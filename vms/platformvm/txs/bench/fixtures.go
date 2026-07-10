@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Package bench holds the linearcodec-vs-native-ZAP benchmark harness
+// Package bench holds the reflection codec-vs-native-ZAP benchmark harness
 // for the platformvm txs.
 //
 // FIXTURE PHILOSOPHY: every tx the harness measures is built with field

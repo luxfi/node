@@ -8,190 +8,242 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/constants"
+	"github.com/luxfi/crypto/hash"
+	"github.com/luxfi/ids"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/vm/types"
+
+	"github.com/luxfi/node/vms/pcodecs"
 )
 
-// TestCodecVersionForTimestamp_StrictBoundary asserts the timestamp
-// selector pins V2 (ZAP-native) from genesis per LP-023.
-// ZAPCodecActivationTimestamp == 0, so every ts >= 0 selects V2.
-func TestCodecVersionForTimestamp_StrictBoundary(t *testing.T) {
-	require := require.New(t)
+// The P-Chain runs ONE codec: ZAP-native (little-endian) at CodecVersion.
+// These tests are the determinism contract that RED verifies before the
+// Nova re-genesis: serialization determines tx IDs, block IDs, and state
+// roots, so the encoding MUST be canonical (same Go value -> same bytes
+// on every node, every run) and non-malleable (no two distinct wire
+// encodings decode to the same value).
 
-	// EXACTLY at activation (ts=0): V2.
-	require.Equal(CodecVersionV2, CodecVersionForTimestamp(ZAPCodecActivationTimestamp),
-		"ts == activation must select zapcodec (V2)")
-
-	// Far after activation: still V2.
-	require.Equal(CodecVersionV2, CodecVersionForTimestamp(ZAPCodecActivationTimestamp+1_000_000),
-		"ts > activation must select zapcodec (V2)")
-
-	// Genesis (ts=0): V2 — LP-023 makes ZAP-native mandatory from genesis.
-	require.Equal(CodecVersionV2, CodecVersionForTimestamp(0),
-		"ts == 0 must select zapcodec (V2) — LP-023 hard cut")
+// determinismFixture is a named UnsignedTx used across the determinism
+// assertions. Every fixture is SIGNATURE-FREE (no BLS) so its bytes are
+// identical whether or not CGO/BLST is linked.
+type determinismFixture struct {
+	name string
+	tx   UnsignedTx
 }
 
-// TestCodecForTimestamp_ManagerIsStable asserts the manager handle is
-// the same across timestamps — only the version returned by
-// CodecVersionForTimestamp varies. Callers MUST pass that version into
-// Codec.Marshal / Codec.Unmarshal.
-func TestCodecForTimestamp_ManagerIsStable(t *testing.T) {
-	require := require.New(t)
-	pre := CodecForTimestamp(0)
-	post := CodecForTimestamp(ZAPCodecActivationTimestamp + 1)
-	// Two interface values from the same package-level variable; must
-	// be identical.
-	require.Equal(Codec, pre)
-	require.Equal(Codec, post)
-	require.Equal(pre, post)
+func determinismFixtures() []determinismFixture {
+	var (
+		assetID = ids.ID{
+			0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+			0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+			0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
+			0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+		}
+		utxoTxID = ids.ID{
+			0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
+			0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
+			0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
+			0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
+		}
+		addr = ids.ShortID{
+			0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+			0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+			0x44, 0x55, 0x66, 0x77,
+		}
+		baseTx = lux.BaseTx{
+			NetworkID:    constants.MainnetID,
+			BlockchainID: constants.PlatformChainID,
+			Ins: []*lux.TransferableInput{
+				{
+					UTXOID: lux.UTXOID{TxID: utxoTxID, OutputIndex: 1},
+					Asset:  lux.Asset{ID: assetID},
+					In: &secp256k1fx.TransferInput{
+						Amt:   constants.Lux,
+						Input: secp256k1fx.Input{SigIndices: []uint32{0, 2}},
+					},
+				},
+			},
+			Outs: []*lux.TransferableOutput{
+				{
+					Asset: lux.Asset{ID: assetID},
+					Out: &secp256k1fx.TransferOutput{
+						Amt: constants.MilliLux,
+						OutputOwners: secp256k1fx.OutputOwners{
+							Threshold: 1,
+							Addrs:     []ids.ShortID{addr},
+						},
+					},
+				},
+			},
+			Memo: types.JSONByteSlice("determinism"),
+		}
+	)
+
+	return []determinismFixture{
+		// Scalar-only: exercises the interface type-id prefix + a bare
+		// uint64 body.
+		{"AdvanceTimeTx", &AdvanceTimeTx{Time: 0x0102030405060708}},
+		// Nested interfaces (TransferableInput.In / TransferableOutput.Out),
+		// slices, byte-slice memo, sorted addr set — the canonical-bytes
+		// machinery that state roots ride on.
+		{"BaseTx", &BaseTx{BaseTx: baseTx}},
+	}
 }
 
-// TestPreActivationRoundTripV1 round-trips a tx through V1 (kept as a
-// registered codec slot even though it is no longer the write version
-// per LP-023 — activation is at genesis). Both V1 and V2 use the same
-// ZAP-native LE wire encoding in this binary; the version byte is the
-// only on-wire distinguisher.
-func TestPreActivationRoundTripV1(t *testing.T) {
+// TestCodecVersionIsSole pins the single-codec invariant: CodecVersion is
+// the one and only registered version, Marshal stamps it as a uint16
+// little-endian wire prefix, and Unmarshal reports it back.
+func TestCodecVersionIsSole(t *testing.T) {
 	require := require.New(t)
 
-	tx := &AdvanceTimeTx{Time: 1700000000}
+	require.Equal(uint16(1), CodecVersion, "sole P-Chain codec version is 1 (ZAP-native)")
 
-	b, err := Codec.Marshal(CodecVersionV1, tx)
+	var unsigned UnsignedTx = &AdvanceTimeTx{Time: 42}
+	b, err := Codec.Marshal(CodecVersion, &unsigned)
 	require.NoError(err)
+	require.GreaterOrEqual(len(b), 2)
+	require.Equal(CodecVersion, binary.LittleEndian.Uint16(b[:2]),
+		"wire prefix MUST be CodecVersion, little-endian")
 
-	// Wire prefix is the codec version (LE per LP-023).
-	require.Equal(uint16(CodecVersionV1), binary.LittleEndian.Uint16(b[:2]),
-		"V1 wire prefix MUST be LE-encoded ZAP-native (LP-023)")
-
-	out := &AdvanceTimeTx{}
-	gotVersion, err := Codec.Unmarshal(b, out)
+	var out UnsignedTx
+	gotVersion, err := Codec.Unmarshal(b, &out)
 	require.NoError(err)
-	require.Equal(CodecVersionV1, gotVersion)
-	require.Equal(tx.Time, out.Time)
+	require.Equal(CodecVersion, gotVersion)
 }
 
-// TestPostActivationRoundTripV2 round-trips a tx through V2 — the
-// canonical post-LP-023 write version. Wire prefix is LE per ZAP.
-func TestPostActivationRoundTripV2(t *testing.T) {
-	require := require.New(t)
-
-	tx := &AdvanceTimeTx{Time: ZAPCodecActivationTimestamp}
-	v := CodecVersionForTimestamp(tx.Time)
-	require.Equal(CodecVersionV2, v)
-
-	b, err := Codec.Marshal(v, tx)
-	require.NoError(err)
-	require.Equal(uint16(CodecVersionV2), binary.LittleEndian.Uint16(b[:2]),
-		"post-activation wire MUST be V2-prefixed (LE per LP-023)")
-
-	out := &AdvanceTimeTx{}
-	gotVersion, err := Codec.Unmarshal(b, out)
-	require.NoError(err)
-	require.Equal(CodecVersionV2, gotVersion)
-	require.Equal(tx.Time, out.Time)
-}
-
-// TestCrossVersionWireIsDistinct asserts that V1 and V2 bytes for the
-// same logical tx differ in the prefix byte only — both encode the
-// payload via ZAP-native LE with the same slot map per LP-023.
-func TestCrossVersionWireIsDistinct(t *testing.T) {
-	require := require.New(t)
-
-	tx := &AdvanceTimeTx{Time: ZAPCodecActivationTimestamp}
-
-	v1Bytes, err := Codec.Marshal(CodecVersionV1, tx)
-	require.NoError(err)
-	v2Bytes, err := Codec.Marshal(CodecVersionV2, tx)
-	require.NoError(err)
-
-	// Same length — same slot map, same wire encoding.
-	require.Equal(len(v1Bytes), len(v2Bytes),
-		"V1 and V2 wire MUST have identical length for the same logical tx")
-
-	// Prefix differs (V1 vs V2 codec version).
-	require.NotEqual(v1Bytes[:2], v2Bytes[:2],
-		"V1 and V2 wire prefix MUST differ")
-
-	// Payload (post-prefix) is identical — both are ZAP-native LE on the
-	// same slot map. LP-023 made V1 and V2 wire-format-equivalent.
-	require.Equal(v1Bytes[2:], v2Bytes[2:],
-		"V1 and V2 wire payload MUST be byte-identical (both ZAP-native LE)")
-}
-
-// TestCodecAllowsRead asserts the read-acceptance gate. V0, V1, V2 are
-// recognised; anything else is not.
-func TestCodecAllowsRead(t *testing.T) {
-	require := require.New(t)
-	require.True(CodecAllowsRead(CodecVersionV0))
-	require.True(CodecAllowsRead(CodecVersionV1))
-	require.True(CodecAllowsRead(CodecVersionV2))
-	require.False(CodecAllowsRead(3))
-	require.False(CodecAllowsRead(0xFFFF))
-}
-
-// TestCodecRequiresLegacy asserts the legacy-version classifier.
-func TestCodecRequiresLegacy(t *testing.T) {
-	require := require.New(t)
-	require.True(CodecRequiresLegacy(CodecVersionV0))
-	require.True(CodecRequiresLegacy(CodecVersionV1))
-	require.False(CodecRequiresLegacy(CodecVersionV2))
-}
-
-// TestV2WireIsZapNative asserts the canonical detection: a V2-prefixed
-// wire has the codec version followed by the zapcodec little-endian
-// payload. Both prefix and payload are LE per ZAP — LP-023 makes ZAP
-// mandatory from genesis.
+// TestGoldenAdvanceTimeTx pins the exact wire bytes AND the derived TxID
+// of a fixed fixture. A change to the ZAP wire layout (byte order, type-id
+// width, slot position, version prefix) breaks this test — which is the
+// point: those bytes are the chain commitment.
 //
-// We assert it structurally by checking that the marshaled byte at
-// offset 2 (first payload byte after the version prefix) is the LSB
-// of the Time field, not the MSB. AdvanceTimeTx packs Time as a
-// uint64 directly; LE means LSB-first.
-func TestV2WireIsZapNative(t *testing.T) {
+// Layout, interface-marshaled at CodecVersion:
+//
+//	01 00                     version 1, uint16 LE
+//	13 00 00 00               interface type-id 19 (AdvanceTimeTx), uint32 LE
+//	08 07 06 05 04 03 02 01   Time uint64 LE (0x0102030405060708)
+func TestGoldenAdvanceTimeTx(t *testing.T) {
 	require := require.New(t)
 
-	// Pick a Time with distinct LSB/MSB.
-	tx := &AdvanceTimeTx{Time: 0x0102030405060708}
+	golden := []byte{
+		0x01, 0x00,
+		0x13, 0x00, 0x00, 0x00,
+		0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
+	}
+	// TxID = SHA-256 of the signed wire bytes. Pinned so a silent
+	// re-hashing or re-encoding is caught.
+	goldenTxID := hash.ComputeHash256Array(golden)
 
-	b, err := Codec.Marshal(CodecVersionV2, tx)
+	var unsigned UnsignedTx = &AdvanceTimeTx{Time: 0x0102030405060708}
+	got, err := Codec.Marshal(CodecVersion, &unsigned)
 	require.NoError(err)
-
-	// Wire layout for AdvanceTimeTx under V2:
-	//   bytes 0-1: 0x0002 (LE, codec version)
-	//   bytes 2-9: Time uint64 in LE — LSB first
-	require.Equal(byte(CodecVersionV2), b[0], "V2 prefix LE: byte 0 is LSB of version")
-	require.Equal(byte(0x00), b[1])
-	require.Equal(byte(0x08), b[2], "V2 LSB-first: byte 2 must be LSB of Time")
-	require.Equal(byte(0x07), b[3])
-	require.Equal(byte(0x06), b[4])
-	require.Equal(byte(0x05), b[5])
-	require.Equal(byte(0x04), b[6])
-	require.Equal(byte(0x03), b[7])
-	require.Equal(byte(0x02), b[8])
-	require.Equal(byte(0x01), b[9], "V2 LSB-first: byte 9 must be MSB of Time")
-
-	// Cross-check via LE uint64.
-	require.Equal(uint64(0x0102030405060708), binary.LittleEndian.Uint64(b[2:]),
-		"V2 payload MUST be LE-decodable as the original Time value")
+	require.Equal(golden, got, "AdvanceTimeTx golden wire bytes drifted")
+	require.Equal(goldenTxID, hash.ComputeHash256Array(got),
+		"TxID = hash(wire) is not stable")
 }
 
-// TestV1WireIsZapNative is the mirror assertion for V1: LP-023 makes
-// ZAP mandatory from genesis, so V1 and V2 share the LE wire format.
-// The version byte at offset 0 is the only on-wire distinguisher.
-func TestV1WireIsZapNative(t *testing.T) {
+// TestMarshalIsDeterministic asserts Marshal is a pure function of its
+// input: the same Go value marshals to byte-identical output on every
+// call. A single differing byte across the fleet forks the chain.
+func TestMarshalIsDeterministic(t *testing.T) {
+	for _, f := range determinismFixtures() {
+		f := f
+		t.Run(f.name, func(t *testing.T) {
+			require := require.New(t)
+			var unsigned UnsignedTx = f.tx
+			first, err := Codec.Marshal(CodecVersion, &unsigned)
+			require.NoError(err)
+			for i := 0; i < 256; i++ {
+				again, err := Codec.Marshal(CodecVersion, &unsigned)
+				require.NoError(err)
+				require.Equal(first, again, "Marshal is not deterministic across calls")
+			}
+		})
+	}
+}
+
+// TestRoundTripByteStability is the canonical-form invariant: for every
+// fixture, Marshal -> Unmarshal -> re-Marshal reproduces byte-identical
+// wire. This is what guarantees a decoded-then-re-encoded tx (the block
+// re-marshal path in initialize) keeps its TxID, and that state records
+// re-serialize to the same bytes -> same state root.
+func TestRoundTripByteStability(t *testing.T) {
+	for _, f := range determinismFixtures() {
+		f := f
+		t.Run(f.name, func(t *testing.T) {
+			require := require.New(t)
+
+			var unsigned UnsignedTx = f.tx
+			wire, err := Codec.Marshal(CodecVersion, &unsigned)
+			require.NoError(err)
+
+			var decoded UnsignedTx
+			version, err := Codec.Unmarshal(wire, &decoded)
+			require.NoError(err)
+			require.Equal(CodecVersion, version)
+
+			reWire, err := Codec.Marshal(CodecVersion, &decoded)
+			require.NoError(err)
+			require.Equal(wire, reWire,
+				"decode->re-encode is not byte-stable; the encoding is non-canonical")
+		})
+	}
+}
+
+// TestTrailingBytesRejected is a malleability guard: appending any bytes
+// to a valid wire MUST be rejected, not silently ignored. Otherwise two
+// distinct byte strings would decode to the same value with different
+// hashes.
+func TestTrailingBytesRejected(t *testing.T) {
 	require := require.New(t)
 
-	tx := &AdvanceTimeTx{Time: 0x0102030405060708}
-
-	b, err := Codec.Marshal(CodecVersionV1, tx)
+	var unsigned UnsignedTx = &AdvanceTimeTx{Time: 7}
+	wire, err := Codec.Marshal(CodecVersion, &unsigned)
 	require.NoError(err)
-	require.Equal(byte(CodecVersionV1), b[0], "V1 prefix LE: byte 0 is LSB of version")
-	require.Equal(byte(0x00), b[1])
-	require.Equal(byte(0x08), b[2], "V1 LSB-first: byte 2 must be LSB of Time (ZAP-native LE)")
-	require.Equal(byte(0x01), b[9], "V1 LSB-first: byte 9 must be MSB of Time (ZAP-native LE)")
+
+	malleable := make([]byte, len(wire)+1)
+	copy(malleable, wire)
+	malleable[len(wire)] = 0x00 // even a zero byte must be rejected
+
+	var out UnsignedTx
+	_, err = Codec.Unmarshal(malleable, &out)
+	require.ErrorIs(err, pcodecs.ErrExtraSpace,
+		"trailing bytes MUST be rejected (canonical-form / non-malleability)")
 }
 
-// TestActivationConstantUnchanged is the watchdog test. The constant
-// MUST be 0 (LP-023: ZAP-native mandatory from genesis).
-func TestActivationConstantUnchanged(t *testing.T) {
-	require.Equal(t, uint64(0), ZAPCodecActivationTimestamp,
-		"activation constant changed without consensus coordination — "+
-			"see comments on ZAPCodecActivationTimestamp for the rationale (LP-023: genesis)")
+// TestTruncatedRejected asserts a wire missing its final byte is rejected
+// rather than decoding a truncated value.
+func TestTruncatedRejected(t *testing.T) {
+	require := require.New(t)
+
+	var unsigned UnsignedTx = &AdvanceTimeTx{Time: 7}
+	wire, err := Codec.Marshal(CodecVersion, &unsigned)
+	require.NoError(err)
+
+	var out UnsignedTx
+	_, err = Codec.Unmarshal(wire[:len(wire)-1], &out)
+	require.Error(err, "a truncated wire MUST NOT decode")
+}
+
+// TestUnknownVersionRejected asserts that a wire whose 2-byte prefix is
+// not CodecVersion is rejected. There is exactly one registered version;
+// anything else is ErrUnknownVersion (no legacy fallback).
+func TestUnknownVersionRejected(t *testing.T) {
+	require := require.New(t)
+
+	var unsigned UnsignedTx = &AdvanceTimeTx{Time: 7}
+	wire, err := Codec.Marshal(CodecVersion, &unsigned)
+	require.NoError(err)
+
+	// Rewrite the prefix to a version that is not registered.
+	forged := make([]byte, len(wire))
+	copy(forged, wire)
+	binary.LittleEndian.PutUint16(forged[:2], CodecVersion+1)
+
+	var out UnsignedTx
+	_, err = Codec.Unmarshal(forged, &out)
+	require.ErrorIs(err, pcodecs.ErrUnknownVersion,
+		"a prefix other than CodecVersion MUST be rejected")
 }

@@ -219,7 +219,7 @@ func getL1Validator(
 	l1Validator := L1Validator{
 		ValidationID: validationID,
 	}
-	if _, err := multiVersionUnmarshal(block.GenesisCodec, bytes, &l1Validator); err != nil {
+	if _, err := block.GenesisCodec.Unmarshal(bytes, &l1Validator); err != nil {
 		return L1Validator{}, fmt.Errorf("failed to unmarshal L1 validator: %w", err)
 	}
 
