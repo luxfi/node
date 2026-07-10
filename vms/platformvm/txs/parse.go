@@ -115,7 +115,9 @@ func writeCredsBuf(creds []verify.Verifiable) ([]byte, error) {
 		blobs = append(blobs, cred.Sigs...)
 		cursor += uint32(len(cred.Sigs))
 	}
-	credsOff, credsCount := clb.Finish()
+	// AddBytes counts bytes, not elements — use real element counts.
+	credsOff, _ := clb.Finish()
+	credsCount := len(creds)
 
 	var sigOff, sigCount int
 	if len(blobs) > 0 {
@@ -123,7 +125,8 @@ func writeCredsBuf(creds []verify.Verifiable) ([]byte, error) {
 		for _, s := range blobs {
 			slb.AddBytes(s[:])
 		}
-		sigOff, sigCount = slb.Finish()
+		sigOff, _ = slb.Finish()
+		sigCount = len(blobs)
 	}
 
 	ob := b.StartObject(credsObjSize)

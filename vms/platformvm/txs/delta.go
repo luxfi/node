@@ -74,7 +74,8 @@ func writeOwner(b *zap.Builder, o fx.Owner) (threshold uint32, locktime uint64, 
 		for _, a := range oo.Addrs {
 			lb.AddBytes(a[:])
 		}
-		addrOff, addrCount = lb.Finish()
+		addrOff, _ = lb.Finish()
+		addrCount = len(oo.Addrs) // AddBytes counts bytes, not elements
 	}
 	return oo.Threshold, oo.Locktime, addrOff, addrCount, nil
 }

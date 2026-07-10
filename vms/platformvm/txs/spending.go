@@ -155,13 +155,16 @@ func writeOutputs(b *zap.Builder, outs []*lux.TransferableOutput) (listOff, list
 		lb.AddBytes(e[:])
 		addrs = append(addrs, oaddrs...)
 	}
-	listOff, listCount = lb.Finish()
+	// AddBytes counts BYTES, not elements — use the real element counts.
+	listOff, _ = lb.Finish()
+	listCount = len(outs)
 	if len(addrs) > 0 {
 		alb := b.StartList(addrStride)
 		for _, a := range addrs {
 			alb.AddBytes(a[:])
 		}
-		addrOff, addrCount = alb.Finish()
+		addrOff, _ = alb.Finish()
+		addrCount = len(addrs)
 	}
 	return listOff, listCount, addrOff, addrCount, nil
 }
@@ -188,7 +191,9 @@ func writeInputs(b *zap.Builder, ins []*lux.TransferableInput) (listOff, listCou
 		lb.AddBytes(e[:])
 		sigs = append(sigs, sigIdx...)
 	}
-	listOff, listCount = lb.Finish()
+	// AddBytes counts BYTES; AddUint32 counts elements — fix the ins list count.
+	listOff, _ = lb.Finish()
+	listCount = len(ins)
 	if len(sigs) > 0 {
 		slb := b.StartList(sigStride)
 		for _, s := range sigs {

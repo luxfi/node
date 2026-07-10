@@ -106,7 +106,8 @@ func writeSovereignChains(b *zap.Builder, chains []*SovereignL1Chain) (listOff, 
 		genBlob = append(genBlob, ch.GenesisData...)
 		lb.AddBytes(e[:])
 	}
-	listOff, listCount = lb.Finish()
+	listOff, _ = lb.Finish()
+	listCount = len(chains) // AddBytes counts bytes, not elements
 	return listOff, listCount, nameBlob, fxIDs, genBlob
 }
 
@@ -190,7 +191,8 @@ func NewCreateSovereignL1Tx(
 		for _, a := range addrPool {
 			alb.AddBytes(a[:])
 		}
-		convAddrOff, convAddrCount = alb.Finish()
+		convAddrOff, _ = alb.Finish()
+		convAddrCount = len(addrPool)
 	}
 	chOff, chCount, nameBlob, fxIDs, genBlob := writeSovereignChains(b, chains)
 	fxOff, fxCount := 0, 0
@@ -199,7 +201,8 @@ func NewCreateSovereignL1Tx(
 		for _, id := range fxIDs {
 			flb.AddBytes(id[:])
 		}
-		fxOff, fxCount = flb.Finish()
+		fxOff, _ = flb.Finish()
+		fxCount = len(fxIDs)
 	}
 
 	ob := b.StartObject(sizeSovTx)
