@@ -11,7 +11,7 @@ import (
 )
 
 // BenchmarkBuildLegacy measures fields→bytes via the legacy
-// linearcodec Marshal path for each fixture. Building includes the
+// reflection codec Marshal path for each fixture. Building includes the
 // reflection-cache lookup, packer alloc, and per-field walk.
 func BenchmarkBuildLegacy(b *testing.B) {
 	fixtures := FixtureMap()

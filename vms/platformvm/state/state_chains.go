@@ -63,7 +63,7 @@ func (s *state) GetNetOwner(netID ids.ID) (fx.Owner, error) {
 	ownerBytes, err := s.chainOwnerDB.Get(netID[:])
 	if err == nil {
 		var owner fx.Owner
-		if _, err := multiVersionUnmarshal(block.GenesisCodec, ownerBytes, &owner); err != nil {
+		if _, err := block.GenesisCodec.Unmarshal(ownerBytes, &owner); err != nil {
 			return nil, err
 		}
 		s.chainOwnerCache.Put(netID, fxOwnerAndSize{
@@ -113,7 +113,7 @@ func (s *state) GetNetToL1Conversion(chainID ids.ID) (NetToL1Conversion, error) 
 	}
 
 	var c NetToL1Conversion
-	if _, err := multiVersionUnmarshal(block.GenesisCodec, bytes, &c); err != nil {
+	if _, err := block.GenesisCodec.Unmarshal(bytes, &c); err != nil {
 		return NetToL1Conversion{}, err
 	}
 	s.chainToL1ConversionCache.Put(chainID, c)

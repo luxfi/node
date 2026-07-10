@@ -588,7 +588,7 @@ const CoronaSignatureLen = 3309
 // 3. Post-quantum: Corona-only (future)
 //
 // Wire format: this type is the 4th type registered in the warp codec
-// (codec.go), which assigns it linearcodec typeID 0x03. The typeID, field
+// (codec.go), which assigns it codec typeID 0x03. The typeID, field
 // order, and field encodings are part of the on-chain wire format and
 // MUST NOT change. The Go-side type name is metadata only and was renamed
 // from HybridBLSRTSignature in the threshold sweep; wire bytes are
