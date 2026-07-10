@@ -81,10 +81,10 @@ const (
 // into the builder's variable section (before the object) and returns their
 // offsets. Callers set them into the object's fixed section via setEnvelope.
 type spendPtrs struct {
-	outsOff, outsCount     int
-	addrOff, addrCount     int
-	insOff, insCount       int
-	sigOff, sigCount       int
+	outsOff, outsCount int
+	addrOff, addrCount int
+	insOff, insCount   int
+	sigOff, sigCount   int
 }
 
 func writeOutputs(b *zap.Builder, outs []*lux.TransferableOutput) (listOff, listCount, addrOff, addrCount int, err error) {
