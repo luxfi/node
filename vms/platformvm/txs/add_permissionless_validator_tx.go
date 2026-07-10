@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -8,22 +8,20 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	safemath "github.com/luxfi/math"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/zap"
 )
 
 var (
-	_ ValidatorTx     = (*AddPermissionlessValidatorTx)(nil)
-	_ ScheduledStaker = (*AddPermissionlessDelegatorTx)(nil)
+	_ UnsignedTx = (*AddPermissionlessValidatorTx)(nil)
 
 	errEmptyNodeID             = errors.New("validator nodeID cannot be empty")
 	errNoStake                 = errors.New("no stake")
@@ -32,117 +30,131 @@ var (
 	errValidatorWeightMismatch = errors.New("validator weight mismatch")
 )
 
-// AddPermissionlessValidatorTx is an unsigned addPermissionlessValidatorTx
+// AddPermissionlessValidatorTx is an unsigned addPermissionlessValidatorTx.
+// The struct IS the wire: it holds the zap buffer and reads its fields by
+// offset. No codec, no marshal.
+//
+// Wire: zap header + object{ envelope@0..76, Validator@77, Chain@121,
+// Signer@153, StakeOuts@298, ValidatorRewardsOwner@314,
+// DelegatorRewardsOwner@334, DelegationShares@354 }.
 type AddPermissionlessValidatorTx struct {
-	// Metadata, inputs and outputs
-	BaseTx `serialize:"true"`
-	// Describes the validator
-	Validator `serialize:"true" json:"validator"`
-	// ID of the chain this validator is validating
-	Chain ids.ID `serialize:"true" json:"chainID"`
-	// If the [Chain] is the primary network, [Signer] is the BLS key for this
-	// validator. If the [Chain] is not the primary network, this value is the
-	// empty signer
-	// Note: We do not enforce that the BLS key is unique across all validators.
-	//       This means that validators can share a key if they so choose.
-	//       However, a NodeID does uniquely map to a BLS key
-	Signer signer.Signer `serialize:"true" json:"signer"`
-	// Where to send staked tokens when done validating
-	StakeOuts []*lux.TransferableOutput `serialize:"true" json:"stake"`
-	// Where to send validation rewards when done validating
-	ValidatorRewardsOwner fx.Owner `serialize:"true" json:"validationRewardsOwner"`
-	// Where to send delegation rewards when done validating
-	DelegatorRewardsOwner fx.Owner `serialize:"true" json:"delegationRewardsOwner"`
-	// Fee this validator charges delegators as a percentage, times 10,000
-	// For example, if this validator has DelegationShares=300,000 then they
-	// take 30% of rewards from delegators
-	DelegationShares uint32 `serialize:"true" json:"shares"`
+	spendingTx
 }
 
-// InitRuntime sets the FxID fields in the inputs and outputs of this
-// [AddPermissionlessValidatorTx]. Also sets the [rt] to the given [vm.rt] so
-// that the addresses can be json marshalled into human readable format
-func (tx *AddPermissionlessValidatorTx) InitRuntime(rt *runtime.Runtime) {
-	tx.BaseTx.InitRuntime(rt)
-	for _, out := range tx.StakeOuts {
-		out.FxID = secp256k1fx.ID
-		out.InitRuntime(rt)
+const (
+	offAPVValidator                = spendSize                       // 77: inline Validator (44B)
+	offAPVChain                    = offAPVValidator + validatorSize // 121: chain id (32B)
+	offAPVSigner                   = offAPVChain + 32                // 153: inline Signer (145B)
+	offAPVStakeOuts                = offAPVSigner + signerSize       // 298: stake-outs list ptr (8B)
+	offAPVStakeAddrs               = offAPVStakeOuts + 8             // 306: stake-outs owner-addr array ptr (8B)
+	offAPVValRewardsThreshold      = offAPVStakeAddrs + 8            // 314: validator rewards owner threshold (u32)
+	offAPVValRewardsLocktime       = offAPVValRewardsThreshold + 4   // 318: validator rewards owner locktime (u64)
+	offAPVValRewardsAddrs          = offAPVValRewardsLocktime + 8    // 326: validator rewards owner addr array ptr (8B)
+	offAPVDelRewardsThreshold      = offAPVValRewardsAddrs + 8       // 334: delegator rewards owner threshold (u32)
+	offAPVDelRewardsLocktime       = offAPVDelRewardsThreshold + 4   // 338: delegator rewards owner locktime (u64)
+	offAPVDelRewardsAddrs          = offAPVDelRewardsLocktime + 8    // 346: delegator rewards owner addr array ptr (8B)
+	offAPVDelegationShares         = offAPVDelRewardsAddrs + 8       // 354: delegation shares (u32)
+	addPermissionlessValidatorSize = offAPVDelegationShares + 4      // 358
+)
+
+// NewAddPermissionlessValidatorTx builds the tx into a fresh zap buffer.
+func NewAddPermissionlessValidatorTx(base *lux.BaseTx, validator Validator, chain ids.ID, sig signer.Signer, stakeOuts []*lux.TransferableOutput, validatorRewardsOwner fx.Owner, delegatorRewardsOwner fx.Owner, delegationShares uint32) (*AddPermissionlessValidatorTx, error) {
+	b := zap.NewBuilder(zap.HeaderSize + 1024 + addPermissionlessValidatorSize)
+	p, err := writeSpending(b, base)
+	if err != nil {
+		return nil, err
 	}
-	// Owner doesn't have InitRuntime method
-	// tx.ValidatorRewardsOwner.InitRuntime(ctx)
-	// tx.DelegatorRewardsOwner.InitRuntime(ctx)
-}
-
-func (tx *AddPermissionlessValidatorTx) ChainID() ids.ID {
-	return tx.Chain
-}
-
-func (tx *AddPermissionlessValidatorTx) NodeID() ids.NodeID {
-	return tx.Validator.NodeID
-}
-
-func (tx *AddPermissionlessValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
-	if err := tx.Signer.Verify(); err != nil {
-		return nil, false, err
+	stakeListOff, stakeListCount, stakeAddrOff, stakeAddrCount, err := writeExtraOuts(b, stakeOuts)
+	if err != nil {
+		return nil, err
 	}
-	key := tx.Signer.Key()
-	return key, key != nil, nil
-}
-
-func (tx *AddPermissionlessValidatorTx) PendingPriority() Priority {
-	if tx.Chain == constants.PrimaryNetworkID {
-		return PrimaryNetworkValidatorPendingPriority
+	valThreshold, valLocktime, valAddrOff, valAddrCount, err := writeOwner(b, validatorRewardsOwner)
+	if err != nil {
+		return nil, err
 	}
-	return ChainPermissionlessValidatorPendingPriority
-}
-
-func (tx *AddPermissionlessValidatorTx) CurrentPriority() Priority {
-	if tx.Chain == constants.PrimaryNetworkID {
-		return PrimaryNetworkValidatorCurrentPriority
+	delThreshold, delLocktime, delAddrOff, delAddrCount, err := writeOwner(b, delegatorRewardsOwner)
+	if err != nil {
+		return nil, err
 	}
-	return ChainPermissionlessValidatorCurrentPriority
+
+	ob := b.StartObject(addPermissionlessValidatorSize)
+	setEnvelope(ob, kindAddPermissionlessValidator, base, p)
+	setValidator(ob, offAPVValidator, validator)
+	setID(ob, offAPVChain, chain)
+	if err := setSigner(ob, offAPVSigner, sig); err != nil {
+		return nil, err
+	}
+	ob.SetList(offAPVStakeOuts, stakeListOff, stakeListCount)
+	ob.SetList(offAPVStakeAddrs, stakeAddrOff, stakeAddrCount)
+	setOwner(ob, offAPVValRewardsThreshold, offAPVValRewardsLocktime, offAPVValRewardsAddrs, valThreshold, valLocktime, valAddrOff, valAddrCount)
+	setOwner(ob, offAPVDelRewardsThreshold, offAPVDelRewardsLocktime, offAPVDelRewardsAddrs, delThreshold, delLocktime, delAddrOff, delAddrCount)
+	ob.SetUint32(offAPVDelegationShares, delegationShares)
+	ob.FinishAsRoot()
+
+	msg, _ := zap.Parse(b.Finish())
+	return &AddPermissionlessValidatorTx{spendingTx{msg}}, nil
 }
 
-func (tx *AddPermissionlessValidatorTx) Stake() []*lux.TransferableOutput {
-	return tx.StakeOuts
+// Validator describes the validator (offset read).
+func (tx *AddPermissionlessValidatorTx) Validator() Validator {
+	return readValidator(tx.root(), offAPVValidator)
 }
 
-func (tx *AddPermissionlessValidatorTx) ValidationRewardsOwner() fx.Owner {
-	return tx.ValidatorRewardsOwner
+// Chain is the id of the chain this validator is validating (offset read).
+func (tx *AddPermissionlessValidatorTx) Chain() ids.ID { return readID(tx.root(), offAPVChain) }
+
+// Signer is the BLS key for this validator (empty signer off the primary
+// network) (offset read).
+func (tx *AddPermissionlessValidatorTx) Signer() signer.Signer {
+	return readSigner(tx.root(), offAPVSigner)
 }
 
-func (tx *AddPermissionlessValidatorTx) DelegationRewardsOwner() fx.Owner {
-	return tx.DelegatorRewardsOwner
+// StakeOuts is where staked tokens go when done validating (offset read).
+func (tx *AddPermissionlessValidatorTx) StakeOuts() []*lux.TransferableOutput {
+	return readExtraOuts(tx.root(), offAPVStakeOuts, offAPVStakeAddrs)
 }
 
-func (tx *AddPermissionlessValidatorTx) Shares() uint32 {
-	return tx.DelegationShares
+// ValidatorRewardsOwner is where validation rewards go when done validating.
+func (tx *AddPermissionlessValidatorTx) ValidatorRewardsOwner() fx.Owner {
+	return readOwner(tx.root(), offAPVValRewardsThreshold, offAPVValRewardsLocktime, offAPVValRewardsAddrs)
 }
 
-// SyntacticVerify returns nil iff [tx] is valid
+// DelegatorRewardsOwner is where delegation rewards go when done validating.
+func (tx *AddPermissionlessValidatorTx) DelegatorRewardsOwner() fx.Owner {
+	return readOwner(tx.root(), offAPVDelRewardsThreshold, offAPVDelRewardsLocktime, offAPVDelRewardsAddrs)
+}
+
+// DelegationShares is the fee (times 10,000) charged to delegators.
+func (tx *AddPermissionlessValidatorTx) DelegationShares() uint32 {
+	return tx.root().Uint32(offAPVDelegationShares)
+}
+
+// SyntacticVerify returns nil iff [tx] is valid.
 func (tx *AddPermissionlessValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
-	switch {
-	case tx == nil:
+	if tx == nil {
 		return ErrNilTx
-	case tx.SyntacticallyVerified: // already passed syntactic verification
-		return nil
-	case tx.Validator.NodeID == ids.EmptyNodeID:
+	}
+	v := tx.Validator()
+	stakeOuts := tx.StakeOuts()
+	switch {
+	case v.NodeID == ids.EmptyNodeID:
 		return errEmptyNodeID
-	case len(tx.StakeOuts) == 0: // Ensure there is provided stake
+	case len(stakeOuts) == 0: // Ensure there is provided stake
 		return errNoStake
-	case tx.DelegationShares > reward.PercentDenominator:
+	case tx.DelegationShares() > reward.PercentDenominator:
 		return errTooManyShares
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
+	if err := verifyBaseTx(tx.baseTx(), rt); err != nil {
 		return fmt.Errorf("failed to verify BaseTx: %w", err)
 	}
-	if err := verify.All(&tx.Validator, tx.Signer, tx.ValidatorRewardsOwner, tx.DelegatorRewardsOwner); err != nil {
+	sig := tx.Signer()
+	if err := verify.All(&v, sig, tx.ValidatorRewardsOwner(), tx.DelegatorRewardsOwner()); err != nil {
 		return fmt.Errorf("failed to verify validator, signer, or rewards owners: %w", err)
 	}
 
-	hasKey := tx.Signer.Key() != nil
-	isPrimaryNetwork := tx.Chain == constants.PrimaryNetworkID
+	hasKey := sig.Key() != nil
+	isPrimaryNetwork := tx.Chain() == constants.PrimaryNetworkID
 	if hasKey != isPrimaryNetwork {
 		return fmt.Errorf(
 			"%w: hasKey=%v != isPrimaryNetwork=%v",
@@ -152,16 +164,16 @@ func (tx *AddPermissionlessValidatorTx) SyntacticVerify(rt *runtime.Runtime) err
 		)
 	}
 
-	for _, out := range tx.StakeOuts {
+	for _, out := range stakeOuts {
 		if err := out.Verify(); err != nil {
 			return fmt.Errorf("failed to verify output: %w", err)
 		}
 	}
 
-	firstStakeOutput := tx.StakeOuts[0]
+	firstStakeOutput := stakeOuts[0]
 	stakedAssetID := firstStakeOutput.AssetID()
 	totalStakeWeight := firstStakeOutput.Output().Amount()
-	for _, out := range tx.StakeOuts[1:] {
+	for _, out := range stakeOuts[1:] {
 		newWeight, err := safemath.Add(totalStakeWeight, out.Output().Amount())
 		if err != nil {
 			return err
@@ -175,14 +187,11 @@ func (tx *AddPermissionlessValidatorTx) SyntacticVerify(rt *runtime.Runtime) err
 	}
 
 	switch {
-	case !lux.IsSortedTransferableOutputs(tx.StakeOuts):
+	case !lux.IsSortedTransferableOutputs(stakeOuts):
 		return errOutputsNotSorted
-	case totalStakeWeight != tx.Wght:
-		return fmt.Errorf("%w: weight %d != stake %d", errValidatorWeightMismatch, tx.Wght, totalStakeWeight)
+	case totalStakeWeight != v.Wght:
+		return fmt.Errorf("%w: weight %d != stake %d", errValidatorWeightMismatch, v.Wght, totalStakeWeight)
 	}
-
-	// cache that this is valid
-	tx.SyntacticallyVerified = true
 	return nil
 }
 
@@ -190,8 +199,7 @@ func (tx *AddPermissionlessValidatorTx) Visit(visitor Visitor) error {
 	return visitor.AddPermissionlessValidatorTx(tx)
 }
 
-// InitializeWithRuntime initializes the transaction with Runtime
+// Initialize is a no-op; Runtime is passed explicitly to InitRuntime.
 func (tx *AddPermissionlessValidatorTx) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
 	return nil
 }

@@ -1,20 +1,18 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
 	"context"
-
-	"github.com/luxfi/runtime"
-
 	"errors"
 	"fmt"
 
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/zap"
 )
 
 var (
@@ -24,44 +22,71 @@ var (
 	errNoExportOutputs = errors.New("no export outputs")
 )
 
-// ExportTx is an unsigned exportTx
+// ExportTx sends funds to another chain. The struct IS the wire: it embeds the
+// spending envelope and reads its delta fields by offset.
+//
+// Delta layout (fixed section, after the 77-byte spending envelope):
+//
+//	DestinationChain 32B @ 77   (id: chain to send the funds to)
+//	ExportedOutputs  8B  @ 109  (output list ptr)
+//	OwnerAddrs       8B  @ 117  (shared owner-address array ptr)
 type ExportTx struct {
-	BaseTx `serialize:"true"`
-
-	// Which chain to send the funds to
-	DestinationChain ids.ID `serialize:"true" json:"destinationChain"`
-
-	// Outputs that are exported to the chain
-	ExportedOutputs []*lux.TransferableOutput `serialize:"true" json:"exportedOutputs"`
+	spendingTx
 }
 
-// InitRuntime sets the FxID fields in the inputs and outputs of this
-// [UnsignedExportTx]. Also sets the [rt] to the given [vm.rt] so that
-// the addresses can be json marshalled into human readable format
-func (tx *ExportTx) InitRuntime(rt *runtime.Runtime) {
-	tx.BaseTx.InitRuntime(rt)
-	for _, out := range tx.ExportedOutputs {
-		out.FxID = secp256k1fx.ID
-		out.InitRuntime(rt)
+const (
+	offExportDestChain = spendSize // 77
+	offExportOutputs   = 109
+	offExportAddrs     = 117
+	sizeExport         = 125
+)
+
+// NewExportTx builds the tx into a fresh zap buffer.
+func NewExportTx(base *lux.BaseTx, destinationChain ids.ID, exportedOutputs []*lux.TransferableOutput) (*ExportTx, error) {
+	b := zap.NewBuilder(zap.HeaderSize + 512 + sizeExport)
+	p, err := writeSpending(b, base)
+	if err != nil {
+		return nil, err
 	}
+	listOff, listCount, addrOff, addrCount, err := writeExtraOuts(b, exportedOutputs)
+	if err != nil {
+		return nil, err
+	}
+
+	ob := b.StartObject(sizeExport)
+	setEnvelope(ob, kindExport, base, p)
+	setID(ob, offExportDestChain, destinationChain)
+	ob.SetList(offExportOutputs, listOff, listCount)
+	ob.SetList(offExportAddrs, addrOff, addrCount)
+	ob.FinishAsRoot()
+
+	msg, _ := zap.Parse(b.Finish())
+	return &ExportTx{spendingTx{msg}}, nil
 }
 
-// SyntacticVerify this transaction is well-formed
+// DestinationChain is the chain the exported funds are sent to (offset read).
+func (tx *ExportTx) DestinationChain() ids.ID { return readID(tx.root(), offExportDestChain) }
+
+// ExportedOutputs are the outputs exported to the destination chain.
+func (tx *ExportTx) ExportedOutputs() []*lux.TransferableOutput {
+	return readExtraOuts(tx.root(), offExportOutputs, offExportAddrs)
+}
+
+// SyntacticVerify this transaction is well-formed.
 func (tx *ExportTx) SyntacticVerify(rt *runtime.Runtime) error {
-	switch {
-	case tx == nil:
+	if tx == nil {
 		return ErrNilTx
-	case tx.SyntacticallyVerified: // already passed syntactic verification
-		return nil
-	case len(tx.ExportedOutputs) == 0:
+	}
+	outs := tx.ExportedOutputs()
+	if len(outs) == 0 {
 		return errNoExportOutputs
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
+	if err := verifyBaseTx(tx.baseTx(), rt); err != nil {
 		return err
 	}
 
-	for _, out := range tx.ExportedOutputs {
+	for _, out := range outs {
 		if err := out.Verify(); err != nil {
 			return fmt.Errorf("output failed verification: %w", err)
 		}
@@ -69,11 +94,9 @@ func (tx *ExportTx) SyntacticVerify(rt *runtime.Runtime) error {
 			return ErrWrongLocktime
 		}
 	}
-	if !lux.IsSortedTransferableOutputs(tx.ExportedOutputs) {
+	if !lux.IsSortedTransferableOutputs(outs) {
 		return errOutputsNotSorted
 	}
-
-	tx.SyntacticallyVerified = true
 	return nil
 }
 
@@ -81,8 +104,5 @@ func (tx *ExportTx) Visit(visitor Visitor) error {
 	return visitor.ExportTx(tx)
 }
 
-// InitializeWithRuntime initializes the transaction with Runtime
-func (tx *ExportTx) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
-}
+// Initialize is a no-op; the struct is already the wire.
+func (tx *ExportTx) Initialize(ctx context.Context) error { return nil }

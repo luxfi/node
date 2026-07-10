@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -8,95 +8,98 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/runtime"
-	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/ids"
 	safemath "github.com/luxfi/math"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/zap"
 )
 
 var (
-	_ DelegatorTx     = (*AddDelegatorTx)(nil)
-	_ ScheduledStaker = (*AddDelegatorTx)(nil)
+	_ UnsignedTx = (*AddDelegatorTx)(nil)
 
 	errDelegatorWeightMismatch = errors.New("delegator weight is not equal to total stake weight")
 	errStakeMustBeLUX          = errors.New("stake must be LUX")
 )
 
-// AddDelegatorTx is an unsigned addDelegatorTx
+// AddDelegatorTx is an unsigned addDelegatorTx. The struct IS the wire: it
+// holds the zap buffer and reads its fields by offset. No codec, no marshal.
+//
+// Wire: zap header + object{ envelope@0..76, Validator@77, StakeOuts@121,
+// DelegationRewardsOwner@137 }.
 type AddDelegatorTx struct {
-	// Metadata, inputs and outputs
-	BaseTx `serialize:"true"`
-	// Describes the delegatee
-	Validator `serialize:"true" json:"validator"`
-	// Where to send staked tokens when done validating
-	StakeOuts []*lux.TransferableOutput `serialize:"true" json:"stake"`
-	// Where to send staking rewards when done validating
-	DelegationRewardsOwner fx.Owner `serialize:"true" json:"rewardsOwner"`
+	spendingTx
 }
 
-// InitRuntime sets the FxID fields in the inputs and outputs of this
-// [UnsignedAddDelegatorTx]. Also sets the [rt] to the given [vm.rt] so that
-// the addresses can be json marshalled into human readable format
-func (tx *AddDelegatorTx) InitRuntime(rt *runtime.Runtime) {
-	tx.BaseTx.InitRuntime(rt)
-	for _, out := range tx.StakeOuts {
-		out.FxID = secp256k1fx.ID
-		out.InitRuntime(rt)
+const (
+	offADValidator        = spendSize                      // 77: inline Validator (44B)
+	offADStakeOuts        = offADValidator + validatorSize // 121: stake-outs list ptr (8B)
+	offADStakeAddrs       = offADStakeOuts + 8             // 129: stake-outs owner-addr array ptr (8B)
+	offADRewardsThreshold = offADStakeAddrs + 8            // 137: rewards owner threshold (u32)
+	offADRewardsLocktime  = offADRewardsThreshold + 4      // 141: rewards owner locktime (u64)
+	offADRewardsAddrs     = offADRewardsLocktime + 8       // 149: rewards owner addr array ptr (8B)
+	addDelegatorSize      = offADRewardsAddrs + 8          // 157
+)
+
+// NewAddDelegatorTx builds the tx into a fresh zap buffer.
+func NewAddDelegatorTx(base *lux.BaseTx, validator Validator, stakeOuts []*lux.TransferableOutput, delegationRewardsOwner fx.Owner) (*AddDelegatorTx, error) {
+	b := zap.NewBuilder(zap.HeaderSize + 1024 + addDelegatorSize)
+	p, err := writeSpending(b, base)
+	if err != nil {
+		return nil, err
 	}
-	// Owner doesn't have InitRuntime method
+	stakeListOff, stakeListCount, stakeAddrOff, stakeAddrCount, err := writeExtraOuts(b, stakeOuts)
+	if err != nil {
+		return nil, err
+	}
+	ownerThreshold, ownerLocktime, ownerAddrOff, ownerAddrCount, err := writeOwner(b, delegationRewardsOwner)
+	if err != nil {
+		return nil, err
+	}
+
+	ob := b.StartObject(addDelegatorSize)
+	setEnvelope(ob, kindAddDelegator, base, p)
+	setValidator(ob, offADValidator, validator)
+	ob.SetList(offADStakeOuts, stakeListOff, stakeListCount)
+	ob.SetList(offADStakeAddrs, stakeAddrOff, stakeAddrCount)
+	setOwner(ob, offADRewardsThreshold, offADRewardsLocktime, offADRewardsAddrs, ownerThreshold, ownerLocktime, ownerAddrOff, ownerAddrCount)
+	ob.FinishAsRoot()
+
+	msg, _ := zap.Parse(b.Finish())
+	return &AddDelegatorTx{spendingTx{msg}}, nil
 }
 
-func (*AddDelegatorTx) ChainID() ids.ID {
-	return constants.PrimaryNetworkID
+// Validator describes the delegatee (offset read).
+func (tx *AddDelegatorTx) Validator() Validator { return readValidator(tx.root(), offADValidator) }
+
+// StakeOuts is where staked tokens go when done validating (offset read).
+func (tx *AddDelegatorTx) StakeOuts() []*lux.TransferableOutput {
+	return readExtraOuts(tx.root(), offADStakeOuts, offADStakeAddrs)
 }
 
-func (tx *AddDelegatorTx) NodeID() ids.NodeID {
-	return tx.Validator.NodeID
+// DelegationRewardsOwner is where staking rewards go when done validating.
+func (tx *AddDelegatorTx) DelegationRewardsOwner() fx.Owner {
+	return readOwner(tx.root(), offADRewardsThreshold, offADRewardsLocktime, offADRewardsAddrs)
 }
 
-func (*AddDelegatorTx) PublicKey() (*bls.PublicKey, bool, error) {
-	return nil, false, nil
-}
-
-func (*AddDelegatorTx) PendingPriority() Priority {
-	return PrimaryNetworkDelegatorLegacyPendingPriority
-}
-
-func (*AddDelegatorTx) CurrentPriority() Priority {
-	return PrimaryNetworkDelegatorCurrentPriority
-}
-
-func (tx *AddDelegatorTx) Stake() []*lux.TransferableOutput {
-	return tx.StakeOuts
-}
-
-func (tx *AddDelegatorTx) RewardsOwner() fx.Owner {
-	return tx.DelegationRewardsOwner
-}
-
-// SyntacticVerify returns nil iff [tx] is valid
+// SyntacticVerify returns nil iff [tx] is valid.
 func (tx *AddDelegatorTx) SyntacticVerify(rt *runtime.Runtime) error {
-	switch {
-	case tx == nil:
+	if tx == nil {
 		return ErrNilTx
-	case tx.SyntacticallyVerified: // already passed syntactic verification
-		return nil
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
+	if err := verifyBaseTx(tx.baseTx(), rt); err != nil {
 		return err
 	}
-	if err := verify.All(&tx.Validator, tx.DelegationRewardsOwner); err != nil {
+	v := tx.Validator()
+	if err := verify.All(&v, tx.DelegationRewardsOwner()); err != nil {
 		return fmt.Errorf("failed to verify validator or rewards owner: %w", err)
 	}
 
+	stakeOuts := tx.StakeOuts()
 	totalStakeWeight := uint64(0)
-	for _, out := range tx.StakeOuts {
+	for _, out := range stakeOuts {
 		if err := out.Verify(); err != nil {
 			return fmt.Errorf("output verification failed: %w", err)
 		}
@@ -114,18 +117,15 @@ func (tx *AddDelegatorTx) SyntacticVerify(rt *runtime.Runtime) error {
 	}
 
 	switch {
-	case !lux.IsSortedTransferableOutputs(tx.StakeOuts):
+	case !lux.IsSortedTransferableOutputs(stakeOuts):
 		return errOutputsNotSorted
-	case totalStakeWeight != tx.Wght:
+	case totalStakeWeight != v.Wght:
 		return fmt.Errorf("%w, delegator weight %d total stake weight %d",
 			errDelegatorWeightMismatch,
-			tx.Wght,
+			v.Wght,
 			totalStakeWeight,
 		)
 	}
-
-	// cache that this is valid
-	tx.SyntacticallyVerified = true
 	return nil
 }
 
@@ -133,8 +133,7 @@ func (tx *AddDelegatorTx) Visit(visitor Visitor) error {
 	return visitor.AddDelegatorTx(tx)
 }
 
-// InitializeWithRuntime initializes the transaction with Runtime
+// Initialize is a no-op; Runtime is passed explicitly to InitRuntime.
 func (tx *AddDelegatorTx) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
 	return nil
 }
