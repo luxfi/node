@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -7,61 +7,52 @@ import (
 	"context"
 	"time"
 
-	"github.com/luxfi/runtime"
-
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/runtime"
 	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/zap"
 )
 
 var _ UnsignedTx = (*AdvanceTimeTx)(nil)
 
-// AdvanceTimeTx is a transaction to increase the chain's timestamp.
-// When the chain's timestamp is updated (a AdvanceTimeTx is accepted and
-// followed by a commit block) the staker set is also updated accordingly.
-// It must be that:
-// - proposed timestamp > [current chain time]
-// - proposed timestamp <= [time for next staker set change]
+// AdvanceTimeTx increases the chain's timestamp. The struct IS the wire: it
+// holds the zap buffer and reads its field by offset. No codec, no marshal.
+//
+// Wire: zap header + object{ kind:u8@0, Time:u64@1 }.
 type AdvanceTimeTx struct {
-	// Unix time this block proposes increasing the timestamp to
-	Time uint64 `serialize:"true" json:"time"`
-
-	unsignedBytes []byte // Unsigned byte representation of this data
+	msg *zap.Message
 }
 
-func (tx *AdvanceTimeTx) SetBytes(unsignedBytes []byte) {
-	tx.unsignedBytes = unsignedBytes
+const offAdvanceTimeTime = 1 // u64, after kind@0
+
+// NewAdvanceTimeTx builds the tx into a fresh zap buffer — the one place a
+// field becomes bytes (construction, not serialization).
+func NewAdvanceTimeTx(t uint64) *AdvanceTimeTx {
+	b := zap.NewBuilder(zap.HeaderSize + 16 + 9)
+	ob := b.StartObject(9)
+	ob.SetUint8(offKind, uint8(kindAdvanceTime))
+	ob.SetUint64(offAdvanceTimeTime, t)
+	ob.FinishAsRoot()
+	msg, _ := zap.Parse(b.Finish())
+	return &AdvanceTimeTx{msg: msg}
 }
 
-func (tx *AdvanceTimeTx) Bytes() []byte {
-	return tx.unsignedBytes
-}
+// Time is the unix time this tx proposes advancing the chain to (offset read).
+func (tx *AdvanceTimeTx) Time() uint64 { return tx.msg.Root().Uint64(offAdvanceTimeTime) }
 
-func (*AdvanceTimeTx) InitRuntime(*runtime.Runtime) {}
+// Timestamp returns Time as a time.Time.
+func (tx *AdvanceTimeTx) Timestamp() time.Time { return time.Unix(int64(tx.Time()), 0) }
 
-// Timestamp returns the time this block is proposing the chain should be set to
-func (tx *AdvanceTimeTx) Timestamp() time.Time {
-	return time.Unix(int64(tx.Time), 0)
-}
+// Bytes returns the underlying zap buffer literally — no encode.
+func (tx *AdvanceTimeTx) Bytes() []byte { return tx.msg.Bytes() }
 
-func (*AdvanceTimeTx) InputIDs() set.Set[ids.ID] {
-	return nil
-}
+// SetBytes wraps b as this tx's buffer (zero copy); the Parse dispatch uses it.
+func (tx *AdvanceTimeTx) SetBytes(b []byte) { tx.msg, _ = zap.Parse(b) }
 
-func (*AdvanceTimeTx) Outputs() []*lux.TransferableOutput {
-	return nil
-}
-
-func (*AdvanceTimeTx) SyntacticVerify(*runtime.Runtime) error {
-	return nil
-}
-
-func (tx *AdvanceTimeTx) Visit(visitor Visitor) error {
-	return visitor.AdvanceTimeTx(tx)
-}
-
-// InitializeWithRuntime initializes the transaction with Runtime
-func (tx *AdvanceTimeTx) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
-}
+func (*AdvanceTimeTx) InitRuntime(*runtime.Runtime)           {}
+func (*AdvanceTimeTx) InputIDs() set.Set[ids.ID]              { return nil }
+func (*AdvanceTimeTx) Outputs() []*lux.TransferableOutput     { return nil }
+func (*AdvanceTimeTx) SyntacticVerify(*runtime.Runtime) error { return nil }
+func (tx *AdvanceTimeTx) Visit(visitor Visitor) error         { return visitor.AdvanceTimeTx(tx) }
+func (tx *AdvanceTimeTx) Initialize(context.Context) error    { return nil }
