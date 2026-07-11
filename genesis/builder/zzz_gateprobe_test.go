@@ -54,10 +54,10 @@ func TestZZZ_GateProbe_PerChainDigest(t *testing.T) {
 		rows := make([]row, 0, len(gen.Chains))
 		for _, c := range gen.Chains {
 			u := c.Unsigned.(*pchaintxs.CreateChainTx)
-			sum := sha256.Sum256(u.GenesisData)
+			sum := sha256.Sum256(u.GenesisData())
 			rows = append(rows, row{
-				name:    u.BlockchainName,
-				vmid:    u.VMID.String(),
+				name:    u.BlockchainName(),
+				vmid:    u.VMID().String(),
 				dataSum: hex.EncodeToString(sum[:]),
 				chainID: c.ID().String(),
 			})
