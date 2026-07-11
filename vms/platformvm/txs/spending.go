@@ -42,7 +42,12 @@ type spendingTx struct {
 	msg *zap.Message
 }
 
-func (t spendingTx) Bytes() []byte      { return t.msg.Bytes() }
+func (t spendingTx) Bytes() []byte {
+	if t.msg == nil { // uninitialized tx (never Parsed/New*Tx'd) has no wire bytes
+		return nil
+	}
+	return t.msg.Bytes()
+}
 func (t *spendingTx) SetBytes(b []byte) { t.msg, _ = zap.Parse(b) }
 func (t spendingTx) root() zap.Object   { return t.msg.Root() }
 
