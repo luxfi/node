@@ -15,7 +15,7 @@ env:
 
 jobs:
   test-zapdb-replay:
-    runs-on: ubuntu-latest
+    runs-on: lux-build-amd64
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
           --api-admin-enabled=true 2>&1 | grep -E "(genesis-db|Genesis)" || true
 
   test-database-factory:
-    runs-on: ubuntu-latest
+    runs-on: lux-build-amd64
     steps:
     - name: Checkout code
       uses: actions/checkout@v4

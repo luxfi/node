@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   fuzz:
-    runs-on: ubuntu-latest
+    runs-on: lux-build-amd64
     env:
       GOPRIVATE: github.com/luxfi/*
       GONOSUMDB: github.com/luxfi/*

@@ -16,7 +16,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-    runs-on: ubuntu-latest
+    runs-on: lux-build-amd64
     steps:
       - uses: actions/checkout@v4
       - uses: crazy-max/ghaction-github-labeler@548a7c3603594ec17c819e1239f281a3b801ab4d #v6.0.0
