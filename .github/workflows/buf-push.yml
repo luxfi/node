@@ -9,7 +9,7 @@ on:
 
 jobs:
   push:
-    runs-on: ubuntu-latest
+    runs-on: lux-build-amd64
     steps:
       - uses: actions/checkout@v4
       - uses: bufbuild/buf-setup-action@v1.31.0
