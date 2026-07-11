@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/vms/pcodecs"
 )
 
 const (
@@ -72,8 +71,6 @@ type UTXOWriter interface {
 }
 
 type utxoState struct {
-	codec pcodecs.Manager
-
 	// UTXO ID -> *UTXO. If the *UTXO is nil the UTXO doesn't exist
 	utxoCache cache.Cacher[ids.ID, *UTXO]
 	utxoDB    database.Database
@@ -85,14 +82,16 @@ type utxoState struct {
 	checksum      ids.ID
 }
 
+// NewUTXOState returns a UTXOState backed by ZAP-native wire bytes (no
+// codec.Manager): UTXO.Marshal on write, UTXO.Unmarshal on read. The
+// fx-aware output dispatch that reconstructs the polymorphic Out is wired
+// via this package's init() (utxo_parser.go) plus the stakeable
+// LockedOutputHandler registration.
 func NewUTXOState(
 	db database.Database,
-	codec pcodecs.Manager,
 	trackChecksum bool,
 ) (UTXOState, error) {
 	s := &utxoState{
-		codec: codec,
-
 		utxoCache: &cache.LRU[ids.ID, *UTXO]{Size: utxoCacheSize},
 		utxoDB:    prefixdb.New(utxoPrefix, db),
 
@@ -106,7 +105,6 @@ func NewUTXOState(
 
 func NewMeteredUTXOState(
 	db database.Database,
-	codec pcodecs.Manager,
 	metrics metric.Registerer,
 	trackChecksum bool,
 ) (UTXOState, error) {
@@ -135,8 +133,6 @@ func NewMeteredUTXOState(
 	}
 
 	s := &utxoState{
-		codec: codec,
-
 		utxoCache: utxoCache,
 		utxoDB:    prefixdb.New(utxoPrefix, db),
 
@@ -165,9 +161,9 @@ func (s *utxoState) GetUTXO(utxoID ids.ID) (*UTXO, error) {
 		return nil, err
 	}
 
-	// The key was in the database
+	// The key was in the database — ZAP-native decode (fx-aware Out dispatch).
 	utxo := &UTXO{}
-	if _, err := s.codec.Unmarshal(bytes, utxo); err != nil {
+	if err := utxo.Unmarshal(bytes); err != nil {
 		return nil, err
 	}
 
@@ -176,7 +172,9 @@ func (s *utxoState) GetUTXO(utxoID ids.ID) (*UTXO, error) {
 }
 
 func (s *utxoState) PutUTXO(utxo *UTXO) error {
-	utxoBytes, err := s.codec.Marshal(codecVersion, utxo)
+	// ZAP-native: the same wire bytes flow to disk and across chains. No
+	// separate codec.Marshal step.
+	utxoBytes, err := utxo.Marshal()
 	if err != nil {
 		return err
 	}
