@@ -1199,25 +1199,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
 			}
 		}
-		// Round-scoped view-change (restores liveness under competing siblings + a zero-margin
-		// quorum — the 415→416 freeze). OPT-IN per deployment via LUX_CONSENSUS_VIEW_CHANGE=true
-		// so devnet/testnet can enable it without a mainnet default (mainnet is owner-gated). Only
-		// meaningful on a multi-validator (K>1) chain; K==1 has no competing proposers. The engine
-		// itself fail-secure HALTS the view-change if the committee fails the 2α−n>f bound, so
-		// enabling it can never weaken safety — at worst it halts (never forks).
-		if consensusParams.K > 1 && strings.EqualFold(os.Getenv("LUX_CONSENSUS_VIEW_CHANGE"), "true") {
-			consensusParams.ViewChange = true
-			// NOTE: presetK/presetAlpha are the sample preset (MainnetParams K=21/α=15),
-			// NOT the finality committee. The α-of-K cert and the view-change POL/precommit are
-			// sized to the LIVE validator set at runtime via effectiveCommittee/bftCommittee
-			// (e.g. 5 validators → K=5/α=4); the engine logs the effective (K,α) whenever it
-			// re-clamps ("committee re-clamped … newK/newAlpha"). Do not read presetK as the quorum.
-			m.Log.Info("round-scoped view-change ENABLED for chain",
-				log.Stringer("chainID", chainParams.ID),
-				log.Int("presetK", consensusParams.K),
-				log.Int("presetAlpha", consensusParams.AlphaConfidence),
-				log.String("note", "finality committee sized to the live validator set at runtime (see engine committee-clamp log for effective K/alpha)"))
-		}
+		// Round-scoped view-change (restores liveness under competing siblings + a
+		// zero-margin quorum — the 415→416 freeze) is now owned INTERNALLY by the
+		// consensus engine (v1.36+): the engine drives the prevote/POL tally + the
+		// lock/unlock re-convergence natively and fail-secure HALTS if the committee
+		// fails the 2α−n>f bound. The node no longer sets a ViewChange param or routes
+		// prevotes — that external plumbing was upstreamed into the engine.
 		_, innerIsDAGNative := vmTyped.(interface {
 			Linearize(context.Context, ids.ID, chan<- vm.Message) error
 		})
@@ -3873,10 +3860,6 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 				b.engine.HandleIncomingVote(blockID, payload)
 			case quorumKindCert:
 				b.engine.HandleIncomingCert(payload)
-			case quorumKindPrevote:
-				// Round-scoped view-change prevote: the engine decodes+verifies
-				// (height,round,canonical,sig) from the payload and tallies it toward a POL.
-				b.engine.HandleIncomingPrevote(payload)
 			}
 			return nil
 		}
@@ -4184,24 +4167,6 @@ func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockI
 		return 0
 	}
 	envelope := encodeQuorumGossip(quorumKindVote, blockID, voteBytes)
-	msg, err := g.msgCreator.Gossip(chainID, envelope)
-	if err != nil {
-		return 0
-	}
-	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
-}
-
-// BroadcastPrevote sends this node's signed ROUND-SCOPED view-change prevote (the
-// non-binding preference signal) for `canonical` at (height, round) to ALL validators,
-// framed in a quorum envelope (kind 3) and decoded by blockHandler.Gossip into
-// engine.HandleIncomingPrevote. Prevotes never finalize anything — they drive the POL +
-// the lock/unlock rule that lets a competing-sibling split RE-CONVERGE (liveness under a
-// down proposer + zero-margin quorum). Only emitted when the chain runs params.ViewChange.
-func (g *networkGossiper) BroadcastPrevote(chainID ids.ID, networkID ids.ID, height uint64, round uint32, canonical ids.ID, voteBytes []byte) int {
-	if g.net == nil || g.msgCreator == nil {
-		return 0
-	}
-	envelope := encodeQuorumGossip(quorumKindPrevote, canonical, voteBytes)
 	msg, err := g.msgCreator.Gossip(chainID, envelope)
 	if err != nil {
 		return 0
