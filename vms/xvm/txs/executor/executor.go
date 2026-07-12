@@ -8,7 +8,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
 	lux "github.com/luxfi/utxo"
@@ -18,7 +17,6 @@ import (
 var _ txs.Visitor = (*Executor)(nil)
 
 type Executor struct {
-	Codec          pcodecs.Manager
 	State          state.Chain // state will be modified
 	Tx             *txs.Tx
 	Inputs         set.Set[ids.ID]             // imported inputs

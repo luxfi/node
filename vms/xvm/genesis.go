@@ -9,18 +9,10 @@ import (
 
 	"github.com/luxfi/address"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/pcodecs"
-	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/utils"
 	lux "github.com/luxfi/utxo"
-	"github.com/luxfi/utxo/bls12381fx"
-	"github.com/luxfi/utxo/ed25519fx"
-	"github.com/luxfi/utxo/mldsafx"
-	"github.com/luxfi/utxo/schnorrfx"
 	"github.com/luxfi/utxo/secp256k1fx"
-	"github.com/luxfi/utxo/secp256r1fx"
-	"github.com/luxfi/utxo/slhdsafx"
 )
 
 // Genesis represents the genesis state of the XVM
@@ -130,11 +122,7 @@ func NewGenesis(
 		}
 
 		if len(initialState.Outs) > 0 {
-			codec, err := newGenesisCodec()
-			if err != nil {
-				return nil, err
-			}
-			initialState.Sort(codec)
+			initialState.Sort()
 			asset.States = append(asset.States, initialState)
 		}
 
@@ -146,31 +134,9 @@ func NewGenesis(
 	return g, nil
 }
 
-// Bytes serializes the Genesis to bytes using the XVM genesis codec
+// Bytes serializes the Genesis to its canonical native-ZAP bytes.
 func (g *Genesis) Bytes() ([]byte, error) {
-	codec, err := newGenesisCodec()
-	if err != nil {
-		return nil, err
-	}
-	return codec.Marshal(txs.CodecVersion, g)
-}
-
-func newGenesisCodec() (pcodecs.Manager, error) {
-	parser, err := txs.NewParser(
-		[]fxs.Fx{
-			&secp256k1fx.Fx{},
-			&mldsafx.Fx{},
-			&slhdsafx.Fx{},
-			&ed25519fx.Fx{},
-			&secp256r1fx.Fx{},
-			&schnorrfx.Fx{},
-			&bls12381fx.Fx{},
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("problem creating parser: %w", err)
-	}
-	return parser.GenesisCodec(), nil
+	return marshalGenesis(g)
 }
 
 // ParseGenesisBytes decodes the canonical XVM genesis bytes produced by
@@ -187,17 +153,13 @@ func newGenesisCodec() (pcodecs.Manager, error) {
 // builder context's UTXOAssetID must be the genesis-derived one or every
 // fee-paying tx fails with "insufficient funds, needs N more nLUX".
 func ParseGenesisBytes(genesisBytes []byte) (*Genesis, error) {
-	codec, err := newGenesisCodec()
+	g, err := parseGenesis(genesisBytes)
 	if err != nil {
 		return nil, err
 	}
-	g := &Genesis{}
-	if _, err := codec.Unmarshal(genesisBytes, g); err != nil {
-		return nil, fmt.Errorf("unmarshal xvm genesis: %w", err)
-	}
 	for i := range g.Txs {
 		tx := &txs.Tx{Unsigned: &g.Txs[i].CreateAssetTx}
-		if err := tx.Initialize(codec); err != nil {
+		if err := tx.Initialize(); err != nil {
 			return nil, fmt.Errorf("initialize genesis asset %d (%s): %w", i, g.Txs[i].Alias, err)
 		}
 	}
@@ -221,11 +183,7 @@ func AssetIDFromGenesisBytes(genesisBytes []byte) (ids.ID, error) {
 		return ids.Empty, fmt.Errorf("xvm genesis has zero asset txs")
 	}
 	tx := &txs.Tx{Unsigned: &g.Txs[0].CreateAssetTx}
-	codec, err := newGenesisCodec()
-	if err != nil {
-		return ids.Empty, err
-	}
-	if err := tx.Initialize(codec); err != nil {
+	if err := tx.Initialize(); err != nil {
 		return ids.Empty, fmt.Errorf("initialize first genesis asset (%s): %w", g.Txs[0].Alias, err)
 	}
 	return tx.ID(), nil

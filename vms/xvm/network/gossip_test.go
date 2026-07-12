@@ -43,7 +43,7 @@ func TestMarshaller(t *testing.T) {
 	}
 
 	want := &txs.Tx{Unsigned: &txs.BaseTx{}}
-	require.NoError(want.Initialize(parser.Codec()))
+	require.NoError(want.Initialize())
 
 	bytes, err := marhsaller.MarshalGossip(want)
 	require.NoError(err)

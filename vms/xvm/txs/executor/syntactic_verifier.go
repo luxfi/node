@@ -128,7 +128,7 @@ func (v *SyntacticVerifier) CreateAssetTx(tx *txs.CreateAssetTx) error {
 	}
 
 	for _, state := range tx.States {
-		if err := state.Verify(v.Codec, len(v.Fxs)); err != nil {
+		if err := state.Verify(len(v.Fxs)); err != nil {
 			return err
 		}
 	}
@@ -191,7 +191,7 @@ func (v *SyntacticVerifier) OperationTx(tx *txs.OperationTx) error {
 			inputs.Add(inputID)
 		}
 	}
-	if !txs.IsSortedAndUniqueOperations(tx.Ops, v.Codec) {
+	if !txs.IsSortedAndUniqueOperations(tx.Ops) {
 		return errOperationsNotSortedUnique
 	}
 

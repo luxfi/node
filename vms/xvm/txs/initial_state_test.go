@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,28 +12,14 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/pcodecs"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var errTest = errors.New("non-nil error")
 
-func TestInitialStateVerifySerialization(t *testing.T) {
+func TestInitialStateRoundTrip(t *testing.T) {
 	require := require.New(t)
-
-	c := pcodecs.NewLinearCodec()
-	require.NoError(c.RegisterType(&secp256k1fx.TransferOutput{}))
-	m := pcodecs.NewDefaultManager()
-	require.NoError(m.RegisterCodec(CodecVersion, c))
-
-	expected := []byte{
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x39, 0x30,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
-		0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x51, 0x02, 0x5c, 0x61, 0xfb, 0xcf, 0xc0, 0x78, 0xf6, 0x93,
-		0x34, 0xf8, 0x34, 0xbe, 0x6d, 0xd2, 0x6d, 0x55, 0xa9, 0x55, 0xc3, 0x34, 0x41, 0x28, 0xe0, 0x60,
-		0x12, 0x8e, 0xde, 0x35, 0x23, 0xa2, 0x4a, 0x46, 0x1c, 0x89, 0x43, 0xab, 0x08, 0x59,
-	}
 
 	is := &InitialState{
 		FxIndex: 0,
@@ -43,109 +29,86 @@ func TestInitialStateVerifySerialization(t *testing.T) {
 				OutputOwners: secp256k1fx.OutputOwners{
 					Locktime:  54321,
 					Threshold: 1,
-					Addrs: []ids.ShortID{
-						{
-							0x51, 0x02, 0x5c, 0x61, 0xfb, 0xcf, 0xc0, 0x78,
-							0xf6, 0x93, 0x34, 0xf8, 0x34, 0xbe, 0x6d, 0xd2,
-							0x6d, 0x55, 0xa9, 0x55,
-						},
-						{
-							0xc3, 0x34, 0x41, 0x28, 0xe0, 0x60, 0x12, 0x8e,
-							0xde, 0x35, 0x23, 0xa2, 0x4a, 0x46, 0x1c, 0x89,
-							0x43, 0xab, 0x08, 0x59,
-						},
-					},
+					Addrs:     []ids.ShortID{keys[0].PublicKey().Address()},
 				},
 			},
 		},
 	}
 
-	isBytes, err := m.Marshal(CodecVersion, is)
+	b, err := is.Bytes()
 	require.NoError(err)
-	require.Equal(expected, isBytes)
+
+	got, err := parseInitialState(b)
+	require.NoError(err)
+	require.EqualValues(0, got.FxIndex)
+	require.Len(got.Outs, 1)
+	require.Equal(fxBytes(t, is.Outs[0]), fxBytes(t, got.Outs[0]))
 }
 
 func TestInitialStateVerifyNil(t *testing.T) {
 	require := require.New(t)
-
-	c := pcodecs.NewLinearCodec()
-	m := pcodecs.NewDefaultManager()
-	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 
 	is := (*InitialState)(nil)
-	err := is.Verify(m, numFxs)
+	err := is.Verify(numFxs)
 	require.ErrorIs(err, ErrNilInitialState)
 }
 
 func TestInitialStateVerifyUnknownFxID(t *testing.T) {
 	require := require.New(t)
-
-	c := pcodecs.NewLinearCodec()
-	m := pcodecs.NewDefaultManager()
-	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 
 	is := InitialState{
 		FxIndex: 1,
 	}
-	err := is.Verify(m, numFxs)
+	err := is.Verify(numFxs)
 	require.ErrorIs(err, ErrUnknownFx)
 }
 
 func TestInitialStateVerifyNilOutput(t *testing.T) {
 	require := require.New(t)
-
-	c := pcodecs.NewLinearCodec()
-	m := pcodecs.NewDefaultManager()
-	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 
 	is := InitialState{
 		FxIndex: 0,
 		Outs:    []verify.State{nil},
 	}
-	err := is.Verify(m, numFxs)
+	err := is.Verify(numFxs)
 	require.ErrorIs(err, ErrNilFxOutput)
 }
 
 func TestInitialStateVerifyInvalidOutput(t *testing.T) {
 	require := require.New(t)
-
-	c := pcodecs.NewLinearCodec()
-	require.NoError(c.RegisterType(&lux.TestState{}))
-	m := pcodecs.NewDefaultManager()
-	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 
 	is := InitialState{
 		FxIndex: 0,
 		Outs:    []verify.State{&lux.TestState{Err: errTest}},
 	}
-	err := is.Verify(m, numFxs)
+	err := is.Verify(numFxs)
 	require.ErrorIs(err, errTest)
 }
 
 func TestInitialStateVerifyUnsortedOutputs(t *testing.T) {
 	require := require.New(t)
-
-	c := pcodecs.NewLinearCodec()
-	require.NoError(c.RegisterType(&lux.TestTransferable{}))
-	m := pcodecs.NewDefaultManager()
-	require.NoError(m.RegisterCodec(CodecVersion, c))
 	numFxs := 1
 
-	is := InitialState{
-		FxIndex: 0,
-		Outs: []verify.State{
-			&lux.TestTransferable{Val: 1},
-			&lux.TestTransferable{Val: 0},
-		},
+	outA := &secp256k1fx.TransferOutput{
+		Amt:          1,
+		OutputOwners: secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{keys[0].PublicKey().Address()}},
 	}
-	err := is.Verify(m, numFxs)
-	require.ErrorIs(err, ErrOutputsNotSorted)
-	is.Sort(m)
-	require.NoError(is.Verify(m, numFxs))
+	outB := &secp256k1fx.TransferOutput{
+		Amt:          2,
+		OutputOwners: secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{keys[0].PublicKey().Address()}},
+	}
+	is := InitialState{FxIndex: 0, Outs: []verify.State{outA, outB}}
+	// Force an unsorted order regardless of the canonical wire byte ordering.
+	if isSortedState(is.Outs) {
+		is.Outs[0], is.Outs[1] = is.Outs[1], is.Outs[0]
+	}
+	require.ErrorIs(is.Verify(numFxs), ErrOutputsNotSorted)
+	is.Sort()
+	require.NoError(is.Verify(numFxs))
 }
 
 func TestInitialStateCompare(t *testing.T) {

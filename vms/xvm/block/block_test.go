@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	lux "github.com/luxfi/utxo"
@@ -36,7 +35,7 @@ func TestInvalidBlock(t *testing.T) {
 	require.NoError(err)
 
 	_, err = parser.ParseBlock(nil)
-	require.ErrorIs(err, pcodecs.ErrCantUnpackVersion)
+	require.Error(err)
 }
 
 func TestStandardBlocks(t *testing.T) {
@@ -53,11 +52,10 @@ func TestStandardBlocks(t *testing.T) {
 	blkTimestamp := time.Now()
 	parentID := ids.GenerateTestID()
 	height := uint64(2022)
-	cm := parser.Codec()
-	txs, err := createTestTxs(cm)
+	txs, err := createTestTxs()
 	require.NoError(err)
 
-	standardBlk, err := NewStandardBlock(parentID, height, blkTimestamp, txs, cm)
+	standardBlk, err := NewStandardBlock(parentID, height, blkTimestamp, txs)
 	require.NoError(err)
 
 	// parse block
@@ -78,7 +76,7 @@ func TestStandardBlocks(t *testing.T) {
 	require.Equal(parsed.Txs(), parsedStandardBlk.Txs())
 }
 
-func createTestTxs(cm pcodecs.Manager) ([]*txs.Tx, error) {
+func createTestTxs() ([]*txs.Tx, error) {
 	countTxs := 1
 	testTxs := make([]*txs.Tx, 0, countTxs)
 	for i := 0; i < countTxs; i++ {
@@ -111,7 +109,7 @@ func createTestTxs(cm pcodecs.Manager) ([]*txs.Tx, error) {
 			}},
 			Memo: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}}}
-		if err := tx.SignSECP256K1Fx(cm, [][]*secp256k1.PrivateKey{{keys[0]}}); err != nil {
+		if err := tx.SignSECP256K1Fx([][]*secp256k1.PrivateKey{{keys[0]}}); err != nil {
 			return nil, err
 		}
 		testTxs = append(testTxs, tx)

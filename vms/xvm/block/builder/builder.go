@@ -130,7 +130,6 @@ func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 		}
 
 		executor := &txexecutor.Executor{
-			Codec:  b.backend.Codec,
 			State:  txDiff,
 			Tx:     tx,
 			Inputs: set.NewSet[ids.ID](0), // Initialize empty set for imported inputs
@@ -188,7 +187,6 @@ func (b *builder) BuildBlock(context.Context) (chain.Block, error) {
 		nextTimestamp,
 		root,
 		blockTxs,
-		b.backend.Codec,
 	)
 	if err != nil {
 		return nil, err

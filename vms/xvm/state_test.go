@@ -74,7 +74,7 @@ func TestSetsAndGets(t *testing.T) {
 			},
 		}},
 	}}}
-	require.NoError(tx.SignSECP256K1Fx(env.vm.parser.Codec(), [][]*secp256k1.PrivateKey{{keys[0]}}))
+	require.NoError(tx.SignSECP256K1Fx([][]*secp256k1.PrivateKey{{keys[0]}}))
 
 	txID := tx.ID()
 

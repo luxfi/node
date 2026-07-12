@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/go-json-experiment/json"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -17,11 +18,10 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	apitypes "github.com/luxfi/api/types"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/utils"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/secp256k1fx"
 
@@ -892,8 +892,7 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 		initialState.Outs = append(initialState.Outs, minter)
 	}
 
-	codec := s.vm.parser.Codec()
-	initialState.Sort(codec)
+	initialState.Sort()
 
 	tx := &txs.Tx{Unsigned: &txs.CreateAssetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
@@ -907,7 +906,7 @@ func (s *Service) buildCreateAssetTx(args *CreateAssetArgs) (*txs.Tx, ids.ShortI
 		Denomination: args.Denomination,
 		States:       []*txs.InitialState{initialState},
 	}}
-	return tx, changeAddr, tx.SignSECP256K1Fx(codec, keys)
+	return tx, changeAddr, tx.SignSECP256K1Fx(keys)
 }
 
 // CreateFixedCapAsset returns ID of the newly created asset
@@ -1060,8 +1059,7 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 		initialState.Outs = append(initialState.Outs, minter)
 	}
 
-	codec := s.vm.parser.Codec()
-	initialState.Sort(codec)
+	initialState.Sort()
 
 	tx := &txs.Tx{Unsigned: &txs.CreateAssetTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
@@ -1075,7 +1073,7 @@ func (s *Service) buildCreateNFTAsset(args *CreateNFTAssetArgs) (*txs.Tx, ids.Sh
 		Denomination: 0, // NFTs are non-fungible
 		States:       []*txs.InitialState{initialState},
 	}}
-	return tx, changeAddr, tx.SignSECP256K1Fx(codec, keys)
+	return tx, changeAddr, tx.SignSECP256K1Fx(keys)
 }
 
 // CreateAddress creates an address for the user [args.Username]
@@ -1386,7 +1384,6 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 		}
 	}
 
-	codec := s.vm.parser.Codec()
 	lux.SortTransferableOutputs(outs)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
@@ -1396,7 +1393,7 @@ func (s *Service) buildSendMultiple(args *SendMultipleArgs) (*txs.Tx, ids.ShortI
 		Ins:          ins,
 		Memo:         memoBytes,
 	}}}
-	return tx, changeAddr, tx.SignSECP256K1Fx(codec, keys)
+	return tx, changeAddr, tx.SignSECP256K1Fx(keys)
 }
 
 // MintArgs are arguments for passing into Mint requests
@@ -1539,7 +1536,7 @@ func (s *Service) buildMint(args *MintArgs) (*txs.Tx, ids.ShortID, error) {
 		}},
 		Ops: ops,
 	}}
-	return tx, changeAddr, tx.SignSECP256K1Fx(s.vm.parser.Codec(), keys)
+	return tx, changeAddr, tx.SignSECP256K1Fx(keys)
 }
 
 // SendNFTArgs are arguments for passing into SendNFT requests
@@ -1667,11 +1664,10 @@ func (s *Service) buildSendNFT(args *SendNFTArgs) (*txs.Tx, ids.ShortID, error) 
 		Ops: ops,
 	}}
 
-	codec := s.vm.parser.Codec()
-	if err := tx.SignSECP256K1Fx(codec, secpKeys); err != nil {
+	if err := tx.SignSECP256K1Fx(secpKeys); err != nil {
 		return nil, ids.ShortEmpty, err
 	}
-	return tx, changeAddr, tx.SignNFTFx(codec, nftKeys)
+	return tx, changeAddr, tx.SignNFTFx(nftKeys)
 }
 
 // MintNFTArgs are arguments for passing into MintNFT requests
@@ -1809,11 +1805,10 @@ func (s *Service) buildMintNFT(args *MintNFTArgs) (*txs.Tx, ids.ShortID, error) 
 		Ops: ops,
 	}}
 
-	codec := s.vm.parser.Codec()
-	if err := tx.SignSECP256K1Fx(codec, secpKeys); err != nil {
+	if err := tx.SignSECP256K1Fx(secpKeys); err != nil {
 		return nil, ids.ShortEmpty, err
 	}
-	return tx, changeAddr, tx.SignNFTFx(codec, nftKeys)
+	return tx, changeAddr, tx.SignNFTFx(nftKeys)
 }
 
 // ImportArgs are arguments for passing into Import requests
@@ -1952,7 +1947,7 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 		SourceChain: chainID,
 		ImportedIns: importInputs,
 	}}
-	return tx, tx.SignSECP256K1Fx(s.vm.parser.Codec(), keys)
+	return tx, tx.SignSECP256K1Fx(keys)
 }
 
 // ExportArgs are arguments for passing into ExportAVA requests
@@ -2102,7 +2097,6 @@ func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
 		}
 	}
 
-	codec := s.vm.parser.Codec()
 	lux.SortTransferableOutputs(outs)
 
 	tx := &txs.Tx{Unsigned: &txs.ExportTx{
@@ -2115,5 +2109,5 @@ func (s *Service) buildExport(args *ExportArgs) (*txs.Tx, ids.ShortID, error) {
 		DestinationChain: chainID,
 		ExportedOuts:     exportOuts,
 	}}
-	return tx, changeAddr, tx.SignSECP256K1Fx(codec, keys)
+	return tx, changeAddr, tx.SignSECP256K1Fx(keys)
 }

@@ -169,7 +169,6 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 	}
 
 	executor := &executor.Executor{
-		Codec:  m.backend.Codec,
 		State:  stateDiff,
 		Tx:     tx,
 		Inputs: set.NewSet[ids.ID](0), // Initialize empty set for imported inputs

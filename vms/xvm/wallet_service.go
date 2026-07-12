@@ -9,15 +9,15 @@ import (
 	"maps"
 	"net/http"
 
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/container/linked"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math"
-	apitypes "github.com/luxfi/api/types"
-	lux "github.com/luxfi/utxo"
-	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -269,7 +269,6 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 		}
 	}
 
-	codec := w.vm.parser.Codec()
 	lux.SortTransferableOutputs(outs)
 
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
@@ -279,7 +278,7 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 		Ins:          ins,
 		Memo:         memoBytes,
 	}}}
-	if err := tx.SignSECP256K1Fx(codec, keys); err != nil {
+	if err := tx.SignSECP256K1Fx(keys); err != nil {
 		return err
 	}
 

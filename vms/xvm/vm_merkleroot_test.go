@@ -70,7 +70,6 @@ func TestMerkleRootStampedAndVerified(t *testing.T) {
 	// Build a sibling block identical in every way EXCEPT a deliberately wrong
 	// root, parse it through the VM, and verify it: the executor recomputes the
 	// expected root and rejects the mismatch.
-	cm := env.vm.parser.Codec()
 	wrongRoot := ids.GenerateTestID()
 	require.NotEqual(wrongRoot, root)
 	tampered, err := block.NewStandardBlockWithRoot(
@@ -79,7 +78,6 @@ func TestMerkleRootStampedAndVerified(t *testing.T) {
 		time.Unix(int64(built.Timestamp().Unix()), 0),
 		wrongRoot,
 		built.Txs(),
-		cm,
 	)
 	require.NoError(err)
 	tamperedParsed, err := env.vm.ParseBlock(context.Background(), tampered.Bytes())
@@ -111,13 +109,11 @@ func TestMerkleRootEmptyRootRejected(t *testing.T) {
 	built := blkIntf.(*blkexecutor.Block)
 
 	// A sibling block identical to the built block but carrying an EMPTY root.
-	cm := env.vm.parser.Codec()
 	empty, err := block.NewStandardBlock(
 		built.Parent(),
 		built.Height(),
 		time.Unix(int64(built.Timestamp().Unix()), 0),
 		built.Txs(),
-		cm,
 	)
 	require.NoError(err)
 	require.Equal(ids.Empty, empty.MerkleRoot())
@@ -145,7 +141,6 @@ func postBlockState(t *testing.T, env *testEnv, parentID ids.ID, blkTxs []*txs.T
 
 	for _, tx := range blkTxs {
 		executor := &txexecutor.Executor{
-			Codec:  env.vm.parser.Codec(),
 			State:  diff,
 			Tx:     tx,
 			Inputs: set.NewSet[ids.ID](0),

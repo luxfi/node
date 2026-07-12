@@ -10,7 +10,6 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/timer/mockable"
 	lux "github.com/luxfi/utxo"
@@ -93,17 +92,14 @@ type Spender interface {
 
 func NewSpender(
 	clk *mockable.Clock,
-	codec pcodecs.Manager,
 ) Spender {
 	return &spender{
 		clock: clk,
-		codec: codec,
 	}
 }
 
 type spender struct {
 	clock *mockable.Clock
-	codec pcodecs.Manager
 }
 
 func (s *spender) Spend(
@@ -239,7 +235,7 @@ func (s *spender) SpendNFT(
 		return nil, nil, errInsufficientFunds
 	}
 
-	txs.SortOperationsWithSigners(ops, keys, s.codec)
+	txs.SortOperationsWithSigners(ops, keys)
 	return ops, keys, nil
 }
 
@@ -358,7 +354,7 @@ func (s *spender) Mint(
 		}
 	}
 
-	txs.SortOperationsWithSigners(ops, keys, s.codec)
+	txs.SortOperationsWithSigners(ops, keys)
 	return ops, keys, nil
 }
 
@@ -426,6 +422,6 @@ func (s *spender) MintNFT(
 		return nil, nil, errAddressesCantMintAsset
 	}
 
-	txs.SortOperationsWithSigners(ops, keys, s.codec)
+	txs.SortOperationsWithSigners(ops, keys)
 	return ops, keys, nil
 }

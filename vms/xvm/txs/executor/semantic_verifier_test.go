@@ -52,7 +52,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
-	parser, err := txs.NewCustomParser(
+	_, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
 		log.NoLog{},
@@ -62,7 +62,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	codec := parser.Codec()
 	txID := ids.GenerateTestID()
 	utxoID := lux.UTXOID{
 		TxID:        txID,
@@ -109,7 +108,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 			},
 		},
 		TypeToFxIndex: typeToFxIndex,
-		Codec:         codec,
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
 	}
@@ -160,7 +158,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 					Unsigned: &baseTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -186,7 +183,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 					Unsigned: &baseTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -217,7 +213,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 					Unsigned: &baseTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -241,7 +236,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 					Unsigned: &baseTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[1]},
 					},
@@ -264,7 +258,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 					Unsigned: &baseTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -294,7 +287,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 					Unsigned: &baseTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -332,7 +324,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 					Unsigned: &baseTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{},
 				))
 				return tx
@@ -354,7 +345,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 					Unsigned: &baseTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -382,7 +372,6 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 					Unsigned: &baseTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -417,7 +406,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
-	parser, err := txs.NewCustomParser(
+	_, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
 		log.NoLog{},
@@ -427,7 +416,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	codec := parser.Codec()
 	txID := ids.GenerateTestID()
 	utxoID := lux.UTXOID{
 		TxID:        txID,
@@ -479,7 +467,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 			},
 		},
 		TypeToFxIndex: typeToFxIndex,
-		Codec:         codec,
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
 	}
@@ -530,7 +517,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 					Unsigned: &exportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -556,7 +542,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 					Unsigned: &exportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -587,7 +572,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 					Unsigned: &exportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -611,7 +595,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 					Unsigned: &exportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[1]},
 					},
@@ -634,7 +617,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 					Unsigned: &exportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -664,7 +646,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 					Unsigned: &exportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -702,7 +683,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 					Unsigned: &exportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{},
 				))
 				return tx
@@ -724,7 +704,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 					Unsigned: &exportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -752,7 +731,6 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 					Unsigned: &exportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[0]},
 					},
@@ -858,7 +836,7 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	secpFx := &secp256k1fx.Fx{}
-	parser, err := txs.NewCustomParser(
+	_, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
 		log.NoLog{},
@@ -868,7 +846,6 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	codec := parser.Codec()
 	txID := ids.GenerateTestID()
 	utxoID := lux.UTXOID{
 		TxID:        txID,
@@ -915,7 +892,6 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 			},
 		},
 		TypeToFxIndex: typeToFxIndex,
-		Codec:         codec,
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
 	}
@@ -954,7 +930,6 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 		Unsigned: &exportTx,
 	}
 	require.NoError(t, tx.SignSECP256K1Fx(
-		codec,
 		[][]*secp256k1.PrivateKey{
 			{keys[0]},
 		},
@@ -978,7 +953,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 
 	typeToFxIndex := make(map[reflect.Type]int)
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewCustomParser(
+	_, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
 		log.NoLog{},
@@ -988,7 +963,6 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	codec := parser.Codec()
 	utxoID := lux.UTXOID{
 		TxID:        ids.GenerateTestID(),
 		OutputIndex: 2,
@@ -1037,7 +1011,6 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 		Unsigned: &unsignedImportTx,
 	}
 	require.NoError(t, importTx.SignSECP256K1Fx(
-		codec,
 		[][]*secp256k1.PrivateKey{
 			{keys[0]},
 		},
@@ -1058,7 +1031,6 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 			},
 		},
 		TypeToFxIndex: typeToFxIndex,
-		Codec:         codec,
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
 		SharedMemory:  &testSharedMemory{sm: m.NewSharedMemory(chainID)},
@@ -1145,7 +1117,6 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 					Unsigned: &unsignedImportTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					[][]*secp256k1.PrivateKey{
 						{keys[1]},
 					},
@@ -1176,7 +1147,6 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 					Unsigned: &importTx,
 				}
 				require.NoError(tx.SignSECP256K1Fx(
-					codec,
 					nil,
 				))
 				return tx

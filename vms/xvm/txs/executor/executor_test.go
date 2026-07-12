@@ -51,7 +51,6 @@ func TestBaseTxExecutor(t *testing.T) {
 		[]fxs.Fx{secpFx},
 	)
 	require.NoError(err)
-	codec := parser.Codec()
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
@@ -109,10 +108,9 @@ func TestBaseTxExecutor(t *testing.T) {
 			},
 		}},
 	}}}
-	require.NoError(baseTx.SignSECP256K1Fx(codec, [][]*secp256k1.PrivateKey{{keys[0]}}))
+	require.NoError(baseTx.SignSECP256K1Fx([][]*secp256k1.PrivateKey{{keys[0]}}))
 
 	executor := &Executor{
-		Codec: codec,
 		State: state,
 		Tx:    baseTx,
 	}
@@ -158,7 +156,6 @@ func TestCreateAssetTxExecutor(t *testing.T) {
 		[]fxs.Fx{secpFx},
 	)
 	require.NoError(err)
-	codec := parser.Codec()
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
@@ -234,10 +231,9 @@ func TestCreateAssetTxExecutor(t *testing.T) {
 			},
 		},
 	}}
-	require.NoError(createAssetTx.SignSECP256K1Fx(codec, [][]*secp256k1.PrivateKey{{keys[0]}}))
+	require.NoError(createAssetTx.SignSECP256K1Fx([][]*secp256k1.PrivateKey{{keys[0]}}))
 
 	executor := &Executor{
-		Codec: codec,
 		State: state,
 		Tx:    createAssetTx,
 	}
@@ -303,7 +299,6 @@ func TestOperationTxExecutor(t *testing.T) {
 		[]fxs.Fx{secpFx},
 	)
 	require.NoError(err)
-	codec := parser.Codec()
 
 	db := memdb.New()
 	vdb := versiondb.New(db)
@@ -392,7 +387,6 @@ func TestOperationTxExecutor(t *testing.T) {
 		}},
 	}}
 	require.NoError(operationTx.SignSECP256K1Fx(
-		codec,
 		[][]*secp256k1.PrivateKey{
 			{keys[0]},
 			{keys[0]},
@@ -400,7 +394,6 @@ func TestOperationTxExecutor(t *testing.T) {
 	))
 
 	executor := &Executor{
-		Codec: codec,
 		State: state,
 		Tx:    operationTx,
 	}

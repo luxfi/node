@@ -9,7 +9,6 @@ import (
 	"github.com/luxfi/metric"
 	utilmetric "github.com/luxfi/metric"
 
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -74,7 +73,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		return nil, errors.New("registerer must implement metric.Registry")
 	}
 	txMetrics, err := newTxMetrics(registry)
-	errs := pcodecs.Errs{Err: err}
+	errs := []error{err}
 
 	m := &metricsImpl{txMetrics: txMetrics}
 
@@ -96,7 +95,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		err = errors.New("APIInterceptor is nil")
 	}
 	m.APIInterceptor = apiRequestMetric
-	errs.Add(err)
+	errs = append(errs, err)
 	// Metrics are self-registering when created with NewCounter etc.
-	return m, errs.Err
+	return m, errors.Join(errs...)
 }

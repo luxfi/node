@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -10,13 +10,14 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/p2p/gossip"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/utxo/wire"
 )
 
 var _ gossip.Gossipable = (*Tx)(nil)
@@ -39,26 +40,80 @@ type UnsignedTx interface {
 // valid if the inputs have the authority to consume the outputs they are
 // attempting to consume and the inputs consume sufficient state to produce the
 // outputs.
+//
+// A signed tx is a wire.SignedTx envelope: the unsigned tx bytes (which carry
+// the xkind discriminator at offset 0) followed by a packed list of fx
+// credential envelopes. There is no codec.
 type Tx struct {
-	Unsigned UnsignedTx          `serialize:"true" json:"unsignedTx"`
-	Creds    []*fxs.FxCredential `serialize:"true" json:"credentials"` // The credentials of this transaction
+	Unsigned UnsignedTx          `json:"unsignedTx"`
+	Creds    []*fxs.FxCredential `json:"credentials"` // The credentials of this transaction
 
 	TxID  ids.ID `json:"id"`
 	bytes []byte
 }
 
-func (t *Tx) Initialize(c pcodecs.Manager) error {
-	signedBytes, err := c.Marshal(CodecVersion, t)
+// UnsignedBytes returns the canonical native-ZAP wire bytes of an unsigned tx,
+// serializing (and caching) them on first use. This is the signing target —
+// every fx signature is computed over hash(unsignedBytes).
+func UnsignedBytes(u UnsignedTx) ([]byte, error) {
+	if b := u.Bytes(); len(b) > 0 {
+		return b, nil
+	}
+	b, err := serializeUnsigned(u)
+	if err != nil {
+		return nil, err
+	}
+	u.SetBytes(b)
+	return b, nil
+}
+
+// serializeUnsigned encodes an unsigned tx to its wire bytes, dispatching on
+// the concrete type. This is the write-side inverse of parseUnsigned.
+func serializeUnsigned(u UnsignedTx) ([]byte, error) {
+	switch t := u.(type) {
+	case *BaseTx:
+		return t.serialize()
+	case *CreateAssetTx:
+		return t.serialize()
+	case *OperationTx:
+		return t.serialize()
+	case *ImportTx:
+		return t.serialize()
+	case *ExportTx:
+		return t.serialize()
+	default:
+		return nil, fmt.Errorf("xvm txs: cannot serialize unknown unsigned tx %T", u)
+	}
+}
+
+// signedBytesFrom wraps unsigned bytes plus fx credential envelopes into a
+// wire.SignedTx buffer.
+func signedBytesFrom(unsignedBytes []byte, creds []*fxs.FxCredential) ([]byte, error) {
+	credEnvelopes := make([][]byte, len(creds))
+	for i, c := range creds {
+		b, err := childBytes(c.Credential)
+		if err != nil {
+			return nil, fmt.Errorf("credential %d: %w", i, err)
+		}
+		credEnvelopes[i] = b
+	}
+	return wire.NewSignedTx(wire.SignedTxInput{
+		UnsignedBytes: unsignedBytes,
+		Credentials:   credEnvelopes,
+	}), nil
+}
+
+// Initialize binds the tx's cached bytes and TxID from its Unsigned tx and
+// Creds. Used for txs built fresh in-process (wallet, block builder).
+func (t *Tx) Initialize() error {
+	unsignedBytes, err := UnsignedBytes(t.Unsigned)
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)
 	}
-
-	unsignedBytesLen, err := c.Size(CodecVersion, &t.Unsigned)
+	signedBytes, err := signedBytesFrom(unsignedBytes, t.Creds)
 	if err != nil {
-		return fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
+		return fmt.Errorf("problem creating transaction: %w", err)
 	}
-
-	unsignedBytes := signedBytes[:unsignedBytesLen]
 	t.SetBytes(unsignedBytes, signedBytes)
 	return nil
 }
@@ -101,28 +156,26 @@ func (t *Tx) InputIDs() set.Set[ids.ID] {
 	return t.Unsigned.InputIDs()
 }
 
-func (t *Tx) SignSECP256K1Fx(c pcodecs.Manager, signers [][]*secp256k1.PrivateKey) error {
-	unsignedBytes, err := c.Marshal(CodecVersion, &t.Unsigned)
+// sign attaches credentials for the provided signer sets over the unsigned
+// bytes, then binds signed bytes = unsigned ‖ creds.
+func (t *Tx) sign(signers [][]*secp256k1.PrivateKey, wrap func([][secp256k1.SignatureLen]byte) verify.Verifiable) error {
+	unsignedBytes, err := UnsignedBytes(t.Unsigned)
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)
 	}
-
-	hash := hash.ComputeHash256(unsignedBytes)
+	h := hash.ComputeHash256(unsignedBytes)
 	for _, keys := range signers {
-		cred := &secp256k1fx.Credential{
-			Sigs: make([][secp256k1.SignatureLen]byte, len(keys)),
-		}
+		sigs := make([][secp256k1.SignatureLen]byte, len(keys))
 		for i, key := range keys {
-			sig, err := key.SignHash(hash)
+			sig, err := key.SignHash(h)
 			if err != nil {
 				return fmt.Errorf("problem creating transaction: %w", err)
 			}
-			copy(cred.Sigs[i][:], sig)
+			copy(sigs[i][:], sig)
 		}
-		t.Creds = append(t.Creds, &fxs.FxCredential{Credential: cred})
+		t.Creds = append(t.Creds, &fxs.FxCredential{Credential: wrap(sigs)})
 	}
-
-	signedBytes, err := c.Marshal(CodecVersion, t)
+	signedBytes, err := signedBytesFrom(unsignedBytes, t.Creds)
 	if err != nil {
 		return fmt.Errorf("problem creating transaction: %w", err)
 	}
@@ -130,60 +183,20 @@ func (t *Tx) SignSECP256K1Fx(c pcodecs.Manager, signers [][]*secp256k1.PrivateKe
 	return nil
 }
 
-func (t *Tx) SignPropertyFx(c pcodecs.Manager, signers [][]*secp256k1.PrivateKey) error {
-	unsignedBytes, err := c.Marshal(CodecVersion, &t.Unsigned)
-	if err != nil {
-		return fmt.Errorf("problem creating transaction: %w", err)
-	}
-
-	hash := hash.ComputeHash256(unsignedBytes)
-	for _, keys := range signers {
-		cred := &propertyfx.Credential{Credential: secp256k1fx.Credential{
-			Sigs: make([][secp256k1.SignatureLen]byte, len(keys)),
-		}}
-		for i, key := range keys {
-			sig, err := key.SignHash(hash)
-			if err != nil {
-				return fmt.Errorf("problem creating transaction: %w", err)
-			}
-			copy(cred.Sigs[i][:], sig)
-		}
-		t.Creds = append(t.Creds, &fxs.FxCredential{Credential: cred})
-	}
-
-	signedBytes, err := c.Marshal(CodecVersion, t)
-	if err != nil {
-		return fmt.Errorf("problem creating transaction: %w", err)
-	}
-	t.SetBytes(unsignedBytes, signedBytes)
-	return nil
+func (t *Tx) SignSECP256K1Fx(signers [][]*secp256k1.PrivateKey) error {
+	return t.sign(signers, func(sigs [][secp256k1.SignatureLen]byte) verify.Verifiable {
+		return &secp256k1fx.Credential{Sigs: sigs}
+	})
 }
 
-func (t *Tx) SignNFTFx(c pcodecs.Manager, signers [][]*secp256k1.PrivateKey) error {
-	unsignedBytes, err := c.Marshal(CodecVersion, &t.Unsigned)
-	if err != nil {
-		return fmt.Errorf("problem creating transaction: %w", err)
-	}
+func (t *Tx) SignPropertyFx(signers [][]*secp256k1.PrivateKey) error {
+	return t.sign(signers, func(sigs [][secp256k1.SignatureLen]byte) verify.Verifiable {
+		return &propertyfx.Credential{Credential: secp256k1fx.Credential{Sigs: sigs}}
+	})
+}
 
-	hash := hash.ComputeHash256(unsignedBytes)
-	for _, keys := range signers {
-		cred := &nftfx.Credential{Credential: secp256k1fx.Credential{
-			Sigs: make([][secp256k1.SignatureLen]byte, len(keys)),
-		}}
-		for i, key := range keys {
-			sig, err := key.SignHash(hash)
-			if err != nil {
-				return fmt.Errorf("problem creating transaction: %w", err)
-			}
-			copy(cred.Sigs[i][:], sig)
-		}
-		t.Creds = append(t.Creds, &fxs.FxCredential{Credential: cred})
-	}
-
-	signedBytes, err := c.Marshal(CodecVersion, t)
-	if err != nil {
-		return fmt.Errorf("problem creating transaction: %w", err)
-	}
-	t.SetBytes(unsignedBytes, signedBytes)
-	return nil
+func (t *Tx) SignNFTFx(signers [][]*secp256k1.PrivateKey) error {
+	return t.sign(signers, func(sigs [][secp256k1.SignatureLen]byte) verify.Verifiable {
+		return &nftfx.Credential{Credential: secp256k1fx.Credential{Sigs: sigs}}
+	})
 }

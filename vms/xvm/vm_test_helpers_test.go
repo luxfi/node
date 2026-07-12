@@ -106,17 +106,13 @@ func newGenesisBytesTest(t *testing.T) []byte {
 func getCreateTxFromGenesisTest(t *testing.T, genesisBytes []byte, assetAlias string) *txs.Tx {
 	require := require.New(t)
 
-	c, err := newGenesisCodec()
-	require.NoError(err)
-
-	genesis := &Genesis{}
-	_, err = c.Unmarshal(genesisBytes, genesis)
+	genesis, err := ParseGenesisBytes(genesisBytes)
 	require.NoError(err)
 
 	for _, asset := range genesis.Txs {
 		if asset.Alias == assetAlias {
 			tx := &txs.Tx{Unsigned: &asset.CreateAssetTx}
-			require.NoError(tx.Initialize(c))
+			require.NoError(tx.Initialize())
 			return tx
 		}
 	}
@@ -405,7 +401,7 @@ func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser
 		},
 	}}
 	require.NoError(
-		tx.SignSECP256K1Fx(parser.Codec(), [][]*secp256k1.PrivateKey{{keys[0]}}),
+		tx.SignSECP256K1Fx([][]*secp256k1.PrivateKey{{keys[0]}}),
 	)
 	return tx
 }

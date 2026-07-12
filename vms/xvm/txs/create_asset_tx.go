@@ -1,12 +1,12 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
 	"github.com/luxfi/runtime"
-
 	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/zap"
 )
 
 var (
@@ -15,13 +15,26 @@ var (
 )
 
 // CreateAssetTx is a transaction that creates a new asset.
+//
+// Wire (unsigned): the shared { xkind@0, baseTxEnvelope@8 } prefix, then
+// Name@16 / Symbol@24 (text) + Denomination@32 (u8) + the InitialStates as a
+// packed (length list @36, blob @44) of self-delimiting InitialState objects.
 type CreateAssetTx struct {
-	BaseTx       `serialize:"true"`
-	Name         string          `serialize:"true" json:"name"`
-	Symbol       string          `serialize:"true" json:"symbol"`
-	Denomination byte            `serialize:"true" json:"denomination"`
-	States       []*InitialState `serialize:"true" json:"initialStates"`
+	BaseTx
+	Name         string          `json:"name"`
+	Symbol       string          `json:"symbol"`
+	Denomination byte            `json:"denomination"`
+	States       []*InitialState `json:"initialStates"`
 }
+
+const (
+	offCAName       = 16 // text ptr
+	offCASymbol     = 24 // text ptr
+	offCADenom      = 32 // u8
+	offCAStatesLen  = 36 // list ptr
+	offCAStatesBlob = 44 // bytes ptr
+	sizeCA          = 52
+)
 
 func (t *CreateAssetTx) InitRuntime(rt *runtime.Runtime) {
 	for _, state := range t.States {
@@ -47,7 +60,61 @@ func (t *CreateAssetTx) Visit(v Visitor) error {
 }
 
 // InitializeWithRuntime initializes the transaction with Runtime
-func (tx *CreateAssetTx) InitializeWithRuntime(rt *runtime.Runtime) error {
-	// Initialize any context-dependent fields here
+func (t *CreateAssetTx) InitializeWithRuntime(rt *runtime.Runtime) error {
+	t.InitRuntime(rt)
 	return nil
+}
+
+func (t *CreateAssetTx) serialize() ([]byte, error) {
+	env, err := t.baseTxWire()
+	if err != nil {
+		return nil, err
+	}
+	states := make([][]byte, len(t.States))
+	for i, s := range t.States {
+		b, err := s.Bytes()
+		if err != nil {
+			return nil, err
+		}
+		states[i] = b
+	}
+	b := zap.NewBuilder(zap.HeaderSize + sizeCA + len(env) + 256)
+	statesLenOff, statesLenCount, statesBlob := writeBlobList(b, states)
+
+	ob := b.StartObject(sizeCA)
+	ob.SetUint8(offXKind, uint8(xkindCreateAsset))
+	ob.SetBytes(offBaseTx, env)
+	ob.SetText(offCAName, t.Name)
+	ob.SetText(offCASymbol, t.Symbol)
+	ob.SetUint8(offCADenom, t.Denomination)
+	ob.SetList(offCAStatesLen, statesLenOff, statesLenCount)
+	ob.SetBytes(offCAStatesBlob, statesBlob)
+	ob.FinishAsRoot()
+	return b.Finish(), nil
+}
+
+func parseCreateAssetTx(unsignedBytes []byte, obj zap.Object) (*CreateAssetTx, error) {
+	base, err := decodeBaseTxWire(obj)
+	if err != nil {
+		return nil, err
+	}
+	stateBufs, err := readBlobList(obj, offCAStatesLen, offCAStatesBlob)
+	if err != nil {
+		return nil, err
+	}
+	states := make([]*InitialState, len(stateBufs))
+	for i, buf := range stateBufs {
+		s, err := parseInitialState(buf)
+		if err != nil {
+			return nil, err
+		}
+		states[i] = s
+	}
+	return &CreateAssetTx{
+		BaseTx:       BaseTx{BaseTx: base, bytes: unsignedBytes},
+		Name:         obj.Text(offCAName),
+		Symbol:       obj.Text(offCASymbol),
+		Denomination: obj.Uint8(offCADenom),
+		States:       states,
+	}, nil
 }

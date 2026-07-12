@@ -1,47 +1,43 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
+// Parse dispatch. There is no codec: ParseTx wraps the wire.SignedTx envelope
+// zero-copy, reads the 1-byte xkind at object offset 0 of the unsigned body to
+// select the concrete tx type, and reconstructs each fx credential by its
+// (TypeKind, ShapeKind) wire discriminator — no reflect, no slot map.
+
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/utxo/wire"
+	"github.com/luxfi/zap"
 )
 
-// CodecVersion is the current default codec version
-const CodecVersion = 0
-
-var _ Parser = (*parser)(nil)
+var (
+	_ Parser         = (*parser)(nil)
+	_ secp256k1fx.VM = (*fxVM)(nil)
+)
 
 type Parser interface {
-	Codec() pcodecs.Manager
-	GenesisCodec() pcodecs.Manager
-
-	CodecRegistry() pcodecs.Registry
-	GenesisCodecRegistry() pcodecs.Registry
-
 	ParseTx(bytes []byte) (*Tx, error)
 	ParseGenesisTx(bytes []byte) (*Tx, error)
 }
 
 type parser struct {
-	cm  pcodecs.Manager
-	gcm pcodecs.Manager
-	c   pcodecs.LinearCodec
-	gc  pcodecs.LinearCodec
+	fxs []fxs.Fx
 }
 
 func NewParser(fxs []fxs.Fx) (Parser, error) {
-	// Create a basic logger for parsing
 	return NewCustomParser(
 		make(map[reflect.Type]int),
 		&mockable.Clock{},
@@ -53,136 +49,155 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 func NewCustomParser(
 	typeToFxIndex map[reflect.Type]int,
 	clock *mockable.Clock,
-	log log.Logger,
-	fxs []fxs.Fx,
+	logger log.Logger,
+	fxList []fxs.Fx,
 ) (Parser, error) {
-	gc := pcodecs.NewLinearCodec()
-	c := pcodecs.NewLinearCodec()
-
-	gcm := pcodecs.NewMaxInt32Manager()
-	cm := pcodecs.NewDefaultManager()
-
-	err := errors.Join(
-		c.RegisterType(&BaseTx{}),
-		c.RegisterType(&CreateAssetTx{}),
-		c.RegisterType(&OperationTx{}),
-		c.RegisterType(&ImportTx{}),
-		c.RegisterType(&ExportTx{}),
-		cm.RegisterCodec(CodecVersion, c),
-
-		gc.RegisterType(&BaseTx{}),
-		gc.RegisterType(&CreateAssetTx{}),
-		gc.RegisterType(&OperationTx{}),
-		gc.RegisterType(&ImportTx{}),
-		gc.RegisterType(&ExportTx{}),
-		gcm.RegisterCodec(CodecVersion, gc),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	vm := &fxVM{
-		typeToFxIndex: typeToFxIndex,
-		clock:         clock,
-		log:           log,
-	}
-	for i, fx := range fxs {
-		vm.codecRegistry = &codecRegistry{
-			codecs:      []pcodecs.Registry{gc, c},
-			index:       i,
-			typeToIndex: vm.typeToFxIndex,
-		}
-		// Initialize with a proper VM that has a logger
+	vm := &fxVM{clock: clock, log: logger}
+	for i, fx := range fxList {
 		if err := fx.Initialize(vm); err != nil {
 			return nil, err
 		}
-		// utxo v0.3.5+ fx.Initialize is a no-op (ZAP-native; LP-023 /
-		// utxo FINAL_RIP step 8). Per-fx wire types used to be registered
-		// inside fx.Initialize via vm.CodecRegistry().RegisterType(...);
-		// re-register them here through vm.codecRegistry so both the
-		// zapcodec interface dispatch AND the typeToFxIndex map
-		// (semantic_verifier.getFx) are populated.
+		// Populate the fx-usage index (concrete fx type -> fx index) that the
+		// semantic verifier's getFx and tx_init.InitializeFx consult. This is
+		// verification policy, distinct from wire decoding (which is envelope
+		// dispatched); it is a plain map fill, no codec.
 		switch fx.(type) {
 		case *secp256k1fx.Fx:
-			if err := errors.Join(
-				vm.codecRegistry.RegisterType(&secp256k1fx.TransferInput{}),
-				vm.codecRegistry.RegisterType(&secp256k1fx.MintOutput{}),
-				vm.codecRegistry.RegisterType(&secp256k1fx.TransferOutput{}),
-				vm.codecRegistry.RegisterType(&secp256k1fx.MintOperation{}),
-				vm.codecRegistry.RegisterType(&secp256k1fx.Credential{}),
-			); err != nil {
-				return nil, err
-			}
+			registerFxTypes(typeToFxIndex, i,
+				&secp256k1fx.TransferInput{},
+				&secp256k1fx.MintOutput{},
+				&secp256k1fx.TransferOutput{},
+				&secp256k1fx.MintOperation{},
+				&secp256k1fx.Credential{},
+			)
 		case *nftfx.Fx:
-			if err := errors.Join(
-				vm.codecRegistry.RegisterType(&nftfx.MintOutput{}),
-				vm.codecRegistry.RegisterType(&nftfx.TransferOutput{}),
-				vm.codecRegistry.RegisterType(&nftfx.MintOperation{}),
-				vm.codecRegistry.RegisterType(&nftfx.TransferOperation{}),
-				vm.codecRegistry.RegisterType(&nftfx.Credential{}),
-			); err != nil {
-				return nil, err
-			}
+			registerFxTypes(typeToFxIndex, i,
+				&nftfx.MintOutput{},
+				&nftfx.TransferOutput{},
+				&nftfx.MintOperation{},
+				&nftfx.TransferOperation{},
+				&nftfx.Credential{},
+			)
 		case *propertyfx.Fx:
-			if err := errors.Join(
-				vm.codecRegistry.RegisterType(&propertyfx.MintOutput{}),
-				vm.codecRegistry.RegisterType(&propertyfx.OwnedOutput{}),
-				vm.codecRegistry.RegisterType(&propertyfx.MintOperation{}),
-				vm.codecRegistry.RegisterType(&propertyfx.BurnOperation{}),
-				vm.codecRegistry.RegisterType(&propertyfx.Credential{}),
-			); err != nil {
-				return nil, err
-			}
+			registerFxTypes(typeToFxIndex, i,
+				&propertyfx.MintOutput{},
+				&propertyfx.OwnedOutput{},
+				&propertyfx.MintOperation{},
+				&propertyfx.BurnOperation{},
+				&propertyfx.Credential{},
+			)
 		}
 	}
-	return &parser{
-		cm:  cm,
-		gcm: gcm,
-		c:   c,
-		gc:  gc,
+	return &parser{fxs: fxList}, nil
+}
+
+func registerFxTypes(m map[reflect.Type]int, index int, vals ...interface{}) {
+	for _, v := range vals {
+		m[reflect.TypeOf(v)] = index
+	}
+}
+
+// Parse decodes a signed X-chain tx from its wire bytes. It is the codec-free,
+// parser-instance-free entry point used by the block layer and any consumer
+// holding raw tx bytes; fx credential dispatch is envelope-based (stateless).
+func Parse(signedBytes []byte) (*Tx, error) {
+	return parseSignedTx(signedBytes)
+}
+
+func (*parser) ParseTx(bytes []byte) (*Tx, error) {
+	return parseSignedTx(bytes)
+}
+
+func (*parser) ParseGenesisTx(bytes []byte) (*Tx, error) {
+	return parseSignedTx(bytes)
+}
+
+// parseSignedTx wraps a wire.SignedTx envelope: the leading unsigned body plus
+// the packed fx credential list. TxID = hash(signedBytes), byte-preserving.
+func parseSignedTx(signedBytes []byte) (*Tx, error) {
+	st, err := wire.WrapSignedTx(signedBytes)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse signed tx: %w", err)
+	}
+	unsigned, err := parseUnsigned(st.UnsignedBytes())
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse unsigned tx: %w", err)
+	}
+	creds, err := parseCreds(st)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse credentials: %w", err)
+	}
+	return &Tx{
+		Unsigned: unsigned,
+		Creds:    creds,
+		TxID:     hash.ComputeHash256Array(signedBytes),
+		bytes:    signedBytes,
 	}, nil
 }
 
-func (p *parser) Codec() pcodecs.Manager {
-	return p.cm
-}
-
-func (p *parser) GenesisCodec() pcodecs.Manager {
-	return p.gcm
-}
-
-func (p *parser) CodecRegistry() pcodecs.Registry {
-	return p.c
-}
-
-func (p *parser) GenesisCodecRegistry() pcodecs.Registry {
-	return p.gc
-}
-
-func (p *parser) ParseTx(bytes []byte) (*Tx, error) {
-	return parse(p.cm, bytes)
-}
-
-func (p *parser) ParseGenesisTx(bytes []byte) (*Tx, error) {
-	return parse(p.gcm, bytes)
-}
-
-func parse(cm pcodecs.Manager, signedBytes []byte) (*Tx, error) {
-	tx := &Tx{}
-	parsedVersion, err := cm.Unmarshal(signedBytes, tx)
+// parseUnsigned wraps the leading unsigned body as the typed UnsignedTx by
+// dispatching on its xkind discriminator (object offset 0).
+func parseUnsigned(unsignedBytes []byte) (UnsignedTx, error) {
+	msg, err := zap.Parse(unsignedBytes)
 	if err != nil {
 		return nil, err
 	}
-	if parsedVersion != CodecVersion {
-		return nil, fmt.Errorf("expected codec version %d but got %d", CodecVersion, parsedVersion)
+	obj := msg.Root()
+	switch k := xkindOf(msg); k {
+	case xkindBase:
+		return parseBaseTx(unsignedBytes, obj)
+	case xkindCreateAsset:
+		return parseCreateAssetTx(unsignedBytes, obj)
+	case xkindOperation:
+		return parseOperationTx(unsignedBytes, obj)
+	case xkindImport:
+		return parseImportTx(unsignedBytes, obj)
+	case xkindExport:
+		return parseExportTx(unsignedBytes, obj)
+	default:
+		return nil, fmt.Errorf("xvm txs: unknown tx kind %d", k)
 	}
+}
 
-	unsignedBytesLen, err := cm.Size(CodecVersion, &tx.Unsigned)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't calculate UnsignedTx marshal length: %w", err)
+// parseCreds reconstructs the fx credential list, dispatching each envelope on
+// its TypeKind. FxID is recovered later by tx_init.InitializeFx.
+func parseCreds(st wire.SignedTx) ([]*fxs.FxCredential, error) {
+	n := st.CredentialCount()
+	if n == 0 {
+		return nil, nil
 	}
+	creds := make([]*fxs.FxCredential, 0, n)
+	blob := st.CredentialBytes()
+	for i := uint32(0); i < n; i++ {
+		env, rest, err := wire.NextEnvelope(blob)
+		if err != nil {
+			return nil, err
+		}
+		cred, err := wrapFxCredential(env)
+		if err != nil {
+			return nil, err
+		}
+		creds = append(creds, &fxs.FxCredential{Credential: cred})
+		blob = rest
+	}
+	return creds, nil
+}
 
-	unsignedBytes := signedBytes[:unsignedBytesLen]
-	tx.SetBytes(unsignedBytes, signedBytes)
-	return tx, nil
+// fxVM is the minimal VM surface an fx needs at Initialize time (clock +
+// logger). ZAP-native: fx wire schemas are compile-time static, so there is no
+// codec registry to provide.
+type fxVM struct {
+	clock *mockable.Clock
+	log   log.Logger
+}
+
+func (vm *fxVM) Clock() *mockable.Clock { return vm.clock }
+func (vm *fxVM) Logger() log.Logger     { return vm.log }
+
+// ParseUnsignedTx decodes native-ZAP unsigned-tx bytes (as produced by
+// UnsignedBytes) back into the concrete UnsignedTx, dispatching on the xkind
+// discriminator. Used by the X-Chain genesis wire to re-hydrate each
+// GenesisAsset's embedded CreateAssetTx.
+func ParseUnsignedTx(unsignedBytes []byte) (UnsignedTx, error) {
+	return parseUnsigned(unsignedBytes)
 }
