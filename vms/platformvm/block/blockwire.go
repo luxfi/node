@@ -23,6 +23,7 @@ package block
 // Sizes: abort/commit = 49, standard = 65, proposal = 73.
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -101,13 +102,25 @@ func (b commonZapBlock) InitRuntime(rt *runtime.Runtime) {
 	}
 }
 
+// ErrExtraSpace is returned when a block buffer carries bytes beyond the
+// self-delimiting zap message — a malleability vector (ID = hash(bytes) would
+// change while the wrapped message is identical). Blocks MUST be canonical.
+var ErrExtraSpace = errors.New("block: trailing bytes after zap message")
+
 // setID parses the final bytes into the block's zap buffer and derives
 // ID = hash(bytes). Used by both the New*Block constructors (fresh buffer) and
 // Parse (wire/disk buffer); the bytes are authoritative and never re-encoded.
+//
+// Rejects trailing bytes: zap.Parse truncates to the header size field, so a
+// buffer with extra tail bytes would wrap the same message but hash to a
+// different ID. The block wire is canonical + non-malleable — reject it.
 func (b *commonZapBlock) setID(bytes []byte) error {
 	msg, err := zap.Parse(bytes)
 	if err != nil {
 		return err
+	}
+	if msg.Size() != len(bytes) {
+		return ErrExtraSpace
 	}
 	b.msg = msg
 	b.id = hash.ComputeHash256Array(bytes)
