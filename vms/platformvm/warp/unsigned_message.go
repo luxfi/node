@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -6,19 +6,30 @@ package warp
 import (
 	"fmt"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/hash"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/zap"
 )
 
 // UnsignedMessage defines the standard format for an unsigned Warp message.
+//
+// Wire (native ZAP, no kind byte — always parsed in context): NetworkID u32
+// @0, SourceChainID 32B @4, Payload bytes @36 = 44-byte object header.
 type UnsignedMessage struct {
-	NetworkID     uint32 `serialize:"true"`
-	SourceChainID ids.ID `serialize:"true"`
-	Payload       []byte `serialize:"true"`
+	NetworkID     uint32 `json:"networkID"`
+	SourceChainID ids.ID `json:"sourceChainID"`
+	Payload       []byte `json:"payload"`
 
 	bytes []byte
 	id    ids.ID
 }
+
+const (
+	umOffNetworkID = 0
+	umOffSource    = 4
+	umOffPayload   = 36
+	umSize         = 44
+)
 
 // NewUnsignedMessage creates a new *UnsignedMessage and initializes it.
 func NewUnsignedMessage(
@@ -37,21 +48,29 @@ func NewUnsignedMessage(
 // ParseUnsignedMessage converts a slice of bytes into an initialized
 // *UnsignedMessage.
 func ParseUnsignedMessage(b []byte) (*UnsignedMessage, error) {
-	msg := &UnsignedMessage{
-		bytes: b,
-		id:    hash.ComputeHash256Array(b),
+	zm, err := zap.Parse(b)
+	if err != nil {
+		return nil, err
 	}
-	_, err := Codec.Unmarshal(b, msg)
-	return msg, err
+	root := zm.Root()
+	return &UnsignedMessage{
+		NetworkID:     root.Uint32(umOffNetworkID),
+		SourceChainID: readWireID(root, umOffSource),
+		Payload:       append([]byte(nil), root.Bytes(umOffPayload)...),
+		bytes:         b,
+		id:            hash.ComputeHash256Array(b),
+	}, nil
 }
 
 // Initialize recalculates the result of Bytes().
 func (m *UnsignedMessage) Initialize() error {
-	bytes, err := Codec.Marshal(CodecVersion, m)
-	if err != nil {
-		return fmt.Errorf("couldn't marshal warp unsigned message: %w", err)
-	}
-	m.bytes = bytes
+	b := zap.NewBuilder(zap.HeaderSize + umSize + len(m.Payload) + 16)
+	ob := b.StartObject(umSize)
+	ob.SetUint32(umOffNetworkID, m.NetworkID)
+	ob.SetBytesFixed(umOffSource, m.SourceChainID[:])
+	ob.SetBytes(umOffPayload, m.Payload)
+	ob.FinishAsRoot()
+	m.bytes = b.Finish()
 	m.id = hash.ComputeHash256Array(m.bytes)
 	return nil
 }

@@ -48,8 +48,8 @@ type HybridSigner interface {
 //   - RT PublicKey: 1952 bytes (ML-DSA-65)
 //   - RT ProofOfPossession: 3309 bytes (ML-DSA-65 signature)
 type HybridProofOfPossession struct {
-	BLS *ProofOfPossession   `serialize:"true" json:"bls"`
-	RT  *RTProofOfPossession `serialize:"true" json:"rt"`
+	BLS *ProofOfPossession   `json:"bls"`
+	RT  *RTProofOfPossession `json:"rt"`
 }
 
 // NewHybridProofOfPossession creates a new hybrid proof combining BLS and RT.

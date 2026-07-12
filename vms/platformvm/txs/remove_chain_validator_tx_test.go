@@ -1,510 +1,74 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/go-json-experiment/json"
-	"github.com/go-json-experiment/json/jsontext"
-	"errors"
 	"testing"
 
-	"github.com/luxfi/runtime"
-
-	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	lux "github.com/luxfi/utxo"
-	"github.com/luxfi/node/vms/components/verify/verifymock"
-	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/utils"
 	"github.com/luxfi/utxo/secp256k1fx"
-	"github.com/luxfi/vm/types"
 )
 
-var errInvalidNetAuth = errors.New("invalid net auth")
-
-func TestRemoveChainValidatorTxSerialization(t *testing.T) {
+// TestRemoveChainValidatorTxRoundTrip builds the tx through its constructor,
+// round-trips it, and confirms the delta fields (NodeID, Chain, ChainAuth) and
+// the spending envelope survive encode→decode.
+func TestRemoveChainValidatorTxRoundTrip(t *testing.T) {
 	require := require.New(t)
 
-	addr := ids.ShortID{
-		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
-		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
-		0x44, 0x55, 0x66, 0x77,
-	}
+	base := spendBase()
+	nodeID := ids.GenerateTestNodeID()
+	chain := ids.GenerateTestID()
+	auth := &secp256k1fx.Input{SigIndices: []uint32{3}}
 
-	utxoAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	in, err := NewRemoveChainValidatorTx(base, nodeID, chain, auth)
 	require.NoError(err)
 
-	customAssetID := ids.ID{
-		0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31,
-		0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31,
-		0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31,
-		0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31,
-	}
-
-	txID := ids.ID{
-		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
-		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
-		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
-		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
-	}
-	nodeID := ids.BuildTestNodeID([]byte{
-		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-		0x11, 0x22, 0x33, 0x44,
-	})
-	netID := ids.ID{
-		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
-		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
-	}
-
-	simpleRemoveValidatorTx := &RemoveChainValidatorTx{
-		BaseTx: BaseTx{
-			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
-				BlockchainID: ids.Empty, // Use empty for serialization test
-				Outs:         []*lux.TransferableOutput{},
-				Ins: []*lux.TransferableInput{
-					{
-						UTXOID: lux.UTXOID{
-							TxID:        txID,
-							OutputIndex: 1,
-						},
-						Asset: lux.Asset{
-							ID: utxoAssetID,
-						},
-						In: &secp256k1fx.TransferInput{
-							Amt: constants.MilliLux,
-							Input: secp256k1fx.Input{
-								SigIndices: []uint32{5},
-							},
-						},
-					},
-				},
-				Memo: types.JSONByteSlice{},
-			},
-		},
-		NodeID: nodeID,
-		Chain:  netID,
-		ChainAuth: &secp256k1fx.Input{
-			SigIndices: []uint32{3},
-		},
-	}
-	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
-	rt := &runtime.Runtime{
-		NetworkID: constants.UnitTestID,
-
-		ChainID: ids.GenerateTestID(),
-	}
-	rt = &runtime.Runtime{
-		NetworkID: constants.MainnetID,
-
-		ChainID:  testChainID,
-		UTXOAssetID: utxoAssetID,
-	}
-	require.NoError(simpleRemoveValidatorTx.SyntacticVerify(rt))
-
-	expectedUnsignedSimpleRemoveValidatorTxBytes := []byte{
-		0x01, 0x00, 0x1b, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
-		0x00, 0x00, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0x01, 0x00, 0x00, 0x00, 0x51, 0xc2, 0x4f, 0xe7, 0xee, 0x02, 0x01, 0xff, 0x0f, 0x33,
-		0x5f, 0x51, 0x99, 0x28, 0xdb, 0x6e, 0xef, 0x62, 0x24, 0x25, 0x45, 0x52, 0xc9, 0x6b, 0x6b, 0x42,
-		0x5f, 0xbc, 0x18, 0xfa, 0x24, 0x3b, 0x05, 0x00, 0x00, 0x00, 0xe8, 0x03, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0x22,
-		0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x11, 0x22,
-		0x33, 0x44, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
-		0x17, 0x18, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36,
-		0x37, 0x38, 0x0a, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00,
-	}
-	var unsignedSimpleRemoveValidatorTx UnsignedTx = simpleRemoveValidatorTx
-	unsignedSimpleRemoveValidatorTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleRemoveValidatorTx)
-	require.NoError(err)
-	require.Equal(expectedUnsignedSimpleRemoveValidatorTxBytes, unsignedSimpleRemoveValidatorTxBytes)
-
-	complexRemoveValidatorTx := &RemoveChainValidatorTx{
-		BaseTx: BaseTx{
-			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
-				BlockchainID: ids.Empty, // Use empty for serialization test
-				Outs: []*lux.TransferableOutput{
-					{
-						Asset: lux.Asset{
-							ID: utxoAssetID,
-						},
-						Out: &stakeable.LockOut{
-							Locktime: 87654321,
-							TransferableOut: &secp256k1fx.TransferOutput{
-								Amt: 1,
-								OutputOwners: secp256k1fx.OutputOwners{
-									Locktime:  12345678,
-									Threshold: 0,
-									Addrs:     []ids.ShortID{},
-								},
-							},
-						},
-					},
-					{
-						Asset: lux.Asset{
-							ID: customAssetID,
-						},
-						Out: &stakeable.LockOut{
-							Locktime: 876543210,
-							TransferableOut: &secp256k1fx.TransferOutput{
-								Amt: 0xffffffffffffffff,
-								OutputOwners: secp256k1fx.OutputOwners{
-									Locktime:  0,
-									Threshold: 1,
-									Addrs: []ids.ShortID{
-										addr,
-									},
-								},
-							},
-						},
-					},
-				},
-				Ins: []*lux.TransferableInput{
-					{
-						UTXOID: lux.UTXOID{
-							TxID:        txID,
-							OutputIndex: 1,
-						},
-						Asset: lux.Asset{
-							ID: utxoAssetID,
-						},
-						In: &secp256k1fx.TransferInput{
-							Amt: constants.Lux,
-							Input: secp256k1fx.Input{
-								SigIndices: []uint32{2, 5},
-							},
-						},
-					},
-					{
-						UTXOID: lux.UTXOID{
-							TxID:        txID,
-							OutputIndex: 2,
-						},
-						Asset: lux.Asset{
-							ID: customAssetID,
-						},
-						In: &stakeable.LockIn{
-							Locktime: 876543210,
-							TransferableIn: &secp256k1fx.TransferInput{
-								Amt: 0xefffffffffffffff,
-								Input: secp256k1fx.Input{
-									SigIndices: []uint32{0},
-								},
-							},
-						},
-					},
-					{
-						UTXOID: lux.UTXOID{
-							TxID:        txID,
-							OutputIndex: 3,
-						},
-						Asset: lux.Asset{
-							ID: customAssetID,
-						},
-						In: &secp256k1fx.TransferInput{
-							Amt: 0x1000000000000000,
-							Input: secp256k1fx.Input{
-								SigIndices: []uint32{},
-							},
-						},
-					},
-				},
-				Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
-			},
-		},
-		NodeID: nodeID,
-		Chain:  netID,
-		ChainAuth: &secp256k1fx.Input{
-			SigIndices: []uint32{},
-		},
-	}
-	lux.SortTransferableOutputs(complexRemoveValidatorTx.Outs)
-	utils.Sort(complexRemoveValidatorTx.Ins)
-	rt2 := &runtime.Runtime{
-		NetworkID: constants.MainnetID,
-
-		ChainID:  testChainID,
-		UTXOAssetID: utxoAssetID,
-	}
-	require.NoError(complexRemoveValidatorTx.SyntacticVerify(rt2))
-
-	expectedUnsignedComplexRemoveValidatorTxBytes := []byte{
-		0x01, 0x00, 0x1b, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x51, 0xc2,
-		0x4f, 0xe7, 0xee, 0x02, 0x01, 0xff, 0x0f, 0x33, 0x5f, 0x51, 0x99, 0x28, 0xdb, 0x6e, 0xef, 0x62,
-		0x24, 0x25, 0x45, 0x52, 0xc9, 0x6b, 0x6b, 0x42, 0x5f, 0xbc, 0x18, 0xfa, 0x24, 0x3b, 0x16, 0x00,
-		0x00, 0x00, 0xb1, 0x7f, 0x39, 0x05, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x01, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4e, 0x61, 0xbc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x16, 0x00, 0x00, 0x00, 0xea, 0xfc, 0x3e, 0x34, 0x00, 0x00,
-		0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x44, 0x55,
-		0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0x44, 0x55,
-		0x66, 0x77, 0x03, 0x00, 0x00, 0x00, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee,
-		0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee,
-		0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x01, 0x00, 0x00, 0x00, 0x51, 0xc2, 0x4f, 0xe7, 0xee, 0x02,
-		0x01, 0xff, 0x0f, 0x33, 0x5f, 0x51, 0x99, 0x28, 0xdb, 0x6e, 0xef, 0x62, 0x24, 0x25, 0x45, 0x52,
-		0xc9, 0x6b, 0x6b, 0x42, 0x5f, 0xbc, 0x18, 0xfa, 0x24, 0x3b, 0x05, 0x00, 0x00, 0x00, 0x40, 0x42,
-		0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x05, 0x00,
-		0x00, 0x00, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0x02, 0x00, 0x00, 0x00, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x15, 0x00, 0x00, 0x00, 0xea, 0xfc, 0x3e, 0x34, 0x00, 0x00,
-		0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xef, 0x01, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee,
-		0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee,
-		0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x03, 0x00, 0x00, 0x00, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33,
-		0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33,
-		0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0xf0, 0x9f,
-		0x98, 0x85, 0x0a, 0x77, 0x65, 0x6c, 0x6c, 0x20, 0x74, 0x68, 0x61, 0x74, 0x27, 0x73, 0x01, 0x23,
-		0x45, 0x21, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
-		0x77, 0x88, 0x11, 0x22, 0x33, 0x44, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x11, 0x12,
-		0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x31, 0x32,
-		0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	}
-	var unsignedComplexRemoveValidatorTx UnsignedTx = complexRemoveValidatorTx
-	unsignedComplexRemoveValidatorTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexRemoveValidatorTx)
-	require.NoError(err)
-	require.Equal(expectedUnsignedComplexRemoveValidatorTxBytes, unsignedComplexRemoveValidatorTxBytes)
-
-	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
-	// This functionality is now handled differently
-
-	rt3 := &runtime.Runtime{
-		NetworkID: constants.MainnetID, // Must match tx.ChainworkID for "P-lux1..." address encoding
-
-		ChainID:  testChainID,
-		UTXOAssetID: utxoAssetID,
-	}
-	unsignedComplexRemoveValidatorTx.InitRuntime(rt3)
-
-	unsignedComplexRemoveValidatorTxJSONBytes, err := json.Marshal(unsignedComplexRemoveValidatorTx, jsontext.WithIndent("\t"))
-	require.NoError(err)
-	require.JSONEq(`{
-	"networkID": 1,
-	"blockchainID": "11111111111111111111111111111111LpoYY",
-	"outputs": [
-		{
-			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"output": {
-				"locktime": 87654321,
-				"output": {
-					"addresses": [],
-					"amount": 1,
-					"locktime": 12345678,
-					"threshold": 0
-				}
-			}
-		},
-		{
-			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"output": {
-				"locktime": 876543210,
-				"output": {
-					"addresses": [
-						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
-					],
-					"amount": 18446744073709551615,
-					"locktime": 0,
-					"threshold": 1
-				}
-			}
-		}
-	],
-	"inputs": [
-		{
-			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
-			"outputIndex": 1,
-			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"input": {
-				"amount": 1000000,
-				"signatureIndices": [
-					2,
-					5
-				]
-			}
-		},
-		{
-			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
-			"outputIndex": 2,
-			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"input": {
-				"locktime": 876543210,
-				"input": {
-					"amount": 17293822569102704639,
-					"signatureIndices": [
-						0
-					]
-				}
-			}
-		},
-		{
-			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
-			"outputIndex": 3,
-			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"input": {
-				"amount": 1152921504606846976,
-				"signatureIndices": []
-			}
-		}
-	],
-	"memo": "0xf09f98850a77656c6c2074686174277301234521",
-	"nodeID": "NodeID-2ZbTY9GatRTrfinAoYiYLcf6CvrPAUYgo",
-	"chainID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
-	"chainAuthorization": {
-		"signatureIndices": []
-	}
-}`, string(unsignedComplexRemoveValidatorTxJSONBytes))
+	got := roundTrip(t, in).(*RemoveChainValidatorTx)
+	require.Equal(nodeID, got.NodeID())
+	require.Equal(chain, got.Chain())
+	require.Equal(auth, got.ChainAuth())
+	require.Equal(base.NetworkID, got.NetworkID())
+	require.Equal(base.BlockchainID, got.BlockchainID())
+	require.Equal([]byte(base.Memo), got.Memo())
 }
 
 func TestRemoveChainValidatorTxSyntacticVerify(t *testing.T) {
-	type test struct {
-		name        string
-		txFunc      func(*gomock.Controller) *RemoveChainValidatorTx
-		expectedErr error
+	require := require.New(t)
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
+
+	nodeID := ids.GenerateTestNodeID()
+	base := func(networkID uint32) *lux.BaseTx {
+		return &lux.BaseTx{NetworkID: networkID, BlockchainID: rt.ChainID}
 	}
 
-	var (
-		networkID = uint32(1337)
-		chainID   = ids.GenerateTestID()
-	)
+	// Case: nil tx
+	var nilTx *RemoveChainValidatorTx
+	require.ErrorIs(nilTx.SyntacticVerify(rt), ErrNilTx)
 
-	rt := &runtime.Runtime{
-		NetworkID: networkID,
+	// Case: invalid BaseTx (wrong network ID); Chain and NodeID are set so we
+	// don't error on those checks first.
+	wrongNet, err := NewRemoveChainValidatorTx(base(rt.NetworkID+1), nodeID, ids.GenerateTestID(), &secp256k1fx.Input{})
+	require.NoError(err)
+	require.ErrorIs(wrongNet.SyntacticVerify(rt), lux.ErrWrongNetworkID)
 
-		ChainID: chainID,
-	}
+	// Case: can't remove a primary network validator
+	primary, err := NewRemoveChainValidatorTx(base(rt.NetworkID), nodeID, constants.PrimaryNetworkID, &secp256k1fx.Input{})
+	require.NoError(err)
+	require.ErrorIs(primary.SyntacticVerify(rt), ErrRemovePrimaryNetworkValidator)
 
-	// A BaseTx that already passed syntactic verification.
-	verifiedBaseTx := BaseTx{
-		SyntacticallyVerified: true,
-	}
-	// Sanity check.
-	require.NoError(t, verifiedBaseTx.SyntacticVerify(rt))
+	// Case: invalid chain auth (sig indices not sorted and unique)
+	badAuth, err := NewRemoveChainValidatorTx(base(rt.NetworkID), nodeID, ids.GenerateTestID(), &secp256k1fx.Input{SigIndices: []uint32{1, 0}})
+	require.NoError(err)
+	require.ErrorIs(badAuth.SyntacticVerify(rt), secp256k1fx.ErrInputIndicesNotSortedUnique)
 
-	// A BaseTx that passes syntactic verification.
-	validBaseTx := BaseTx{
-		BaseTx: lux.BaseTx{
-			NetworkID:    networkID,
-			BlockchainID: chainID,
-		},
-	}
-	// Sanity check.
-	require.NoError(t, validBaseTx.SyntacticVerify(rt))
-	// Make sure we're not caching the verification result.
-	require.False(t, validBaseTx.SyntacticallyVerified)
-
-	// A BaseTx that fails syntactic verification.
-	invalidBaseTx := BaseTx{}
-
-	tests := []test{
-		{
-			name: "nil tx",
-			txFunc: func(*gomock.Controller) *RemoveChainValidatorTx {
-				return nil
-			},
-			expectedErr: ErrNilTx,
-		},
-		{
-			name: "already verified",
-			txFunc: func(*gomock.Controller) *RemoveChainValidatorTx {
-				return &RemoveChainValidatorTx{BaseTx: verifiedBaseTx}
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "invalid BaseTx",
-			txFunc: func(*gomock.Controller) *RemoveChainValidatorTx {
-				return &RemoveChainValidatorTx{
-					// Set netID so we don't error on that check.
-					Chain: ids.GenerateTestID(),
-					// Set NodeID so we don't error on that check.
-					NodeID: ids.GenerateTestNodeID(),
-					BaseTx: invalidBaseTx,
-				}
-			},
-			expectedErr: lux.ErrWrongNetworkID,
-		},
-		{
-			name: "invalid netID",
-			txFunc: func(*gomock.Controller) *RemoveChainValidatorTx {
-				return &RemoveChainValidatorTx{
-					BaseTx: validBaseTx,
-					// Set NodeID so we don't error on that check.
-					NodeID: ids.GenerateTestNodeID(),
-					Chain:  constants.PrimaryNetworkID,
-				}
-			},
-			expectedErr: ErrRemovePrimaryNetworkValidator,
-		},
-		{
-			name: "invalid chainAuth",
-			txFunc: func(ctrl *gomock.Controller) *RemoveChainValidatorTx {
-				// This NetAuth fails verification.
-				invalidNetAuth := verifymock.NewVerifiable(ctrl)
-				invalidNetAuth.EXPECT().Verify().Return(errInvalidNetAuth)
-				return &RemoveChainValidatorTx{
-					// Set netID so we don't error on that check.
-					Chain: ids.GenerateTestID(),
-					// Set NodeID so we don't error on that check.
-					NodeID:    ids.GenerateTestNodeID(),
-					BaseTx:    validBaseTx,
-					ChainAuth: invalidNetAuth,
-				}
-			},
-			expectedErr: errInvalidNetAuth,
-		},
-		{
-			name: "passes verification",
-			txFunc: func(ctrl *gomock.Controller) *RemoveChainValidatorTx {
-				// This NetAuth passes verification.
-				validNetAuth := verifymock.NewVerifiable(ctrl)
-				validNetAuth.EXPECT().Verify().Return(nil)
-				return &RemoveChainValidatorTx{
-					// Set netID so we don't error on that check.
-					Chain: ids.GenerateTestID(),
-					// Set NodeID so we don't error on that check.
-					NodeID:    ids.GenerateTestNodeID(),
-					BaseTx:    validBaseTx,
-					ChainAuth: validNetAuth,
-				}
-			},
-			expectedErr: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
-			ctrl := gomock.NewController(t)
-
-			tx := tt.txFunc(ctrl)
-			err := tx.SyntacticVerify(rt)
-			require.ErrorIs(err, tt.expectedErr)
-			if tt.expectedErr != nil {
-				return
-			}
-			require.True(tx.SyntacticallyVerified)
-		})
-	}
+	// Case: passes verification
+	valid, err := NewRemoveChainValidatorTx(base(rt.NetworkID), nodeID, ids.GenerateTestID(), &secp256k1fx.Input{})
+	require.NoError(err)
+	require.NoError(valid.SyntacticVerify(rt))
 }

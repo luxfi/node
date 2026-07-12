@@ -3,9 +3,22 @@
 
 package payload
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/luxfi/zap"
+)
 
 var _ Payload = (*AddressedCall)(nil)
+
+// AddressedCall wire: pkind u8 @0, SourceAddress bytes-ptr @1, Payload
+// bytes-ptr @9 = 17-byte object header (+ the two byte blobs in the buffer).
+const (
+	acOffKind    = offPKind
+	acOffSource  = 1
+	acOffPayload = 9
+	acSize       = 17
+)
 
 // AddressedCall defines the format for delivering a call across VMs including a
 // source address and a payload.
@@ -13,8 +26,8 @@ var _ Payload = (*AddressedCall)(nil)
 // Note: If a destination address is expected, it should be encoded in the
 // payload.
 type AddressedCall struct {
-	SourceAddress []byte `serialize:"true"`
-	Payload       []byte `serialize:"true"`
+	SourceAddress []byte `json:"sourceAddress"`
+	Payload       []byte `json:"payload"`
 
 	bytes []byte
 }
@@ -25,7 +38,14 @@ func NewAddressedCall(sourceAddress []byte, payload []byte) (*AddressedCall, err
 		SourceAddress: sourceAddress,
 		Payload:       payload,
 	}
-	return ap, initialize(ap)
+	b := zap.NewBuilder(zap.HeaderSize + acSize + len(sourceAddress) + len(payload) + 64)
+	ob := b.StartObject(acSize)
+	ob.SetUint8(acOffKind, uint8(pkindAddressedCall))
+	ob.SetBytes(acOffSource, sourceAddress)
+	ob.SetBytes(acOffPayload, payload)
+	ob.FinishAsRoot()
+	ap.initialize(b.Finish())
+	return ap, nil
 }
 
 // ParseAddressedCall converts a slice of bytes into an initialized

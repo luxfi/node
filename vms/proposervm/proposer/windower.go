@@ -5,6 +5,7 @@ package proposer
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"math/bits"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/utils"
 )
 
@@ -106,11 +106,13 @@ type windower struct {
 }
 
 func New(state validators.State, netID, chainID ids.ID) Windower {
-	w := pcodecs.Packer{Bytes: chainID[:]}
+	// chainSource seeds the per-chain PRNG for proposer selection: the first 8
+	// bytes of the chainID read little-endian (byte-for-byte the value the
+	// retired pcodecs.Packer.UnpackLong produced).
 	return &windower{
 		state:       state,
 		netID:       netID,
-		chainSource: w.UnpackLong(),
+		chainSource: binary.LittleEndian.Uint64(chainID[:8]),
 	}
 }
 

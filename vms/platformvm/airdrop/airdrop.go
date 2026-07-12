@@ -50,7 +50,7 @@ type REQLSnapshot struct {
 // AirdropClaim represents a claim on the airdrop
 type AirdropClaim struct {
 	Address        common.Address `json:"address"`
-	LuxAddress     ids.ShortID    `json:"luxAddress"`
+	UTXOAddr     ids.ShortID    `json:"utxoAddr"`
 	AmountClaimed  *big.Int       `json:"amountClaimed"`
 	ClaimTime      time.Time      `json:"claimTime"`
 	VestingEndTime time.Time      `json:"vestingEndTime"`
@@ -122,7 +122,7 @@ func (m *Manager) CheckEligibility(ethAddress common.Address) (*REQLSnapshot, er
 func (m *Manager) ClaimAirdrop(
 	ctx context.Context,
 	ethAddress common.Address,
-	luxAddress ids.ShortID,
+	utxoAddr ids.ShortID,
 	signature []byte,
 ) (*AirdropClaim, error) {
 	// Verify eligibility
@@ -132,7 +132,7 @@ func (m *Manager) ClaimAirdrop(
 	}
 
 	// Verify signature (proves ownership of ETH address)
-	if err := m.verifySignature(ethAddress, luxAddress, signature); err != nil {
+	if err := m.verifySignature(ethAddress, utxoAddr, signature); err != nil {
 		return nil, err
 	}
 
@@ -142,7 +142,7 @@ func (m *Manager) ClaimAirdrop(
 	// Create claim record
 	claim := &AirdropClaim{
 		Address:        ethAddress,
-		LuxAddress:     luxAddress,
+		UTXOAddr:     utxoAddr,
 		AmountClaimed:  snapshot.LUXAllocation,
 		ClaimTime:      time.Now(),
 		VestingEndTime: time.Now().Add(time.Duration(m.config.VestingPeriod) * time.Second),
@@ -164,7 +164,7 @@ func (m *Manager) ClaimAirdrop(
 
 	m.log.Info("Airdrop claimed",
 		"ethAddress", ethAddress.Hex(),
-		"luxAddress", luxAddress,
+		"utxoAddr", utxoAddr,
 		"amount", claim.AmountClaimed.String(),
 		"txID", txID,
 	)
@@ -261,7 +261,7 @@ func (m *Manager) saveClaim(claim *AirdropClaim) error {
 }
 
 // verifySignature verifies ownership of the Ethereum address
-func (m *Manager) verifySignature(ethAddress common.Address, luxAddress ids.ShortID, signature []byte) error {
+func (m *Manager) verifySignature(ethAddress common.Address, utxoAddr ids.ShortID, signature []byte) error {
 	// In production, implement proper signature verification
 	// to prove ownership of the Ethereum address
 	return nil

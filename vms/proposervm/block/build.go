@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func BuildUnsigned(
@@ -21,24 +20,14 @@ func BuildUnsigned(
 	epoch Epoch,
 	blockBytes []byte,
 ) (SignedBlock, error) {
-	var block SignedBlock = &statelessBlock{
-		StatelessBlock: statelessUnsignedBlock{
-			ParentID:     parentID,
-			Timestamp:    timestamp.Unix(),
-			PChainHeight: pChainHeight,
-			Epoch:        epoch,
-			Certificate:  nil,
-			Block:        blockBytes,
-		},
-		timestamp: timestamp,
-	}
+	// No certificate, no signature: the block bytes are just the unsigned body.
+	unsignedBytes := buildUnsignedBuffer(parentID, timestamp.Unix(), pChainHeight, epoch, nil, blockBytes)
 
-	bytes, err := Codec.Marshal(CodecVersion, &block)
-	if err != nil {
+	block := &statelessBlock{}
+	if err := block.initialize(unsignedBytes); err != nil {
 		return nil, err
 	}
-
-	return block, block.initialize(bytes)
+	return block, nil
 }
 
 func Build(
@@ -51,50 +40,30 @@ func Build(
 	chainID ids.ID,
 	key crypto.Signer,
 ) (SignedBlock, error) {
-	block := &statelessBlock{
-		StatelessBlock: statelessUnsignedBlock{
-			ParentID:     parentID,
-			Timestamp:    timestamp.Unix(),
-			PChainHeight: pChainHeight,
-			Epoch:        epoch,
-			Certificate:  cert.Raw,
-			Block:        blockBytes,
-		},
-		timestamp: timestamp,
-		cert:      cert,
-		proposer: ids.NodeIDFromCert(&ids.Certificate{
-			Raw:       cert.Raw,
-			PublicKey: cert.PublicKey,
-		}),
-	}
-	var blockIntf SignedBlock = block
+	unsignedBytes := buildUnsignedBuffer(parentID, timestamp.Unix(), pChainHeight, epoch, cert.Raw, blockBytes)
 
-	unsignedBytesWithEmptySignature, err := Codec.Marshal(CodecVersion, &blockIntf)
-	if err != nil {
-		return nil, err
-	}
+	// The block ID is the hash of the unsigned prefix; the proposer signs a
+	// header binding (chainID, parentID, blockID).
+	id := hash.ComputeHash256Array(unsignedBytes)
 
-	// The serialized form of the block is the unsignedBytes followed by the
-	// signature, which is prefixed by a uint32. Because we are marshalling the
-	// block with an empty signature, we only need to strip off the length
-	// prefix to get the unsigned bytes.
-	lenUnsignedBytes := len(unsignedBytesWithEmptySignature) - pcodecs.IntLen
-	unsignedBytes := unsignedBytesWithEmptySignature[:lenUnsignedBytes]
-	block.id = hash.ComputeHash256Array(unsignedBytes)
-
-	header, err := BuildHeader(chainID, parentID, block.id)
+	header, err := BuildHeader(chainID, parentID, id)
 	if err != nil {
 		return nil, err
 	}
 
 	headerHash := hash.ComputeHash256(header.Bytes())
-	block.Signature, err = key.Sign(rand.Reader, headerHash, crypto.SHA256)
+	sig, err := key.Sign(rand.Reader, headerHash, crypto.SHA256)
 	if err != nil {
 		return nil, err
 	}
 
-	block.bytes, err = Codec.Marshal(CodecVersion, &blockIntf)
-	return block, err
+	signedBytes := concat(unsignedBytes, buildSigBuffer(sig))
+
+	block := &statelessBlock{}
+	if err := block.initialize(signedBytes); err != nil {
+		return nil, err
+	}
+	return block, nil
 }
 
 func BuildHeader(
@@ -102,15 +71,12 @@ func BuildHeader(
 	parentID ids.ID,
 	bodyID ids.ID,
 ) (Header, error) {
-	header := statelessHeader{
+	return &statelessHeader{
 		Chain:  chainID,
 		Parent: parentID,
 		Body:   bodyID,
-	}
-
-	bytes, err := Codec.Marshal(CodecVersion, &header)
-	header.bytes = bytes
-	return &header, err
+		bytes:  buildHeaderBuffer(chainID, parentID, bodyID),
+	}, nil
 }
 
 // BuildOption the option block
@@ -120,15 +86,9 @@ func BuildOption(
 	parentID ids.ID,
 	innerBytes []byte,
 ) (Block, error) {
-	var block Block = &option{
-		PrntID:     parentID,
-		InnerBytes: innerBytes,
-	}
-
-	bytes, err := Codec.Marshal(CodecVersion, &block)
-	if err != nil {
+	block := &option{}
+	if err := block.initialize(buildOptionBuffer(parentID, innerBytes)); err != nil {
 		return nil, err
 	}
-
-	return block, block.initialize(bytes)
+	return block, nil
 }

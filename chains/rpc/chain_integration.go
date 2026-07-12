@@ -150,7 +150,7 @@ func (r *ChainHandlerRegistrar) ValidateEndpoint(
 	}
 
 	// Build the full URL
-	fullURL := fmt.Sprintf("/ext/%s%s", info.Base, endpoint)
+	fullURL := fmt.Sprintf("/v1/%s%s", info.Base, endpoint)
 
 	r.log.Info("Validating endpoint",
 		log.Stringer("chainID", chainID),

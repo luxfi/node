@@ -422,7 +422,7 @@ func (m *manager) GetNetworkID(chainID ids.ID) (ids.ID, error) {
 	if !ok {
 		return ids.Empty, fmt.Errorf("%q is not a blockchain", chainID)
 	}
-	return chain.ChainID, nil
+	return chain.ChainID(), nil
 }
 
 func (m *manager) GetChainID(netID ids.ID) (ids.ID, error) {

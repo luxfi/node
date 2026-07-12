@@ -9,6 +9,7 @@ import (
 	"math"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/zap"
 )
 
 var ErrNonceReservedForRemoval = errors.New("maxUint64 nonce is reserved for removal")
@@ -20,13 +21,22 @@ var ErrNonceReservedForRemoval = errors.New("maxUint64 nonce is reserved for rem
 //
 // If the P-chain is sending this message, it is reporting the current nonce and
 // weight of the validator.
+//
+// Wire: mkind u8 @0, ValidationID 32B @1, Nonce u64 @33, Weight u64 @41 = 49B.
 type L1ValidatorWeight struct {
 	payload
 
-	ValidationID ids.ID `serialize:"true" json:"validationID"`
-	Nonce        uint64 `serialize:"true" json:"nonce"`
-	Weight       uint64 `serialize:"true" json:"weight"`
+	ValidationID ids.ID `json:"validationID"`
+	Nonce        uint64 `json:"nonce"`
+	Weight       uint64 `json:"weight"`
 }
+
+const (
+	vwOffValidationID = 1
+	vwOffNonce        = 33
+	vwOffWeight       = 41
+	vwSize            = 49
+)
 
 func (s *L1ValidatorWeight) Verify() error {
 	if s.Nonce == math.MaxUint64 && s.Weight != 0 {
@@ -46,7 +56,23 @@ func NewL1ValidatorWeight(
 		Nonce:        nonce,
 		Weight:       weight,
 	}
-	return msg, Initialize(msg)
+	b := zap.NewBuilder(zap.HeaderSize + vwSize)
+	ob := b.StartObject(vwSize)
+	ob.SetUint8(offMKind, uint8(mkindL1ValidatorWeight))
+	ob.SetBytesFixed(vwOffValidationID, validationID[:])
+	ob.SetUint64(vwOffNonce, nonce)
+	ob.SetUint64(vwOffWeight, weight)
+	ob.FinishAsRoot()
+	msg.initialize(b.Finish())
+	return msg, nil
+}
+
+func parseL1ValidatorWeight(root zap.Object) *L1ValidatorWeight {
+	return &L1ValidatorWeight{
+		ValidationID: readID(root, vwOffValidationID),
+		Nonce:        root.Uint64(vwOffNonce),
+		Weight:       root.Uint64(vwOffWeight),
+	}
 }
 
 // ParseL1ValidatorWeight parses bytes into an initialized L1ValidatorWeight.

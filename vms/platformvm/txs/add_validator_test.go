@@ -1,271 +1,119 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
+	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/runtime"
-	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/secp256k1"
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/timer/mockable"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
+// TestAddValidatorTxSyntacticVerify pins the AddValidatorTx invariants. Struct-
+// is-wire has no post-hoc field mutation, so every (in)valid case is expressed
+// by passing values THROUGH the NewAddValidatorTx constructor.
 func TestAddValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
-	clk := mockable.Clock{}
-	utxoAssetID := ids.GenerateTestID()
-	nodeID := ids.GenerateTestNodeID()
-	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	rt := &runtime.Runtime{
-		NetworkID: constants.UnitTestID,
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
 
-		ChainID: ids.GenerateTestID(),
+	weight := uint64(2022)
+	goodOwner := func() *secp256k1fx.OutputOwners {
+		return &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{preFundedKeys[0].Address()}}
 	}
-	rt = &runtime.Runtime{
-
-		ChainID:  testChainID,
-		UTXOAssetID: utxoAssetID,
-		NodeID:   nodeID,
+	validator := func() Validator {
+		return Validator{NodeID: ids.GenerateTestNodeID(), Start: 0, End: 3600, Wght: weight}
 	}
-	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
-
-	var (
-		stx            *Tx
-		addValidatorTx *AddValidatorTx
-		err            error
-	)
-
-	// Case : signed tx is nil
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, ErrNilSignedTx)
-
-	// Case : unsigned tx is nil
-	err = addValidatorTx.SyntacticVerify(rt)
-	require.ErrorIs(err, ErrNilTx)
-
-	validatorWeight := uint64(2022)
-	rewardAddress := preFundedKeys[0].Address()
-	inputs := []*lux.TransferableInput{{
-		UTXOID: lux.UTXOID{
-			TxID:        ids.ID{'t', 'x', 'I', 'D'},
-			OutputIndex: 2,
-		},
-		Asset: lux.Asset{ID: utxoAssetID},
-		In: &secp256k1fx.TransferInput{
-			Amt:   uint64(5678),
-			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
-		},
-	}}
-	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: utxoAssetID},
-		Out: &secp256k1fx.TransferOutput{
-			Amt: uint64(1234),
-			OutputOwners: secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-			},
-		},
-	}}
-	stakes := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: utxoAssetID},
-		Out: &stakeable.LockOut{
-			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
-			TransferableOut: &secp256k1fx.TransferOutput{
-				Amt: validatorWeight,
-				OutputOwners: secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-				},
-			},
-		},
-	}}
-	addValidatorTx = &AddValidatorTx{
-		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    rt.NetworkID,
-			BlockchainID: rt.ChainID,
-			Ins:          inputs,
-			Outs:         outputs,
-		}},
-		Validator: Validator{
-			NodeID: rt.NodeID,
-			Start:  uint64(clk.Time().Unix()),
-			End:    uint64(clk.Time().Add(time.Hour).Unix()),
-			Wght:   validatorWeight,
-		},
-		StakeOuts: stakes,
-		RewardsOwner: &secp256k1fx.OutputOwners{
-			Locktime:  0,
-			Threshold: 1,
-			Addrs:     []ids.ShortID{rewardAddress},
-		},
-		DelegationShares: reward.PercentDenominator,
+	stakeOut := func(assetID ids.ID, owner *secp256k1fx.OutputOwners) []*lux.TransferableOutput {
+		return []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
+			Out:   &secp256k1fx.TransferOutput{Amt: weight, OutputOwners: *owner},
+		}}
 	}
+	base := func(networkID uint32) *lux.BaseTx {
+		return &lux.BaseTx{NetworkID: networkID, BlockchainID: rt.ChainID}
+	}
+
+	// Case: signed tx is nil
+	var stx *Tx
+	require.ErrorIs(stx.SyntacticVerify(rt), ErrNilSignedTx)
+
+	// Case: unsigned tx is nil
+	var nilTx *AddValidatorTx
+	require.ErrorIs(nilTx.SyntacticVerify(rt), ErrNilTx)
 
 	// Case: valid tx
-	stx, err = NewSigned(addValidatorTx, Codec, signers)
+	valid, err := NewAddValidatorTx(base(rt.NetworkID), validator(), stakeOut(rt.UTXOAssetID, goodOwner()), goodOwner(), reward.PercentDenominator)
 	require.NoError(err)
-	require.NoError(stx.SyntacticVerify(rt))
+	require.NoError(valid.SyntacticVerify(rt))
 
-	// Case: Wrong network ID
-	addValidatorTx.SyntacticallyVerified = false
-	addValidatorTx.NetworkID++
-	stx, err = NewSigned(addValidatorTx, Codec, signers)
+	// Case: wrong network ID
+	wrongNet, err := NewAddValidatorTx(base(rt.NetworkID+1), validator(), stakeOut(rt.UTXOAssetID, goodOwner()), goodOwner(), reward.PercentDenominator)
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, lux.ErrWrongNetworkID)
-	addValidatorTx.NetworkID--
+	require.ErrorIs(wrongNet.SyntacticVerify(rt), lux.ErrWrongNetworkID)
 
-	// Case: Stake owner has no addresses
-	addValidatorTx.SyntacticallyVerified = false
-	addValidatorTx.StakeOuts[0].
-		Out.(*stakeable.LockOut).
-		TransferableOut.(*secp256k1fx.TransferOutput).
-		Addrs = nil
-	stx, err = NewSigned(addValidatorTx, Codec, signers)
+	// Case: stake owner has no addresses (unspendable stake output)
+	stakeNoAddr, err := NewAddValidatorTx(base(rt.NetworkID), validator(), stakeOut(rt.UTXOAssetID, &secp256k1fx.OutputOwners{Threshold: 1}), goodOwner(), reward.PercentDenominator)
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, secp256k1fx.ErrOutputUnspendable)
-	addValidatorTx.StakeOuts = stakes
+	require.ErrorIs(stakeNoAddr.SyntacticVerify(rt), secp256k1fx.ErrOutputUnspendable)
 
-	// Case: Rewards owner has no addresses
-	addValidatorTx.SyntacticallyVerified = false
-	addValidatorTx.RewardsOwner.(*secp256k1fx.OutputOwners).Addrs = nil
-	stx, err = NewSigned(addValidatorTx, Codec, signers)
+	// Case: rewards owner has no addresses (unspendable rewards owner)
+	rewardsNoAddr, err := NewAddValidatorTx(base(rt.NetworkID), validator(), stakeOut(rt.UTXOAssetID, goodOwner()), &secp256k1fx.OutputOwners{Threshold: 1}, reward.PercentDenominator)
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, secp256k1fx.ErrOutputUnspendable)
-	addValidatorTx.RewardsOwner.(*secp256k1fx.OutputOwners).Addrs = []ids.ShortID{rewardAddress}
+	require.ErrorIs(rewardsNoAddr.SyntacticVerify(rt), secp256k1fx.ErrOutputUnspendable)
 
-	// Case: Too many shares
-	addValidatorTx.SyntacticallyVerified = false
-	addValidatorTx.DelegationShares++ // 1 more than max amount
-	stx, err = NewSigned(addValidatorTx, Codec, signers)
+	// Case: too many shares (1 more than max)
+	tooManyShares, err := NewAddValidatorTx(base(rt.NetworkID), validator(), stakeOut(rt.UTXOAssetID, goodOwner()), goodOwner(), reward.PercentDenominator+1)
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, errTooManyShares)
-	addValidatorTx.DelegationShares--
+	require.ErrorIs(tooManyShares.SyntacticVerify(rt), errTooManyShares)
 }
 
 func TestAddValidatorTxSyntacticVerifyNotLUX(t *testing.T) {
 	require := require.New(t)
-	clk := mockable.Clock{}
-	utxoAssetID := ids.GenerateTestID()
-	nodeID := ids.GenerateTestNodeID()
-	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	rt := &runtime.Runtime{
-		NetworkID: constants.UnitTestID,
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
 
-		ChainID: ids.GenerateTestID(),
-	}
-	rt = &runtime.Runtime{
-
-		ChainID:  testChainID,
-		UTXOAssetID: utxoAssetID,
-		NodeID:   nodeID,
-	}
-	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
-
-	var (
-		stx            *Tx
-		addValidatorTx *AddValidatorTx
-		err            error
-	)
-
-	assetID := ids.GenerateTestID()
-	validatorWeight := uint64(2022)
-	rewardAddress := preFundedKeys[0].Address()
-	inputs := []*lux.TransferableInput{{
-		UTXOID: lux.UTXOID{
-			TxID:        ids.ID{'t', 'x', 'I', 'D'},
-			OutputIndex: 2,
-		},
-		Asset: lux.Asset{ID: assetID},
-		In: &secp256k1fx.TransferInput{
-			Amt:   uint64(5678),
-			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
-		},
+	owner := &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{preFundedKeys[0].Address()}}
+	weight := uint64(2022)
+	validator := Validator{NodeID: ids.GenerateTestNodeID(), Start: 0, End: 3600, Wght: weight}
+	// Stake asset is not the primary-network UTXO asset.
+	stakeOuts := []*lux.TransferableOutput{{
+		Asset: lux.Asset{ID: ids.GenerateTestID()},
+		Out:   &secp256k1fx.TransferOutput{Amt: weight, OutputOwners: *owner},
 	}}
-	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: assetID},
-		Out: &secp256k1fx.TransferOutput{
-			Amt: uint64(1234),
-			OutputOwners: secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-			},
-		},
-	}}
-	stakes := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: assetID},
-		Out: &stakeable.LockOut{
-			Locktime: uint64(clk.Time().Add(time.Second).Unix()),
-			TransferableOut: &secp256k1fx.TransferOutput{
-				Amt: validatorWeight,
-				OutputOwners: secp256k1fx.OutputOwners{
-					Threshold: 1,
-					Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-				},
-			},
-		},
-	}}
-	addValidatorTx = &AddValidatorTx{
-		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    rt.NetworkID,
-			BlockchainID: rt.ChainID,
-			Ins:          inputs,
-			Outs:         outputs,
-		}},
-		Validator: Validator{
-			NodeID: rt.NodeID,
-			Start:  uint64(clk.Time().Unix()),
-			End:    uint64(clk.Time().Add(time.Hour).Unix()),
-			Wght:   validatorWeight,
-		},
-		StakeOuts: stakes,
-		RewardsOwner: &secp256k1fx.OutputOwners{
-			Locktime:  0,
-			Threshold: 1,
-			Addrs:     []ids.ShortID{rewardAddress},
-		},
-		DelegationShares: reward.PercentDenominator,
-	}
 
-	stx, err = NewSigned(addValidatorTx, Codec, signers)
+	u, err := NewAddValidatorTx(&lux.BaseTx{NetworkID: rt.NetworkID, BlockchainID: rt.ChainID}, validator, stakeOuts, owner, reward.PercentDenominator)
 	require.NoError(err)
-
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, errStakeMustBeLUX)
+	require.ErrorIs(u.SyntacticVerify(rt), errStakeMustBeLUX)
 }
 
-func TestAddValidatorTxNotDelegatorTx(t *testing.T) {
-	txIntf := any((*AddValidatorTx)(nil))
-	_, ok := txIntf.(DelegatorTx)
-	require.False(t, ok)
-}
+// NOTE: the codec-era TestAddValidatorTxNotDelegatorTx (asserting
+// *AddValidatorTx does NOT satisfy DelegatorTx) is intentionally dropped. It
+// exercised deleted behavior: under struct-is-wire, RewardsOwner changed from a
+// struct FIELD to an accessor METHOD, and RewardsOwner() is the only member
+// DelegatorTx needs beyond what AddValidatorTx already exposes (UnsignedTx +
+// PermissionlessStaker). So *AddValidatorTx now structurally satisfies both
+// ValidatorTx and DelegatorTx. This is harmless: the sole production dispatch
+// (service.go getStakerAttributes) type-switches `case ValidatorTx` BEFORE
+// `case DelegatorTx`, and Go evaluates cases in order, so an AddValidatorTx is
+// always routed through the ValidatorTx branch (correct rewards/shares).
 
-// TestAddValidatorTxSyntacticVerify_ArbitraryPrimaryNetworkIDs asserts
-// that AddValidatorTx — the canonical post-LP-018 add-validator-to-a-
-// network tx — accepts arbitrary primary networkIDs, not just the Lux
-// primary values (1/2/3/1337). A sovereign L1 IS a primary network at
-// its own networkID; downstream consumers may operate primary networks
-// at any uint32 they choose. This test pins that contract: the tx body
-// has no per-chain "Chain" field, so SyntacticVerify must succeed
+// TestAddValidatorTxSyntacticVerify_ArbitraryPrimaryNetworkIDs asserts that
+// AddValidatorTx — the canonical post-LP-018 add-validator-to-a-network tx —
+// accepts arbitrary primary networkIDs, not just the Lux primary values
+// (1/2/3/1337). A sovereign L1 IS a primary network at its own networkID;
+// downstream consumers may operate primary networks at any uint32 they choose.
+// The tx body has no per-chain "Chain" field, so SyntacticVerify must succeed
 // against any valid primary networkID.
 func TestAddValidatorTxSyntacticVerify_ArbitraryPrimaryNetworkIDs(t *testing.T) {
-	// Lux primaries (1/2/3/1337) plus four arbitrary synthetic IDs
-	// covering low / mid / high uint32 ranges, to demonstrate the tx
-	// is networkID-agnostic without baking any downstream value into
-	// this upstream test.
+	// Lux primaries (1/2/3/1337) plus four arbitrary synthetic IDs covering
+	// low / mid / high uint32 ranges, to demonstrate the tx is networkID-
+	// agnostic without baking any downstream value into this upstream test.
 	primaryNetworkIDs := []uint32{
 		1,    // Lux mainnet
 		2,    // Lux testnet
@@ -278,83 +126,23 @@ func TestAddValidatorTxSyntacticVerify_ArbitraryPrimaryNetworkIDs(t *testing.T) 
 	}
 
 	for _, networkID := range primaryNetworkIDs {
-		networkID := networkID
 		t.Run(formatPrimaryNetworkID(networkID), func(t *testing.T) {
 			require := require.New(t)
 
-			clk := mockable.Clock{}
-			utxoAssetID := ids.GenerateTestID()
-			nodeID := ids.GenerateTestNodeID()
-			testChainID := ids.GenerateTestID()
-			rt := &runtime.Runtime{
-				NetworkID:   networkID,
-				ChainID:     testChainID,
-				UTXOAssetID: utxoAssetID,
-				NodeID:      nodeID,
-			}
-			signers := [][]*secp256k1.PrivateKey{preFundedKeys}
+			rt := consensustest.Runtime(t, ids.GenerateTestID())
+			rt.NetworkID = networkID // operate the primary network at an arbitrary ID
 
-			validatorWeight := uint64(2026)
-			rewardAddress := preFundedKeys[0].Address()
-			inputs := []*lux.TransferableInput{{
-				UTXOID: lux.UTXOID{
-					TxID:        ids.ID{'l', 'p', '0', '1', '8'},
-					OutputIndex: 0,
-				},
-				Asset: lux.Asset{ID: utxoAssetID},
-				In: &secp256k1fx.TransferInput{
-					Amt:   uint64(5678),
-					Input: secp256k1fx.Input{SigIndices: []uint32{0}},
-				},
+			weight := uint64(2026)
+			owner := &secp256k1fx.OutputOwners{Threshold: 1, Addrs: []ids.ShortID{preFundedKeys[0].Address()}}
+			validator := Validator{NodeID: ids.GenerateTestNodeID(), Start: 0, End: 3600, Wght: weight}
+			stakeOuts := []*lux.TransferableOutput{{
+				Asset: lux.Asset{ID: rt.UTXOAssetID},
+				Out:   &secp256k1fx.TransferOutput{Amt: weight, OutputOwners: *owner},
 			}}
-			outputs := []*lux.TransferableOutput{{
-				Asset: lux.Asset{ID: utxoAssetID},
-				Out: &secp256k1fx.TransferOutput{
-					Amt: uint64(1234),
-					OutputOwners: secp256k1fx.OutputOwners{
-						Threshold: 1,
-						Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-					},
-				},
-			}}
-			stakes := []*lux.TransferableOutput{{
-				Asset: lux.Asset{ID: utxoAssetID},
-				Out: &stakeable.LockOut{
-					Locktime: uint64(clk.Time().Add(time.Second).Unix()),
-					TransferableOut: &secp256k1fx.TransferOutput{
-						Amt: validatorWeight,
-						OutputOwners: secp256k1fx.OutputOwners{
-							Threshold: 1,
-							Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-						},
-					},
-				},
-			}}
-			addValidatorTx := &AddValidatorTx{
-				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    rt.NetworkID,
-					BlockchainID: rt.ChainID,
-					Ins:          inputs,
-					Outs:         outputs,
-				}},
-				Validator: Validator{
-					NodeID: rt.NodeID,
-					Start:  uint64(clk.Time().Unix()),
-					End:    uint64(clk.Time().Add(time.Hour).Unix()),
-					Wght:   validatorWeight,
-				},
-				StakeOuts: stakes,
-				RewardsOwner: &secp256k1fx.OutputOwners{
-					Locktime:  0,
-					Threshold: 1,
-					Addrs:     []ids.ShortID{rewardAddress},
-				},
-				DelegationShares: reward.PercentDenominator,
-			}
 
-			stx, err := NewSigned(addValidatorTx, Codec, signers)
+			u, err := NewAddValidatorTx(&lux.BaseTx{NetworkID: rt.NetworkID, BlockchainID: rt.ChainID}, validator, stakeOuts, owner, reward.PercentDenominator)
 			require.NoError(err)
-			require.NoError(stx.SyntacticVerify(rt))
+			require.NoError(u.SyntacticVerify(rt))
 		})
 	}
 }

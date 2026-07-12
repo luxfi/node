@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/chain/p/signer"
 	"github.com/luxfi/node/wallet/chain/p/wallet"
@@ -118,8 +117,7 @@ func NewWalletWithOptions(
 			}
 
 			for _, utxoBytes := range atomicUTXOs {
-				var utxo lux.UTXO
-				_, err := txs.Codec.Unmarshal(utxoBytes, &utxo)
+				utxo, err := lux.ParseUTXO(utxoBytes)
 				if err != nil {
 					continue // Skip malformed UTXOs
 				}
@@ -128,7 +126,7 @@ func NewWalletWithOptions(
 					context.Background(),
 					sourceChainID,
 					constants.PlatformChainID,
-					&utxo,
+					utxo,
 				))
 			}
 		}
@@ -145,13 +143,9 @@ func NewWalletWithOptions(
 		l1Validator, err := state.GetL1Validator(validationID)
 		require.NoError(err)
 
-		var owner message.PChainOwner
-		_, err = txs.Codec.Unmarshal(l1Validator.DeactivationOwner, &owner)
+		owner, err := txs.UnmarshalOwner(l1Validator.DeactivationOwner)
 		require.NoError(err)
-		owners[validationID] = &secp256k1fx.OutputOwners{
-			Threshold: owner.Threshold,
-			Addrs:     owner.Addresses,
-		}
+		owners[validationID] = owner
 	}
 
 	backend := wallet.NewBackend(

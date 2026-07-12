@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/zap"
 )
 
 func TestMessage(t *testing.T) {
@@ -25,7 +25,7 @@ func TestMessage(t *testing.T) {
 		payload,
 	)
 	require.NoError(err)
-	require.Len(unsignedMsg.Bytes(), 42+len(payload))
+	require.Len(unsignedMsg.Bytes(), zap.HeaderSize+umSize+len(payload)) // header + object (incl. inline bytes-ptr) + payload blob
 
 	msg, err := NewMessage(
 		unsignedMsg,
@@ -47,5 +47,5 @@ func TestParseMessageJunk(t *testing.T) {
 
 	bytes := []byte{0, 1, 2, 3, 4, 5, 6, 7}
 	_, err := ParseMessage(bytes)
-	require.ErrorIs(err, pcodecs.ErrUnknownVersion)
+	require.ErrorIs(err, zap.ErrBufferTooSmall)
 }

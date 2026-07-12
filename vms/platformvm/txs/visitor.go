@@ -9,6 +9,7 @@ type Visitor interface {
 	AddChainValidatorTx(*AddChainValidatorTx) error
 	AddDelegatorTx(*AddDelegatorTx) error
 	CreateNetworkTx(*CreateNetworkTx) error
+	ConvertNetworkTx(*ConvertNetworkTx) error
 	CreateChainTx(*CreateChainTx) error
 	ImportTx(*ImportTx) error
 	ExportTx(*ExportTx) error
@@ -23,24 +24,8 @@ type Visitor interface {
 	TransferChainOwnershipTx(*TransferChainOwnershipTx) error
 	BaseTx(*BaseTx) error
 
-	ConvertNetworkToL1Tx(*ConvertNetworkToL1Tx) error
-	// CreateSovereignL1Tx atomically registers a new sovereign L1
-	// (network + genesis validators + chain manifest + manager-contract
-	// handoff) in one tx. The single-step alternative to the legacy
-	// CreateNetworkTx + AddChainValidatorTx ×N + CreateChainTx ×K +
-	// ConvertNetworkToL1Tx flow. After commit, the primary network
-	// neither track-chains nor validates the L1's blocks — the L1's
-	// own validators run their own consensus from genesis.
-	CreateSovereignL1Tx(*CreateSovereignL1Tx) error
 	RegisterL1ValidatorTx(*RegisterL1ValidatorTx) error
 	SetL1ValidatorWeightTx(*SetL1ValidatorWeightTx) error
 	IncreaseL1ValidatorBalanceTx(*IncreaseL1ValidatorBalanceTx) error
 	DisableL1ValidatorTx(*DisableL1ValidatorTx) error
-
-	SlashValidatorTx(*SlashValidatorTx) error
-
-	// P-only primary network — historically X-Chain
-	// (kept on PlatformVM, opt-in for X-Chain when present):
-	CreateAssetTx(*CreateAssetTx) error
-	OperationTx(*OperationTx) error
 }

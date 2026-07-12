@@ -176,3 +176,45 @@ func wrapOutput(b []byte, tk wire.TypeKind, sk wire.ShapeKind) (verify.State, er
 	}
 	return nil, fmt.Errorf("zap utxo dispatch: unknown (TypeKind=0x%02x, ShapeKind=0x%02x)", tk, sk)
 }
+
+// wrapInputBytes is the input-side counterpart of wrapOutput: it
+// reconstructs a TransferableIn from its fx wire envelope, dispatching on
+// the (TypeKind, ShapeKind) discriminator. Each branch calls exactly one
+// fx-package WrapTransferInput / WrapAttestationInput — the fx primitive
+// owns its own wire; components/lux stays fx-agnostic. Used by
+// TransferableInput.Unmarshal.
+func wrapInputBytes(b []byte) (TransferableIn, error) {
+	tk, sk, err := wire.PeekDiscriminator(b)
+	if err != nil {
+		return nil, fmt.Errorf("peek input discriminator: %w", err)
+	}
+	switch tk {
+	case wire.TypeKindSecp256k1:
+		if sk == wire.ShapeKindTransferInput {
+			return secp256k1fx.WrapTransferInput(b)
+		}
+	case wire.TypeKindMLDSA:
+		if sk == wire.ShapeKindTransferInput {
+			return mldsafx.WrapTransferInput(b)
+		}
+	case wire.TypeKindSLHDSA:
+		if sk == wire.ShapeKindTransferInput {
+			return slhdsafx.WrapTransferInput(b)
+		}
+	case wire.TypeKindEd25519:
+		if sk == wire.ShapeKindTransferInput {
+			return ed25519fx.WrapTransferInput(b)
+		}
+	case wire.TypeKindSecp256r1:
+		if sk == wire.ShapeKindTransferInput {
+			return secp256r1fx.WrapTransferInput(b)
+		}
+	case wire.TypeKindSchnorr:
+		if sk == wire.ShapeKindTransferInput {
+			return schnorrfx.WrapTransferInput(b)
+		}
+	}
+	// bls12381fx attestations are not value-transfer inputs (no Amount),
+	// so they never appear as a TransferableIn.
+	return nil, fmt.Errorf("zap input dispatch: unknown (TypeKind=0x%02x, ShapeKind=0x%02x)", tk, sk)
+}

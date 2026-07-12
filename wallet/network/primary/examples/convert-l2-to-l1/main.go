@@ -15,12 +15,14 @@ import (
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/vms/platformvm/security"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/warp/message"
 	"github.com/luxfi/node/wallet/network/primary"
 	"github.com/luxfi/node/wallet/network/primary/examples/keyutil"
 	"github.com/luxfi/sdk/info"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -89,27 +91,38 @@ func main() {
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
 	convertNetToL1StartTime := time.Now()
-	convertNetToL1Tx, err := wallet.P().IssueConvertNetworkToL1Tx(
-		netID,
-		chainID,
-		address,
-		[]*txs.ConvertNetworkToL1Validator{
-			{
-				NodeID:                nodeID[:],
-				Weight:                weight,
-				Balance:               constants.Lux,
-				Signer:                *pop,
-				RemainingBalanceOwner: message.PChainOwner{},
-				DeactivationOwner:     message.PChainOwner{},
-			},
+	// NOTE: The P-Chain wallet builder does not expose a ConvertNetwork issue
+	// path — the legacy ConvertNetworkToL1Tx (and its wallet Issue method) was
+	// removed in the native-ZAP migration. This example now constructs the
+	// unsigned promote tx directly via the native txs constructor to document
+	// the new shape; a runnable flow needs a wallet builder that sources a
+	// funded *lux.BaseTx (UTXO selection) and signs it.
+	_ = wallet
+	sec := security.Mode{Admission: security.Gated, Manager: security.PChain}
+	validators := []*txs.NetworkValidator{
+		{
+			NodeID:  nodeID[:],
+			Weight:  weight,
+			Balance: constants.Lux,
+			Signer:  *pop,
 		},
+	}
+	convertNetTx, err := txs.NewConvertNetworkTx(
+		&lux.BaseTx{},
+		netID,                      // network being promoted
+		constants.PrimaryNetworkID, // new parent (L1 ⇐ Primary)
+		chainID,                    // chain hosting the manager
+		sec,
+		address,
+		validators,
+		&secp256k1fx.Input{}, // existing-owner authorization (unsigned here)
 	)
 	if err != nil {
-		log.Fatalf("failed to issue net conversion transaction: %s\n", err)
+		log.Fatalf("failed to build convert network tx: %s\n", err)
 	}
-	log.Printf("converted net %s with transactionID %s, validationID %s, and conversionID %s in %s\n",
+	log.Printf("built unsigned convert-network tx (%d bytes) promoting net %s, validationID %s, conversionID %s in %s\n",
+		len(convertNetTx.Bytes()),
 		netID,
-		convertNetToL1Tx.ID(),
 		validationID,
 		conversionID,
 		time.Since(convertNetToL1StartTime),

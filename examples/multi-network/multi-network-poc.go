@@ -75,9 +75,9 @@ func NewMultiNetworkNode() *MultiNetworkNode {
 
 // StartRPCServer starts the unified RPC server
 func (n *MultiNetworkNode) StartRPCServer(port int) {
-	http.HandleFunc("/ext/crossnet/status", n.handleCrossNetStatus)
-	http.HandleFunc("/ext/crossnet/validators", n.handleCrossNetValidators)
-	http.HandleFunc("/ext/network/", n.handleNetworkSpecific)
+	http.HandleFunc("/v1/crossnet/status", n.handleCrossNetStatus)
+	http.HandleFunc("/v1/crossnet/validators", n.handleCrossNetValidators)
+	http.HandleFunc("/v1/network/", n.handleNetworkSpecific)
 
 	fmt.Printf("🌐 Multi-Network RPC Server starting on port %d\n", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
@@ -172,7 +172,7 @@ func (n *MultiNetworkNode) handleCrossNetValidators(w http.ResponseWriter, r *ht
 
 // handleNetworkSpecific routes to network-specific handlers
 func (n *MultiNetworkNode) handleNetworkSpecific(w http.ResponseWriter, r *http.Request) {
-	// Parse network ID from path: /ext/network/{networkID}/...
+	// Parse network ID from path: /v1/network/{networkID}/...
 	// This would route to the appropriate network's chain manager
 
 	response := fmt.Sprintf(`{
@@ -251,9 +251,9 @@ func main() {
 	}
 
 	fmt.Println("\n🌐 Starting Multi-Network RPC Server...")
-	fmt.Println("  • Cross-network status: http://localhost:9650/ext/crossnet/status")
-	fmt.Println("  • Cross-network validators: http://localhost:9650/ext/crossnet/validators")
-	fmt.Println("  • Network-specific: http://localhost:9650/ext/network/{networkID}/...")
+	fmt.Println("  • Cross-network status: http://localhost:9650/v1/crossnet/status")
+	fmt.Println("  • Cross-network validators: http://localhost:9650/v1/crossnet/validators")
+	fmt.Println("  • Network-specific: http://localhost:9650/v1/network/{networkID}/...")
 
 	// This would be replaced with actual RPC server
 	node.StartRPCServer(9650)

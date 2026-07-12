@@ -1,20 +1,19 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
 	"context"
-
-	"github.com/luxfi/runtime"
-
 	"errors"
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
-	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/zap"
 )
 
 var (
@@ -23,56 +22,86 @@ var (
 	ErrTransferPermissionlessChain = errors.New("cannot transfer ownership of a permissionless chain")
 )
 
+// TransferChainOwnershipTx re-owns a chain. The struct IS the wire: it embeds
+// the spending envelope and reads its delta fields by offset.
+//
+// Delta layout (fixed section, after the 77-byte spending envelope):
+//
+//	Chain           32B @ 77   (id)
+//	ChainAuth       8B  @ 109  (auth ptr: sig-index list)
+//	Owner.Threshold u32 @ 117
+//	Owner.Locktime  u64 @ 121
+//	Owner.Addrs     8B  @ 129  (addr list ptr)
 type TransferChainOwnershipTx struct {
-	// Metadata, inputs and outputs
-	BaseTx `serialize:"true"`
-	// ID of the chain this tx is modifying
-	Chain ids.ID `serialize:"true" json:"chainID"`
-	// Proves that the issuer has the right to modify the chain.
-	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
-	// Who is now authorized to manage this chain
-	Owner fx.Owner `serialize:"true" json:"newOwner"`
+	spendingTx
 }
 
-// InitRuntime sets the FxID fields in the inputs and outputs of this
-// [TransferChainOwnershipTx]. Also sets the [rt] to the given [vm.rt] so
-// that the addresses can be json marshalled into human readable format
-func (tx *TransferChainOwnershipTx) InitRuntime(rt *runtime.Runtime) {
-	tx.BaseTx.InitRuntime(rt)
-	// Owner doesn't have InitRuntime method
-	if owner, ok := tx.Owner.(*secp256k1fx.OutputOwners); ok {
-		owner.InitRuntime(rt)
+const (
+	offTransferChain           = spendSize // 77
+	offTransferChainAuth       = 109
+	offTransferOwnerThreshold  = 117
+	offTransferOwnerLocktime   = 121
+	offTransferOwnerAddrs      = 129
+	sizeTransferChainOwnership = 137
+)
+
+// NewTransferChainOwnershipTx builds the tx into a fresh zap buffer.
+func NewTransferChainOwnershipTx(base *lux.BaseTx, chain ids.ID, chainAuth verify.Verifiable, owner fx.Owner) (*TransferChainOwnershipTx, error) {
+	b := zap.NewBuilder(zap.HeaderSize + 512 + sizeTransferChainOwnership)
+	p, err := writeSpending(b, base)
+	if err != nil {
+		return nil, err
 	}
+	authOff, authCount, err := writeAuth(b, chainAuth)
+	if err != nil {
+		return nil, err
+	}
+	threshold, locktime, addrOff, addrCount, err := writeOwner(b, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	ob := b.StartObject(sizeTransferChainOwnership)
+	setEnvelope(ob, kindTransferChainOwnership, base, p)
+	setID(ob, offTransferChain, chain)
+	ob.SetList(offTransferChainAuth, authOff, authCount)
+	setOwner(ob, offTransferOwnerThreshold, offTransferOwnerLocktime, offTransferOwnerAddrs, threshold, locktime, addrOff, addrCount)
+	ob.FinishAsRoot()
+
+	msg, _ := zap.Parse(b.Finish())
+	return &TransferChainOwnershipTx{spendingTx{msg}}, nil
+}
+
+// Chain is the ID of the chain this tx is modifying (offset read).
+func (tx *TransferChainOwnershipTx) Chain() ids.ID { return readID(tx.root(), offTransferChain) }
+
+// ChainAuth proves the issuer has the right to modify the chain.
+func (tx *TransferChainOwnershipTx) ChainAuth() verify.Verifiable {
+	return readAuth(tx.root(), offTransferChainAuth)
+}
+
+// Owner is who is now authorized to manage this chain.
+func (tx *TransferChainOwnershipTx) Owner() fx.Owner {
+	return readOwner(tx.root(), offTransferOwnerThreshold, offTransferOwnerLocktime, offTransferOwnerAddrs)
 }
 
 func (tx *TransferChainOwnershipTx) SyntacticVerify(rt *runtime.Runtime) error {
 	switch {
 	case tx == nil:
 		return ErrNilTx
-	case tx.SyntacticallyVerified:
-		// already passed syntactic verification
-		return nil
-	case tx.Chain == constants.PrimaryNetworkID:
+	case tx.Chain() == constants.PrimaryNetworkID:
 		return ErrTransferPermissionlessChain
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
+	if err := verifyBaseTx(tx.baseTx(), rt); err != nil {
 		return err
 	}
-	if err := verify.All(tx.ChainAuth, tx.Owner); err != nil {
-		return err
-	}
-
-	tx.SyntacticallyVerified = true
-	return nil
+	return verify.All(tx.ChainAuth(), tx.Owner())
 }
 
 func (tx *TransferChainOwnershipTx) Visit(visitor Visitor) error {
 	return visitor.TransferChainOwnershipTx(tx)
 }
 
-// InitializeWithRuntime initializes the transaction with Runtime
-func (tx *TransferChainOwnershipTx) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
-	return nil
-}
+// Initialize is a no-op; the struct is already the wire.
+func (tx *TransferChainOwnershipTx) Initialize(ctx context.Context) error { return nil }

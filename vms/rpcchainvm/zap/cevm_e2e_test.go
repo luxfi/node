@@ -175,7 +175,7 @@ func TestCEvm_DialsZAPdbServer(t *testing.T) {
 		CChainID:     make([]byte, 32),
 		UTXOAssetID:  make([]byte, 32),
 		ChainDataDir: tmpDir,
-		GenesisBytes: []byte(`{"config":{"chainId":96369},"alloc":{}}`),
+		GenesisBytes: []byte(`{"config":{"chainId":96369},"gasLimit":"0x1312d00","difficulty":"0x0","alloc":{}}`),
 		UpgradeBytes: nil,
 		ConfigBytes:  nil,
 		DBServerAddr: dbAddr,

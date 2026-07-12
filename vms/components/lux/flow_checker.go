@@ -8,14 +8,13 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
-	"github.com/luxfi/node/vms/pcodecs"
 )
 
 var ErrInsufficientFunds = errors.New("insufficient funds")
 
 type FlowChecker struct {
 	consumed, produced map[ids.ID]uint64
-	errs               pcodecs.Errs
+	errs               []error
 }
 
 func NewFlowChecker() *FlowChecker {
@@ -36,18 +35,20 @@ func (fc *FlowChecker) Produce(assetID ids.ID, amount uint64) {
 func (fc *FlowChecker) add(value map[ids.ID]uint64, assetID ids.ID, amount uint64) {
 	var err error
 	value[assetID], err = math.Add64(value[assetID], amount)
-	fc.errs.Add(err)
+	if err != nil {
+		fc.errs = append(fc.errs, err)
+	}
 }
 
 func (fc *FlowChecker) Verify() error {
-	if !fc.errs.Errored() {
+	if len(fc.errs) == 0 {
 		for assetID, producedAssetAmount := range fc.produced {
 			consumedAssetAmount := fc.consumed[assetID]
 			if producedAssetAmount > consumedAssetAmount {
-				fc.errs.Add(ErrInsufficientFunds)
+				fc.errs = append(fc.errs, ErrInsufficientFunds)
 				break
 			}
 		}
 	}
-	return fc.errs.Err
+	return errors.Join(fc.errs...)
 }

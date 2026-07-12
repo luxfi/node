@@ -1,229 +1,93 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/runtime"
-
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	lux "github.com/luxfi/utxo"
-	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
-// Note: Consider refactoring to use table tests for better test organization
+// TestAddChainValidatorTxSyntacticVerify pins the (deprecated) per-chain
+// validator-registration invariants. Every (in)valid case is expressed by
+// passing values THROUGH the NewAddChainValidatorTx constructor.
 func TestAddChainValidatorTxSyntacticVerify(t *testing.T) {
 	require := require.New(t)
-	clk := mockable.Clock{}
-	nodeID := ids.GenerateTestNodeID()
-	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	rt := &runtime.Runtime{
-		NetworkID: constants.UnitTestID,
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
 
-		ChainID: testChainID,
-		NodeID:  nodeID,
+	weight := uint64(2022)
+	chain := ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'}
+	goodAuth := func() *secp256k1fx.Input { return &secp256k1fx.Input{SigIndices: []uint32{0, 1}} }
+	validator := func(wght uint64) Validator {
+		return Validator{NodeID: ids.GenerateTestNodeID(), Start: 0, End: 3600, Wght: wght}
 	}
-	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
-
-	var (
-		stx               *Tx
-		addNetValidatorTx *AddChainValidatorTx
-		err               error
-	)
-
-	// Case : signed tx is nil
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, ErrNilSignedTx)
-
-	// Case : unsigned tx is nil
-	err = addNetValidatorTx.SyntacticVerify(rt)
-	require.ErrorIs(err, ErrNilTx)
-
-	validatorWeight := uint64(2022)
-	netID := ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'}
-	inputs := []*lux.TransferableInput{{
-		UTXOID: lux.UTXOID{
-			TxID:        ids.ID{'t', 'x', 'I', 'D'},
-			OutputIndex: 2,
-		},
-		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
-		In: &secp256k1fx.TransferInput{
-			Amt:   uint64(5678),
-			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
-		},
-	}}
-	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
-		Out: &secp256k1fx.TransferOutput{
-			Amt: uint64(1234),
-			OutputOwners: secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-			},
-		},
-	}}
-	chainAuth := &secp256k1fx.Input{
-		SigIndices: []uint32{0, 1},
+	base := func(networkID uint32) *lux.BaseTx {
+		return &lux.BaseTx{NetworkID: networkID, BlockchainID: rt.ChainID}
 	}
-	addNetValidatorTx = &AddChainValidatorTx{
-		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    rt.NetworkID,
-			BlockchainID: rt.ChainID,
-			Ins:          inputs,
-			Outs:         outputs,
-			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
-		}},
-		ChainValidator: ChainValidator{
-			Validator: Validator{
-				NodeID: nodeID,
-				Start:  uint64(clk.Time().Unix()),
-				End:    uint64(clk.Time().Add(time.Hour).Unix()),
-				Wght:   validatorWeight,
-			},
-			Chain: netID,
-		},
-		ChainAuth: chainAuth,
-	}
+
+	// Case: signed tx is nil
+	var stx *Tx
+	require.ErrorIs(stx.SyntacticVerify(rt), ErrNilSignedTx)
+
+	// Case: unsigned tx is nil
+	var nilTx *AddChainValidatorTx
+	require.ErrorIs(nilTx.SyntacticVerify(rt), ErrNilTx)
 
 	// Case: valid tx
-	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
+	valid, err := NewAddChainValidatorTx(base(rt.NetworkID), validator(weight), chain, goodAuth())
 	require.NoError(err)
-	require.NoError(stx.SyntacticVerify(rt))
+	require.NoError(valid.SyntacticVerify(rt))
 
-	// Case: Wrong network ID
-	addNetValidatorTx.SyntacticallyVerified = false
-	addNetValidatorTx.NetworkID++
-	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
+	// Case: wrong network ID
+	wrongNet, err := NewAddChainValidatorTx(base(rt.NetworkID+1), validator(weight), chain, goodAuth())
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, lux.ErrWrongNetworkID)
-	addNetValidatorTx.NetworkID--
+	require.ErrorIs(wrongNet.SyntacticVerify(rt), lux.ErrWrongNetworkID)
 
-	// Case: Specifies primary network ChainID
-	addNetValidatorTx.SyntacticallyVerified = false
-	addNetValidatorTx.Chain = ids.Empty
-	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
+	// Case: specifies primary network ChainID (empty)
+	primaryEmpty, err := NewAddChainValidatorTx(base(rt.NetworkID), validator(weight), ids.Empty, goodAuth())
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, errAddPrimaryNetworkValidator)
-	addNetValidatorTx.Chain = netID
+	require.ErrorIs(primaryEmpty.SyntacticVerify(rt), errAddPrimaryNetworkValidator)
 
-	// Case: No weight
-	addNetValidatorTx.SyntacticallyVerified = false
-	addNetValidatorTx.Wght = 0
-	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
+	// Case: no weight
+	noWeight, err := NewAddChainValidatorTx(base(rt.NetworkID), validator(0), chain, goodAuth())
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, ErrWeightTooSmall)
-	addNetValidatorTx.Wght = validatorWeight
+	require.ErrorIs(noWeight.SyntacticVerify(rt), ErrWeightTooSmall)
 
-	// Case: Net auth indices not unique
-	addNetValidatorTx.SyntacticallyVerified = false
-	input := addNetValidatorTx.ChainAuth.(*secp256k1fx.Input)
-	oldInput := *input
-	input.SigIndices[0] = input.SigIndices[1]
-	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
+	// Case: chain auth indices not sorted+unique ([1,1])
+	badAuth, err := NewAddChainValidatorTx(base(rt.NetworkID), validator(weight), chain, &secp256k1fx.Input{SigIndices: []uint32{1, 1}})
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, secp256k1fx.ErrInputIndicesNotSortedUnique)
-	*input = oldInput
+	require.ErrorIs(badAuth.SyntacticVerify(rt), secp256k1fx.ErrInputIndicesNotSortedUnique)
 
-	// Case: adding to Primary Network
-	addNetValidatorTx.SyntacticallyVerified = false
-	addNetValidatorTx.Chain = constants.PrimaryNetworkID
-	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
+	// Case: adding to Primary Network (explicit PrimaryNetworkID)
+	primary, err := NewAddChainValidatorTx(base(rt.NetworkID), validator(weight), constants.PrimaryNetworkID, goodAuth())
 	require.NoError(err)
-	err = stx.SyntacticVerify(rt)
-	require.ErrorIs(err, errAddPrimaryNetworkValidator)
+	require.ErrorIs(primary.SyntacticVerify(rt), errAddPrimaryNetworkValidator)
 }
 
-func TestAddNetValidatorMarshal(t *testing.T) {
+// TestAddChainValidatorTx_RoundTrip replaces the deleted linearcodec
+// Marshal/Parse golden test: the delta fields (Validator, Chain, ChainAuth)
+// survive the struct-is-wire serialize→Parse path.
+func TestAddChainValidatorTx_RoundTrip(t *testing.T) {
 	require := require.New(t)
-	clk := mockable.Clock{}
-	nodeID := ids.GenerateTestNodeID()
-	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	rt := &runtime.Runtime{
-		NetworkID: constants.UnitTestID,
 
-		ChainID: testChainID,
-		NodeID:  nodeID,
-	}
-	signers := [][]*secp256k1.PrivateKey{preFundedKeys}
+	vdr := Validator{NodeID: ids.GenerateTestNodeID(), Start: 0, End: 3600, Wght: 2022}
+	chain := ids.GenerateTestID()
+	auth := &secp256k1fx.Input{SigIndices: []uint32{0, 1}}
 
-	var (
-		stx               *Tx
-		addNetValidatorTx *AddChainValidatorTx
-		err               error
-	)
-
-	// create a valid tx
-	validatorWeight := uint64(2022)
-	netID := ids.ID{'s', 'u', 'b', 'n', 'e', 't', 'I', 'D'}
-	inputs := []*lux.TransferableInput{{
-		UTXOID: lux.UTXOID{
-			TxID:        ids.ID{'t', 'x', 'I', 'D'},
-			OutputIndex: 2,
-		},
-		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
-		In: &secp256k1fx.TransferInput{
-			Amt:   uint64(5678),
-			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
-		},
-	}}
-	outputs := []*lux.TransferableOutput{{
-		Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
-		Out: &secp256k1fx.TransferOutput{
-			Amt: uint64(1234),
-			OutputOwners: secp256k1fx.OutputOwners{
-				Threshold: 1,
-				Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-			},
-		},
-	}}
-	chainAuth := &secp256k1fx.Input{
-		SigIndices: []uint32{0, 1},
-	}
-	addNetValidatorTx = &AddChainValidatorTx{
-		BaseTx: BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    rt.NetworkID,
-			BlockchainID: rt.ChainID,
-			Ins:          inputs,
-			Outs:         outputs,
-			Memo:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
-		}},
-		ChainValidator: ChainValidator{
-			Validator: Validator{
-				NodeID: nodeID,
-				Start:  uint64(clk.Time().Unix()),
-				End:    uint64(clk.Time().Add(time.Hour).Unix()),
-				Wght:   validatorWeight,
-			},
-			Chain: netID,
-		},
-		ChainAuth: chainAuth,
-	}
-
-	// Case: valid tx
-	stx, err = NewSigned(addNetValidatorTx, Codec, signers)
-	require.NoError(err)
-	require.NoError(stx.SyntacticVerify(rt))
-
-	txBytes, err := Codec.Marshal(CodecVersion, stx)
+	utx, err := NewAddChainValidatorTx(spendBase(), vdr, chain, auth)
 	require.NoError(err)
 
-	parsedTx, err := Parse(Codec, txBytes)
-	require.NoError(err)
-
-	require.NoError(parsedTx.SyntacticVerify(rt))
-	require.Equal(stx, parsedTx)
+	got := roundTrip(t, utx).(*AddChainValidatorTx)
+	require.Equal(vdr, got.Validator())
+	require.Equal(chain, got.Chain())
+	require.Equal(utx.ChainAuth(), got.ChainAuth())
 }
 
 func TestAddChainValidatorTxNotValidatorTx(t *testing.T) {

@@ -8,10 +8,10 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
+	"github.com/luxfi/vm/chains/atomic"
 )
 
 var _ txs.Visitor = (*atomicTxExecutor)(nil)
@@ -108,11 +108,7 @@ func (*atomicTxExecutor) BaseTx(*txs.BaseTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
-	return ErrWrongTxType
-}
-
-func (*atomicTxExecutor) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
+func (*atomicTxExecutor) ConvertNetworkTx(*txs.ConvertNetworkTx) error {
 	return ErrWrongTxType
 }
 
@@ -129,18 +125,6 @@ func (*atomicTxExecutor) IncreaseL1ValidatorBalanceTx(*txs.IncreaseL1ValidatorBa
 }
 
 func (*atomicTxExecutor) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
-	return ErrWrongTxType
-}
-
-func (*atomicTxExecutor) SlashValidatorTx(*txs.SlashValidatorTx) error {
-	return ErrWrongTxType
-}
-
-func (*atomicTxExecutor) CreateAssetTx(*txs.CreateAssetTx) error {
-	return ErrWrongTxType
-}
-
-func (*atomicTxExecutor) OperationTx(*txs.OperationTx) error {
 	return ErrWrongTxType
 }
 

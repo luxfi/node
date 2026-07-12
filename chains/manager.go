@@ -849,7 +849,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				chainBase := fmt.Sprintf("bc/%s", chainAlias)
 				chainIDBase := fmt.Sprintf("bc/%s", chainParams.ID.String())
 
-				// AddRoute will build the full path as /ext/<base><endpoint>
+				// AddRoute will build the full path as /v1/<base><endpoint>
 				m.Server.AddRoute(handler, chainBase, endpoint)
 				if chainAlias != chainParams.ID.String() {
 					m.Server.AddRoute(handler, chainIDBase, endpoint)
@@ -4233,6 +4233,7 @@ func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockI
 // v1.36 "Nova": BroadcastPrevote was DELETED — the round-scoped view-change (prevote/POL/lock)
 // it fed no longer exists in the consensus engine (174af3c31). Nova sampling decides; the ⅔
 // Quasar attestation (a plain accept-vote, gossiped via BroadcastVote) trails it. Keep the braid dead.
+
 
 // GossipCert broadcasts an assembled α-of-K finality cert to ALL validators so
 // followers finalize blockID on a verifiable proof (HandleIncomingCert), not a

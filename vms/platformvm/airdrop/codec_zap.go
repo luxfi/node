@@ -22,7 +22,7 @@ package airdrop
 //	u32  entryLen
 //	u8   entryKind             # = entryKindClaim
 //	20B  EthAddress             ( @ 0..20 of payload )
-//	20B  LuxAddress (ShortID)   ( @ 20..40 )
+//	20B  UTXOAddr (ShortID)   ( @ 20..40 )
 //	32B  TxID                   ( @ 40..72 )
 //	i64  ClaimUnixNs            ( @ 72..80 )
 //	i64  VestingEndUnixNs       ( @ 80..88 )
@@ -57,7 +57,7 @@ const (
 	airdropEntryKindClaim uint8 = 1
 
 	claimOffEthAddress       = 0
-	claimOffLuxAddress       = 20
+	claimOffUTXOAddr       = 20
 	claimOffTxID             = 40
 	claimOffClaimUnixNs      = 72
 	claimOffVestingEndUnixNs = 80
@@ -148,7 +148,7 @@ func encodeClaimEntry(c *AirdropClaim) []byte {
 
 	p := out[5:]
 	copy(p[claimOffEthAddress:claimOffEthAddress+20], c.Address[:])
-	copy(p[claimOffLuxAddress:claimOffLuxAddress+20], c.LuxAddress[:])
+	copy(p[claimOffUTXOAddr:claimOffUTXOAddr+20], c.UTXOAddr[:])
 	copy(p[claimOffTxID:claimOffTxID+32], c.TxID[:])
 	binary.LittleEndian.PutUint64(p[claimOffClaimUnixNs:], uint64(c.ClaimTime.UnixNano()))
 	binary.LittleEndian.PutUint64(p[claimOffVestingEndUnixNs:], uint64(c.VestingEndTime.UnixNano()))
@@ -172,7 +172,7 @@ func decodeClaimEntry(p []byte) (*AirdropClaim, common.Address, error) {
 		AmountClaimed:  new(big.Int).SetBytes(p[claimPayloadFixed : uint32(claimPayloadFixed)+amountLen]),
 	}
 	copy(c.Address[:], p[claimOffEthAddress:claimOffEthAddress+20])
-	copy(c.LuxAddress[:], p[claimOffLuxAddress:claimOffLuxAddress+20])
+	copy(c.UTXOAddr[:], p[claimOffUTXOAddr:claimOffUTXOAddr+20])
 	var tx ids.ID
 	copy(tx[:], p[claimOffTxID:claimOffTxID+32])
 	c.TxID = tx

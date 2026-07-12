@@ -314,15 +314,15 @@ func TestFromConfigExplicitStakers(t *testing.T) {
 	for i, vdrTx := range parsed.Validators {
 		switch ut := vdrTx.Unsigned.(type) {
 		case *txs.AddValidatorTx:
-			require.Equal(stakers[i].Weight, ut.Wght,
+			require.Equal(stakers[i].Weight, ut.Weight(),
 				"validator %d weight mismatch", i)
 			t.Logf("Validator %d: NodeID=%s Weight=%d StakeOuts=%d",
-				i, ut.Validator.NodeID, ut.Wght, len(ut.StakeOuts))
+				i, ut.Validator().NodeID, ut.Weight(), len(ut.StakeOuts()))
 		case *txs.AddPermissionlessValidatorTx:
-			require.Equal(stakers[i].Weight, ut.Wght,
+			require.Equal(stakers[i].Weight, ut.Weight(),
 				"validator %d weight mismatch", i)
 			t.Logf("Validator %d: NodeID=%s Weight=%d StakeOuts=%d",
-				i, ut.Validator.NodeID, ut.Wght, len(ut.StakeOuts))
+				i, ut.Validator().NodeID, ut.Weight(), len(ut.StakeOuts()))
 		default:
 			t.Fatalf("unexpected validator tx type: %T", ut)
 		}
@@ -396,15 +396,15 @@ func TestFromConfigExplicitStakersNoStakedFunds(t *testing.T) {
 	for i, vdrTx := range parsed.Validators {
 		switch ut := vdrTx.Unsigned.(type) {
 		case *txs.AddValidatorTx:
-			require.Greater(ut.Wght, uint64(0), "validator %d weight must be non-zero", i)
-			require.Greater(len(ut.StakeOuts), 0, "validator %d must have stake outputs", i)
+			require.Greater(ut.Weight(), uint64(0), "validator %d weight must be non-zero", i)
+			require.Greater(len(ut.StakeOuts()), 0, "validator %d must have stake outputs", i)
 			t.Logf("Validator %d: NodeID=%s Weight=%d StakeOuts=%d",
-				i, ut.Validator.NodeID, ut.Wght, len(ut.StakeOuts))
+				i, ut.Validator().NodeID, ut.Weight(), len(ut.StakeOuts()))
 		case *txs.AddPermissionlessValidatorTx:
-			require.Greater(ut.Wght, uint64(0), "validator %d weight must be non-zero", i)
-			require.Greater(len(ut.StakeOuts), 0, "validator %d must have stake outputs", i)
+			require.Greater(ut.Weight(), uint64(0), "validator %d weight must be non-zero", i)
+			require.Greater(len(ut.StakeOuts()), 0, "validator %d must have stake outputs", i)
 			t.Logf("Validator %d: NodeID=%s Weight=%d StakeOuts=%d",
-				i, ut.Validator.NodeID, ut.Wght, len(ut.StakeOuts))
+				i, ut.Validator().NodeID, ut.Weight(), len(ut.StakeOuts()))
 		default:
 			t.Fatalf("unexpected validator tx type: %T", ut)
 		}

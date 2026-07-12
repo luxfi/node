@@ -86,11 +86,7 @@ func (v *MempoolTxVerifier) BaseTx(tx *txs.BaseTx) error {
 	return v.standardTx(tx)
 }
 
-func (v *MempoolTxVerifier) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
-	return v.standardTx(tx)
-}
-
-func (v *MempoolTxVerifier) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
+func (v *MempoolTxVerifier) ConvertNetworkTx(tx *txs.ConvertNetworkTx) error {
 	return v.standardTx(tx)
 }
 
@@ -107,18 +103,6 @@ func (v *MempoolTxVerifier) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1Valid
 }
 
 func (v *MempoolTxVerifier) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	return v.standardTx(tx)
-}
-
-func (v *MempoolTxVerifier) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
-	return v.standardTx(tx)
-}
-
-func (v *MempoolTxVerifier) CreateAssetTx(tx *txs.CreateAssetTx) error {
-	return v.standardTx(tx)
-}
-
-func (v *MempoolTxVerifier) OperationTx(tx *txs.OperationTx) error {
 	return v.standardTx(tx)
 }
 

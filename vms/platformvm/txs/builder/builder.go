@@ -9,10 +9,12 @@ import (
 	"time"
 
 	"github.com/luxfi/runtime"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/config"
+	"github.com/luxfi/node/vms/platformvm/security"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/utxo"
@@ -311,17 +313,20 @@ func (b *builder) NewImportTx(
 	lux.SortTransferableOutputs(outs) // sort imported outputs
 
 	// Create the transaction
-	utx := &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	utx, err := txs.NewImportTx(
+		&lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Outs:         outs,
 			Ins:          ins,
-		}},
-		SourceChain:    from,
-		ImportedInputs: importedInputs,
+		},
+		from,
+		importedInputs,
+	)
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}
@@ -345,15 +350,15 @@ func (b *builder) NewExportTx(
 	}
 
 	// Create the transaction
-	utx := &txs.ExportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	utx, err := txs.NewExportTx(
+		&lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs, // Non-exported outputs
-		}},
-		DestinationChain: chainID,
-		ExportedOutputs: []*lux.TransferableOutput{{ // Exported to X-Chain
+		},
+		chainID,
+		[]*lux.TransferableOutput{{ // Exported to X-Chain
 			Asset: lux.Asset{ID: b.UTXOAssetID},
 			Out: &secp256k1fx.TransferOutput{
 				Amt: amount,
@@ -364,8 +369,11 @@ func (b *builder) NewExportTx(
 				},
 			},
 		}},
+	)
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}
@@ -397,21 +405,24 @@ func (b *builder) NewCreateChainTx(
 	utils.Sort(fxIDs)
 
 	// Create the tx
-	utx := &txs.CreateChainTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	utx, err := txs.NewCreateChainTx(
+		&lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
-		}},
-		ChainID:        netID,
-		BlockchainName: chainName,
-		VMID:           vmID,
-		FxIDs:          fxIDs,
-		GenesisData:    genesisData,
-		ChainAuth:      chainAuth,
+		},
+		netID,
+		chainName,
+		vmID,
+		fxIDs,
+		genesisData,
+		chainAuth,
+	)
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}
@@ -433,20 +444,30 @@ func (b *builder) NewCreateNetworkTx(
 	// Sort control addresses
 	utils.Sort(ownerAddrs)
 
-	// Create the tx
-	utx := &txs.CreateNetworkTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	// Create the tx — a classic permissioned network: it restakes its parent
+	// (the primary network) and runs no own validator set. Members are added
+	// later via AddChainValidatorTx.
+	utx, err := txs.NewCreateNetworkTx(
+		&lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
-		}},
-		Owner: &secp256k1fx.OutputOwners{
+		},
+		constants.PrimaryNetworkID,
+		&secp256k1fx.OutputOwners{
 			Threshold: threshold,
 			Addrs:     ownerAddrs,
 		},
+		security.Mode{RestakeParent: true, Admission: security.NoOwnSet, Manager: security.PChain},
+		nil,       // validators (none: no own set)
+		ids.Empty, // managerChainID (P-Chain-governed)
+		nil,       // managerAddress
+	)
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}
@@ -468,28 +489,31 @@ func (b *builder) NewAddValidatorTx(
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
 	// Create the tx
-	utx := &txs.AddValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	utx, err := txs.NewAddValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         unstakedOuts,
-		}},
-		Validator: txs.Validator{
+		},
+		txs.Validator{
 			NodeID: nodeID,
 			Start:  startTime,
 			End:    endTime,
 			Wght:   stakeAmount,
 		},
-		StakeOuts: stakedOuts,
-		RewardsOwner: &secp256k1fx.OutputOwners{
+		stakedOuts,
+		&secp256k1fx.OutputOwners{
 			Locktime:  0,
 			Threshold: 1,
 			Addrs:     []ids.ShortID{rewardAddress},
 		},
-		DelegationShares: shares,
+		shares,
+	)
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}
@@ -510,27 +534,30 @@ func (b *builder) NewAddDelegatorTx(
 		return nil, fmt.Errorf("couldn't generate tx inputs/outputs: %w", err)
 	}
 	// Create the tx
-	utx := &txs.AddDelegatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	utx, err := txs.NewAddDelegatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         unlockedOuts,
-		}},
-		Validator: txs.Validator{
+		},
+		txs.Validator{
 			NodeID: nodeID,
 			Start:  startTime,
 			End:    endTime,
 			Wght:   stakeAmount,
 		},
-		StakeOuts: lockedOuts,
-		DelegationRewardsOwner: &secp256k1fx.OutputOwners{
+		lockedOuts,
+		&secp256k1fx.OutputOwners{
 			Locktime:  0,
 			Threshold: 1,
 			Addrs:     []ids.ShortID{rewardAddress},
 		},
+	)
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}
@@ -558,25 +585,26 @@ func (b *builder) NewAddChainValidatorTx(
 	signers = append(signers, chainSigners)
 
 	// Create the tx
-	utx := &txs.AddChainValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	utx, err := txs.NewAddChainValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
-		}},
-		ChainValidator: txs.ChainValidator{
-			Validator: txs.Validator{
-				NodeID: nodeID,
-				Start:  startTime,
-				End:    endTime,
-				Wght:   weight,
-			},
-			Chain: netID,
 		},
-		ChainAuth: chainAuth,
+		txs.Validator{
+			NodeID: nodeID,
+			Start:  startTime,
+			End:    endTime,
+			Wght:   weight,
+		},
+		netID,
+		chainAuth,
+	)
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}
@@ -601,18 +629,21 @@ func (b *builder) NewRemoveChainValidatorTx(
 	signers = append(signers, chainSigners)
 
 	// Create the tx
-	utx := &txs.RemoveChainValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	utx, err := txs.NewRemoveChainValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
-		}},
-		Chain:     netID,
-		NodeID:    nodeID,
-		ChainAuth: chainAuth,
+		},
+		nodeID,
+		netID,
+		chainAuth,
+	)
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}
@@ -620,8 +651,8 @@ func (b *builder) NewRemoveChainValidatorTx(
 }
 
 func (b *builder) NewAdvanceTimeTx(timestamp time.Time) (*txs.Tx, error) {
-	utx := &txs.AdvanceTimeTx{Time: uint64(timestamp.Unix())}
-	tx, err := txs.NewSigned(utx, txs.Codec, nil)
+	utx := txs.NewAdvanceTimeTx(uint64(timestamp.Unix()))
+	tx, err := txs.NewSigned(utx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -629,8 +660,8 @@ func (b *builder) NewAdvanceTimeTx(timestamp time.Time) (*txs.Tx, error) {
 }
 
 func (b *builder) NewRewardValidatorTx(txID ids.ID) (*txs.Tx, error) {
-	utx := &txs.RewardValidatorTx{TxID: txID}
-	tx, err := txs.NewSigned(utx, txs.Codec, nil)
+	utx := txs.NewRewardValidatorTx(txID)
+	tx, err := txs.NewSigned(utx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -656,21 +687,24 @@ func (b *builder) NewTransferChainOwnershipTx(
 	}
 	signers = append(signers, chainSigners)
 
-	utx := &txs.TransferChainOwnershipTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	utx, err := txs.NewTransferChainOwnershipTx(
+		&lux.BaseTx{
 			NetworkID:    b.NetworkID,
 			BlockchainID: b.ChainID,
 			Ins:          ins,
 			Outs:         outs,
-		}},
-		Chain:     netID,
-		ChainAuth: chainAuth,
-		Owner: &secp256k1fx.OutputOwners{
+		},
+		netID,
+		chainAuth,
+		&secp256k1fx.OutputOwners{
 			Threshold: threshold,
 			Addrs:     ownerAddrs,
 		},
+	)
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}
@@ -702,15 +736,16 @@ func (b *builder) NewBaseTx(
 
 	lux.SortTransferableOutputs(outs)
 
-	utx := &txs.BaseTx{
-		BaseTx: lux.BaseTx{
-			NetworkID:    b.NetworkID,
-			BlockchainID: b.ChainID,
-			Ins:          ins,
-			Outs:         outs,
-		},
+	utx, err := txs.NewBaseTx(&lux.BaseTx{
+		NetworkID:    b.NetworkID,
+		BlockchainID: b.ChainID,
+		Ins:          ins,
+		Outs:         outs,
+	})
+	if err != nil {
+		return nil, err
 	}
-	tx, err := txs.NewSigned(utx, txs.Codec, signers)
+	tx, err := txs.NewSigned(utx, signers)
 	if err != nil {
 		return nil, err
 	}

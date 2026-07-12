@@ -6,9 +6,9 @@ package lux
 import (
 	"errors"
 
+	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/crypto/hash"
 )
 
 var (

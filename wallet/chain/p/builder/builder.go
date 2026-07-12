@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/node/vms/platformvm/security"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -156,20 +157,6 @@ type Builder interface {
 		owner *secp256k1fx.OutputOwners,
 		options ...common.Option,
 	) (*txs.TransferChainOwnershipTx, error)
-
-	// NewConvertNetworkToL1Tx converts the chain to a Permissionless L1.
-	//
-	// - [netID] specifies the chain to be converted
-	// - [managerChainID] specifies which chain the manager is deployed on
-	// - [address] specifies the address of the manager
-	// - [validators] specifies the initial L1 validators of the L1
-	NewConvertNetworkToL1Tx(
-		netID ids.ID,
-		managerChainID ids.ID,
-		address []byte,
-		validators []*txs.ConvertNetworkToL1Validator,
-		options ...common.Option,
-	) (*txs.ConvertNetworkToL1Tx, error)
 
 	// NewRegisterL1ValidatorTx adds a validator to an L1.
 	//
@@ -435,14 +422,13 @@ func (b *builder) NewBaseTx(
 	outputs = append(outputs, changeOutputs...)
 	lux.SortTransferableOutputs(outputs) // sort the outputs
 
-	tx := &txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewBaseTx(&lux.BaseTx{
 		NetworkID:    b.context.NetworkID,
 		BlockchainID: b.getBlockchainID(),
 		Ins:          inputs,
 		Outs:         outputs,
 		Memo:         memo,
-	}}
-	return tx, b.initCtx(tx)
+	})
 }
 
 func (b *builder) NewAddValidatorTx(
@@ -471,20 +457,19 @@ func (b *builder) NewAddValidatorTx(
 
 	utils.Sort(rewardsOwner.Addrs)
 
-	tx := &txs.AddValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
-		}},
-		Validator:        *vdr,
-		StakeOuts:        stakeOutputs,
-		RewardsOwner:     rewardsOwner,
-		DelegationShares: shares,
-	}
-	return tx, b.initCtx(tx)
+		},
+		*vdr,
+		stakeOutputs,
+		rewardsOwner,
+		shares,
+	)
 }
 
 // Removed in regenesis
@@ -529,18 +514,18 @@ func (b *builder) NewAddChainValidatorTx(
 		return nil, err
 	}
 	//
-	tx := &txs.AddChainValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddChainValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         memo,
-		}},
-		ChainValidator: *vdr,
-		ChainAuth:      chainAuth,
-	}
-	return tx, b.initCtx(tx)
+		},
+		vdr.Validator,
+		vdr.Chain,
+		chainAuth,
+	)
 }
 
 // Removed in regenesis
@@ -586,19 +571,18 @@ func (b *builder) NewRemoveChainValidatorTx(
 		return nil, err
 	}
 	//
-	tx := &txs.RemoveChainValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewRemoveChainValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
-		}},
-		Chain:     netID,
-		NodeID:    nodeID,
-		ChainAuth: chainAuth,
-	}
-	return tx, b.initCtx(tx)
+		},
+		nodeID,
+		netID,
+		chainAuth,
+	)
 }
 
 func (b *builder) NewAddDelegatorTx(
@@ -625,19 +609,18 @@ func (b *builder) NewAddDelegatorTx(
 	}
 
 	utils.Sort(rewardsOwner.Addrs)
-	tx := &txs.AddDelegatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddDelegatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         ops.Memo(),
-		}},
-		Validator:              *vdr,
-		StakeOuts:              stakeOutputs,
-		DelegationRewardsOwner: rewardsOwner,
-	}
-	return tx, b.initCtx(tx)
+		},
+		*vdr,
+		stakeOutputs,
+		rewardsOwner,
+	)
 }
 
 func (b *builder) NewCreateChainTx(
@@ -702,22 +685,21 @@ func (b *builder) NewCreateChainTx(
 	}
 
 	utils.Sort(fxIDs)
-	tx := &txs.CreateChainTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewCreateChainTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         memo,
-		}},
-		ChainID:        netID,
-		BlockchainName: chainName,
-		VMID:           vmID,
-		FxIDs:          fxIDs,
-		GenesisData:    genesis,
-		ChainAuth:      chainAuth,
-	}
-	return tx, b.initCtx(tx)
+		},
+		netID,
+		chainName,
+		vmID,
+		fxIDs,
+		genesis,
+		chainAuth,
+	)
 }
 
 func (b *builder) NewCreateNetworkTx(
@@ -757,17 +739,24 @@ func (b *builder) NewCreateNetworkTx(
 	}
 
 	utils.Sort(owner.Addrs)
-	tx := &txs.CreateNetworkTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	// Plain "create an empty network under the primary network": no own
+	// validators or chains, no manager. Parent = primary network;
+	// security inherited (restaked from parent).
+	return txs.NewCreateNetworkTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         memo,
-		}},
-		Owner: owner,
-	}
-	return tx, b.initCtx(tx)
+		},
+		constants.PrimaryNetworkID, // parent
+		owner,
+		security.Mode{RestakeParent: true, Manager: security.PChain}, // restaked L2 under primary
+		nil,       // validators
+		ids.Empty, // managerChainID (P-Chain-governed)
+		nil,       // managerAddress
+	)
 }
 
 // Removed in regenesis
@@ -819,102 +808,18 @@ func (b *builder) NewTransferChainOwnershipTx(
 	}
 	//
 	utils.Sort(owner.Addrs)
-	tx := &txs.TransferChainOwnershipTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewTransferChainOwnershipTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         memo,
-		}},
-		Chain:     chainID,
-		Owner:     owner,
-		ChainAuth: chainAuth,
-	}
-	return tx, b.initCtx(tx)
-}
-
-func (b *builder) NewConvertNetworkToL1Tx(
-	netID ids.ID,
-	managerChainID ids.ID,
-	address []byte,
-	validators []*txs.ConvertNetworkToL1Validator,
-	options ...common.Option,
-) (*txs.ConvertNetworkToL1Tx, error) {
-	var luxToBurn uint64
-	for _, vdr := range validators {
-		var err error
-		luxToBurn, err = math.Add(luxToBurn, vdr.Balance)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	var (
-		toBurn = map[ids.ID]uint64{
-			b.context.UTXOAssetID: luxToBurn,
-		}
-		toStake = map[ids.ID]uint64{}
-		ops     = common.NewOptions(options)
+		},
+		chainID,
+		chainAuth,
+		owner,
 	)
-	chainAuth, err := b.authorize(netID, ops)
-	if err != nil {
-		return nil, err
-	}
-
-	memo := ops.Memo()
-	additionalBytes, err := math.Add(uint64(len(memo)), uint64(len(address)))
-	if err != nil {
-		return nil, err
-	}
-	bytesComplexity := gas.Dimensions{
-		gas.Bandwidth: additionalBytes,
-	}
-	validatorComplexity, err := fee.ConvertNetworkToL1ValidatorComplexity(validators...)
-	if err != nil {
-		return nil, err
-	}
-	authComplexity, err := fee.AuthComplexity(chainAuth)
-	if err != nil {
-		return nil, err
-	}
-	complexity, err := fee.IntrinsicConvertNetworkToL1TxComplexities.Add(
-		&bytesComplexity,
-		&validatorComplexity,
-		&authComplexity,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	inputs, outputs, _, err := b.spend(
-		toBurn,
-		toStake,
-		0,
-		complexity,
-		nil,
-		ops,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	utils.Sort(validators)
-	tx := &txs.ConvertNetworkToL1Tx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-			NetworkID:    b.context.NetworkID,
-			BlockchainID: constants.PlatformChainID,
-			Ins:          inputs,
-			Outs:         outputs,
-			Memo:         memo,
-		}},
-		Chain:          netID,
-		ManagerChainID: managerChainID,
-		Address:        address,
-		Validators:     validators,
-		ChainAuth:      chainAuth,
-	}
-	return tx, b.initCtx(tx)
 }
 
 func (b *builder) NewRegisterL1ValidatorTx(
@@ -959,19 +864,18 @@ func (b *builder) NewRegisterL1ValidatorTx(
 		return nil, err
 	}
 
-	tx := &txs.RegisterL1ValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewRegisterL1ValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         memo,
-		}},
-		Balance:           balance,
-		ProofOfPossession: proofOfPossession,
-		Message:           message,
-	}
-	return tx, b.initCtx(tx)
+		},
+		balance,
+		proofOfPossession,
+		message,
+	)
 }
 
 func (b *builder) NewSetL1ValidatorWeightTx(
@@ -1011,17 +915,16 @@ func (b *builder) NewSetL1ValidatorWeightTx(
 		return nil, err
 	}
 
-	tx := &txs.SetL1ValidatorWeightTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewSetL1ValidatorWeightTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         memo,
-		}},
-		Message: message,
-	}
-	return tx, b.initCtx(tx)
+		},
+		message,
+	)
 }
 
 func (b *builder) NewIncreaseL1ValidatorBalanceTx(
@@ -1059,18 +962,17 @@ func (b *builder) NewIncreaseL1ValidatorBalanceTx(
 		return nil, err
 	}
 
-	tx := &txs.IncreaseL1ValidatorBalanceTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewIncreaseL1ValidatorBalanceTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         memo,
-		}},
-		ValidationID: validationID,
-		Balance:      balance,
-	}
-	return tx, b.initCtx(tx)
+		},
+		validationID,
+		balance,
+	)
 }
 
 func (b *builder) NewDisableL1ValidatorTx(
@@ -1116,18 +1018,17 @@ func (b *builder) NewDisableL1ValidatorTx(
 		return nil, err
 	}
 
-	tx := &txs.DisableL1ValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewDisableL1ValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         memo,
-		}},
-		ValidationID: validationID,
-		DisableAuth:  disableAuth,
-	}
-	return tx, b.initCtx(tx)
+		},
+		validationID,
+		disableAuth,
+	)
 }
 
 func (b *builder) NewImportTx(
@@ -1245,18 +1146,17 @@ func (b *builder) NewImportTx(
 	outputs = append(outputs, changeOutputs...)
 
 	lux.SortTransferableOutputs(outputs) // sort imported outputs
-	tx := &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewImportTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         memo,
-		}},
-		SourceChain:    sourceChainID,
-		ImportedInputs: importedInputs,
-	}
-	return tx, b.initCtx(tx)
+		},
+		sourceChainID,
+		importedInputs,
+	)
 }
 
 func (b *builder) NewExportTx(
@@ -1305,18 +1205,17 @@ func (b *builder) NewExportTx(
 	}
 
 	lux.SortTransferableOutputs(outputs) // sort exported outputs
-	tx := &txs.ExportTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewExportTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         changeOutputs,
 			Memo:         memo,
-		}},
-		DestinationChain: chainID,
-		ExportedOutputs:  outputs,
-	}
-	return tx, b.initCtx(tx)
+		},
+		chainID,
+		outputs,
+	)
 }
 
 // Removed in regenesis
@@ -1360,31 +1259,30 @@ func (b *builder) NewTransformChainTx(
 		return nil, err
 	}
 	//
-	tx := &txs.TransformChainTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewTransformChainTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         outputs,
 			Memo:         ops.Memo(),
-		}},
-		Chain:                    netID,
-		AssetID:                  assetID,
-		InitialSupply:            initialSupply,
-		MaximumSupply:            maxSupply,
-		MinConsumptionRate:       minConsumptionRate,
-		MaxConsumptionRate:       maxConsumptionRate,
-		MinValidatorStake:        minValidatorStake,
-		MaxValidatorStake:        maxValidatorStake,
-		MinStakeDuration:         uint32(minStakeDuration / time.Second),
-		MaxStakeDuration:         uint32(maxStakeDuration / time.Second),
-		MinDelegationFee:         minDelegationFee,
-		MinDelegatorStake:        minDelegatorStake,
-		MaxValidatorWeightFactor: maxValidatorWeightFactor,
-		UptimeRequirement:        uptimeRequirement,
-		ChainAuth:                chainAuth,
-	}
-	return tx, b.initCtx(tx)
+		},
+		netID,
+		assetID,
+		initialSupply,
+		maxSupply,
+		minConsumptionRate,
+		maxConsumptionRate,
+		minValidatorStake,
+		maxValidatorStake,
+		uint32(minStakeDuration/time.Second),
+		uint32(maxStakeDuration/time.Second),
+		minDelegationFee,
+		minDelegatorStake,
+		maxValidatorWeightFactor,
+		uptimeRequirement,
+		chainAuth,
+	)
 }
 
 func (b *builder) NewAddPermissionlessValidatorTx(
@@ -1442,23 +1340,22 @@ func (b *builder) NewAddPermissionlessValidatorTx(
 
 	utils.Sort(validationRewardsOwner.Addrs)
 	utils.Sort(delegationRewardsOwner.Addrs)
-	tx := &txs.AddPermissionlessValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddPermissionlessValidatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         memo,
-		}},
-		Validator:             vdr.Validator,
-		Chain:                 vdr.Chain,
-		Signer:                signer,
-		StakeOuts:             stakeOutputs,
-		ValidatorRewardsOwner: validationRewardsOwner,
-		DelegatorRewardsOwner: delegationRewardsOwner,
-		DelegationShares:      shares,
-	}
-	return tx, b.initCtx(tx)
+		},
+		vdr.Validator,
+		vdr.Chain,
+		signer,
+		stakeOutputs,
+		validationRewardsOwner,
+		delegationRewardsOwner,
+		shares,
+	)
 }
 
 func (b *builder) NewAddPermissionlessDelegatorTx(
@@ -1502,20 +1399,19 @@ func (b *builder) NewAddPermissionlessDelegatorTx(
 	}
 
 	utils.Sort(rewardsOwner.Addrs)
-	tx := &txs.AddPermissionlessDelegatorTx{
-		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+	return txs.NewAddPermissionlessDelegatorTx(
+		&lux.BaseTx{
 			NetworkID:    b.context.NetworkID,
 			BlockchainID: b.getBlockchainID(),
 			Ins:          inputs,
 			Outs:         baseOutputs,
 			Memo:         memo,
-		}},
-		Validator:              vdr.Validator,
-		Chain:                  vdr.Chain,
-		StakeOuts:              stakeOutputs,
-		DelegationRewardsOwner: rewardsOwner,
-	}
-	return tx, b.initCtx(tx)
+		},
+		vdr.Validator,
+		vdr.Chain,
+		stakeOutputs,
+		rewardsOwner,
+	)
 }
 
 func (b *builder) getBalance(
@@ -1930,16 +1826,6 @@ func (b *builder) authorize(ownerID ids.ID, options *common.Options) (*secp256k1
 	return &secp256k1fx.Input{
 		SigIndices: inputSigIndices,
 	}, nil
-}
-
-func (b *builder) initCtx(tx txs.UnsignedTx) error {
-	rt, err := NewConsensusRuntime(b.context.NetworkID, b.context.UTXOAssetID)
-	if err != nil {
-		return err
-	}
-
-	tx.InitRuntime(rt)
-	return nil
 }
 
 type spendHelper struct {

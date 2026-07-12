@@ -6,7 +6,6 @@ package execute
 import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/state"
 )
@@ -36,7 +35,7 @@ func Genesis(db database.KeyValueReaderWriterDeleter, chainID ids.ID, g *genesis
 		return err
 	}
 
-	blkBytes, err := block.Codec.Marshal(block.CodecVersion, blk)
+	blkBytes, err := blk.Marshal()
 	if err != nil {
 		return err
 	}

@@ -6,13 +6,13 @@ package builder
 import (
 	"time"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/bls"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/node/wallet/network/primary/common"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 var _ Builder = (*withOptions)(nil)
@@ -154,22 +154,6 @@ func (w *withOptions) NewTransferChainOwnershipTx(
 	return w.builder.NewTransferChainOwnershipTx(
 		chainID,
 		owner,
-		common.UnionOptions(w.options, options)...,
-	)
-}
-
-func (w *withOptions) NewConvertNetworkToL1Tx(
-	netID ids.ID,
-	managerChainID ids.ID,
-	address []byte,
-	validators []*txs.ConvertNetworkToL1Validator,
-	options ...common.Option,
-) (*txs.ConvertNetworkToL1Tx, error) {
-	return w.builder.NewConvertNetworkToL1Tx(
-		netID,
-		managerChainID,
-		address,
-		validators,
 		common.UnionOptions(w.options, options)...,
 	)
 }

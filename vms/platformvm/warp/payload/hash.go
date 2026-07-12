@@ -7,12 +7,20 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/zap"
 )
 
 var _ Payload = (*Hash)(nil)
 
+// Hash wire: pkind u8 @0, Hash 32B @1 = 33 bytes.
+const (
+	hashOffKind = offPKind
+	hashOffHash = 1
+	hashSize    = 33
+)
+
 type Hash struct {
-	Hash ids.ID `serialize:"true"`
+	Hash ids.ID `json:"hash"`
 
 	bytes []byte
 }
@@ -22,7 +30,13 @@ func NewHash(hash ids.ID) (*Hash, error) {
 	bhp := &Hash{
 		Hash: hash,
 	}
-	return bhp, initialize(bhp)
+	b := zap.NewBuilder(zap.HeaderSize + hashSize)
+	ob := b.StartObject(hashSize)
+	ob.SetUint8(hashOffKind, uint8(pkindHash))
+	ob.SetBytesFixed(hashOffHash, hash[:])
+	ob.FinishAsRoot()
+	bhp.initialize(b.Finish())
+	return bhp, nil
 }
 
 // ParseHash converts a slice of bytes into an initialized Hash.

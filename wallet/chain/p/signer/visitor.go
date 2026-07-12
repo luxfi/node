@@ -31,8 +31,6 @@ var (
 	ErrUnknownAuthType       = errors.New("unknown auth type")
 	ErrUnknownOwnerType      = errors.New("unknown owner type")
 	ErrUnknownCredentialType = errors.New("unknown credential type")
-	ErrUnknownOpType         = errors.New("unknown op type")
-	ErrInvalidNumUTXOsInOp   = errors.New("invalid number of UTXOs in operation")
 
 	emptySig [secp256k1.SignatureLen]byte
 )
@@ -54,7 +52,7 @@ func (*visitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 }
 
 func (s *visitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
@@ -62,11 +60,11 @@ func (s *visitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 }
 
 func (s *visitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
-	chainAuthSigners, err := s.getAuthSigners(tx.ChainValidator.Chain, tx.ChainAuth)
+	chainAuthSigners, err := s.getAuthSigners(tx.Chain(), tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -75,7 +73,7 @@ func (s *visitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
 }
 
 func (s *visitor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
@@ -83,11 +81,11 @@ func (s *visitor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 }
 
 func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
-	netAuthSigners, err := s.getAuthSigners(tx.ChainID, tx.ChainAuth)
+	netAuthSigners, err := s.getAuthSigners(tx.ChainID(), tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -96,19 +94,34 @@ func (s *visitor) CreateChainTx(tx *txs.CreateChainTx) error {
 }
 
 func (s *visitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *visitor) ImportTx(tx *txs.ImportTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+// ConvertNetworkTx promotes an existing network; like CreateChainTx it requires
+// the existing network owner's authorization (tx.Auth() against tx.Network()).
+func (s *visitor) ConvertNetworkTx(tx *txs.ConvertNetworkTx) error {
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
-	txImportSigners, err := s.getSigners(tx.SourceChain, tx.ImportedInputs)
+	netAuthSigners, err := s.getAuthSigners(tx.Network(), tx.Auth())
+	if err != nil {
+		return err
+	}
+	txSigners = append(txSigners, netAuthSigners)
+	return sign(s.tx, false, txSigners)
+}
+
+func (s *visitor) ImportTx(tx *txs.ImportTx) error {
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
+	if err != nil {
+		return err
+	}
+	txImportSigners, err := s.getSigners(tx.SourceChain(), tx.ImportedInputs())
 	if err != nil {
 		return err
 	}
@@ -117,7 +130,7 @@ func (s *visitor) ImportTx(tx *txs.ImportTx) error {
 }
 
 func (s *visitor) ExportTx(tx *txs.ExportTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
@@ -126,11 +139,11 @@ func (s *visitor) ExportTx(tx *txs.ExportTx) error {
 
 // Removed in regenesis
 func (s *visitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
-	chainAuthSigners, err := s.getAuthSigners(tx.Chain, tx.ChainAuth)
+	chainAuthSigners, err := s.getAuthSigners(tx.Chain(), tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -139,11 +152,11 @@ func (s *visitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
 }
 
 func (s *visitor) TransformChainTx(tx *txs.TransformChainTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
-	chainAuthSigners, err := s.getAuthSigners(tx.Chain, tx.ChainAuth)
+	chainAuthSigners, err := s.getAuthSigners(tx.Chain(), tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -152,7 +165,7 @@ func (s *visitor) TransformChainTx(tx *txs.TransformChainTx) error {
 }
 
 func (s *visitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
@@ -160,7 +173,7 @@ func (s *visitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidato
 }
 
 func (s *visitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
@@ -168,11 +181,11 @@ func (s *visitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegato
 }
 
 func (s *visitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
-	chainAuthSigners, err := s.getAuthSigners(tx.Chain, tx.ChainAuth)
+	chainAuthSigners, err := s.getAuthSigners(tx.Chain(), tx.ChainAuth())
 	if err != nil {
 		return err
 	}
@@ -181,36 +194,15 @@ func (s *visitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) err
 }
 
 func (s *visitor) BaseTx(tx *txs.BaseTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
 	return sign(s.tx, false, txSigners)
 }
 
-func (s *visitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	chainAuthSigners, err := s.getAuthSigners(tx.Chain, tx.ChainAuth)
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, chainAuthSigners)
-	return sign(s.tx, true, txSigners)
-}
-
-func (s *visitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	return sign(s.tx, true, txSigners)
-}
-
 func (s *visitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
@@ -218,7 +210,7 @@ func (s *visitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
 }
 
 func (s *visitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
@@ -226,7 +218,7 @@ func (s *visitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
 }
 
 func (s *visitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
@@ -234,103 +226,16 @@ func (s *visitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanc
 }
 
 func (s *visitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
+	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Inputs())
 	if err != nil {
 		return err
 	}
-	disableAuthSigners, err := s.getAuthSigners(tx.ValidationID, tx.DisableAuth)
+	disableAuthSigners, err := s.getAuthSigners(tx.ValidationID(), tx.DisableAuth())
 	if err != nil {
 		return err
 	}
 	txSigners = append(txSigners, disableAuthSigners)
 	return sign(s.tx, true, txSigners)
-}
-
-func (s *visitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	return sign(s.tx, true, txSigners)
-}
-
-// CreateAssetTx signs the BaseTx fee inputs that pay for asset creation.
-// No additional auth required beyond the input credentials.
-func (s *visitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	return sign(s.tx, false, txSigners)
-}
-
-// OperationTx signs BaseTx fee inputs plus, for each operation, the
-// signature indices required by the consumed UTXO outputs. Mirrors
-// `wallet/chain/x/signer/visitor.go::getOpsSigners` so the P-only
-// secp256k1fx path produces credentials the semantic verifier will accept.
-func (s *visitor) OperationTx(tx *txs.OperationTx) error {
-	txSigners, err := s.getSigners(constants.PlatformChainID, tx.Ins)
-	if err != nil {
-		return err
-	}
-	opsSigners, err := s.getOpsSigners(constants.PlatformChainID, tx.Ops)
-	if err != nil {
-		return err
-	}
-	txSigners = append(txSigners, opsSigners...)
-	return sign(s.tx, false, txSigners)
-}
-
-// getOpsSigners resolves the per-op credential signers from the consumed
-// UTXOs. PlatformVM ships only secp256k1fx so the operation must carry a
-// *secp256k1fx.MintOperation; the consumed UTXO output must be a
-// *secp256k1fx.MintOutput (the asset's mint authority). Any other shape is
-// rejected — the same gate the syntactic verifier and codec both apply.
-func (s *visitor) getOpsSigners(
-	sourceChainID ids.ID,
-	ops []*txs.Operation,
-) ([][]keychain.Signer, error) {
-	txSigners := make([][]keychain.Signer, len(ops))
-	for credIndex, op := range ops {
-		mintOp, ok := op.Op.(*secp256k1fx.MintOperation)
-		if !ok {
-			return nil, ErrUnknownOpType
-		}
-		input := &mintOp.MintInput
-		inputSigners := make([]keychain.Signer, len(input.SigIndices))
-		txSigners[credIndex] = inputSigners
-
-		if len(op.UTXOIDs) != 1 {
-			return nil, ErrInvalidNumUTXOsInOp
-		}
-		utxoID := op.UTXOIDs[0].InputID()
-		utxo, err := s.backend.GetUTXO(s.ctx, sourceChainID, utxoID)
-		if err == database.ErrNotFound {
-			// No access to the UTXO — partial sign and let the caller
-			// merge a populated credential later.
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		mintOut, ok := utxo.Out.(*secp256k1fx.MintOutput)
-		if !ok {
-			return nil, ErrUnknownOutputType
-		}
-		for sigIndex, addrIndex := range input.SigIndices {
-			if addrIndex >= uint32(len(mintOut.Addrs)) {
-				return nil, ErrInvalidUTXOSigIndex
-			}
-			addr := mintOut.Addrs[addrIndex]
-			key, ok := s.kc.Get(addr)
-			if !ok {
-				continue
-			}
-			inputSigners[sigIndex] = key
-		}
-	}
-	return txSigners, nil
 }
 
 func (s *visitor) getSigners(sourceChainID ids.ID, ins []*lux.TransferableInput) ([][]keychain.Signer, error) {
@@ -426,11 +331,10 @@ func (s *visitor) getAuthSigners(ownerID ids.ID, auth verify.Verifiable) ([]keyc
 }
 
 func sign(tx *txs.Tx, signHash bool, txSigners [][]keychain.Signer) error {
-	unsignedBytes, err := txs.Codec.Marshal(txs.CodecVersion, &tx.Unsigned)
-	if err != nil {
-		return fmt.Errorf("couldn't marshal unsigned tx: %w", err)
-	}
+	// The unsigned tx is already a zap buffer — its bytes are the wire form.
+	unsignedBytes := tx.Unsigned.Bytes()
 	unsignedHash := hash.ComputeHash256(unsignedBytes)
+	var err error
 
 	if expectedLen := len(txSigners); expectedLen != len(tx.Creds) {
 		tx.Creds = make([]verify.Verifiable, expectedLen)
@@ -487,10 +391,7 @@ func sign(tx *txs.Tx, signHash bool, txSigners [][]keychain.Signer) error {
 		}
 	}
 
-	signedBytes, err := txs.Codec.Marshal(txs.CodecVersion, tx)
-	if err != nil {
-		return fmt.Errorf("couldn't marshal tx: %w", err)
-	}
-	tx.SetBytes(unsignedBytes, signedBytes)
-	return nil
+	// Signed bytes are unsigned ‖ creds; Initialize encodes the credential
+	// buffer, concatenates, and binds bytes + TxID. There is no codec.
+	return tx.Initialize()
 }

@@ -220,7 +220,7 @@ func FetchEthState(
 	addrs set.Set[ethcommon.Address],
 ) (*EthState, error) {
 	path := fmt.Sprintf(
-		"%s/ext/%s/C/rpc",
+		"%s/v1/%s/C/rpc",
 		uri,
 		constants.ChainAliasPrefix,
 	)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txheap
@@ -11,8 +11,27 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
+
+// newAddValidatorTx builds a native-wire AddValidatorTx staker whose
+// distinguishing field is its end time, then wraps + initializes it as a
+// signed tx (struct-is-wire: constructor + Initialize, no codec).
+func newAddValidatorTx(t *testing.T, nodeID ids.NodeID, start, end uint64) *txs.Tx {
+	t.Helper()
+	utx, err := txs.NewAddValidatorTx(
+		&lux.BaseTx{},
+		txs.Validator{NodeID: nodeID, Start: start, End: end},
+		nil, // stake outs
+		&secp256k1fx.OutputOwners{},
+		0, // delegation shares
+	)
+	require.NoError(t, err)
+	tx := &txs.Tx{Unsigned: utx}
+	require.NoError(t, tx.Initialize())
+	return tx
+}
 
 func TestByEndTime(t *testing.T) {
 	require := require.New(t)
@@ -20,39 +39,16 @@ func TestByEndTime(t *testing.T) {
 	txHeap := NewByEndTime()
 
 	baseTime := time.Now()
+	base := uint64(baseTime.Unix())
 
-	utx0 := &txs.AddValidatorTx{
-		Validator: txs.Validator{
-			NodeID: ids.BuildTestNodeID([]byte{0}),
-			Start:  uint64(baseTime.Unix()),
-			End:    uint64(baseTime.Unix()) + 1,
-		},
-		RewardsOwner: &secp256k1fx.OutputOwners{},
-	}
-	tx0 := &txs.Tx{Unsigned: utx0}
-	require.NoError(tx0.Initialize(txs.Codec))
+	tx0 := newAddValidatorTx(t, ids.BuildTestNodeID([]byte{0}), base, base+1)
+	utx0 := tx0.Unsigned.(*txs.AddValidatorTx)
 
-	utx1 := &txs.AddValidatorTx{
-		Validator: txs.Validator{
-			NodeID: ids.BuildTestNodeID([]byte{1}),
-			Start:  uint64(baseTime.Unix()),
-			End:    uint64(baseTime.Unix()) + 2,
-		},
-		RewardsOwner: &secp256k1fx.OutputOwners{},
-	}
-	tx1 := &txs.Tx{Unsigned: utx1}
-	require.NoError(tx1.Initialize(txs.Codec))
+	tx1 := newAddValidatorTx(t, ids.BuildTestNodeID([]byte{1}), base, base+2)
+	utx1 := tx1.Unsigned.(*txs.AddValidatorTx)
 
-	utx2 := &txs.AddValidatorTx{
-		Validator: txs.Validator{
-			NodeID: ids.BuildTestNodeID([]byte{1}),
-			Start:  uint64(baseTime.Unix()),
-			End:    uint64(baseTime.Unix()) + 3,
-		},
-		RewardsOwner: &secp256k1fx.OutputOwners{},
-	}
-	tx2 := &txs.Tx{Unsigned: utx2}
-	require.NoError(tx2.Initialize(txs.Codec))
+	tx2 := newAddValidatorTx(t, ids.BuildTestNodeID([]byte{1}), base, base+3)
+	utx2 := tx2.Unsigned.(*txs.AddValidatorTx)
 
 	txHeap.Add(tx2)
 	require.Equal(utx2.EndTime(), txHeap.Timestamp())

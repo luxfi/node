@@ -144,20 +144,6 @@ func (m *txMetrics) BaseTx(*txs.BaseTx) error {
 	return nil
 }
 
-func (m *txMetrics) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "convert_net_to_l1",
-	}).Inc()
-	return nil
-}
-
-func (m *txMetrics) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "create_sovereign_l1",
-	}).Inc()
-	return nil
-}
-
 func (m *txMetrics) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "register_l1_validator",
@@ -186,13 +172,6 @@ func (m *txMetrics) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
 	return nil
 }
 
-func (m *txMetrics) SlashValidatorTx(*txs.SlashValidatorTx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "slash_validator",
-	}).Inc()
-	return nil
-}
-
 func (m *txMetrics) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "add_net_validator",
@@ -203,6 +182,13 @@ func (m *txMetrics) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 func (m *txMetrics) CreateNetworkTx(*txs.CreateNetworkTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "create_network",
+	}).Inc()
+	return nil
+}
+
+func (m *txMetrics) ConvertNetworkTx(*txs.ConvertNetworkTx) error {
+	m.numTxs.With(metric.Labels{
+		txLabel: "convert_network",
 	}).Inc()
 	return nil
 }
@@ -224,20 +210,6 @@ func (m *txMetrics) TransformChainTx(*txs.TransformChainTx) error {
 func (m *txMetrics) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "transfer_net_ownership",
-	}).Inc()
-	return nil
-}
-
-func (m *txMetrics) CreateAssetTx(*txs.CreateAssetTx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "create_asset",
-	}).Inc()
-	return nil
-}
-
-func (m *txMetrics) OperationTx(*txs.OperationTx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "operation",
 	}).Inc()
 	return nil
 }

@@ -10,11 +10,14 @@ import (
 	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 
-	"github.com/luxfi/node/vms/pcodecs"
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
 var _ chain.BatchedChainVM = (*VM)(nil)
+
+// containerLenPrefix is the 4-byte length prefix each block occupies in an
+// ancestors response container; counted toward the response size budget.
+const containerLenPrefix = 4
 
 func (vm *VM) GetAncestors(
 	ctx context.Context,
@@ -42,10 +45,10 @@ func (vm *VM) GetAncestors(
 
 		blkBytes := blk.Bytes()
 
-		// Ensure response size isn't too large. Include pcodecs.IntLen because
-		// the size of the message is included with each container, and the size
-		// is repr. by an int.
-		currentByteLength += pcodecs.IntLen + len(blkBytes)
+		// Ensure response size isn't too large. Include containerLenPrefix
+		// because the size of the message is included with each container, and
+		// the size is repr. by an int.
+		currentByteLength += containerLenPrefix + len(blkBytes)
 		elapsedTime := vm.Clock.Time().Sub(startTime)
 		if len(res) > 0 && (currentByteLength >= maxBlocksSize || maxBlocksRetrievalTime <= elapsedTime) {
 			return res, nil // reached maximum size or ran out of time

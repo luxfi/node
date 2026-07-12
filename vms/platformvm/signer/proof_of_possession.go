@@ -18,10 +18,10 @@ var (
 )
 
 type ProofOfPossession struct {
-	PublicKey [bls.PublicKeyLen]byte `serialize:"true" json:"publicKey"`
+	PublicKey [bls.PublicKeyLen]byte `json:"publicKey"`
 	// BLS signature proving ownership of [PublicKey]. The signed message is the
 	// [PublicKey].
-	ProofOfPossession [bls.SignatureLen]byte `serialize:"true" json:"proofOfPossession"`
+	ProofOfPossession [bls.SignatureLen]byte `json:"proofOfPossession"`
 
 	// publicKey is the parsed version of [PublicKey]. It is populated in
 	// [Verify].

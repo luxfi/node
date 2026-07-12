@@ -8,8 +8,8 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/metrics"
@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
-	"github.com/luxfi/math"
+	"github.com/luxfi/vm/chains/atomic"
 
 	"github.com/luxfi/node/vms/components/gas"
 	txfee "github.com/luxfi/node/vms/platformvm/txs/fee"
@@ -74,7 +74,7 @@ func (v *verifier) ProposalBlock(b *block.ProposalBlock) error {
 
 	feeCalculator := state.PickFeeCalculator(v.txExecutorBackend.Config, onDecisionState)
 	inputs, atomicRequests, onAcceptFunc, gasConsumed, _, err := v.processStandardTxs(
-		b.Transactions,
+		b.Txs(),
 		feeCalculator,
 		onDecisionState,
 		b.Parent(),
@@ -95,7 +95,7 @@ func (v *verifier) ProposalBlock(b *block.ProposalBlock) error {
 
 	return v.proposalBlock( // Must be the last validity check on the block
 		b,
-		b.Tx,
+		b.Tx(),
 		onDecisionState,
 		gasConsumed,
 		onCommitState,
@@ -131,7 +131,7 @@ func (v *verifier) StandardBlock(b *block.StandardBlock) error {
 	feeCalculator := state.PickFeeCalculator(v.txExecutorBackend.Config, onAcceptState)
 	return v.standardBlock( // Must be the last validity check on the block
 		b,
-		b.Transactions,
+		b.Txs(),
 		feeCalculator,
 		onAcceptState,
 		changed,

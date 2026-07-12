@@ -1,12 +1,9 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
 
 import (
-	"encoding/hex"
-	"github.com/go-json-experiment/json"
-	"github.com/go-json-experiment/json/jsontext"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,122 +12,129 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/warp/message"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
-func TestTxComplexity_Individual(t *testing.T) {
-	// txTests fixtures are pre-LP-023 BE-encoded V1 wire bytes. Post-LP-023
-	// the codec is ZAP-native LE — these hex strings no longer parse.
-	// TxComplexity correctness is covered by the runtime-marshal
-	// Output/Input/Owner/Auth/Signer complexity tests below.
-	t.Skip("txTests fixtures are pre-LP-023 BE wire; runtime-marshal coverage in *Complexity tests")
+// Post-LP-023 notes for this file:
+//
+//   - The pre-LP-023 whole-tx complexity/fee tests parsed hard-coded
+//     big-endian linearcodec hex fixtures (txTests, still defined in
+//     calculator_test.go) via txs.Parse(txs.Codec, ...). That codec is
+//     gone (struct-is-wire ZAP), and the BE hex no longer parses.
+//     TestTxComplexity below rebuilds representative txs natively through
+//     the New*Tx constructors and exercises the same visitor + batch +
+//     ErrUnsupportedTx paths.
+//   - The per-case codec byte cross-check (txs.Codec.Marshal(...) vs
+//     actual[gas.Bandwidth]) is removed: it tied the intrinsic fee model to
+//     the legacy linearcodec object length. The intrinsic model is a
+//     protocol cost constant (Output/Input/Owner/Auth/Signer bandwidth is
+//     still asserted below against the expected dimensions), decoupled from
+//     the physical ZAP object framing (header + pointer indirection), so
+//     there is no equivalent standalone-component marshal to compare
+//     against. The expected-dimension assertions are the real coverage of
+//     the complexity functions and are preserved in full.
+//   - TestConvertNetworkToL1ValidatorComplexity was removed: both the
+//     txs.ConvertNetworkToL1Validator type and the
+//     ConvertNetworkToL1ValidatorComplexity function it exercised were
+//     deleted in the native-wire cutover. Per-validator convert complexity
+//     is now computed inline by complexityVisitor.ConvertNetworkTx (over
+//     txs.NetworkValidator); there is no exported per-validator entry point
+//     to unit test in isolation.
 
-	for _, test := range txTests {
-		t.Run(test.name, func(t *testing.T) {
-			require := require.New(t)
-
-			txBytes, err := hex.DecodeString(test.tx)
-			require.NoError(err)
-
-			tx, err := txs.Parse(txs.Codec, txBytes)
-			require.NoError(err)
-
-			// If the test fails, logging the transaction can be helpful for
-			// debugging.
-			txJSON, err := json.Marshal(tx, jsontext.WithIndent("\t"))
-			require.NoError(err)
-			t.Log(string(txJSON))
-
-			actual, err := TxComplexity(tx.Unsigned)
-			require.Equal(test.expectedComplexity, actual)
-			require.ErrorIs(err, test.expectedComplexityErr)
-			if err != nil {
-				return
-			}
-
-			require.Len(txBytes, int(actual[gas.Bandwidth]))
-		})
+// feeSpendBase is a minimal, well-typed spending envelope (1 input with 1
+// signature, 1 output with 1 owner) used to construct native-wire txs for
+// the whole-tx complexity/fee tests. Constructors do not run SyntacticVerify,
+// so the envelope only needs to be structurally valid.
+func feeSpendBase() *lux.BaseTx {
+	assetID := ids.GenerateTestID()
+	return &lux.BaseTx{
+		NetworkID:    10,
+		BlockchainID: ids.GenerateTestID(),
+		Outs: []*lux.TransferableOutput{{
+			Asset: lux.Asset{ID: assetID},
+			Out: &secp256k1fx.TransferOutput{
+				Amt: 1000,
+				OutputOwners: secp256k1fx.OutputOwners{
+					Threshold: 1,
+					Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+				},
+			},
+		}},
+		Ins: []*lux.TransferableInput{{
+			UTXOID: lux.UTXOID{TxID: ids.GenerateTestID(), OutputIndex: 0},
+			Asset:  lux.Asset{ID: assetID},
+			In: &secp256k1fx.TransferInput{
+				Amt:   1000,
+				Input: secp256k1fx.Input{SigIndices: []uint32{0}},
+			},
+		}},
 	}
 }
 
-func TestTxComplexity_Batch(t *testing.T) {
-	t.Skip("txTests fixtures are pre-LP-023 BE wire; runtime-marshal coverage in *Complexity tests")
+func feeBaseTx(t *testing.T) *txs.BaseTx {
+	t.Helper()
+	tx, err := txs.NewBaseTx(feeSpendBase())
+	require.NoError(t, err)
+	return tx
+}
+
+func feeCreateChainTx(t *testing.T) *txs.CreateChainTx {
+	t.Helper()
+	tx, err := txs.NewCreateChainTx(
+		feeSpendBase(),
+		ids.GenerateTestID(), // chainID
+		"chain",
+		ids.GenerateTestID(),                        // vmID
+		nil,                                         // fxIDs
+		[]byte("genesis"),                           // genesisData
+		&secp256k1fx.Input{SigIndices: []uint32{0}}, // chainAuth
+	)
+	require.NoError(t, err)
+	return tx
+}
+
+// TestTxComplexity exercises the whole-tx complexity visitor over
+// natively-built txs (replacing the dead BE hex-fixture path): supported tx
+// types yield non-zero bandwidth and compose additively in batch mode, and
+// unsupported tx types are refused with ErrUnsupportedTx.
+func TestTxComplexity(t *testing.T) {
 	require := require.New(t)
 
-	var (
-		unsignedTxs        = make([]txs.UnsignedTx, 0, len(txTests))
-		expectedComplexity gas.Dimensions
-	)
-	for _, test := range txTests {
-		if test.expectedComplexityErr != nil {
-			continue
-		}
-
-		var err error
-		expectedComplexity, err = test.expectedComplexity.Add(&expectedComplexity)
-		require.NoError(err)
-
-		txBytes, err := hex.DecodeString(test.tx)
-		require.NoError(err)
-
-		tx, err := txs.Parse(txs.Codec, txBytes)
-		require.NoError(err)
-
-		unsignedTxs = append(unsignedTxs, tx.Unsigned)
+	supported := []txs.UnsignedTx{
+		feeBaseTx(t),
+		feeCreateChainTx(t),
 	}
 
-	complexity, err := TxComplexity(unsignedTxs...)
+	// Individual: every supported tx computes without error and consumes
+	// bandwidth.
+	var want gas.Dimensions
+	for _, utx := range supported {
+		c, err := TxComplexity(utx)
+		require.NoError(err)
+		require.NotZero(c[gas.Bandwidth])
+
+		want, err = want.Add(&c)
+		require.NoError(err)
+	}
+
+	// Batch: the variadic call equals the running sum of the individual
+	// complexities.
+	batch, err := TxComplexity(supported...)
 	require.NoError(err)
-	require.Equal(expectedComplexity, complexity)
-}
+	require.Equal(want, batch)
 
-func BenchmarkTxComplexity_Individual(b *testing.B) {
-	for _, test := range txTests {
-		b.Run(test.name, func(b *testing.B) {
-			require := require.New(b)
-
-			txBytes, err := hex.DecodeString(test.tx)
-			require.NoError(err)
-
-			tx, err := txs.Parse(txs.Codec, txBytes)
-			require.NoError(err)
-
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				_, _ = TxComplexity(tx.Unsigned)
-			}
-		})
-	}
-}
-
-func BenchmarkTxComplexity_Batch(b *testing.B) {
-	require := require.New(b)
-
-	unsignedTxs := make([]txs.UnsignedTx, 0, len(txTests))
-	for _, test := range txTests {
-		if test.expectedComplexityErr != nil {
-			continue
-		}
-
-		txBytes, err := hex.DecodeString(test.tx)
-		require.NoError(err)
-
-		tx, err := txs.Parse(txs.Codec, txBytes)
-		require.NoError(err)
-
-		unsignedTxs = append(unsignedTxs, tx.Unsigned)
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, _ = TxComplexity(unsignedTxs...)
+	// Unsupported: AdvanceTime / RewardValidator are refused.
+	for _, utx := range []txs.UnsignedTx{
+		txs.NewAdvanceTimeTx(1),
+		txs.NewRewardValidatorTx(ids.GenerateTestID()),
+	} {
+		_, err := TxComplexity(utx)
+		require.ErrorIs(err, ErrUnsupportedTx)
 	}
 }
 
@@ -219,16 +223,6 @@ func TestOutputComplexity(t *testing.T) {
 			actual, err := OutputComplexity(test.out)
 			require.ErrorIs(err, test.expectedErr)
 			require.Equal(test.expected, actual)
-
-			if err != nil {
-				return
-			}
-
-			bytes, err := txs.Codec.Marshal(txs.CodecVersion, test.out)
-			require.NoError(err)
-
-			numBytesWithoutCodecVersion := uint64(len(bytes) - pcodecs.VersionSize)
-			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
 }
@@ -339,96 +333,6 @@ func TestInputComplexity(t *testing.T) {
 			actual, err := InputComplexity(test.in)
 			require.ErrorIs(err, test.expectedErr)
 			require.Equal(test.expected, actual)
-
-			if err != nil {
-				return
-			}
-
-			inputBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.in)
-			require.NoError(err)
-
-			cred := test.cred
-			credentialBytes, err := txs.Codec.Marshal(txs.CodecVersion, &cred)
-			require.NoError(err)
-
-			numBytesWithoutCodecVersion := uint64(len(inputBytes) + len(credentialBytes) - 2*pcodecs.VersionSize)
-			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
-		})
-	}
-}
-
-func TestConvertNetworkToL1ValidatorComplexity(t *testing.T) {
-	tests := []struct {
-		name     string
-		vdr      txs.ConvertNetworkToL1Validator
-		expected gas.Dimensions
-	}{
-		{
-			name: "any can spend",
-			vdr: txs.ConvertNetworkToL1Validator{
-				NodeID:                make([]byte, ids.NodeIDLen),
-				Signer:                signer.ProofOfPossession{},
-				RemainingBalanceOwner: message.PChainOwner{},
-				DeactivationOwner:     message.PChainOwner{},
-			},
-			expected: gas.Dimensions{
-				gas.Bandwidth: 200,
-				gas.DBWrite:   4,
-				gas.Compute:   1050,
-			},
-		},
-		{
-			name: "single remaining balance owner",
-			vdr: txs.ConvertNetworkToL1Validator{
-				NodeID: make([]byte, ids.NodeIDLen),
-				Signer: signer.ProofOfPossession{},
-				RemainingBalanceOwner: message.PChainOwner{
-					Threshold: 1,
-					Addresses: []ids.ShortID{
-						ids.GenerateTestShortID(),
-					},
-				},
-				DeactivationOwner: message.PChainOwner{},
-			},
-			expected: gas.Dimensions{
-				gas.Bandwidth: 220,
-				gas.DBWrite:   4,
-				gas.Compute:   1050,
-			},
-		},
-		{
-			name: "single deactivation owner",
-			vdr: txs.ConvertNetworkToL1Validator{
-				NodeID:                make([]byte, ids.NodeIDLen),
-				Signer:                signer.ProofOfPossession{},
-				RemainingBalanceOwner: message.PChainOwner{},
-				DeactivationOwner: message.PChainOwner{
-					Threshold: 1,
-					Addresses: []ids.ShortID{
-						ids.GenerateTestShortID(),
-					},
-				},
-			},
-			expected: gas.Dimensions{
-				gas.Bandwidth: 220,
-				gas.DBWrite:   4,
-				gas.Compute:   1050,
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			require := require.New(t)
-
-			actual, err := ConvertNetworkToL1ValidatorComplexity(&test.vdr)
-			require.NoError(err)
-			require.Equal(test.expected, actual)
-
-			vdrBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.vdr)
-			require.NoError(err)
-
-			numBytesWithoutCodecVersion := uint64(len(vdrBytes) - pcodecs.VersionSize)
-			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
 }
@@ -484,16 +388,6 @@ func TestOwnerComplexity(t *testing.T) {
 			actual, err := OwnerComplexity(test.owner)
 			require.ErrorIs(err, test.expectedErr)
 			require.Equal(test.expected, actual)
-
-			if err != nil {
-				return
-			}
-
-			ownerBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.owner)
-			require.NoError(err)
-
-			numBytesWithoutCodecVersion := uint64(len(ownerBytes) - pcodecs.VersionSize)
-			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
 }
@@ -562,19 +456,6 @@ func TestAuthComplexity(t *testing.T) {
 			actual, err := AuthComplexity(test.auth)
 			require.ErrorIs(err, test.expectedErr)
 			require.Equal(test.expected, actual)
-
-			if err != nil {
-				return
-			}
-
-			authBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.auth)
-			require.NoError(err)
-
-			credentialBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.cred)
-			require.NoError(err)
-
-			numBytesWithoutCodecVersion := uint64(len(authBytes) + len(credentialBytes) - 2*pcodecs.VersionSize)
-			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
 }
@@ -615,16 +496,6 @@ func TestSignerComplexity(t *testing.T) {
 			actual, err := SignerComplexity(test.signer)
 			require.ErrorIs(err, test.expectedErr)
 			require.Equal(test.expected, actual)
-
-			if err != nil {
-				return
-			}
-
-			signerBytes, err := txs.Codec.Marshal(txs.CodecVersion, test.signer)
-			require.NoError(err)
-
-			numBytesWithoutCodecVersion := uint64(len(signerBytes) - pcodecs.VersionSize)
-			require.Equal(numBytesWithoutCodecVersion, actual[gas.Bandwidth])
 		})
 	}
 }

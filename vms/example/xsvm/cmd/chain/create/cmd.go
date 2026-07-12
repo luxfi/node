@@ -55,7 +55,7 @@ func createFunc(c *cobra.Command, args []string) error {
 	}
 	log.Printf("synced wallet in %s\n", time.Since(walletSyncStartTime))
 
-	genesisBytes, err := genesis.Codec.Marshal(genesis.CodecVersion, &genesis.Genesis{
+	genesisBytes, err := (&genesis.Genesis{
 		Timestamp: 0,
 		Allocations: []genesis.Allocation{
 			{
@@ -63,7 +63,7 @@ func createFunc(c *cobra.Command, args []string) error {
 				Balance: config.Balance,
 			},
 		},
-	})
+	}).Marshal()
 	if err != nil {
 		return err
 	}

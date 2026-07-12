@@ -1,14 +1,11 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
 
 import (
-	"context"
-	"fmt"
 	"time"
 
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
@@ -16,39 +13,19 @@ import (
 var _ Block = (*StandardBlock)(nil)
 
 // StandardBlock is the canonical P-Chain standard block. It carries a
-// per-block timestamp (advance-all-implicitly removed the separate
-// AdvanceTimeTx flow) and an ordered list of decision txs.
+// per-block timestamp and an ordered list of decision txs, stored as a u32
+// length list + concatenated tx blob in the zap buffer.
 type StandardBlock struct {
-	Time         uint64    `serialize:"true" json:"time"`
-	CommonBlock  `serialize:"true"`
-	Transactions []*txs.Tx `serialize:"true" json:"txs"`
+	commonZapBlock
 }
 
-func (b *StandardBlock) Timestamp() time.Time { return time.Unix(int64(b.Time), 0) }
-
-func (b *StandardBlock) initialize(bytes []byte) error {
-	b.CommonBlock.initialize(bytes)
-	for _, tx := range b.Transactions {
-		// Byte-preserving: re-derive signedBytes by re-marshalling at
-		// the canonical write version (v1). This is the v1 read path
-		// — v0 reads go through block.parseV0 + liftedV0Block, which
-		// rebinds via InitializeFromBytesAtVersion(v0).
-		if err := tx.InitializeFromBytesAtVersion(txs.Codec, txs.CodecVersionV1); err != nil {
-			return fmt.Errorf("failed to initialize tx: %w", err)
-		}
-	}
-	return nil
+// Txs returns the decision txs in wire order.
+func (b *StandardBlock) Txs() []*txs.Tx {
+	list, _ := readTxList(b.msg.Root(), offBlkTxLengths, offBlkTxBlob)
+	return list
 }
 
-func (b *StandardBlock) InitRuntime(rt *runtime.Runtime) {
-	for _, tx := range b.Transactions {
-		tx.Unsigned.InitRuntime(rt)
-	}
-}
-
-func (b *StandardBlock) Txs() []*txs.Tx          { return b.Transactions }
-func (b *StandardBlock) Visit(v Visitor) error   { return v.StandardBlock(b) }
-func (*StandardBlock) Initialize(context.Context) error { return nil }
+func (b *StandardBlock) Visit(v Visitor) error { return v.StandardBlock(b) }
 
 func NewStandardBlock(
 	timestamp time.Time,
@@ -56,10 +33,13 @@ func NewStandardBlock(
 	height uint64,
 	txs []*txs.Tx,
 ) (*StandardBlock, error) {
-	blk := &StandardBlock{
-		Time:         uint64(timestamp.Unix()),
-		CommonBlock:  CommonBlock{PrntID: parentID, Hght: height},
-		Transactions: txs,
+	bytes, err := buildBlock(blkStandard, parentID, height, uint64(timestamp.Unix()), txs, nil)
+	if err != nil {
+		return nil, err
 	}
-	return blk, initialize(blk, &blk.CommonBlock)
+	blk := &StandardBlock{}
+	if err := blk.setID(bytes); err != nil {
+		return nil, err
+	}
+	return blk, nil
 }
