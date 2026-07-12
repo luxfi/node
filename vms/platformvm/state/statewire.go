@@ -17,6 +17,7 @@ package state
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/gas"
@@ -308,4 +309,75 @@ func parseTxStatus(b []byte) (txBytesAndStatus, error) {
 		Tx:     stCopyBytes(obj.Bytes(txsTx)),
 		Status: status.Status(obj.Uint32(txsStatus)),
 	}, nil
+}
+
+// ---- validatorMetadata (staker uptime/reward record; txID is the DB key, not
+// serialized). Fixed object of five uint64 fields. ----
+
+const (
+	vmdUpDuration      = 0
+	vmdLastUpdated     = 8
+	vmdPotentialReward = 16
+	vmdDelegateeReward = 24
+	vmdStakerStartTime = 32
+	vmdSize            = 40
+)
+
+func marshalValidatorMetadata(m *validatorMetadata) ([]byte, error) {
+	b := zap.NewBuilder(zap.HeaderSize + vmdSize)
+	ob := b.StartObject(vmdSize)
+	ob.SetUint64(vmdUpDuration, uint64(m.UpDuration))
+	ob.SetUint64(vmdLastUpdated, m.LastUpdated)
+	ob.SetUint64(vmdPotentialReward, m.PotentialReward)
+	ob.SetUint64(vmdDelegateeReward, m.PotentialDelegateeReward)
+	ob.SetUint64(vmdStakerStartTime, m.StakerStartTime)
+	ob.FinishAsRoot()
+	return b.Finish(), nil
+}
+
+// unmarshalValidatorMetadata overlays m's five serialized fields from b. All
+// five are always written, so a full buffer overwrites any caller-supplied
+// tx-default values (StakerStartTime/LastUpdated); the derived lastUpdated and
+// the DB-key txID are handled by the parseValidatorMetadata wrapper.
+func unmarshalValidatorMetadata(b []byte, m *validatorMetadata) error {
+	msg, err := zap.Parse(b)
+	if err != nil {
+		return err
+	}
+	obj := msg.Root()
+	m.UpDuration = time.Duration(obj.Uint64(vmdUpDuration))
+	m.LastUpdated = obj.Uint64(vmdLastUpdated)
+	m.PotentialReward = obj.Uint64(vmdPotentialReward)
+	m.PotentialDelegateeReward = obj.Uint64(vmdDelegateeReward)
+	m.StakerStartTime = obj.Uint64(vmdStakerStartTime)
+	return nil
+}
+
+// ---- delegatorMetadata (PotentialReward + StakerStartTime; txID is the DB
+// key, not serialized). ----
+
+const (
+	dmdPotentialReward = 0
+	dmdStakerStartTime = 8
+	dmdSize            = 16
+)
+
+func marshalDelegatorMetadata(m *delegatorMetadata) ([]byte, error) {
+	b := zap.NewBuilder(zap.HeaderSize + dmdSize)
+	ob := b.StartObject(dmdSize)
+	ob.SetUint64(dmdPotentialReward, m.PotentialReward)
+	ob.SetUint64(dmdStakerStartTime, m.StakerStartTime)
+	ob.FinishAsRoot()
+	return b.Finish(), nil
+}
+
+func unmarshalDelegatorMetadata(b []byte, m *delegatorMetadata) error {
+	msg, err := zap.Parse(b)
+	if err != nil {
+		return err
+	}
+	obj := msg.Root()
+	m.PotentialReward = obj.Uint64(dmdPotentialReward)
+	m.StakerStartTime = obj.Uint64(dmdStakerStartTime)
+	return nil
 }

@@ -607,7 +607,7 @@ func (s *state) initValidatorSets() error {
 	return nil
 }
 
-func (s *state) writeCurrentStakers(codecVersion uint16) error {
+func (s *state) writeCurrentStakers() error {
 	for chainID, validatorDiffs := range s.currentStakers.validatorDiffs {
 		// Select db to write to
 		validatorDB := s.currentNetValidatorList
@@ -639,7 +639,7 @@ func (s *state) writeCurrentStakers(codecVersion uint16) error {
 					PotentialDelegateeReward: 0,
 				}
 
-				metadataBytes, err := MetadataCodec.Marshal(codecVersion, metadata)
+				metadataBytes, err := marshalValidatorMetadata(metadata)
 				if err != nil {
 					return fmt.Errorf("failed to serialize current validator: %w", err)
 				}
@@ -660,7 +660,6 @@ func (s *state) writeCurrentStakers(codecVersion uint16) error {
 			err := writeCurrentDelegatorDiff(
 				delegatorDB,
 				validatorDiff,
-				codecVersion,
 			)
 			if err != nil {
 				return err
@@ -674,7 +673,6 @@ func (s *state) writeCurrentStakers(codecVersion uint16) error {
 func writeCurrentDelegatorDiff(
 	currentDelegatorList linkeddb.LinkedDB,
 	validatorDiff *diffValidator,
-	codecVersion uint16,
 ) error {
 	addedDelegatorIterator := iterator.FromTree(validatorDiff.addedDelegators)
 	defer addedDelegatorIterator.Release()
@@ -687,7 +685,7 @@ func writeCurrentDelegatorDiff(
 			PotentialReward: staker.PotentialReward,
 			StakerStartTime: uint64(staker.StartTime.Unix()),
 		}
-		if err := writeDelegatorMetadata(currentDelegatorList, metadata, codecVersion); err != nil {
+		if err := writeDelegatorMetadata(currentDelegatorList, metadata); err != nil {
 			return fmt.Errorf("failed to write current delegator to list: %w", err)
 		}
 	}

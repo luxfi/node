@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/zap"
 )
 
 var (
@@ -23,9 +23,9 @@ var (
 
 // Epoch represents a P-Chain epoch for validator set coordination
 type Epoch struct {
-	PChainHeight uint64 `serialize:"true" json:"pChainHeight"`
-	Number       uint64 `serialize:"true" json:"number"`
-	StartTime    int64  `serialize:"true" json:"startTime"`
+	PChainHeight uint64 `json:"pChainHeight"`
+	Number       uint64 `json:"number"`
+	StartTime    int64  `json:"startTime"`
 }
 
 type Block interface {
@@ -56,30 +56,19 @@ type SignedBlock interface {
 	BlobCount() uint32         // Number of DA blobs in block
 }
 
-type statelessUnsignedBlock struct {
-	ParentID     ids.ID `serialize:"true"`
-	Timestamp    int64  `serialize:"true"`
-	PChainHeight uint64 `serialize:"true"`
-	Epoch        Epoch  `serialize:"true"`
-	Certificate  []byte `serialize:"true"`
-	Block        []byte `serialize:"true"`
-
-	// Data Availability fields (v1.1 spec)
-	DARoot          [32]byte `serialize:"true"` // Root of DA commitments
-	WitnessRoot     [32]byte `serialize:"true"` // Root of witnesses/proofs
-	MessagesOutRoot [32]byte `serialize:"true"` // Root of outgoing cross-chain messages
-	BlobCount       uint32   `serialize:"true"` // Number of DA blobs in block
-}
-
+// statelessBlock is zap-backed: msg is the unsigned body buffer (a
+// self-delimiting zap message with blkSigned at offset 0), Signature is the
+// optional proposer signature carried in the appended suffix buffer. All block
+// fields are read from msg via fixed offsets — the struct IS the wire.
 type statelessBlock struct {
-	StatelessBlock statelessUnsignedBlock `serialize:"true"`
-	Signature      []byte                 `serialize:"true"`
+	msg       *zap.Message // unsigned body buffer
+	Signature []byte       // proposer signature (appended suffix); exported for tests
 
 	id        ids.ID
 	timestamp time.Time
 	cert      *staking.Certificate
 	proposer  ids.NodeID
-	bytes     []byte
+	bytes     []byte // full signed bytes = unsigned ‖ sig
 }
 
 func (b *statelessBlock) ID() ids.ID {
@@ -87,34 +76,55 @@ func (b *statelessBlock) ID() ids.ID {
 }
 
 func (b *statelessBlock) ParentID() ids.ID {
-	return b.StatelessBlock.ParentID
+	return ids.ID(read32(b.msg.Root(), offParentID))
 }
 
 func (b *statelessBlock) Block() []byte {
-	return b.StatelessBlock.Block
+	return b.msg.Root().Bytes(offBlock)
 }
 
 func (b *statelessBlock) Bytes() []byte {
 	return b.bytes
 }
 
+// initialize binds the block's fields from its signed bytes. This is the one
+// bytes→fields entry, shared by the Build* constructors (fresh buffer) and
+// Parse (wire/disk buffer); the bytes are authoritative and never re-encoded.
 func (b *statelessBlock) initialize(bytes []byte) error {
 	b.bytes = bytes
 
-	// The serialized form of the block is the unsignedBytes followed by the
-	// signature, which is prefixed by a uint32. So, we need to strip off the
-	// signature as well as it's length prefix to get the unsigned bytes.
-	lenUnsignedBytes := len(bytes) - pcodecs.IntLen - len(b.Signature)
-	unsignedBytes := bytes[:lenUnsignedBytes]
-	b.id = hash.ComputeHash256Array(unsignedBytes)
+	// The signed form is unsigned_buffer ‖ sig_buffer (both self-delimiting).
+	// Split on the leading message length; the ID is the hash of that prefix.
+	n, err := zapLen(bytes)
+	if err != nil {
+		return err
+	}
+	msg, err := zap.Parse(bytes[:n])
+	if err != nil {
+		return err
+	}
+	b.msg = msg
+	b.id = hash.ComputeHash256Array(bytes[:n])
 
-	b.timestamp = time.Unix(b.StatelessBlock.Timestamp, 0)
-	if len(b.StatelessBlock.Certificate) == 0 {
+	if len(bytes) > n {
+		sigMsg, err := zap.Parse(bytes[n:])
+		if err != nil {
+			return err
+		}
+		if s := sigMsg.Root().Bytes(offSig); len(s) > 0 {
+			b.Signature = append([]byte(nil), s...)
+		}
+	}
+
+	root := b.msg.Root()
+	b.timestamp = time.Unix(root.Int64(offTimestamp), 0)
+
+	certBytes := root.Bytes(offCert)
+	if len(certBytes) == 0 {
 		return nil
 	}
 
-	var err error
-	b.cert, err = staking.ParseCertificate(b.StatelessBlock.Certificate)
+	b.cert, err = staking.ParseCertificate(certBytes)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errInvalidCertificate, err)
 	}
@@ -127,14 +137,14 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 }
 
 func (b *statelessBlock) verify(chainID ids.ID) error {
-	if len(b.StatelessBlock.Certificate) == 0 {
+	if b.cert == nil {
 		if len(b.Signature) > 0 {
 			return errUnexpectedSignature
 		}
 		return nil
 	}
 
-	header, err := BuildHeader(chainID, b.StatelessBlock.ParentID, b.id)
+	header, err := BuildHeader(chainID, b.ParentID(), b.id)
 	if err != nil {
 		return err
 	}
@@ -148,11 +158,16 @@ func (b *statelessBlock) verify(chainID ids.ID) error {
 }
 
 func (b *statelessBlock) PChainHeight() uint64 {
-	return b.StatelessBlock.PChainHeight
+	return b.msg.Root().Uint64(offPChainHt)
 }
 
 func (b *statelessBlock) PChainEpoch() Epoch {
-	return b.StatelessBlock.Epoch
+	root := b.msg.Root()
+	return Epoch{
+		PChainHeight: root.Uint64(offEpochHt),
+		Number:       root.Uint64(offEpochNum),
+		StartTime:    root.Int64(offEpochStart),
+	}
 }
 
 func (b *statelessBlock) Timestamp() time.Time {
@@ -164,17 +179,17 @@ func (b *statelessBlock) Proposer() ids.NodeID {
 }
 
 func (b *statelessBlock) DARoot() [32]byte {
-	return b.StatelessBlock.DARoot
+	return read32(b.msg.Root(), offDARoot)
 }
 
 func (b *statelessBlock) WitnessRoot() [32]byte {
-	return b.StatelessBlock.WitnessRoot
+	return read32(b.msg.Root(), offWitnessRoot)
 }
 
 func (b *statelessBlock) MessagesOutRoot() [32]byte {
-	return b.StatelessBlock.MessagesOutRoot
+	return read32(b.msg.Root(), offMsgOutRoot)
 }
 
 func (b *statelessBlock) BlobCount() uint32 {
-	return b.StatelessBlock.BlobCount
+	return b.msg.Root().Uint32(offBlobCount)
 }

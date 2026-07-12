@@ -43,9 +43,9 @@ type RTSigner interface {
 // by requiring a signature over the public key itself.
 type RTProofOfPossession struct {
 	// PublicKey is the ML-DSA-65 public key (1952 bytes)
-	PublicKey []byte `serialize:"true" json:"publicKey"`
+	PublicKey []byte `json:"publicKey"`
 	// ProofOfPossession is the ML-DSA signature over PublicKey, proving ownership
-	ProofOfPossession []byte `serialize:"true" json:"proofOfPossession"`
+	ProofOfPossession []byte `json:"proofOfPossession"`
 }
 
 // NewRTProofOfPossession creates a new RTProofOfPossession from a private key.

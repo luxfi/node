@@ -126,7 +126,7 @@ func (c *Client) IssueTx(
 	newTx *tx.Tx,
 	options ...rpc.Option,
 ) (ids.ID, error) {
-	txBytes, err := tx.Codec.Marshal(tx.CodecVersion, newTx)
+	txBytes, err := newTx.Marshal()
 	if err != nil {
 		return ids.Empty, err
 	}

@@ -5,4 +5,9 @@ package tx
 
 type Unsigned interface {
 	Visit(Visitor) error
+
+	// Marshal encodes the unsigned tx to its native ZAP wire form. The first
+	// object byte is the tx kind discriminator — this is the whole dispatch,
+	// no codec.
+	Marshal() ([]byte, error)
 }

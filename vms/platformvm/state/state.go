@@ -12,7 +12,6 @@ import (
 	"github.com/google/btree"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/runtime"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
@@ -521,7 +520,7 @@ func txAndStatusSize(_ ids.ID, t *txAndStatus) int {
 	if t == nil {
 		return ids.IDLen + constants.PointerOverhead
 	}
-	return ids.IDLen + len(t.tx.Bytes()) + pcodecs.IntLen + 2*constants.PointerOverhead
+	return ids.IDLen + len(t.tx.Bytes()) + 4 /* status (uint32) */ + 2*constants.PointerOverhead
 }
 
 func blockSize(_ ids.ID, blk block.Block) int {
@@ -595,7 +594,7 @@ func New(
 		"l1_validator_weights_cache",
 		reg,
 		lru.NewSizedCache(execCfg.L1WeightsCacheSize, func(ids.ID, uint64) int {
-			return ids.IDLen + pcodecs.LongLen
+			return ids.IDLen + database.Uint64Size
 		}),
 	)
 	if err != nil {
@@ -609,8 +608,8 @@ func New(
 			execCfg.L1InactiveValidatorsCacheSize,
 			func(_ ids.ID, maybeL1Validator maybe.Maybe[L1Validator]) int {
 				const (
-					l1ValidatorOverhead      = ids.IDLen + ids.NodeIDLen + 4*pcodecs.LongLen + 3*constants.PointerOverhead
-					maybeL1ValidatorOverhead = pcodecs.BoolLen + l1ValidatorOverhead
+					l1ValidatorOverhead      = ids.IDLen + ids.NodeIDLen + 4*database.Uint64Size + 3*constants.PointerOverhead
+					maybeL1ValidatorOverhead = database.BoolSize + l1ValidatorOverhead
 					entryOverhead            = ids.IDLen + maybeL1ValidatorOverhead
 				)
 				if maybeL1Validator.IsNothing() {
@@ -630,7 +629,7 @@ func New(
 		"l1_validator_chain_id_node_id_cache",
 		reg,
 		lru.NewSizedCache(execCfg.L1ChainIDNodeIDCacheSize, func(chainIDNodeID, bool) int {
-			return ids.IDLen + ids.NodeIDLen + pcodecs.BoolLen
+			return ids.IDLen + ids.NodeIDLen + database.BoolSize
 		}),
 	)
 	if err != nil {

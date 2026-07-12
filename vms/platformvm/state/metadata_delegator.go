@@ -9,33 +9,24 @@ import (
 )
 
 type delegatorMetadata struct {
-	PotentialReward uint64 `serialize:"true"`
-	StakerStartTime uint64 `serialize:"true"`
+	PotentialReward uint64
+	StakerStartTime uint64
 
 	txID ids.ID
 }
 
+// parseDelegatorMetadata overlays metadata's persisted fields (native
+// delegatorMetadata wire) from bytes. Empty bytes means nothing was persisted —
+// the caller's tx-derived StakerStartTime default is kept.
 func parseDelegatorMetadata(bytes []byte, metadata *delegatorMetadata) error {
-	var err error
-	switch len(bytes) {
-	case database.Uint64Size:
-		// only potential reward was stored
-		metadata.PotentialReward, err = database.ParseUInt64(bytes)
-	default:
-		_, err = MetadataCodec.Unmarshal(bytes, metadata)
+	if len(bytes) == 0 {
+		return nil
 	}
-	return err
+	return unmarshalDelegatorMetadata(bytes, metadata)
 }
 
-func writeDelegatorMetadata(db database.KeyValueWriter, metadata *delegatorMetadata, codecVersion uint16) error {
-	// The "0" codec is skipped for [delegatorMetadata]. This is to ensure the
-	// [validatorMetadata] codec version is the same as the [delegatorMetadata]
-	// codec version.
-	//
-	if codecVersion == 0 {
-		return database.PutUInt64(db, metadata.txID[:], metadata.PotentialReward)
-	}
-	metadataBytes, err := MetadataCodec.Marshal(codecVersion, metadata)
+func writeDelegatorMetadata(db database.KeyValueWriter, metadata *delegatorMetadata) error {
+	metadataBytes, err := marshalDelegatorMetadata(metadata)
 	if err != nil {
 		return err
 	}

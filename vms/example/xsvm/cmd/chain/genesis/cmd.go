@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/luxfi/formatting"
-	"github.com/luxfi/node/vms/example/xsvm/genesis"
 )
 
 var errUnknownEncoding = errors.New("unknown encoding")
@@ -34,7 +33,7 @@ func genesisFunc(c *cobra.Command, args []string) error {
 		return err
 	}
 
-	genesisBytes, err := genesis.Codec.Marshal(genesis.CodecVersion, config.Genesis)
+	genesisBytes, err := config.Genesis.Marshal()
 	if err != nil {
 		return err
 	}
