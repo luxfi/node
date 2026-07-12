@@ -16,7 +16,6 @@ import (
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -219,8 +218,7 @@ func (s *visitor) getOpsSigners(ctx context.Context, sourceChainID ids.ID, ops [
 }
 
 func sign(tx *txs.Tx, creds []verify.Verifiable, txSigners [][]keychain.Signer) error {
-	codec := builder.Parser.Codec()
-	unsignedBytes, err := codec.Marshal(txs.CodecVersion, &tx.Unsigned)
+	unsignedBytes, err := txs.UnsignedBytes(tx.Unsigned)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal unsigned tx: %w", err)
 	}
@@ -291,10 +289,8 @@ func sign(tx *txs.Tx, creds []verify.Verifiable, txSigners [][]keychain.Signer) 
 		}
 	}
 
-	signedBytes, err := codec.Marshal(txs.CodecVersion, tx)
-	if err != nil {
-		return fmt.Errorf("couldn't marshal tx: %w", err)
-	}
-	tx.SetBytes(unsignedBytes, signedBytes)
-	return nil
+	// Rebuild the signed wire bytes (unsigned ‖ fx credential envelopes) and
+	// bind TxID = hash(signedBytes). The unsigned bytes are already cached, so
+	// Initialize reuses the exact bytes just signed over.
+	return tx.Initialize()
 }

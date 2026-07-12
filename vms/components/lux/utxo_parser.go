@@ -177,6 +177,15 @@ func wrapOutput(b []byte, tk wire.TypeKind, sk wire.ShapeKind) (verify.State, er
 	return nil, fmt.Errorf("zap utxo dispatch: unknown (TypeKind=0x%02x, ShapeKind=0x%02x)", tk, sk)
 }
 
+// WrapInputBytes is the public entry to the fx-aware input dispatcher — the
+// input-side counterpart of WrapOutputBytes. It reconstructs the polymorphic
+// fx Input from its wire envelope; the concrete type (e.g.
+// *secp256k1fx.TransferInput) also satisfies luxfi/utxo's TransferableIn, so
+// consumers holding the utxo type tree (xvm/txs) can type-assert across.
+func WrapInputBytes(b []byte) (TransferableIn, error) {
+	return wrapInputBytes(b)
+}
+
 // wrapInputBytes is the input-side counterpart of wrapOutput: it
 // reconstructs a TransferableIn from its fx wire envelope, dispatching on
 // the (TypeKind, ShapeKind) discriminator. Each branch calls exactly one
