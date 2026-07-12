@@ -21,7 +21,7 @@ const DefaultPollingInterval = 50 * time.Millisecond
 
 func NewClient(uri, chain string) *Client {
 	path := fmt.Sprintf(
-		"%s/ext/%s/%s",
+		"%s/v1/%s/%s",
 		uri,
 		constants.ChainAliasPrefix,
 		chain,

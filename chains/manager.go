@@ -849,7 +849,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				chainBase := fmt.Sprintf("bc/%s", chainAlias)
 				chainIDBase := fmt.Sprintf("bc/%s", chainParams.ID.String())
 
-				// AddRoute will build the full path as /ext/<base><endpoint>
+				// AddRoute will build the full path as /v1/<base><endpoint>
 				m.Server.AddRoute(handler, chainBase, endpoint)
 				if chainAlias != chainParams.ID.String() {
 					m.Server.AddRoute(handler, chainIDBase, endpoint)

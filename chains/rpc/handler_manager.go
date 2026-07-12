@@ -111,7 +111,7 @@ func (m *HandlerManager) RegisterChainHandlers(
 					log.Err(err))
 			} else {
 				m.log.Info("Handler registered successfully",
-					log.String("route", fmt.Sprintf("/ext/%s%s", base, endpoint)),
+					log.String("route", fmt.Sprintf("/v1/%s%s", base, endpoint)),
 					log.Stringer("chainID", chainID))
 			}
 		}
@@ -187,7 +187,7 @@ func (m *HandlerManager) getFullRoutes(bases []string, endpoints []string) []str
 	routes := []string{}
 	for _, base := range bases {
 		for _, endpoint := range endpoints {
-			routes = append(routes, fmt.Sprintf("/ext/%s%s", base, endpoint))
+			routes = append(routes, fmt.Sprintf("/v1/%s%s", base, endpoint))
 		}
 	}
 	return routes
