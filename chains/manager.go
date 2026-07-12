@@ -160,6 +160,20 @@ var (
 	_ Manager = (*manager)(nil)
 )
 
+// quasarExportVM is the OPTIONAL two-tier-consensus (v1.36) export sink a VM may
+// expose: the consensus engine pushes each Quasar (⅔-by-stake) EXPORT-FINAL
+// frontier advance in, and re-seeds from the VM's durable height on boot, so the
+// VM's `finalized`/`safe` tags and cross-chain export gate track ⅔-stake
+// finality instead of the reorgable Nova accept tip. NOT part of chain.ChainVM —
+// generic VMs never implement it and run Nova-only. For a plugin VM the concrete
+// implementation is in another process; the rpcchainvm client carries these
+// across the boundary and reports whether the plugin advertised the capability
+// via SupportsQuasarExport (see the wiring in createChain).
+type quasarExportVM interface {
+	SetLastQuasarFinalized(uint64)
+	LastQuasarHeight() uint64
+}
+
 // Manager manages the chains running on this node.
 // It can:
 //   - Create a chain
@@ -1520,34 +1534,55 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 					log.Stringer("networkID", networkID))
 			}
 		}
-			// EXPORT-FRONTIER BRIDGE (two-tier consensus, v1.36). VM.Accept now advances the
-			// local NOVA (bare-majority) accept tip, which is reorgable and MUST NOT be exported.
-			// Push each EXPORT (Quasar, ⅔-by-stake) frontier advance into the VM so the EVM
-			// `finalized`/`safe` block tags and the warp cross-chain export gate resolve to the
-			// Quasar tip, NEVER the Nova tip (the "semantic collapse" the split exists to prevent).
-			// Interface-gated: only a VM that exposes the export sink participates (the C-Chain
-			// EVM); other VMs are Nova-only with no export surface. Push into the RAW inner VM
-			// (vmTyped) — the eth backend / warp backend live there, not on the proposervm wrapper.
-			if qvm, ok := vmTyped.(interface{ SetLastQuasarFinalized(uint64) }); ok {
+		// EXPORT-FRONTIER BRIDGE (two-tier consensus, v1.36). VM.Accept now advances the
+		// local NOVA (bare-majority) accept tip, which is reorgable and MUST NOT be exported.
+		// Push each EXPORT (Quasar, ⅔-by-stake) frontier advance into the VM so the EVM
+		// `finalized`/`safe` block tags and the warp cross-chain export gate resolve to the
+		// Quasar tip, NEVER the Nova tip (the "semantic collapse" the split exists to prevent).
+		//
+		// Capability-gated, not just interface-gated: the C-Chain EVM runs as a SEPARATE
+		// rpcchainvm plugin process, so vmTyped here is the rpcchainvm *Client, which carries
+		// SetLastQuasarFinalized/LastQuasarHeight for EVERY plugin (they cross the ZAP
+		// boundary). The client learns from the plugin's Initialize handshake whether the
+		// concrete VM actually implements the export capability and reports it via
+		// SupportsQuasarExport — false → the observer stays unwired and this chain is Nova-only
+		// with no per-finalization cross-process no-op. A VM WITHOUT the probe (an in-process
+		// VM whose concrete export methods we hold directly) is treated as capable, preserving
+		// the direct-wire path. Push into the RAW inner VM (vmTyped) — the eth/warp backends
+		// live there, not on the proposervm wrapper.
+		//
+		// Ordering: the observer MUST be set on netCfg BEFORE NewRuntime captures it; the boot
+		// re-seed needs the constructed engine and so runs after. exportVM (nil unless capable)
+		// carries the wired/not-wired decision across that split — a value, not a re-derived
+		// predicate.
+		var exportVM quasarExportVM
+		if qvm, ok := vmTyped.(quasarExportVM); ok {
+			capable := true
+			if probe, hasProbe := vmTyped.(interface{ SupportsQuasarExport() bool }); hasProbe {
+				capable = probe.SupportsQuasarExport()
+			}
+			if capable {
+				exportVM = qvm
 				netCfg.QuasarObserver = func(_ ids.ID, height uint64) {
 					qvm.SetLastQuasarFinalized(height)
 				}
 				m.Log.Info("wired EXPORT-frontier (quasar) bridge into the VM (finalized/safe + warp gate track ⅔-stake finality)",
 					log.Stringer("chainID", chainParams.ID))
 			}
-			consensusEngine := consensuschain.NewRuntime(netCfg)
+		}
+		consensusEngine := consensuschain.NewRuntime(netCfg)
 
-			// Re-seed the consensus EXPORT frontier from the VM's DURABLE Quasar height so
-			// GetQuasarTip / QuasarHeight do not regress on restart (the in-memory frontier resets
-			// to (Empty,0) until a fresh ⅔-stake cert re-forms; the VM persisted the export height).
-			// Advance-only; the observer above refines it as new certs land this session.
-			if qvm, ok := vmTyped.(interface{ LastQuasarHeight() uint64 }); ok {
-				if h := qvm.LastQuasarHeight(); h > 0 {
-					consensusEngine.SyncQuasarFrontier(ids.Empty, h)
-					m.Log.Info("re-seeded consensus export (quasar) frontier from the VM's durable height on boot",
-						log.Stringer("chainID", chainParams.ID), log.Uint64("quasarHeight", h))
-				}
+		// Re-seed the consensus EXPORT frontier from the VM's DURABLE Quasar height so
+		// GetQuasarTip / QuasarHeight do not regress on restart (the in-memory frontier resets
+		// to (Empty,0) until a fresh ⅔-stake cert re-forms; the VM persisted the export height).
+		// Advance-only; the observer above refines it as new certs land this session.
+		if exportVM != nil {
+			if h := exportVM.LastQuasarHeight(); h > 0 {
+				consensusEngine.SyncQuasarFrontier(ids.Empty, h)
+				m.Log.Info("re-seeded consensus export (quasar) frontier from the VM's durable height on boot",
+					log.Stringer("chainID", chainParams.ID), log.Uint64("quasarHeight", h))
 			}
+		}
 
 		// Start the consensus engine with a LIFETIME context (not a timeout):
 		// engine.Start parents all four long-running loops (poll, vote, pipeline,

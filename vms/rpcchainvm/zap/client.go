@@ -14,6 +14,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	zapwire "github.com/luxfi/api/zap"
@@ -67,6 +68,16 @@ type Client struct {
 	dbListener  net.Listener
 	dbServerCtx context.Context
 	dbServerCxl context.CancelFunc
+
+	// quasarCapable records whether the plugin advertised CapQuasarExport in the
+	// Initialize handshake — i.e. its concrete VM tracks a Quasar (⅔-by-stake)
+	// EXPORT-FINAL height across the process boundary. Written ONCE at Initialize
+	// (before the chain manager wires the consensus observer or reads the export
+	// height), read by SetLastQuasarFinalized/LastQuasarHeight/SupportsQuasarExport.
+	// atomic so the -race detector is satisfied without pretending the callers
+	// share a lock. A plugin that does not advertise it → false → the export
+	// methods are graceful no-ops and the chain manager stays Nova-only.
+	quasarCapable atomic.Bool
 }
 
 // NewClient creates a new ZAP-based VM client
@@ -157,9 +168,15 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 	}
 	c.setLastAccepted(seedID)
 
+	// Capture the plugin's OPTIONAL export capability from the handshake. Only a
+	// VM that advertises CapQuasarExport participates in the two-tier consensus
+	// export frontier across this boundary; everything else stays Nova-only.
+	c.quasarCapable.Store(resp.Capabilities&zapwire.CapQuasarExport != 0)
+
 	c.logger.Info("VM initialized via ZAP",
 		"height", resp.Height,
 		"lastAcceptedID", seedID,
+		"quasarExport", c.quasarCapable.Load(),
 	)
 
 	return nil
@@ -635,6 +652,70 @@ func (c *Client) WaitForEvent(ctx context.Context) (block.Message, error) {
 	return block.Message{
 		Type: block.MessageType(resp.Message),
 	}, nil
+}
+
+// quasarCallTimeout bounds a single Quasar export RPC. The export bridge fires
+// off the consensus accept path (post-accept, not the hot vote path), so a short
+// bound keeps a wedged plugin from stalling the observer without being so tight
+// it drops a legitimate slow round-trip.
+const quasarCallTimeout = 5 * time.Second
+
+// SupportsQuasarExport reports whether the plugin advertised the Quasar
+// (⅔-by-stake) EXPORT capability at Initialize. The chain manager gates the
+// consensus export-frontier observer on this: false → the plugin is a generic VM
+// with no export surface and the chain runs Nova-only (no cross-process no-op
+// spam per finalization).
+func (c *Client) SupportsQuasarExport() bool { return c.quasarCapable.Load() }
+
+// SetLastQuasarFinalized forwards a new Quasar (⅔-by-stake) EXPORT-FINAL height
+// to the plugin VM across the ZAP boundary so the plugin's `finalized`/`safe`
+// tags and warp export gate track ⅔-stake finality, not the reorgable Nova tip.
+// No-op (no RPC) if the plugin did not advertise CapQuasarExport — so the chain
+// manager can wire this unconditionally. Fire-and-forget: a transport error is
+// logged, not returned, because the sole caller is the consensus export-frontier
+// observer, which has no error channel (the durable height is re-seeded on boot).
+func (c *Client) SetLastQuasarFinalized(height uint64) {
+	if !c.quasarCapable.Load() {
+		return
+	}
+	buf := zapwire.GetBuffer()
+	defer zapwire.PutBuffer(buf)
+	req := &zapwire.SetQuasarFinalizedRequest{Height: height}
+	req.Encode(buf)
+
+	ctx, cancel := context.WithTimeout(context.Background(), quasarCallTimeout)
+	defer cancel()
+	if _, _, err := c.conn.Call(ctx, zapwire.MsgSetQuasarFinalized, buf.Bytes()); err != nil {
+		c.logger.Warn("zap set-quasar-finalized failed", "height", height, "error", err)
+	}
+}
+
+// LastQuasarHeight returns the plugin VM's accept-tip-CLAMPED Quasar EXPORT-FINAL
+// height across the ZAP boundary (0 before the first export forms). Returns 0 if
+// the plugin did not advertise CapQuasarExport or if the call fails — so the
+// chain manager's boot re-seed of the consensus export frontier treats an
+// unavailable/absent height as "empty" (advance-only; a fresh cert refines it).
+func (c *Client) LastQuasarHeight() uint64 {
+	if !c.quasarCapable.Load() {
+		return 0
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), quasarCallTimeout)
+	defer cancel()
+	respType, respData, err := c.conn.Call(ctx, zapwire.MsgQuasarHeight, nil)
+	if err != nil {
+		c.logger.Warn("zap quasar-height failed", "error", err)
+		return 0
+	}
+	if respType&^(zapwire.MsgResponseFlag|zapwire.MsgErrorFlag) != zapwire.MsgQuasarHeight {
+		c.logger.Warn("zap quasar-height: unexpected response type", "respType", respType)
+		return 0
+	}
+	resp := &zapwire.QuasarHeightResponse{}
+	if err := resp.Decode(zapwire.NewReader(respData)); err != nil {
+		c.logger.Warn("zap quasar-height decode failed", "error", err)
+		return 0
+	}
+	return resp.Height
 }
 
 // Close closes the connection

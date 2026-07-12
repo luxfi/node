@@ -1,7 +1,7 @@
-# platformvm/txs/bench — linearcodec vs native-ZAP harness
+# platformvm/txs/bench — reflection codec vs native-ZAP harness
 
 Measures the parse/build/field/workload deltas between the current
-linearcodec path (`txs.Parse` / `codec.Manager.Marshal`) and the
+reflection codec path (`txs.Parse` / `codec.Manager.Marshal`) and the
 native-ZAP path Blue is building under
 `vms/platformvm/txs/zap_native`.
 
