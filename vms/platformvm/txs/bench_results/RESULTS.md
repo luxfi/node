@@ -109,7 +109,7 @@ The slight dip from 7.71× → 7.44× tracks the addition of the trivial `Benchm
 **Headlines:**
 1. Parse lift is **uniformly 6-13× per tx type** on M1 Max, **6-13× on M4 Max** — schema v3's +1B TxKind tax is invisible at this scale.
 2. Per-type geomean Parse on M1 with v0.7.2 (**7.71×**, up from 7.33× on v0.7.1) reflects the ListStride clamp's negligible accept-path cost. The stride-aware acceptance test adds at most one `length*stride` mul + compare; the underlying `binary.LittleEndian.Uint32` reads dominate.
-3. **Build is a wash or regression on raw ZAP for 6 of 9 types on M4 Max** (geomean 0.86×). This is a real, reproducible finding — `Object.SetU64`-heavy builders aren't yet beating linearcodec's append path. Affects production write throughput; tracked as a v0.7.x follow-up (zap.Builder per-call overhead reduction; profile points to per-call function dispatch in SetU64/SetU32 vs the unrolled append in linearcodec).
+3. **Build is a wash or regression on raw ZAP for 6 of 9 types on M4 Max** (geomean 0.86×). This is a real, reproducible finding — `Object.SetU64`-heavy builders aren't yet beating reflection codec's append path. Affects production write throughput; tracked as a v0.7.x follow-up (zap.Builder per-call overhead reduction; profile points to per-call function dispatch in SetU64/SetU32 vs the unrolled append in reflection codec).
 4. The `txs.Codec`-wrapped AdvanceTime end-to-end ratio scales with the chip: **34.14× → 42.76× M1→M4** — the codec.Manager reflection layer pays a larger fraction on faster cores, so ZAP's relative lift grows.
 
 **v0.7.2 changes** (this refresh):
@@ -135,7 +135,7 @@ The slight dip from 7.71× → 7.44× tracks the addition of the trivial `Benchm
 
 ## Per-tx-type Parse + Build — M1 Max
 
-ZAP-native benches measure equivalent field-shape stubs (`legacy*Tx` Go structs registered with `linearcodec.NewDefault()`) vs the native `WrapXxxTx` accessors at `zap_native.*`. Apples-to-apples per type.
+ZAP-native benches measure equivalent field-shape stubs (`legacy*Tx` Go structs registered with `the reflection codec`) vs the native `WrapXxxTx` accessors at `zap_native.*`. Apples-to-apples per type.
 
 ### Parse — M1 Max (v0.7.2)
 | Tx | Legacy ns | ZAP ns | Parse × | Legacy alloc | ZAP alloc | Δ allocs | Legacy B | ZAP B | Δ bytes |
@@ -197,9 +197,9 @@ The v0.7.2 numbers show a ~6% improvement in Parse over the v0.7.1 baseline (7.1
 | RemoveChainValidatorTx          | 115  | 138  | **0.83×** ⚠ | 5 | 2 | 2.50× | 224 | 120 | 1.87× |
 | **Geomean (n=9)**               |       |       | **0.86×** ⚠ |   |   | **2.18×** |   |   | **1.77×** |
 
-**M4 Max Build regression.** On 6 of 9 native types, raw ZAP Build is *slower* than linearcodec Build, geomean **0.86×**. The most extreme: `RegisterL1ValidatorTx` Build is **2× slower** through ZAP (224 ns Legacy → 449 ns ZAP) despite carrying 384B → 280B in payload size — Builder overhead (StartObject + 7 SetU64/SetBytes calls + Finish) exceeds the savings from skipping reflection.
+**M4 Max Build regression.** On 6 of 9 native types, raw ZAP Build is *slower* than reflection codec Build, geomean **0.86×**. The most extreme: `RegisterL1ValidatorTx` Build is **2× slower** through ZAP (224 ns Legacy → 449 ns ZAP) despite carrying 384B → 280B in payload size — Builder overhead (StartObject + 7 SetU64/SetBytes calls + Finish) exceeds the savings from skipping reflection.
 
-**Why M1 doesn't show this.** On M1 Max, ZAP Build is **+0.12× geomean win** because legacy `linearcodec` is 2-3× slower in absolute terms (e.g. RegisterL1 Build: M1=1,155 ns vs M4=224 ns Legacy). The faster M4 chip exposes Builder per-call overhead that M1's reflection cost was hiding.
+**Why M1 doesn't show this.** On M1 Max, ZAP Build is **+0.12× geomean win** because legacy `reflection codec` is 2-3× slower in absolute terms (e.g. RegisterL1 Build: M1=1,155 ns vs M4=224 ns Legacy). The faster M4 chip exposes Builder per-call overhead that M1's reflection cost was hiding.
 
 **Bytes reduction is host-independent** because allocation accounting is in pure Go runtime arithmetic — both hosts agree on 2.18× allocs and 1.77× bytes geomean reduction. The wall-clock cost of writing those fewer bytes is what diverges.
 
@@ -304,15 +304,15 @@ Schema v3 added a 1-byte TxKind discriminator at offset 0. Predicted impact on P
 
 - `go test -bench` with `-count=3` and `-benchtime=500ms` per type. Median reported. Variance is small (typically ±5% on parse, ±10% on build per benchtime).
 - Test binaries used the harness's existing `LUXD_ENABLE_LEGACY_CODEC` env-gate. Default mode is native-ZAP first; legacy is opt-in. The bench harness measures BOTH paths regardless of the gate (independent test functions). Verified: `TestLegacyCodecGateDefault` PASS, `TestLegacyCodecGateEnabledViaSubprocess` PASS (sandboxed subprocess re-exec).
-- `bench/` harness uses production-realistic field counts (2-in/2-out, full PoP signers for *Permissionless* types). `zap_native/all_types_bench_test.go` uses minimal stubs (`legacy*Tx` structs registered with `linearcodec.NewDefault()`). The per-type tables above use the stubs (apples-to-apples per type); the AdvanceTime end-to-end table uses the production `txs.Codec` path.
+- `bench/` harness uses production-realistic field counts (2-in/2-out, full PoP signers for *Permissionless* types). `zap_native/all_types_bench_test.go` uses minimal stubs (`legacy*Tx` structs registered with `the reflection codec`). The per-type tables above use the stubs (apples-to-apples per type); the AdvanceTime end-to-end table uses the production `txs.Codec` path.
 - Both hosts on darwin/arm64. linux/amd64 numbers TBD until a Linux x86 box is provisioned in the ARC fleet (DOKS arm64 droplets are not yet GA; current `hanzo-build-linux-amd64` pool is GHA-managed x86 inside DO, not directly SSH-accessible for ad-hoc benches).
 - Files: `/tmp/zap_bench/{m1max,m4max}_{bench_harness,zap_native}.txt` on author box; pulled from dbc via scp.
 
 ## Honest residuals
 
-1. **Build is a regression on M4 Max for 6/9 types** (geomean 0.86×). This affects write throughput on luxd P-chain block proposers. Root cause: `zap.Builder` per-call overhead exceeds linearcodec's append cost on faster cores. **Action: feed back into Blue's v3.1 iteration (luxfi/zap v0.7.0).**
+1. **Build is a regression on M4 Max for 6/9 types** (geomean 0.86×). This affects write throughput on luxd P-chain block proposers. Root cause: `zap.Builder` per-call overhead exceeds reflection codec's append cost on faster cores. **Action: feed back into Blue's v3.1 iteration (luxfi/zap v0.7.0).**
 2. **The `txs.Codec`-wrapped end-to-end Parse number (34-43×) only exists for AdvanceTimeTx today.** Other tx types in fixtures.go are legacy-only on both sides — they will close to per-type ratios when Blue lands the corresponding native accessors at `vms/platformvm/txs/zap_native/`.
-3. **No linux/amd64 measurements in this report.** Both physical hosts ARE darwin/arm64 (M1 Max + M4 Max). Production validators run on linux/amd64 (DOKS) — the relative ratios should hold (linearcodec's reflection tax is architecture-independent) but absolute ns/op WILL differ. Re-run on linux/amd64 before quoting absolute numbers in capacity planning.
+3. **No linux/amd64 measurements in this report.** Both physical hosts ARE darwin/arm64 (M1 Max + M4 Max). Production validators run on linux/amd64 (DOKS) — the relative ratios should hold (reflection codec's reflection tax is architecture-independent) but absolute ns/op WILL differ. Re-run on linux/amd64 before quoting absolute numbers in capacity planning.
 4. **Synthetic mempool repeats payload bytes.** Cache-friendly. Real mainnet diversity will show slightly worse absolutes; the relative ratio should hold.
 5. **Field-access ZAP is 2-3× slower per read.** Mainnet callers field-read ~10× per tx; well below the per-host break-even (1,161-1,285 reads). Not a concern at current call frequency.
 
