@@ -27,13 +27,13 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.36.1
-	github.com/luxfi/crypto v1.19.26
+	github.com/luxfi/crypto v1.20.0
 	github.com/luxfi/database v1.20.4
 	github.com/luxfi/ids v1.3.1
 	github.com/luxfi/keychain v1.0.2
 	github.com/luxfi/log v1.4.3
 	github.com/luxfi/math v1.4.1
-	github.com/luxfi/metric v1.5.9
+	github.com/luxfi/metric v1.6.0
 	github.com/luxfi/mock v0.1.1
 	github.com/mr-tron/base58 v1.3.0
 	github.com/onsi/ginkgo/v2 v2.28.1
@@ -147,7 +147,7 @@ require (
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.2.5
 	github.com/luxfi/warp v1.24.0
-	github.com/luxfi/zap v0.8.11
+	github.com/luxfi/zap v1.1.0
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/zap-proto/http v0.0.0-20260506200741-fd6047874433
@@ -190,7 +190,7 @@ require (
 	github.com/hanzoai/vfs v0.4.3 // indirect
 	github.com/hanzos3/go-sdk v1.0.2 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
-	github.com/luxfi/age v1.5.0 // indirect
+	github.com/luxfi/age v1.6.0 // indirect
 	github.com/luxfi/corona v0.10.3 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
@@ -200,7 +200,7 @@ require (
 	github.com/luxfi/magnetar v1.2.3 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/mlwe v0.2.1 // indirect
-	github.com/luxfi/pq v1.0.3 // indirect
+	github.com/luxfi/pq v1.1.0 // indirect
 	github.com/luxfi/precompile v0.19.0 // indirect
 	github.com/luxfi/pulsar v1.9.0 // indirect
 	github.com/luxfi/staking v1.5.1 // indirect
@@ -263,3 +263,5 @@ require (
 exclude github.com/ethereum/go-ethereum v1.10.26
 
 replace github.com/luxfi/zap => /Users/z/work/lux/zap
+
+replace github.com/luxfi/utxo => /Users/z/work/lux/utxo
