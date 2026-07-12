@@ -11,13 +11,13 @@ import (
 	"github.com/luxfi/address"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/math"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txheap"
 	"github.com/luxfi/utils"
-	"github.com/luxfi/math"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -29,7 +29,7 @@ import (
 
 var (
 	errUTXOHasNoValue         = errors.New("genesis UTXO has no value")
-	errValidatorHasZeroWeight   = errors.New("validator has zero weight")
+	errValidatorHasZeroWeight = errors.New("validator has zero weight")
 	errValidatorAlreadyExited = errors.New("validator would have already unstaked")
 	errStakeOverflow          = errors.New("validator stake exceeds limit")
 
@@ -38,18 +38,18 @@ var (
 
 // UTXO adds messages to UTXOs
 type UTXO struct {
-	lux.UTXO `serialize:"true"`
-	Message  []byte `serialize:"true" json:"message"`
+	lux.UTXO
+	Message []byte `json:"message"`
 }
 
 // Genesis represents a genesis state of the platform chain
 type Genesis struct {
-	UTXOs         []*UTXO   `serialize:"true"`
-	Validators    []*txs.Tx `serialize:"true"`
-	Chains        []*txs.Tx `serialize:"true"`
-	Timestamp     uint64    `serialize:"true"`
-	InitialSupply uint64    `serialize:"true"`
-	Message       string    `serialize:"true"`
+	UTXOs         []*UTXO
+	Validators    []*txs.Tx
+	Chains        []*txs.Tx
+	Timestamp     uint64
+	InitialSupply uint64
+	Message       string
 }
 
 // Parse deserializes a P-Chain genesis blob from its native-ZAP wire form

@@ -62,16 +62,14 @@ func (s *state) Close() error {
 }
 
 func (s *state) write(updateValidators bool, height uint64) error {
-	const codecVersion = CodecVersion1
-
 	return errors.Join(
 		s.writeBlocks(),
 		s.writeExpiry(),
 		s.updateValidatorManager(updateValidators),
 		s.writeValidatorDiffs(height),
-		s.writeCurrentStakers(codecVersion),
+		s.writeCurrentStakers(),
 		s.writePendingStakers(),
-		s.WriteValidatorMetadata(s.currentValidatorList, s.currentNetValidatorList, codecVersion), // Must be called after writeCurrentStakers
+		s.WriteValidatorMetadata(s.currentValidatorList, s.currentNetValidatorList), // Must be called after writeCurrentStakers
 		s.writeL1Validators(),
 		s.writeTXs(),
 		s.writeRewardUTXOs(),

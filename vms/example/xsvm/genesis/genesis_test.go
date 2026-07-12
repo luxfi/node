@@ -26,7 +26,7 @@ func TestGenesis(t *testing.T) {
 			{Address: id2, Balance: 3000000000},
 		},
 	}
-	bytes, err := Codec.Marshal(CodecVersion, genesis)
+	bytes, err := genesis.Marshal()
 	require.NoError(err)
 
 	parsed, err := Parse(bytes)

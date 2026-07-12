@@ -55,8 +55,8 @@ func init() {
 }
 
 type LockOut struct {
-	Locktime            uint64 `serialize:"true" json:"locktime"`
-	lux.TransferableOut `serialize:"true" json:"output"`
+	Locktime            uint64 `json:"locktime"`
+	lux.TransferableOut `json:"output"`
 }
 
 func (s *LockOut) InitRuntime(rt *runtime.Runtime) {
@@ -106,8 +106,8 @@ func (s *LockOut) Bytes() []byte {
 }
 
 type LockIn struct {
-	Locktime           uint64 `serialize:"true" json:"locktime"`
-	lux.TransferableIn `serialize:"true" json:"input"`
+	Locktime           uint64 `json:"locktime"`
+	lux.TransferableIn `json:"input"`
 }
 
 func (s *LockIn) Verify() error {

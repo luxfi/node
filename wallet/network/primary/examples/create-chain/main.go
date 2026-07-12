@@ -43,7 +43,7 @@ func main() {
 		log.Fatalf("failed to parse net ID: %s\n", err)
 	}
 
-	genesisBytes, err := xsgenesis.Codec.Marshal(xsgenesis.CodecVersion, genesis)
+	genesisBytes, err := genesis.Marshal()
 	if err != nil {
 		log.Fatalf("failed to create genesis bytes: %s\n", err)
 	}
