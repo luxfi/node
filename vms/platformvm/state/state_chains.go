@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
@@ -62,8 +61,8 @@ func (s *state) GetNetOwner(netID ids.ID) (fx.Owner, error) {
 
 	ownerBytes, err := s.chainOwnerDB.Get(netID[:])
 	if err == nil {
-		var owner fx.Owner
-		if _, err := multiVersionUnmarshal(block.GenesisCodec, ownerBytes, &owner); err != nil {
+		owner, err := parseOwner(ownerBytes)
+		if err != nil {
 			return nil, err
 		}
 		s.chainOwnerCache.Put(netID, fxOwnerAndSize{
@@ -89,8 +88,9 @@ func (s *state) GetNetOwner(netID ids.ID) (fx.Owner, error) {
 		return nil, fmt.Errorf("%q %w", netID, errIsNotNet)
 	}
 
-	s.SetNetOwner(netID, network.Owner)
-	return network.Owner, nil
+	owner := network.Owner()
+	s.SetNetOwner(netID, owner)
+	return owner, nil
 }
 
 func (s *state) SetNetOwner(netID ids.ID, owner fx.Owner) {
@@ -112,8 +112,8 @@ func (s *state) GetNetToL1Conversion(chainID ids.ID) (NetToL1Conversion, error) 
 		return NetToL1Conversion{}, err
 	}
 
-	var c NetToL1Conversion
-	if _, err := multiVersionUnmarshal(block.GenesisCodec, bytes, &c); err != nil {
+	c, err := parseConversion(bytes)
+	if err != nil {
 		return NetToL1Conversion{}, err
 	}
 	s.chainToL1ConversionCache.Put(chainID, c)
@@ -155,7 +155,7 @@ func (s *state) GetNetTransformation(chainID ids.ID) (*txs.Tx, error) {
 
 func (s *state) AddNetTransformation(transformNetTxIntf *txs.Tx) {
 	transformNetTx := transformNetTxIntf.Unsigned.(*txs.TransformChainTx)
-	s.transformedNets[transformNetTx.Chain] = transformNetTxIntf
+	s.transformedNets[transformNetTx.Chain()] = transformNetTxIntf
 }
 
 func (s *state) GetChains(netID ids.ID) ([]*txs.Tx, error) {
@@ -189,7 +189,7 @@ func (s *state) GetChains(netID ids.ID) ([]*txs.Tx, error) {
 
 func (s *state) AddChain(createChainTxIntf *txs.Tx) {
 	createChainTx := createChainTxIntf.Unsigned.(*txs.CreateChainTx)
-	netID := createChainTx.ChainID
+	netID := createChainTx.ChainID()
 	s.addedChains[netID] = append(s.addedChains[netID], createChainTxIntf)
 	if chains, cached := s.chainCache.Get(netID); cached {
 		chains = append(chains, createChainTxIntf)
@@ -197,8 +197,8 @@ func (s *state) AddChain(createChainTxIntf *txs.Tx) {
 	}
 
 	// Register chain name for uniqueness tracking (case-insensitive)
-	if createChainTx.BlockchainName != "" {
-		nameLower := strings.ToLower(createChainTx.BlockchainName)
+	if createChainTx.BlockchainName() != "" {
+		nameLower := strings.ToLower(createChainTx.BlockchainName())
 		chainID := createChainTxIntf.ID()
 		s.addedChainNames[nameLower] = chainID
 		s.chainNameCache.Put(nameLower, chainID)
@@ -265,7 +265,7 @@ func (s *state) writeNetOwners() error {
 	for chainID, owner := range s.chainOwners {
 		delete(s.chainOwners, chainID)
 
-		ownerBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, &owner)
+		ownerBytes, err := marshalOwner(owner)
 		if err != nil {
 			return fmt.Errorf("failed to marshal net owner: %w", err)
 		}
@@ -286,7 +286,7 @@ func (s *state) writeNetToL1Conversions() error {
 	for chainID, c := range s.chainToL1Conversions {
 		delete(s.chainToL1Conversions, chainID)
 
-		bytes, err := block.GenesisCodec.Marshal(block.CodecVersion, &c)
+		bytes, err := marshalConversion(c)
 		if err != nil {
 			return fmt.Errorf("failed to marshal chain conversion: %w", err)
 		}

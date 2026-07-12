@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/utils"
 )
@@ -87,9 +86,19 @@ func (out *TransferableOutput) Verify() error {
 	}
 }
 
+// wireBytesOrNil returns the native ZAP wire envelope of a TransferableOut
+// when the inner fx primitive carries a Bytes() adapter (every production
+// fx does). This is the single source of truth for canonical ordering —
+// the same bytes that hit disk and the wire, no separate codec marshal.
+func wireBytesOrNil(out TransferableOut) []byte {
+	if ws, ok := out.(interface{ Bytes() []byte }); ok {
+		return ws.Bytes()
+	}
+	return nil
+}
+
 type innerSortTransferableOutputs struct {
-	outs  []*TransferableOutput
-	codec pcodecs.Manager
+	outs []*TransferableOutput
 }
 
 func (outs *innerSortTransferableOutputs) Less(i, j int) bool {
@@ -106,15 +115,7 @@ func (outs *innerSortTransferableOutputs) Less(i, j int) bool {
 		return false
 	}
 
-	iBytes, err := outs.codec.Marshal(codecVersion, &iOut.Out)
-	if err != nil {
-		return false
-	}
-	jBytes, err := outs.codec.Marshal(codecVersion, &jOut.Out)
-	if err != nil {
-		return false
-	}
-	return bytes.Compare(iBytes, jBytes) == -1
+	return bytes.Compare(wireBytesOrNil(iOut.Out), wireBytesOrNil(jOut.Out)) == -1
 }
 
 func (outs *innerSortTransferableOutputs) Len() int {
@@ -126,14 +127,15 @@ func (outs *innerSortTransferableOutputs) Swap(i, j int) {
 	o[j], o[i] = o[i], o[j]
 }
 
-// SortTransferableOutputs sorts output objects
-func SortTransferableOutputs(outs []*TransferableOutput, c pcodecs.Manager) {
-	sort.Sort(&innerSortTransferableOutputs{outs: outs, codec: c})
+// SortTransferableOutputs sorts output objects by (AssetID, inner-output
+// ZAP wire bytes). ZAP-native — no codec.Manager needed.
+func SortTransferableOutputs(outs []*TransferableOutput) {
+	sort.Sort(&innerSortTransferableOutputs{outs: outs})
 }
 
 // IsSortedTransferableOutputs returns true if output objects are sorted
-func IsSortedTransferableOutputs(outs []*TransferableOutput, c pcodecs.Manager) bool {
-	return sort.IsSorted(&innerSortTransferableOutputs{outs: outs, codec: c})
+func IsSortedTransferableOutputs(outs []*TransferableOutput) bool {
+	return sort.IsSorted(&innerSortTransferableOutputs{outs: outs})
 }
 
 type TransferableInput struct {
@@ -211,7 +213,6 @@ func VerifyTx(
 	feeAssetID ids.ID,
 	allIns [][]*TransferableInput,
 	allOuts [][]*TransferableOutput,
-	c pcodecs.Manager,
 ) error {
 	fc := NewFlowChecker()
 
@@ -225,7 +226,7 @@ func VerifyTx(
 			}
 			fc.Produce(out.AssetID(), out.Output().Amount())
 		}
-		if !IsSortedTransferableOutputs(outs, c) {
+		if !IsSortedTransferableOutputs(outs) {
 			return ErrOutputsNotSorted
 		}
 	}

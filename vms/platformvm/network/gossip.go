@@ -63,7 +63,7 @@ func (txMarshaller) MarshalGossip(tx *txs.Tx) ([]byte, error) {
 }
 
 func (txMarshaller) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
-	return txs.Parse(txs.Codec, bytes)
+	return txs.Parse(bytes)
 }
 
 func newGossipMempool(

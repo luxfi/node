@@ -22,7 +22,6 @@ import (
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -101,8 +100,7 @@ type VM struct {
 	chainID     ids.ID
 	state       state.State
 
-	fx            fx.Fx
-	codecRegistry pcodecs.Registry
+	fx fx.Fx
 
 	// Bootstrapped remembers if this chain has finished bootstrapping or not
 	bootstrappedConsensus utils.Atomic[bool]
@@ -231,8 +229,6 @@ func (vm *VM) Initialize(
 	// Since DBManager is now an interface{}, we need to handle it differently
 	// logic simplified as we now just trust init.DB or fallback to memdb if nil above
 
-	// Note: this codec is never used to serialize anything
-	vm.codecRegistry = pcodecs.NewLinearCodec()
 	vm.fx = &secp256k1fx.Fx{}
 	if err := vm.fx.Initialize(vm); err != nil {
 		return fmt.Errorf("failed to initialize fx: %w", err)
@@ -617,9 +613,9 @@ func (vm *VM) Shutdown(context.Context) error {
 }
 
 func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
-	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
-	// rather than blocks.GenesisCodec
-	statelessBlk, err := block.Parse(block.Codec, b)
+	// Blocks are native struct-is-wire (zap): Parse re-wraps the self-delimiting
+	// buffer zero-copy — no codec, no version prefix.
+	statelessBlk, err := block.Parse(b)
 	if err != nil {
 		return nil, err
 	}
@@ -775,10 +771,6 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 		return err
 	}
 	return vm.Network.Disconnected(ctx, nodeID)
-}
-
-func (vm *VM) CodecRegistry() pcodecs.Registry {
-	return vm.codecRegistry
 }
 
 func (vm *VM) Clock() *mockable.Clock {

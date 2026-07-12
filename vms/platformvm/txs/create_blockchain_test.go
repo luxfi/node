@@ -1,120 +1,82 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/luxfi/runtime"
-
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
+// TestUnsignedCreateChainTxVerify pins the CreateChainTx syntactic invariants.
+// Struct-is-wire has no post-hoc field mutation, so every invalid case is built
+// THROUGH the NewCreateChainTx constructor with the offending value baked in.
 func TestUnsignedCreateChainTxVerify(t *testing.T) {
-	testChainID := ids.GenerateTestID() // Use a test chain ID instead of empty
-	rt := &runtime.Runtime{
-		NetworkID: constants.UnitTestID,
-
-		ChainID: ids.GenerateTestID(),
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
+	validChain := ids.GenerateTestID()
+	auth := &secp256k1fx.Input{SigIndices: []uint32{0, 1}}
+	base := func() *lux.BaseTx {
+		return &lux.BaseTx{NetworkID: rt.NetworkID, BlockchainID: rt.ChainID}
 	}
-	rt = &runtime.Runtime{
 
-		ChainID: testChainID,
-	}
-	testNet1ID := ids.GenerateTestID()
-
-	type test struct {
+	tests := []struct {
 		description string
-		netID       ids.ID
-		genesisData []byte
-		vmID        ids.ID
-		fxIDs       []ids.ID
-		chainName   string
-		setup       func(*CreateChainTx) *CreateChainTx
+		build       func(t *testing.T) *CreateChainTx
 		expectedErr error
-	}
-
-	tests := []test{
+	}{
 		{
 			description: "tx is nil",
-			netID:       testNet1ID,
-			genesisData: nil,
-			vmID:        constants.XVMID,
-			fxIDs:       nil,
-			chainName:   "yeet",
-			setup: func(*CreateChainTx) *CreateChainTx {
-				return nil
-			},
+			build:       func(*testing.T) *CreateChainTx { return nil },
 			expectedErr: ErrNilTx,
 		},
 		{
 			description: "vm ID is empty",
-			netID:       testNet1ID,
-			genesisData: nil,
-			vmID:        constants.XVMID,
-			fxIDs:       nil,
-			chainName:   "yeet",
-			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.VMID = ids.Empty
+			build: func(t *testing.T) *CreateChainTx {
+				tx, err := NewCreateChainTx(base(), validChain, "yeet", ids.Empty, nil, nil, auth)
+				require.NoError(t, err)
 				return tx
 			},
 			expectedErr: errInvalidVMID,
 		},
 		{
 			description: "chain ID is primary network ID",
-			netID:       testNet1ID,
-			genesisData: nil,
-			vmID:        constants.XVMID,
-			fxIDs:       nil,
-			chainName:   "yeet",
-			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.ChainID = constants.PrimaryNetworkID
+			build: func(t *testing.T) *CreateChainTx {
+				tx, err := NewCreateChainTx(base(), constants.PrimaryNetworkID, "yeet", constants.XVMID, nil, nil, auth)
+				require.NoError(t, err)
 				return tx
 			},
 			expectedErr: ErrCantValidatePrimaryNetwork,
 		},
 		{
 			description: "chain name is too long",
-			netID:       testNet1ID,
-			genesisData: nil,
-			vmID:        constants.XVMID,
-			fxIDs:       nil,
-			chainName:   "yeet",
-			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.BlockchainName = string(make([]byte, MaxNameLen+1))
+			build: func(t *testing.T) *CreateChainTx {
+				tx, err := NewCreateChainTx(base(), validChain, string(make([]byte, MaxNameLen+1)), constants.XVMID, nil, nil, auth)
+				require.NoError(t, err)
 				return tx
 			},
 			expectedErr: errNameTooLong,
 		},
 		{
 			description: "chain name has invalid character",
-			netID:       testNet1ID,
-			genesisData: nil,
-			vmID:        constants.XVMID,
-			fxIDs:       nil,
-			chainName:   "yeet",
-			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.BlockchainName = "⌘"
+			build: func(t *testing.T) *CreateChainTx {
+				tx, err := NewCreateChainTx(base(), validChain, "⌘", constants.XVMID, nil, nil, auth)
+				require.NoError(t, err)
 				return tx
 			},
 			expectedErr: errIllegalNameCharacter,
 		},
 		{
 			description: "genesis data is too long",
-			netID:       testNet1ID,
-			genesisData: nil,
-			vmID:        constants.XVMID,
-			fxIDs:       nil,
-			chainName:   "yeet",
-			setup: func(tx *CreateChainTx) *CreateChainTx {
-				tx.GenesisData = make([]byte, MaxGenesisLen+1)
+			build: func(t *testing.T) *CreateChainTx {
+				tx, err := NewCreateChainTx(base(), validChain, "yeet", constants.XVMID, nil, make([]byte, MaxGenesisLen+1), auth)
+				require.NoError(t, err)
 				return tx
 			},
 			expectedErr: errGenesisTooLong,
@@ -123,57 +85,7 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			require := require.New(t)
-
-			inputs := []*lux.TransferableInput{{
-				UTXOID: lux.UTXOID{
-					TxID:        ids.ID{'t', 'x', 'I', 'D'},
-					OutputIndex: 2,
-				},
-				Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
-				In: &secp256k1fx.TransferInput{
-					Amt:   uint64(5678),
-					Input: secp256k1fx.Input{SigIndices: []uint32{0}},
-				},
-			}}
-			outputs := []*lux.TransferableOutput{{
-				Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 't'}},
-				Out: &secp256k1fx.TransferOutput{
-					Amt: uint64(1234),
-					OutputOwners: secp256k1fx.OutputOwners{
-						Threshold: 1,
-						Addrs:     []ids.ShortID{preFundedKeys[0].Address()},
-					},
-				},
-			}}
-			chainAuth := &secp256k1fx.Input{
-				SigIndices: []uint32{0, 1},
-			}
-
-			createChainTx := &CreateChainTx{
-				BaseTx: BaseTx{BaseTx: lux.BaseTx{
-					NetworkID:    rt.NetworkID,
-					BlockchainID: rt.ChainID,
-					Ins:          inputs,
-					Outs:         outputs,
-				}},
-				ChainID:        test.netID,
-				BlockchainName: test.chainName,
-				VMID:           test.vmID,
-				FxIDs:          test.fxIDs,
-				GenesisData:    test.genesisData,
-				ChainAuth:      chainAuth,
-			}
-
-			signers := [][]*secp256k1.PrivateKey{preFundedKeys}
-			stx, err := NewSigned(createChainTx, Codec, signers)
-			require.NoError(err)
-
-			createChainTx.SyntacticallyVerified = false
-			stx.Unsigned = test.setup(createChainTx)
-
-			err = stx.SyntacticVerify(rt)
-			require.ErrorIs(err, test.expectedErr)
+			require.ErrorIs(t, test.build(t).SyntacticVerify(rt), test.expectedErr)
 		})
 	}
 }

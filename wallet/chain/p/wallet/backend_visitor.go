@@ -39,50 +39,56 @@ func (*backendVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 }
 
 func (b *backendVisitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
 	b.b.setOwner(
 		b.txID,
-		tx.Owner,
+		tx.Owner(),
 	)
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
+}
+
+// ConvertNetworkTx promotes an existing network — its owner is already tracked
+// from the original CreateNetworkTx, so only the base UTXO scan is needed.
+func (b *backendVisitor) ConvertNetworkTx(tx *txs.ConvertNetworkTx) error {
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) ImportTx(tx *txs.ImportTx) error {
 	err := b.b.removeUTXOs(
 		b.ctx,
-		tx.SourceChain,
+		tx.SourceChain(),
 		tx.InputUTXOs(),
 	)
 	if err != nil {
 		return err
 	}
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
-	for i, out := range tx.ExportedOutputs {
+	for i, out := range tx.ExportedOutputs() {
 		err := b.b.AddUTXO(
 			b.ctx,
-			tx.DestinationChain,
+			tx.DestinationChain(),
 			&lux.UTXO{
 				UTXOID: lux.UTXOID{
 					TxID:        b.txID,
-					OutputIndex: uint32(len(tx.Outs) + i),
+					OutputIndex: uint32(len(tx.Outputs()) + i),
 				},
 				Asset: lux.Asset{ID: out.AssetID()},
 				Out:   out.Out,
@@ -92,59 +98,39 @@ func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 			return err
 		}
 	}
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) TransformChainTx(tx *txs.TransformChainTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
 	b.b.setOwner(
-		tx.Chain,
-		tx.Owner,
+		tx.Chain(),
+		tx.Owner(),
 	)
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) BaseTx(tx *txs.BaseTx) error {
 	return b.baseTx(tx)
 }
 
-func (b *backendVisitor) ConvertNetworkToL1Tx(tx *txs.ConvertNetworkToL1Tx) error {
-	for i, vdr := range tx.Validators {
-		b.b.setOwner(
-			tx.Chain.Append(uint32(i)),
-			&secp256k1fx.OutputOwners{
-				Threshold: vdr.DeactivationOwner.Threshold,
-				Addrs:     vdr.DeactivationOwner.Addresses,
-			},
-		)
-	}
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) CreateSovereignL1Tx(tx *txs.CreateSovereignL1Tx) error {
-	// Sovereign L1 launch: the new network ID is derived from the tx
-	// hash at commit time. The wallet backend does not need to
-	// preregister owners — that happens P-chain-side during execution.
-	return b.baseTx(&tx.BaseTx)
-}
-
 func (b *backendVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
-	warpMessage, err := warp.ParseMessage(tx.Message)
+	warpMessage, err := warp.ParseMessage(tx.Message())
 	if err != nil {
 		return err
 	}
@@ -164,37 +150,22 @@ func (b *backendVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) er
 			Addrs:     registerL1ValidatorMessage.DisableOwner.Addresses,
 		},
 	)
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
+	return b.baseTx(tx)
 }
 
-func (b *backendVisitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
-	// Fee inputs are consumed; minted asset outputs become locally tracked
-	// UTXOs owned by the backend so subsequent OperationTx can spend them.
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) OperationTx(tx *txs.OperationTx) error {
-	// Operation UTXOIDs are tracked through InputIDs() (see OperationTx).
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) baseTx(tx *txs.BaseTx) error {
+func (b *backendVisitor) baseTx(tx txs.UnsignedTx) error {
 	return b.b.removeUTXOs(
 		b.ctx,
 		constants.PlatformChainID,

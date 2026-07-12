@@ -12,7 +12,6 @@ import (
 	"github.com/google/btree"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/runtime"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
@@ -246,33 +245,9 @@ type State interface {
 	Close() error
 }
 
-// Prior to https://github.com/luxfi/node/pull/1719, blocks were
-// stored as a map from blkID to stateBlk. Nodes synced prior to this PR may
-// still have blocks partially stored using this legacy format.
-//
-// stateBlk is the legacy block storage format from before PR #1719.
-// Retained for backward compatibility with pre-v1.14.x databases.
-type stateBlk struct {
-	Bytes  []byte `serialize:"true"`
-	Status uint32 `serialize:"true"`
-}
-
-// RegisterStateBlockType registers the stateBlk type with the given codec.
-// This is needed for backward compatibility with old block storage format.
-func RegisterStateBlockType(targetCodec pcodecs.Registry) error {
-	return targetCodec.RegisterType(&stateBlk{})
-}
-
-// Initialize the stateBlk type registration with the block codecs.
-// This must be called before using parseStoredBlock for backward compatibility.
-func init() {
-	// We need to register stateBlk with block.GenesisCodec so that
-	// parseStoredBlock can deserialize legacy block storage format.
-	// Since state imports block (no import cycle), we can register directly.
-	if err := block.RegisterGenesisType(&stateBlk{}); err != nil {
-		panic(err)
-	}
-}
+// Blocks are stored as their native-ZAP wire bytes (struct-is-wire) keyed by
+// blockID; parseStoredBlock wraps them via block.Parse. There is no legacy
+// stateBlk envelope and no codec registry under native ZAP.
 
 /*
  * VMDB
@@ -545,7 +520,7 @@ func txAndStatusSize(_ ids.ID, t *txAndStatus) int {
 	if t == nil {
 		return ids.IDLen + constants.PointerOverhead
 	}
-	return ids.IDLen + len(t.tx.Bytes()) + pcodecs.IntLen + 2*constants.PointerOverhead
+	return ids.IDLen + len(t.tx.Bytes()) + 4 /* status (uint32) */ + 2*constants.PointerOverhead
 }
 
 func blockSize(_ ids.ID, blk block.Block) int {
@@ -619,7 +594,7 @@ func New(
 		"l1_validator_weights_cache",
 		reg,
 		lru.NewSizedCache(execCfg.L1WeightsCacheSize, func(ids.ID, uint64) int {
-			return ids.IDLen + pcodecs.LongLen
+			return ids.IDLen + database.Uint64Size
 		}),
 	)
 	if err != nil {
@@ -633,8 +608,8 @@ func New(
 			execCfg.L1InactiveValidatorsCacheSize,
 			func(_ ids.ID, maybeL1Validator maybe.Maybe[L1Validator]) int {
 				const (
-					l1ValidatorOverhead      = ids.IDLen + ids.NodeIDLen + 4*pcodecs.LongLen + 3*constants.PointerOverhead
-					maybeL1ValidatorOverhead = pcodecs.BoolLen + l1ValidatorOverhead
+					l1ValidatorOverhead      = ids.IDLen + ids.NodeIDLen + 4*database.Uint64Size + 3*constants.PointerOverhead
+					maybeL1ValidatorOverhead = database.BoolSize + l1ValidatorOverhead
 					entryOverhead            = ids.IDLen + maybeL1ValidatorOverhead
 				)
 				if maybeL1Validator.IsNothing() {
@@ -654,7 +629,7 @@ func New(
 		"l1_validator_chain_id_node_id_cache",
 		reg,
 		lru.NewSizedCache(execCfg.L1ChainIDNodeIDCacheSize, func(chainIDNodeID, bool) int {
-			return ids.IDLen + ids.NodeIDLen + pcodecs.BoolLen
+			return ids.IDLen + ids.NodeIDLen + database.BoolSize
 		}),
 	)
 	if err != nil {

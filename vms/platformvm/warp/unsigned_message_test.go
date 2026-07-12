@@ -10,7 +10,7 @@ import (
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/zap"
 )
 
 func TestUnsignedMessage(t *testing.T) {
@@ -34,5 +34,5 @@ func TestParseUnsignedMessageJunk(t *testing.T) {
 
 	bytes := []byte{0, 1, 2, 3, 4, 5, 6, 7}
 	_, err := ParseUnsignedMessage(bytes)
-	require.ErrorIs(err, pcodecs.ErrUnknownVersion)
+	require.ErrorIs(err, zap.ErrBufferTooSmall)
 }

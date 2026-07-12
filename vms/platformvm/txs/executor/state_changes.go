@@ -10,12 +10,12 @@ import (
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
-	"github.com/luxfi/math"
 )
 
 var (
@@ -362,9 +362,9 @@ func GetRewardsCalculator(
 	}
 
 	return reward.NewCalculator(reward.Config{
-		MaxConsumptionRate: transformNet.MaxConsumptionRate,
-		MinConsumptionRate: transformNet.MinConsumptionRate,
+		MaxConsumptionRate: transformNet.MaxConsumptionRate(),
+		MinConsumptionRate: transformNet.MinConsumptionRate(),
 		MintingPeriod:      backend.Config.RewardConfig.MintingPeriod,
-		SupplyCap:          transformNet.MaximumSupply,
+		SupplyCap:          transformNet.MaximumSupply(),
 	}), nil
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/nets"
 	pchaingenesis "github.com/luxfi/node/vms/platformvm/genesis"
-	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 )
 
 const chainConfigFilenameExtension = ".ex"
@@ -536,8 +535,8 @@ func TestGetNetConfigsFromFlags(t *testing.T) {
 				"2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i": {
 					"consensusParameters": {
 						"k": 30,
-						"alphaPreference": 16,
-						"alphaConfidence": 20
+						"alphaPreference": 20,
+						"alphaConfidence": 25
 					},
 					"validatorOnly": true
 				}
@@ -547,8 +546,8 @@ func TestGetNetConfigsFromFlags(t *testing.T) {
 				config, ok := given[id]
 				require.True(ok)
 				require.True(config.ValidatorOnly)
-				require.Equal(16, config.ConsensusParameters.AlphaPreference)
-				require.Equal(20, config.ConsensusParameters.AlphaConfidence)
+				require.Equal(20, config.ConsensusParameters.AlphaPreference)
+				require.Equal(25, config.ConsensusParameters.AlphaConfidence)
 				require.Equal(30, config.ConsensusParameters.K)
 				// must still respect defaults (MainnetParameters.MaxOutstandingItems = 1024)
 				require.Equal(1024, config.ConsensusParameters.MaxOutstandingItems)
@@ -733,7 +732,7 @@ func TestResolveUTXOAssetID_POnlyFallback(t *testing.T) {
 	require := require.New(t)
 
 	pOnly := &pchaingenesis.Genesis{Chains: nil}
-	pOnlyBytes, err := pchaingenesis.Codec.Marshal(pchaintxs.CodecVersion, pOnly)
+	pOnlyBytes, err := pOnly.Bytes()
 	require.NoError(err)
 
 	gotID, err := resolveUTXOAssetID(42, pOnlyBytes)

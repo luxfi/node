@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 //
 // File deprecation notice: this file defines AddChainValidatorTx, the
@@ -6,60 +6,118 @@
 // (sovereign-L1), validators join a network — never a chain — via
 // AddValidatorTx. Chains live on networks (created via CreateChainTx);
 // the canonical model has validators validate networks, not chains. A
-// sovereign L1 IS a primary network at its own networkID; the Lux
-// primary networks live at 1/2/3/1337, and any downstream consumer
-// running its own primary picks any other uint32. AddValidatorTx is
-// the universal add-validator-to-a-network entry point for all of
-// them. New code must use AddValidatorTx. The wire codec entries,
-// Visitor method, and wallet IssueAddChainValidatorTx helper are kept
-// for one release cycle so existing pre-LP-018 P-chain history
-// continues to decode and replay.
+// sovereign L1 IS a primary network at its own networkID. AddValidatorTx
+// is the universal add-validator-to-a-network entry point. New code must
+// use AddValidatorTx. This type is retained for one release cycle so
+// existing pre-LP-018 P-chain history continues to decode and replay.
 
 package txs
 
 import (
 	"context"
 	"errors"
+	"time"
 
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/bls"
+	bls "github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/zap"
 )
 
 var (
+	_ UnsignedTx      = (*AddChainValidatorTx)(nil)
 	_ StakerTx        = (*AddChainValidatorTx)(nil)
 	_ ScheduledStaker = (*AddChainValidatorTx)(nil)
 
 	errAddPrimaryNetworkValidator = errors.New("can't add primary network validator with AddChainValidatorTx")
 )
 
-// AddChainValidatorTx is the legacy per-chain (pre-LP-018: per-L1)
-// validator registration tx.
+// AddChainValidatorTx is the legacy per-chain validator registration tx.
+// The struct IS the wire: it holds the zap buffer and reads its fields by
+// offset. No codec, no marshal.
 //
-// Deprecated: Use AddValidatorTx. Under LP-018 sovereign-L1, validators
-// join a network (Lux primary 1/2/3/1337 or any sovereign L1's own
-// primary at its EVM chainID). Chains live on networks; validators no
-// longer register per-chain. This type is retained for one release
-// cycle for wire/codec compat with pre-LP-018 binaries. The Visitor
-// method, codec slots, and wallet IssueAddChainValidatorTx helper are
-// preserved so older P-chain history still decodes and replays.
+// Wire: zap header + object{ envelope@0..76, Validator@77, Chain@121,
+// ChainAuth@153 }.
+//
+// Deprecated: Use AddValidatorTx. Retained for one release cycle for
+// wire/codec compat with pre-LP-018 binaries.
 type AddChainValidatorTx struct {
-	// Metadata, inputs and outputs
-	BaseTx `serialize:"true"`
-	// The validator
-	ChainValidator `serialize:"true" json:"validator"`
-	// Auth that will be allowing this validator into the network
-	ChainAuth verify.Verifiable `serialize:"true" json:"chainAuthorization"`
+	spendingTx
+}
+
+const (
+	offACVValidator       = spendSize                       // 77: inline Validator (44B)
+	offACVChain           = offACVValidator + validatorSize // 121: chain id (32B)
+	offACVChainAuth       = offACVChain + 32                // 153: chain-auth list ptr (8B)
+	addChainValidatorSize = offACVChainAuth + 8             // 161
+)
+
+// NewAddChainValidatorTx builds the tx into a fresh zap buffer — the one
+// place a field becomes bytes (construction, not serialization).
+func NewAddChainValidatorTx(base *lux.BaseTx, validator Validator, chain ids.ID, chainAuth verify.Verifiable) (*AddChainValidatorTx, error) {
+	b := zap.NewBuilder(zap.HeaderSize + 1024 + addChainValidatorSize)
+	p, err := writeSpending(b, base)
+	if err != nil {
+		return nil, err
+	}
+	authOff, authCount, err := writeAuth(b, chainAuth)
+	if err != nil {
+		return nil, err
+	}
+
+	ob := b.StartObject(addChainValidatorSize)
+	setEnvelope(ob, kindAddChainValidator, base, p)
+	setValidator(ob, offACVValidator, validator)
+	setID(ob, offACVChain, chain)
+	ob.SetList(offACVChainAuth, authOff, authCount)
+	ob.FinishAsRoot()
+
+	msg, _ := zap.Parse(b.Finish())
+	return &AddChainValidatorTx{spendingTx{msg}}, nil
+}
+
+// Validator is the inline validator descriptor (offset read).
+func (tx *AddChainValidatorTx) Validator() Validator {
+	return readValidator(tx.root(), offACVValidator)
+}
+
+// Chain is the network id this validator registers under (offset read).
+func (tx *AddChainValidatorTx) Chain() ids.ID { return readID(tx.root(), offACVChain) }
+
+// ChainAuth proves the issuer may add this validator to the network.
+func (tx *AddChainValidatorTx) ChainAuth() verify.Verifiable {
+	return readAuth(tx.root(), offACVChainAuth)
+}
+
+// ---- Staker / ScheduledStaker interface ----
+
+// ChainID is the network id this validator registers under (legacy
+// ChainValidator.ChainID, sourced from the pure Chain() accessor).
+func (tx *AddChainValidatorTx) ChainID() ids.ID {
+	return tx.Chain()
 }
 
 func (tx *AddChainValidatorTx) NodeID() ids.NodeID {
-	return tx.ChainValidator.NodeID
+	return tx.Validator().NodeID
 }
 
 func (*AddChainValidatorTx) PublicKey() (*bls.PublicKey, bool, error) {
 	return nil, false, nil
+}
+
+func (tx *AddChainValidatorTx) StartTime() time.Time {
+	return time.Unix(int64(tx.Validator().Start), 0)
+}
+
+func (tx *AddChainValidatorTx) EndTime() time.Time {
+	return time.Unix(int64(tx.Validator().End), 0)
+}
+
+func (tx *AddChainValidatorTx) Weight() uint64 {
+	return tx.Validator().Wght
 }
 
 func (*AddChainValidatorTx) PendingPriority() Priority {
@@ -70,26 +128,22 @@ func (*AddChainValidatorTx) CurrentPriority() Priority {
 	return ChainPermissionedValidatorCurrentPriority
 }
 
-// SyntacticVerify returns nil iff [tx] is valid
+// SyntacticVerify returns nil iff [tx] is valid.
 func (tx *AddChainValidatorTx) SyntacticVerify(rt *runtime.Runtime) error {
-	switch {
-	case tx == nil:
+	if tx == nil {
 		return ErrNilTx
-	case tx.SyntacticallyVerified: // already passed syntactic verification
-		return nil
-	case tx.Chain == constants.PrimaryNetworkID:
+	}
+	if tx.Chain() == constants.PrimaryNetworkID {
 		return errAddPrimaryNetworkValidator
 	}
 
-	if err := tx.BaseTx.SyntacticVerify(rt); err != nil {
+	if err := verifyBaseTx(tx.baseTx(), rt); err != nil {
 		return err
 	}
-	if err := verify.All(&tx.Validator, tx.ChainAuth); err != nil {
+	v := tx.Validator()
+	if err := verify.All(&v, tx.ChainAuth()); err != nil {
 		return err
 	}
-
-	// cache that this is valid
-	tx.SyntacticallyVerified = true
 	return nil
 }
 
@@ -97,8 +151,7 @@ func (tx *AddChainValidatorTx) Visit(visitor Visitor) error {
 	return visitor.AddChainValidatorTx(tx)
 }
 
-// InitializeWithRuntime initializes the transaction with Runtime
+// Initialize is a no-op; Runtime is passed explicitly to InitRuntime.
 func (tx *AddChainValidatorTx) Initialize(ctx context.Context) error {
-	// Initialize any context-dependent fields here
 	return nil
 }

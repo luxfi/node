@@ -211,13 +211,11 @@ func TestTeleportMessageCodecRoundTrip(t *testing.T) {
 		Encrypted:     false,
 	}
 
-	// Encode
-	encoded, err := Codec.Marshal(CodecVersion, original)
-	require.NoError(err)
+	// Encode (native ZAP, wkind-tagged)
+	encoded := marshalTeleportMessage(original)
 
 	// Decode
-	decoded := &TeleportMessage{}
-	_, err = Codec.Unmarshal(encoded, decoded)
+	decoded, err := ParseTeleportMessage(encoded)
 	require.NoError(err)
 
 	// Verify
@@ -276,13 +274,12 @@ func TestTeleportAttestPayload(t *testing.T) {
 		AttesterID:      ids.GenerateTestNodeID(),
 	}
 
-	// Encode
-	encoded, err := Codec.Marshal(CodecVersion, payload)
+	// Encode (native ZAP, wkind-tagged)
+	encoded, err := payload.Bytes()
 	require.NoError(err)
 
 	// Decode
-	decoded := &TeleportAttestPayload{}
-	_, err = Codec.Unmarshal(encoded, decoded)
+	decoded, err := ParseAttestPayload(encoded)
 	require.NoError(err)
 
 	// Verify

@@ -93,7 +93,7 @@ func (c *staticVisitor) CreateChainTx(*txs.CreateChainTx) error {
 // }
 
 func (c *staticVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	if tx.Chain != constants.PrimaryNetworkID {
+	if tx.Chain() != constants.PrimaryNetworkID {
 		c.fee = c.config.TxFee // Use TxFee since AddChainValidatorFee was removed in regenesis
 	} else {
 		c.fee = c.config.AddNetworkValidatorFee
@@ -102,7 +102,7 @@ func (c *staticVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessVa
 }
 
 func (c *staticVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	if tx.Chain != constants.PrimaryNetworkID {
+	if tx.Chain() != constants.PrimaryNetworkID {
 		c.fee = c.config.TxFee // Use TxFee since AddChainDelegatorFee was removed in regenesis
 	} else {
 		c.fee = c.config.AddNetworkDelegatorFee
@@ -125,14 +125,6 @@ func (c *staticVisitor) ExportTx(*txs.ExportTx) error {
 	return nil
 }
 
-func (*staticVisitor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
-	return ErrUnsupportedTx
-}
-
-func (*staticVisitor) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
-	return ErrUnsupportedTx
-}
-
 func (*staticVisitor) DisableL1ValidatorTx(*txs.DisableL1ValidatorTx) error {
 	return ErrUnsupportedTx
 }
@@ -149,16 +141,18 @@ func (*staticVisitor) SetL1ValidatorWeightTx(*txs.SetL1ValidatorWeightTx) error 
 	return ErrUnsupportedTx
 }
 
-func (*staticVisitor) SlashValidatorTx(*txs.SlashValidatorTx) error {
-	return ErrUnsupportedTx
-}
-
 func (v *staticVisitor) AddChainValidatorTx(*txs.AddChainValidatorTx) error {
 	v.fee = v.config.AddChainValidatorFee
 	return nil
 }
 
 func (v *staticVisitor) CreateNetworkTx(*txs.CreateNetworkTx) error {
+	v.fee = v.config.CreateNetworkTxFee
+	return nil
+}
+
+func (v *staticVisitor) ConvertNetworkTx(*txs.ConvertNetworkTx) error {
+	// Convert is a network-lifecycle operation of the same class as create.
 	v.fee = v.config.CreateNetworkTxFee
 	return nil
 }
@@ -174,16 +168,6 @@ func (v *staticVisitor) TransformChainTx(*txs.TransformChainTx) error {
 }
 
 func (v *staticVisitor) TransferChainOwnershipTx(*txs.TransferChainOwnershipTx) error {
-	v.fee = v.config.TxFee
-	return nil
-}
-
-func (v *staticVisitor) CreateAssetTx(*txs.CreateAssetTx) error {
-	v.fee = v.config.CreateAssetTxFee
-	return nil
-}
-
-func (v *staticVisitor) OperationTx(*txs.OperationTx) error {
 	v.fee = v.config.TxFee
 	return nil
 }

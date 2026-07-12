@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/luxfi/address"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
@@ -312,40 +313,30 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 			delegationFee = uint32(*vdr.ExactDelegationFee)
 		}
 
+		base := &lux.BaseTx{
+			NetworkID:    uint32(args.NetworkID),
+			BlockchainID: ids.Empty,
+		}
+		validator := txs.Validator{
+			NodeID: vdr.NodeID,
+			Start:  uint64(args.Time),
+			End:    uint64(vdr.EndTime),
+			Wght:   weight,
+		}
 		var (
-			baseTx = txs.BaseTx{BaseTx: lux.BaseTx{
-				NetworkID:    uint32(args.NetworkID),
-				BlockchainID: ids.Empty,
-			}}
-			validator = txs.Validator{
-				NodeID: vdr.NodeID,
-				Start:  uint64(args.Time),
-				End:    uint64(vdr.EndTime),
-				Wght:   weight,
-			}
-			tx *txs.Tx
+			utx txs.UnsignedTx
+			err error
 		)
 		if vdr.Signer == nil {
-			tx = &txs.Tx{Unsigned: &txs.AddValidatorTx{
-				BaseTx:           baseTx,
-				Validator:        validator,
-				StakeOuts:        stake,
-				RewardsOwner:     owner,
-				DelegationShares: delegationFee,
-			}}
+			utx, err = txs.NewAddValidatorTx(base, validator, stake, owner, delegationFee)
 		} else {
-			tx = &txs.Tx{Unsigned: &txs.AddPermissionlessValidatorTx{
-				BaseTx:                baseTx,
-				Validator:             validator,
-				Signer:                vdr.Signer,
-				StakeOuts:             stake,
-				ValidatorRewardsOwner: owner,
-				DelegatorRewardsOwner: owner,
-				DelegationShares:      delegationFee,
-			}}
+			utx, err = txs.NewAddPermissionlessValidatorTx(base, validator, constants.PrimaryNetworkID, vdr.Signer, stake, owner, owner, delegationFee)
 		}
-
-		if err := tx.Initialize(txs.GenesisCodec); err != nil {
+		if err != nil {
+			return err
+		}
+		tx := &txs.Tx{Unsigned: utx}
+		if err := tx.Initialize(); err != nil {
 			return err
 		}
 
@@ -359,19 +350,23 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 		if err != nil {
 			return fmt.Errorf("problem decoding chain genesis data: %w", err)
 		}
-		tx := &txs.Tx{Unsigned: &txs.CreateChainTx{
-			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
+		utx, err := txs.NewCreateChainTx(
+			&lux.BaseTx{
 				NetworkID:    uint32(args.NetworkID),
 				BlockchainID: ids.Empty,
-			}},
-			ChainID:        chain.ChainID,
-			BlockchainName: chain.Name,
-			VMID:           chain.VMID,
-			FxIDs:          chain.FxIDs,
-			GenesisData:    genesisBytes,
-			ChainAuth:      &secp256k1fx.Input{},
-		}}
-		if err := tx.Initialize(txs.GenesisCodec); err != nil {
+			},
+			chain.ChainID,
+			chain.Name,
+			chain.VMID,
+			chain.FxIDs,
+			genesisBytes,
+			&secp256k1fx.Input{},
+		)
+		if err != nil {
+			return err
+		}
+		tx := &txs.Tx{Unsigned: utx}
+		if err := tx.Initialize(); err != nil {
 			return err
 		}
 
@@ -390,8 +385,8 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 		Message:       args.Message,
 	}
 
-	// Marshal genesis to bytes
-	bytes, err := genesis.Codec.Marshal(genesis.CodecVersion, g)
+	// Marshal genesis to bytes (native ZAP; no codec)
+	bytes, err := g.Bytes()
 	if err != nil {
 		return fmt.Errorf("couldn't marshal genesis: %w", err)
 	}

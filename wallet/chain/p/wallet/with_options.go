@@ -149,22 +149,6 @@ func (w *withOptions) IssueTransferChainOwnershipTx(
 	)
 }
 
-func (w *withOptions) IssueConvertNetworkToL1Tx(
-	netID ids.ID,
-	managerChainID ids.ID,
-	address []byte,
-	validators []*txs.ConvertNetworkToL1Validator,
-	options ...common.Option,
-) (*txs.Tx, error) {
-	return w.wallet.IssueConvertNetworkToL1Tx(
-		netID,
-		managerChainID,
-		address,
-		validators,
-		common.UnionOptions(w.options, options)...,
-	)
-}
-
 func (w *withOptions) IssueRegisterL1ValidatorTx(
 	balance uint64,
 	proofOfPossession [bls.SignatureLen]byte,

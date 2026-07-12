@@ -10,11 +10,11 @@ import (
 	"github.com/luxfi/accel"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/math/set"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	validators "github.com/luxfi/validators"
 )
 
 // VerifyWarpMessages verifies all warp messages in the block. If any of the
@@ -148,9 +148,9 @@ func VerifyWarpMessages(
 func extractWarpMessageBytes(unsigned txs.UnsignedTx) ([]byte, bool) {
 	switch tx := unsigned.(type) {
 	case *txs.RegisterL1ValidatorTx:
-		return tx.Message, true
+		return tx.Message(), true
 	case *txs.SetL1ValidatorWeightTx:
-		return tx.Message, true
+		return tx.Message(), true
 	default:
 		return nil, false
 	}

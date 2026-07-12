@@ -60,7 +60,7 @@ func TestMempoolDuplicate(t *testing.T) {
 
 	txID := ids.GenerateTestID()
 	tx := &txs.Tx{
-		Unsigned: &txs.BaseTx{},
+		Unsigned: newBaseTx(t),
 		TxID:     txID,
 	}
 
@@ -87,7 +87,7 @@ func TestGossipAddBloomFilter(t *testing.T) {
 
 	txID := ids.GenerateTestID()
 	tx := &txs.Tx{
-		Unsigned: &txs.BaseTx{},
+		Unsigned: newBaseTx(t),
 		TxID:     txID,
 	}
 

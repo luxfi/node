@@ -14,17 +14,16 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/cache/metercacher"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/proposervm/block"
 )
 
 const blockCacheSize = 64 * constants.MiB
 
-var (
-	errBlockWrongVersion = errors.New("wrong version")
+// statusIntLen is the wire width of the serialized status uint32; used only for
+// cache-size accounting.
+const statusIntLen = 4
 
-	_ BlockState = (*blockState)(nil)
-)
+var _ BlockState = (*blockState)(nil)
 
 type BlockState interface {
 	GetBlock(blkID ids.ID) (block.Block, error)
@@ -41,8 +40,8 @@ type blockState struct {
 }
 
 type blockWrapper struct {
-	Block     []byte `serialize:"true"`
-	StatusInt uint32 `serialize:"true"` // Store status as uint32 for serialization
+	Block     []byte
+	StatusInt uint32 // Store status as uint32 for serialization
 
 	block  block.Block
 	status choices.Status // Keep the actual status here
@@ -52,7 +51,7 @@ func cachedBlockSize(_ ids.ID, bw *blockWrapper) int {
 	if bw == nil {
 		return ids.IDLen + constants.PointerOverhead
 	}
-	return ids.IDLen + len(bw.Block) + pcodecs.IntLen + 2*constants.PointerOverhead
+	return ids.IDLen + len(bw.Block) + statusIntLen + 2*constants.PointerOverhead
 }
 
 func NewBlockState(db database.Database) BlockState {
@@ -97,12 +96,8 @@ func (s *blockState) GetBlock(blkID ids.ID) (block.Block, error) {
 	}
 
 	blkWrapper := blockWrapper{}
-	parsedVersion, err := Codec.Unmarshal(blkWrapperBytes, &blkWrapper)
-	if err != nil {
+	if err := parseBlockWrapper(blkWrapperBytes, &blkWrapper); err != nil {
 		return nil, err
-	}
-	if parsedVersion != CodecVersion {
-		return nil, errBlockWrongVersion
 	}
 
 	// The key was in the database
@@ -124,10 +119,7 @@ func (s *blockState) PutBlock(blk block.Block) error {
 		block:  blk,
 	}
 
-	bytes, err := Codec.Marshal(CodecVersion, &blkWrapper)
-	if err != nil {
-		return err
-	}
+	bytes := marshalBlockWrapper(&blkWrapper)
 
 	blkID := blk.ID()
 	s.blkCache.Put(blkID, &blkWrapper)

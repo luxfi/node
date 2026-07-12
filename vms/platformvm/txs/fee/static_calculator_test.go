@@ -1,40 +1,48 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
 
 import (
-	"encoding/hex"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
+// TestStaticCalculator exercises the static fee visitor over natively-built
+// txs (the pre-LP-023 BE hex fixtures no longer parse). Supported tx types map
+// to their configured flat fee; the proposal/internal txs the static visitor
+// does not price (AdvanceTime, RewardValidator) surface ErrUnsupportedTx.
 func TestStaticCalculator(t *testing.T) {
-	// txTests fixtures are pre-LP-023 BE-encoded V1 wire bytes. Post-LP-023
-	// the codec is ZAP-native LE — these hex strings no longer parse.
-	// Fee computation correctness is covered by TestOutputComplexity,
-	// TestInputComplexity, TestOwnerComplexity, TestAuthComplexity,
-	// TestSignerComplexity, and TestConvertNetworkToL1ValidatorComplexity
-	// which marshal at runtime. Re-generating these full-tx fixtures is
-	// tracked separately.
-	t.Skip("txTests fixtures are pre-LP-023 BE wire; runtime-marshal coverage in *Complexity tests")
+	require := require.New(t)
 
-	calculator := NewSimpleStaticCalculator(StaticConfig{})
-	for _, test := range txTests {
-		t.Run(test.name, func(t *testing.T) {
-			require := require.New(t)
+	cfg := StaticConfig{
+		TxFee:                  1000,
+		CreateChainTxFee:       2000,
+		CreateNetworkTxFee:     3000,
+		AddNetworkValidatorFee: 4000,
+	}
+	calculator := NewSimpleStaticCalculator(cfg)
 
-			txBytes, err := hex.DecodeString(test.tx)
-			require.NoError(err)
+	// BaseTx → flat TxFee.
+	fee, err := calculator.CalculateFee(feeBaseTx(t))
+	require.NoError(err)
+	require.Equal(cfg.TxFee, fee)
 
-			tx, err := txs.Parse(txs.Codec, txBytes)
-			require.NoError(err)
+	// CreateChainTx → CreateChainTxFee.
+	fee, err = calculator.CalculateFee(feeCreateChainTx(t))
+	require.NoError(err)
+	require.Equal(cfg.CreateChainTxFee, fee)
 
-			_, err = calculator.CalculateFee(tx.Unsigned)
-			require.ErrorIs(err, test.expectedStaticFeeErr)
-		})
+	// Unsupported (consensus-internal) txs are refused.
+	for _, utx := range []txs.UnsignedTx{
+		txs.NewAdvanceTimeTx(1),
+		txs.NewRewardValidatorTx(ids.GenerateTestID()),
+	} {
+		_, err := calculator.CalculateFee(utx)
+		require.ErrorIs(err, ErrUnsupportedTx)
 	}
 }

@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/ids"
 	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/platformvm/block"
+	"github.com/luxfi/utils/wrappers"
 )
 
 const (
@@ -145,7 +145,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		}),
 	}
 
-	errs := pcodecs.Errs{Err: err}
+	errs := wrappers.Errs{Err: err}
 	registry, ok := registerer.(metric.Registry)
 	if !ok {
 		return nil, errors.New("registerer must be a Registry")

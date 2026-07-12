@@ -9,9 +9,9 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/math"
 )
 
 type addValidatorRules struct {
@@ -45,12 +45,12 @@ func getValidatorRules(
 	}
 
 	return &addValidatorRules{
-		assetID:           transformNet.AssetID,
-		minValidatorStake: transformNet.MinValidatorStake,
-		maxValidatorStake: transformNet.MaxValidatorStake,
-		minStakeDuration:  time.Duration(transformNet.MinStakeDuration) * time.Second,
-		maxStakeDuration:  time.Duration(transformNet.MaxStakeDuration) * time.Second,
-		minDelegationFee:  transformNet.MinDelegationFee,
+		assetID:           transformNet.AssetID(),
+		minValidatorStake: transformNet.MinValidatorStake(),
+		maxValidatorStake: transformNet.MaxValidatorStake(),
+		minStakeDuration:  time.Duration(transformNet.MinStakeDuration()) * time.Second,
+		maxStakeDuration:  time.Duration(transformNet.MaxStakeDuration()) * time.Second,
+		minDelegationFee:  transformNet.MinDelegationFee(),
 	}, nil
 }
 
@@ -85,12 +85,12 @@ func getDelegatorRules(
 	}
 
 	return &addDelegatorRules{
-		assetID:                  transformNet.AssetID,
-		minDelegatorStake:        transformNet.MinDelegatorStake,
-		maxValidatorStake:        transformNet.MaxValidatorStake,
-		minStakeDuration:         time.Duration(transformNet.MinStakeDuration) * time.Second,
-		maxStakeDuration:         time.Duration(transformNet.MaxStakeDuration) * time.Second,
-		maxValidatorWeightFactor: transformNet.MaxValidatorWeightFactor,
+		assetID:                  transformNet.AssetID(),
+		minDelegatorStake:        transformNet.MinDelegatorStake(),
+		maxValidatorStake:        transformNet.MaxValidatorStake(),
+		minStakeDuration:         time.Duration(transformNet.MinStakeDuration()) * time.Second,
+		maxStakeDuration:         time.Duration(transformNet.MaxStakeDuration()) * time.Second,
+		maxValidatorWeightFactor: transformNet.MaxValidatorWeightFactor(),
 	}, nil
 }
 

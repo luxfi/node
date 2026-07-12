@@ -62,16 +62,14 @@ func (s *state) Close() error {
 }
 
 func (s *state) write(updateValidators bool, height uint64) error {
-	const codecVersion = CodecVersion1
-
 	return errors.Join(
 		s.writeBlocks(),
 		s.writeExpiry(),
 		s.updateValidatorManager(updateValidators),
 		s.writeValidatorDiffs(height),
-		s.writeCurrentStakers(codecVersion),
+		s.writeCurrentStakers(),
 		s.writePendingStakers(),
-		s.WriteValidatorMetadata(s.currentValidatorList, s.currentNetValidatorList, codecVersion), // Must be called after writeCurrentStakers
+		s.WriteValidatorMetadata(s.currentValidatorList, s.currentNetValidatorList), // Must be called after writeCurrentStakers
 		s.writeL1Validators(),
 		s.writeTXs(),
 		s.writeRewardUTXOs(),
@@ -278,7 +276,7 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 		// Ensure all chains that the genesis bytes say to create have the right
 		// network ID
 		networkID := s.rt.NetworkID
-		if false && unsignedChain.NetworkID != networkID { // Temporarily disabled for genesis compatibility
+		if false && unsignedChain.NetworkID() != networkID { // Temporarily disabled for genesis compatibility
 			return lux.ErrWrongNetworkID
 		}
 
@@ -342,9 +340,9 @@ func (s *state) migrateNewGenesisChains(genesisBytes []byte) error {
 			continue
 		}
 		log.Info("migrating new genesis chain into state",
-			"name", unsignedChain.BlockchainName,
+			"name", unsignedChain.BlockchainName(),
 			"chainID", chain.ID(),
-			"vmID", unsignedChain.VMID,
+			"vmID", unsignedChain.VMID(),
 		)
 		s.AddChain(chain)
 		s.AddTx(chain, status.Committed)

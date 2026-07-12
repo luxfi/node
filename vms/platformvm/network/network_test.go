@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
@@ -27,6 +28,38 @@ import (
 
 	pmempool "github.com/luxfi/node/vms/platformvm/txs/mempool"
 )
+
+// newBaseTx builds an empty spending tx backed by a real zap buffer. P-chain
+// txs are struct-is-wire: an un-constructed &txs.BaseTx{} has a nil buffer and
+// panics the moment the mempool reads its inputs/outputs, so tests that hand a
+// tx to the mempool must build it through the constructor.
+func newBaseTx(tb testing.TB) *txs.BaseTx {
+	tb.Helper()
+	tx, err := txs.NewBaseTx(&lux.BaseTx{})
+	require.NoError(tb, err)
+	return tx
+}
+
+// newConflictTx builds a spending tx consuming a single (zero) UTXO. Two such
+// txs consume the same input ID, so the second to reach the mempool conflicts
+// with the first — exercising the conflict-detection path.
+func newConflictTx(tb testing.TB, txID ids.ID) *txs.Tx {
+	tb.Helper()
+	unsigned, err := txs.NewBaseTx(&lux.BaseTx{
+		Ins: []*lux.TransferableInput{
+			{
+				UTXOID: lux.UTXOID{},
+				Asset:  lux.Asset{ID: ids.Empty},
+				In: &secp256k1fx.TransferInput{
+					Amt:   1,
+					Input: secp256k1fx.Input{SigIndices: []uint32{0}},
+				},
+			},
+		},
+	})
+	require.NoError(tb, err)
+	return &txs.Tx{Unsigned: unsigned, TxID: txID}
+}
 
 // testSender implements warp.Sender for testing with optional call tracking
 type testSender struct {
@@ -172,13 +205,13 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			mempool: func() *pmempool.Mempool {
 				mempool, err := pmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
-				require.NoError(t, mempool.Add(&txs.Tx{Unsigned: &txs.BaseTx{}}))
+				require.NoError(t, mempool.Add(&txs.Tx{Unsigned: newBaseTx(t)}))
 				return mempool
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
 				return &testSender{}
 			},
-			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
+			tx:          &txs.Tx{Unsigned: newBaseTx(t)},
 			expectedErr: mempool.ErrDuplicateTx,
 		},
 		{
@@ -193,7 +226,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				// Shouldn't gossip the tx
 				return &testSender{}
 			},
-			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
+			tx:          &txs.Tx{Unsigned: newBaseTx(t)},
 			expectedErr: errTest,
 		},
 		{
@@ -208,7 +241,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				// Shouldn't gossip the tx
 				return &testSender{}
 			},
-			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
+			tx:          &txs.Tx{Unsigned: newBaseTx(t)},
 			expectedErr: errTest,
 		},
 		{
@@ -223,9 +256,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return &testSender{}
 			},
 			tx: func() *txs.Tx {
-				tx := &txs.Tx{Unsigned: &txs.BaseTx{}}
+				tx := &txs.Tx{Unsigned: newBaseTx(t)}
 				bytes := make([]byte, mempool.MaxTxSize+1)
-				tx.SetBytes(bytes, bytes)
+				tx.SetBytes(bytes)
 				return tx
 			}(),
 			expectedErr: mempool.ErrTxTooLarge,
@@ -236,40 +269,14 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				mempool, err := pmempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 
-				tx := &txs.Tx{
-					Unsigned: &txs.BaseTx{
-						BaseTx: lux.BaseTx{
-							Ins: []*lux.TransferableInput{
-								{
-									UTXOID: lux.UTXOID{},
-								},
-							},
-						},
-					},
-				}
-
-				require.NoError(t, mempool.Add(tx))
+				require.NoError(t, mempool.Add(newConflictTx(t, ids.Empty)))
 				return mempool
 			}(),
 			appSenderFunc: func(ctrl *gomock.Controller) warp.Sender {
 				// Shouldn't gossip the tx
 				return &testSender{}
 			},
-			tx: func() *txs.Tx {
-				tx := &txs.Tx{
-					Unsigned: &txs.BaseTx{
-						BaseTx: lux.BaseTx{
-							Ins: []*lux.TransferableInput{
-								{
-									UTXOID: lux.UTXOID{},
-								},
-							},
-						},
-					},
-					TxID: ids.ID{1},
-				}
-				return tx
-			}(),
+			tx:          newConflictTx(t, ids.ID{1}),
 			expectedErr: mempool.ErrConflictsWithOtherTx,
 		},
 		{
@@ -280,9 +287,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 
 				// Fill the mempool to capacity (64 MiB / 2 MiB per tx = 32 txs)
 				for i := 0; i < 32; i++ {
-					tx := &txs.Tx{Unsigned: &txs.BaseTx{}}
+					tx := &txs.Tx{Unsigned: newBaseTx(t)}
 					bytes := make([]byte, mempool.MaxTxSize)
-					tx.SetBytes(bytes, bytes)
+					tx.SetBytes(bytes)
 					tx.TxID = ids.GenerateTestID()
 					require.NoError(t, m.Add(tx))
 				}
@@ -294,8 +301,8 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return &testSender{}
 			},
 			tx: func() *txs.Tx {
-				tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{}}}
-				tx.SetBytes([]byte{1, 2, 3}, []byte{1, 2, 3})
+				tx := &txs.Tx{Unsigned: newBaseTx(t)}
+				tx.SetBytes([]byte{1, 2, 3})
 				return tx
 			}(),
 			expectedErr: mempool.ErrMempoolFull,
@@ -311,7 +318,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				// testSender tracks if SendGossip was called
 				return &testSender{}
 			},
-			tx:          &txs.Tx{Unsigned: &txs.BaseTx{}},
+			tx:          &txs.Tx{Unsigned: newBaseTx(t)},
 			expectedErr: nil,
 		},
 	}

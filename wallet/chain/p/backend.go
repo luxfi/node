@@ -45,14 +45,14 @@ func NewBackend(context *builder.Context, utxos common.ChainUTXOs, chainTxs map[
 		if !ok {
 			continue
 		}
-		chainOwner[txID] = createNetworkTx.Owner
+		chainOwner[txID] = createNetworkTx.Owner()
 	}
 	for _, tx := range chainTxs { // then check for TransferChainOwnershipTx
 		transferChainOwnershipTx, ok := tx.Unsigned.(*txs.TransferChainOwnershipTx)
 		if !ok {
 			continue
 		}
-		chainOwner[transferChainOwnershipTx.Chain] = transferChainOwnershipTx.Owner
+		chainOwner[transferChainOwnershipTx.Chain()] = transferChainOwnershipTx.Owner()
 	}
 	return &backend{
 		ChainUTXOs: utxos,
@@ -93,43 +93,49 @@ func (v *backendVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 }
 
 func (v *backendVisitor) AddValidatorTx(tx *txs.AddValidatorTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) CreateNetworkTx(tx *txs.CreateNetworkTx) error {
-	v.b.setChainOwner(v.txID, tx.Owner)
-	return v.baseTx(&tx.BaseTx)
+	v.b.setChainOwner(v.txID, tx.Owner())
+	return v.baseTx(tx)
+}
+
+// ConvertNetworkTx promotes an existing network — its owner is already tracked
+// from the original CreateNetworkTx, so only the base UTXO scan is needed.
+func (v *backendVisitor) ConvertNetworkTx(tx *txs.ConvertNetworkTx) error {
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) ImportTx(tx *txs.ImportTx) error {
-	err := v.b.removeUTXOs(v.ctx, tx.SourceChain, tx.InputUTXOs())
+	err := v.b.removeUTXOs(v.ctx, tx.SourceChain(), tx.InputUTXOs())
 	if err != nil {
 		return err
 	}
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) ExportTx(tx *txs.ExportTx) error {
-	for i, out := range tx.ExportedOutputs {
+	for i, out := range tx.ExportedOutputs() {
 		err := v.b.AddUTXO(
 			v.ctx,
-			tx.DestinationChain,
+			tx.DestinationChain(),
 			&lux.UTXO{
 				UTXOID: lux.UTXOID{
 					TxID:        v.txID,
-					OutputIndex: uint32(len(tx.Outs) + i),
+					OutputIndex: uint32(len(tx.Outputs()) + i),
 				},
 				Asset: lux.Asset{ID: out.AssetID()},
 				Out:   out.Out,
@@ -139,40 +145,32 @@ func (v *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 			return err
 		}
 	}
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) TransformChainTx(tx *txs.TransformChainTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
-	v.b.setChainOwner(tx.Chain, tx.Owner)
-	return v.baseTx(&tx.BaseTx)
+	v.b.setChainOwner(tx.Chain(), tx.Owner())
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) BaseTx(tx *txs.BaseTx) error {
 	return v.baseTx(tx)
-}
-
-func (v *backendVisitor) ConvertNetworkToL1Tx(*txs.ConvertNetworkToL1Tx) error {
-	return nil
-}
-
-func (v *backendVisitor) CreateSovereignL1Tx(*txs.CreateSovereignL1Tx) error {
-	return nil
 }
 
 func (v *backendVisitor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error {
@@ -180,30 +178,18 @@ func (v *backendVisitor) RegisterL1ValidatorTx(*txs.RegisterL1ValidatorTx) error
 }
 
 func (v *backendVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
 func (v *backendVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
-	return v.baseTx(&tx.BaseTx)
+	return v.baseTx(tx)
 }
 
-func (v *backendVisitor) SlashValidatorTx(tx *txs.SlashValidatorTx) error {
-	return v.baseTx(&tx.BaseTx)
-}
-
-func (v *backendVisitor) CreateAssetTx(tx *txs.CreateAssetTx) error {
-	return v.baseTx(&tx.BaseTx)
-}
-
-func (v *backendVisitor) OperationTx(tx *txs.OperationTx) error {
-	return v.baseTx(&tx.BaseTx)
-}
-
-func (v *backendVisitor) baseTx(tx *txs.BaseTx) error {
+func (v *backendVisitor) baseTx(tx txs.UnsignedTx) error {
 	return v.b.removeUTXOs(v.ctx, constants.PlatformChainID, tx.InputIDs())
 }
 

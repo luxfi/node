@@ -13,9 +13,10 @@ import (
 
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/platformvm/txs"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/node/vms/platformvm/signer/signermock"
+	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
 var errCustom = errors.New("custom")
@@ -159,12 +160,16 @@ func TestNewCurrentStaker(t *testing.T) {
 		Priority:        stakerTx.CurrentPriority(),
 	}, staker)
 
+	// A staker transaction whose PublicKey() fails verification must
+	// propagate the error. The tx is now struct-is-wire (immutable zap
+	// buffer), so the failing signer can no longer be injected onto the
+	// concrete tx; instead a ScheduledStaker whose PublicKey() returns the
+	// error is passed through the interface NewCurrentStaker accepts.
 	ctrl := gomock.NewController(t)
-	signer := signermock.NewSigner(ctrl)
-	signer.EXPECT().Verify().Return(errCustom)
-	stakerTx.Signer = signer
+	mockStaker := txs.NewMockScheduledStaker(ctrl)
+	mockStaker.EXPECT().PublicKey().Return(nil, false, errCustom)
 
-	_, err = NewCurrentStaker(txID, stakerTx, startTime, potentialReward)
+	_, err = NewCurrentStaker(txID, mockStaker, startTime, potentialReward)
 	require.ErrorIs(err, errCustom)
 }
 
@@ -191,12 +196,13 @@ func TestNewPendingStaker(t *testing.T) {
 		Priority:  stakerTx.PendingPriority(),
 	}, staker)
 
+	// See TestNewCurrentStaker: exercise the PublicKey() error path through
+	// the ScheduledStaker interface.
 	ctrl := gomock.NewController(t)
-	signer := signermock.NewSigner(ctrl)
-	signer.EXPECT().Verify().Return(errCustom)
-	stakerTx.Signer = signer
+	mockStaker := txs.NewMockScheduledStaker(ctrl)
+	mockStaker.EXPECT().PublicKey().Return(nil, false, errCustom)
 
-	_, err = NewPendingStaker(txID, stakerTx)
+	_, err = NewPendingStaker(txID, mockStaker)
 	require.ErrorIs(err, errCustom)
 }
 
@@ -211,14 +217,36 @@ func generateStakerTx(require *require.Assertions) *txs.AddPermissionlessValidat
 	startTime := time.Now().Truncate(time.Second)
 	endTime := startTime.Add(time.Hour)
 
-	return &txs.AddPermissionlessValidatorTx{
-		Validator: txs.Validator{
-			NodeID: nodeID,
-			Start:  uint64(startTime.Unix()),
-			End:    uint64(endTime.Unix()),
-			Wght:   weight,
-		},
-		Signer: pop,
-		Chain:  chainID,
+	validator := txs.Validator{
+		NodeID: nodeID,
+		Start:  uint64(startTime.Unix()),
+		End:    uint64(endTime.Unix()),
+		Wght:   weight,
 	}
+	owner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+	}
+	stakeOuts := []*lux.TransferableOutput{
+		{
+			Asset: lux.Asset{ID: ids.GenerateTestID()},
+			Out: &secp256k1fx.TransferOutput{
+				Amt:          weight,
+				OutputOwners: *owner,
+			},
+		},
+	}
+
+	tx, err := txs.NewAddPermissionlessValidatorTx(
+		&lux.BaseTx{},
+		validator,
+		chainID,
+		pop,
+		stakeOuts,
+		owner,
+		owner,
+		0,
+	)
+	require.NoError(err)
+	return tx
 }

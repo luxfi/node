@@ -212,10 +212,10 @@ func TestGenesis(t *testing.T) {
 	validator := genesis.Validators[0]
 	txValidator, ok := validator.Unsigned.(*txs.AddValidatorTx)
 	require.True(ok)
-	require.Equal(nodeID, txValidator.Validator.NodeID)
-	require.Equal(uint64(20), txValidator.Validator.End)
-	require.Len(txValidator.StakeOuts, 1)
-	stakeOut := txValidator.StakeOuts[0]
+	require.Equal(nodeID, txValidator.Validator().NodeID)
+	require.Equal(uint64(20), txValidator.Validator().End)
+	require.Len(txValidator.StakeOuts(), 1)
+	stakeOut := txValidator.StakeOuts()[0]
 	stakeOutput, ok := stakeOut.Out.(*secp256k1fx.TransferOutput)
 	require.True(ok)
 	require.Equal(uint64(987654321), stakeOutput.Amt)

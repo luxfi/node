@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/zap"
 )
 
 type ParseResult struct {
@@ -46,28 +47,40 @@ func Parse(bytes []byte, chainID ids.ID) (Block, error) {
 }
 
 // ParseWithoutVerification parses a block without verifying that the signature
-// on the block is correct.
+// on the block is correct. Dispatch is the 1-byte blockKind at object offset 0
+// of the leading self-delimiting zap message — no codec, no version.
 func ParseWithoutVerification(bytes []byte) (Block, error) {
-	var block Block
-	parsedVersion, err := Codec.Unmarshal(bytes, &block)
+	n, err := zapLen(bytes)
 	if err != nil {
 		return nil, err
 	}
-	if parsedVersion != CodecVersion {
-		return nil, fmt.Errorf("expected codec version %d but got %d", CodecVersion, parsedVersion)
+	msg, err := zap.Parse(bytes[:n])
+	if err != nil {
+		return nil, err
 	}
-	return block, block.initialize(bytes)
+
+	switch k := blockKind(msg.Root().Uint8(offKind)); k {
+	case blkSigned:
+		block := &statelessBlock{}
+		return block, block.initialize(bytes)
+	case blkOption:
+		block := &option{}
+		return block, block.initialize(bytes[:n])
+	default:
+		return nil, fmt.Errorf("%w: %d", errUnknownBlockType, k)
+	}
 }
 
 func ParseHeader(bytes []byte) (Header, error) {
-	header := statelessHeader{}
-	parsedVersion, err := Codec.Unmarshal(bytes, &header)
+	msg, err := zap.Parse(bytes)
 	if err != nil {
 		return nil, err
 	}
-	if parsedVersion != CodecVersion {
-		return nil, fmt.Errorf("expected codec version %d but got %d", CodecVersion, parsedVersion)
-	}
-	header.bytes = bytes
-	return &header, nil
+	root := msg.Root()
+	return &statelessHeader{
+		Chain:  ids.ID(read32(root, hdrChain)),
+		Parent: ids.ID(read32(root, hdrParent)),
+		Body:   ids.ID(read32(root, hdrBody)),
+		bytes:  bytes,
+	}, nil
 }

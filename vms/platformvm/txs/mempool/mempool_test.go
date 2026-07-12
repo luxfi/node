@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mempool
@@ -151,45 +151,55 @@ func TestProposalTxsInMempool(t *testing.T) {
 	}
 }
 
+// createTestDecisionTxs builds native-wire CreateChainTx decision txs via the
+// New*Tx constructor + (&Tx{}).Initialize() path — no codec, no NewSigned
+// codec arg. The spending envelope (network/blockchain/ins/outs) is passed as
+// a *lux.BaseTx to the constructor; the delta fields (chainID/name/vmID/fxIDs/
+// genesis/auth) are the remaining positional args.
 func createTestDecisionTxs(count int) ([]*txs.Tx, error) {
 	decisionTxs := make([]*txs.Tx, 0, count)
 	for i := uint32(0); i < uint32(count); i++ {
-		utx := &txs.CreateChainTx{
-			BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
-				NetworkID:    10,
-				BlockchainID: ids.Empty.Prefix(uint64(i)),
-				Ins: []*lux.TransferableInput{{
-					UTXOID: lux.UTXOID{
-						TxID:        ids.ID{'t', 'x', 'I', 'D'},
-						OutputIndex: i,
-					},
-					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
-					In: &secp256k1fx.TransferInput{
-						Amt:   uint64(5678),
-						Input: secp256k1fx.Input{SigIndices: []uint32{i}},
-					},
-				}},
-				Outs: []*lux.TransferableOutput{{
-					Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
-					Out: &secp256k1fx.TransferOutput{
-						Amt: uint64(1234),
-						OutputOwners: secp256k1fx.OutputOwners{
-							Threshold: 1,
-							Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
-						},
-					},
-				}},
+		base := &lux.BaseTx{
+			NetworkID:    10,
+			BlockchainID: ids.Empty.Prefix(uint64(i)),
+			Ins: []*lux.TransferableInput{{
+				UTXOID: lux.UTXOID{
+					TxID:        ids.ID{'t', 'x', 'I', 'D'},
+					OutputIndex: i,
+				},
+				Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+				In: &secp256k1fx.TransferInput{
+					Amt:   uint64(5678),
+					Input: secp256k1fx.Input{SigIndices: []uint32{i}},
+				},
 			}},
-			ChainID:        ids.GenerateTestID(),
-			BlockchainName: "chainName",
-			VMID:           ids.GenerateTestID(),
-			FxIDs:          []ids.ID{ids.GenerateTestID()},
-			GenesisData:    []byte{'g', 'e', 'n', 'D', 'a', 't', 'a'},
-			ChainAuth:      &secp256k1fx.Input{SigIndices: []uint32{1}},
+			Outs: []*lux.TransferableOutput{{
+				Asset: lux.Asset{ID: ids.ID{'a', 's', 's', 'e', 'r', 't'}},
+				Out: &secp256k1fx.TransferOutput{
+					Amt: uint64(1234),
+					OutputOwners: secp256k1fx.OutputOwners{
+						Threshold: 1,
+						Addrs:     []ids.ShortID{preFundedKeys[0].PublicKey().Address()},
+					},
+				},
+			}},
 		}
 
-		tx, err := txs.NewSigned(utx, txs.Codec, nil)
+		utx, err := txs.NewCreateChainTx(
+			base,
+			ids.GenerateTestID(), // chainID
+			"chainName",
+			ids.GenerateTestID(),                        // vmID
+			[]ids.ID{ids.GenerateTestID()},              // fxIDs
+			[]byte{'g', 'e', 'n', 'D', 'a', 't', 'a'},   // genesisData
+			&secp256k1fx.Input{SigIndices: []uint32{1}}, // chainAuth
+		)
 		if err != nil {
+			return nil, err
+		}
+
+		tx := &txs.Tx{Unsigned: utx}
+		if err := tx.Initialize(); err != nil {
 			return nil, err
 		}
 		decisionTxs = append(decisionTxs, tx)
@@ -215,19 +225,26 @@ func createTestProposalTxs(count int) ([]*txs.Tx, error) {
 }
 
 func generateAddValidatorTx(startTime uint64, endTime uint64) (*txs.Tx, error) {
-	utx := &txs.AddValidatorTx{
-		BaseTx: txs.BaseTx{},
-		Validator: txs.Validator{
+	utx, err := txs.NewAddValidatorTx(
+		&lux.BaseTx{},
+		txs.Validator{
 			NodeID: ids.GenerateTestNodeID(),
 			Start:  startTime,
 			End:    endTime,
 		},
-		StakeOuts:        nil,
-		RewardsOwner:     &secp256k1fx.OutputOwners{},
-		DelegationShares: 100,
+		nil, // stake outs
+		&secp256k1fx.OutputOwners{},
+		100, // delegation shares
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	return txs.NewSigned(utx, txs.Codec, nil)
+	tx := &txs.Tx{Unsigned: utx}
+	if err := tx.Initialize(); err != nil {
+		return nil, err
+	}
+	return tx, nil
 }
 
 func TestDropExpiredStakerTxs(t *testing.T) {

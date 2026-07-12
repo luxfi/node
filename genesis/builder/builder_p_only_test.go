@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/node/vms/platformvm/genesis"
-	pchaintxs "github.com/luxfi/node/vms/platformvm/txs"
 )
 
 // TestUTXOAssetIDFromGenesisBytes_Sovereign asserts the canonical
@@ -63,7 +62,7 @@ func TestUTXOAssetIDFromGenesisBytes_POnly(t *testing.T) {
 	require := require.New(t)
 
 	pOnly := &genesis.Genesis{Chains: nil}
-	pOnlyBytes, err := genesis.Codec.Marshal(pchaintxs.CodecVersion, pOnly)
+	pOnlyBytes, err := pOnly.Bytes()
 	require.NoError(err)
 
 	id, ok, err := UTXOAssetIDFromGenesisBytes(pOnlyBytes)
@@ -93,7 +92,7 @@ func TestVMGenesisOptInChains(t *testing.T) {
 	pOnly := &genesis.Genesis{
 		Chains: nil,
 	}
-	pOnlyBytes, err := genesis.Codec.Marshal(pchaintxs.CodecVersion, pOnly)
+	pOnlyBytes, err := pOnly.Bytes()
 	require.NoError(err)
 
 	for name, vmID := range map[string]ids.ID{

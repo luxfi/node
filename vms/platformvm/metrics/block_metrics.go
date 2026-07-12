@@ -59,19 +59,20 @@ func (m *blockMetrics) ProposalBlock(b *block.ProposalBlock) error {
 	m.numBlocks.With(metric.Labels{
 		blkLabel: "proposal",
 	}).Inc()
-	for _, tx := range b.Transactions {
+	// Txs() returns the decision txs followed by the proposal tx (last).
+	for _, tx := range b.Txs() {
 		if err := tx.Unsigned.Visit(m.txMetrics); err != nil {
 			return err
 		}
 	}
-	return b.Tx.Unsigned.Visit(m.txMetrics)
+	return nil
 }
 
 func (m *blockMetrics) StandardBlock(b *block.StandardBlock) error {
 	m.numBlocks.With(metric.Labels{
 		blkLabel: "standard",
 	}).Inc()
-	for _, tx := range b.Transactions {
+	for _, tx := range b.Txs() {
 		if err := tx.Unsigned.Visit(m.txMetrics); err != nil {
 			return err
 		}

@@ -17,7 +17,7 @@ import (
 
 	safemath "github.com/luxfi/math"
 	"github.com/luxfi/node/vms/components/gas"
-	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/utils/wrappers"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 	MinMaxPerSecond     = MinTargetPerSecond * TargetToMax
 	MinMaxCapacity      = MinMaxPerSecond * TimeToFillCapacity
 
-	StateSize = 3 * pcodecs.LongLen
+	StateSize = 3 * wrappers.LongLen
 
 	maxTargetExcess = 1_024_950_627 // TargetConversion * ln(MaxUint64 / MinTargetPerSecond) + 1
 )
@@ -63,9 +63,9 @@ func ParseState(bytes []byte) (State, error) {
 	return State{
 		Gas: gas.State{
 			Capacity: gas.Gas(binary.BigEndian.Uint64(bytes)),
-			Excess:   gas.Gas(binary.BigEndian.Uint64(bytes[pcodecs.LongLen:])),
+			Excess:   gas.Gas(binary.BigEndian.Uint64(bytes[wrappers.LongLen:])),
 		},
-		TargetExcess: gas.Gas(binary.BigEndian.Uint64(bytes[2*pcodecs.LongLen:])),
+		TargetExcess: gas.Gas(binary.BigEndian.Uint64(bytes[2*wrappers.LongLen:])),
 	}, nil
 }
 
@@ -161,8 +161,8 @@ func (s *State) UpdateTargetExcess(desiredTargetExcess gas.Gas) {
 func (s *State) Bytes() []byte {
 	bytes := make([]byte, StateSize)
 	binary.BigEndian.PutUint64(bytes, uint64(s.Gas.Capacity))
-	binary.BigEndian.PutUint64(bytes[pcodecs.LongLen:], uint64(s.Gas.Excess))
-	binary.BigEndian.PutUint64(bytes[2*pcodecs.LongLen:], uint64(s.TargetExcess))
+	binary.BigEndian.PutUint64(bytes[wrappers.LongLen:], uint64(s.Gas.Excess))
+	binary.BigEndian.PutUint64(bytes[2*wrappers.LongLen:], uint64(s.TargetExcess))
 	return bytes
 }
 

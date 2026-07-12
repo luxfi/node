@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
@@ -12,10 +12,13 @@ type Header interface {
 	Bytes() []byte
 }
 
+// statelessHeader is the (chain, parent, body) binding the proposer signs. Its
+// bytes are a single fixed-shape zap object (see buildHeaderBuffer); the struct
+// caches the three IDs plus the encoded bytes.
 type statelessHeader struct {
-	Chain  ids.ID `serialize:"true"`
-	Parent ids.ID `serialize:"true"`
-	Body   ids.ID `serialize:"true"`
+	Chain  ids.ID
+	Parent ids.ID
+	Body   ids.ID
 
 	bytes []byte
 }

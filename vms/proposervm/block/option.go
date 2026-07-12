@@ -1,17 +1,18 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
 
 import (
-	"github.com/luxfi/ids"
 	"github.com/luxfi/crypto/hash"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/zap"
 )
 
+// option is zap-backed: msg is the single self-delimiting message with
+// blkOption at offset 0. ID = hash(bytes); options carry no signature.
 type option struct {
-	PrntID     ids.ID `serialize:"true"`
-	InnerBytes []byte `serialize:"true"`
-
+	msg   *zap.Message
 	id    ids.ID
 	bytes []byte
 }
@@ -21,11 +22,11 @@ func (b *option) ID() ids.ID {
 }
 
 func (b *option) ParentID() ids.ID {
-	return b.PrntID
+	return ids.ID(read32(b.msg.Root(), offOptParent))
 }
 
 func (b *option) Block() []byte {
-	return b.InnerBytes
+	return b.msg.Root().Bytes(offOptInner)
 }
 
 func (b *option) Bytes() []byte {
@@ -33,8 +34,13 @@ func (b *option) Bytes() []byte {
 }
 
 func (b *option) initialize(bytes []byte) error {
-	b.id = hash.ComputeHash256Array(bytes)
+	msg, err := zap.Parse(bytes)
+	if err != nil {
+		return err
+	}
+	b.msg = msg
 	b.bytes = bytes
+	b.id = hash.ComputeHash256Array(bytes)
 	return nil
 }
 

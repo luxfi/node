@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/pcodecs"
+	"github.com/luxfi/zap"
 )
 
 func TestAddressedCall(t *testing.T) {
@@ -31,16 +31,21 @@ func TestAddressedCall(t *testing.T) {
 
 func TestParseAddressedCallJunk(t *testing.T) {
 	_, err := ParseAddressedCall(junkBytes)
-	require.ErrorIs(t, err, pcodecs.ErrUnknownVersion)
+	require.ErrorIs(t, err, zap.ErrBufferTooSmall)
 }
 
+// TestAddressedCallBytes pins the native-ZAP wire (golden generated from the
+// struct-is-wire encoder at cutover; re-genesis retired the codec wire). Any
+// future encoder change that shifts these bytes is a wire break — fail loudly.
 func TestAddressedCallBytes(t *testing.T) {
 	require := require.New(t)
-	base64Payload := "AAABAAAAEAAAAAECAwAAAAAAAAAAAAAAAAADAAAACgsM"
+	base64Payload := "WkFQAAIAAAAQAAAANAAAAAEQAAAAEAAAABgAAAADAAAAAQIDAAAAAAAAAAAAAAAAAAoLDA=="
 	addressedPayload, err := NewAddressedCall(
 		[]byte{1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		[]byte{10, 11, 12},
 	)
 	require.NoError(err)
 	require.Equal(base64Payload, base64.StdEncoding.EncodeToString(addressedPayload.Bytes()))
+	// structural pin: pkind discriminator sits at the first object byte.
+	require.Equal(uint8(pkindAddressedCall), addressedPayload.Bytes()[zap.HeaderSize])
 }

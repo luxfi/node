@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/pcodecs"
 )
 
 func TestValidatorUptimes(t *testing.T) {
@@ -82,7 +81,7 @@ func TestWriteValidatorMetadata(t *testing.T) {
 	chainDB := memdb.New()
 
 	// write empty uptimes
-	require.NoError(state.WriteValidatorMetadata(primaryDB, chainDB, CodecVersion1))
+	require.NoError(state.WriteValidatorMetadata(primaryDB, chainDB))
 
 	// load uptime
 	nodeID := ids.GenerateTestNodeID()
@@ -96,7 +95,7 @@ func TestWriteValidatorMetadata(t *testing.T) {
 	state.LoadValidatorMetadata(nodeID, netID, testUptimeReward)
 
 	// write state, should not reflect to DB yet
-	require.NoError(state.WriteValidatorMetadata(primaryDB, chainDB, CodecVersion1))
+	require.NoError(state.WriteValidatorMetadata(primaryDB, chainDB))
 	require.False(primaryDB.Has(testUptimeReward.txID[:]))
 	require.False(chainDB.Has(testUptimeReward.txID[:]))
 
@@ -112,7 +111,7 @@ func TestWriteValidatorMetadata(t *testing.T) {
 	require.NoError(state.SetUptime(nodeID, netID, newUpDuration, newLastUpdated))
 
 	// write uptimes, should reflect to net DB
-	require.NoError(state.WriteValidatorMetadata(primaryDB, chainDB, CodecVersion1))
+	require.NoError(state.WriteValidatorMetadata(primaryDB, chainDB))
 	require.False(primaryDB.Has(testUptimeReward.txID[:]))
 	require.True(chainDB.Has(testUptimeReward.txID[:]))
 }
@@ -171,130 +170,76 @@ func TestValidatorDelegateeRewards(t *testing.T) {
 }
 
 func TestParseValidatorMetadata(t *testing.T) {
+	// full is a fully-populated record round-tripped through the native wire.
+	full := &validatorMetadata{
+		UpDuration:               6000000,
+		LastUpdated:              900000,
+		PotentialReward:          100000,
+		PotentialDelegateeReward: 20000,
+		StakerStartTime:          12345,
+	}
+	fullBytes, err := marshalValidatorMetadata(full)
+	require.NoError(t, err)
+
 	type test struct {
-		name        string
-		bytes       []byte
-		expected    *validatorMetadata
-		expectedErr error
+		name    string
+		bytes   []byte
+		initial *validatorMetadata // caller-supplied defaults before parse
+		want    *validatorMetadata
+		wantErr bool
 	}
 	tests := []test{
 		{
-			name:  "nil",
-			bytes: nil,
-			expected: &validatorMetadata{
-				lastUpdated: time.Unix(0, 0),
-			},
-			expectedErr: nil,
-		},
-		{
-			name:  "nil",
-			bytes: []byte{},
-			expected: &validatorMetadata{
-				lastUpdated: time.Unix(0, 0),
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "potential reward only",
-			bytes: []byte{
-				// potential reward via database.ParseUInt64 (BE — database layer, not codec)
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x86, 0xA0,
-			},
-			expected: &validatorMetadata{
-				PotentialReward: 100000,
-				lastUpdated:     time.Unix(0, 0),
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "uptime + potential reward",
-			bytes: []byte{
-				// codec version (LE)
-				0x00, 0x00,
-				// up duration (LE) — 6000000 = 0x808D5B_00_00_00_00_00
-				0x80, 0x8D, 0x5B, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// last updated (LE) — 900000 = 0xA0BB0D_00_00_00_00_00
-				0xA0, 0xBB, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// potential reward (LE) — 100000 = 0xA08601_00_00_00_00_00
-				0xA0, 0x86, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-			},
-			expected: &validatorMetadata{
-				UpDuration:      6000000,
+			// Empty ⇒ nothing persisted; caller's tx-derived defaults are kept,
+			// only lastUpdated is derived from LastUpdated.
+			name:    "nil keeps defaults",
+			bytes:   nil,
+			initial: &validatorMetadata{StakerStartTime: 900000, LastUpdated: 900000},
+			want: &validatorMetadata{
+				StakerStartTime: 900000,
 				LastUpdated:     900000,
-				PotentialReward: 100000,
 				lastUpdated:     time.Unix(900000, 0),
 			},
-			expectedErr: nil,
 		},
 		{
-			name: "uptime + potential reward + potential delegatee reward",
-			bytes: []byte{
-				// codec version (LE)
-				0x00, 0x00,
-				// up duration (LE) — 6000000
-				0x80, 0x8D, 0x5B, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// last updated (LE) — 900000
-				0xA0, 0xBB, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// potential reward (LE) — 100000
-				0xA0, 0x86, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// potential delegatee reward (LE) — 20000 = 0x204E_00_00_00_00_00_00
-				0x20, 0x4E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			},
-			expected: &validatorMetadata{
+			name:    "empty keeps defaults",
+			bytes:   []byte{},
+			initial: &validatorMetadata{},
+			want:    &validatorMetadata{lastUpdated: time.Unix(0, 0)},
+		},
+		{
+			// Full native buffer overwrites every serialized field, including the
+			// caller's tx-default StakerStartTime.
+			name:    "full native round-trip",
+			bytes:   fullBytes,
+			initial: &validatorMetadata{StakerStartTime: 999},
+			want: &validatorMetadata{
 				UpDuration:               6000000,
 				LastUpdated:              900000,
 				PotentialReward:          100000,
 				PotentialDelegateeReward: 20000,
+				StakerStartTime:          12345,
 				lastUpdated:              time.Unix(900000, 0),
 			},
-			expectedErr: nil,
 		},
 		{
-			name: "invalid codec version",
-			bytes: []byte{
-				// codec version (LE) — 2 = 0x02 0x00, but reading LE that means we want value 2
-				// so encode as 0x02 0x00 (low byte first)
-				0x02, 0x00,
-				// up duration (LE)
-				0x80, 0x8D, 0x5B, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// last updated (LE)
-				0xA0, 0xBB, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// potential reward (LE)
-				0xA0, 0x86, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// potential delegatee reward (LE)
-				0x20, 0x4E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			},
-			expected:    nil,
-			expectedErr: pcodecs.ErrUnknownVersion,
-		},
-		{
-			name: "short byte len",
-			bytes: []byte{
-				// codec version (LE)
-				0x00, 0x00,
-				// up duration (LE)
-				0x80, 0x8D, 0x5B, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// last updated (LE)
-				0xA0, 0xBB, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// potential reward (LE)
-				0xA0, 0x86, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-				// potential delegatee reward (truncated)
-				0x20, 0x4E, 0x00, 0x00, 0x00, 0x00,
-			},
-			expected:    nil,
-			expectedErr: pcodecs.ErrInsufficientLength,
+			name:    "truncated buffer errors",
+			bytes:   fullBytes[:len(fullBytes)-1],
+			initial: &validatorMetadata{},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			var metadata validatorMetadata
-			err := parseValidatorMetadata(tt.bytes, &metadata)
-			require.ErrorIs(err, tt.expectedErr)
-			if tt.expectedErr != nil {
+			metadata := tt.initial
+			err := parseValidatorMetadata(tt.bytes, metadata)
+			if tt.wantErr {
+				require.Error(err)
 				return
 			}
-			require.Equal(tt.expected, &metadata)
+			require.NoError(err)
+			require.Equal(tt.want, metadata)
 		})
 	}
 }

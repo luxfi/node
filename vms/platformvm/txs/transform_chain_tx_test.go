@@ -1,843 +1,332 @@
-// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
 
 import (
-	"github.com/go-json-experiment/json"
-	"github.com/go-json-experiment/json/jsontext"
 	"testing"
 
-	"github.com/luxfi/runtime"
-
-	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
-	"github.com/luxfi/node/vms/components/verify/verifymock"
-	"github.com/luxfi/node/vms/platformvm/reward"
-	"github.com/luxfi/node/vms/platformvm/stakeable"
-	"github.com/luxfi/utils"
 	"github.com/luxfi/utxo/secp256k1fx"
-	"github.com/luxfi/vm/types"
+
+	consensustest "github.com/luxfi/consensus/test/helpers"
+	"github.com/luxfi/node/vms/platformvm/reward"
+	lux "github.com/luxfi/utxo"
 )
 
-func TestTransformChainTxSerialization(t *testing.T) {
+// TestTransformChainTx_RoundTrip exercises the struct-is-wire path: every delta
+// field (chain, asset, the supply/rate/stake/duration knobs, the weight factor
+// and uptime requirement, and the chain auth) round-trips through Parse. This
+// replaces the deleted linearcodec golden-byte + JSON serialization tests.
+func TestTransformChainTx_RoundTrip(t *testing.T) {
 	require := require.New(t)
 
-	addr := ids.ShortID{
-		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
-		0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
-		0x44, 0x55, 0x66, 0x77,
-	}
-
-	utxoAssetID, err := ids.FromString("d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG")
+	chain := ids.GenerateTestID()
+	assetID := ids.GenerateTestID()
+	auth := &secp256k1fx.Input{SigIndices: []uint32{0, 2, 5}}
+	in, err := NewTransformChainTx(
+		spendBase(), chain, assetID,
+		1_000_000, // initial supply
+		2_000_000, // maximum supply
+		10_000,    // min consumption rate
+		90_000,    // max consumption rate
+		100,       // min validator stake
+		5_000,     // max validator stake
+		60,        // min stake duration
+		3_600,     // max stake duration
+		20_000,    // min delegation fee
+		1,         // min delegator stake
+		5,         // max validator weight factor
+		80_000,    // uptime requirement
+		auth,
+	)
 	require.NoError(err)
 
-	customAssetID := ids.ID{
-		0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31,
-		0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31,
-		0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31,
-		0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31,
-	}
+	got := roundTrip(t, in).(*TransformChainTx)
+	require.Equal(chain, got.Chain())
+	require.Equal(assetID, got.AssetID())
+	require.EqualValues(1_000_000, got.InitialSupply())
+	require.EqualValues(2_000_000, got.MaximumSupply())
+	require.EqualValues(10_000, got.MinConsumptionRate())
+	require.EqualValues(90_000, got.MaxConsumptionRate())
+	require.EqualValues(100, got.MinValidatorStake())
+	require.EqualValues(5_000, got.MaxValidatorStake())
+	require.EqualValues(60, got.MinStakeDuration())
+	require.EqualValues(3_600, got.MaxStakeDuration())
+	require.EqualValues(20_000, got.MinDelegationFee())
+	require.EqualValues(1, got.MinDelegatorStake())
+	require.EqualValues(5, got.MaxValidatorWeightFactor())
+	require.EqualValues(80_000, got.UptimeRequirement())
 
-	txID := ids.ID{
-		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
-		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
-		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
-		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
-	}
-	netID := ids.ID{
-		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
-		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
-	}
+	gotAuth, ok := got.ChainAuth().(*secp256k1fx.Input)
+	require.True(ok)
+	require.Equal(auth.SigIndices, gotAuth.SigIndices)
+}
 
-	simpleTransformTx := &TransformChainTx{
-		BaseTx: BaseTx{
-			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
-				BlockchainID: ids.Empty, // Use empty for serialization test
-				Outs:         []*lux.TransferableOutput{},
-				Ins: []*lux.TransferableInput{
-					{
-						UTXOID: lux.UTXOID{
-							TxID:        txID,
-							OutputIndex: 1,
-						},
-						Asset: lux.Asset{
-							ID: utxoAssetID,
-						},
-						In: &secp256k1fx.TransferInput{
-							Amt: 10 * constants.Lux,
-							Input: secp256k1fx.Input{
-								SigIndices: []uint32{5},
-							},
-						},
-					},
-					{
-						UTXOID: lux.UTXOID{
-							TxID:        txID,
-							OutputIndex: 2,
-						},
-						Asset: lux.Asset{
-							ID: customAssetID,
-						},
-						In: &secp256k1fx.TransferInput{
-							Amt: 0xefffffffffffffff,
-							Input: secp256k1fx.Input{
-								SigIndices: []uint32{0},
-							},
-						},
-					},
-				},
-				Memo: types.JSONByteSlice{},
-			},
-		},
-		Chain:                    netID,
-		AssetID:                  customAssetID,
-		InitialSupply:            0x1000000000000000,
-		MaximumSupply:            0xffffffffffffffff,
-		MinConsumptionRate:       1_000,
-		MaxConsumptionRate:       1_000_000,
-		MinValidatorStake:        1,
-		MaxValidatorStake:        0xffffffffffffffff,
-		MinStakeDuration:         1,
-		MaxStakeDuration:         365 * 24 * 60 * 60,
-		MinDelegationFee:         reward.PercentDenominator,
-		MinDelegatorStake:        1,
-		MaxValidatorWeightFactor: 1,
-		UptimeRequirement:        .95 * reward.PercentDenominator,
-		ChainAuth: &secp256k1fx.Input{
-			SigIndices: []uint32{3},
-		},
-	}
-	testChainID := ids.Empty // Use empty chain ID for serialization test to match expected bytes
-	rt := &runtime.Runtime{
-		NetworkID: constants.MainnetID, // Must match tx.NetworkID
-
-		ChainID:  testChainID,
-		UTXOAssetID: utxoAssetID,
-	}
-	require.NoError(simpleTransformTx.SyntacticVerify(rt))
-
-	expectedUnsignedSimpleTransformTxBytes := []byte{
-		0x01, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00,
-		0x00, 0x00, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0x01, 0x00, 0x00, 0x00, 0x51, 0xc2, 0x4f, 0xe7, 0xee, 0x02, 0x01, 0xff, 0x0f, 0x33,
-		0x5f, 0x51, 0x99, 0x28, 0xdb, 0x6e, 0xef, 0x62, 0x24, 0x25, 0x45, 0x52, 0xc9, 0x6b, 0x6b, 0x42,
-		0x5f, 0xbc, 0x18, 0xfa, 0x24, 0x3b, 0x05, 0x00, 0x00, 0x00, 0x80, 0x96, 0x98, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x02, 0x00, 0x00, 0x00, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x05, 0x00,
-		0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xef, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x11, 0x12,
-		0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x31, 0x32,
-		0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xe8, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x42,
-		0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01, 0x00, 0x00, 0x00, 0x80, 0x33, 0xe1, 0x01, 0x40, 0x42,
-		0x0f, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xf0, 0x7e, 0x0e, 0x00, 0x0a,
-		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00,
-	}
-	var unsignedSimpleTransformTx UnsignedTx = simpleTransformTx
-	unsignedSimpleTransformTxBytes, err := Codec.Marshal(CodecVersion, &unsignedSimpleTransformTx)
-	require.NoError(err)
-	require.Equal(expectedUnsignedSimpleTransformTxBytes, unsignedSimpleTransformTxBytes)
-
-	complexTransformTx := &TransformChainTx{
-		BaseTx: BaseTx{
-			BaseTx: lux.BaseTx{
-				NetworkID:    constants.MainnetID,
-				BlockchainID: ids.Empty, // Use empty for serialization test
-				Outs: []*lux.TransferableOutput{
-					{
-						Asset: lux.Asset{
-							ID: utxoAssetID,
-						},
-						Out: &stakeable.LockOut{
-							Locktime: 87654321,
-							TransferableOut: &secp256k1fx.TransferOutput{
-								Amt: 1,
-								OutputOwners: secp256k1fx.OutputOwners{
-									Locktime:  12345678,
-									Threshold: 0,
-									Addrs:     []ids.ShortID{},
-								},
-							},
-						},
-					},
-					{
-						Asset: lux.Asset{
-							ID: customAssetID,
-						},
-						Out: &stakeable.LockOut{
-							Locktime: 876543210,
-							TransferableOut: &secp256k1fx.TransferOutput{
-								Amt: 0xffffffffffffffff,
-								OutputOwners: secp256k1fx.OutputOwners{
-									Locktime:  0,
-									Threshold: 1,
-									Addrs: []ids.ShortID{
-										addr,
-									},
-								},
-							},
-						},
-					},
-				},
-				Ins: []*lux.TransferableInput{
-					{
-						UTXOID: lux.UTXOID{
-							TxID:        txID,
-							OutputIndex: 1,
-						},
-						Asset: lux.Asset{
-							ID: utxoAssetID,
-						},
-						In: &secp256k1fx.TransferInput{
-							Amt: constants.KiloLux,
-							Input: secp256k1fx.Input{
-								SigIndices: []uint32{2, 5},
-							},
-						},
-					},
-					{
-						UTXOID: lux.UTXOID{
-							TxID:        txID,
-							OutputIndex: 2,
-						},
-						Asset: lux.Asset{
-							ID: customAssetID,
-						},
-						In: &stakeable.LockIn{
-							Locktime: 876543210,
-							TransferableIn: &secp256k1fx.TransferInput{
-								Amt: 0xefffffffffffffff,
-								Input: secp256k1fx.Input{
-									SigIndices: []uint32{0},
-								},
-							},
-						},
-					},
-					{
-						UTXOID: lux.UTXOID{
-							TxID:        txID,
-							OutputIndex: 3,
-						},
-						Asset: lux.Asset{
-							ID: customAssetID,
-						},
-						In: &secp256k1fx.TransferInput{
-							Amt: 0x1000000000000000,
-							Input: secp256k1fx.Input{
-								SigIndices: []uint32{},
-							},
-						},
-					},
-				},
-				Memo: types.JSONByteSlice("😅\nwell that's\x01\x23\x45!"),
-			},
-		},
-		Chain:                    netID,
-		AssetID:                  customAssetID,
-		InitialSupply:            0x1000000000000000,
-		MaximumSupply:            0x1000000000000000,
-		MinConsumptionRate:       0,
-		MaxConsumptionRate:       0,
-		MinValidatorStake:        1,
-		MaxValidatorStake:        0x1000000000000000,
-		MinStakeDuration:         1,
-		MaxStakeDuration:         1,
-		MinDelegationFee:         0,
-		MinDelegatorStake:        0xffffffffffffffff,
-		MaxValidatorWeightFactor: 255,
-		UptimeRequirement:        0,
-		ChainAuth: &secp256k1fx.Input{
-			SigIndices: []uint32{},
-		},
-	}
-	lux.SortTransferableOutputs(complexTransformTx.Outs)
-	utils.Sort(complexTransformTx.Ins)
-	rt2 := &runtime.Runtime{
-		NetworkID: constants.MainnetID, // Must match tx.NetworkID
-
-		ChainID:  testChainID,
-		UTXOAssetID: utxoAssetID,
-	}
-	require.NoError(complexTransformTx.SyntacticVerify(rt2))
-
-	expectedUnsignedComplexTransformTxBytes := []byte{
-		0x01, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x51, 0xc2,
-		0x4f, 0xe7, 0xee, 0x02, 0x01, 0xff, 0x0f, 0x33, 0x5f, 0x51, 0x99, 0x28, 0xdb, 0x6e, 0xef, 0x62,
-		0x24, 0x25, 0x45, 0x52, 0xc9, 0x6b, 0x6b, 0x42, 0x5f, 0xbc, 0x18, 0xfa, 0x24, 0x3b, 0x16, 0x00,
-		0x00, 0x00, 0xb1, 0x7f, 0x39, 0x05, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x01, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4e, 0x61, 0xbc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x16, 0x00, 0x00, 0x00, 0xea, 0xfc, 0x3e, 0x34, 0x00, 0x00,
-		0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x44, 0x55,
-		0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0x44, 0x55,
-		0x66, 0x77, 0x03, 0x00, 0x00, 0x00, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee,
-		0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee,
-		0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x01, 0x00, 0x00, 0x00, 0x51, 0xc2, 0x4f, 0xe7, 0xee, 0x02,
-		0x01, 0xff, 0x0f, 0x33, 0x5f, 0x51, 0x99, 0x28, 0xdb, 0x6e, 0xef, 0x62, 0x24, 0x25, 0x45, 0x52,
-		0xc9, 0x6b, 0x6b, 0x42, 0x5f, 0xbc, 0x18, 0xfa, 0x24, 0x3b, 0x05, 0x00, 0x00, 0x00, 0x00, 0xca,
-		0x9a, 0x3b, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x05, 0x00,
-		0x00, 0x00, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa,
-		0x99, 0x88, 0x02, 0x00, 0x00, 0x00, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77,
-		0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x15, 0x00, 0x00, 0x00, 0xea, 0xfc, 0x3e, 0x34, 0x00, 0x00,
-		0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xef, 0x01, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee,
-		0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0xff, 0xee,
-		0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88, 0x03, 0x00, 0x00, 0x00, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33,
-		0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33,
-		0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0xf0, 0x9f,
-		0x98, 0x85, 0x0a, 0x77, 0x65, 0x6c, 0x6c, 0x20, 0x74, 0x68, 0x61, 0x74, 0x27, 0x73, 0x01, 0x23,
-		0x45, 0x21, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
-		0x17, 0x18, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36,
-		0x37, 0x38, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33,
-		0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33, 0x55, 0x31, 0x99, 0x77, 0x55, 0x77, 0x11, 0x33,
-		0x55, 0x31, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x10, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,
-	}
-	var unsignedComplexTransformTx UnsignedTx = complexTransformTx
-	unsignedComplexTransformTxBytes, err := Codec.Marshal(CodecVersion, &unsignedComplexTransformTx)
-	require.NoError(err)
-	require.Equal(expectedUnsignedComplexTransformTxBytes, unsignedComplexTransformTxBytes)
-
-	// Remove aliaser as BCLookup field doesn't exist in runtime.Runtime
-	// This functionality is now handled differently
-
-	rt3 := &runtime.Runtime{
-		NetworkID: constants.MainnetID, // Must match tx.NetworkID
-
-		ChainID:  testChainID,
-		UTXOAssetID: utxoAssetID,
-	}
-	unsignedComplexTransformTx.InitRuntime(rt3)
-
-	unsignedComplexTransformTxJSONBytes, err := json.Marshal(unsignedComplexTransformTx, jsontext.WithIndent("\t"))
-	require.NoError(err)
-	require.JSONEq(`{
-	"networkID": 1,
-	"blockchainID": "11111111111111111111111111111111LpoYY",
-	"outputs": [
-		{
-			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"output": {
-				"locktime": 87654321,
-				"output": {
-					"addresses": [],
-					"amount": 1,
-					"locktime": 12345678,
-					"threshold": 0
-				}
-			}
-		},
-		{
-			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"output": {
-				"locktime": 876543210,
-				"output": {
-					"addresses": [
-						"7EKFm18KvWqcxMCNgpBSN51pJnEr1cVUb"
-					],
-					"amount": 18446744073709551615,
-					"locktime": 0,
-					"threshold": 1
-				}
-			}
-		}
-	],
-	"inputs": [
-		{
-			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
-			"outputIndex": 1,
-			"assetID": "d1Rdokz7Vq8H5aczkwgkiPCCa6JME7yT2xpqgWTfFKWYVsGbG",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"input": {
-				"amount": 1000000000,
-				"signatureIndices": [
-					2,
-					5
-				]
-			}
-		},
-		{
-			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
-			"outputIndex": 2,
-			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"input": {
-				"locktime": 876543210,
-				"input": {
-					"amount": 17293822569102704639,
-					"signatureIndices": [
-						0
-					]
-				}
-			}
-		},
-		{
-			"txID": "2wiU5PnFTjTmoAXGZutHAsPF36qGGyLHYHj9G1Aucfmb3JFFGN",
-			"outputIndex": 3,
-			"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
-			"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
-			"input": {
-				"amount": 1152921504606846976,
-				"signatureIndices": []
-			}
-		}
-	],
-	"memo": "0xf09f98850a77656c6c2074686174277301234521",
-	"chainID": "SkB92YpWm4UpburLz9tEKZw2i67H3FF6YkjaU4BkFUDTG9Xm",
-	"assetID": "2Ab62uWwJw1T6VvmKD36ufsiuGZuX1pGykXAvPX1LtjTRHxwcc",
-	"initialSupply": 1152921504606846976,
-	"maximumSupply": 1152921504606846976,
-	"minConsumptionRate": 0,
-	"maxConsumptionRate": 0,
-	"minValidatorStake": 1,
-	"maxValidatorStake": 1152921504606846976,
-	"minStakeDuration": 1,
-	"maxStakeDuration": 1,
-	"minDelegationFee": 0,
-	"minDelegatorStake": 18446744073709551615,
-	"maxValidatorWeightFactor": 255,
-	"uptimeRequirement": 0,
-	"chainAuthorization": {
-		"signatureIndices": []
-	}
-}`, string(unsignedComplexTransformTxJSONBytes))
+// transformParams mirrors the NewTransformChainTx arguments so each error-path
+// case can start from a fully-valid baseline and perturb exactly one field —
+// struct-is-wire has no post-hoc mutation, so the bad value goes THROUGH the
+// constructor and the SAME sentinel is asserted from SyntacticVerify.
+type transformParams struct {
+	base                     *lux.BaseTx
+	chain                    ids.ID
+	assetID                  ids.ID
+	initialSupply            uint64
+	maximumSupply            uint64
+	minConsumptionRate       uint64
+	maxConsumptionRate       uint64
+	minValidatorStake        uint64
+	maxValidatorStake        uint64
+	minStakeDuration         uint32
+	maxStakeDuration         uint32
+	minDelegationFee         uint32
+	minDelegatorStake        uint64
+	maxValidatorWeightFactor byte
+	uptimeRequirement        uint32
+	chainAuth                *secp256k1fx.Input
 }
 
 func TestTransformChainTxSyntacticVerify(t *testing.T) {
-	type test struct {
-		name   string
-		txFunc func(*gomock.Controller) *TransformChainTx
-		err    error
+	rt := consensustest.Runtime(t, ids.GenerateTestID())
+
+	validBase := func() *lux.BaseTx {
+		return &lux.BaseTx{NetworkID: rt.NetworkID, BlockchainID: rt.ChainID}
+	}
+	invalidBase := func() *lux.BaseTx {
+		return &lux.BaseTx{NetworkID: 0, BlockchainID: rt.ChainID} // wrong networkID
+	}
+	// A fully-valid baseline: every field passes its own SyntacticVerify check.
+	valid := func() transformParams {
+		return transformParams{
+			base:                     validBase(),
+			chain:                    ids.GenerateTestID(),
+			assetID:                  ids.GenerateTestID(),
+			initialSupply:            10,
+			maximumSupply:            10,
+			minConsumptionRate:       0,
+			maxConsumptionRate:       reward.PercentDenominator,
+			minValidatorStake:        2,
+			maxValidatorStake:        10,
+			minStakeDuration:         1,
+			maxStakeDuration:         2,
+			minDelegationFee:         reward.PercentDenominator,
+			minDelegatorStake:        1,
+			maxValidatorWeightFactor: 1,
+			uptimeRequirement:        reward.PercentDenominator,
+			chainAuth:                &secp256k1fx.Input{SigIndices: []uint32{0}},
+		}
+	}
+	mk := func(t *testing.T, p transformParams) *TransformChainTx {
+		tx, err := NewTransformChainTx(
+			p.base, p.chain, p.assetID,
+			p.initialSupply, p.maximumSupply,
+			p.minConsumptionRate, p.maxConsumptionRate,
+			p.minValidatorStake, p.maxValidatorStake,
+			p.minStakeDuration, p.maxStakeDuration,
+			p.minDelegationFee, p.minDelegatorStake,
+			p.maxValidatorWeightFactor, p.uptimeRequirement,
+			p.chainAuth,
+		)
+		require.NoError(t, err)
+		return tx
 	}
 
-	var (
-		networkID = uint32(1337)
-		chainID   = ids.GenerateTestID()
-		utxoAssetID  = ids.GenerateTestID()
-	)
-
-	rt := &runtime.Runtime{
-		NetworkID: networkID, // Must match tx.NetworkID
-
-		ChainID:  chainID,
-		UTXOAssetID: utxoAssetID,
-	}
-
-	// A BaseTx that already passed syntactic verification.
-	verifiedBaseTx := BaseTx{
-		SyntacticallyVerified: true,
-	}
-
-	// A BaseTx that passes syntactic verification.
-	validBaseTx := BaseTx{
-		BaseTx: lux.BaseTx{
-			NetworkID:    networkID,
-			BlockchainID: chainID,
-		},
-	}
-
-	// A BaseTx that fails syntactic verification.
-	invalidBaseTx := BaseTx{}
-
-	tests := []test{
+	tests := []struct {
+		name  string
+		build func(t *testing.T) *TransformChainTx
+		err   error
+	}{
 		{
-			name: "nil tx",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return nil
-			},
-			err: ErrNilTx,
-		},
-		{
-			name: "already verified",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx: verifiedBaseTx,
-				}
-			},
-			err: nil,
+			name:  "nil tx",
+			build: func(*testing.T) *TransformChainTx { return nil },
+			err:   ErrNilTx,
 		},
 		{
 			name: "invalid netID",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx: validBaseTx,
-					Chain:  constants.PrimaryNetworkID,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.chain = constants.PrimaryNetworkID
+				return mk(t, p)
 			},
 			err: errCantTransformPrimaryNetwork,
 		},
 		{
 			name: "empty assetID",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:  validBaseTx,
-					Chain:   ids.GenerateTestID(),
-					AssetID: ids.Empty,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.assetID = ids.Empty
+				return mk(t, p)
 			},
 			err: errEmptyAssetID,
 		},
 		{
 			name: "LUX assetID",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:        validBaseTx,
-					Chain:         ids.GenerateTestID(),
-					AssetID:       utxoAssetID,
-					InitialSupply: 1, // Non-zero to hit LUX assetID error first
-					MaximumSupply: 1,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.assetID = rt.UTXOAssetID
+				return mk(t, p)
 			},
 			err: errAssetIDCantBeLUX,
 		},
 		{
 			name: "initialSupply == 0",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:        validBaseTx,
-					Chain:         ids.GenerateTestID(),
-					AssetID:       ids.GenerateTestID(),
-					InitialSupply: 0,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.initialSupply = 0
+				return mk(t, p)
 			},
 			err: errInitialSupplyZero,
 		},
 		{
 			name: "initialSupply > maximumSupply",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:        validBaseTx,
-					Chain:         ids.GenerateTestID(),
-					AssetID:       ids.GenerateTestID(),
-					InitialSupply: 2,
-					MaximumSupply: 1,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.initialSupply = 2
+				p.maximumSupply = 1
+				return mk(t, p)
 			},
 			err: errInitialSupplyGreaterThanMaxSupply,
 		},
 		{
 			name: "minConsumptionRate > maxConsumptionRate",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      1,
-					MaximumSupply:      1,
-					MinConsumptionRate: 2,
-					MaxConsumptionRate: 1,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.minConsumptionRate = 2
+				p.maxConsumptionRate = 1
+				return mk(t, p)
 			},
 			err: errMinConsumptionRateTooLarge,
 		},
 		{
 			name: "maxConsumptionRate > 100%",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      1,
-					MaximumSupply:      1,
-					MinConsumptionRate: 0,
-					MaxConsumptionRate: reward.PercentDenominator + 1,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.minConsumptionRate = 0
+				p.maxConsumptionRate = reward.PercentDenominator + 1
+				return mk(t, p)
 			},
 			err: errMaxConsumptionRateTooLarge,
 		},
 		{
 			name: "minValidatorStake == 0",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      1,
-					MaximumSupply:      1,
-					MinConsumptionRate: 0,
-					MaxConsumptionRate: reward.PercentDenominator,
-					MinValidatorStake:  0,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.minValidatorStake = 0
+				return mk(t, p)
 			},
 			err: errMinValidatorStakeZero,
 		},
 		{
 			name: "minValidatorStake > initialSupply",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      1,
-					MaximumSupply:      1,
-					MinConsumptionRate: 0,
-					MaxConsumptionRate: reward.PercentDenominator,
-					MinValidatorStake:  2,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.initialSupply = 1
+				p.minValidatorStake = 2
+				return mk(t, p)
 			},
 			err: errMinValidatorStakeAboveSupply,
 		},
 		{
 			name: "minValidatorStake > maxValidatorStake",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      10,
-					MaximumSupply:      10,
-					MinConsumptionRate: 0,
-					MaxConsumptionRate: reward.PercentDenominator,
-					MinValidatorStake:  2,
-					MaxValidatorStake:  1,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.minValidatorStake = 2
+				p.maxValidatorStake = 1
+				return mk(t, p)
 			},
 			err: errMinValidatorStakeAboveMax,
 		},
 		{
 			name: "maxValidatorStake > maximumSupply",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      10,
-					MaximumSupply:      10,
-					MinConsumptionRate: 0,
-					MaxConsumptionRate: reward.PercentDenominator,
-					MinValidatorStake:  2,
-					MaxValidatorStake:  11,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.maxValidatorStake = 11
+				return mk(t, p)
 			},
 			err: errMaxValidatorStakeTooLarge,
 		},
 		{
 			name: "minStakeDuration == 0",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      10,
-					MaximumSupply:      10,
-					MinConsumptionRate: 0,
-					MaxConsumptionRate: reward.PercentDenominator,
-					MinValidatorStake:  2,
-					MaxValidatorStake:  10,
-					MinStakeDuration:   0,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.minStakeDuration = 0
+				return mk(t, p)
 			},
 			err: errMinStakeDurationZero,
 		},
 		{
 			name: "minStakeDuration > maxStakeDuration",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      10,
-					MaximumSupply:      10,
-					MinConsumptionRate: 0,
-					MaxConsumptionRate: reward.PercentDenominator,
-					MinValidatorStake:  2,
-					MaxValidatorStake:  10,
-					MinStakeDuration:   2,
-					MaxStakeDuration:   1,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.minStakeDuration = 2
+				p.maxStakeDuration = 1
+				return mk(t, p)
 			},
 			err: errMinStakeDurationTooLarge,
 		},
 		{
 			name: "minDelegationFee > 100%",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      10,
-					MaximumSupply:      10,
-					MinConsumptionRate: 0,
-					MaxConsumptionRate: reward.PercentDenominator,
-					MinValidatorStake:  2,
-					MaxValidatorStake:  10,
-					MinStakeDuration:   1,
-					MaxStakeDuration:   2,
-					MinDelegationFee:   reward.PercentDenominator + 1,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.minDelegationFee = reward.PercentDenominator + 1
+				return mk(t, p)
 			},
 			err: errMinDelegationFeeTooLarge,
 		},
 		{
 			name: "minDelegatorStake == 0",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:             validBaseTx,
-					Chain:              ids.GenerateTestID(),
-					AssetID:            ids.GenerateTestID(),
-					InitialSupply:      10,
-					MaximumSupply:      10,
-					MinConsumptionRate: 0,
-					MaxConsumptionRate: reward.PercentDenominator,
-					MinValidatorStake:  2,
-					MaxValidatorStake:  10,
-					MinStakeDuration:   1,
-					MaxStakeDuration:   2,
-					MinDelegationFee:   reward.PercentDenominator,
-					MinDelegatorStake:  0,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.minDelegatorStake = 0
+				return mk(t, p)
 			},
 			err: errMinDelegatorStakeZero,
 		},
 		{
 			name: "maxValidatorWeightFactor == 0",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:                   validBaseTx,
-					Chain:                    ids.GenerateTestID(),
-					AssetID:                  ids.GenerateTestID(),
-					InitialSupply:            10,
-					MaximumSupply:            10,
-					MinConsumptionRate:       0,
-					MaxConsumptionRate:       reward.PercentDenominator,
-					MinValidatorStake:        2,
-					MaxValidatorStake:        10,
-					MinStakeDuration:         1,
-					MaxStakeDuration:         2,
-					MinDelegationFee:         reward.PercentDenominator,
-					MinDelegatorStake:        1,
-					MaxValidatorWeightFactor: 0,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.maxValidatorWeightFactor = 0
+				return mk(t, p)
 			},
 			err: errMaxValidatorWeightFactorZero,
 		},
 		{
 			name: "uptimeRequirement > 100%",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:                   validBaseTx,
-					Chain:                    ids.GenerateTestID(),
-					AssetID:                  ids.GenerateTestID(),
-					InitialSupply:            10,
-					MaximumSupply:            10,
-					MinConsumptionRate:       0,
-					MaxConsumptionRate:       reward.PercentDenominator,
-					MinValidatorStake:        2,
-					MaxValidatorStake:        10,
-					MinStakeDuration:         1,
-					MaxStakeDuration:         2,
-					MinDelegationFee:         reward.PercentDenominator,
-					MinDelegatorStake:        1,
-					MaxValidatorWeightFactor: 1,
-					UptimeRequirement:        reward.PercentDenominator + 1,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.uptimeRequirement = reward.PercentDenominator + 1
+				return mk(t, p)
 			},
 			err: errUptimeRequirementTooLarge,
 		},
 		{
+			// Was: verifymock chainAuth returns errInvalidNetAuth. Reproduced
+			// with a real *secp256k1fx.Input whose indices are not sorted-unique.
 			name: "invalid chainAuth",
-			txFunc: func(ctrl *gomock.Controller) *TransformChainTx {
-				// This NetAuth fails verification.
-				invalidNetAuth := verifymock.NewVerifiable(ctrl)
-				invalidNetAuth.EXPECT().Verify().Return(errInvalidNetAuth)
-				return &TransformChainTx{
-					BaseTx:                   validBaseTx,
-					Chain:                    ids.GenerateTestID(),
-					AssetID:                  ids.GenerateTestID(),
-					InitialSupply:            10,
-					MaximumSupply:            10,
-					MinConsumptionRate:       0,
-					MaxConsumptionRate:       reward.PercentDenominator,
-					MinValidatorStake:        2,
-					MaxValidatorStake:        10,
-					MinStakeDuration:         1,
-					MaxStakeDuration:         2,
-					MinDelegationFee:         reward.PercentDenominator,
-					MinDelegatorStake:        1,
-					MaxValidatorWeightFactor: 1,
-					UptimeRequirement:        reward.PercentDenominator,
-					ChainAuth:                invalidNetAuth,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.chainAuth = &secp256k1fx.Input{SigIndices: []uint32{1, 0}}
+				return mk(t, p)
 			},
-			err: errInvalidNetAuth,
+			err: secp256k1fx.ErrInputIndicesNotSortedUnique,
 		},
 		{
 			name: "invalid BaseTx",
-			txFunc: func(*gomock.Controller) *TransformChainTx {
-				return &TransformChainTx{
-					BaseTx:                   invalidBaseTx,
-					Chain:                    ids.GenerateTestID(),
-					AssetID:                  ids.GenerateTestID(),
-					InitialSupply:            10,
-					MaximumSupply:            10,
-					MinConsumptionRate:       0,
-					MaxConsumptionRate:       reward.PercentDenominator,
-					MinValidatorStake:        2,
-					MaxValidatorStake:        10,
-					MinStakeDuration:         1,
-					MaxStakeDuration:         2,
-					MinDelegationFee:         reward.PercentDenominator,
-					MinDelegatorStake:        1,
-					MaxValidatorWeightFactor: 1,
-					UptimeRequirement:        reward.PercentDenominator,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				p := valid()
+				p.base = invalidBase()
+				return mk(t, p)
 			},
 			err: lux.ErrWrongNetworkID,
 		},
 		{
 			name: "passes verification",
-			txFunc: func(ctrl *gomock.Controller) *TransformChainTx {
-				// This NetAuth passes verification.
-				validNetAuth := verifymock.NewVerifiable(ctrl)
-				validNetAuth.EXPECT().Verify().Return(nil)
-				return &TransformChainTx{
-					BaseTx:                   validBaseTx,
-					Chain:                    ids.GenerateTestID(),
-					AssetID:                  ids.GenerateTestID(),
-					InitialSupply:            10,
-					MaximumSupply:            10,
-					MinConsumptionRate:       0,
-					MaxConsumptionRate:       reward.PercentDenominator,
-					MinValidatorStake:        2,
-					MaxValidatorStake:        10,
-					MinStakeDuration:         1,
-					MaxStakeDuration:         2,
-					MinDelegationFee:         reward.PercentDenominator,
-					MinDelegatorStake:        1,
-					MaxValidatorWeightFactor: 1,
-					UptimeRequirement:        reward.PercentDenominator,
-					ChainAuth:                validNetAuth,
-				}
+			build: func(t *testing.T) *TransformChainTx {
+				return mk(t, valid())
 			},
 			err: nil,
 		},
@@ -845,11 +334,7 @@ func TestTransformChainTxSyntacticVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-
-			tx := tt.txFunc(ctrl)
-			err := tx.SyntacticVerify(rt)
-			require.ErrorIs(t, err, tt.err)
+			require.ErrorIs(t, tt.build(t).SyntacticVerify(rt), tt.err)
 		})
 	}
 }

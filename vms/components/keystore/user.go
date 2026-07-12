@@ -71,9 +71,34 @@ func (u *user) GetAddresses() ([]ids.ShortID, error) {
 		return nil, err
 	}
 
-	var addresses []ids.ShortID
-	_, err = LegacyCodec.Unmarshal(addressBytes, &addresses)
-	return addresses, err
+	return parseAddresses(addressBytes)
+}
+
+// marshalAddresses encodes the user's controlled addresses as the flat
+// concatenation of their 20-byte values. ids.ShortID is fixed-width, so the
+// count is implied by len/ShortIDLen — no length prefix or codec is needed.
+func marshalAddresses(addresses []ids.ShortID) []byte {
+	b := make([]byte, 0, len(addresses)*ids.ShortIDLen)
+	for i := range addresses {
+		b = append(b, addresses[i][:]...)
+	}
+	return b
+}
+
+// parseAddresses is the inverse of marshalAddresses.
+func parseAddresses(b []byte) ([]ids.ShortID, error) {
+	if len(b)%ids.ShortIDLen != 0 {
+		return nil, fmt.Errorf("keystore: address blob length %d is not a multiple of %d", len(b), ids.ShortIDLen)
+	}
+	n := len(b) / ids.ShortIDLen
+	if n == 0 {
+		return nil, nil
+	}
+	addresses := make([]ids.ShortID, n)
+	for i := 0; i < n; i++ {
+		copy(addresses[i][:], b[i*ids.ShortIDLen:])
+	}
+	return addresses, nil
 }
 
 func (u *user) PutKeys(privKeys ...*secp256k1.PrivateKey) error {
@@ -119,11 +144,7 @@ func (u *user) PutKeys(privKeys ...*secp256k1.PrivateKey) error {
 		addresses = append(addresses, address)
 	}
 
-	addressBytes, err := Codec.Marshal(CodecVersion, addresses)
-	if err != nil {
-		return err
-	}
-	return u.db.Put(addressesKey, addressBytes)
+	return u.db.Put(addressesKey, marshalAddresses(addresses))
 }
 
 func (u *user) GetKey(address ids.ShortID) (*secp256k1.PrivateKey, error) {

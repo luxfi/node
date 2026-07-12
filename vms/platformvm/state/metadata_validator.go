@@ -10,91 +10,29 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/pcodecs"
 )
-
-// preDelegateeRewardSize is the size of codec marshalling
-// [preDelegateeRewardMetadata].
-//
-// CodecVersionLen + UpDurationLen + LastUpdatedLen + PotentialRewardLen
-const preDelegateeRewardSize = pcodecs.VersionSize + 3*pcodecs.LongLen
-
-// preStakerStartTimeSize is the size of codec marshalling
-// [preStakerStartTimeMetadata].
-//
-// CodecVersionLen + UpDurationLen + LastUpdatedLen + PotentialRewardLen + PotentialDelegateeRewardLen
-const preStakerStartTimeSize = pcodecs.VersionSize + 4*pcodecs.LongLen
 
 var _ validatorState = (*metadata)(nil)
 
-type preDelegateeRewardMetadata struct {
-	UpDuration      time.Duration `serialize:"true"`
-	LastUpdated     uint64        `serialize:"true"` // Unix time in seconds
-	PotentialReward uint64        `serialize:"true"`
-}
-
-// preStakerStartTimeMetadata is used for backward compatibility with data
-// that was written before StakerStartTime was added.
-type preStakerStartTimeMetadata struct {
-	UpDuration               time.Duration `serialize:"true"`
-	LastUpdated              uint64        `serialize:"true"` // Unix time in seconds
-	PotentialReward          uint64        `serialize:"true"`
-	PotentialDelegateeReward uint64        `serialize:"true"`
-}
-
 type validatorMetadata struct {
-	UpDuration               time.Duration `serialize:"true"`
-	LastUpdated              uint64        `serialize:"true"` // Unix time in seconds
-	PotentialReward          uint64        `serialize:"true"`
-	PotentialDelegateeReward uint64        `serialize:"true"`
-	StakerStartTime          uint64        `serialize:"true"`
+	UpDuration               time.Duration
+	LastUpdated              uint64 // Unix time in seconds
+	PotentialReward          uint64
+	PotentialDelegateeReward uint64
+	StakerStartTime          uint64
 
 	txID        ids.ID
 	lastUpdated time.Time
 }
 
-// Permissioned validators originally wrote their values as nil.
-// We now write the uptime, reward, and delegatee reward together.
+// parseValidatorMetadata overlays metadata's persisted fields (native
+// validatorMetadata wire) from bytes. Empty bytes means nothing was persisted
+// for this staker — the caller pre-populates tx-derived defaults
+// (StakerStartTime/LastUpdated), which are kept as-is. lastUpdated is always
+// derived from the resulting LastUpdated.
 func parseValidatorMetadata(bytes []byte, metadata *validatorMetadata) error {
-	switch len(bytes) {
-	case 0:
-	// nothing was stored
-
-	case database.Uint64Size:
-		// only potential reward was stored
-		var err error
-		metadata.PotentialReward, err = database.ParseUInt64(bytes)
-		if err != nil {
-			return err
-		}
-
-	case preDelegateeRewardSize:
-		// potential reward and uptime was stored but potential delegatee reward
-		// was not
-		tmp := preDelegateeRewardMetadata{}
-		if _, err := MetadataCodec.Unmarshal(bytes, &tmp); err != nil {
-			return err
-		}
-
-		metadata.UpDuration = tmp.UpDuration
-		metadata.LastUpdated = tmp.LastUpdated
-		metadata.PotentialReward = tmp.PotentialReward
-
-	case preStakerStartTimeSize:
-		// All fields except StakerStartTime were stored (pre-v1 format)
-		tmp := preStakerStartTimeMetadata{}
-		if _, err := MetadataCodec.Unmarshal(bytes, &tmp); err != nil {
-			return err
-		}
-
-		metadata.UpDuration = tmp.UpDuration
-		metadata.LastUpdated = tmp.LastUpdated
-		metadata.PotentialReward = tmp.PotentialReward
-		metadata.PotentialDelegateeReward = tmp.PotentialDelegateeReward
-
-	default:
-		// everything was stored (v1+ format with StakerStartTime)
-		if _, err := MetadataCodec.Unmarshal(bytes, metadata); err != nil {
+	if len(bytes) > 0 {
+		if err := unmarshalValidatorMetadata(bytes, metadata); err != nil {
 			return err
 		}
 	}
@@ -157,7 +95,6 @@ type validatorState interface {
 	WriteValidatorMetadata(
 		dbPrimary database.KeyValueWriter,
 		dbNet database.KeyValueWriter,
-		codecVersion uint16,
 	) error
 }
 
@@ -258,14 +195,13 @@ func (m *metadata) DeleteValidatorMetadata(vdrID ids.NodeID, netID ids.ID) {
 func (m *metadata) WriteValidatorMetadata(
 	dbPrimary database.KeyValueWriter,
 	dbNet database.KeyValueWriter,
-	codecVersion uint16,
 ) error {
 	for vdrID, updatedNets := range m.updatedMetadata {
 		for netID := range updatedNets {
 			metadata := m.metadata[vdrID][netID]
 			metadata.LastUpdated = uint64(metadata.lastUpdated.Unix())
 
-			metadataBytes, err := MetadataCodec.Marshal(codecVersion, metadata)
+			metadataBytes, err := marshalValidatorMetadata(metadata)
 			if err != nil {
 				return err
 			}

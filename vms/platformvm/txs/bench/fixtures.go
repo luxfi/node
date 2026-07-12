@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/security"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
@@ -122,9 +123,12 @@ func buildBaseTxFields(numIns, numOuts int) lux.BaseTx {
 // payload and the unit by which all other fixtures are bounded from
 // below.
 func NewBaseTxFixture() *txs.BaseTx {
-	return &txs.BaseTx{
-		BaseTx: buildBaseTxFields(1, 1),
+	base := buildBaseTxFields(1, 1)
+	utx, err := txs.NewBaseTx(&base)
+	if err != nil {
+		panic(err)
 	}
+	return utx
 }
 
 // NewAddValidatorTxFixture returns a legacy primary-network
@@ -141,21 +145,26 @@ func NewAddValidatorTxFixture() *txs.AddValidatorTx {
 			},
 		},
 	}}
-	return &txs.AddValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: buildBaseTxFields(2, 2)},
-		Validator: txs.Validator{
+	base := buildBaseTxFields(2, 2)
+	utx, err := txs.NewAddValidatorTx(
+		&base,
+		txs.Validator{
 			NodeID: fixedNodeID,
 			Start:  uint64(1_700_000_000),
 			End:    uint64(1_700_000_000 + 21*24*60*60),
 			Wght:   2_000 * constants.Lux,
 		},
-		StakeOuts: stake,
-		RewardsOwner: &secp256k1fx.OutputOwners{
+		stake,
+		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{fixedAddr},
 		},
-		DelegationShares: 200_000, // 20%
+		200_000, // 20%
+	)
+	if err != nil {
+		panic(err)
 	}
+	return utx
 }
 
 // NewAddDelegatorTxFixture is the delegator counterpart — same shape,
@@ -171,20 +180,25 @@ func NewAddDelegatorTxFixture() *txs.AddDelegatorTx {
 			},
 		},
 	}}
-	return &txs.AddDelegatorTx{
-		BaseTx: txs.BaseTx{BaseTx: buildBaseTxFields(2, 2)},
-		Validator: txs.Validator{
+	base := buildBaseTxFields(2, 2)
+	utx, err := txs.NewAddDelegatorTx(
+		&base,
+		txs.Validator{
 			NodeID: fixedNodeID,
 			Start:  uint64(1_700_000_000),
 			End:    uint64(1_700_000_000 + 14*24*60*60),
 			Wght:   25 * constants.Lux,
 		},
-		StakeOuts: stake,
-		DelegationRewardsOwner: &secp256k1fx.OutputOwners{
+		stake,
+		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{fixedAddr},
 		},
+	)
+	if err != nil {
+		panic(err)
 	}
+	return utx
 }
 
 // NewAddPermissionlessValidatorTxFixture is the Banff-era primary-net
@@ -203,30 +217,35 @@ func NewAddPermissionlessValidatorTxFixture() *txs.AddPermissionlessValidatorTx 
 			},
 		},
 	}}
-	return &txs.AddPermissionlessValidatorTx{
-		BaseTx: txs.BaseTx{BaseTx: buildBaseTxFields(2, 2)},
-		Validator: txs.Validator{
+	base := buildBaseTxFields(2, 2)
+	utx, err := txs.NewAddPermissionlessValidatorTx(
+		&base,
+		txs.Validator{
 			NodeID: fixedNodeID,
 			Start:  uint64(1_700_000_000),
 			End:    uint64(1_700_000_000 + 21*24*60*60),
 			Wght:   2_000 * constants.Lux,
 		},
-		Chain: constants.PrimaryNetworkID,
-		Signer: &signer.ProofOfPossession{
+		constants.PrimaryNetworkID,
+		&signer.ProofOfPossession{
 			PublicKey:         fixedPK,
 			ProofOfPossession: fixedSig,
 		},
-		StakeOuts: stake,
-		ValidatorRewardsOwner: &secp256k1fx.OutputOwners{
+		stake,
+		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{fixedAddr},
 		},
-		DelegatorRewardsOwner: &secp256k1fx.OutputOwners{
+		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{fixedAddr},
 		},
-		DelegationShares: reward.PercentDenominator / 5, // 20%
+		reward.PercentDenominator/5, // 20%
+	)
+	if err != nil {
+		panic(err)
 	}
+	return utx
 }
 
 // NewAddPermissionlessDelegatorTxFixture is the delegator companion to
@@ -244,21 +263,26 @@ func NewAddPermissionlessDelegatorTxFixture() *txs.AddPermissionlessDelegatorTx 
 			},
 		},
 	}}
-	return &txs.AddPermissionlessDelegatorTx{
-		BaseTx: txs.BaseTx{BaseTx: buildBaseTxFields(2, 2)},
-		Validator: txs.Validator{
+	base := buildBaseTxFields(2, 2)
+	utx, err := txs.NewAddPermissionlessDelegatorTx(
+		&base,
+		txs.Validator{
 			NodeID: fixedNodeID,
 			Start:  uint64(1_700_000_000),
 			End:    uint64(1_700_000_000 + 14*24*60*60),
 			Wght:   25 * constants.Lux,
 		},
-		Chain:     constants.PrimaryNetworkID,
-		StakeOuts: stake,
-		DelegationRewardsOwner: &secp256k1fx.OutputOwners{
+		constants.PrimaryNetworkID,
+		stake,
+		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{fixedAddr},
 		},
+	)
+	if err != nil {
+		panic(err)
 	}
+	return utx
 }
 
 // NewImportTxFixture covers the cross-chain import path; the
@@ -280,11 +304,12 @@ func NewImportTxFixture() *txs.ImportTx {
 			Input: secp256k1fx.Input{SigIndices: []uint32{0}},
 		},
 	}}
-	return &txs.ImportTx{
-		BaseTx:         txs.BaseTx{BaseTx: buildBaseTxFields(0, 1)},
-		SourceChain:    ids.GenerateTestID(),
-		ImportedInputs: importedIns,
+	base := buildBaseTxFields(0, 1)
+	utx, err := txs.NewImportTx(&base, ids.GenerateTestID(), importedIns)
+	if err != nil {
+		panic(err)
 	}
+	return utx
 }
 
 // NewExportTxFixture covers the P→X (or P→C) export.
@@ -299,50 +324,64 @@ func NewExportTxFixture() *txs.ExportTx {
 			},
 		},
 	}}
-	return &txs.ExportTx{
-		BaseTx:           txs.BaseTx{BaseTx: buildBaseTxFields(1, 1)},
-		DestinationChain: ids.GenerateTestID(),
-		ExportedOutputs:  exportedOuts,
+	base := buildBaseTxFields(1, 1)
+	utx, err := txs.NewExportTx(&base, ids.GenerateTestID(), exportedOuts)
+	if err != nil {
+		panic(err)
 	}
+	return utx
 }
 
 // NewAdvanceTimeTxFixture is the minimal scheduled-time-advance tx.
 // 4 fields in the wire layout: codec version, type ID, then a single
 // uint64. Smallest of the smalls.
 func NewAdvanceTimeTxFixture() *txs.AdvanceTimeTx {
-	return &txs.AdvanceTimeTx{Time: 1_700_000_000}
+	return txs.NewAdvanceTimeTx(1_700_000_000)
 }
 
 // NewRewardValidatorTxFixture is the "reward this validator" tx.
 // Carries a single ids.ID. Tiny.
 func NewRewardValidatorTxFixture() *txs.RewardValidatorTx {
-	return &txs.RewardValidatorTx{TxID: fixedTxID}
+	return txs.NewRewardValidatorTx(fixedTxID)
 }
 
 // NewCreateChainTxFixture is the legacy create-blockchain tx.
 func NewCreateChainTxFixture() *txs.CreateChainTx {
-	return &txs.CreateChainTx{
-		BaseTx:         txs.BaseTx{BaseTx: buildBaseTxFields(1, 1)},
-		ChainID:        ids.GenerateTestID(),
-		BlockchainName: "lqd bench chain",
-		VMID:           ids.GenerateTestID(),
-		FxIDs:          []ids.ID{ids.GenerateTestID()},
-		GenesisData:    make([]byte, 256),
-		ChainAuth: &secp256k1fx.Input{
-			SigIndices: []uint32{0},
-		},
+	base := buildBaseTxFields(1, 1)
+	utx, err := txs.NewCreateChainTx(
+		&base,
+		ids.GenerateTestID(),
+		"lqd bench chain",
+		ids.GenerateTestID(),
+		[]ids.ID{ids.GenerateTestID()},
+		make([]byte, 256),
+		&secp256k1fx.Input{SigIndices: []uint32{0}},
+	)
+	if err != nil {
+		panic(err)
 	}
+	return utx
 }
 
 // NewCreateNetworkTxFixture is the legacy create-network tx.
 func NewCreateNetworkTxFixture() *txs.CreateNetworkTx {
-	return &txs.CreateNetworkTx{
-		BaseTx: txs.BaseTx{BaseTx: buildBaseTxFields(1, 1)},
-		Owner: &secp256k1fx.OutputOwners{
+	base := buildBaseTxFields(1, 1)
+	utx, err := txs.NewCreateNetworkTx(
+		&base,
+		ids.Empty, // parent = primary network
+		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{fixedAddr},
 		},
+		security.Mode{RestakeParent: true}, // restaked L2, no own set
+		nil,       // validators
+		ids.Empty, // managerChainID (P-Chain-governed)
+		nil,       // managerAddress
+	)
+	if err != nil {
+		panic(err)
 	}
+	return utx
 }
 
 // NewBaseTxWithStakeableFixture stresses the stakeable.LockOut path
@@ -363,7 +402,11 @@ func NewBaseTxWithStakeableFixture() *txs.BaseTx {
 			},
 		},
 	}}
-	return &txs.BaseTx{BaseTx: base}
+	utx, err := txs.NewBaseTx(&base)
+	if err != nil {
+		panic(err)
+	}
+	return utx
 }
 
 // FixtureMap returns the named fixtures the bench harness iterates
@@ -374,38 +417,36 @@ func NewBaseTxWithStakeableFixture() *txs.BaseTx {
 // columns appear in RESULTS.md.
 func FixtureMap() map[string]txs.UnsignedTx {
 	return map[string]txs.UnsignedTx{
-		"BaseTx":                        NewBaseTxFixture(),
-		"BaseTxStakeable":               NewBaseTxWithStakeableFixture(),
-		"AddValidatorTx":                NewAddValidatorTxFixture(),
-		"AddDelegatorTx":                NewAddDelegatorTxFixture(),
-		"AddPermissionlessValidatorTx":  NewAddPermissionlessValidatorTxFixture(),
-		"AddPermissionlessDelegatorTx":  NewAddPermissionlessDelegatorTxFixture(),
-		"ImportTx":                      NewImportTxFixture(),
-		"ExportTx":                      NewExportTxFixture(),
-		"AdvanceTimeTx":                 NewAdvanceTimeTxFixture(),
-		"RewardValidatorTx":             NewRewardValidatorTxFixture(),
-		"CreateChainTx":                 NewCreateChainTxFixture(),
-		"CreateNetworkTx":               NewCreateNetworkTxFixture(),
+		"BaseTx":                       NewBaseTxFixture(),
+		"BaseTxStakeable":              NewBaseTxWithStakeableFixture(),
+		"AddValidatorTx":               NewAddValidatorTxFixture(),
+		"AddDelegatorTx":               NewAddDelegatorTxFixture(),
+		"AddPermissionlessValidatorTx": NewAddPermissionlessValidatorTxFixture(),
+		"AddPermissionlessDelegatorTx": NewAddPermissionlessDelegatorTxFixture(),
+		"ImportTx":                     NewImportTxFixture(),
+		"ExportTx":                     NewExportTxFixture(),
+		"AdvanceTimeTx":                NewAdvanceTimeTxFixture(),
+		"RewardValidatorTx":            NewRewardValidatorTxFixture(),
+		"CreateChainTx":                NewCreateChainTxFixture(),
+		"CreateNetworkTx":              NewCreateNetworkTxFixture(),
 	}
 }
 
-// MustMarshal panics on error; intended for fixture pre-encoding.
+// MustMarshal returns the unsigned tx's canonical bytes. The struct IS the
+// wire (native ZAP), so this is just the tx buffer — no codec step.
 func MustMarshal(unsigned txs.UnsignedTx) []byte {
-	b, err := txs.Codec.Marshal(txs.CodecVersion, &unsigned)
-	if err != nil {
-		panic(err)
-	}
-	return b
+	return unsigned.Bytes()
 }
 
 // MustMarshalSignedTx wraps an unsigned in a *txs.Tx with empty creds
 // and returns the canonical signed-byte form. This matches the
 // mempool/block path: txs on the wire are *txs.Tx, not bare unsigned.
+// With no creds, signed bytes == unsigned bytes ‖ (empty) — Initialize
+// binds them.
 func MustMarshalSignedTx(unsigned txs.UnsignedTx) []byte {
 	tx := &txs.Tx{Unsigned: unsigned}
-	b, err := txs.Codec.Marshal(txs.CodecVersion, tx)
-	if err != nil {
+	if err := tx.Initialize(); err != nil {
 		panic(err)
 	}
-	return b
+	return tx.Bytes()
 }

@@ -71,16 +71,16 @@ const (
 // holding the POST-transition field values. Its fields are hashed, in this exact
 // order, into the leaf preimage:
 //
-//	SignerID ‖ LuxAddress[20] ‖ 0u32 ‖ BondLo ‖ BondHi ‖ OptInHeight ‖
+//	SignerID ‖ UTXOAddr[20] ‖ 0u32 ‖ BondLo ‖ BondHi ‖ OptInHeight ‖
 //	ExitEpoch ‖ SignCount ‖ BLSPubkey[48] ‖ CoronaPubkey[32] ‖ MLDSAPubkey[32] ‖
 //	Status ‖ JailUntilEpoch ‖ SlashCount ‖ index   (integers little-endian)
 //
 // A signer with Occupied == 0 is skipped (not folded), exactly as the kernel
-// skips unoccupied slots. The 0u32 after LuxAddress is the GPU struct's
+// skips unoccupied slots. The 0u32 after UTXOAddr is the GPU struct's
 // _pad_addr, committed as four zero bytes.
 type SignerLeaf struct {
 	SignerID       uint64
-	LuxAddress     [20]byte
+	UTXOAddr     [20]byte
 	BondLo         uint64
 	BondHi         uint64
 	OptInHeight    uint64
@@ -175,7 +175,7 @@ func le64(b []byte, v uint64) []byte {
 func signerLeafDigest(s SignerLeaf, i uint32) [Size]byte {
 	b := make([]byte, 0, 8+20+4+8+8+8+8+8+48+32+32+4+4+4+4)
 	b = le64(b, s.SignerID)
-	b = append(b, s.LuxAddress[:]...)
+	b = append(b, s.UTXOAddr[:]...)
 	b = le32(b, 0) // _pad_addr
 	b = le64(b, s.BondLo)
 	b = le64(b, s.BondHi)
