@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/zap"
 )
 
 // TeleportVersion is the current version of the Teleport protocol
@@ -105,11 +106,8 @@ func NewPrivateTeleportMessage(
 		return nil, fmt.Errorf("failed to encrypt teleport payload: %w", err)
 	}
 
-	// Serialize the encrypted payload
-	encryptedBytes, err := Codec.Marshal(CodecVersion, encrypted)
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize encrypted payload: %w", err)
-	}
+	// Serialize the encrypted payload (native ZAP, wkind-tagged)
+	encryptedBytes := marshalEncryptedWarpPayload(encrypted)
 
 	return &TeleportMessage{
 		Version:       TeleportVersion,
@@ -128,13 +126,23 @@ func (t *TeleportMessage) ToWarpMessage(networkID uint32) (*UnsignedMessage, err
 		return nil, err
 	}
 
-	// Serialize the TeleportMessage as the Warp payload
-	teleportPayload, err := Codec.Marshal(CodecVersion, t)
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize teleport message: %w", err)
-	}
+	// Serialize the TeleportMessage as the Warp payload (native ZAP)
+	teleportPayload := marshalTeleportMessage(t)
 
 	return NewUnsignedMessage(networkID, t.SourceChainID, teleportPayload)
+}
+
+// ParseTeleportMessage deserializes a wkind-tagged TeleportMessage buffer.
+func ParseTeleportMessage(data []byte) (*TeleportMessage, error) {
+	zm, err := zap.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	root := zm.Root()
+	if k := wkind(root.Uint8(offWKind)); k != wkindTeleportMessage {
+		return nil, fmt.Errorf("%w: %d is not a teleport message", ErrUnknownWireKind, k)
+	}
+	return parseTeleportMessage(root), nil
 }
 
 // Validate checks if the TeleportMessage is well-formed
@@ -160,12 +168,16 @@ func (t *TeleportMessage) DecryptPayload(recipientPrivKey []byte) ([]byte, error
 		return t.Payload, nil
 	}
 
-	// Deserialize the encrypted payload
-	encrypted := &EncryptedWarpPayload{}
-	_, err := Codec.Unmarshal(t.Payload, encrypted)
+	// Deserialize the encrypted payload (native ZAP, wkind-tagged)
+	zm, err := zap.Parse(t.Payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deserialize encrypted payload: %w", err)
 	}
+	root := zm.Root()
+	if k := wkind(root.Uint8(offWKind)); k != wkindEncryptedWarpPayload {
+		return nil, fmt.Errorf("%w: %d is not an encrypted payload", ErrUnknownWireKind, k)
+	}
+	encrypted := parseEncryptedWarpPayload(root)
 
 	// Decrypt using ML-KEM
 	plaintext, err := encrypted.Decrypt(recipientPrivKey)
@@ -247,19 +259,40 @@ func NewTransferPayload(
 	}
 }
 
-// Bytes serializes the transfer payload
+// Bytes serializes the transfer payload (native ZAP, wkind-tagged).
 func (p *TeleportTransferPayload) Bytes() ([]byte, error) {
-	return Codec.Marshal(CodecVersion, p)
+	return marshalTeleportTransferPayload(p), nil
 }
 
-// ParseTransferPayload deserializes a transfer payload
+// ParseTransferPayload deserializes a transfer payload.
 func ParseTransferPayload(data []byte) (*TeleportTransferPayload, error) {
-	payload := &TeleportTransferPayload{}
-	_, err := Codec.Unmarshal(data, payload)
+	zm, err := zap.Parse(data)
 	if err != nil {
 		return nil, err
 	}
-	return payload, nil
+	root := zm.Root()
+	if k := wkind(root.Uint8(offWKind)); k != wkindTeleportTransferPayload {
+		return nil, fmt.Errorf("%w: %d is not a transfer payload", ErrUnknownWireKind, k)
+	}
+	return parseTeleportTransferPayload(root), nil
+}
+
+// Bytes serializes the attest payload (native ZAP, wkind-tagged).
+func (p *TeleportAttestPayload) Bytes() ([]byte, error) {
+	return marshalTeleportAttestPayload(p), nil
+}
+
+// ParseAttestPayload deserializes an attest payload.
+func ParseAttestPayload(data []byte) (*TeleportAttestPayload, error) {
+	zm, err := zap.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	root := zm.Root()
+	if k := wkind(root.Uint8(offWKind)); k != wkindTeleportAttestPayload {
+		return nil, fmt.Errorf("%w: %d is not an attest payload", ErrUnknownWireKind, k)
+	}
+	return parseTeleportAttestPayload(root), nil
 }
 
 // TeleportAttestPayload represents an attestation (oracle data)
