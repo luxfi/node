@@ -147,7 +147,7 @@ require (
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.2.5
 	github.com/luxfi/warp v1.24.0
-	github.com/luxfi/zap v1.1.0
+	github.com/luxfi/zap v1.2.0
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/zap-proto/http v0.0.0-20260506200741-fd6047874433
@@ -261,7 +261,3 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-replace github.com/luxfi/zap => /Users/z/work/lux/zap
-
-replace github.com/luxfi/utxo => /Users/z/work/lux/utxo
