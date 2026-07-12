@@ -252,14 +252,13 @@ func (b *txBuilder) NewCreateAssetTx(
 		return nil, err
 	}
 
-	codec := Parser.Codec()
 	states := make([]*txs.InitialState, 0, len(initialState))
 	for fxIndex, outs := range initialState {
 		state := &txs.InitialState{
 			FxIndex: fxIndex,
 			Outs:    outs,
 		}
-		state.Sort(codec) // sort the outputs
+		state.Sort() // sort the outputs
 		states = append(states, state)
 	}
 
@@ -293,7 +292,7 @@ func (b *txBuilder) NewOperationTx(
 		return nil, err
 	}
 
-	txs.SortOperations(operations, Parser.Codec())
+	txs.SortOperations(operations)
 	return &txs.OperationTx{
 		BaseTx: txs.BaseTx{BaseTx: lux.BaseTx{
 			NetworkID:    b.backend.Context().NetworkID,

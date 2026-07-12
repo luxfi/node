@@ -219,8 +219,7 @@ func (s *signerVisitor) getOpsSigners(ctx stdcontext.Context, sourceChainID ids.
 }
 
 func sign(tx *txs.Tx, creds []verify.Verifiable, txSigners [][]keychain.Signer) error {
-	codec := Parser.Codec()
-	unsignedBytes, err := codec.Marshal(txs.CodecVersion, &tx.Unsigned)
+	unsignedBytes, err := txs.UnsignedBytes(tx.Unsigned)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal unsigned tx: %w", err)
 	}
@@ -288,10 +287,8 @@ func sign(tx *txs.Tx, creds []verify.Verifiable, txSigners [][]keychain.Signer) 
 		}
 	}
 
-	signedBytes, err := codec.Marshal(txs.CodecVersion, tx)
-	if err != nil {
-		return fmt.Errorf("couldn't marshal tx: %w", err)
-	}
-	tx.SetBytes(unsignedBytes, signedBytes)
-	return nil
+	// Rebuild the signed wire bytes (unsigned ‖ fx credential envelopes) and
+	// bind TxID = hash(signedBytes). The unsigned bytes are already cached, so
+	// Initialize reuses the exact bytes just signed over.
+	return tx.Initialize()
 }
