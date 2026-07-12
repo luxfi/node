@@ -40,7 +40,7 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 	ctx := context.Background()
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser(
+	_, err := txs.NewParser(
 		[]fxs.Fx{
 			fx,
 		},
@@ -97,7 +97,6 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 		&cred,
 	}
 
-	codec := parser.Codec()
 	// Override Runtime to match baseTx's NetworkID and BlockchainID
 	luxRT.NetworkID = constants.UnitTestID
 	luxRT.ChainID = chainID
@@ -112,7 +111,6 @@ func TestSyntacticVerifierBaseTx(t *testing.T) {
 				Fx: fx,
 			},
 		},
-		Codec:      codec,
 		FeeAssetID: feeAssetID,
 	}
 
@@ -420,7 +418,7 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 	ctx := context.Background()
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser(
+	_, err := txs.NewParser(
 		[]fxs.Fx{
 			fx,
 		},
@@ -492,7 +490,6 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 		&cred,
 	}
 
-	codec := parser.Codec()
 	// Override Runtime to match baseTx's NetworkID and BlockchainID
 	luxRT.NetworkID = constants.UnitTestID
 	luxRT.ChainID = chainID
@@ -507,7 +504,6 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 				Fx: fx,
 			},
 		},
-		Codec:      codec,
 		FeeAssetID: feeAssetID,
 	}
 
@@ -926,7 +922,7 @@ func TestSyntacticVerifierCreateAssetTx(t *testing.T) {
 					&fxOutput0,
 					&fxOutput1,
 				}
-				initialState.Sort(codec)
+				initialState.Sort()
 				initialState.Outs[0], initialState.Outs[1] = initialState.Outs[1], initialState.Outs[0]
 
 				tx := tx
@@ -1040,7 +1036,7 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 	luxRT.NetworkID = constants.UnitTestID
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser(
+	_, err := txs.NewParser(
 		[]fxs.Fx{
 			fx,
 		},
@@ -1120,7 +1116,6 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 		&cred,
 	}
 
-	codec := parser.Codec()
 	backend := &Backend{
 		Ctx:      ctx,
 		Runtime:  luxRT,
@@ -1132,7 +1127,6 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 				Fx: fx,
 			},
 		},
-		Codec:      codec,
 		FeeAssetID: feeAssetID,
 	}
 
@@ -1425,7 +1419,7 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 					&op,
 					&newOp,
 				}
-				txs.SortOperations(tx.Ops, codec)
+				txs.SortOperations(tx.Ops)
 				return &txs.Tx{
 					Unsigned: &tx,
 					Creds:    creds,
@@ -1444,7 +1438,7 @@ func TestSyntacticVerifierOperationTx(t *testing.T) {
 					&op,
 					&op,
 				}
-				txs.SortOperations(tx.Ops, codec)
+				txs.SortOperations(tx.Ops)
 				return &txs.Tx{
 					Unsigned: &tx,
 					Creds:    creds,
@@ -1533,7 +1527,7 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 	cChainID := ids.GenerateTestID()
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser(
+	_, err := txs.NewParser(
 		[]fxs.Fx{
 			fx,
 		},
@@ -1594,7 +1588,6 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 		&cred,
 	}
 
-	codec := parser.Codec()
 	luxRT := consensustest.Runtime(t, chainID)
 	// Override Runtime to match baseTx's NetworkID
 	luxRT.NetworkID = constants.UnitTestID
@@ -1609,7 +1602,6 @@ func TestSyntacticVerifierImportTx(t *testing.T) {
 				Fx: fx,
 			},
 		},
-		Codec:      codec,
 		FeeAssetID: feeAssetID,
 	}
 
@@ -1940,7 +1932,7 @@ func TestSyntacticVerifierExportTx(t *testing.T) {
 	cChainID := ids.GenerateTestID()
 
 	fx := &secp256k1fx.Fx{}
-	parser, err := txs.NewParser(
+	_, err := txs.NewParser(
 		[]fxs.Fx{
 			fx,
 		},
@@ -2001,7 +1993,6 @@ func TestSyntacticVerifierExportTx(t *testing.T) {
 		&cred,
 	}
 
-	codec := parser.Codec()
 	luxRT := consensustest.Runtime(t, chainID)
 	// Override Runtime to match baseTx's NetworkID
 	luxRT.NetworkID = constants.UnitTestID
@@ -2016,7 +2007,6 @@ func TestSyntacticVerifierExportTx(t *testing.T) {
 				Fx: fx,
 			},
 		},
-		Codec:      codec,
 		FeeAssetID: feeAssetID,
 	}
 

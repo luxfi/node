@@ -20,8 +20,6 @@ import (
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/pcodecs"
-	"github.com/luxfi/node/vms/pcodecs/pcodecsmock"
 	"github.com/luxfi/node/vms/xvm/block"
 	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	"github.com/luxfi/node/vms/xvm/block/executor/executormock"
@@ -340,13 +338,9 @@ func TestBuilderBuildBlock(t *testing.T) {
 				require.NoError(t, memPool.Add(tx2))
 
 				// To marshal the tx/block
-				codec := pcodecsmock.NewManager(ctrl)
-				codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
-				codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
 
 				return New(
 					&txexecutor.Backend{
-						Codec:   codec,
 						Ctx:     context.Background(),
 						Runtime: testRuntime(),
 						Log:     log.NewNoOpLogger(),
@@ -409,19 +403,19 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().SetBytes(gomock.Any()).AnyTimes()
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
+				// Native-ZAP blocks store each tx's own wire bytes; give the
+				// mocked tx non-nil bytes so the block builder doesn't try to
+				// serialize the mock Unsigned (which has no Bytes expectation).
+				tx.SetBytes(nil, []byte{1, 2, 3})
 
 				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, memPool.Add(tx))
 
 				// To marshal the tx/block
-				codec := pcodecsmock.NewManager(ctrl)
-				codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
-				codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
 
 				return New(
 					&txexecutor.Backend{
-						Codec:   codec,
 						Ctx:     context.Background(),
 						Runtime: testRuntime(),
 						Log:     log.NewNoOpLogger(),
@@ -486,19 +480,19 @@ func TestBuilderBuildBlock(t *testing.T) {
 				unsignedTx.EXPECT().SetBytes(gomock.Any()).AnyTimes()
 				unsignedTx.EXPECT().InputIDs().Return(nil)
 				tx := &txs.Tx{Unsigned: unsignedTx}
+				// Native-ZAP blocks store each tx's own wire bytes; give the
+				// mocked tx non-nil bytes so the block builder doesn't try to
+				// serialize the mock Unsigned (which has no Bytes expectation).
+				tx.SetBytes(nil, []byte{1, 2, 3})
 
 				memPool, err := mempool.New("", metric.NewRegistry())
 				require.NoError(t, err)
 				require.NoError(t, memPool.Add(tx))
 
 				// To marshal the tx/block
-				codec := pcodecsmock.NewManager(ctrl)
-				codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
-				codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
 
 				return New(
 					&txexecutor.Backend{
-						Codec:   codec,
 						Ctx:     context.Background(),
 						Runtime: testRuntime(),
 						Log:     log.NewNoOpLogger(),
@@ -549,7 +543,6 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	backend := &txexecutor.Backend{
 		Ctx:     context.Background(),
 		Runtime: testRuntime(),
-		Codec:   parser.Codec(),
 		Log:     log.NewNoOpLogger(),
 	}
 
@@ -563,10 +556,9 @@ func TestBlockBuilderAddLocalTx(t *testing.T) {
 	now := time.Now()
 	parentTimestamp := now.Add(-2 * time.Second)
 	parentID := ids.GenerateTestID()
-	cm := parser.Codec()
-	txs, err := createParentTxs(cm)
+	txs, err := createParentTxs()
 	require.NoError(err)
-	parentBlk, err := block.NewStandardBlock(parentID, 0, parentTimestamp, txs, cm)
+	parentBlk, err := block.NewStandardBlock(parentID, 0, parentTimestamp, txs)
 	require.NoError(err)
 	state.AddBlock(parentBlk)
 	state.SetLastAccepted(parentBlk.ID())
@@ -621,7 +613,7 @@ func createTxs() []*txs.Tx {
 	}}
 }
 
-func createParentTxs(cm pcodecs.Manager) ([]*txs.Tx, error) {
+func createParentTxs() ([]*txs.Tx, error) {
 	countTxs := 1
 	testTxs := make([]*txs.Tx, 0, countTxs)
 	for i := 0; i < countTxs; i++ {
@@ -654,7 +646,7 @@ func createParentTxs(cm pcodecs.Manager) ([]*txs.Tx, error) {
 			}},
 			Memo: []byte{1, 2, 9, 4, 5, 6, 7, 8},
 		}}}
-		if err := tx.SignSECP256K1Fx(cm, [][]*secp256k1.PrivateKey{{keys[0]}}); err != nil {
+		if err := tx.SignSECP256K1Fx([][]*secp256k1.PrivateKey{{keys[0]}}); err != nil {
 			return nil, err
 		}
 		testTxs = append(testTxs, tx)

@@ -63,24 +63,26 @@ func init() {
 	populatedTx = &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		BlockchainID: ids.GenerateTestID(),
 	}}}
-	err = populatedTx.Initialize(parser.Codec())
+	err = populatedTx.Initialize()
 	if err != nil {
 		panic(err)
 	}
 	populatedTxID = populatedTx.ID()
 
+	// Native-ZAP blocks store each tx's own wire bytes, so a block's txs must
+	// be Initialized (bytes populated) before the block is built — the same
+	// contract production uses (mempool/parse hand the builder initialized txs).
+	blkTx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
+		BlockchainID: ids.GenerateTestID(),
+	}}}
+	if err = blkTx.Initialize(); err != nil {
+		panic(err)
+	}
 	populatedBlk, err = block.NewStandardBlock(
 		ids.GenerateTestID(),
 		1,
 		time.Now(),
-		[]*txs.Tx{
-			{
-				Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
-					BlockchainID: ids.GenerateTestID(),
-				}},
-			},
-		},
-		parser.Codec(),
+		[]*txs.Tx{blkTx},
 	)
 	if err != nil {
 		panic(err)
@@ -199,7 +201,7 @@ func ChainTxTest(t *testing.T, c Chain) {
 	tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 		BlockchainID: ids.GenerateTestID(),
 	}}}
-	require.NoError(tx.Initialize(parser.Codec()))
+	require.NoError(tx.Initialize())
 	txID := tx.ID()
 
 	_, err = c.GetTx(txID)
@@ -236,18 +238,15 @@ func ChainBlockTest(t *testing.T, c Chain) {
 	require.NoError(err)
 	require.Equal(populatedBlk.ID(), fetchedBlk.ID())
 
+	inlineTx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
+		BlockchainID: ids.GenerateTestID(),
+	}}}
+	require.NoError(inlineTx.Initialize())
 	blk, err := block.NewStandardBlock(
 		ids.GenerateTestID(),
 		10,
 		time.Now(),
-		[]*txs.Tx{
-			{
-				Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
-					BlockchainID: ids.GenerateTestID(),
-				}},
-			},
-		},
-		parser.Codec(),
+		[]*txs.Tx{inlineTx},
 	)
 	if err != nil {
 		panic(err)
@@ -302,7 +301,6 @@ func TestInitializeChainState(t *testing.T) {
 		genesis.Height()+1,
 		genesisTimestamp,
 		nil,
-		parser.Codec(),
 	)
 	require.NoError(err)
 

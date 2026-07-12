@@ -32,7 +32,6 @@ import (
 	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
-	"github.com/luxfi/node/vms/pcodecs"
 	"github.com/luxfi/node/vms/txs/auth"
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/block"
@@ -333,8 +332,7 @@ func (vm *VM) initialize(
 		return err
 	}
 
-	codec := vm.parser.Codec()
-	vm.Spender = utxo.NewSpender(&vm.clock, codec)
+	vm.Spender = utxo.NewSpender(&vm.clock)
 
 	state, err := state.New(
 		vm.db,
@@ -378,7 +376,6 @@ func (vm *VM) initialize(
 		Config:        &vm.Config,
 		Fxs:           vm.fxs,
 		TypeToFxIndex: vm.typeToFxIndex,
-		Codec:         vm.parser.Codec(),
 		FeeAssetID:    vm.feeAssetID,
 		Bootstrapped:  false,
 		SharedMemory:  vm.SharedMemory,
@@ -684,11 +681,11 @@ func (vm *VM) issueTxFromRPC(tx *txs.Tx) (ids.ID, error) {
  */
 
 func (vm *VM) initGenesis(genesisBytes []byte) error {
-	genesisCodec := vm.parser.GenesisCodec()
-	genesis := Genesis{}
-	if _, err := genesisCodec.Unmarshal(genesisBytes, &genesis); err != nil {
+	parsed, err := parseGenesis(genesisBytes)
+	if err != nil {
 		return err
 	}
+	genesis := *parsed
 
 	stateInitialized, err := vm.state.IsInitialized()
 	if err != nil {
@@ -707,7 +704,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 		tx := &txs.Tx{
 			Unsigned: &genesisTx.CreateAssetTx,
 		}
-		if err := tx.Initialize(genesisCodec); err != nil {
+		if err := tx.Initialize(); err != nil {
 			return err
 		}
 
@@ -1031,14 +1028,6 @@ func (v *validatorStateWrapper) GetWarpValidatorSets(ctx context.Context, height
 // Clock returns the VM's clock for time-related operations
 func (vm *VM) Clock() *mockable.Clock {
 	return &vm.clock
-}
-
-// CodecRegistry returns the codec registry for marshalling/unmarshalling
-func (vm *VM) CodecRegistry() pcodecs.Registry {
-	if vm.parser == nil {
-		return nil
-	}
-	return vm.parser.CodecRegistry()
 }
 
 // Logger returns the VM's logger

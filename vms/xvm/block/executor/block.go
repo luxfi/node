@@ -199,7 +199,6 @@ func (b *Block) Verify(ctx context.Context) error {
 		// to ensure that semantic verification correctly accounts for
 		// transactions that occurred earlier in the block.
 		executor := &executor.Executor{
-			Codec:  b.manager.backend.Codec,
 			State:  stateDiff,
 			Tx:     tx,
 			Inputs: set.NewSet[ids.ID](0),

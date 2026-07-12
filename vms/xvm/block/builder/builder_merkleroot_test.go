@@ -15,7 +15,6 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/vms/pcodecs/pcodecsmock"
 	"github.com/luxfi/node/vms/xvm/block"
 	blkexecutor "github.com/luxfi/node/vms/xvm/block/executor"
 	"github.com/luxfi/node/vms/xvm/block/executor/executormock"
@@ -104,17 +103,12 @@ func buildOneTxBlock(
 	require.NoError(err)
 	require.NoError(memPool.Add(tx))
 
-	// Mock codec: the builder serializes the block; the test reads block.Root
-	// (set before marshal), so fixed marshal output is fine.
-	codec := pcodecsmock.NewManager(ctrl)
-	codec.EXPECT().Marshal(gomock.Any(), gomock.Any()).Return([]byte{1, 2, 3}, nil).AnyTimes()
-	codec.EXPECT().Size(gomock.Any(), gomock.Any()).Return(2, nil).AnyTimes()
-
+	// The builder serializes the block natively (ZAP struct-is-wire); there is
+	// no codec to inject. The test reads block.Root (stamped before serialize).
 	builder := New(
 		&txexecutor.Backend{
 			Ctx:     context.Background(),
 			Runtime: testRuntime(),
-			Codec:   codec,
 			Config:  &config.Config{},
 			Log:     log.NewNoOpLogger(),
 		},

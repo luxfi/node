@@ -14,7 +14,6 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	pcodecs "github.com/luxfi/node/vms/pcodecs"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -139,18 +138,4 @@ func (m *MockBlock) Txs() []*txs.Tx {
 func (mr *MockBlockMockRecorder) Txs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Txs", reflect.TypeOf((*MockBlock)(nil).Txs))
-}
-
-// initialize mocks base method.
-func (m *MockBlock) initialize(bytes []byte, cm pcodecs.Manager) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "initialize", bytes, cm)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// initialize indicates an expected call of initialize.
-func (mr *MockBlockMockRecorder) initialize(bytes, cm any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "initialize", reflect.TypeOf((*MockBlock)(nil).initialize), bytes, cm)
 }

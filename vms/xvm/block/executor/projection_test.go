@@ -304,7 +304,7 @@ func makeTxs(t *testing.T, n int) []*txs.Tx {
 		tx := &txs.Tx{Unsigned: &txs.BaseTx{BaseTx: lux.BaseTx{
 			BlockchainID: ids.GenerateTestID(),
 		}}}
-		require.NoError(t, tx.Initialize(projTestParser.Codec()))
+		require.NoError(t, tx.Initialize())
 		out[i] = tx
 	}
 	return out

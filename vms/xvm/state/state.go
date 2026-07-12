@@ -396,7 +396,6 @@ func (s *state) initializeChainState(stopVertexID ids.ID, genesisTimestamp time.
 		0,
 		genesisTimestamp,
 		nil,
-		s.parser.Codec(),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to initialize genesis block: %w", err)

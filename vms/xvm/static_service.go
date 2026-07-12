@@ -12,11 +12,11 @@ import (
 	"github.com/luxfi/address"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/utils"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -77,19 +77,19 @@ type BuildGenesisReply struct {
 // BuildGenesis returns the UTXOs such that at least one address in [args.Addresses] is
 // referenced in the UTXO.
 func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, reply *BuildGenesisReply) error {
-	parser, err := txs.NewParser(
+	// Validate the fx set is well-formed (native genesis marshals without a
+	// codec; the parser is only constructed here to reject a bad fx set).
+	if _, err := txs.NewParser(
 		[]fxs.Fx{
 			&secp256k1fx.Fx{},
 			&nftfx.Fx{},
 			&propertyfx.Fx{},
 		},
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 
 	g := Genesis{}
-	genesisCodec := parser.GenesisCodec()
 	for assetAlias, assetDefinition := range args.GenesisData {
 		assetMemo, err := formatting.Decode(args.Encoding, assetDefinition.Memo)
 		if err != nil {
@@ -175,7 +175,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 					return errUnknownAssetType
 				}
 			}
-			initialState.Sort(genesisCodec)
+			initialState.Sort()
 			asset.States = append(asset.States, initialState)
 		}
 		utils.Sort(asset.States)
@@ -183,7 +183,7 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 	}
 	utils.Sort(g.Txs)
 
-	b, err := genesisCodec.Marshal(txs.CodecVersion, &g)
+	b, err := g.Bytes()
 	if err != nil {
 		return fmt.Errorf("problem marshaling genesis: %w", err)
 	}
