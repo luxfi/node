@@ -120,7 +120,7 @@ require (
 	github.com/luxfi/accel v1.2.4
 	github.com/luxfi/api v1.0.16
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.7.2
+	github.com/luxfi/chains v1.7.4
 	github.com/luxfi/codec v1.1.5
 	github.com/luxfi/compress v0.0.5
 	github.com/luxfi/constants v1.6.1
@@ -201,11 +201,10 @@ require (
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/mlwe v0.2.1 // indirect
 	github.com/luxfi/pq v1.1.0 // indirect
-	github.com/luxfi/precompile v0.19.0 // indirect
+	github.com/luxfi/precompile v0.19.1 // indirect
 	github.com/luxfi/pulsar v1.9.0 // indirect
 	github.com/luxfi/staking v1.5.1 // indirect
 	github.com/luxfi/trace v1.1.0 // indirect
-	github.com/luxfi/zapcodec v1.0.1 // indirect
 	github.com/luxfi/zapdb v1.10.1 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20220103164710-9a04d6ca976b // indirect
@@ -215,6 +214,7 @@ require (
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
 	go.mongodb.org/mongo-driver v1.17.9 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
 )
 
 require (
@@ -261,3 +261,5 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
+
+replace github.com/luxfi/utxo => ../utxo
