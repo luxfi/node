@@ -143,11 +143,11 @@ require (
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.2.0
-	github.com/luxfi/utxo v0.5.1
+	github.com/luxfi/utxo v0.5.3
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.2.7
 	github.com/luxfi/warp v1.24.0
-	github.com/luxfi/zap v1.2.0
+	github.com/luxfi/zap v1.2.2
 	github.com/luxfi/zwing v0.5.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/zap-proto/http v0.0.0-20260506200741-fd6047874433
