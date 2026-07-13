@@ -143,7 +143,7 @@ require (
 	github.com/luxfi/timer v1.0.2
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.2.0
-	github.com/luxfi/utxo v0.3.7
+	github.com/luxfi/utxo v0.5.1
 	github.com/luxfi/validators v1.2.0
 	github.com/luxfi/vm v1.2.7
 	github.com/luxfi/warp v1.24.0
@@ -261,5 +261,3 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
-
-replace github.com/luxfi/utxo => ../utxo
