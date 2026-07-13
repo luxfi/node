@@ -311,10 +311,20 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # helper (bridgevm/zkvm/mpcvm), graphvm genesis-last-accepted fix, built on
 # evm v1.99.48 + precompile v0.16.0 (enable-everything builder surface). Keeps the
 # baked VM plugins in lockstep with the host node.
-ARG CHAINS_REF=v1.7.2
+ARG CHAINS_REF=v1.7.4
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
-    find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
+    find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
+    # Build the baked VM plugins against the HOST node source (/build, the exact
+    # vX.Y.Z being built) rather than chains' pinned github.com/luxfi/node@vA.B.C.
+    # This is what the "plugins in lockstep with the host node" intent (above)
+    # actually requires, and it sidesteps chains' stale node pin whose tag may be
+    # absent from the remote (e.g. v1.30.6 — a wiped/disjoint release lineage).
+    # chains is the main module here, so node(/build)'s own require of chains
+    # resolves back to /tmp/chains (main-module-wins) — no version fetch, no loop.
+    for m in $(find /tmp/chains -name go.mod); do \
+        ( cd "$(dirname "$m")" && go mod edit -replace github.com/luxfi/node=/build ) ; \
+    done
 
 # Each VM is an independent Go module under /tmp/chains/<vm>/.
 # Build each plugin binary and place it at /luxd/build/plugins/<cb58-vm-id>.
