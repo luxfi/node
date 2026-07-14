@@ -2032,3 +2032,96 @@ func TestRED_BehindNode_PeerConnectDelay_NeverFalseCompletesAtStale(t *testing.T
 	require.Greater(t, net.peerInfoCalls, net.connectAfterCalls,
 		"the loop must have WAITED through the connecting passes before naming the frontier")
 }
+
+// TestChainExpectsStakedBeacons_SybilDrivesNotSkipBootstrap pins the ROOT-CAUSE decision of the
+// rejoin wedge (tasks #66/#74): whether a chain syncs its bootstrap frontier against the STAKED
+// primary-network set is driven by SYBIL PROTECTION, NOT --skip-bootstrap. Production validators
+// set --skip-bootstrap (to skip the initial bootstrap WAIT); the prior `!m.SkipBootstrap && ...`
+// made that flag also EMPTY the beacon set, so a behind native chain (C/X/Q) reported
+// FrontierNoBeacons, named its STALE local tip the network frontier, went live there, and never
+// caught up across restarts until a manual chaindata wipe. skip-bootstrap is not even an input to
+// the fixed decision — that is the point.
+func TestChainExpectsStakedBeacons_SybilDrivesNotSkipBootstrap(t *testing.T) {
+	require.True(t, chainExpectsStakedBeacons(true, true, false),
+		"sybil-protected native non-platform chain (C/X/Q) MUST expect staked beacons → peer-sync a behind validator (regardless of skip-bootstrap)")
+	require.False(t, chainExpectsStakedBeacons(false, true, false),
+		"non-sybil (dev / single-node) native chain → NO staked beacons: the empty-beacon immediate-start path")
+	require.False(t, chainExpectsStakedBeacons(true, false, false),
+		"a non-native chain does not sync against the primary staked set here")
+	require.False(t, chainExpectsStakedBeacons(true, true, true),
+		"the platform chain anchors to its OWN CustomBeacons, never the staked-set frontier quorum")
+}
+
+// TestNodeBootstrap_SelfOnlyStakedSet_ReportsNoBeacons covers the single-VALIDATOR counterpart of
+// the fix: a sybil-protected chain whose staked set is EXACTLY this node (a single-validator
+// devnet, or the sole validator of an L1) has no OTHER beacon to sync from, so FrontierTip reports
+// FrontierNoBeacons (immediate start at the node's own tip) rather than hanging in FrontierConnecting.
+// This is what lets skip-bootstrap stop emptying native beacons WITHOUT bricking a single-validator
+// net. It is NOT an eclipse: the staked set is read from P-chain STATE (hasExternalBeacons), so a
+// hidden peer would still appear in `weights`.
+func TestNodeBootstrap_SelfOnlyStakedSet_ReportsNoBeacons(t *testing.T) {
+	const N = 10
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, N) // the sole validator IS at the frontier
+	self := ids.GenerateTestNodeID()
+	bh, chainID := newBSHandlerWeighted(t, vm, map[ids.NodeID]uint64{self: 100})
+	bh.selfNodeID = self // the staked set is EXACTLY this node — a genuine single-validator net
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, byID: byID, tip: chain[N]}
+	bh.msgCreator = bsMsgBuilder{}
+
+	bh.bsActive.Store(true)
+	tip, status := bh.FrontierTip(context.Background())
+	bh.bsActive.Store(false)
+	require.Equal(t, chainbootstrap.FrontierNoBeacons, status,
+		"self-only staked set (single validator) → NoBeacons (nothing to sync to), never a FrontierConnecting hang")
+	require.Equal(t, ids.Empty, tip)
+
+	// Discriminator: add ONE other validator and the SAME node must now run the quorum (has a peer
+	// to sync from) — proving the self-only shortcut fires ONLY for a genuinely alone validator.
+	require.True(t, bh.hasExternalBeacons(map[ids.NodeID]uint64{self: 100, ids.GenerateTestNodeID(): 100}),
+		"a ≥2-validator staked set has an external beacon → runs the ⅔-by-stake quorum, not the self-only shortcut")
+}
+
+// TestNodeBootstrap_BehindValidator_StakedSet_CatchesUpNoWipe is THE REJOIN INVARIANT (tasks
+// #66/#74), the code reproduction of the mainnet luxd-0 wedge: a staked validator that fell behind
+// must sync from its peers on restart and reach the network frontier WITHOUT a chaindata wipe.
+//
+// The node reloads its STALE on-disk tip at height M (the "restart" — no wipe) and holds a
+// sybil-protected native-chain staked beacon set (expectsStakedBeacons=true — exactly what
+// buildChain now leaves in place under --skip-bootstrap, instead of emptying it). The 4 healthy
+// producers name+serve the frontier N over the real GetAcceptedFrontier/GetAncestors transport, so
+// the behind node fetch+executes M+1..N and ends ACCEPTED at N — never stuck at the stale M.
+func TestNodeBootstrap_BehindValidator_StakedSet_CatchesUpNoWipe(t *testing.T) {
+	const N = 60 // network frontier (the healthy producers)
+	const M = 42 // our STALE local height after a restart — behind by N-M, NO wipe
+	chain, byID := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, M) // reload the stale on-disk tip (the restart)
+
+	// A 5-validator staked set (equal stake): this node is one, the other 4 are the connected,
+	// serving producers at the frontier N. This mirrors lux-mainnet's 5-validator C-Chain.
+	weights := map[ids.NodeID]uint64{}
+	producers := make([]ids.NodeID, 4)
+	for i := range producers {
+		producers[i] = ids.GenerateTestNodeID()
+		weights[producers[i]] = 100
+	}
+	self := ids.GenerateTestNodeID()
+	weights[self] = 100
+	bh, chainID := newBSHandlerWeighted(t, vm, weights)
+	bh.selfNodeID = self
+	require.True(t, bh.expectsStakedBeacons,
+		"a native sybil chain expects staked beacons even under skip-bootstrap — the fix that keeps peer-sync alive")
+
+	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: producers, byID: byID, tip: chain[N], serveAncestors: true}
+	bh.msgCreator = bsMsgBuilder{}
+
+	ctx := context.Background()
+	require.NoError(t, runBS(t, bh),
+		"behind validator must converge to the frontier from its peers — no wipe, chain keeps finalizing")
+
+	last, _ := vm.LastAccepted(ctx)
+	require.Equal(t, chain[N].id, last,
+		"REJOIN: behind validator caught up from peers to frontier N=%d (was stuck at stale M=%d, no wipe)", N, M)
+	require.True(t, bh.Accepted(ctx, chain[N].id),
+		"node holds + ACCEPTED the frontier tip after the rejoin (genuine catch-up, not a stale false-complete)")
+}
