@@ -222,7 +222,7 @@ func writeSpending(b *zap.Builder, base *lux.BaseTx) (spendPtrs, error) {
 }
 
 // setEnvelope writes the shared envelope fields into an already-started object.
-func setEnvelope(ob *zap.ObjectBuilder, k kind, base *lux.BaseTx, p spendPtrs) {
+func setEnvelope(ob zap.ObjectBuilder, k kind, base *lux.BaseTx, p spendPtrs) {
 	ob.SetUint8(offKind, uint8(k))
 	ob.SetUint32(offNetworkID, base.NetworkID)
 	ob.SetBytesFixed(offBlockchainID, base.BlockchainID[:])
