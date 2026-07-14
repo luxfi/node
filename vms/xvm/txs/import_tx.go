@@ -34,10 +34,9 @@ type ImportTx struct {
 }
 
 const (
-	offImportSource  = 16 // 32B
-	offImportInsLen  = 48 // list ptr
-	offImportInsBlob = 56 // bytes ptr
-	sizeImport       = 64
+	offImportSource = 16 // 32B
+	offImportIns    = 48 // objptr list (relOffset + count, 8 bytes)
+	sizeImport      = 56
 )
 
 // InputUTXOs track which UTXOs this transaction is consuming.
@@ -88,23 +87,26 @@ func (t *ImportTx) serialize() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	ins := make([][]byte, len(t.ImportedIns))
+	b := zap.NewBuilder(zap.HeaderSize + sizeImport + len(env) + 256)
+	offs := make([]int, len(t.ImportedIns))
 	for i, in := range t.ImportedIns {
-		b, err := transferableInBytes(in)
+		inner, err := childBytes(in.In)
 		if err != nil {
 			return nil, err
 		}
-		ins[i] = b
+		offs[i] = wire.AppendTransferableIn(b, in.UTXOID.TxID, in.UTXOID.OutputIndex, in.Asset.ID, inner)
 	}
-	b := zap.NewBuilder(zap.HeaderSize + sizeImport + len(env) + 256)
-	insLenOff, insLenCount, insBlob := writeBlobList(b, ins)
+	lb := b.StartList(4)
+	for _, off := range offs {
+		lb.AddObjectPtr(off)
+	}
+	insOff, insLen := lb.Finish()
 
 	ob := b.StartObject(sizeImport)
 	ob.SetUint8(offXKind, uint8(xkindImport))
 	ob.SetBytes(offBaseTx, env)
 	ob.SetBytesFixed(offImportSource, t.SourceChain[:])
-	ob.SetList(offImportInsLen, insLenOff, insLenCount)
-	ob.SetBytes(offImportInsBlob, insBlob)
+	ob.SetList(offImportIns, insOff, insLen)
 	ob.FinishAsRoot()
 	return b.Finish(), nil
 }
@@ -116,16 +118,11 @@ func parseImportTx(unsignedBytes []byte, obj zap.Object) (*ImportTx, error) {
 	}
 	var sourceChain ids.ID
 	copy(sourceChain[:], obj.BytesFixedSlice(offImportSource, 32))
-	inBufs, err := readBlobList(obj, offImportInsLen, offImportInsBlob)
-	if err != nil {
-		return nil, err
-	}
-	ins := make([]*lux.TransferableInput, len(inBufs))
-	for i, buf := range inBufs {
-		w, err := wire.WrapTransferableIn(buf)
-		if err != nil {
-			return nil, err
-		}
+	msg := obj.Message()
+	l := obj.ListStride(offImportIns, 4)
+	ins := make([]*lux.TransferableInput, l.Len())
+	for i := range ins {
+		w := wire.TransferableInFromObject(msg, l.ObjectPtr(i))
 		in, err := inputFromWire(w)
 		if err != nil {
 			return nil, err
