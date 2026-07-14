@@ -39,12 +39,6 @@ type backend struct {
 	rt *runtime.Runtime
 }
 
-// SharedMemory provides cross-chain atomic operations
-type SharedMemory interface {
-	Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error)
-	Apply(requests map[ids.ID]interface{}, batch ...interface{}) error
-}
-
 func (b *backend) GetState(blkID ids.ID) (state.Chain, bool) {
 	b.blkIDToStateLock.RLock()
 	defer b.blkIDToStateLock.RUnlock()

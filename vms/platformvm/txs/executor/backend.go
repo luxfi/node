@@ -6,7 +6,6 @@ package executor
 import (
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/validators/uptime"
-	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -26,10 +25,4 @@ type Backend struct {
 	Rewards      reward.Calculator
 	Bootstrapped *utils.Atomic[bool]
 	Log          log.Logger
-}
-
-// SharedMemory provides cross-chain atomic operations
-type SharedMemory interface {
-	Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error)
-	Apply(requests map[ids.ID]interface{}, batch ...interface{}) error
 }
