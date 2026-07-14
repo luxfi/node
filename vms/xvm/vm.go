@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"sync"
 	"time"
 
@@ -147,7 +146,7 @@ type VM struct {
 	baseDB database.Database
 	db     *versiondb.Database
 
-	typeToFxIndex map[reflect.Type]int
+	fxIndex *txs.FxIndex
 	fxs           []*extensions.ParsedFx
 
 	walletService WalletService
@@ -321,9 +320,9 @@ func (vm *VM) initialize(
 		}
 	}
 
-	vm.typeToFxIndex = map[reflect.Type]int{}
+	vm.fxIndex = txs.NewFxIndex()
 	vm.parser, err = block.NewCustomParser(
-		vm.typeToFxIndex,
+		vm.fxIndex,
 		&vm.clock,
 		vm.log,
 		typedFxs,
@@ -375,7 +374,7 @@ func (vm *VM) initialize(
 		Runtime:       vm.consensusRuntime,
 		Config:        &vm.Config,
 		Fxs:           vm.fxs,
-		TypeToFxIndex: vm.typeToFxIndex,
+		FxIndex:       vm.fxIndex,
 		FeeAssetID:    vm.feeAssetID,
 		Bootstrapped:  false,
 		SharedMemory:  vm.SharedMemory,

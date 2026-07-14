@@ -6,7 +6,6 @@ package executor
 import (
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/luxfi/ids"
 	lux "github.com/luxfi/utxo"
@@ -246,9 +245,8 @@ func (v *SemanticVerifier) verifyFxUsage(
 }
 
 func (v *SemanticVerifier) getFx(val interface{}) (int, error) {
-	valType := reflect.TypeOf(val)
-	fx, exists := v.TypeToFxIndex[valType]
-	if !exists {
+	fx, ok := v.FxIndex.GetFx(val)
+	if !ok {
 		return 0, errUnknownFx
 	}
 	return fx, nil

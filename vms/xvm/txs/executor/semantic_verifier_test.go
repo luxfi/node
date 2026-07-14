@@ -5,7 +5,6 @@ package executor
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/luxfi/mock/gomock"
@@ -50,10 +49,10 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	ctx := context.Background()
 	cChainID := ids.GenerateTestID()
 
-	typeToFxIndex := make(map[reflect.Type]int)
+	fxIndex := txs.NewFxIndex()
 	secpFx := &secp256k1fx.Fx{}
 	_, err := txs.NewCustomParser(
-		typeToFxIndex,
+		fxIndex,
 		new(mockable.Clock),
 		log.NoLog{},
 		[]fxs.Fx{
@@ -107,7 +106,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 				Fx: secpFx,
 			},
 		},
-		TypeToFxIndex: typeToFxIndex,
+		FxIndex:       fxIndex,
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
 	}
@@ -404,10 +403,10 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	cChainID := ids.GenerateTestID()
 	chainID := ids.GenerateTestID()
 
-	typeToFxIndex := make(map[reflect.Type]int)
+	fxIndex := txs.NewFxIndex()
 	secpFx := &secp256k1fx.Fx{}
 	_, err := txs.NewCustomParser(
-		typeToFxIndex,
+		fxIndex,
 		new(mockable.Clock),
 		log.NoLog{},
 		[]fxs.Fx{
@@ -466,7 +465,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 				Fx: secpFx,
 			},
 		},
-		TypeToFxIndex: typeToFxIndex,
+		FxIndex:       fxIndex,
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
 	}
@@ -834,10 +833,10 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 		},
 	}
 
-	typeToFxIndex := make(map[reflect.Type]int)
+	fxIndex := txs.NewFxIndex()
 	secpFx := &secp256k1fx.Fx{}
 	_, err := txs.NewCustomParser(
-		typeToFxIndex,
+		fxIndex,
 		new(mockable.Clock),
 		log.NoLog{},
 		[]fxs.Fx{
@@ -891,7 +890,7 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 				Fx: secpFx,
 			},
 		},
-		TypeToFxIndex: typeToFxIndex,
+		FxIndex:       fxIndex,
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
 	}
@@ -951,10 +950,10 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	ctx := context.Background() // Use standard context for Backend
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, memdb.New()))
 
-	typeToFxIndex := make(map[reflect.Type]int)
+	fxIndex := txs.NewFxIndex()
 	fx := &secp256k1fx.Fx{}
 	_, err := txs.NewCustomParser(
-		typeToFxIndex,
+		fxIndex,
 		new(mockable.Clock),
 		log.NoLog{},
 		[]fxs.Fx{
@@ -1030,7 +1029,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 				Fx: fx,
 			},
 		},
-		TypeToFxIndex: typeToFxIndex,
+		FxIndex:       fxIndex,
 		FeeAssetID:    ids.GenerateTestID(),
 		Bootstrapped:  true,
 		SharedMemory:  &testSharedMemory{sm: m.NewSharedMemory(chainID)},

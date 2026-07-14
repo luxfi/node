@@ -130,7 +130,7 @@ func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, reply *
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
-				typeToFxIndex: s.vm.typeToFxIndex,
+				fxIndex:       s.vm.fxIndex,
 				fxs:           s.vm.fxs,
 			})
 			if err != nil {
@@ -187,7 +187,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHei
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:            tx,
-				typeToFxIndex: s.vm.typeToFxIndex,
+				fxIndex:       s.vm.fxIndex,
 				fxs:           s.vm.fxs,
 			})
 			if err != nil {
@@ -408,7 +408,7 @@ func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, reply *apityp
 	if args.Encoding == formatting.JSON {
 		err = tx.Unsigned.Visit(&txInit{
 			tx:            tx,
-			typeToFxIndex: s.vm.typeToFxIndex,
+			fxIndex:       s.vm.fxIndex,
 			fxs:           s.vm.fxs,
 		})
 		result = tx

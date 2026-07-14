@@ -4,8 +4,6 @@
 package block
 
 import (
-	"reflect"
-
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
@@ -36,12 +34,12 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 }
 
 func NewCustomParser(
-	typeToFxIndex map[reflect.Type]int,
+	fxIndex *txs.FxIndex,
 	clock *mockable.Clock,
 	log log.Logger,
 	fxs []fxs.Fx,
 ) (Parser, error) {
-	p, err := txs.NewCustomParser(typeToFxIndex, clock, log, fxs)
+	p, err := txs.NewCustomParser(fxIndex, clock, log, fxs)
 	if err != nil {
 		return nil, err
 	}

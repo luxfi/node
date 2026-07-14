@@ -10,7 +10,6 @@ package txs
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/luxfi/crypto/hash"
 	"github.com/luxfi/log"
@@ -39,7 +38,7 @@ type parser struct {
 
 func NewParser(fxs []fxs.Fx) (Parser, error) {
 	return NewCustomParser(
-		make(map[reflect.Type]int),
+		NewFxIndex(),
 		&mockable.Clock{},
 		log.Noop(),
 		fxs,
@@ -47,7 +46,7 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 }
 
 func NewCustomParser(
-	typeToFxIndex map[reflect.Type]int,
+	fxIndex *FxIndex,
 	clock *mockable.Clock,
 	logger log.Logger,
 	fxList []fxs.Fx,
@@ -57,44 +56,20 @@ func NewCustomParser(
 		if err := fx.Initialize(vm); err != nil {
 			return nil, err
 		}
-		// Populate the fx-usage index (concrete fx type -> fx index) that the
-		// semantic verifier's getFx and tx_init.InitializeFx consult. This is
-		// verification policy, distinct from wire decoding (which is envelope
-		// dispatched); it is a plain map fill, no codec.
+		// Record the fx family -> list-position mapping the semantic verifier's
+		// getFx and tx_init consult. Keyed by wire.TypeKind (the family tag),
+		// filled by the SAME closed-set match used everywhere else — no
+		// reflect.TypeOf, no map[reflect.Type]int.
 		switch fx.(type) {
 		case *secp256k1fx.Fx:
-			registerFxTypes(typeToFxIndex, i,
-				&secp256k1fx.TransferInput{},
-				&secp256k1fx.MintOutput{},
-				&secp256k1fx.TransferOutput{},
-				&secp256k1fx.MintOperation{},
-				&secp256k1fx.Credential{},
-			)
+			fxIndex.Set(wire.TypeKindSecp256k1, i)
 		case *nftfx.Fx:
-			registerFxTypes(typeToFxIndex, i,
-				&nftfx.MintOutput{},
-				&nftfx.TransferOutput{},
-				&nftfx.MintOperation{},
-				&nftfx.TransferOperation{},
-				&nftfx.Credential{},
-			)
+			fxIndex.Set(wire.TypeKindNFT, i)
 		case *propertyfx.Fx:
-			registerFxTypes(typeToFxIndex, i,
-				&propertyfx.MintOutput{},
-				&propertyfx.OwnedOutput{},
-				&propertyfx.MintOperation{},
-				&propertyfx.BurnOperation{},
-				&propertyfx.Credential{},
-			)
+			fxIndex.Set(wire.TypeKindProperty, i)
 		}
 	}
 	return &parser{fxs: fxList}, nil
-}
-
-func registerFxTypes(m map[reflect.Type]int, index int, vals ...interface{}) {
-	for _, v := range vals {
-		m[reflect.TypeOf(v)] = index
-	}
 }
 
 // Parse decodes a signed X-chain tx from its wire bytes. It is the codec-free,
