@@ -105,24 +105,31 @@ func (t *BaseTx) serialize() ([]byte, error) {
 }
 
 // baseTxWire builds the wire.XVMBaseTx envelope from the embedded spending
-// envelope: each Out/In becomes an fx-typed TransferableOut/In envelope built
-// from its inner fx primitive's .Bytes().
+// envelope. Each Out/In carries its AssetID (X-Chain is multi-asset) plus the
+// inner fx primitive's own wire envelope (.Bytes()); NewXVMBaseTx nests them
+// natively (AddObjectPtr object lists), so there is no per-container envelope
+// prefix and no blob concatenation.
 func (t *BaseTx) baseTxWire() ([]byte, error) {
-	outs := make([][]byte, len(t.Outs))
+	outs := make([]wire.XVMTransferOut, len(t.Outs))
 	for i, o := range t.Outs {
-		b, err := transferableOutBytes(o)
+		inner, err := childBytes(o.Out)
 		if err != nil {
 			return nil, err
 		}
-		outs[i] = b
+		outs[i] = wire.XVMTransferOut{AssetID: o.Asset.ID, Output: inner}
 	}
-	ins := make([][]byte, len(t.Ins))
+	ins := make([]wire.XVMTransferIn, len(t.Ins))
 	for i, in := range t.Ins {
-		b, err := transferableInBytes(in)
+		inner, err := childBytes(in.In)
 		if err != nil {
 			return nil, err
 		}
-		ins[i] = b
+		ins[i] = wire.XVMTransferIn{
+			TxID:        in.UTXOID.TxID,
+			OutputIndex: in.UTXOID.OutputIndex,
+			AssetID:     in.Asset.ID,
+			Input:       inner,
+		}
 	}
 	return wire.NewXVMBaseTx(wire.XVMBaseTxInput{
 		NetworkID:    t.NetworkID,

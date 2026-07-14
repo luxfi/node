@@ -81,27 +81,11 @@ func readBlobList(obj zap.Object, lenPtrOff, blobPtrOff int) ([][]byte, error) {
 	return out, nil
 }
 
-// ---- TransferableOutput / TransferableInput <-> wire envelopes ----
-
-// transferableOutBytes builds a wire TransferableOut envelope (AssetID + inner
-// fx Output) from a lux.TransferableOutput.
-func transferableOutBytes(o *lux.TransferableOutput) ([]byte, error) {
-	inner, err := childBytes(o.Out)
-	if err != nil {
-		return nil, err
-	}
-	return wire.NewTransferableOut(o.Asset.ID, inner), nil
-}
-
-// transferableInBytes builds a wire TransferableIn envelope (UTXOID + AssetID +
-// inner fx Input) from a lux.TransferableInput.
-func transferableInBytes(in *lux.TransferableInput) ([]byte, error) {
-	inner, err := childBytes(in.In)
-	if err != nil {
-		return nil, err
-	}
-	return wire.NewTransferableIn(in.UTXOID.TxID, in.UTXOID.OutputIndex, in.Asset.ID, inner), nil
-}
+// ---- TransferableOutput / TransferableInput <-> wire ----
+//
+// Build side lives in baseTxWire (BaseTx composes XVMTransferOut/In directly so
+// the whole tx nests in one buffer). These reconstruct the node types from the
+// nested wire accessors on the read side.
 
 // outputFromWire reconstructs a lux.TransferableOutput from a parsed wire
 // TransferableOut, dispatching the inner fx Output on its own discriminator.

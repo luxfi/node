@@ -33,10 +33,9 @@ type ExportTx struct {
 }
 
 const (
-	offExportDest     = 16 // 32B
-	offExportOutsLen  = 48 // list ptr
-	offExportOutsBlob = 56 // bytes ptr
-	sizeExport        = 64
+	offExportDest = 16 // 32B
+	offExportOuts = 48 // objptr list (relOffset + count, 8 bytes)
+	sizeExport    = 56
 )
 
 func (t *ExportTx) InitRuntime(rt *runtime.Runtime) {
@@ -67,23 +66,28 @@ func (t *ExportTx) serialize() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	outs := make([][]byte, len(t.ExportedOuts))
+	b := zap.NewBuilder(zap.HeaderSize + sizeExport + len(env) + 256)
+	// Append each exported TransferableOut object inline, then an objptr list —
+	// native nesting, no per-output envelope prefix, no blob concat.
+	offs := make([]int, len(t.ExportedOuts))
 	for i, o := range t.ExportedOuts {
-		b, err := transferableOutBytes(o)
+		inner, err := childBytes(o.Out)
 		if err != nil {
 			return nil, err
 		}
-		outs[i] = b
+		offs[i] = wire.AppendTransferableOut(b, o.Asset.ID, inner)
 	}
-	b := zap.NewBuilder(zap.HeaderSize + sizeExport + len(env) + 256)
-	outsLenOff, outsLenCount, outsBlob := writeBlobList(b, outs)
+	lb := b.StartList(4)
+	for _, off := range offs {
+		lb.AddObjectPtr(off)
+	}
+	outsOff, outsLen := lb.Finish()
 
 	ob := b.StartObject(sizeExport)
 	ob.SetUint8(offXKind, uint8(xkindExport))
 	ob.SetBytes(offBaseTx, env)
 	ob.SetBytesFixed(offExportDest, t.DestinationChain[:])
-	ob.SetList(offExportOutsLen, outsLenOff, outsLenCount)
-	ob.SetBytes(offExportOutsBlob, outsBlob)
+	ob.SetList(offExportOuts, outsOff, outsLen)
 	ob.FinishAsRoot()
 	return b.Finish(), nil
 }
@@ -95,16 +99,11 @@ func parseExportTx(unsignedBytes []byte, obj zap.Object) (*ExportTx, error) {
 	}
 	var destChain ids.ID
 	copy(destChain[:], obj.BytesFixedSlice(offExportDest, 32))
-	outBufs, err := readBlobList(obj, offExportOutsLen, offExportOutsBlob)
-	if err != nil {
-		return nil, err
-	}
-	outs := make([]*lux.TransferableOutput, len(outBufs))
-	for i, buf := range outBufs {
-		w, err := wire.WrapTransferableOut(buf)
-		if err != nil {
-			return nil, err
-		}
+	msg := obj.Message()
+	l := obj.ListStride(offExportOuts, 4)
+	outs := make([]*lux.TransferableOutput, l.Len())
+	for i := range outs {
+		w := wire.TransferableOutFromObject(msg, l.ObjectPtr(i))
 		out, err := outputFromWire(w)
 		if err != nil {
 			return nil, err
