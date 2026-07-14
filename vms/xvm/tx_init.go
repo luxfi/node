@@ -4,8 +4,6 @@
 package xvm
 
 import (
-	"reflect"
-
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 )
@@ -14,15 +12,14 @@ var _ txs.Visitor = (*txInit)(nil)
 
 // txInit initializes FxID where required
 type txInit struct {
-	tx            *txs.Tx
-	typeToFxIndex map[reflect.Type]int
-	fxs           []*fxs.ParsedFx
+	tx      *txs.Tx
+	fxIndex *txs.FxIndex
+	fxs     []*fxs.ParsedFx
 }
 
 func (t *txInit) getFx(val interface{}) (int, error) {
-	valType := reflect.TypeOf(val)
-	fx, exists := t.typeToFxIndex[valType]
-	if !exists {
+	fx, ok := t.fxIndex.GetFx(val)
+	if !ok {
 		return 0, errUnknownFx
 	}
 	return fx, nil

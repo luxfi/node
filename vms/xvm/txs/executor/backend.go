@@ -5,13 +5,13 @@ package executor
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/fxs"
+	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/runtime"
 )
 
@@ -20,7 +20,7 @@ type Backend struct {
 	Runtime       *runtime.Runtime
 	Config        *config.Config
 	Fxs           []*fxs.ParsedFx
-	TypeToFxIndex map[reflect.Type]int
+	FxIndex       *txs.FxIndex
 	// Note: FeeAssetID may be different than ctx.UTXOAssetID if this XVM is
 	// running in a chain.
 	FeeAssetID   ids.ID
