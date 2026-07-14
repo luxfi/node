@@ -29,8 +29,8 @@ const (
 
 // ---- fixed ids ----
 
-func setID(ob *zap.ObjectBuilder, off int, id ids.ID)         { ob.SetBytesFixed(off, id[:]) }
-func setNodeID(ob *zap.ObjectBuilder, off int, id ids.NodeID) { ob.SetBytesFixed(off, id[:]) }
+func setID(ob zap.ObjectBuilder, off int, id ids.ID)         { ob.SetBytesFixed(off, id[:]) }
+func setNodeID(ob zap.ObjectBuilder, off int, id ids.NodeID) { ob.SetBytesFixed(off, id[:]) }
 
 func readNodeID(o zap.Object, off int) ids.NodeID {
 	var id ids.NodeID
@@ -80,7 +80,7 @@ func writeOwner(b *zap.Builder, o fx.Owner) (threshold uint32, locktime uint64, 
 	return oo.Threshold, oo.Locktime, addrOff, addrCount, nil
 }
 
-func setOwner(ob *zap.ObjectBuilder, thresholdOff, locktimeOff, addrPtrOff int, threshold uint32, locktime uint64, addrOff, addrCount int) {
+func setOwner(ob zap.ObjectBuilder, thresholdOff, locktimeOff, addrPtrOff int, threshold uint32, locktime uint64, addrOff, addrCount int) {
 	ob.SetUint32(thresholdOff, threshold)
 	ob.SetUint64(locktimeOff, locktime)
 	ob.SetList(addrPtrOff, addrOff, addrCount)
@@ -145,7 +145,7 @@ func UnmarshalOwner(b []byte) (*secp256k1fx.OutputOwners, error) {
 
 const validatorSize = 44
 
-func setValidator(ob *zap.ObjectBuilder, off int, v Validator) {
+func setValidator(ob zap.ObjectBuilder, off int, v Validator) {
 	setNodeID(ob, off, v.NodeID)
 	ob.SetUint64(off+20, v.Start)
 	ob.SetUint64(off+28, v.End)
@@ -165,7 +165,7 @@ func readValidator(obj zap.Object, off int) Validator {
 
 const signerSize = 1 + blsPubLen + blsSigLen
 
-func setSigner(ob *zap.ObjectBuilder, off int, s signer.Signer) error {
+func setSigner(ob zap.ObjectBuilder, off int, s signer.Signer) error {
 	switch sig := s.(type) {
 	case *signer.Empty:
 		ob.SetUint8(off, 0)

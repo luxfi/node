@@ -178,7 +178,7 @@ const (
 
 // setSecurity / readSecurity encode a security.Mode across four fixed object
 // fields. Shared by CreateNetworkTx and ConvertNetworkTx — one wire encoding.
-func setSecurity(ob *zap.ObjectBuilder, offRestake, offAdmission, offManager, offThreshold int, m security.Mode) {
+func setSecurity(ob zap.ObjectBuilder, offRestake, offAdmission, offManager, offThreshold int, m security.Mode) {
 	var restake uint8
 	if m.RestakeParent {
 		restake = 1

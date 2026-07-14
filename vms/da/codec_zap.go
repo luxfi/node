@@ -347,7 +347,7 @@ func decodeSignatures(data []byte) ([][]byte, error) {
 
 // ---------------- Helpers ----------------
 
-func writeIDInto(ob *zap.ObjectBuilder, off int, id ids.ID) {
+func writeIDInto(ob zap.ObjectBuilder, off int, id ids.ID) {
 	for i := 0; i < 32; i++ {
 		ob.SetUint8(off+i, id[i])
 	}
