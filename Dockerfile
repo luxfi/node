@@ -311,7 +311,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # helper (bridgevm/zkvm/mpcvm), graphvm genesis-last-accepted fix, built on
 # evm v1.99.48 + precompile v0.16.0 (enable-everything builder surface). Keeps the
 # baked VM plugins in lockstep with the host node.
-ARG CHAINS_REF=v1.7.5
+ARG CHAINS_REF=v1.7.6
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
