@@ -201,6 +201,19 @@ func (b *blockHandler) fullyConnectedBeacons(weights map[ids.NodeID]uint64, conn
 	return external > 0 && len(connected) >= external
 }
 
+// hasExternalBeacons reports whether the staked beacon set contains any validator OTHER than this
+// node. False for a self-only (single-validator) set — there is then no peer to sync from, so the
+// node's own tip IS the frontier (FrontierTip returns FrontierNoBeacons). The set is read from
+// P-chain STATE, not connectivity, so this is a TOPOLOGY fact (a genuine single-validator net),
+// never an eclipse artifact (an eclipse drops peers from `connected`, never from `weights`).
+func (b *blockHandler) hasExternalBeacons(weights map[ids.NodeID]uint64) bool {
+	external := len(weights)
+	if _, selfIsBeacon := weights[b.selfNodeID]; selfIsBeacon {
+		external--
+	}
+	return external > 0
+}
+
 // withSelfVote returns `replies` plus the node's OWN accepted frontier as a beacon reply — the
 // SELF-VOTE. The node is itself a beacon (selfNodeID in `weights`, the trust anchor) and knows its
 // own accepted tip (lastID) with certainty, so it vouches for it exactly as a connected peer's reply
@@ -309,6 +322,21 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 			log.Stringer("chainID", b.chainID),
 			log.Int("partialBeaconCount", len(weights)))
 		return ids.Empty, chainbootstrap.FrontierConnecting
+	}
+
+	// SELF-ONLY staked set: the configured validator set is exactly THIS node — a genuine
+	// single-validator network (a sybil-protected devnet, or the sole validator of an L1). There
+	// is no OTHER beacon to sync from, so the node's own accepted tip IS the network frontier →
+	// immediate start (FrontierNoBeacons). This is NOT an eclipse: the staked set is read from
+	// P-chain STATE, not connectivity, so a hidden peer would still appear in `weights`; only a
+	// genuine single-validator topology reaches here. Placed AFTER the P-ready gate so a boot-race
+	// partial set (transiently self-only mid-P-replay) WAITS above rather than false-completing here.
+	// This is the sybil-protected single-validator counterpart to the empty-set FrontierNoBeacons
+	// path: a multi-validator staked set (the ≥2 case) still runs the ⅔-by-stake quorum below.
+	if !b.hasExternalBeacons(weights) {
+		b.logger.Debug("bootstrap frontier: self-only staked set (single validator) — NoBeacons, nothing to sync to",
+			log.Stringer("chainID", b.chainID))
+		return ids.Empty, chainbootstrap.FrontierNoBeacons
 	}
 
 	// THE MASS-RECOVERY FIX. The acceptance decision is the BootstrapPolicy (a SEPARATE object

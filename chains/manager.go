@@ -1109,18 +1109,21 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		// expectsStakedBeacons gates the EMPTY-beacon-set behavior of the bootstrap frontier
-		// quorum (see blockHandler.expectsStakedBeacons). True ONLY for a native NON-platform
-		// chain (C/X/Q/...) on a sybil-protected network — those sync against the STAKED
+		// quorum (see blockHandler.expectsStakedBeacons). True for a native NON-platform chain
+		// (C/X/Q/...) on a SYBIL-PROTECTED (real staked) network — those sync against the STAKED
 		// primary-network validator set (m.Validators, populated by the already-bootstrapped
 		// P-chain), so an empty set means "not yet loaded / misconfig → wait then fail safe",
-		// NOT "single-node → done". The P-chain (CustomBeacons may be empty under endpoint-only
-		// --bootstrap-nodes) and skip-bootstrap keep the "empty ⇒ nothing to sync to" behavior.
-		// Computed BEFORE the skip-bootstrap override so it is false in single-node mode.
-		expectsStakedBeacons := !m.SkipBootstrap && ids.IsNativeChain(chainParams.ID) && !isPlatformChain
+		// NOT "single-node → done". Driven by sybil-protection, NOT --skip-bootstrap: a production
+		// validator sets skip-bootstrap and that must NOT make it masquerade as single-node and
+		// wedge behind at its stale local tip (tasks #66/#74). See chainExpectsStakedBeacons.
+		expectsStakedBeacons := chainExpectsStakedBeacons(m.SybilProtectionEnabled, ids.IsNativeChain(chainParams.ID), isPlatformChain)
 
-		// In skip-bootstrap mode, use empty beacons for all chains
-		// This enables single-node development mode
-		if m.SkipBootstrap {
+		// skip-bootstrap forces empty beacons (single-node immediate-start) for every chain EXCEPT
+		// one that syncs against the staked set — those MUST always catch a behind validator up from
+		// its peers, so emptying their beacons (the prior UNCONDITIONAL override) is precisely the
+		// rejoin wedge this fixes. A genuine single-node / dev net runs sybil-protection OFF, so its
+		// native chains still fall here and get the empty-beacon immediate-start path.
+		if m.SkipBootstrap && !expectsStakedBeacons {
 			beacons = &emptyValidatorManager{}
 			m.Log.Info("skip-bootstrap enabled - using empty beacons for single-node mode")
 		}
@@ -2652,6 +2655,28 @@ func (m *manager) getOrMakeVMGatherer(vmID ids.ID) (metrics.MultiGatherer, error
 	}
 	m.vmGatherer[vmID] = vmGatherer
 	return vmGatherer, nil
+}
+
+// chainExpectsStakedBeacons reports whether a chain must sync its bootstrap frontier against the
+// STAKED primary-network validator set — the ⅔-by-stake quorum that names the network frontier
+// (blockHandler.expectsStakedBeacons, the C1 forged-chain gate). When true, --skip-bootstrap does
+// NOT empty the chain's beacon set (buildChain below), so a behind validator always catches up
+// from its peers.
+//
+// It is driven by SYBIL PROTECTION — the true "this is a real staked network" signal — and NOT by
+// --skip-bootstrap. Production validators set --skip-bootstrap to skip the initial bootstrap WAIT,
+// but that flag must NEVER disable peer-sync on a staked network. Keying this decision off
+// --skip-bootstrap (the prior `!m.SkipBootstrap && ...`) is exactly what wedged a behind native
+// chain (C/X/Q...): with skip-bootstrap set, the chain got expectsStakedBeacons=false + empty
+// beacons, so FrontierTip reported FrontierNoBeacons ("nothing to sync to"), the node named its
+// STALE local last-accepted the network frontier, went live there, and never caught up across
+// restarts until a manual chaindata wipe (tasks #66/#74). A genuine single-node / dev network runs
+// sybil-protection OFF, so it still takes the empty-beacon immediate-start path. The platform chain
+// anchors to its own CustomBeacons (not the staked set), so it is excluded here as before; a
+// single-VALIDATOR staked net (self-only set) is handled downstream by FrontierTip's
+// hasExternalBeacons rule, which reads the LOADED set.
+func chainExpectsStakedBeacons(sybilProtectionEnabled, isNativeChain, isPlatformChain bool) bool {
+	return sybilProtectionEnabled && isNativeChain && !isPlatformChain
 }
 
 // emptyValidatorManager implements validators.Manager with no validators
