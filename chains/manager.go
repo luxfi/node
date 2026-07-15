@@ -101,6 +101,16 @@ const (
 	defaultChannelSize = 1
 	initialQueueSize   = 3
 
+	// vmStartupTimeout bounds each VM startup/lifecycle operation (Initialize,
+	// Linearize, SetState, CreateHandlers, router AddChain, state-sync). It must
+	// be generous enough to cover a cold coreth "Regenerate historical state"
+	// pass after an unclean shutdown (observed 67-134s on mainnet C-Chain),
+	// which the previous hardcoded 30s budget blew — the context was cancelled
+	// mid-init, so the VM was marked failed and its C-Chain route never
+	// registered (the recurring post-restart 404 that needed a second restart).
+	// Bounded so a genuinely hung VM still surfaces rather than hanging forever.
+	vmStartupTimeout = 10 * time.Minute
+
 	luxNamespace          = constants.PlatformName + utilmetric.NamespaceSeparator + "lux"
 	handlerNamespace      = constants.PlatformName + utilmetric.NamespaceSeparator + "handler"
 	meterchainvmNamespace = constants.PlatformName + utilmetric.NamespaceSeparator + "meterchainvm"
@@ -842,7 +852,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		m.Log.Info("VM implements CreateHandlers, calling it",
 			log.Stringer("chainID", chainParams.ID),
 		)
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 		defer cancel()
 		handlers, err := vm.CreateHandlers(ctx)
 		if err != nil {
@@ -909,7 +919,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 	// Register chain with the router for message routing
 	if m.ManagerConfig.Router != nil {
-		routeCtx, routeCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		routeCtx, routeCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 		defer routeCancel()
 		m.ManagerConfig.Router.AddChain(routeCtx, chainParams.ID, chain.Handler)
 	}
@@ -951,7 +961,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	// Tell the chain to start processing messages.
 	// If the X, P, or C Chain panics, do not attempt to recover
 	if chain.Engine != nil {
-		startCtx, startCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		startCtx, startCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 		defer startCancel()
 		chain.Engine.Start(startCtx, !m.CriticalChains.Contains(chainParams.ID))
 
@@ -1287,7 +1297,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
-		initCtx, initCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		initCtx, initCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 		defer initCancel()
 		// Initialize THROUGH engineVM. proposervm.Initialize builds its windower
 		// from chainRuntime.ValidatorState, then initializes the inner VM with the
@@ -1355,7 +1365,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}); ok {
 			m.Log.Info("linearizing DAG-native VM into linear block mode",
 				log.Stringer("chainID", chainParams.ID))
-			linCtx, linCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			linCtx, linCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 			if err := linearVM.Linearize(linCtx, ids.Empty, toEngine); err != nil {
 				linCancel()
 				m.Log.Error("failed to linearize VM",
@@ -1388,7 +1398,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}); ok {
 			m.Log.Info("transitioning VM to bootstrapping (initial sync gates normal operation)",
 				log.Stringer("chainID", chainParams.ID))
-			stateCtx, stateCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			stateCtx, stateCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 			if err := stateVM.SetState(stateCtx, uint32(vm.Bootstrapping)); err != nil {
 				stateCancel()
 				m.Log.Error("failed to transition VM to bootstrapping",
@@ -1607,7 +1617,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		m.Log.Info("consensus engine started with Lux consensus (Photon → Wave → Focus)",
 			log.Stringer("chainID", chainParams.ID))
 		if blockBuilder != nil {
-			syncCtx, syncCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			syncCtx, syncCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 			defer syncCancel()
 			lastAcceptedID, height, err := consensuschain.SyncStateFromVM(syncCtx, blockBuilder, consensusEngine.Transitive)
 			if err != nil {
@@ -1876,7 +1886,7 @@ func (m *manager) createDAG(
 	}
 
 	// Create a context for VM initialization with timeout
-	initCtx, cancelInit := context.WithTimeout(context.Background(), 30*time.Second)
+	initCtx, cancelInit := context.WithTimeout(context.Background(), vmStartupTimeout)
 	defer cancelInit() // Ensure cleanup on function exit
 
 	// Initialize VM if it supports Initialize
@@ -2044,7 +2054,7 @@ func (m *manager) createDAG(
 
 	// Register HTTP handlers for DAG VMs (exchangevm, qvm, etc.)
 	adapter := &dagVMAdapter{underlying: vmImpl}
-	dagHandlerCtx, dagHandlerCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	dagHandlerCtx, dagHandlerCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 	defer dagHandlerCancel()
 	handlers, err := adapter.CreateHandlers(dagHandlerCtx)
 	if err != nil {
