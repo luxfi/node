@@ -1116,7 +1116,13 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// NOT "single-node → done". Driven by sybil-protection, NOT --skip-bootstrap: a production
 		// validator sets skip-bootstrap and that must NOT make it masquerade as single-node and
 		// wedge behind at its stale local tip (tasks #66/#74). See chainExpectsStakedBeacons.
-		expectsStakedBeacons := chainExpectsStakedBeacons(m.SybilProtectionEnabled, ids.IsNativeChain(chainParams.ID), isPlatformChain)
+		// Discriminate on the validating Net (chainParams.ChainID), NOT the blockchain ID:
+		// deployed C/X/Q carry HASH blockchain IDs, and ids.IsNativeChain only matches the
+		// symbolic 111...C alias form (no deployed chain has it). Keying off the blockchain ID
+		// (the prior ids.IsNativeChain(chainParams.ID)) was therefore ALWAYS false for the real
+		// C-Chain, leaving this fix inert — the exact wedge #66/#74 set out to kill fired anyway.
+		isPrimaryNetworkChain := chainValidatesOnPrimaryNetwork(chainParams.ChainID)
+		expectsStakedBeacons := chainExpectsStakedBeacons(m.SybilProtectionEnabled, isPrimaryNetworkChain, isPlatformChain)
 
 		// skip-bootstrap forces empty beacons (single-node immediate-start) for every chain EXCEPT
 		// one that syncs against the staked set — those MUST always catch a behind validator up from
@@ -2675,8 +2681,23 @@ func (m *manager) getOrMakeVMGatherer(vmID ids.ID) (metrics.MultiGatherer, error
 // anchors to its own CustomBeacons (not the staked set), so it is excluded here as before; a
 // single-VALIDATOR staked net (self-only set) is handled downstream by FrontierTip's
 // hasExternalBeacons rule, which reads the LOADED set.
-func chainExpectsStakedBeacons(sybilProtectionEnabled, isNativeChain, isPlatformChain bool) bool {
-	return sybilProtectionEnabled && isNativeChain && !isPlatformChain
+func chainExpectsStakedBeacons(sybilProtectionEnabled, isPrimaryNetworkChain, isPlatformChain bool) bool {
+	return sybilProtectionEnabled && isPrimaryNetworkChain && !isPlatformChain
+}
+
+// chainValidatesOnPrimaryNetwork reports whether a chain's validating Net IS the primary
+// network — the correct discriminator for the "native" C/X/Q/... set that syncs its bootstrap
+// frontier against the primary-network STAKED validator set. It keys off the validating Net
+// (subnet) ID, NOT the blockchain ID: deployed C/X/Q carry HASH blockchain IDs, whereas
+// ids.IsNativeChain only ever matches the symbolic 111...C alias form that NO deployed chain
+// uses (only the P-chain, at PlatformChainID=111...P, has a symbolic blockchain ID — and it is
+// excluded as the platform chain anyway). Keying the durable-rejoin discriminator off the
+// blockchain ID (the prior ids.IsNativeChain(chainParams.ID)) therefore silently excluded every
+// real C/X/Q and left the fix inert across restarts (#66/#74). The validating Net is
+// PrimaryNetworkID for C/X/Q and each sovereign L1's own net ID for an L2, so this correctly
+// keeps the empty-beacon single-node path for L2s while re-enabling peer-sync for C/X/Q.
+func chainValidatesOnPrimaryNetwork(validatingNetID ids.ID) bool {
+	return validatingNetID == constants.PrimaryNetworkID
 }
 
 // emptyValidatorManager implements validators.Manager with no validators

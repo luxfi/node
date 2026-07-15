@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.13]
+
+### Fixed
+- **The durable rejoin fix (#66/#74) shipped INERT for the C-Chain — the exact chain whose 40h mainnet freeze motivated it.** `chains/manager.go` gated `expectsStakedBeacons` on `ids.IsNativeChain(chainParams.ID)` — the *blockchain* ID. But `ids.IsNativeChain` only matches the symbolic `111…C` alias form, and every deployed C/X/Q carries a **hash** blockchain ID (devnet C `21HieZng…`, mainnet C `2wRdZG…`); only the P-chain has a symbolic blockchain ID (`111…P`), and it is excluded as the platform chain. So `isNativeChain` was **always false** for the real C-Chain → `expectsStakedBeacons=false` → under the production `--skip-bootstrap=true` the beacon set was emptied → a behind C-Chain named its STALE local tip the frontier and never caught up (verified on devnet v1.36.12: C-Chain wedged at height 0 with "using empty beacons for single-node mode"). Fix: discriminate on the **validating Net** (`chainParams.ChainID == constants.PrimaryNetworkID`) via new `chainValidatesOnPrimaryNetwork`, which is `PrimaryNetworkID` for C/X/Q and each sovereign L1's own net ID for an L2 — so C/X/Q now keep their staked beacons under `--skip-bootstrap` (peer-sync a behind validator) while L2s keep the empty-beacon single-node path. Regression test `TestChainValidatesOnPrimaryNetwork_RealHashChainID` exercises the real discriminator with hash chain IDs (the prior hardcoded-bool tests could not catch this); `TestRED_EmptyStakedSetFailsSafe` still passes (forged-frontier gate intact).
+
 ## [1.36.12]
 
 ### Fixed

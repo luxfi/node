@@ -25,6 +25,7 @@ import (
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	cblock "github.com/luxfi/consensus/engine/chain/block"
 	chainbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -2050,6 +2051,39 @@ func TestChainExpectsStakedBeacons_SybilDrivesNotSkipBootstrap(t *testing.T) {
 		"a non-native chain does not sync against the primary staked set here")
 	require.False(t, chainExpectsStakedBeacons(true, true, true),
 		"the platform chain anchors to its OWN CustomBeacons, never the staked-set frontier quorum")
+}
+
+// TestChainValidatesOnPrimaryNetwork_RealHashChainID is the regression the hardcoded-bool test
+// above could NOT catch: it exercises the ACTUAL discriminator buildChain feeds into
+// chainExpectsStakedBeacons. The durable rejoin fix (#66/#74) shipped INERT in production because
+// the discriminator keyed off the blockchain ID via ids.IsNativeChain — false for every deployed
+// C/X/Q (they carry HASH blockchain IDs; ids.IsNativeChain only matches the symbolic 111...C alias
+// form, which no deployed chain uses). So a real behind C-Chain still got empty beacons under
+// --skip-bootstrap and wedged. The fix keys off the validating Net (chainParams.ChainID) instead.
+func TestChainValidatesOnPrimaryNetwork_RealHashChainID(t *testing.T) {
+	// Real deployed C-Chain blockchain IDs (devnet + mainnet) are HASHES, and ids.IsNativeChain
+	// is false for them — the exact trap that disabled the fix.
+	for _, s := range []string{
+		"21HieZngQW8unBnSTbdQ9PcPAz6hhPLGrPzZhTvjC8KgjE95Bg", // devnet C-Chain
+		"2wRdZGeca1qkxzNCq88NWDF5nJ5A9o623vRJKd3FsjRYvuVvvt", // mainnet C-Chain
+	} {
+		id, err := ids.FromString(s)
+		require.NoError(t, err)
+		require.False(t, ids.IsNativeChain(id),
+			"trap: ids.IsNativeChain is false for real hash C-Chain ID %s — do NOT discriminate on the blockchain ID", s)
+	}
+
+	// C/X/Q validate on the PRIMARY NETWORK: chainParams.ChainID == PrimaryNetworkID. That is the
+	// signal buildChain now passes, so the durable fix fires for the real (hash-ID) C-Chain.
+	require.True(t, chainValidatesOnPrimaryNetwork(constants.PrimaryNetworkID))
+	require.True(t, chainExpectsStakedBeacons(true, chainValidatesOnPrimaryNetwork(constants.PrimaryNetworkID), false),
+		"a sybil-protected primary-network non-platform chain (C/X/Q) MUST expect staked beacons regardless of its hash blockchain ID")
+
+	// An L2 validates on its OWN sovereign net, not the primary network → stays on the
+	// empty-beacon single-node path (behavior unchanged for L2s).
+	l2Net := ids.GenerateTestID()
+	require.False(t, chainValidatesOnPrimaryNetwork(l2Net))
+	require.False(t, chainExpectsStakedBeacons(true, chainValidatesOnPrimaryNetwork(l2Net), false))
 }
 
 // TestNodeBootstrap_SelfOnlyStakedSet_ReportsNoBeacons covers the single-VALIDATOR counterpart of
