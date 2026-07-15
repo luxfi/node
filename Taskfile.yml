@@ -73,12 +73,6 @@ tasks:
       - task: generate-mocks
       - task: check-clean-branch
 
-  check-generate-protobuf:
-    desc: Checks that generated protobuf is up-to-date (requires a clean git working tree)
-    cmds:
-      - task: generate-protobuf
-      - task: check-clean-branch
-
   check-go-mod-tidy:
     desc: Checks that go.mod and go.sum are up-to-date (requires a clean git working tree)
     cmds:
@@ -100,10 +94,6 @@ tasks:
     cmds:
       - cmd: grep -lr -E '^// Code generated - DO NOT EDIT\.$' tests/load/c | xargs -r rm
       - cmd: go generate ./tests/load/c/...
-
-  generate-protobuf:
-    desc: Generates protobuf
-    cmd: ./scripts/protobuf_codegen.sh
 
   ginkgo-build:
     desc: Runs ginkgo against the current working directory

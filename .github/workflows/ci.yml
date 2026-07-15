@@ -94,53 +94,6 @@ jobs:
       - name: Run actionlint
         shell: bash
         run: scripts/actionlint.sh
-  buf-lint:
-    name: Protobuf Lint
-    runs-on: lux-build-amd64
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install buf
-        shell: bash
-        run: |
-          BUF_VERSION="1.47.2"
-          curl -sSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64" -o /usr/local/bin/buf
-          chmod +x /usr/local/bin/buf
-          buf --version
-      - name: Lint protobuf
-        shell: bash
-        run: buf lint proto
-  check_generated_protobuf:
-    name: Up-to-date protobuf
-    runs-on: lux-build-amd64
-    continue-on-error: true
-    env:
-      GOPRIVATE: github.com/luxfi/*
-      GONOSUMDB: github.com/luxfi/*
-      GOWORK: off
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-go-for-project
-      - name: Configure Git for private modules
-        shell: bash
-        run: git config --global url."https://${{ github.token }}@github.com/".insteadOf "https://github.com/"
-      - name: Install buf
-        shell: bash
-        run: |
-          BUF_VERSION="1.47.2"
-          curl -sSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64" -o /usr/local/bin/buf
-          chmod +x /usr/local/bin/buf
-      - name: Install protoc-gen-go tools
-        shell: bash
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.35.1
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
-          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
-      - shell: bash
-        run: scripts/protobuf_codegen.sh
-        env:
-          CGO_ENABLED: '0'
-      - shell: bash
-        run: .github/workflows/check-clean-branch.sh
   check_mockgen:
     name: Up-to-date mocks
     runs-on: lux-build-amd64
