@@ -158,6 +158,101 @@ charge less.
 - Relay (R-Chain): `~/work/lux/relay/vm/feegate.go` (re-exported by `~/work/lux/chains/relayvm/`)
 - Graph (G-Chain): `~/work/lux/chains/graphvm/feegate.go` (read-only; NoUserTxPolicy)
 
+## C-Chain tx-fee routing — RewardManager to DAO Safe (P-Chain: NO CHANGE)
+
+Owner tokenomics pivoted: **100% of C-Chain tx fees accrue to the chain's DAO Gov
+Safe** via the existing `rewardmanager` precompile (C-Chain only). This needs **no
+P-Chain change** — routing is `GetCoinbaseAt` → reward address on the C-Chain. See
+`~/work/lux/evm/LLM.md` → "C-Chain Tx-Fee Routing — RewardManager". The P-Chain
+`feeRewardPool` fold-in below is **NOT built** (design-only, superseded); no
+`vms/platformvm/state` change was made.
+
+<details><summary>Superseded design — 50/50 burn + P-Chain staking-reward fold (dormant option)</summary>
+
+If the DAO ever chooses an in-protocol 50/50 split, the C-Chain half exists (dormant,
+`FeeSplitTimestamp` gated off) and the P-Chain fold-in would be: system-triggered epoch
+export of the C-Chain vault C→P → persisted `feeRewardPool` in `vms/platformvm/state`
+(mirror the `accruedFees` singleton, upgrade-safe) → pro-rata payout at
+`vms/platformvm/txs/executor/proposal_tx_executor.go` `rewardValidatorTx` (~line 285),
+unified into `PotentialReward`, NO second mint → decrement `currentSupply` by the epoch
+burn. Model R1 (move-not-mint), conservation-exact; R2 (burn+re-mint) rejected.
+</details>
+
+## v1.36.12 fleet rollout — durable rejoin fix + RewardManager→DAO Safe (IN PROGRESS 2026-07-15)
+
+Rolling the durable rejoin fix (node `63f61429d1`) across all Lux nets, gated
+devnet→testnet→mainnet, + activating RewardManager fees. Two hard facts were found
+on the devnet canary that change the naive "swap image" plan:
+
+**BLOCKER (fixed in v1.36.12): published `node:v1.36.11` (digest `c3cf92a6`) cannot
+run ANY EVM chain.** Its baked VM plugins were built against a stale `luxfi/api`:
+C-Chain EVM from `luxfi/evm@v1.104.8` and D-Chain dexvm from `luxfi/dex@v1.5.15`
+both resolve `api v1.0.15`; the node pins `api v1.0.16`, which APPENDED
+`InitializeResponse.Capabilities` (Quasar-export handshake, api `1f2dc5a`). Node
+decodes the field, stale plugins never encode it → `vms/rpcchainvm/zap/client.go`
+fails every EVM `Initialize` with `zap decode initialize response: unexpected EOF`.
+Native VMs (P/X/Q) unaffected. **Fix = v1.36.12** (this repo, tag pushed, ARC docker
+build run 29381442539): `EVM_VERSION v1.104.8→v1.104.9`, force `api@v1.0.16` in the
+dexvm build stage; `CHAINS_REF=v1.7.6` was already v1.0.16. Node binary unchanged
+(still the durable fix). api bump is code-free for plugins (`chains v1.7.4→v1.7.5`
+adopted it go.mod-only). **Roll v1.36.12, NOT v1.36.11.** (Also: `api 1f2dc5a` added
+`Capabilities` WITHOUT bumping `version.RPCChainVMProtocol` (42) → skew is invisible
+at handshake, only fails at Initialize decode. Consider bumping the protocol next
+api-wire change so skews fail fast.)
+
+**MIGRATION: v1.36.2→v1.36.x is a P-Chain codec change (linearcodec→ZAP-native),
+one-time DB wipe + re-bootstrap.** v1.36.11/12 cannot read a v1.36.2 P-Chain zapdb
+(`loadMetadata: feeState: zap: invalid magic bytes`; `state_commit.go:116` "database
+must be wiped"). Recovery = wipe `/data/db`+`/data/chainData`, re-bootstrap from
+peers. **Cross-version bootstrap (v1.36.11 node ← v1.36.2 peers) is PROVEN working**
+(devnet luxd-1: P/X re-bootstrapped from the 4 v1.36.2 peers). Devnet startup got a
+marker-gated one-time wipe (`/data/.zap-native-migrated`): absent→wipe+set marker,
+present→NO wipe (the durable-fix no-wipe restart path). mainnet/testnet/zoo use
+`startup.sh` which already has `.wipe-cchain` (C-Chain only) + `.allow-bootstrap`
+(flips skip-bootstrap=false + EVM state-sync); for the codec migration the P-Chain
+zapdb (`/data/db`) must also be cleared. **Mainnet C-Chain is 1.08M blocks → MUST
+enable EVM state-sync for the re-sync (full replay is too slow); native VMs are tiny.**
+
+**Durable fix (`63f61429d1`):** discriminator for keeping the staked beacon set is
+SYBIL-PROTECTION, not `--skip-bootstrap`. So a behind validator on a sybil-protected
+net catches up from peers even with `--skip-bootstrap=true` (which prod hardcodes),
+no wipe. Devnet added `--skip-bootstrap=true` to the inline cmd to exercise this.
+
+**RewardManager (C-Chain precompile, per-net `cchain-upgrade.json` → append one
+`precompileUpgrades` entry, dated `blockTimestamp`):** proven testnet shape is
+`{"rewardManagerConfig":{"blockTimestamp":<ts>,"adminAddresses":["<admin>"],
+"initialRewardConfig":{"rewardAddress":"<reward>"}}}`. Reward addr = coinbase; 100%
+fees land there, blackhole `0x0100…00` goes flat. Addresses: **testnet ALREADY LIVE**
+(reward `0xEAbCC110fAcBfebabC66Ad6f9E7B67288e720B59`, admin `0x9011…94714`); **mainnet**
+reward+admin = DAO Gov Safe `0x8E29b816c6C35b13cE1ff68D33E245C2bda8ac3D`; **zoo**
+reward `0x229599f227231d8C90fcF1a78589F5DC4b7A6962`; **devnet** reward
+`0x8d5081153aE1cfb41f5c932fe0b6Beb7E159cF84` (idx2), admin `0x9011…94714` (idx0).
+Source ConfigMaps: devnet `luxd-chain-upgrades/cchain-upgrade.json`; mainnet+testnet
+`luxd-startup/cchain-upgrade.json`; zoo `zood-mv-genesis/upgrade.json` (`--upgrade-file`).
+
+**Rollout levers (lux-operator is scaled 0/0 — sts/cm are the live source of truth;
+CRs are STALE, do not scale operator up mid-roll):** ports devnet 9650 / testnet 9640
+/ mainnet 9630 / zoo 9630; RPC path `/v1/bc/C/rpc`; container `luxd` (`zood` on zoo).
+Devnet uses an inline generated cmd; testnet/mainnet/zoo use `/scripts/startup.sh`.
+**Zoo `zood-mv` trap: RollingUpdate + hardcoded `--skip-bootstrap=true` with NO
+`.allow-bootstrap` gate → switch to OnDelete BEFORE rolling.** Lux sts are OnDelete.
+Master funded key = LUX_MNEMONIC (secret `lux-deployer`) idx0 `0x9011…94714`;
+`genesis/cmd/derivekey -mnemonic "$M"` (path m/44'/9000'/0'/0/i, `CGO_ENABLED=0`).
+
+**Per-node roll protocol (ALL nets, one at a time, NEVER 2 mainnet down — quorum
+4/5):** set sts image v1.36.12 (+ rewardManager cm edit) → delete ONE pod → WAIT
+until it is back at **TIP HEIGHT matching the others** (NOT pod-Ready; a wedged node
+false-reports Ready) AND C-Chain serves RPC → only then the next. If any node fails
+to return to tip, STOP that net and report.
+
+**State at pause:** v1.36.12 tag pushed + ARC build dispatched (run 29381442539).
+Devnet sts = v1.36.11 + skip-bootstrap + wipe-marker; luxd-1 migrated (P/X up on
+v1.36.11, C-Chain down = the plugin bug → will heal on v1.36.12); luxd-0/2/3/4 still
+v1.36.2 healthy (devnet C-Chain 4/5). Nothing rolled on testnet/mainnet/zoo. NEXT:
+when v1.36.12 image is ready → set devnet sts image v1.36.12, delete luxd-1, confirm
+C-Chain inits + reaches tip; then finish devnet (durable-fix proof + RewardManager),
+then gated testnet→mainnet→zoo.
+
 ## Essential Commands
 
 ### Release & build (canonical) — via platform.hanzo.ai, NOT GitHub Actions
