@@ -257,7 +257,15 @@ RUN . ./build_env.sh && \
 # failed ValidateState, and BRICKED the node. Proven on-node: real swap → kill -9 →
 # clean reboot, state intact. v1.99.40 = v1.99.39 + deps to latest. consensus v1.25.21 =
 # stake-weighted alpha-of-K quorum finality + per-height single-finalize + epoch-bound certs.
-ARG EVM_VERSION=v1.104.8
+# v1.104.9 bumps luxfi/api v1.0.15 -> v1.0.16 (indirect via luxfi/vm). v1.0.16
+# APPENDED InitializeResponse.Capabilities (uint64) for the Quasar-export
+# handshake (api commit 1f2dc5a). The node pins api v1.0.16 and DECODES that
+# field; an EVM plugin built at v1.104.8 (api v1.0.15) omits it, so the node's
+# strict struct decode hits "zap decode initialize response: unexpected EOF"
+# and EVERY EVM chain (C + L2s hanzo/zoo/pars/spc, all mgj786) fails to
+# initialize. The api bump is code-free for plugins (chains v1.7.4->v1.7.5
+# adopted it with a go.mod-only diff), so v1.104.9 = v1.104.8 + api alignment.
+ARG EVM_VERSION=v1.104.9
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
@@ -402,6 +410,11 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     cd /tmp/dex && \
+    # Align the dexvm plugin's ZAP wire (luxfi/api) with the node. No dex release
+    # pins api v1.0.16 yet (all <=v1.5.20 carry v1.0.15), so force it here; the
+    # bump is code-free (adds InitializeResponse.Capabilities, capability-gated),
+    # so dexvm emits the field the node decodes -> no "unexpected EOF" on D-Chain.
+    go mod edit -require=github.com/luxfi/api@v1.0.16 && \
     . /build/build_env.sh && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=0 GOFLAGS=-mod=mod \
