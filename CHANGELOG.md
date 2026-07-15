@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.12]
+
+### Fixed
+- **EVM chains (C/D/L2) failed to initialize on v1.36.11 — bundled VM plugins were built against a stale `luxfi/api`.** The node pins `luxfi/api v1.0.16`, whose `InitializeResponse` carries the appended `Capabilities uint64` field (Quasar-export handshake, api commit `1f2dc5a`). The image baked the C-Chain EVM plugin from `luxfi/evm@v1.104.8` and the D-Chain dexvm plugin from `luxfi/dex@v1.5.15`, both of which resolve `luxfi/api v1.0.15` (no `Capabilities`). Their `InitializeResponse.Encode` writes a shorter payload than the node's strict `InitializeResponse.Decode` expects, so `vms/rpcchainvm/zap/client.go` fails every EVM VM handshake with `zap decode initialize response: unexpected EOF`. Native VMs (P/X/Q) were unaffected. Fix: bump `EVM_VERSION` `v1.104.8 → v1.104.9` (api v1.0.16) and force `luxfi/api@v1.0.16` in the dexvm build stage. The api bump is code-free for plugins (`luxfi/chains v1.7.4 → v1.7.5` adopted it with a go.mod-only diff; `CHAINS_REF=v1.7.6` already carries v1.0.16). No node source change beyond the version bump — this is v1.36.11's node binary (durable rejoin fix, commit `63f61429d1`) rebuilt with plugin↔node ZAP-wire alignment.
+
 ## [1.28.0]
 
 ### Added
