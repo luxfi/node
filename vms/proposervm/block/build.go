@@ -31,7 +31,7 @@ func BuildUnsigned(
 	// No identity, no signature: the block bytes are just the unsigned body. This
 	// is the pre-fork→post-fork transition block and every K=1 block (no proposer
 	// window), so small local nets never exercise a signed path.
-	unsignedBytes := buildUnsignedBuffer(parentID, timestamp.Unix(), pChainHeight, epoch, nil, blockBytes)
+	unsignedBytes := buildUnsignedBuffer(parentID, timestamp.UnixMilli(), pChainHeight, epoch, nil, blockBytes)
 
 	block := &statelessBlock{}
 	if err := block.initialize(unsignedBytes); err != nil {
@@ -103,7 +103,7 @@ func buildSigned(
 	idSlot = append(idSlot, scheme)
 	idSlot = append(idSlot, identity...)
 
-	unsignedBytes := buildUnsignedBuffer(parentID, timestamp.Unix(), pChainHeight, epoch, idSlot, blockBytes)
+	unsignedBytes := buildUnsignedBuffer(parentID, timestamp.UnixMilli(), pChainHeight, epoch, idSlot, blockBytes)
 
 	// The block ID is the hash of the unsigned prefix; the proposer signs a
 	// header binding (chainID, parentID, blockID).

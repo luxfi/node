@@ -144,7 +144,7 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 	}
 
 	root := b.msg.Root()
-	b.timestamp = time.Unix(root.Int64(offTimestamp), 0)
+	b.timestamp = time.UnixMilli(root.Int64(offTimestamp))
 
 	// Proposer-identity slot: [scheme:1B | identity]. Empty ⇒ unsigned block.
 	idSlot := root.Bytes(offCert)
