@@ -265,7 +265,7 @@ RUN . ./build_env.sh && \
 # and EVERY EVM chain (C + L2s hanzo/zoo/pars/spc, all mgj786) fails to
 # initialize. The api bump is code-free for plugins (chains v1.7.4->v1.7.5
 # adopted it with a go.mod-only diff), so v1.104.9 = v1.104.8 + api alignment.
-ARG EVM_VERSION=v1.104.9
+ARG EVM_VERSION=v1.104.9-hotfix.1
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
