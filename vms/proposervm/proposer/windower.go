@@ -12,26 +12,50 @@ import (
 
 	"gonum.org/v1/gonum/mathext/prng"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
 	"github.com/luxfi/utils"
+	validators "github.com/luxfi/validators"
 )
 
-// Proposer list constants
+// Proposer list slot-COUNT constants (fixed; independent of the wall-clock
+// window length).
 const (
+	MaxVerifyWindows  = 6
+	MaxBuildWindows   = 60
+	MaxLookAheadSlots = 720
+)
+
+// WindowDuration is the proposer-slot spacing: a validator's minimum build delay
+// is its slot index times WindowDuration. Default 5s (the avalanchego mainnet
+// value, tuned for large validator sets). It is a startup-configurable VAR — small
+// local/dev networks shrink it via SetWindowDuration (proposervm Config →
+// --proposer-window-duration) so block cadence is not floored at 5s per proposer
+// slot. It is read by BOTH the windower's delay math AND TimeToSlot, so the two
+// stay consistent by construction.
+var (
 	WindowDuration = 5 * time.Second
 
-	MaxVerifyWindows = 6
-	MaxVerifyDelay   = MaxVerifyWindows * WindowDuration // 30 seconds
-
-	MaxBuildWindows = 60
-	MaxBuildDelay   = MaxBuildWindows * WindowDuration // 5 minutes
-
-	MaxLookAheadSlots  = 720
-	MaxLookAheadWindow = MaxLookAheadSlots * WindowDuration // 1 hour
+	MaxVerifyDelay     = MaxVerifyWindows * WindowDuration  // 30s at the default
+	MaxBuildDelay      = MaxBuildWindows * WindowDuration   // 5m at the default
+	MaxLookAheadWindow = MaxLookAheadSlots * WindowDuration // 1h at the default
 )
+
+// SetWindowDuration overrides the proposer-slot spacing. It MUST be called at
+// startup, before any chain begins block production: WindowDuration is read by
+// both the windower delay math and TimeToSlot, so changing it mid-flight would
+// desynchronize the slot mapping across the fleet (a consensus fault). Values
+// <= 0 are ignored, so an unset config leaves the safe 5s default in place.
+func SetWindowDuration(d time.Duration) {
+	if d <= 0 {
+		return
+	}
+	WindowDuration = d
+	MaxVerifyDelay = MaxVerifyWindows * WindowDuration
+	MaxBuildDelay = MaxBuildWindows * WindowDuration
+	MaxLookAheadWindow = MaxLookAheadSlots * WindowDuration
+}
 
 var (
 	_ Windower = (*windower)(nil)

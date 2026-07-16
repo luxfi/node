@@ -18,10 +18,10 @@ import (
 var (
 	_ SignedBlock = (*statelessBlock)(nil)
 
-	errUnexpectedSignature      = errors.New("signature provided when none was expected")
-	errInvalidCertificate       = errors.New("invalid certificate")
-	errUnknownProposerScheme    = errors.New("proposervm block: unknown proposer identity scheme")
-	errMLDSAProposerSigInvalid  = errors.New("proposervm block: ML-DSA proposer signature invalid")
+	errUnexpectedSignature     = errors.New("signature provided when none was expected")
+	errInvalidCertificate      = errors.New("invalid certificate")
+	errUnknownProposerScheme   = errors.New("proposervm block: unknown proposer identity scheme")
+	errMLDSAProposerSigInvalid = errors.New("proposervm block: ML-DSA proposer signature invalid")
 )
 
 // Proposer-identity scheme tags stored as the FIRST byte of the offCert slot,
@@ -67,6 +67,12 @@ type SignedBlock interface {
 	// Proposer returns the ID of the node that proposed this block. If no node
 	// signed this block, [ids.EmptyNodeID] will be returned.
 	Proposer() ids.NodeID
+
+	// HasClassicalProposer reports whether this block carries a CLASSICAL
+	// (secp256k1/ECDSA) proposer identity. A strict-PQ chain refuses such a block
+	// — its proposer must be ML-DSA-65 to match the ML-DSA-keyed validator set.
+	// Unsigned blocks (transition / single-validator) return false.
+	HasClassicalProposer() bool
 
 	// Data Availability fields (v1.1 spec)
 	DARoot() [32]byte          // Root of DA commitments
@@ -231,6 +237,10 @@ func (b *statelessBlock) Timestamp() time.Time {
 
 func (b *statelessBlock) Proposer() ids.NodeID {
 	return b.proposer
+}
+
+func (b *statelessBlock) HasClassicalProposer() bool {
+	return b.scheme == schemeSecp256k1
 }
 
 func (b *statelessBlock) DARoot() [32]byte {
