@@ -35,6 +35,12 @@ type Config struct {
 	// Configurable minimal delay among blocks issued consecutively
 	MinBlkDelay time.Duration
 
+	// ProposerWindowDuration overrides the proposer-slot spacing (proposer.
+	// WindowDuration). Zero keeps the 5s mainnet default; small local/dev nets set
+	// it low (e.g. 1s or less) so block cadence is not floored at 5s per proposer
+	// slot. Applied once at VM init via proposer.SetWindowDuration.
+	ProposerWindowDuration time.Duration
+
 	// Maximal number of block indexed.
 	// Zero signals all blocks are indexed.
 	NumHistoricalBlocks uint64

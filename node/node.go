@@ -1356,6 +1356,7 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 			StakingTLSCert:            n.StakingTLSCert,
 			StakingMLDSASigner:        n.Config.StakingConfig.StakingMLDSA,
 			StakingMLDSAPub:           n.Config.StakingConfig.StakingMLDSAPub,
+			ProposerWindowDuration:    n.Config.ProposerWindowDuration,
 			StakingBLSKey:             n.Config.StakingSigningKey,
 			Log:                       n.Log,
 			LogFactory:                n.LogFactory,

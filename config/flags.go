@@ -369,6 +369,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// ProposerVM
 	fs.Bool(ProposerVMUseCurrentHeightKey, false, "Have the ProposerVM always report the last accepted P-chain block height")
 	fs.Duration(ProposerVMMinBlockDelayKey, proposervm.DefaultMinBlockDelay, "Minimum delay to enforce when building a chain++ block for the primary network chains and the default minimum delay for chains")
+	fs.Duration(ProposerVMWindowDurationKey, 0, "Proposer-slot spacing for block production (0 uses the 5s mainnet default); shrink for fast cadence on small/local networks")
 
 	// Metrics
 	fs.Bool(MeterVMsEnabledKey, true, "Enable Meter VMs to track VM performance with more granularity")

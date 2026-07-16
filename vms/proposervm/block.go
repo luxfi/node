@@ -25,20 +25,21 @@ const (
 )
 
 var (
-	errUnsignedChild            = errors.New("expected child to be signed")
-	errUnexpectedBlockType      = errors.New("unexpected proposer block type")
-	errInnerParentMismatch      = errors.New("inner parentID didn't match expected parent")
-	errTimeNotMonotonic         = errors.New("time must monotonically increase")
-	errPChainHeightNotMonotonic = errors.New("non monotonically increasing P-chain height")
-	errPChainHeightNotReached   = errors.New("block P-chain height larger than current P-chain height")
-	errTimeTooAdvanced          = errors.New("time is too far advanced")
-	errEpochMismatch            = errors.New("epoch mismatch")
-	errProposerWindowNotStarted = errors.New("proposer window hasn't started")
-	errUnexpectedProposer       = errors.New("unexpected proposer for current window")
-	errProposerMismatch         = errors.New("proposer mismatch")
-	errProposersNotActivated    = errors.New("proposers haven't been activated yet")
-	errPChainHeightTooLow       = errors.New("block P-chain height is too low")
-	errNotOracle                = errors.New("block is not an oracle block")
+	errUnsignedChild                  = errors.New("expected child to be signed")
+	errUnexpectedBlockType            = errors.New("unexpected proposer block type")
+	errInnerParentMismatch            = errors.New("inner parentID didn't match expected parent")
+	errClassicalProposerUnderStrictPQ = errors.New("classical (secp256k1) proposer identity refused on a strict-PQ chain")
+	errTimeNotMonotonic               = errors.New("time must monotonically increase")
+	errPChainHeightNotMonotonic       = errors.New("non monotonically increasing P-chain height")
+	errPChainHeightNotReached         = errors.New("block P-chain height larger than current P-chain height")
+	errTimeTooAdvanced                = errors.New("time is too far advanced")
+	errEpochMismatch                  = errors.New("epoch mismatch")
+	errProposerWindowNotStarted       = errors.New("proposer window hasn't started")
+	errUnexpectedProposer             = errors.New("unexpected proposer for current window")
+	errProposerMismatch               = errors.New("proposer mismatch")
+	errProposersNotActivated          = errors.New("proposers haven't been activated yet")
+	errPChainHeightTooLow             = errors.New("block P-chain height is too low")
+	errNotOracle                      = errors.New("block is not an oracle block")
 )
 
 // OracleBlock is a block that can return multiple child options
@@ -124,6 +125,18 @@ func (p *postForkCommonComponents) Verify(
 	parentEpoch chain.Epoch,
 	child *postForkBlock,
 ) error {
+	// STRICT-PQ PROFILE GATE (fail-closed, UNCONDITIONAL — before the Ready gate,
+	// so it also holds during bootstrap/state-sync when the proposer-window check
+	// below is skipped). A chain whose own proposer signs with ML-DSA-65
+	// (StakingMLDSASigner set) is strict-PQ: its validator set is ML-DSA-keyed, so
+	// a block carrying a CLASSICAL secp256k1 proposer identity can never be a
+	// legitimate proposer and must be refused outright — never relying on the
+	// 20-byte NodeID collision bound or upstream validator-set enforcement to catch
+	// it. Mirrors contract.RefuseUnderStrictPQ: one gate, one place.
+	if p.vm.StakingMLDSASigner != nil && child.SignedBlock.HasClassicalProposer() {
+		return errClassicalProposerUnderStrictPQ
+	}
+
 	if err := verifyIsNotOracleBlock(ctx, p.innerBlk); err != nil {
 		return err
 	}
@@ -233,6 +246,7 @@ func (p *postForkCommonComponents) Verify(
 //     sub-window timestamp — zero behaviour change on a live chain;
 //   - a snapped time is strictly > parent (monotonic, no errTimeNotMonotonic) and ≤ now (never
 //     errTimeTooAdvanced).
+//
 // It is a pure function of (parentTimestamp, now) so it is idempotent for any two calls in the
 // same slot — the property the liveness fix relies on.
 func slotSnappedChildTimestamp(parentTimestamp, now time.Time) time.Time {

@@ -1762,6 +1762,10 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	if nodeConfig.HealthCheckFreq < 0 {
 		return node.Config{}, fmt.Errorf("%s must be positive", HealthCheckFreqKey)
 	}
+	nodeConfig.ProposerWindowDuration = v.GetDuration(ProposerVMWindowDurationKey)
+	if nodeConfig.ProposerWindowDuration < 0 {
+		return node.Config{}, fmt.Errorf("%s must not be negative", ProposerVMWindowDurationKey)
+	}
 	// Halflife of continuous averager used in health checks
 	healthCheckAveragerHalflife := v.GetDuration(HealthCheckAveragerHalflifeKey)
 	if healthCheckAveragerHalflife <= 0 {

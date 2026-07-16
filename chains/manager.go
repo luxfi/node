@@ -369,7 +369,10 @@ type ManagerConfig struct {
 	// Proposer() matches the ML-DSA-keyed validator set. Nil ⇒ classical TLS-leaf.
 	StakingMLDSASigner *mldsa.PrivateKey
 	StakingMLDSAPub    []byte
-	StakingBLSKey      bls.Signer
+	// ProposerWindowDuration overrides the proposervm proposer-slot spacing (0 ⇒
+	// the 5s mainnet default). Small local/dev nets set it low for fast cadence.
+	ProposerWindowDuration time.Duration
+	StakingBLSKey          bls.Signer
 	TracingEnabled         bool
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
 	Tracer                    trace.Tracer
@@ -1287,15 +1290,16 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				return nil, fmt.Errorf("failed to register proposervm metrics for chain %s: %w", chainParams.ID, regErr)
 			}
 			engineVM = proposervm.New(vmTyped, proposervm.Config{
-				Upgrades:            m.Upgrades,
-				NetworkID:           networkID, // CRITICAL-3: windower uses the SAME set ID as the cert side
-				MinBlkDelay:         proposervm.DefaultMinBlockDelay,
-				NumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
-				StakingLeafSigner:   m.StakingTLSSigner,
-				StakingCertLeaf:     m.StakingTLSCert,
-				StakingMLDSASigner:  m.StakingMLDSASigner,
-				StakingMLDSAPub:     m.StakingMLDSAPub,
-				Registerer:          proposervmReg,
+				Upgrades:               m.Upgrades,
+				NetworkID:              networkID, // CRITICAL-3: windower uses the SAME set ID as the cert side
+				MinBlkDelay:            proposervm.DefaultMinBlockDelay,
+				NumHistoricalBlocks:    proposervm.DefaultNumHistoricalBlocks,
+				StakingLeafSigner:      m.StakingTLSSigner,
+				StakingCertLeaf:        m.StakingTLSCert,
+				StakingMLDSASigner:     m.StakingMLDSASigner,
+				StakingMLDSAPub:        m.StakingMLDSAPub,
+				ProposerWindowDuration: m.ProposerWindowDuration,
+				Registerer:             proposervmReg,
 			})
 			m.Log.Info("wrapping chain VM in proposervm for single-proposer-per-height block production",
 				log.Stringer("chainID", chainParams.ID),
@@ -4332,7 +4336,6 @@ func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockI
 // v1.36 "Nova": BroadcastPrevote was DELETED — the round-scoped view-change (prevote/POL/lock)
 // it fed no longer exists in the consensus engine (174af3c31). Nova sampling decides; the ⅔
 // Quasar attestation (a plain accept-vote, gossiped via BroadcastVote) trails it. Keep the braid dead.
-
 
 // GossipCert broadcasts an assembled α-of-K finality cert to ALL validators so
 // followers finalize blockID on a verifiable proof (HandleIncomingCert), not a

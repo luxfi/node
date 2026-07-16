@@ -177,6 +177,11 @@ type Config struct {
 	// Health
 	HealthCheckFreq time.Duration `json:"healthCheckFreq"`
 
+	// ProposerWindowDuration overrides the proposervm proposer-slot spacing.
+	// Zero keeps the 5s mainnet default; small local/dev nets set it low (e.g.
+	// 1s) so block cadence is not floored at 5s per proposer slot.
+	ProposerWindowDuration time.Duration `json:"proposerWindowDuration"`
+
 	// Network configuration
 	NetworkConfig network.Config `json:"networkConfig"`
 

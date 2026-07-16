@@ -289,6 +289,10 @@ func (vm *VM) Initialize(
 // constants.PrimaryNetworkID, so a native chain matches the original
 // proposer.New(..., PrimaryNetworkID, ...) byte-for-byte.
 func (vm *VM) newWindower() proposer.Windower {
+	// Apply the configured proposer-slot spacing before the first schedule is
+	// resolved (no-op at the default; shrinks cadence on local/dev nets). Startup
+	// only — see proposer.SetWindowDuration.
+	proposer.SetWindowDuration(vm.Config.ProposerWindowDuration)
 	netID := vm.Config.NetworkID
 	if netID == ids.Empty {
 		netID = constants.PrimaryNetworkID
