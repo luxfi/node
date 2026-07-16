@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/luxfi/crypto/hash"
+	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/zap"
@@ -17,8 +18,26 @@ import (
 var (
 	_ SignedBlock = (*statelessBlock)(nil)
 
-	errUnexpectedSignature = errors.New("signature provided when none was expected")
-	errInvalidCertificate  = errors.New("invalid certificate")
+	errUnexpectedSignature      = errors.New("signature provided when none was expected")
+	errInvalidCertificate       = errors.New("invalid certificate")
+	errUnknownProposerScheme    = errors.New("proposervm block: unknown proposer identity scheme")
+	errMLDSAProposerSigInvalid  = errors.New("proposervm block: ML-DSA proposer signature invalid")
+)
+
+// Proposer-identity scheme tags stored as the FIRST byte of the offCert slot,
+// so a block is self-describing about which primitive proves its proposer.
+// They are the SAME bytes as the canonical wire NodeID scheme (ids.NodeIDScheme):
+// 0x90 classical secp256k1/ECDSA TLS leaf, 0x42 strict-PQ ML-DSA-65. Keeping the
+// tag in the block means a verifier dispatches to the correct verifier + the
+// correct NodeID derivation WITHOUT consulting the chain profile — the block
+// carries its own identity discriminator, exactly like a TypedNodeID does on the
+// handshake. The proposer NodeID a signed block reports MUST equal the NodeID the
+// windower elected; the windower reads the P-chain validator set, whose NodeIDs
+// are ids.NodeIDFromCert (classical) or DeriveMLDSA(ids.Empty, pub) (strict-PQ) —
+// so the two branches below reproduce exactly those two derivations.
+const (
+	schemeSecp256k1 = byte(ids.NodeIDSchemeSecp256k1) // 0x90
+	schemeMLDSA65   = byte(ids.NodeIDSchemeMLDSA65)   // 0x42
 )
 
 // Epoch represents a P-Chain epoch for validator set coordination
@@ -66,7 +85,9 @@ type statelessBlock struct {
 
 	id        ids.ID
 	timestamp time.Time
-	cert      *staking.Certificate
+	scheme    byte                 // proposer-identity scheme (0 for unsigned)
+	cert      *staking.Certificate // set for the classical (secp256k1) scheme
+	mldsaPub  *mldsa.PublicKey     // set for the strict-PQ (ML-DSA-65) scheme
 	proposer  ids.NodeID
 	bytes     []byte // full signed bytes = unsigned ‖ sig
 }
@@ -119,25 +140,49 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 	root := b.msg.Root()
 	b.timestamp = time.Unix(root.Int64(offTimestamp), 0)
 
-	certBytes := root.Bytes(offCert)
-	if len(certBytes) == 0 {
+	// Proposer-identity slot: [scheme:1B | identity]. Empty ⇒ unsigned block.
+	idSlot := root.Bytes(offCert)
+	if len(idSlot) == 0 {
 		return nil
 	}
-
-	b.cert, err = staking.ParseCertificate(certBytes)
-	if err != nil {
-		return fmt.Errorf("%w: %w", errInvalidCertificate, err)
+	b.scheme = idSlot[0]
+	identity := idSlot[1:]
+	switch b.scheme {
+	case schemeMLDSA65:
+		// Strict-PQ: identity is the raw ML-DSA-65 public key. Derive the proposer
+		// NodeID the SAME way the node derives its own canonical NodeID and the
+		// windower reads it — DeriveMLDSA over the empty chain id (node.go boots with
+		// DeriveNodeID(ids.Empty)). This is what makes Proposer() == the windower's
+		// elected NodeID under strict-PQ.
+		pub, err := mldsa.PublicKeyFromBytes(identity, mldsa.MLDSA65)
+		if err != nil {
+			return fmt.Errorf("%w: %w", errInvalidCertificate, err)
+		}
+		b.mldsaPub = pub
+		nodeID, _, err := ids.NodeIDSchemeMLDSA65.DeriveMLDSA(ids.Empty, identity)
+		if err != nil {
+			return err
+		}
+		b.proposer = nodeID
+	case schemeSecp256k1:
+		// Classical: identity is the DER TLS cert. NodeID = hash of the cert, the
+		// legacy upstream derivation used on non-strict-PQ chains.
+		b.cert, err = staking.ParseCertificate(identity)
+		if err != nil {
+			return fmt.Errorf("%w: %w", errInvalidCertificate, err)
+		}
+		b.proposer = ids.NodeIDFromCert(&ids.Certificate{
+			Raw:       b.cert.Raw,
+			PublicKey: b.cert.PublicKey,
+		})
+	default:
+		return fmt.Errorf("%w: 0x%02x", errUnknownProposerScheme, b.scheme)
 	}
-
-	b.proposer = ids.NodeIDFromCert(&ids.Certificate{
-		Raw:       b.cert.Raw,
-		PublicKey: b.cert.PublicKey,
-	})
 	return nil
 }
 
 func (b *statelessBlock) verify(chainID ids.ID) error {
-	if b.cert == nil {
+	if b.cert == nil && b.mldsaPub == nil {
 		if len(b.Signature) > 0 {
 			return errUnexpectedSignature
 		}
@@ -148,8 +193,18 @@ func (b *statelessBlock) verify(chainID ids.ID) error {
 	if err != nil {
 		return err
 	}
-
 	headerBytes := header.Bytes()
+
+	if b.mldsaPub != nil {
+		// FIPS 204 §5.2 domain-separated verification: the same proposervm context
+		// the signer bound, so a proposer signature can never be replayed as any
+		// other ML-DSA message (UTXO auth, consensus vote) the validator produces.
+		if !b.mldsaPub.VerifySignatureCtx(headerBytes, b.Signature, proposerSigCtx) {
+			return errMLDSAProposerSigInvalid
+		}
+		return nil
+	}
+
 	return staking.CheckSignature(
 		b.cert,
 		headerBytes,

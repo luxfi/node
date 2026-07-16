@@ -7,6 +7,7 @@ import (
 	"crypto"
 	"time"
 
+	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 
@@ -43,6 +44,16 @@ type Config struct {
 
 	// Block certificate
 	StakingCertLeaf *staking.Certificate
+
+	// Strict-PQ block signer. When StakingMLDSASigner is non-nil the proposer
+	// signs post-fork blocks with ML-DSA-65 and stamps the block's proposer
+	// identity as the raw ML-DSA-65 public key, so Proposer() derives via
+	// DeriveMLDSA and EQUALS the strict-PQ NodeID the windower elected (the
+	// validator set is ML-DSA-keyed under strict-PQ). Nil ⇒ classical TLS-leaf
+	// signing above. Exactly one of the two schemes is active per chain, chosen at
+	// wiring time from the resolved ChainSecurityProfile.
+	StakingMLDSASigner *mldsa.PrivateKey
+	StakingMLDSAPub    []byte
 
 	// Registerer for metric metrics
 	Registerer metric.Registerer
