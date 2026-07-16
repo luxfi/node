@@ -372,8 +372,11 @@ type ManagerConfig struct {
 	// ProposerWindowDuration overrides the proposervm proposer-slot spacing (0 ⇒
 	// the 5s mainnet default). Small local/dev nets set it low for fast cadence.
 	ProposerWindowDuration time.Duration
-	StakingBLSKey          bls.Signer
-	TracingEnabled         bool
+	// ProposerMinBlockDelay overrides the proposervm minimum block delay (0 ⇒ the
+	// 1s default). High-throughput / DEX nets set it low (e.g. 1ms).
+	ProposerMinBlockDelay time.Duration
+	StakingBLSKey         bls.Signer
+	TracingEnabled        bool
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
 	Tracer                    trace.Tracer
 	Log                       log.Logger
@@ -1289,10 +1292,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			if regErr != nil {
 				return nil, fmt.Errorf("failed to register proposervm metrics for chain %s: %w", chainParams.ID, regErr)
 			}
+			minBlkDelay := proposervm.DefaultMinBlockDelay
+			if m.ProposerMinBlockDelay > 0 {
+				minBlkDelay = m.ProposerMinBlockDelay
+			}
 			engineVM = proposervm.New(vmTyped, proposervm.Config{
 				Upgrades:               m.Upgrades,
 				NetworkID:              networkID, // CRITICAL-3: windower uses the SAME set ID as the cert side
-				MinBlkDelay:            proposervm.DefaultMinBlockDelay,
+				MinBlkDelay:            minBlkDelay,
 				NumHistoricalBlocks:    proposervm.DefaultNumHistoricalBlocks,
 				StakingLeafSigner:      m.StakingTLSSigner,
 				StakingCertLeaf:        m.StakingTLSCert,
@@ -1305,7 +1312,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				log.Stringer("chainID", chainParams.ID),
 				log.Int("K", consensusParams.K),
 				log.Stringer("windowerNetworkID", networkID),
-				log.Duration("minBlockDelay", proposervm.DefaultMinBlockDelay))
+				log.Duration("minBlockDelay", minBlkDelay))
 		}
 
 		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))

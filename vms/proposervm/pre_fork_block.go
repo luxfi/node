@@ -203,7 +203,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	// "chain is currently forking" path is the only one taken.
 	parentTimestamp := b.Timestamp()
 	parentID := b.ID()
-	newTimestamp := b.vm.Time().Truncate(time.Second)
+	newTimestamp := b.vm.Time().Truncate(proposer.TimestampGranularity())
 	if newTimestamp.Before(parentTimestamp) {
 		newTimestamp = parentTimestamp
 	}

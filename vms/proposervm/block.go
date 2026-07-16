@@ -250,7 +250,7 @@ func (p *postForkCommonComponents) Verify(
 // It is a pure function of (parentTimestamp, now) so it is idempotent for any two calls in the
 // same slot — the property the liveness fix relies on.
 func slotSnappedChildTimestamp(parentTimestamp, now time.Time) time.Time {
-	ts := now.Truncate(time.Second)
+	ts := now.Truncate(proposer.TimestampGranularity())
 	if ts.Before(parentTimestamp) {
 		return parentTimestamp
 	}

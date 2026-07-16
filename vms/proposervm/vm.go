@@ -551,7 +551,7 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 		parentTimestamp  = blk.Timestamp()
 		nextStartTime    time.Time
 	)
-	currentTime := vm.Clock.Time().Truncate(time.Second)
+	currentTime := vm.Clock.Time().Truncate(proposer.TimestampGranularity())
 	if nextStartTime, err = vm.getPostDurangoSlotTime(
 		ctx,
 		childBlockHeight,
@@ -602,7 +602,7 @@ func (vm *VM) timeToBuildPreForkTransitionLocked(ctx context.Context) (time.Time
 	var (
 		parentTimestamp = pre.Timestamp()
 		childHeight     = pre.Height() + 1
-		currentTime     = vm.Clock.Time().Truncate(time.Second)
+		currentTime     = vm.Clock.Time().Truncate(proposer.TimestampGranularity())
 		slot            = proposer.TimeToSlot(parentTimestamp, currentTime)
 	)
 	// MinDelayForProposer returns the delay until THIS node's earliest slot in the

@@ -182,6 +182,11 @@ type Config struct {
 	// 1s) so block cadence is not floored at 5s per proposer slot.
 	ProposerWindowDuration time.Duration `json:"proposerWindowDuration"`
 
+	// ProposerMinBlockDelay is the proposervm minimum delay between consecutive
+	// blocks (the hard cadence floor). Zero keeps the 1s default; high-throughput
+	// / DEX nets set it low (e.g. 1ms) to approach the consensus-finality floor.
+	ProposerMinBlockDelay time.Duration `json:"proposerMinBlockDelay"`
+
 	// Network configuration
 	NetworkConfig network.Config `json:"networkConfig"`
 
