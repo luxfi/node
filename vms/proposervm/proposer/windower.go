@@ -42,6 +42,20 @@ var (
 	MaxLookAheadWindow = MaxLookAheadSlots * WindowDuration // 1h at the default
 )
 
+// TimestampGranularity is the resolution block timestamps are truncated to. It
+// tracks WindowDuration so the proposer-slot clock (TimeToSlot = elapsed /
+// WindowDuration) and the block-timestamp clock advance at the SAME rate: with a
+// coarser 1s truncation, a sub-second WindowDuration would inflate slot numbers
+// without finer time resolution, so blocks could not actually be produced faster
+// than 1/s. Capped at 1s so mainnet (WindowDuration >= 1s) keeps the original
+// 1-second block-time granularity exactly.
+func TimestampGranularity() time.Duration {
+	if WindowDuration > time.Second {
+		return time.Second
+	}
+	return WindowDuration
+}
+
 // SetWindowDuration overrides the proposer-slot spacing. It MUST be called at
 // startup, before any chain begins block production: WindowDuration is read by
 // both the windower delay math and TimeToSlot, so changing it mid-flight would
