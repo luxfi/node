@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.36.7
+	github.com/luxfi/consensus v1.36.9
 	github.com/luxfi/crypto v1.20.2
 	github.com/luxfi/database v1.21.1
 	github.com/luxfi/ids v1.3.2
@@ -40,7 +40,7 @@ require (
 	github.com/pires/go-proxyproto v0.11.0
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.67.5 // indirect
+	github.com/prometheus/common v0.68.0 // indirect
 	github.com/rs/cors v1.11.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/cast v1.10.0 // indirect
@@ -73,7 +73,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0
-	github.com/cockroachdb/errors v1.12.0 // indirect
+	github.com/cockroachdb/errors v1.13.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20241215232642-bb51bb14a506 // indirect
 	github.com/cockroachdb/redact v1.1.8 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
@@ -81,7 +81,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.9.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/getsentry/sentry-go v0.44.1 // indirect
+	github.com/getsentry/sentry-go v0.46.2 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
@@ -98,7 +98,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
-	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	github.com/rogpeppe/go-internal v1.15.0 // indirect
 	github.com/sanity-io/litter v1.5.5 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
@@ -120,7 +120,7 @@ require (
 	github.com/luxfi/accel v1.2.4
 	github.com/luxfi/api v1.1.1
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.7.7
+	github.com/luxfi/chains v1.7.9
 	github.com/luxfi/codec v1.2.1
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.2
@@ -256,7 +256,6 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 )
 
