@@ -1354,6 +1354,8 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 			SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
 			StakingTLSSigner:          n.StakingTLSSigner,
 			StakingTLSCert:            n.StakingTLSCert,
+			StakingMLDSASigner:        n.Config.StakingConfig.StakingMLDSA,
+			StakingMLDSAPub:           n.Config.StakingConfig.StakingMLDSAPub,
 			StakingBLSKey:             n.Config.StakingSigningKey,
 			Log:                       n.Log,
 			LogFactory:                n.LogFactory,

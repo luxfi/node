@@ -307,16 +307,31 @@ func (p *postForkCommonComponents) buildChild(
 	// Build the child
 	var statelessChild block.SignedBlock
 	if shouldBuildSignedBlock {
-		statelessChild, err = block.Build(
-			parentID,
-			newTimestamp,
-			pChainHeight,
-			epoch,
-			p.vm.StakingCertLeaf,
-			innerBlock.Bytes(),
-			p.vm.rt.ChainID,
-			p.vm.StakingLeafSigner,
-		)
+		if p.vm.StakingMLDSASigner != nil {
+			// Strict-PQ: sign with ML-DSA-65 and stamp the raw ML-DSA pubkey so the
+			// block's Proposer() == the windower's ML-DSA-keyed election.
+			statelessChild, err = block.BuildMLDSA(
+				parentID,
+				newTimestamp,
+				pChainHeight,
+				epoch,
+				p.vm.StakingMLDSAPub,
+				innerBlock.Bytes(),
+				p.vm.rt.ChainID,
+				p.vm.StakingMLDSASigner,
+			)
+		} else {
+			statelessChild, err = block.Build(
+				parentID,
+				newTimestamp,
+				pChainHeight,
+				epoch,
+				p.vm.StakingCertLeaf,
+				innerBlock.Bytes(),
+				p.vm.rt.ChainID,
+				p.vm.StakingLeafSigner,
+			)
+		}
 	} else {
 		statelessChild, err = block.BuildUnsigned(
 			parentID,

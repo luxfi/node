@@ -58,6 +58,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/container/buffer"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/filesystem/perms"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -363,7 +364,12 @@ type ManagerConfig struct {
 	SybilProtectionEnabled bool
 	StakingTLSSigner       crypto.Signer
 	StakingTLSCert         *staking.Certificate
-	StakingBLSKey          bls.Signer
+	// Strict-PQ proposer identity. When StakingMLDSASigner is non-nil, chains wrap
+	// their proposervm with ML-DSA-65 block signing so the signed block's
+	// Proposer() matches the ML-DSA-keyed validator set. Nil ⇒ classical TLS-leaf.
+	StakingMLDSASigner *mldsa.PrivateKey
+	StakingMLDSAPub    []byte
+	StakingBLSKey      bls.Signer
 	TracingEnabled         bool
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
 	Tracer                    trace.Tracer
@@ -1287,6 +1293,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				NumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
 				StakingLeafSigner:   m.StakingTLSSigner,
 				StakingCertLeaf:     m.StakingTLSCert,
+				StakingMLDSASigner:  m.StakingMLDSASigner,
+				StakingMLDSAPub:     m.StakingMLDSAPub,
 				Registerer:          proposervmReg,
 			})
 			m.Log.Info("wrapping chain VM in proposervm for single-proposer-per-height block production",
