@@ -178,6 +178,46 @@ unified into `PotentialReward`, NO second mint → decrement `currentSupply` by 
 burn. Model R1 (move-not-mint), conservation-exact; R2 (burn+re-mint) rejected.
 </details>
 
+## v1.36.14 TESTNET RESTORED + FORK VERDICT: C-Chain NOT broken, fork VIABLE (2026-07-15)
+
+**VERDICT (fork go/no-go): v1.36.14 C-Chain WORKS. The "failed to create chain on net
+1111…11" is NOT a v1.36.14 node-code blocker — it was the v1.36.11 plugin-api codec
+blocker (see next section), fixed in v1.36.12, plus the 30s VM-startup timeout, fixed in
+v1.36.14 (`b8b5a19caf`, 30s→10m). Both fixes ship in v1.36.14. PROVEN on two nets:**
+- **Testnet (96368)** on v1.36.14: C-Chain `CHAIN CREATED SUCCESSFULLY`, eth_chainId
+  `0x17870`=96368, height 255, **5/5 converged** (block-0 hash
+  `0x0a18a48a11fd3e97a9034c7df3e9c7b216483fc4d081f82928ab42caec1e24e3` identical on all 5),
+  producing (252→255 over the session). 9/10 chains bootstrapped (P,X,C,K,G,A,Z,B,D);
+  only **Q-Chain (quantumvm) still bootstrapping** — finality-only, no user blockspace,
+  does NOT gate C/X/D.
+- **Devnet (96367)** on v1.36.14: C-Chain eth_chainId `0x1786f`=96367, height 104. Alive.
+
+**Testnet "DOWN" was a MISDIAGNOSIS, fixed CONFIG-only (no rollback, no data wipe, no RLP
+re-import):** the STS **readiness probe pointed at `/v1/health`** (full health) while
+devnet+mainnet use **`/v1/health/liveness`**. Full `/v1/health` returns 503 for TWO
+reasons: (1) the `bootstrapped` check is legitimately false while Q-Chain finishes, and
+(2) a jsonv2 encode bug (below). So pods sat 0/5 NotReady though every chain was up. The
+migration agent also queried the OLD `/ext/bc/C/rpc` path (this build serves `/v1/bc/C/rpc`)
+→ 404 → "chainId not answering". FIX: `kubectl patch sts luxd` readinessProbe path →
+`/v1/health/liveness`; pods recreated (OnDelete) → **testnet 5/5 Ready, stable, restarts=0.**
+State was never lost — rlp-import init logged "node NOT armed; skipping (no wipe)".
+
+**Real but NON-BLOCKING v1.36.14 node bugs (follow-ups, do NOT gate the fork):**
+1. **jsonv2 health-encode bug** `service/health/handler.go` GET path: `/v1/health` and
+   `/v1/health/readiness` fail `json.MarshalWrite` even with `AllowInvalidUTF8(true)` →
+   `{"healthy":false,"error":"health reply encode failed"}`. The POST RPC (`health.health`,
+   gorilla codec) and `/v1/health/liveness` both encode fine. Fleet gates k8s readiness on
+   `/v1/health/liveness`, so no k8s/fork impact. Fix = pin the field jsonv2 rejects in a
+   check's Details (not UTF-8, not NaN — sendFailRate=0; likely a non-string map key /
+   unsupported type) and make the GET encoder tolerant. Owner: luxfi/node health service.
+2. **Q-Chain (quantumvm) slow/failing bootstrap on v1.36.14** — worth a look for "all chains
+   live", but orthogonal to the EVM C-Chain fork.
+
+**Testnet kept on v1.36.14 (proving ground) — NOT rolled to v1.36.2.** Rolling back would
+destroy the live proof the fork works and needs a risky wipe+RLP re-import. RLP exports
+preserved at `~/work/lux/state/lux-testnet-96368-v13614-AUTH-251.rlp` (+probe-250) if a
+rollback is ever chosen. Mainnet UNTOUCHED (v1.36.2, 5/5).
+
 ## v1.36.12 fleet rollout — durable rejoin fix + RewardManager→DAO Safe (IN PROGRESS 2026-07-15)
 
 Rolling the durable rejoin fix (node `63f61429d1`) across all Lux nets, gated
@@ -934,5 +974,37 @@ v2 semantic differences worth knowing (these change wire shape):
   Adjust HTTP-handler test fixtures accordingly.
 
 ---
+
+---
+
+## v1.36.14 BREAKING hard-fork — PROVEN state-preserving migration (testnet 96368)
+
+v1.36.14 rips the P-Chain codec (linearcodec→ZAP): a v1.36.14 node CANNOT read a
+v1.36.2 P-Chain DB, and the C-Chain blockchainID changes (testnet
+`FD75qkkadFNR9cNTmBqQUC9t7HVHSWv1vaDFfpesR8FMw5euR`→`2dbTRWZrj65UZQe6yWruV1jEiq9oR9hawVF8SRwm9UtpGder6p`;
+EVM chainId 96368 unchanged, RPC "C" alias unchanged). Flag-day only, not rolling.
+
+- **Only state-preserving path = RLP export/import.** `admin_exportChain(["/data/x.rlp",0,H])`
+  on v1.36.2 → flag-day (scale STS 0, wipe `/data/db /data/chainData /data/genesis.bytes`,
+  image v1.36.14, scale 5) → `--import-chain-data` startup flag re-executes blocks into the
+  new-blockchainID C-Chain. Genesis blob unchanged (v1.36.14 re-encodes genesis.bytes → wipe
+  the cache). PROVEN zero-loss: block0/blockH hash + **stateRoot** byte-identical, all 5
+  converge, blocks finalize, node self-heals on rejoin (no wipe).
+- **CRITICAL 1 — `--import-chain-data` is NOT idempotent on v1.36.14.** A re-import over a
+  populated DB → `startup import failed: no blocks imported (parsed=0)` = FATAL C-Chain
+  init failure (RPC 404). MUST be one-shot: gate the flag on a `/data/.do-cchain-import`
+  marker created only by the flag-day wipe and `rm`'d the instant the flag is added.
+  Restarts then boot from the persisted C-Chain DB. (Old "leave it on for self-heal" BRICKS.)
+- **CRITICAL 2 — fresh v1.36.14 primary net = readiness false-negative.** `/v1/health` (GET,
+  k8s readiness) returns `health reply encode failed` (NaN in an idle rate metric; jsonv2
+  rejects NaN) AND the `bootstrapped` check persistently lists primary-network ctx
+  `11111111111111111111111111111111LpoYY` as "chains not bootstrapped" — despite
+  `isBootstrapped(P)=true`, `platform.getCurrentValidators`=full set, and blocks finalizing.
+  Pods stay 0/1 → Service has no endpoints → LB won't route. Mitigation (k8s only): point the
+  readiness probe at `/v1/health/liveness` (returns 200) → 5/5 Ready. File node bugs for both.
+- Full runbook: `~/work/lux/state/V1.36.14-FORK-RUNBOOK.md` (export→stage→flag-day→verify
+  gates→resilience→downtime). Mainnet 96369 (1.09M blocks/~1.28GB RLP) import is the dominant
+  downtime — BENCHMARK before the announced window (budget 1–4h). Zoo 200200 (729 settlements)
+  same procedure. Per-PVC cp / object-storage staging for the >1MiB-ConfigMap mainnet RLP.
 
 *Last Updated*: 2026-06-06
