@@ -260,9 +260,17 @@ func (vm *VM) Initialize(
 	validatorManager := pvalidators.NewManager(vm.Internal, vm.state, vm.metrics, &vm.nodeClock)
 	vm.State = validatorManager
 	utxoHandler := utxo.NewHandler(context.Background(), &vm.nodeClock, vm.fx)
-	// Create uptime manager - use the configured UptimeLockedCalculator which
-	// delegates to its fallback calculator (NoOp by default, but tests can
-	// configure ZeroUptimeCalculator for "never connected" scenarios)
+
+	// Create the real uptime tracker for the primary network NOW, at Initialize,
+	// so peer Connect events delivered during bootstrap are captured — the
+	// connected map must already be populated by the time StartTracking runs at
+	// normal-operations start. Register it with the thread-safe LockedCalculator,
+	// through which both the API (service.go getCurrentValidators) and the reward
+	// gate (block/executor/options.go prefersCommit) read uptime.
+	vm.tracker = newUptimeTracker(vm.state, constants.PrimaryNetworkID, vm.nodeClock.Time)
+	if err := vm.UptimeLockedCalculator.SetCalculator(constants.PrimaryNetworkID, vm.tracker); err != nil {
+		return fmt.Errorf("failed to register uptime tracker: %w", err)
+	}
 	vm.uptimeManager = vm.UptimeLockedCalculator
 
 	txExecutorBackend := &txexecutor.Backend{
@@ -531,6 +539,16 @@ func (vm *VM) createNet(netID ids.ID) error {
 func (vm *VM) onBootstrapStarted() error {
 	vm.bootstrapped.Set(false)
 	vm.bootstrappedConsensus.Set(false)
+
+	// On a normal-ops → re-bootstrap transition, flush and stop uptime tracking
+	// so connected sessions are persisted before we stop measuring. This is a
+	// no-op on the first bootstrap (tracking hasn't started yet).
+	if vm.tracker != nil && vm.tracker.StartedTracking() {
+		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+		if err := vm.tracker.StopTracking(primaryVdrIDs); err != nil {
+			return err
+		}
+	}
 	return vm.fx.Bootstrapping()
 }
 
@@ -546,12 +564,19 @@ func (vm *VM) onReady() error {
 		return err
 	}
 
-	// Create and register the real uptime tracker for the primary network.
-	vm.tracker = newUptimeTracker(vm.state, constants.PrimaryNetworkID, vm.nodeClock.Time)
-	if err := vm.UptimeLockedCalculator.SetCalculator(constants.PrimaryNetworkID, vm.tracker); err != nil {
-		return err
+	// Begin tracking validator uptime for the primary network. The tracker was
+	// created and registered at Initialize (so bootstrap-time peer connections
+	// were already captured); StartTracking baselines every current validator's
+	// uptime record and switches the tracker into live-tracking mode. Mirrors
+	// avalanchego's onNormalOperationsStarted.
+	if vm.tracker != nil && !vm.tracker.StartedTracking() {
+		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+		if err := vm.tracker.StartTracking(primaryVdrIDs); err != nil {
+			return err
+		}
+		vm.log.Info("uptime tracking started for primary network",
+			log.Int("validators", len(primaryVdrIDs)))
 	}
-	vm.log.Info("uptime tracker registered for primary network")
 
 	// Commit state BEFORE starting background goroutines to avoid race conditions
 	// between state readers (forwardNotifications) and state writers (Commit)
@@ -592,8 +617,11 @@ func (vm *VM) Shutdown(context.Context) error {
 
 	vm.onShutdownCtxCancel()
 
-	if vm.tracker != nil {
-		if err := vm.tracker.Shutdown(); err != nil {
+	// Flush uptime for all primary-network validators before closing state, so
+	// connected sessions are durably persisted across the restart.
+	if vm.tracker != nil && vm.tracker.StartedTracking() {
+		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+		if err := vm.tracker.StopTracking(primaryVdrIDs); err != nil {
 			return err
 		}
 		if err := vm.state.Commit(); err != nil {

@@ -195,24 +195,55 @@ func (r *chainRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.Ha
 
 func (r *chainRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	r.lock.Lock()
-	defer r.lock.Unlock()
-
 	r.connectedPeers.Add(nodeID)
+	handlers := make([]handler.Handler, 0, len(r.chains))
+	for _, h := range r.chains {
+		handlers = append(handlers, h)
+	}
+	r.lock.Unlock()
+
 	r.log.Debug("peer connected",
 		log.Stringer("nodeID", nodeID),
 		log.Any("version", nodeVersion),
 		log.Stringer("netID", netID),
 	)
+
+	// Deliver the connection to every chain handler so VMs observe peer
+	// connectivity — the P-chain uptime tracker in particular. Handlers dedup, so
+	// repeated dispatch of the same connection (once per tracked network) is
+	// safe. Dispatch OUTSIDE the router lock: a handler must never re-enter the
+	// router while we hold it.
+	for _, h := range handlers {
+		if err := h.Connected(context.Background(), nodeID); err != nil {
+			r.log.Debug("chain handler Connected failed",
+				log.Stringer("nodeID", nodeID),
+				log.Err(err),
+			)
+		}
+	}
 }
 
 func (r *chainRouter) Disconnected(nodeID ids.NodeID) {
 	r.lock.Lock()
-	defer r.lock.Unlock()
-
 	r.connectedPeers.Remove(nodeID)
+	handlers := make([]handler.Handler, 0, len(r.chains))
+	for _, h := range r.chains {
+		handlers = append(handlers, h)
+	}
+	r.lock.Unlock()
+
 	r.log.Debug("peer disconnected",
 		log.Stringer("nodeID", nodeID),
 	)
+
+	for _, h := range handlers {
+		if err := h.Disconnected(context.Background(), nodeID); err != nil {
+			r.log.Debug("chain handler Disconnected failed",
+				log.Stringer("nodeID", nodeID),
+				log.Err(err),
+			)
+		}
+	}
 }
 
 func (r *chainRouter) Benched(chainID ids.ID, nodeID ids.NodeID) {

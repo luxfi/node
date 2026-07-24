@@ -4,91 +4,222 @@
 package platformvm
 
 import (
+	"errors"
 	"sync"
 	"time"
 
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/validators/uptime"
 )
 
-// uptimeTracker implements uptime.Calculator by tracking peer connections
-// and computing real uptime percentages from persistent state.
+var (
+	errAlreadyStartedTracking = errors.New("uptime tracker already started tracking")
+	errNotStartedTracking     = errors.New("uptime tracker has not started tracking")
+)
+
+// uptimeTracker implements uptime.Calculator plus the connection/tracking hooks
+// the platform VM drives directly (Connect, Disconnect, StartTracking,
+// StopTracking, IsConnected).
 //
-// It wraps an uptime.State (backed by platformvm state) that stores
-// cumulative upDuration and lastUpdated per validator. On Connect, it
-// records the connection time. On Disconnect, it flushes the elapsed
-// connected time into the persistent state. CalculateUptimePercent
-// reads from state and accounts for any currently-connected time.
+// It is a faithful port of avalanchego's snow/uptime.Manager, adapted to the
+// luxfi validators uptime.State interface (which keys by netID and returns
+// lastUpdated encoded as a second-granular duration since the Unix epoch).
+//
+// Model, in one sentence: each connected peer's session accrues into a per
+// validator up-duration that is folded forward to "now" on read, and persisted
+// on flush.
+//
+//   - Connect records a peer's connection time. It is captured from the very
+//     first handshake — including during bootstrap, before StartTracking — so a
+//     stable, continuously-connected validator set is fully observed the moment
+//     tracking begins.
+//   - StartTracking, called once at P-chain normal-operations start, baselines
+//     every validator (crediting the pre-tracking window as online, matching
+//     avalanchego) and switches into live-tracking mode.
+//   - CalculateUptime folds the currently-connected session forward to now, so a
+//     validator that stays connected accrues up-duration WITHOUT ever needing a
+//     Disconnect.
+//   - Disconnect / StopTracking flush the accrued session into persistent state.
+//
+// The prior custom tracker could not accrue uptime for a stable set: it never
+// started tracking, only flushed on Disconnect, and — because peer connection
+// events were never delivered to the VM — never populated its connected map.
 type uptimeTracker struct {
-	mu        sync.RWMutex
-	clk       func() time.Time
-	state     uptime.State
-	netID     ids.ID
-	connected map[ids.NodeID]time.Time // nodeID -> time they connected
+	mu    sync.RWMutex
+	clk   func() time.Time
+	state uptime.State
+	netID ids.ID
+
+	// connections maps a currently-connected nodeID to the (second-granular)
+	// time it connected.
+	connections map[ids.NodeID]time.Time
+
+	// startedTracking gates live-session accounting. Before StartTracking, a
+	// validator is assumed online since its last persisted update (so the
+	// bootstrap window is not spuriously counted as downtime). After
+	// StartTracking, only genuinely-connected sessions accrue.
+	startedTracking bool
 }
 
 func newUptimeTracker(state uptime.State, netID ids.ID, clk func() time.Time) *uptimeTracker {
 	return &uptimeTracker{
-		clk:       clk,
-		state:     state,
-		netID:     netID,
-		connected: make(map[ids.NodeID]time.Time),
+		clk:         clk,
+		state:       state,
+		netID:       netID,
+		connections: make(map[ids.NodeID]time.Time),
 	}
 }
 
-// Connect records that a validator connected.
+// now returns the tracker clock truncated to second precision. lastUpdated is
+// persisted at second granularity (state stores lastUpdated.Unix()), so working
+// at one resolution keeps the interval arithmetic exact and side-steps
+// monotonic-clock skew.
+func (t *uptimeTracker) now() time.Time {
+	return time.Unix(t.clk().Unix(), 0)
+}
+
+// lastUpdatedFromDuration reconstructs the persisted lastUpdated timestamp from
+// the second-granular "duration since epoch" the uptime.State returns.
+func lastUpdatedFromDuration(d time.Duration) time.Time {
+	return time.Unix(int64(d/time.Second), 0)
+}
+
+// Connect records that [nodeID] connected. It is idempotent: a duplicate Connect
+// for an already-connected node keeps the original connection time, so repeated
+// router dispatch of the same live connection can never reset the session clock.
 func (t *uptimeTracker) Connect(nodeID ids.NodeID) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if _, ok := t.connected[nodeID]; ok {
-		return // already connected
+	if _, ok := t.connections[nodeID]; ok {
+		return
 	}
-	t.connected[nodeID] = t.clk()
+	t.connections[nodeID] = t.now()
 }
 
-// Disconnect records that a validator disconnected and flushes
-// the accumulated uptime into persistent state.
+// IsConnected reports whether [nodeID] currently has a live connection.
+func (t *uptimeTracker) IsConnected(nodeID ids.NodeID) bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	_, connected := t.connections[nodeID]
+	return connected
+}
+
+// Disconnect records that [nodeID] disconnected, flushing its accrued session
+// into persistent state. Flushing is a no-op before StartTracking (the session
+// is not yet being measured), matching avalanchego.
 func (t *uptimeTracker) Disconnect(nodeID ids.NodeID) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return t.disconnectLocked(nodeID)
-}
-
-func (t *uptimeTracker) disconnectLocked(nodeID ids.NodeID) error {
-	connectedAt, ok := t.connected[nodeID]
-	if !ok {
-		return nil // wasn't connected
-	}
-	delete(t.connected, nodeID)
-	now := t.clk()
-	elapsed := now.Sub(connectedAt)
-	return t.addUptime(nodeID, elapsed, now)
-}
-
-// addUptime adds elapsed duration to the validator's persistent uptime.
-func (t *uptimeTracker) addUptime(nodeID ids.NodeID, elapsed time.Duration, now time.Time) error {
-	upDuration, _, err := t.state.GetUptime(nodeID, t.netID)
-	if err != nil {
-		// Validator not in state (e.g., not a current validator). Skip.
+	defer delete(t.connections, nodeID)
+	if !t.startedTracking {
 		return nil
 	}
-	return t.state.SetUptime(nodeID, t.netID, upDuration+elapsed, now)
+	return t.updateUptimeLocked(nodeID)
 }
 
-// Shutdown flushes all connected validators' uptime to state.
-// Call this before persisting state on node shutdown.
-func (t *uptimeTracker) Shutdown() error {
+// StartTracking baselines every validator in [nodeIDs] and switches into live
+// tracking mode. It is called once at P-chain normal-operations start. Each
+// validator's persisted up-duration is advanced to now assuming it was online
+// since its last update (the standard avalanchego assumption), so a validator
+// that has been in the set is not penalized for the un-measured pre-tracking
+// window.
+func (t *uptimeTracker) StartTracking(nodeIDs []ids.NodeID) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	for nodeID := range t.connected {
-		if err := t.disconnectLocked(nodeID); err != nil {
+	if t.startedTracking {
+		return errAlreadyStartedTracking
+	}
+	for _, nodeID := range nodeIDs {
+		if err := t.updateUptimeLocked(nodeID); err != nil {
 			return err
 		}
 	}
+	t.startedTracking = true
 	return nil
 }
 
-// CalculateUptime returns (upDuration, totalDuration, error) for a validator.
+// StopTracking flushes every validator in [nodeIDs] and leaves tracking mode.
+// It is called on the normal-ops → bootstrapping / shutdown transition so the
+// connected sessions are durably persisted before the node stops measuring.
+func (t *uptimeTracker) StopTracking(nodeIDs []ids.NodeID) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if !t.startedTracking {
+		return errNotStartedTracking
+	}
+	for _, nodeID := range nodeIDs {
+		if err := t.updateUptimeLocked(nodeID); err != nil {
+			return err
+		}
+	}
+	t.startedTracking = false
+	return nil
+}
+
+// StartedTracking reports whether StartTracking has run and StopTracking has not
+// since. The VM lifecycle uses it to avoid double-start and to gate shutdown
+// flushing.
+func (t *uptimeTracker) StartedTracking() bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.startedTracking
+}
+
+// calculateUptimeLocked mirrors avalanchego snow/uptime.Manager.CalculateUptime:
+// it returns [nodeID]'s up-duration folded forward to now, plus that now (the
+// new lastUpdated). The caller must hold t.mu (read or write).
+func (t *uptimeTracker) calculateUptimeLocked(nodeID ids.NodeID) (time.Duration, time.Time, error) {
+	upDuration, lastUpdatedDur, err := t.state.GetUptime(nodeID, t.netID)
+	if err != nil {
+		return 0, time.Time{}, err
+	}
+	lastUpdated := lastUpdatedFromDuration(lastUpdatedDur)
+	now := t.now()
+
+	// Clock skew: never subtract time or double-count.
+	if now.Before(lastUpdated) {
+		return upDuration, lastUpdated, nil
+	}
+
+	// Before tracking, assume the node was online since its last update.
+	if !t.startedTracking {
+		return upDuration + now.Sub(lastUpdated), now, nil
+	}
+
+	// Tracking, but not connected: offline since its last update.
+	connectedAt, isConnected := t.connections[nodeID]
+	if !isConnected {
+		return upDuration, now, nil
+	}
+
+	// Tracking and connected: credit from the later of (connect, lastUpdated) so
+	// no interval is double-counted.
+	if connectedAt.Before(lastUpdated) {
+		connectedAt = lastUpdated
+	}
+	if now.Before(connectedAt) {
+		return upDuration, now, nil
+	}
+	return upDuration + now.Sub(connectedAt), now, nil
+}
+
+// updateUptimeLocked persists the current up-duration for [nodeID]. A node
+// without a state record (i.e. not a current validator) is silently skipped, so
+// tracking non-validator peers is harmless. The caller must hold t.mu (write).
+func (t *uptimeTracker) updateUptimeLocked(nodeID ids.NodeID) error {
+	upDuration, lastUpdated, err := t.calculateUptimeLocked(nodeID)
+	if errors.Is(err, database.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return t.state.SetUptime(nodeID, t.netID, upDuration, lastUpdated)
+}
+
+// CalculateUptime returns (upDuration, totalDuration) for [nodeID], where
+// totalDuration is the maximum possible uptime since the validator's start.
 func (t *uptimeTracker) CalculateUptime(nodeID ids.NodeID, netID ids.ID) (time.Duration, time.Duration, error) {
 	if netID != t.netID {
 		return 0, 0, nil
@@ -99,97 +230,62 @@ func (t *uptimeTracker) CalculateUptime(nodeID ids.NodeID, netID ids.ID) (time.D
 		return 0, 0, err
 	}
 
-	now := t.clk()
-	totalDuration := now.Sub(startTime)
-	if totalDuration <= 0 {
-		return 0, 0, nil
-	}
-
-	upDuration, _, err := t.state.GetUptime(nodeID, netID)
-	if err != nil {
-		return 0, totalDuration, nil
-	}
-
-	// Add any currently-connected time that hasn't been flushed yet.
 	t.mu.RLock()
-	if connectedAt, ok := t.connected[nodeID]; ok {
-		upDuration += now.Sub(connectedAt)
-	}
+	upDuration, _, err := t.calculateUptimeLocked(nodeID)
 	t.mu.RUnlock()
-
-	if upDuration > totalDuration {
-		upDuration = totalDuration
+	if err != nil {
+		return 0, 0, err
 	}
-	return upDuration, totalDuration, nil
+
+	total := t.now().Sub(startTime)
+	if total < 0 {
+		total = 0
+	}
+	return upDuration, total, nil
 }
 
-// CalculateUptimePercent returns the uptime as a fraction in [0, 1].
+// CalculateUptimePercent returns [nodeID]'s uptime over its whole staking period
+// as a fraction in [0, 1].
 func (t *uptimeTracker) CalculateUptimePercent(nodeID ids.NodeID, netID ids.ID) (float64, error) {
 	if netID != t.netID {
 		return 0, nil
 	}
-	upDuration, totalDuration, err := t.CalculateUptime(nodeID, netID)
+	startTime, err := t.state.GetStartTime(nodeID, netID)
 	if err != nil {
 		return 0, err
 	}
-	if totalDuration == 0 {
-		return 1, nil // no time elapsed, consider 100%
-	}
-	return float64(upDuration) / float64(totalDuration), nil
+	return t.CalculateUptimePercentFrom(nodeID, netID, startTime)
 }
 
-// CalculateUptimePercentFrom returns the uptime as a fraction since [from].
+// CalculateUptimePercentFrom returns [nodeID]'s uptime since [from] as a fraction
+// in [0, 1].
 func (t *uptimeTracker) CalculateUptimePercentFrom(nodeID ids.NodeID, netID ids.ID, from time.Time) (float64, error) {
 	if netID != t.netID {
 		return 0, nil
 	}
 
-	now := t.clk()
-	totalDuration := now.Sub(from)
-	if totalDuration <= 0 {
-		return 1, nil
-	}
-
-	upDuration, _, err := t.state.GetUptime(nodeID, netID)
-	if err != nil {
-		return 0, nil
-	}
-
-	// Subtract uptime before [from] by using startTime.
-	// If from > startTime, some of the stored upDuration may predate [from].
-	// We approximate by assuming the same uptime rate.
-	startTime, err := t.state.GetStartTime(nodeID, netID)
-	if err != nil {
-		return 0, nil
-	}
-
-	totalSinceStart := now.Sub(startTime)
-	if totalSinceStart <= 0 {
-		return 1, nil
-	}
-
-	// Add any currently-connected time.
 	t.mu.RLock()
-	if connectedAt, ok := t.connected[nodeID]; ok {
-		upDuration += now.Sub(connectedAt)
-	}
+	upDuration, _, err := t.calculateUptimeLocked(nodeID)
 	t.mu.RUnlock()
-
-	if upDuration > totalSinceStart {
-		upDuration = totalSinceStart
+	if err != nil {
+		return 0, err
 	}
 
-	// Scale upDuration to the [from, now] window.
-	if from.After(startTime) {
-		rate := float64(upDuration) / float64(totalSinceStart)
-		return rate, nil
+	bestPossible := t.now().Sub(from)
+	if bestPossible <= 0 {
+		return 1, nil
 	}
 
-	// from <= startTime, just use overall rate.
-	return float64(upDuration) / float64(totalSinceStart), nil
+	fraction := float64(upDuration) / float64(bestPossible)
+	if fraction > 1 {
+		fraction = 1
+	}
+	return fraction, nil
 }
 
-// SetCalculator is a no-op; this tracker doesn't delegate.
+// SetCalculator is a no-op: this tracker is a concrete Calculator and does not
+// delegate. It exists only to satisfy uptime.Calculator; registration is done by
+// the enclosing uptime.LockedCalculator.
 func (t *uptimeTracker) SetCalculator(ids.ID, uptime.Calculator) error {
 	return nil
 }
