@@ -245,6 +245,7 @@ require (
 	github.com/luxfi/cache v1.3.1 // indirect
 	github.com/luxfi/formatting v1.1.1
 	github.com/luxfi/go-bip32 v1.1.0
+	github.com/luxfi/kms v1.12.4
 	github.com/luxfi/math/big v0.1.0 // indirect
 	github.com/luxfi/sampler v1.1.0 // indirect
 	github.com/luxfi/tls v1.1.1 // indirect
@@ -260,3 +261,7 @@ require (
 )
 
 exclude github.com/ethereum/go-ethereum v1.10.26
+
+replace github.com/luxfi/keys => ../keys
+
+replace github.com/luxfi/kms => ../kms

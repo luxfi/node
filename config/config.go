@@ -5,9 +5,9 @@ package config
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -644,20 +644,6 @@ func getStakingTLSCert(v *viper.Viper) (tls.Certificate, error) {
 		return tls.Certificate{}, errStakingKeyContentUnset
 	case v.IsSet(StakingTLSKeyContentKey) && v.IsSet(StakingCertContentKey):
 		return getStakingTLSCertFromFlag(v)
-	case v.IsSet(StakingKMSEndpointKey):
-		keys, err := staking.FetchFromKMS(staking.KMSConfig{
-			Endpoint:   v.GetString(StakingKMSEndpointKey),
-			SecretPath: v.GetString(StakingKMSSecretPathKey),
-			AuthToken:  v.GetString(StakingKMSTokenKey),
-		})
-		if err != nil {
-			return tls.Certificate{}, fmt.Errorf("fetching staking keys from KMS: %w", err)
-		}
-		cert, err := staking.LoadTLSCertFromBytes([]byte(keys.TLSKey), []byte(keys.TLSCert))
-		if err != nil {
-			return tls.Certificate{}, fmt.Errorf("loading TLS cert from KMS: %w", err)
-		}
-		return *cert, nil
 	default:
 		cert, err := getStakingTLSCertFromFile(v)
 		if err != nil {
@@ -691,28 +677,6 @@ func getStakingSigner(v *viper.Viper) (bls.Signer, error) {
 			return nil, fmt.Errorf("couldn't parse signing key: %w", err)
 		}
 		return key, nil
-	}
-
-	if v.IsSet(StakingKMSEndpointKey) {
-		keys, err := staking.FetchFromKMS(staking.KMSConfig{
-			Endpoint:   v.GetString(StakingKMSEndpointKey),
-			SecretPath: v.GetString(StakingKMSSecretPathKey),
-			AuthToken:  v.GetString(StakingKMSTokenKey),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("fetching signer key from KMS: %w", err)
-		}
-		if keys.SignerKey != "" {
-			signerKeyContent, err := hex.DecodeString(keys.SignerKey)
-			if err != nil {
-				return nil, fmt.Errorf("decoding hex signer key from KMS: %w", err)
-			}
-			key, err := localsigner.FromBytes(signerKeyContent)
-			if err != nil {
-				return nil, fmt.Errorf("parsing signer key from KMS: %w", err)
-			}
-			return key, nil
-		}
 	}
 
 	signingKeyPath := getExpandedArg(v, StakingSignerKeyPathKey)
@@ -813,6 +777,124 @@ func pemBytesOrFile(v *viper.Viper, contentKey, pathKey, expectType string) ([]b
 	return body, path, err
 }
 
+// stakingKMSTimeout bounds the whole native-KMS staking-identity resolution
+// (dial + envelope handshake + secret round-trip). Generous enough for a cold
+// KMS but finite so a boot cannot hang indefinitely on an unreachable KMS.
+const stakingKMSTimeout = 30 * time.Second
+
+// applyStakingKMS resolves the node's complete staking identity from Lux KMS
+// over native ZAP and installs it into the StakingConfig. It is the single KMS
+// touch-point for staking-init: verification, transport, and profile policy are
+// each owned by their own layer (staking.ResolveStakingIdentity composes the
+// keys derivation/codec with the envelope-authenticated zapclient; this
+// function only parses the resolved materials into typed config fields).
+//
+// Fails CLOSED: any KMS/auth/read/parse error returns an error and the node
+// does not boot with a local key. Classical materials (TLS transport + BLS
+// consensus) are ALWAYS installed; strict-PQ materials are installed only when
+// the resolved identity carries them (operator opted in via
+// --staking-kms-strict-pq) — installing StakingMLDSAPub is exactly what flips
+// DeriveNodeID to the ML-DSA-65 NodeID.
+func applyStakingKMS(v *viper.Viper, config *node.StakingConfig) error {
+	ctx, cancel := context.WithTimeout(context.Background(), stakingKMSTimeout)
+	defer cancel()
+
+	id, err := staking.ResolveStakingIdentity(ctx, staking.NativeKMSConfig{
+		Endpoint:          v.GetString(StakingKMSEndpointKey),
+		Env:               v.GetString(StakingKMSEnvKey),
+		MnemonicPath:      v.GetString(StakingKMSMnemonicPathKey),
+		ValidatorIndex:    uint32(v.GetUint(StakingKMSValidatorIndexKey)),
+		IdentityPath:      v.GetString(StakingKMSIdentityPathKey),
+		Save:              v.GetBool(StakingKMSSaveKey),
+		StrictPQ:          v.GetBool(StakingKMSStrictPQKey),
+		BootstrapMnemonic: v.GetString(StakingKMSBootstrapMnemonicKey),
+		NodeLabel:         v.GetString(StakingKMSNodeLabelKey),
+		AllowEnvMnemonic:  v.GetBool(StakingKMSAllowEnvMnemonicKey),
+	})
+	if err != nil {
+		return fmt.Errorf("resolve staking identity from KMS: %w", err)
+	}
+	defer id.Wipe()
+
+	if !id.HasClassical() {
+		return errors.New("KMS staking identity is missing classical materials (TLS cert/key + BLS signer)")
+	}
+	// Parse each secret from a COPY of the bundle bytes. Some key parsers
+	// (e.g. mldsa.PrivateKeyFromBytes) ALIAS the input slice as their live
+	// secret, so parsing directly from the bundle and then `defer id.Wipe()`
+	// would zero the installed signing key out from under the node. Copies
+	// let the typed keys own memory that lives for the process; Wipe then
+	// clears only the bundle's now-redundant copies.
+	cert, err := staking.LoadTLSCertFromBytes(cloneBytes(id.TLSKeyPEM), cloneBytes(id.TLSCertPEM))
+	if err != nil {
+		return fmt.Errorf("parse KMS TLS cert: %w", err)
+	}
+	if cert.Leaf == nil {
+		return errors.New("KMS TLS cert has a nil leaf after parse")
+	}
+	config.StakingTLSCert = *cert
+
+	blsSigner, err := localsigner.FromBytes(cloneBytes(id.BLSSigner))
+	if err != nil {
+		return fmt.Errorf("parse KMS BLS signer: %w", err)
+	}
+	config.StakingSigningKey = blsSigner
+
+	if id.HasStrictPQ() {
+		mldsaPriv, err := mldsa.PrivateKeyFromBytes(mldsa.MLDSA65, cloneBytes(id.MLDSAPriv))
+		if err != nil {
+			return fmt.Errorf("parse KMS ML-DSA-65 key: %w", err)
+		}
+		// Defense in depth: the public key must match the one derivable from
+		// the private key, else the NodeID would point at a key the node
+		// cannot sign for (a silent authentication failure downstream).
+		if !bytes.Equal(mldsaPriv.PublicKey.Bytes(), id.MLDSAPub) {
+			return errors.New("KMS ML-DSA-65 public key does not match its private key")
+		}
+		config.StakingMLDSA = mldsaPriv
+		config.StakingMLDSAPub = cloneBytes(id.MLDSAPub)
+
+		mlkemPriv, err := mlkemcrypto.PrivateKeyFromBytes(cloneBytes(id.MLKEMPriv), mlkemcrypto.MLKEM768)
+		if err != nil {
+			return fmt.Errorf("parse KMS ML-KEM-768 key: %w", err)
+		}
+		config.HandshakeMLKEMPriv = mlkemPriv
+		config.HandshakeMLKEMPub = cloneBytes(id.MLKEMPub)
+	}
+	return nil
+}
+
+// firstSetStakingKMSFlag returns the name of the first KMS staking flag (other
+// than the endpoint) that the operator explicitly set, or "" if none. Backs the
+// L2 gate that refuses a KMS config naming paths/modes/labels but no endpoint.
+func firstSetStakingKMSFlag(v *viper.Viper) string {
+	for _, k := range []string{
+		StakingKMSEnvKey,
+		StakingKMSMnemonicPathKey,
+		StakingKMSValidatorIndexKey,
+		StakingKMSIdentityPathKey,
+		StakingKMSSaveKey,
+		StakingKMSStrictPQKey,
+		StakingKMSBootstrapMnemonicKey,
+		StakingKMSNodeLabelKey,
+		StakingKMSAllowEnvMnemonicKey,
+	} {
+		if v.IsSet(k) {
+			return k
+		}
+	}
+	return ""
+}
+
+// cloneBytes returns an independent copy of b (nil-safe). Used so key parsers
+// that alias their input do not share memory with a bundle slated for Wipe().
+func cloneBytes(b []byte) []byte {
+	if b == nil {
+		return nil
+	}
+	return append([]byte(nil), b...)
+}
+
 // loadStakingMLDSA returns the strict-PQ ML-DSA-65 keypair (if any).
 // Both private and public materials are optional at the config layer
 // — a missing pair means classical-compat mode. A strict-PQ chain
@@ -902,38 +984,59 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 	}
 
 	var err error
-	config.StakingTLSCert, err = getStakingTLSCert(v)
-	if err != nil {
-		return node.StakingConfig{}, err
+	// L2: the KMS custody path is gated on the ENDPOINT being set. Any other
+	// staking-kms-* flag set WITHOUT an endpoint is a misconfiguration that
+	// would otherwise silently fall through to local file/generate keys — the
+	// opposite of the operator's evident intent. Refuse it here so the mistake
+	// surfaces at boot rather than as a node running an unexpected local key.
+	if !v.IsSet(StakingKMSEndpointKey) {
+		if orphan := firstSetStakingKMSFlag(v); orphan != "" {
+			return node.StakingConfig{}, fmt.Errorf("config: --%s is set but --%s is not; refusing to fall back to local keys (set the endpoint or unset the KMS flags)", orphan, StakingKMSEndpointKey)
+		}
 	}
-	config.StakingSigningKey, err = getStakingSigner(v)
-	if err != nil {
-		return node.StakingConfig{}, err
-	}
+	// Native-ZAP KMS custody supersedes every file/content/generate source:
+	// when --staking-kms-endpoint is set, the node's complete staking identity
+	// (classical TLS+BLS, and strict-PQ ML-DSA/ML-KEM when opted in) comes from
+	// KMS via an ML-DSA-65-authenticated envelope. This is the ONE KMS
+	// touch-point — it fails CLOSED, never falling back to a local key.
+	if v.IsSet(StakingKMSEndpointKey) {
+		if err = applyStakingKMS(v, &config); err != nil {
+			return node.StakingConfig{}, err
+		}
+	} else {
+		config.StakingTLSCert, err = getStakingTLSCert(v)
+		if err != nil {
+			return node.StakingConfig{}, err
+		}
+		config.StakingSigningKey, err = getStakingSigner(v)
+		if err != nil {
+			return node.StakingConfig{}, err
+		}
 
-	// Strict-PQ identity (FIPS 204 ML-DSA-65 + FIPS 203 ML-KEM-768).
-	// Both pairs are optional at this layer — classical-compat chains
-	// run without them. Strict-PQ profile rejects a missing pair at
-	// the validator-set boundary; that gate lives in consensus/config
-	// (the profile gate that owns the strict-PQ vs classical-compat
-	// dispatch), not here in node-config land.
-	mldsaPriv, mldsaPub, mldsaPrivPath, mldsaPubPath, err := loadStakingMLDSA(v)
-	if err != nil {
-		return node.StakingConfig{}, err
-	}
-	config.StakingMLDSA = mldsaPriv
-	config.StakingMLDSAPub = mldsaPub
-	config.StakingMLDSAKeyPath = mldsaPrivPath
-	config.StakingMLDSAPubPath = mldsaPubPath
+		// Strict-PQ identity (FIPS 204 ML-DSA-65 + FIPS 203 ML-KEM-768).
+		// Both pairs are optional at this layer — classical-compat chains
+		// run without them. Strict-PQ profile rejects a missing pair at
+		// the validator-set boundary; that gate lives in consensus/config
+		// (the profile gate that owns the strict-PQ vs classical-compat
+		// dispatch), not here in node-config land.
+		mldsaPriv, mldsaPub, mldsaPrivPath, mldsaPubPath, mErr := loadStakingMLDSA(v)
+		if mErr != nil {
+			return node.StakingConfig{}, mErr
+		}
+		config.StakingMLDSA = mldsaPriv
+		config.StakingMLDSAPub = mldsaPub
+		config.StakingMLDSAKeyPath = mldsaPrivPath
+		config.StakingMLDSAPubPath = mldsaPubPath
 
-	mlkemPriv, mlkemPub, mlkemPrivPath, mlkemPubPath, err := loadHandshakeMLKEM(v)
-	if err != nil {
-		return node.StakingConfig{}, err
+		mlkemPriv, mlkemPub, mlkemPrivPath, mlkemPubPath, kErr := loadHandshakeMLKEM(v)
+		if kErr != nil {
+			return node.StakingConfig{}, kErr
+		}
+		config.HandshakeMLKEMPriv = mlkemPriv
+		config.HandshakeMLKEMPub = mlkemPub
+		config.HandshakeMLKEMKeyPath = mlkemPrivPath
+		config.HandshakeMLKEMPubPath = mlkemPubPath
 	}
-	config.HandshakeMLKEMPriv = mlkemPriv
-	config.HandshakeMLKEMPub = mlkemPub
-	config.HandshakeMLKEMKeyPath = mlkemPrivPath
-	config.HandshakeMLKEMPubPath = mlkemPubPath
 
 	if networkID != constants.MainnetID && networkID != constants.TestnetID {
 		config.UptimeRequirement = v.GetFloat64(UptimeRequirementKey)

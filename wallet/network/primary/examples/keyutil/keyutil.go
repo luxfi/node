@@ -18,6 +18,7 @@ import (
 	"github.com/luxfi/go-bip32"
 	"github.com/luxfi/go-bip39"
 	"github.com/luxfi/keys"
+	kmsmnemonic "github.com/luxfi/kms/pkg/mnemonic"
 )
 
 const (
@@ -31,7 +32,7 @@ const (
 
 // MustLoadKey loads a secp256k1 private key from (in order of priority):
 //  1. MNEMONIC environment variable (BIP-39 mnemonic phrase)
-//  2.  via native ZAP — when KMS_ADDR + KMS_ENV +
+//  2. via native ZAP — when KMS_ADDR + KMS_ENV +
 //     KMS_MNEMONIC_PATH are set in the environment. Uses the canonical
 //     luxfi/kms keys.LoadMnemonic loader so every Lux-derived
 //     service resolves keys the same way.
@@ -62,20 +63,34 @@ func LoadKey() (*secp256k1.PrivateKey, error) {
 		return keyFromMnemonic(mnemonic)
 	}
 
-	// 2.  via native ZAP — production path for any Lux-derived
-	// service running under a KMS-projected env. The canonical loader
-	// lives in luxfi/keys (alongside the BIP-39 derivation primitives)
-	// so luxd, netrunner, lux/cli, and every descending L1's bootstrap
-	// all resolve mnemonics the same way.
-	// Trust at the network boundary (NetworkPolicy + ZAP wire) — the
-	// staking material itself comes from the KMS-held operational
-	// mnemonic at KMS_MNEMONIC_PATH (default /mnemonic).
+	// 2. KMS via native ZAP — production path for any Lux-derived service
+	// running under a KMS-projected env. The canonical loader lives in
+	// kms/pkg/mnemonic (it composes luxfi/keys' BIP-39 semantics +
+	// ServiceIdentity with the envelope-authenticated ZAP client — hosting it
+	// there keeps the module graph acyclic: kms → keys, never keys → kms). So
+	// luxd, netrunner, lux/cli, and every descending L1's bootstrap resolve
+	// mnemonics the same one way.
+	//
+	// When KMS_BOOTSTRAP_MNEMONIC is set, it seeds the ML-DSA-65 envelope-auth
+	// identity every secret opcode is signed with (production KMS requires it);
+	// otherwise the dial is anonymous, accepted only by a dev/loopback KMS or
+	// one trusted at the network boundary (NetworkPolicy + ZAP wire).
 	if addr := os.Getenv("KMS_ADDR"); addr != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		mnemonic, err := keys.LoadMnemonicFromKMS(ctx, addr,
+		var identity *keys.ServiceIdentity
+		if boot := strings.TrimSpace(os.Getenv("KMS_BOOTSTRAP_MNEMONIC")); boot != "" {
+			id, err := keys.NewServiceIdentity(boot, "luxd/keyutil-bootstrap")
+			if err != nil {
+				return nil, fmt.Errorf("build KMS bootstrap identity: %w", err)
+			}
+			defer id.Wipe()
+			identity = id
+		}
+		mnemonic, err := kmsmnemonic.LoadFromKMS(ctx, addr,
 			os.Getenv("KMS_ENV"),
-			envOr("KMS_MNEMONIC_PATH", "/mnemonic"))
+			envOr("KMS_MNEMONIC_PATH", "/mnemonic"),
+			identity)
 		if err != nil {
 			return nil, fmt.Errorf("load mnemonic from KMS: %w", err)
 		}

@@ -96,9 +96,21 @@ const (
 	StakingEphemeralSignerEnabledKey = "staking-ephemeral-signer-enabled"
 	StakingSignerKeyPathKey          = "staking-signer-key-file"
 	StakingSignerKeyContentKey       = "staking-signer-key-file-content"
-	StakingKMSEndpointKey            = "staking-kms-endpoint"
-	StakingKMSSecretPathKey          = "staking-kms-secret-path"
-	StakingKMSTokenKey               = "staking-kms-token"
+	// Native-ZAP KMS staking custody (github.com/luxfi/kms). When
+	// StakingKMSEndpointKey is set, the node's complete staking identity is
+	// resolved from Lux KMS over an ML-DSA-65-authenticated envelope,
+	// superseding every file/content/generate source. Fails CLOSED. Exactly
+	// one of MnemonicPath (derive) or IdentityPath (custody) must be set.
+	StakingKMSEndpointKey          = "staking-kms-endpoint"           // KMS ZAP peer host:port
+	StakingKMSEnvKey               = "staking-kms-env"                // dev | test | main
+	StakingKMSMnemonicPathKey      = "staking-kms-mnemonic-path"      // DERIVE: KMS path of deploy mnemonic
+	StakingKMSValidatorIndexKey    = "staking-kms-validator-index"    // DERIVE: BIP-44 index
+	StakingKMSIdentityPathKey      = "staking-kms-identity-path"      // CUSTODY: KMS path of this node's identity blob
+	StakingKMSSaveKey              = "staking-kms-save"               // CUSTODY: mint+save when absent (operator authority)
+	StakingKMSStrictPQKey          = "staking-kms-strict-pq"          // also install ML-DSA-65 + ML-KEM-768 (strict-PQ NodeID)
+	StakingKMSBootstrapMnemonicKey = "staking-kms-bootstrap-mnemonic" // seed for the envelope-auth identity
+	StakingKMSNodeLabelKey         = "staking-kms-node-label"         // CUSTODY: operator label bound into the identity blob (equivocation tripwire)
+	StakingKMSAllowEnvMnemonicKey  = "staking-allow-env-mnemonic"     // DEV-ONLY: permit MNEMONIC env to supersede a configured KMS endpoint
 	// Strict-PQ staking identity (FIPS 204 ML-DSA-65). When set, the node
 	// uses the ML-DSA-65 public key as the NodeID source via
 	// ids.NodeIDSchemeMLDSA65.DeriveMLDSA(chainID, pubKey), replacing the
