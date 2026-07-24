@@ -106,14 +106,17 @@ func (t *uptimeTracker) IsConnected(nodeID ids.NodeID) bool {
 }
 
 // Disconnect records that [nodeID] disconnected, flushing its accrued session
-// into persistent state. Flushing is a no-op before StartTracking (the session
-// is not yet being measured), matching avalanchego.
-func (t *uptimeTracker) Disconnect(nodeID ids.NodeID) error {
+// into persistent state. It returns whether that flush actually wrote uptime
+// state (a SetUptime the caller must Commit). Flushing is a no-op — mutated
+// false — before StartTracking (the session is not yet being measured, matching
+// avalanchego) and for a peer with no uptime record (a non-validator), so the
+// caller can skip an empty state.Commit.
+func (t *uptimeTracker) Disconnect(nodeID ids.NodeID) (mutated bool, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	defer delete(t.connections, nodeID)
 	if !t.startedTracking {
-		return nil
+		return false, nil
 	}
 	return t.updateUptimeLocked(nodeID)
 }
@@ -131,7 +134,7 @@ func (t *uptimeTracker) StartTracking(nodeIDs []ids.NodeID) error {
 		return errAlreadyStartedTracking
 	}
 	for _, nodeID := range nodeIDs {
-		if err := t.updateUptimeLocked(nodeID); err != nil {
+		if _, err := t.updateUptimeLocked(nodeID); err != nil {
 			return err
 		}
 	}
@@ -149,7 +152,7 @@ func (t *uptimeTracker) StopTracking(nodeIDs []ids.NodeID) error {
 		return errNotStartedTracking
 	}
 	for _, nodeID := range nodeIDs {
-		if err := t.updateUptimeLocked(nodeID); err != nil {
+		if _, err := t.updateUptimeLocked(nodeID); err != nil {
 			return err
 		}
 	}
@@ -204,18 +207,23 @@ func (t *uptimeTracker) calculateUptimeLocked(nodeID ids.NodeID) (time.Duration,
 	return upDuration + now.Sub(connectedAt), now, nil
 }
 
-// updateUptimeLocked persists the current up-duration for [nodeID]. A node
-// without a state record (i.e. not a current validator) is silently skipped, so
-// tracking non-validator peers is harmless. The caller must hold t.mu (write).
-func (t *uptimeTracker) updateUptimeLocked(nodeID ids.NodeID) error {
+// updateUptimeLocked persists the current up-duration for [nodeID], returning
+// whether it actually wrote (mutated). A node without a state record (i.e. not a
+// current validator) is silently skipped — mutated false — so tracking
+// non-validator peers is harmless and never dirties the state. The caller must
+// hold t.mu (write).
+func (t *uptimeTracker) updateUptimeLocked(nodeID ids.NodeID) (mutated bool, err error) {
 	upDuration, lastUpdated, err := t.calculateUptimeLocked(nodeID)
 	if errors.Is(err, database.ErrNotFound) {
-		return nil
+		return false, nil
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
-	return t.state.SetUptime(nodeID, t.netID, upDuration, lastUpdated)
+	if err := t.state.SetUptime(nodeID, t.netID, upDuration, lastUpdated); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // CalculateUptime returns (upDuration, totalDuration) for [nodeID], where

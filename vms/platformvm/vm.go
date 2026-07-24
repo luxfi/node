@@ -844,16 +844,26 @@ func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	// writes fatal. The p2p Network.Disconnected below touches only the p2p peer
 	// set (its own lock), so it stays OUTSIDE stateLock to keep the critical
 	// section to the state commit.
+	//
+	// Commit ONLY when the flush actually wrote uptime state. Before StartTracking
+	// (bootstrap churn) and for non-validator peers, Disconnect is a no-op, and an
+	// unconditional Commit would be an empty full-write+fsync on every such
+	// disconnect. A no-write disconnect leaves the state clean, so skipping Commit
+	// is correct — every writer under stateLock (block accept, Start/StopTracking)
+	// commits its own diff, so there is never an orphaned write relying on us.
 	vm.stateLock.Lock()
 	if vm.tracker != nil {
-		if err := vm.tracker.Disconnect(nodeID); err != nil {
+		mutated, err := vm.tracker.Disconnect(nodeID)
+		if err != nil {
 			vm.stateLock.Unlock()
 			return err
 		}
-	}
-	if err := vm.state.Commit(); err != nil {
-		vm.stateLock.Unlock()
-		return err
+		if mutated {
+			if err := vm.state.Commit(); err != nil {
+				vm.stateLock.Unlock()
+				return err
+			}
+		}
 	}
 	vm.stateLock.Unlock()
 	return vm.Network.Disconnected(ctx, nodeID)
