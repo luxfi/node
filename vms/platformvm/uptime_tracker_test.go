@@ -185,7 +185,9 @@ func TestUptimeTrackerConnectDisconnectFlush(t *testing.T) {
 
 	tracker.Connect(nodeID)
 	now = now.Add(30 * time.Minute)
-	require.NoError(tracker.Disconnect(nodeID))
+	mutated, err := tracker.Disconnect(nodeID)
+	require.NoError(err)
+	require.True(mutated) // a tracked validator's session flush writes uptime
 
 	require.Equal(30*time.Minute, state.uptimes[nodeID])
 	require.False(tracker.IsConnected(nodeID))
@@ -195,6 +197,36 @@ func TestUptimeTrackerConnectDisconnectFlush(t *testing.T) {
 	pct, err := tracker.CalculateUptimePercent(nodeID, netID)
 	require.NoError(err)
 	require.InDelta(0.5, pct, 0.001)
+}
+
+// TestUptimeTrackerDisconnectBeforeTrackingIsNoWrite is the regression test for
+// the empty-commit elimination (RED round-2 LOW). A peer disconnect during
+// bootstrap — before StartTracking — must report mutated=false so VM.Disconnected
+// skips an empty state.Commit (a full-write+fsync). Under bootstrap churn that
+// commit ran on every disconnect for no reason.
+func TestUptimeTrackerDisconnectBeforeTrackingIsNoWrite(t *testing.T) {
+	require := require.New(t)
+
+	state := newFakeUptimeState()
+	netID := ids.GenerateTestID()
+	nodeID := ids.GenerateTestNodeID()
+
+	now := time.Now().Truncate(time.Second)
+	clk := func() time.Time { return now }
+
+	state.addValidator(nodeID, netID, now)
+
+	tracker := newUptimeTracker(state, netID, clk)
+	// Deliberately NO StartTracking — we are still bootstrapping.
+
+	tracker.Connect(nodeID)
+	now = now.Add(30 * time.Minute)
+
+	mutated, err := tracker.Disconnect(nodeID)
+	require.NoError(err)
+	require.False(mutated) // no write → VM.Disconnected must skip Commit
+	require.False(tracker.IsConnected(nodeID))
+	require.Equal(time.Duration(0), state.uptimes[nodeID]) // untouched
 }
 
 // TestUptimeTrackerDisconnectedValidatorGetsZero verifies that, once tracking, a
@@ -303,13 +335,16 @@ func TestUptimeTrackerUnknownValidator(t *testing.T) {
 	// StartTracking must not fail on a node that has no state record.
 	require.NoError(tracker.StartTracking([]ids.NodeID{unknownNode}))
 
-	// Connecting then disconnecting an unknown node is a no-op, not an error.
+	// Connecting then disconnecting an unknown node is a no-op, not an error, and
+	// must NOT report a state mutation (no uptime record to write).
 	tracker.Connect(unknownNode)
 	now = now.Add(time.Minute)
-	require.NoError(tracker.Disconnect(unknownNode))
+	mutated, err := tracker.Disconnect(unknownNode)
+	require.NoError(err)
+	require.False(mutated)
 
 	// A percent query for an unknown validator surfaces the error.
-	_, err := tracker.CalculateUptimePercent(unknownNode, netID)
+	_, err = tracker.CalculateUptimePercent(unknownNode, netID)
 	require.Error(err)
 }
 
@@ -358,7 +393,9 @@ func TestUptimeTrackerDoubleConnect(t *testing.T) {
 	now = now.Add(5 * time.Minute)
 	tracker.Connect(nodeID) // duplicate — must NOT reset the 5-minute-old session
 	now = now.Add(5 * time.Minute)
-	require.NoError(tracker.Disconnect(nodeID))
+	mutated, err := tracker.Disconnect(nodeID)
+	require.NoError(err)
+	require.True(mutated)
 
 	// Ten minutes total, not five.
 	require.Equal(10*time.Minute, state.uptimes[nodeID])
@@ -383,7 +420,8 @@ func TestUptimeTrackerRapidConnectDisconnect(t *testing.T) {
 	// 100 cycles with no clock advance — zero accrual.
 	for i := 0; i < 100; i++ {
 		tracker.Connect(nodeID)
-		require.NoError(tracker.Disconnect(nodeID))
+		_, err := tracker.Disconnect(nodeID)
+		require.NoError(err)
 	}
 	require.Equal(time.Duration(0), state.uptimes[nodeID])
 
@@ -391,7 +429,8 @@ func TestUptimeTrackerRapidConnectDisconnect(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		tracker.Connect(nodeID)
 		now = now.Add(time.Second)
-		require.NoError(tracker.Disconnect(nodeID))
+		_, err := tracker.Disconnect(nodeID)
+		require.NoError(err)
 	}
 	require.Equal(50*time.Second, state.uptimes[nodeID])
 }
@@ -427,7 +466,7 @@ func TestUptimeTrackerConcurrent(t *testing.T) {
 			case 0:
 				tracker.Connect(nodeID)
 			case 1:
-				_ = tracker.Disconnect(nodeID)
+				_, _ = tracker.Disconnect(nodeID)
 			case 2:
 				_, _ = tracker.CalculateUptimePercent(nodeID, netID)
 			case 3:
