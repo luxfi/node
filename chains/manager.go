@@ -1704,7 +1704,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// through (blockBuilder == the P-chain-height wrapper on K>1, the inner VM
 		// on K==1), so the container bytes it parses match the bytes the engine
 		// framed — one codec, no raw-vs-wrapped split.
-		bh := newBlockHandler(blockBuilder, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, m.NodeID, expectsStakedBeacons)
+		// engineVM is the connectable VM (the proposervm on a wrapped chain, the
+		// inner VM otherwise); it carries Connected/Disconnected, which the router
+		// dispatches so the P-chain uptime tracker observes validator connectivity.
+		bh := newBlockHandler(blockBuilder, engineVM, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, m.NodeID, expectsStakedBeacons)
 		// Gate this native chain's bootstrap frontier-TRUST on the P-chain having finished its
 		// initial sync, so the staked beacon set (and thus the stake-majority floor denominator)
 		// is the TRUE full validator set, not a partial mid-replay set. Wired ONLY for native
@@ -2844,6 +2847,15 @@ type blockHandler struct {
 	chainID    ids.ID                     // Chain ID for message routing
 	networkID  ids.ID                     // Network ID for validator routing
 
+	// connector receives peer connect/disconnect notifications routed from the
+	// node's chainRouter and forwards them to this chain's VM (e.g. the P-chain
+	// uptime tracker; other VMs use them for their own peer sets). connectedNodes
+	// dedups delivery so a peer the router dispatches once per tracked network is
+	// forwarded to the VM exactly once. A nil connector makes forwarding a no-op.
+	connector      chain.ChainVM
+	connMu         sync.Mutex
+	connectedNodes set.Set[ids.NodeID]
+
 	// Context sync support - when a block fails verification due to missing context,
 	// we request the prerequisite blocks from the peer to catch up
 	pendingContext   map[ids.ID]contextRequest // Map from blockID to pending context request
@@ -3018,9 +3030,10 @@ type contextRequest struct {
 	timestamp time.Time
 }
 
-func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager, selfNodeID ids.NodeID, expectsStakedBeacons bool) *blockHandler {
+func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager, selfNodeID ids.NodeID, expectsStakedBeacons bool) *blockHandler {
 	return &blockHandler{
 		vm:                   vm,
+		connector:            connector,
 		logger:               logger,
 		engine:               engine,
 		net:                  net,
@@ -3033,6 +3046,7 @@ func newBlockHandler(vm consensuschain.BlockBuilder, logger log.Logger, engine *
 		pendingContext:       make(map[ids.ID]contextRequest),
 		maxContextBlocks:     256, // Default max context blocks to request/serve
 		pendingQbits:         make(map[ids.ID][]QbitEvent),
+		connectedNodes:       set.NewSet[ids.NodeID](16),
 		bsAncestorCh:         make(map[uint32]chan [][]byte),
 	}
 }
@@ -4051,8 +4065,47 @@ func (b *blockHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, r
 func (b *blockHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
 	return nil
 }
-func (b *blockHandler) Connected(ctx context.Context, nodeID ids.NodeID) error    { return nil }
-func (b *blockHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error { return nil }
+// Connected forwards a peer connection to this chain's VM exactly once. The
+// P-chain VM records it in its uptime tracker; other VMs use it for their own
+// peer sets. A nil connector makes this a no-op. On a forwarding error the dedup
+// entry is rolled back so a subsequent dispatch of the same connection retries.
+func (b *blockHandler) Connected(ctx context.Context, nodeID ids.NodeID) error {
+	if b.connector == nil {
+		return nil
+	}
+	b.connMu.Lock()
+	if b.connectedNodes.Contains(nodeID) {
+		b.connMu.Unlock()
+		return nil
+	}
+	b.connectedNodes.Add(nodeID)
+	b.connMu.Unlock()
+
+	// The node's p2p layer ignores the version argument; pass nil.
+	if err := b.connector.Connected(ctx, nodeID, nil); err != nil {
+		b.connMu.Lock()
+		b.connectedNodes.Remove(nodeID)
+		b.connMu.Unlock()
+		return err
+	}
+	return nil
+}
+
+// Disconnected forwards a peer disconnection to this chain's VM exactly once.
+func (b *blockHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	if b.connector == nil {
+		return nil
+	}
+	b.connMu.Lock()
+	if !b.connectedNodes.Contains(nodeID) {
+		b.connMu.Unlock()
+		return nil
+	}
+	b.connectedNodes.Remove(nodeID)
+	b.connMu.Unlock()
+
+	return b.connector.Disconnected(ctx, nodeID)
+}
 func (b *blockHandler) HealthCheck(ctx context.Context) (interface{}, error)      { return nil, nil }
 func (b *blockHandler) Stop(ctx context.Context) {
 	if b.pollerCancel != nil {

@@ -8,11 +8,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luxfi/ids"
 	"github.com/stretchr/testify/require"
+
+	"github.com/luxfi/database"
+	"github.com/luxfi/ids"
 )
 
-// fakeUptimeState implements uptime.State for testing.
+// fakeUptimeState implements uptime.State for testing, mirroring how the real
+// platformvm state stores uptime: an up-duration plus a second-granular
+// lastUpdated, returned as a "duration since the Unix epoch". Validators must be
+// registered first; GetUptime/SetUptime on an unregistered node return
+// database.ErrNotFound, exactly like metadata_validator.go.
 type fakeUptimeState struct {
 	uptimes    map[ids.NodeID]time.Duration
 	lastUpdate map[ids.NodeID]time.Time
@@ -27,8 +33,7 @@ func newFakeUptimeState() *fakeUptimeState {
 	}
 }
 
-func (f *fakeUptimeState) addValidator(nodeID ids.NodeID, netID ids.ID, startTime time.Time) {
-	_ = netID
+func (f *fakeUptimeState) addValidator(nodeID ids.NodeID, _ ids.ID, startTime time.Time) {
 	f.uptimes[nodeID] = 0
 	f.lastUpdate[nodeID] = startTime
 	f.startTimes[nodeID] = startTime
@@ -37,7 +42,7 @@ func (f *fakeUptimeState) addValidator(nodeID ids.NodeID, netID ids.ID, startTim
 func (f *fakeUptimeState) GetUptime(nodeID ids.NodeID, _ ids.ID) (time.Duration, time.Duration, error) {
 	up, ok := f.uptimes[nodeID]
 	if !ok {
-		return 0, 0, errNotFound
+		return 0, 0, database.ErrNotFound
 	}
 	lastUpdatedDuration := time.Duration(f.lastUpdate[nodeID].Unix()) * time.Second
 	return up, lastUpdatedDuration, nil
@@ -45,7 +50,7 @@ func (f *fakeUptimeState) GetUptime(nodeID ids.NodeID, _ ids.ID) (time.Duration,
 
 func (f *fakeUptimeState) SetUptime(nodeID ids.NodeID, _ ids.ID, uptime time.Duration, lastUpdated time.Time) error {
 	if _, ok := f.uptimes[nodeID]; !ok {
-		return errNotFound
+		return database.ErrNotFound
 	}
 	f.uptimes[nodeID] = uptime
 	f.lastUpdate[nodeID] = lastUpdated
@@ -55,18 +60,23 @@ func (f *fakeUptimeState) SetUptime(nodeID ids.NodeID, _ ids.ID, uptime time.Dur
 func (f *fakeUptimeState) GetStartTime(nodeID ids.NodeID, _ ids.ID) (time.Time, error) {
 	st, ok := f.startTimes[nodeID]
 	if !ok {
-		return time.Time{}, errNotFound
+		return time.Time{}, database.ErrNotFound
 	}
 	return st, nil
 }
 
-var errNotFound = errTestNotFound{}
-
-type errTestNotFound struct{}
-
-func (errTestNotFound) Error() string { return "not found" }
-
-func TestUptimeTrackerConnectDisconnect(t *testing.T) {
+// TestUptimeTrackerLongRunningValidatorAccruesUptime is the regression test for
+// the ~165M LUX reward gate. A validator that has been staked for 30 days must
+// report ~100% uptime, not 0%.
+//
+// This test uses ONLY the shared Calculator surface (newUptimeTracker +
+// CalculateUptimePercentFrom) that both the old and the fixed tracker expose, so
+// it can be run against either implementation:
+//   - OLD tracker: returns ~0.0 — stored upDuration is 0 and the tracker had no
+//     baseline for the un-measured window, so upDuration/total = 0/30d = 0.
+//   - FIXED tracker: returns ~1.0 — before tracking begins, a validator is
+//     assumed online since its last persisted update (avalanchego semantics).
+func TestUptimeTrackerLongRunningValidatorAccruesUptime(t *testing.T) {
 	require := require.New(t)
 
 	state := newFakeUptimeState()
@@ -76,87 +86,208 @@ func TestUptimeTrackerConnectDisconnect(t *testing.T) {
 	now := time.Now()
 	clk := func() time.Time { return now }
 
-	state.addValidator(nodeID, netID, now.Add(-time.Hour))
+	startTime := now.Add(-30 * 24 * time.Hour) // staked 30 days ago
+	state.addValidator(nodeID, netID, startTime)
 
 	tracker := newUptimeTracker(state, netID, clk)
 
-	// Before connect: 0% uptime.
+	pct, err := tracker.CalculateUptimePercentFrom(nodeID, netID, startTime)
+	require.NoError(err)
+	require.InDelta(1.0, pct, 0.001, "a continuously-staked validator must report ~100%% uptime, not 0%%")
+}
+
+// TestUptimeTrackerStartTrackingBaselines verifies that StartTracking credits the
+// un-measured pre-tracking window (assuming the validator was online) and moves
+// the tracker into live-tracking mode.
+func TestUptimeTrackerStartTrackingBaselines(t *testing.T) {
+	require := require.New(t)
+
+	state := newFakeUptimeState()
+	netID := ids.GenerateTestID()
+	nodeID := ids.GenerateTestNodeID()
+
+	now := time.Now().Truncate(time.Second)
+	clk := func() time.Time { return now }
+
+	startTime := now.Add(-time.Hour)
+	state.addValidator(nodeID, netID, startTime)
+
+	tracker := newUptimeTracker(state, netID, clk)
+	require.False(tracker.StartedTracking())
+
+	require.NoError(tracker.StartTracking([]ids.NodeID{nodeID}))
+	require.True(tracker.StartedTracking())
+
+	// The hour since lastUpdated (== startTime) is baked into the persisted
+	// up-duration, and lastUpdated advanced to now.
+	require.Equal(time.Hour, state.uptimes[nodeID])
+	require.Equal(now.Unix(), state.lastUpdate[nodeID].Unix())
+}
+
+// TestUptimeTrackerContinuouslyConnectedClimbs is the core behavioral fix: a
+// validator that connects (during bootstrap) and stays connected accrues uptime
+// over time WITHOUT ever disconnecting, and IsConnected reports true.
+func TestUptimeTrackerContinuouslyConnectedClimbs(t *testing.T) {
+	require := require.New(t)
+
+	state := newFakeUptimeState()
+	netID := ids.GenerateTestID()
+	nodeID := ids.GenerateTestNodeID()
+
+	now := time.Now().Truncate(time.Second)
+	clk := func() time.Time { return now }
+
+	startTime := now
+	state.addValidator(nodeID, netID, startTime)
+
+	tracker := newUptimeTracker(state, netID, clk)
+
+	// Peer connects during bootstrap, before tracking starts.
+	tracker.Connect(nodeID)
+	require.True(tracker.IsConnected(nodeID))
+
+	// Normal operations begin.
+	require.NoError(tracker.StartTracking([]ids.NodeID{nodeID}))
+
+	// One hour passes with the validator continuously connected — no Disconnect.
+	now = now.Add(time.Hour)
+
 	pct, err := tracker.CalculateUptimePercent(nodeID, netID)
 	require.NoError(err)
-	require.InDelta(0.0, pct, 0.01)
+	require.InDelta(1.0, pct, 0.001, "continuously-connected validator must climb to ~100%%")
+	require.True(tracker.IsConnected(nodeID))
 
-	// Connect.
-	tracker.Connect(nodeID)
-
-	// Advance clock by 30 minutes.
-	now = now.Add(30 * time.Minute)
-
-	// While connected: should show ~50% (30min connected / 60min+30min total).
+	// Two hours in, still ~100%.
+	now = now.Add(time.Hour)
 	pct, err = tracker.CalculateUptimePercent(nodeID, netID)
 	require.NoError(err)
-	// 30min / 90min = 0.333...
-	require.InDelta(0.333, pct, 0.01)
-
-	// Disconnect.
-	require.NoError(tracker.Disconnect(nodeID))
-
-	// State should now have 30 minutes of uptime persisted.
-	require.Equal(30*time.Minute, state.uptimes[nodeID])
-
-	// After disconnect, no live connection bonus.
-	pct, err = tracker.CalculateUptimePercent(nodeID, netID)
-	require.NoError(err)
-	require.InDelta(0.333, pct, 0.01)
+	require.InDelta(1.0, pct, 0.001)
 }
 
-func TestUptimeTrackerDoubleConnect(t *testing.T) {
+// TestUptimeTrackerConnectDisconnectFlush verifies that, once tracking, a
+// connected session is flushed into persistent state on Disconnect.
+func TestUptimeTrackerConnectDisconnectFlush(t *testing.T) {
 	require := require.New(t)
 
 	state := newFakeUptimeState()
 	netID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 
-	now := time.Now()
+	now := time.Now().Truncate(time.Second)
 	clk := func() time.Time { return now }
 
-	state.addValidator(nodeID, netID, now.Add(-time.Hour))
+	startTime := now
+	state.addValidator(nodeID, netID, startTime)
+
 	tracker := newUptimeTracker(state, netID, clk)
+	require.NoError(tracker.StartTracking([]ids.NodeID{nodeID}))
+	require.Equal(time.Duration(0), state.uptimes[nodeID])
 
 	tracker.Connect(nodeID)
-	tracker.Connect(nodeID) // second connect should be no-op
-
-	now = now.Add(10 * time.Minute)
+	now = now.Add(30 * time.Minute)
 	require.NoError(tracker.Disconnect(nodeID))
 
-	// Should be exactly 10 minutes, not 20.
-	require.Equal(10*time.Minute, state.uptimes[nodeID])
+	require.Equal(30*time.Minute, state.uptimes[nodeID])
+	require.False(tracker.IsConnected(nodeID))
+
+	// After disconnect, no further live-session bonus; percent reflects 30m/60m.
+	now = now.Add(30 * time.Minute)
+	pct, err := tracker.CalculateUptimePercent(nodeID, netID)
+	require.NoError(err)
+	require.InDelta(0.5, pct, 0.001)
 }
 
-func TestUptimeTrackerShutdown(t *testing.T) {
+// TestUptimeTrackerDisconnectedValidatorGetsZero verifies that, once tracking, a
+// validator that never connects earns 0% uptime (it is offline from this node's
+// perspective) — the property that lets the reward gate withhold rewards.
+func TestUptimeTrackerDisconnectedValidatorGetsZero(t *testing.T) {
 	require := require.New(t)
 
 	state := newFakeUptimeState()
 	netID := ids.GenerateTestID()
-	nodeA := ids.GenerateTestNodeID()
-	nodeB := ids.GenerateTestNodeID()
+	nodeID := ids.GenerateTestNodeID()
 
-	now := time.Now()
+	now := time.Now().Truncate(time.Second)
 	clk := func() time.Time { return now }
 
-	state.addValidator(nodeA, netID, now.Add(-time.Hour))
-	state.addValidator(nodeB, netID, now.Add(-time.Hour))
+	startTime := now
+	state.addValidator(nodeID, netID, startTime)
+
 	tracker := newUptimeTracker(state, netID, clk)
+	require.NoError(tracker.StartTracking([]ids.NodeID{nodeID}))
 
-	tracker.Connect(nodeA)
-	tracker.Connect(nodeB)
+	now = now.Add(time.Hour) // an hour passes, never connected
 
-	now = now.Add(5 * time.Minute)
-	require.NoError(tracker.Shutdown())
-
-	require.Equal(5*time.Minute, state.uptimes[nodeA])
-	require.Equal(5*time.Minute, state.uptimes[nodeB])
+	pct, err := tracker.CalculateUptimePercent(nodeID, netID)
+	require.NoError(err)
+	require.InDelta(0.0, pct, 0.001, "never-connected validator (while tracking) must earn 0%%")
+	require.False(tracker.IsConnected(nodeID))
 }
 
+// TestUptimeTrackerStopTrackingFlushesAll verifies that StopTracking persists all
+// connected validators' sessions and leaves tracking mode.
+func TestUptimeTrackerStopTrackingFlushesAll(t *testing.T) {
+	require := require.New(t)
+
+	state := newFakeUptimeState()
+	netID := ids.GenerateTestID()
+
+	now := time.Now().Truncate(time.Second)
+	clk := func() time.Time { return now }
+
+	const numValidators = 10
+	nodeIDs := make([]ids.NodeID, numValidators)
+	for i := range nodeIDs {
+		nodeIDs[i] = ids.GenerateTestNodeID()
+		state.addValidator(nodeIDs[i], netID, now)
+	}
+
+	tracker := newUptimeTracker(state, netID, clk)
+	require.NoError(tracker.StartTracking(nodeIDs))
+	for _, nid := range nodeIDs {
+		tracker.Connect(nid)
+	}
+
+	now = now.Add(3 * time.Minute)
+	require.NoError(tracker.StopTracking(nodeIDs))
+	require.False(tracker.StartedTracking())
+
+	for _, nid := range nodeIDs {
+		require.Equal(3*time.Minute, state.uptimes[nid])
+	}
+}
+
+// TestUptimeTrackerDoubleStartTracking verifies StartTracking is not re-entrant.
+func TestUptimeTrackerDoubleStartTracking(t *testing.T) {
+	require := require.New(t)
+
+	state := newFakeUptimeState()
+	netID := ids.GenerateTestID()
+	nodeID := ids.GenerateTestNodeID()
+	now := time.Now().Truncate(time.Second)
+
+	state.addValidator(nodeID, netID, now)
+	tracker := newUptimeTracker(state, netID, func() time.Time { return now })
+
+	require.NoError(tracker.StartTracking([]ids.NodeID{nodeID}))
+	require.ErrorIs(tracker.StartTracking([]ids.NodeID{nodeID}), errAlreadyStartedTracking)
+}
+
+// TestUptimeTrackerStopWithoutStart verifies StopTracking errors before start.
+func TestUptimeTrackerStopWithoutStart(t *testing.T) {
+	require := require.New(t)
+
+	state := newFakeUptimeState()
+	netID := ids.GenerateTestID()
+	now := time.Now().Truncate(time.Second)
+	tracker := newUptimeTracker(state, netID, func() time.Time { return now })
+
+	require.ErrorIs(tracker.StopTracking(nil), errNotStartedTracking)
+}
+
+// TestUptimeTrackerUnknownValidator verifies non-validators are handled safely:
+// StartTracking/Connect/Disconnect skip them without error, and a percent query
+// surfaces the not-found error.
 func TestUptimeTrackerUnknownValidator(t *testing.T) {
 	require := require.New(t)
 
@@ -164,21 +295,25 @@ func TestUptimeTrackerUnknownValidator(t *testing.T) {
 	netID := ids.GenerateTestID()
 	unknownNode := ids.GenerateTestNodeID()
 
-	now := time.Now()
+	now := time.Now().Truncate(time.Second)
 	clk := func() time.Time { return now }
 
 	tracker := newUptimeTracker(state, netID, clk)
 
-	// Connect an unknown validator. Disconnect should not error.
+	// StartTracking must not fail on a node that has no state record.
+	require.NoError(tracker.StartTracking([]ids.NodeID{unknownNode}))
+
+	// Connecting then disconnecting an unknown node is a no-op, not an error.
 	tracker.Connect(unknownNode)
 	now = now.Add(time.Minute)
 	require.NoError(tracker.Disconnect(unknownNode))
 
-	// CalculateUptimePercent for unknown validator should error.
+	// A percent query for an unknown validator surfaces the error.
 	_, err := tracker.CalculateUptimePercent(unknownNode, netID)
 	require.Error(err)
 }
 
+// TestUptimeTrackerWrongNet verifies a query for a different network returns 0.
 func TestUptimeTrackerWrongNet(t *testing.T) {
 	require := require.New(t)
 
@@ -187,41 +322,50 @@ func TestUptimeTrackerWrongNet(t *testing.T) {
 	otherNet := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 
-	now := time.Now()
+	now := time.Now().Truncate(time.Second)
 	clk := func() time.Time { return now }
 
 	state.addValidator(nodeID, netID, now.Add(-time.Hour))
 	tracker := newUptimeTracker(state, netID, clk)
 
-	// Querying the wrong net should return 0.
 	pct, err := tracker.CalculateUptimePercent(nodeID, otherNet)
 	require.NoError(err)
 	require.Equal(0.0, pct)
+
+	up, total, err := tracker.CalculateUptime(nodeID, otherNet)
+	require.NoError(err)
+	require.Equal(time.Duration(0), up)
+	require.Equal(time.Duration(0), total)
 }
 
-func TestUptimeTrackerDisconnectWithoutConnect(t *testing.T) {
+// TestUptimeTrackerDoubleConnect verifies a duplicate Connect keeps the original
+// connection time (repeated router dispatch cannot inflate uptime).
+func TestUptimeTrackerDoubleConnect(t *testing.T) {
 	require := require.New(t)
 
 	state := newFakeUptimeState()
 	netID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 
-	now := time.Now()
+	now := time.Now().Truncate(time.Second)
 	clk := func() time.Time { return now }
 
-	state.addValidator(nodeID, netID, now.Add(-time.Hour))
+	state.addValidator(nodeID, netID, now)
 	tracker := newUptimeTracker(state, netID, clk)
+	require.NoError(tracker.StartTracking([]ids.NodeID{nodeID}))
 
-	// Disconnect without prior connect should be no-op.
+	tracker.Connect(nodeID)
+	now = now.Add(5 * time.Minute)
+	tracker.Connect(nodeID) // duplicate — must NOT reset the 5-minute-old session
+	now = now.Add(5 * time.Minute)
 	require.NoError(tracker.Disconnect(nodeID))
-	require.Equal(time.Duration(0), state.uptimes[nodeID])
+
+	// Ten minutes total, not five.
+	require.Equal(10*time.Minute, state.uptimes[nodeID])
 }
 
-// --- Additional edge-case and inversion tests ---
-
-// TestUptimeTrackerRapidConnectDisconnect verifies that rapid Connect/Disconnect
-// cycling does not accumulate phantom uptime. Each cycle should only account
-// for the exact clock delta during that connection.
+// TestUptimeTrackerRapidConnectDisconnect verifies rapid cycling never fabricates
+// uptime beyond the exact connected intervals.
 func TestUptimeTrackerRapidConnectDisconnect(t *testing.T) {
 	require := require.New(t)
 
@@ -229,179 +373,49 @@ func TestUptimeTrackerRapidConnectDisconnect(t *testing.T) {
 	netID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 
-	now := time.Now()
+	now := time.Now().Truncate(time.Second)
 	clk := func() time.Time { return now }
 
-	state.addValidator(nodeID, netID, now.Add(-time.Hour))
+	state.addValidator(nodeID, netID, now)
 	tracker := newUptimeTracker(state, netID, clk)
+	require.NoError(tracker.StartTracking([]ids.NodeID{nodeID}))
 
-	// Rapid connect/disconnect 100 times with no clock advance.
+	// 100 cycles with no clock advance — zero accrual.
 	for i := 0; i < 100; i++ {
 		tracker.Connect(nodeID)
 		require.NoError(tracker.Disconnect(nodeID))
 	}
-
-	// No time passed, so uptime should be 0.
 	require.Equal(time.Duration(0), state.uptimes[nodeID])
 
-	// Now do 50 cycles with 1ms advance each.
+	// 50 cycles, each holding the connection for one second.
 	for i := 0; i < 50; i++ {
 		tracker.Connect(nodeID)
-		now = now.Add(1 * time.Millisecond)
+		now = now.Add(time.Second)
 		require.NoError(tracker.Disconnect(nodeID))
 	}
-
-	// Should be exactly 50ms of uptime.
-	require.Equal(50*time.Millisecond, state.uptimes[nodeID])
+	require.Equal(50*time.Second, state.uptimes[nodeID])
 }
 
-// TestUptimeTrackerShutdownFlushesAll verifies that Shutdown flushes all
-// currently connected validators and leaves the connected map empty.
-func TestUptimeTrackerShutdownFlushesAll(t *testing.T) {
-	require := require.New(t)
-
-	state := newFakeUptimeState()
-	netID := ids.GenerateTestID()
-
-	now := time.Now()
-	clk := func() time.Time { return now }
-
-	const numValidators = 10
-	nodeIDs := make([]ids.NodeID, numValidators)
-	for i := range nodeIDs {
-		nodeIDs[i] = ids.GenerateTestNodeID()
-		state.addValidator(nodeIDs[i], netID, now.Add(-time.Hour))
-	}
-
-	tracker := newUptimeTracker(state, netID, clk)
-
-	// Connect all
-	for _, nid := range nodeIDs {
-		tracker.Connect(nid)
-	}
-
-	now = now.Add(3 * time.Minute)
-	require.NoError(tracker.Shutdown())
-
-	// All should have 3 minutes of uptime
-	for _, nid := range nodeIDs {
-		require.Equal(3*time.Minute, state.uptimes[nid])
-	}
-
-	// Connected map should be empty after shutdown
-	tracker.mu.RLock()
-	require.Len(tracker.connected, 0)
-	tracker.mu.RUnlock()
-}
-
-// TestUptimeTrackerNeverConnected verifies that a validator that was never
-// connected has 0% uptime.
-func TestUptimeTrackerNeverConnected(t *testing.T) {
+// TestUptimeTrackerConcurrent races Connect/Disconnect/reads and StartTracking to
+// assert there are no data races (run with -race).
+func TestUptimeTrackerConcurrent(t *testing.T) {
 	require := require.New(t)
 
 	state := newFakeUptimeState()
 	netID := ids.GenerateTestID()
 	nodeID := ids.GenerateTestNodeID()
 
-	now := time.Now()
-	clk := func() time.Time { return now }
-
-	// Validator has been registered for 1 hour but never connected
-	state.addValidator(nodeID, netID, now.Add(-time.Hour))
-	tracker := newUptimeTracker(state, netID, clk)
-
-	pct, err := tracker.CalculateUptimePercent(nodeID, netID)
-	require.NoError(err)
-	require.Equal(0.0, pct, "never-connected validator must have 0%% uptime")
-}
-
-// TestUptimeTrackerAlwaysConnected verifies that a validator connected for
-// the entire tracking period reports 100% uptime.
-func TestUptimeTrackerAlwaysConnected(t *testing.T) {
-	require := require.New(t)
-
-	state := newFakeUptimeState()
-	netID := ids.GenerateTestID()
-	nodeID := ids.GenerateTestNodeID()
-
-	now := time.Now()
-	clk := func() time.Time { return now }
-
-	startTime := now
-	state.addValidator(nodeID, netID, startTime)
-	tracker := newUptimeTracker(state, netID, clk)
-
-	// Connect immediately at start
-	tracker.Connect(nodeID)
-
-	// Advance clock by 1 hour
-	now = now.Add(time.Hour)
-
-	pct, err := tracker.CalculateUptimePercent(nodeID, netID)
-	require.NoError(err)
-	require.InDelta(1.0, pct, 0.001, "always-connected validator must have ~100%% uptime")
-}
-
-// TestUptimeTrackerConcurrentConnect verifies that concurrent Connect calls
-// from multiple goroutines do not cause data races or phantom uptime.
-func TestUptimeTrackerConcurrentConnect(t *testing.T) {
-	require := require.New(t)
-
-	state := newFakeUptimeState()
-	netID := ids.GenerateTestID()
-	nodeID := ids.GenerateTestNodeID()
-
-	now := time.Now()
-	clk := func() time.Time { return now }
-
-	state.addValidator(nodeID, netID, now.Add(-time.Hour))
-	tracker := newUptimeTracker(state, netID, clk)
-
-	// Race 50 goroutines calling Connect on the same node.
-	const goroutines = 50
-	var wg sync.WaitGroup
-	wg.Add(goroutines)
-	for i := 0; i < goroutines; i++ {
-		go func() {
-			defer wg.Done()
-			tracker.Connect(nodeID)
-		}()
-	}
-	wg.Wait()
-
-	// Should have exactly one entry in connected map.
-	tracker.mu.RLock()
-	_, exists := tracker.connected[nodeID]
-	require.True(exists)
-	tracker.mu.RUnlock()
-
-	// Advance clock and disconnect
-	now = now.Add(5 * time.Minute)
-	require.NoError(tracker.Disconnect(nodeID))
-
-	// Uptime should be exactly 5 minutes, not 5*50 minutes.
-	require.Equal(5*time.Minute, state.uptimes[nodeID])
-}
-
-// TestUptimeTrackerConcurrentConnectDisconnect races Connect and Disconnect
-// from multiple goroutines on the same node.
-func TestUptimeTrackerConcurrentConnectDisconnect(t *testing.T) {
-	require := require.New(t)
-
-	state := newFakeUptimeState()
-	netID := ids.GenerateTestID()
-	nodeID := ids.GenerateTestNodeID()
-
-	now := time.Now()
-	mu := sync.Mutex{}
+	var clkMu sync.Mutex
+	now := time.Now().Truncate(time.Second)
 	clk := func() time.Time {
-		mu.Lock()
-		defer mu.Unlock()
+		clkMu.Lock()
+		defer clkMu.Unlock()
 		return now
 	}
 
-	state.addValidator(nodeID, netID, now.Add(-time.Hour))
+	state.addValidator(nodeID, netID, now)
 	tracker := newUptimeTracker(state, netID, clk)
+	require.NoError(tracker.StartTracking([]ids.NodeID{nodeID}))
 
 	const goroutines = 100
 	var wg sync.WaitGroup
@@ -409,46 +423,22 @@ func TestUptimeTrackerConcurrentConnectDisconnect(t *testing.T) {
 	for i := 0; i < goroutines; i++ {
 		go func(idx int) {
 			defer wg.Done()
-			if idx%2 == 0 {
+			switch idx % 4 {
+			case 0:
 				tracker.Connect(nodeID)
-			} else {
+			case 1:
 				_ = tracker.Disconnect(nodeID)
+			case 2:
+				_, _ = tracker.CalculateUptimePercent(nodeID, netID)
+			case 3:
+				_ = tracker.IsConnected(nodeID)
 			}
 		}(i)
 	}
 	wg.Wait()
 
-	// Should not panic. Final state depends on ordering but must be consistent.
-	// Clean up: ensure we can still shutdown.
-	mu.Lock()
+	clkMu.Lock()
 	now = now.Add(time.Minute)
-	mu.Unlock()
-	require.NoError(tracker.Shutdown())
-}
-
-func TestUptimeTrackerCalculateUptimePercentFrom(t *testing.T) {
-	require := require.New(t)
-
-	state := newFakeUptimeState()
-	netID := ids.GenerateTestID()
-	nodeID := ids.GenerateTestNodeID()
-
-	now := time.Now()
-	clk := func() time.Time { return now }
-
-	startTime := now.Add(-2 * time.Hour)
-	state.addValidator(nodeID, netID, startTime)
-	tracker := newUptimeTracker(state, netID, clk)
-
-	// Connect for 1 hour.
-	tracker.Connect(nodeID)
-	now = now.Add(time.Hour)
-	require.NoError(tracker.Disconnect(nodeID))
-
-	// Total time is 3 hours (2h before + 1h connected).
-	// Connected for 1 hour. Rate = 1/3.
-	// From startTime: same rate applies.
-	pct, err := tracker.CalculateUptimePercentFrom(nodeID, netID, startTime)
-	require.NoError(err)
-	require.InDelta(0.333, pct, 0.01)
+	clkMu.Unlock()
+	require.NoError(tracker.StopTracking([]ids.NodeID{nodeID}))
 }

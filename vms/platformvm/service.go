@@ -926,11 +926,12 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 				// Transform this to a percentage (0-100) to make it consistent
 				// with observedUptime in info.peers API
 				currentUptime := avajson.Float32(rawUptime * 100)
-				if err != nil {
-					return nil, err
-				}
-				// connected field left nil - IsConnected method no longer exists
 				uptime = &currentUptime
+
+				// Report whether this validator currently has a live connection
+				// to us, read from the same tracker that measured its uptime.
+				isConnected := s.vm.tracker != nil && s.vm.tracker.IsConnected(currentStaker.NodeID)
+				connected = &isConnected
 			}
 
 			var (
