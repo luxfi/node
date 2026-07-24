@@ -87,10 +87,24 @@ func (b *Block) Verify(ctx context.Context) error {
 }
 
 func (b *Block) Accept(context.Context) error {
+	// Serialize the block's state commit (acceptor → state.Apply/CommitBatch →
+	// state.write) with the VM's OTHER writers of the same shared state — the
+	// peer Disconnect and Start/StopTracking uptime flushes, which run on
+	// goroutines the consensus engine does not serialize against accept (it
+	// invokes VM.Accept as a lock-free call-out). Holding the VM's stateLock for
+	// the whole visit makes accept atomic w.r.t. those commits, closing the
+	// concurrent-map-write in state.write(). Mirrors avalanchego's ctx.Lock,
+	// which serializes block accept with engine.Connected/Disconnected.
+	b.manager.stateLock.Lock()
+	defer b.manager.stateLock.Unlock()
 	return b.Visit(b.manager.acceptor)
 }
 
 func (b *Block) Reject(context.Context) error {
+	// Held under the same lock as Accept so a block DECISION (accept or reject)
+	// is uniformly serialized with the VM's peer-lifecycle state commits.
+	b.manager.stateLock.Lock()
+	defer b.manager.stateLock.Unlock()
 	return b.Visit(b.manager.rejector)
 }
 

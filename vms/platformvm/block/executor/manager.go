@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
-	"github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -20,6 +20,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	"github.com/luxfi/node/vms/platformvm/validators"
 	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/vm/chain"
 )
 
 var (
@@ -57,6 +58,15 @@ func NewManager(
 	s state.State,
 	txExecutorBackend *executor.Backend,
 	validatorManager validators.Manager,
+	// stateLock serializes a block's accept/reject state commit with the VM's
+	// OTHER writers of the same shared state — the peer-lifecycle (Disconnect)
+	// and normal-ops (Start/StopTracking) uptime flushes, which run on
+	// goroutines the consensus engine does not serialize. The platform VM owns
+	// it and holds the SAME lock in those paths; without it a peer disconnect's
+	// state.Commit races a block accept's state.CommitBatch inside state.write()
+	// (concurrent Go map writes → fatal). Must be non-nil (the VM always
+	// supplies &vm.stateLock).
+	stateLock *sync.Mutex,
 ) Manager {
 	lastAccepted := s.GetLastAccepted()
 	backend := &backend{
@@ -81,6 +91,7 @@ func NewManager(
 		preferred:         lastAccepted,
 		txExecutorBackend: txExecutorBackend,
 		validatorManager:  validatorManager,
+		stateLock:         stateLock,
 		Log:               log.Noop(),
 	}
 }
@@ -93,7 +104,10 @@ type manager struct {
 	preferred         ids.ID
 	txExecutorBackend *executor.Backend
 	validatorManager  validators.Manager
-	Log               log.Logger
+	// stateLock serializes block accept/reject (Block.Accept/Reject) with the
+	// VM's peer-lifecycle / normal-ops state commits. See NewManager.
+	stateLock *sync.Mutex
+	Log       log.Logger
 }
 
 func (m *manager) GetBlock(blkID ids.ID) (chain.Block, error) {
