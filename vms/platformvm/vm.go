@@ -100,6 +100,23 @@ type VM struct {
 	chainID     ids.ID
 	state       state.State
 
+	// stateLock serializes every commit of the shared platform state (state.write)
+	// that originates OUTSIDE the consensus engine's serialized accept path:
+	//   - a block DECISION (block/executor Block.Accept/Reject → state.CommitBatch);
+	//     the executor manager holds THIS lock (passed as &vm.stateLock),
+	//   - a peer Disconnect (tracker.Disconnect → state.SetUptime, then state.Commit),
+	//   - normal-ops Start/StopTracking uptime flushes (state.SetUptime + state.Commit).
+	// The engine invokes VM.Accept as a lock-free call-out (its t.mu is released
+	// before the call-out per its lock discipline), and peer connect/disconnect run
+	// on the node's peer-lifecycle goroutine, so nothing else serializes these
+	// writers against one another. Without this lock a disconnect's state.Commit
+	// races an accept's state.CommitBatch inside state.write() → Go "concurrent map
+	// writes" fatal. This is the avalanchego ctx.Lock invariant (accept serialized
+	// with engine.Connected/Disconnected), scoped to the state the platform VM owns.
+	// It is DISTINCT from vm.lock (which guards API/service reads): a separate lock
+	// keeps the accept path off the API lock and avoids any ordering coupling.
+	stateLock sync.Mutex
+
 	fx fx.Fx
 
 	// Bootstrapped remembers if this chain has finished bootstrapping or not
@@ -302,6 +319,7 @@ func (vm *VM) Initialize(
 		vm.state,
 		txExecutorBackend,
 		validatorManager,
+		&vm.stateLock,
 	)
 
 	txVerifier := network.NewLockedTxVerifier(&vm.lock, vm.manager)
@@ -542,12 +560,21 @@ func (vm *VM) onBootstrapStarted() error {
 
 	// On a normal-ops → re-bootstrap transition, flush and stop uptime tracking
 	// so connected sessions are persisted before we stop measuring. This is a
-	// no-op on the first bootstrap (tracking hasn't started yet).
-	if vm.tracker != nil && vm.tracker.StartedTracking() {
-		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-		if err := vm.tracker.StopTracking(primaryVdrIDs); err != nil {
-			return err
+	// no-op on the first bootstrap (tracking hasn't started yet). StopTracking
+	// flushes uptime into shared state (state.SetUptime → state.write), so hold
+	// stateLock to serialize it with any block accept still in flight.
+	if err := func() error {
+		vm.stateLock.Lock()
+		defer vm.stateLock.Unlock()
+		if vm.tracker != nil && vm.tracker.StartedTracking() {
+			primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+			if err := vm.tracker.StopTracking(primaryVdrIDs); err != nil {
+				return err
+			}
 		}
+		return nil
+	}(); err != nil {
+		return err
 	}
 	return vm.fx.Bootstrapping()
 }
@@ -569,18 +596,27 @@ func (vm *VM) onReady() error {
 	// were already captured); StartTracking baselines every current validator's
 	// uptime record and switches the tracker into live-tracking mode. Mirrors
 	// avalanchego's onNormalOperationsStarted.
-	if vm.tracker != nil && !vm.tracker.StartedTracking() {
-		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-		if err := vm.tracker.StartTracking(primaryVdrIDs); err != nil {
-			return err
+	//
+	// StartTracking (state.SetUptime) and the trailing state.Commit both write
+	// shared state, so hold stateLock across them to serialize with any block
+	// accept (Block.Accept holds the same lock) — the same guard as the peer
+	// Disconnect path.
+	if err := func() error {
+		vm.stateLock.Lock()
+		defer vm.stateLock.Unlock()
+		if vm.tracker != nil && !vm.tracker.StartedTracking() {
+			primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+			if err := vm.tracker.StartTracking(primaryVdrIDs); err != nil {
+				return err
+			}
+			vm.log.Info("uptime tracking started for primary network",
+				log.Int("validators", len(primaryVdrIDs)))
 		}
-		vm.log.Info("uptime tracking started for primary network",
-			log.Int("validators", len(primaryVdrIDs)))
-	}
 
-	// Commit state BEFORE starting background goroutines to avoid race conditions
-	// between state readers (forwardNotifications) and state writers (Commit)
-	if err := vm.state.Commit(); err != nil {
+		// Commit state BEFORE starting background goroutines to avoid race conditions
+		// between state readers (forwardNotifications) and state writers (Commit)
+		return vm.state.Commit()
+	}(); err != nil {
 		return err
 	}
 
@@ -618,15 +654,24 @@ func (vm *VM) Shutdown(context.Context) error {
 	vm.onShutdownCtxCancel()
 
 	// Flush uptime for all primary-network validators before closing state, so
-	// connected sessions are durably persisted across the restart.
-	if vm.tracker != nil && vm.tracker.StartedTracking() {
-		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
-		if err := vm.tracker.StopTracking(primaryVdrIDs); err != nil {
-			return err
+	// connected sessions are durably persisted across the restart. StopTracking
+	// (state.SetUptime) + state.Commit write shared state, so hold stateLock to
+	// serialize with any block accept still draining as the chain stops.
+	if err := func() error {
+		vm.stateLock.Lock()
+		defer vm.stateLock.Unlock()
+		if vm.tracker != nil && vm.tracker.StartedTracking() {
+			primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
+			if err := vm.tracker.StopTracking(primaryVdrIDs); err != nil {
+				return err
+			}
+			if err := vm.state.Commit(); err != nil {
+				return err
+			}
 		}
-		if err := vm.state.Commit(); err != nil {
-			return err
-		}
+		return nil
+	}(); err != nil {
+		return err
 	}
 
 	var errs []error
@@ -790,14 +835,27 @@ func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *cha
 }
 
 func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	// This runs on the node's peer-lifecycle goroutine, which the consensus
+	// engine does NOT serialize against block accept. tracker.Disconnect flushes
+	// the peer's uptime into shared state (state.SetUptime) and state.Commit
+	// persists the whole diff (state.write). Hold stateLock so both are atomic
+	// w.r.t. a concurrent block accept (Block.Accept holds the same lock);
+	// otherwise state.write races the acceptor's state.write → concurrent map
+	// writes fatal. The p2p Network.Disconnected below touches only the p2p peer
+	// set (its own lock), so it stays OUTSIDE stateLock to keep the critical
+	// section to the state commit.
+	vm.stateLock.Lock()
 	if vm.tracker != nil {
 		if err := vm.tracker.Disconnect(nodeID); err != nil {
+			vm.stateLock.Unlock()
 			return err
 		}
 	}
 	if err := vm.state.Commit(); err != nil {
+		vm.stateLock.Unlock()
 		return err
 	}
+	vm.stateLock.Unlock()
 	return vm.Network.Disconnected(ctx, nodeID)
 }
 

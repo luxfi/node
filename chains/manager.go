@@ -69,6 +69,7 @@ import (
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms"
 	validators "github.com/luxfi/validators"
+	version "github.com/luxfi/version"
 	"github.com/luxfi/vm/fx"
 
 	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
@@ -4065,11 +4066,33 @@ func (b *blockHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, r
 func (b *blockHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
 	return nil
 }
-// Connected forwards a peer connection to this chain's VM exactly once. The
-// P-chain VM records it in its uptime tracker; other VMs use it for their own
-// peer sets. A nil connector makes this a no-op. On a forwarding error the dedup
-// entry is rolled back so a subsequent dispatch of the same connection retries.
+
+// Connected satisfies handler.Handler, whose interface carries no peer version.
+// The real delivery path is ConnectedWithVersion (chainRouter uses it via the
+// versionedConnector capability); this nil-version entry exists only for the
+// interface contract and any non-router caller.
 func (b *blockHandler) Connected(ctx context.Context, nodeID ids.NodeID) error {
+	return b.connect(ctx, nodeID, nil)
+}
+
+// ConnectedWithVersion forwards a peer connection WITH its real application
+// version to this chain's VM. chainRouter invokes this (detecting the
+// versionedConnector capability) so the version survives to the inner VM:
+// proposervm promotes Connected to the C-Chain (coreth), whose state-sync peer
+// tracker compares peer versions — a nil version there dereferences nil and
+// panics a state-syncing node (a fresh join OR a validator rejoining after
+// falling behind). This mirrors avalanchego, which delivers msg.NodeVersion to
+// engine.Connected.
+func (b *blockHandler) ConnectedWithVersion(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
+	return b.connect(ctx, nodeID, nodeVersion)
+}
+
+// connect forwards a peer connection to this chain's VM exactly once, carrying
+// nodeVersion (nil only on the interface path). The P-chain VM records it in its
+// uptime tracker; the C-Chain/X-Chain VMs store the version for their peer sets.
+// A nil connector makes this a no-op. On a forwarding error the dedup entry is
+// rolled back so a subsequent dispatch of the same connection retries.
+func (b *blockHandler) connect(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
 	if b.connector == nil {
 		return nil
 	}
@@ -4081,8 +4104,7 @@ func (b *blockHandler) Connected(ctx context.Context, nodeID ids.NodeID) error {
 	b.connectedNodes.Add(nodeID)
 	b.connMu.Unlock()
 
-	// The node's p2p layer ignores the version argument; pass nil.
-	if err := b.connector.Connected(ctx, nodeID, nil); err != nil {
+	if err := b.connector.Connected(ctx, nodeID, nodeVersion); err != nil {
 		b.connMu.Lock()
 		b.connectedNodes.Remove(nodeID)
 		b.connMu.Unlock()
@@ -4106,7 +4128,7 @@ func (b *blockHandler) Disconnected(ctx context.Context, nodeID ids.NodeID) erro
 
 	return b.connector.Disconnected(ctx, nodeID)
 }
-func (b *blockHandler) HealthCheck(ctx context.Context) (interface{}, error)      { return nil, nil }
+func (b *blockHandler) HealthCheck(ctx context.Context) (interface{}, error) { return nil, nil }
 func (b *blockHandler) Stop(ctx context.Context) {
 	if b.pollerCancel != nil {
 		b.pollerCancel()

@@ -14,9 +14,10 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/p2p"
+	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/timer"
-	"github.com/luxfi/node/trace"
+	luxversion "github.com/luxfi/version"
 )
 
 // router implements Router interface for routing messages to chain handlers
@@ -193,6 +194,32 @@ func (r *chainRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.Ha
 	)
 }
 
+// versionedConnector is the capability a chain handler advertises when it can
+// forward a peer's REAL application version to its VM. The consensus
+// handler.Handler.Connected signature carries only the nodeID (the version was
+// dropped at that boundary); a handler that implements this receives the real
+// version instead. blockHandler implements it. The version must survive to the
+// inner VM: the C-Chain (coreth) state-sync peer tracker compares peer versions
+// and dereferences a nil version, panicking a state-syncing node.
+type versionedConnector interface {
+	ConnectedWithVersion(ctx context.Context, nodeID ids.NodeID, nodeVersion *luxversion.Application) error
+}
+
+// toAppVersion converts the node's peer version (github.com/luxfi/node/version)
+// to the github.com/luxfi/version.Application the VM Connected boundary
+// (chain.VersionInfo) expects. nil-safe: a nil peer version maps to nil.
+func toAppVersion(v *version.Application) *luxversion.Application {
+	if v == nil {
+		return nil
+	}
+	return &luxversion.Application{
+		Name:  v.Name,
+		Major: v.Major,
+		Minor: v.Minor,
+		Patch: v.Patch,
+	}
+}
+
 func (r *chainRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Application, netID ids.ID) {
 	r.lock.Lock()
 	r.connectedPeers.Add(nodeID)
@@ -213,8 +240,19 @@ func (r *chainRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Applicat
 	// repeated dispatch of the same connection (once per tracked network) is
 	// safe. Dispatch OUTSIDE the router lock: a handler must never re-enter the
 	// router while we hold it.
+	//
+	// Deliver the REAL peer version through the versionedConnector capability so
+	// it reaches the inner VM (proposervm → coreth state-sync). Only handlers
+	// that cannot carry a version fall back to the plain nodeID-only Connected.
+	appVersion := toAppVersion(nodeVersion)
 	for _, h := range handlers {
-		if err := h.Connected(context.Background(), nodeID); err != nil {
+		var err error
+		if vc, ok := h.(versionedConnector); ok {
+			err = vc.ConnectedWithVersion(context.Background(), nodeID, appVersion)
+		} else {
+			err = h.Connected(context.Background(), nodeID)
+		}
+		if err != nil {
 			r.log.Debug("chain handler Connected failed",
 				log.Stringer("nodeID", nodeID),
 				log.Err(err),
