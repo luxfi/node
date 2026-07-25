@@ -5,11 +5,10 @@ package health
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/go-json-experiment/json"
-	"github.com/go-json-experiment/json/jsontext"
 	"github.com/gorilla/rpc/v2"
 
 	apihealth "github.com/luxfi/api/health"
@@ -56,17 +55,24 @@ func NewGetHandler(reporter func(tags ...string) (map[string]apihealth.Result, b
 			// If a health check has failed, we should return a 503.
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
-		// Buffer the reply — a streaming encoder that errors part-way
-		// (jsonv2 rejects invalid UTF-8, and check Details may embed raw
-		// chain-ID bytes) leaves the client a torn body whose
-		// Content-Length matches the truncation. Buffering makes the
-		// reply atomic; AllowInvalidUTF8 turns binary detail bytes into
-		// replacement runes instead of an encode error.
+		// One encoder for one wire type: apihealth.APIReply is defined with
+		// encoding/json tags and carries a time.Duration per check, so it is
+		// encoding/json that defines its representation. The POST (jsonrpc)
+		// path already encodes it through that codec; encoding it here the
+		// same way is what makes GET and POST agree. jsonv2 cannot encode
+		// this type at all — time.Duration has no default representation
+		// there — so every GET reply used to degrade to the error fallback
+		// below. encoding/json also replaces invalid UTF-8 (check Details
+		// may embed raw chain-ID bytes) with U+FFFD rather than failing.
+		//
+		// Buffer first: a streaming encoder that errors part-way would leave
+		// the client a torn body whose Content-Length matches the
+		// truncation. Buffering makes the reply atomic.
 		var buf bytes.Buffer
-		err := json.MarshalWrite(&buf, apihealth.APIReply{
+		err := json.NewEncoder(&buf).Encode(apihealth.APIReply{
 			Checks:  checks,
 			Healthy: healthy,
-		}, jsontext.AllowInvalidUTF8(true))
+		})
 		if err != nil {
 			buf.Reset()
 			fmt.Fprintf(&buf, `{"healthy":%t,"error":"health reply encode failed"}`, healthy)
