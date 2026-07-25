@@ -124,22 +124,27 @@ RUN --mount=type=secret,id=ghtok,required=false \
 # linked into the C-Chain plugin via github.com/luxfi/chains/evm/cevm
 # and become the default execution backend (parallel + GPU EVM).
 #
-# CI/RELEASE GAP: the luxcpp/cevm release artifacts MUST publish per-arch
-# tarballs at the URL below for both linux-x86_64 and linux-arm64. Until
-# those tarballs exist, builds with CGO_ENABLED=1 will fail at this step and
-# operators must build with CGO_ENABLED=0 (pure-Go fallback).
+# The release assets live in the PRIVATE lux-private/cevm repo, so the fetch is
+# authenticated with the same `ghtok` secret as the private go modules and
+# lux-accel above. Best-effort, like lux-accel: only a build that asks for the
+# cevm backend (EVM_CGO=1 below) actually needs these.
 ARG CGO_ENABLED=1
-ARG CEVM_VERSION=v0.19.0
-RUN if [ "${CGO_ENABLED}" = "1" ]; then \
+ARG CEVM_VERSION=v0.51.10
+ARG CEVM_REPO=lux-private/cevm
+RUN --mount=type=secret,id=ghtok,required=false \
+    if [ "${CGO_ENABLED}" = "1" ]; then \
         ARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
         if [ "$ARCH" = "amd64" ]; then CEVM_ARCH="linux-x86_64"; else CEVM_ARCH="linux-arm64"; fi && \
-        wget -q "https://github.com/luxcpp/cevm/releases/download/${CEVM_VERSION}/luxcpp-cevm-${CEVM_ARCH}.tar.gz" \
-            -O /tmp/cevm.tar.gz && \
-        tar -xzf /tmp/cevm.tar.gz -C /usr/local && \
-        rm /tmp/cevm.tar.gz && \
-        ldconfig 2>/dev/null || true ; \
+        AUTH=""; [ -s /run/secrets/ghtok ] && AUTH="--header=Authorization: Bearer $(cat /run/secrets/ghtok)"; \
+        ( wget -q ${AUTH:+"$AUTH"} \
+            "https://github.com/${CEVM_REPO}/releases/download/${CEVM_VERSION}/luxcpp-cevm-${CEVM_ARCH}.tar.gz" \
+            -O /tmp/cevm.tar.gz \
+          && tar -xzf /tmp/cevm.tar.gz -C /usr/local \
+          && rm /tmp/cevm.tar.gz \
+          && ldconfig 2>/dev/null \
+        ) || echo "WARN: cevm ${CEVM_VERSION} fetch skipped (unreachable; needed only when EVM_CGO=1)" ; \
     else \
-        echo "CGO_ENABLED=0: skipping luxcpp/cevm fetch (pure-Go fallback build)" ; \
+        echo "CGO_ENABLED=0: skipping cevm fetch (pure-Go fallback build)" ; \
     fi
 
 # Build node. CGO_ENABLED=1 (default) links luxcpp/cevm for parallel + GPU EVM.
@@ -265,6 +270,13 @@ RUN . ./build_env.sh && \
 # and EVERY EVM chain (C + L2s hanzo/zoo/pars/spc, all mgj786) fails to
 # initialize. The api bump is code-free for plugins (chains v1.7.4->v1.7.5
 # adopted it with a go.mod-only diff), so v1.104.9 = v1.104.8 + api alignment.
+# C-Chain execution backend. The default is the pure-Go EVM, which is what
+# every image has shipped so far. EVM_CGO=1 EVM_TAGS=cevm links luxcpp/cevm
+# instead — that pair is what makes AutoEVM resolve to CppEVM. The libraries
+# come from the cevm fetch in this same stage above.
+ARG EVM_CGO=0
+ARG EVM_TAGS=""
+
 ARG EVM_VERSION=v1.104.9
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
@@ -292,8 +304,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     go mod edit -require=github.com/luxfi/chains@v1.7.0 && \
     find /tmp/evm -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
-    CGO_ENABLED=0 GOFLAGS=-mod=mod \
-    go build -ldflags="-s -w" -o /luxd/build/plugins/${EVM_VM_ID} ./plugin && \
+    CGO_ENABLED=${EVM_CGO} GOFLAGS=-mod=mod \
+    go build -ldflags="-s -w" -tags "${EVM_TAGS}" -o /luxd/build/plugins/${EVM_VM_ID} ./plugin && \
     chmod +x /luxd/build/plugins/${EVM_VM_ID} && \
     rm -rf /tmp/evm
 
