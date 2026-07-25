@@ -97,9 +97,9 @@ func TestMChainGenesisPolicyIsUnambiguousAndDeployable(t *testing.T) {
 		networkID uint32
 		want      string
 	}{
-		{constants.MainnetID, "7-of-10"},
+		{constants.MainnetID, "3-of-5"},
 		{constants.TestnetID, "3-of-5"},
-		{constants.LocalID, "3-of-5"},
+		{constants.LocalID, "2-of-3"},
 	} {
 		cfg := GetConfig(tc.networkID)
 		require.NotNil(t, cfg)
@@ -136,5 +136,38 @@ func TestMChainGenesisHasNoAmbiguousThresholdFields(t *testing.T) {
 				"network %d mchain.json still carries %q; the policy field is the only quorum statement",
 				networkID, dead)
 		}
+	}
+}
+
+// A policy is only real if the network has enough validators to hold its
+// shares. M-Chain draws its committee from the validator set, and RunKeygen
+// refuses a policy needing more parties than the committee has — so a genesis
+// declaring 7-of-10 on a five-validator network fails closed forever: no
+// custody key can ever be generated, and the failure only shows up the first
+// time someone tries to bridge.
+//
+// mainnet's mchain.json shipped exactly that mismatch for as long as the field
+// existed, harmlessly, because nothing read it. This test is what keeps it
+// harmless now that the policy is authoritative.
+func TestMChainPolicyIsSatisfiableByTheGenesisValidatorSet(t *testing.T) {
+	for _, networkID := range []uint32{constants.MainnetID, constants.TestnetID, constants.LocalID} {
+		cfg := GetConfig(networkID)
+		require.NotNil(t, cfg)
+
+		raw, _, err := FromConfig(cfg)
+		require.NoError(t, err)
+		parsed, err := genesis.Parse(raw)
+		require.NoError(t, err)
+
+		var blob struct {
+			Policy string `json:"policy"`
+		}
+		require.NoError(t, json.Unmarshal([]byte(cfg.MChainGenesis), &blob))
+		_, n := parsePolicy(t, blob.Policy)
+
+		require.LessOrEqualf(t, n, len(parsed.Validators),
+			"network %d: M-Chain policy %s needs %d parties but genesis declares %d validators; "+
+				"keygen would fail closed and no custody key could ever exist",
+			networkID, blob.Policy, n, len(parsed.Validators))
 	}
 }
