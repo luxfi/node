@@ -54,8 +54,16 @@ source "${REPO_ROOT}"/scripts/constants.sh
 # Determine the git commit hash to use for the build
 source "${REPO_ROOT}"/scripts/git_commit.sh
 
-# Configure build based on profile
-tags=""
+# Configure build based on profile.
+#
+# `metrics` is a base tag, not a profile choice: without it luxfi/metric's
+# NewRegistry() resolves to the no-op registry (registry_noop.go, //go:build
+# !metrics), every metric registers into a black hole, and /v1/metrics answers
+# 200 with a zero-byte body — while --api-metrics-enabled=true still reports
+# metrics as on. Whether metrics are served is the runtime flag's decision
+# alone; the build must not silently overrule it.
+base_tags="metrics"
+tags="${base_tags}"
 ldflags="-X github.com/luxfi/node/version.GitCommit=$git_commit \
          -X github.com/luxfi/node/version.VersionMajor=$version_major \
          -X github.com/luxfi/node/version.VersionMinor=$version_minor \
@@ -67,7 +75,7 @@ upx_compress=false
 case "${profile}" in
   minimal)
     echo "Profile: minimal (ZAP, all VMs, NAT, stripped)"
-    tags="nattraversal"
+    tags="${base_tags},nattraversal"
     strip_flags="-s -w"
     ;;
   core)
@@ -77,7 +85,7 @@ case "${profile}" in
     ;;
   full)
     echo "Profile: full (gRPC+ZAP, all VMs, all features, stripped)"
-    tags="grpc,nattraversal,zxcvbn,metrics"
+    tags="${base_tags},grpc,nattraversal,zxcvbn"
     strip_flags="-s -w"
     ;;
   dev)
@@ -86,7 +94,7 @@ case "${profile}" in
     ;;
   tiny)
     echo "Profile: tiny (all VMs, NAT + UPX compressed)"
-    tags="nattraversal"
+    tags="${base_tags},nattraversal"
     strip_flags="-s -w"
     upx_compress=true
     ;;
