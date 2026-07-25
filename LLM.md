@@ -935,4 +935,14 @@ v2 semantic differences worth knowing (these change wire shape):
 
 ---
 
+## Housekeeping
+
+Removed 6 generated write-ups / stale root artifacts (`LAUNCH_CHECKLIST.md`,
+`rename_app.sh`, `replace_imports.sh`, `gen_zoo_addr` binary, `.ci-status-check.md`,
+`.ci-trigger`) plus the 73MB `.claude/worktrees/` agent scratch tree. Release and
+launch state live in this file, `CHANGELOG.md`, `RELEASE.md`; chain IDs/ports in
+`~/work/lux/universe/NETWORKS.yaml` and `~/work/lux/genesis/configs/`.
+
+---
+
 *Last Updated*: 2026-06-06
