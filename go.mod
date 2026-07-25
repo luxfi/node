@@ -126,7 +126,7 @@ require (
 	github.com/luxfi/constants v1.6.2
 	github.com/luxfi/container v0.2.1
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.16.2
+	github.com/luxfi/genesis v1.16.3
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
 	github.com/luxfi/geth v1.20.1
 	github.com/luxfi/go-bip39 v1.2.0
@@ -196,6 +196,7 @@ require (
 	github.com/luxfi/dkg v0.3.5 // indirect
 	github.com/luxfi/lattice/v7 v7.1.4 // indirect
 	github.com/luxfi/lens v0.2.1 // indirect
+	github.com/luxfi/light v1.0.0 // indirect
 	github.com/luxfi/magnetar v1.2.3 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/mlwe v0.3.0 // indirect

@@ -329,16 +329,14 @@ github.com/luxfi/crypto/ipa v1.2.4 h1:6xfwhI9/HrcDkF3Ti5/NxsNQIWbwYDJmRSNIHRQ/xf
 github.com/luxfi/crypto/ipa v1.2.4/go.mod h1:43J6f6rcfUMrZt4cQectMOZb6Ps+fAEj8ZTPC3Kk+gE=
 github.com/luxfi/database v1.21.1 h1:GNnoWVa82l+n2dK7x2aG8LR2NEToq6ZCRX0sQjmK0OM=
 github.com/luxfi/database v1.21.1/go.mod h1:Gc7Z2OPrrcYLnAL8B1trOnguXauOlSDV5tkviLN6Xec=
-github.com/luxfi/dex v1.14.0 h1:4PtorVbRmbD73S6YWPvgp5GRCb9jeuaedl7mo1CbzCI=
-github.com/luxfi/dex v1.14.0/go.mod h1:wYWQmwospvdKBWQ6OJMXb8I+kfgEtE46R1rD8H7vHCQ=
 github.com/luxfi/dkg v0.3.5 h1:s2L2mMQaz+n9m0b0ghvoV5VZNxiwb2z4WrGugvK0udY=
 github.com/luxfi/dkg v0.3.5/go.mod h1:M+WH7GFRN+YUD851Rlnumdp0Md98kplNN8pVx65U8I8=
 github.com/luxfi/filesystem v0.0.1 h1:VZ6xMFKaAPBW/ddlMsDnI2G0VU1lV5rYaVcW5d+KwEY=
 github.com/luxfi/filesystem v0.0.1/go.mod h1:OQVSU6XNwqrr1AI+MqkID2taHUclx7NYmmr3svgttec=
 github.com/luxfi/formatting v1.1.1 h1:MJhVXIPh1dbysvYEjtaEA/Z0FUTiI7n0DwOF54FS08c=
 github.com/luxfi/formatting v1.1.1/go.mod h1:zhBWp6fLZduhpiAdPgVDdPVOyhw4FvwRUksF6+xKQCE=
-github.com/luxfi/genesis v1.16.2 h1:OLQg5+ln8qgORBYnJuQsZxar8AfZlsXg5g/f95AraPI=
-github.com/luxfi/genesis v1.16.2/go.mod h1:piaSqJY80eVpgov8DUWQXll9IdlCroWgvhnwC7/3lTA=
+github.com/luxfi/genesis v1.16.3 h1:P9/ixEOTC9yVvhhcRT3femRMMVIQxKINet1X1GwE4tQ=
+github.com/luxfi/genesis v1.16.3/go.mod h1:0F6hV6GfwDSmIWsueB7/vqPZFxyS7A4Jo3p1QU87fFc=
 github.com/luxfi/genesis/pkg/genesis/security v1.13.8 h1:9ier0p55ErSpoXHRJpZ04WV5HwwMB1uDrU7PHGBKG2U=
 github.com/luxfi/genesis/pkg/genesis/security v1.13.8/go.mod h1:DzU+GYUFv12ja4Vc46bWKNBBmNYbcow3u/DASx4wpfI=
 github.com/luxfi/geth v1.20.1 h1:QUGQr4AKvADjwMi7t8a0OfoyxShgEcI9pwie1jFYfm0=
@@ -357,6 +355,8 @@ github.com/luxfi/lattice/v7 v7.1.4 h1:hQR02M6cHTAV5+joOPi9gb9Gm+z/hKJnhJF4IlciIJ
 github.com/luxfi/lattice/v7 v7.1.4/go.mod h1:DmIQFi3mJiehVsR235l1NKYEU0JhU649OX5p7gMEW2c=
 github.com/luxfi/lens v0.2.1 h1:5Qd0GdjbM+XUVgwDbZ452tKkR7yeE8QnBTHHaH8fJNY=
 github.com/luxfi/lens v0.2.1/go.mod h1:6FIhC8weEE5RbNMF3SaE+XPSB9cr6FmjypYBoHkz4JQ=
+github.com/luxfi/light v1.0.0 h1:zTJgp5M0xX8rIwRjYDQgOGhLas3rgXyhkszrTX+ne3s=
+github.com/luxfi/light v1.0.0/go.mod h1:1G0kgjEe/srlBMCIrFq4IvhnrMuHKFG18CRUWfw1z30=
 github.com/luxfi/log v1.4.3 h1:xkUKRWvQ4ZwvlUC2e0/RTtHYZOYSMvSQ9W9lbjwBmiI=
 github.com/luxfi/log v1.4.3/go.mod h1:myIkufyiQomSQH34K981kbz6cG4WUoerRUh7F4XhlQI=
 github.com/luxfi/magnetar v1.2.3 h1:n4UrJZLK+mhDDZr1HLl2H/KgA6o6v62r5oiC61R7awE=
