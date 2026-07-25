@@ -322,7 +322,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 #   oraclevm     -> r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS
 #   quantumvm    -> ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug
 #   relayvm      -> sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz
-#   mpcvm  -> tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t
+#   mpcvm        -> qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS
 #   zkvm         -> vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9
 
 # MUST track node's go.mod luxfi/chains (the D-Chain dexvm + 10 VM plugins).
@@ -366,7 +366,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     ( cd /tmp/chains/relayvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz ./cmd/plugin ) || echo "WARN: relayvm plugin build skipped" ; \
     ( cd /tmp/chains/mpcvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
-        -o /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t ./cmd/plugin ) || echo "WARN: mpcvm plugin build skipped" ; \
+        -o /luxd/build/plugins/qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS ./cmd/plugin ) || echo "WARN: mpcvm plugin build skipped" ; \
     ( cd /tmp/chains/zkvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 ./cmd/plugin ) || echo "WARN: zkvm plugin build skipped" ; \
     ( chmod +x /luxd/build/plugins/* 2>/dev/null || true ) && \
@@ -379,7 +379,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
         r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS \
         ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug \
         sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz \
-        tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t \
+        qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS \
         vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 ; do \
         test -s /luxd/build/plugins/$p \
             || { echo "FATAL: required chain-VM plugin $p missing/empty — its build failed above (see the matching WARN line); the runtime-stage hard COPY would otherwise fail cryptically. Surface & fix the real Go build error, or remove the plugin from BOTH the build list and the runtime COPY."; exit 1; } ; \
@@ -489,7 +489,7 @@ COPY --from=builder \
     /luxd/build/plugins/r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS \
     /luxd/build/plugins/ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug \
     /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz \
-    /luxd/build/plugins/tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t \
+    /luxd/build/plugins/qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS \
     /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 \
     /luxd/build/plugins/
 WORKDIR /luxd/build

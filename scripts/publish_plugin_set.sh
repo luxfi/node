@@ -60,7 +60,7 @@ PLUGINS=(
   r5m1ujrmXxVcQetG3CQfuDLHp2RHKh6vCDaFgBRQfUcTZh7eS   # oraclevm
   ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug   # quantumvm
   sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz   # relayvm
-  tGVBwRxpmD2aFdg3iYjgRvrCe8Jcmq9UNKxyHMus2NZ8WcD8t   # mpcvm
+  qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS   # mpcvm
   vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9   # zkvm
 )
 
