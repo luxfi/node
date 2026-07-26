@@ -7,8 +7,15 @@ CGO_ENABLED ?= 1
 FIPS_STRICT ?= 0
 
 # Go 1.26 experimental features:
-#   runtimesecret - zeroes stack/register state after secret.Do() for forward secrecy
+#   runtimesecret - zeroes stack/register state after secret.Do() for forward secrecy.
+# It SIGSEGVs at startup under the WSL2 kernel (confirmed on go1.26.3 and go1.26.4), so enable
+# it only off-WSL; forward secrecy stays on for real Linux/macOS/production builds.
+WSL := $(shell grep -qiE 'microsoft|WSL' /proc/sys/kernel/osrelease 2>/dev/null && echo 1)
+ifeq ($(WSL),1)
+GOEXPERIMENT ?= none
+else
 GOEXPERIMENT ?= runtimesecret
+endif
 export GOEXPERIMENT
 
 # FIPS 140-3 always enabled (required for blockchain/financial systems)
