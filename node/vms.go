@@ -114,18 +114,29 @@ var CoreVMs = map[ids.ID]CoreVM{
 // today's opt-in-flag behavior) while the gate itself remains fail-closed.
 //
 // C (evm) and the remaining app VMs are plugin-loaded but ungated today.
+//
+// Declaring a VM here is a statement of intent, not a guarantee that a binary
+// exists: the registry scan simply finds nothing and the chain cannot start.
+// fhevm (F-Chain) is exactly that case today — see its entry below.
 var OptionalVMs = map[ids.ID]PluginSpec{
-	constants.DexVMID:       {Name: "dexvm", RequiredNFT: &NFTRequirement{Collection: "dex-operator", GroupID: 0}},
-	constants.BridgeVMID:    {Name: "bridgevm", RequiredNFT: &NFTRequirement{Collection: "bridge-operator", GroupID: 0}},
-	constants.EVMID:         {Name: "evm"},
-	constants.AIVMID:        {Name: "aivm"},
-	constants.GraphVMID:     {Name: "graphvm"},
-	constants.IdentityVMID:  {Name: "identityvm"},
-	constants.KeyVMID:       {Name: "keyvm"},
-	constants.OracleVMID:    {Name: "oraclevm"},
-	constants.RelayVMID:     {Name: "relayvm"},
-	constants.MPCVMID:       {Name: "mpcvm"},
-	constants.FHEVMID:       {Name: "fhevm"},
+	constants.DexVMID:      {Name: "dexvm", RequiredNFT: &NFTRequirement{Collection: "dex-operator", GroupID: 0}},
+	constants.BridgeVMID:   {Name: "bridgevm", RequiredNFT: &NFTRequirement{Collection: "bridge-operator", GroupID: 0}},
+	constants.EVMID:        {Name: "evm"},
+	constants.AIVMID:       {Name: "aivm"},
+	constants.GraphVMID:    {Name: "graphvm"},
+	constants.IdentityVMID: {Name: "identityvm"},
+	constants.KeyVMID:      {Name: "keyvm"},
+	constants.OracleVMID:   {Name: "oraclevm"},
+	constants.RelayVMID:    {Name: "relayvm"},
+	constants.MPCVMID:      {Name: "mpcvm"},
+	// F-Chain. Reserved ID, no shipping VM: luxfi/chains has no fhevm/
+	// directory, so `make` produces no fhevm binary and this scan always comes
+	// up empty. The FHE runtime library lives at luxfi/chains/mpcvm/fhe as a
+	// package inside mpcvm, not as a standalone chain. F-Chain is a spec
+	// (LP-8200, LP-167). Kept declared so the intent stays visible and the ID
+	// stays reserved — remove it only when F-Chain is cancelled, not merely
+	// because it is unbuilt.
+	constants.FHEVMID: {Name: "fhevm"},
 }
 
 func init() {
@@ -155,7 +166,8 @@ func assertRegistriesDisjoint() error {
 // registerCoreVMs registers the in-process core VMs that carry a concrete
 // factory (Q, Z). P and X are registered separately in node.go because their
 // factories require live node dependencies (RegisteredInNodeGo=true in
-// CoreVMs). The optional chain VMs (A/B/C/D/G/I/K/O/R/T) are NEVER registered
+// CoreVMs). The optional chain VMs (A/B/C/D/F/G/I/K/M/O/R — the keys of
+// OptionalVMs; there is no T, LP-134 dissolved it) are NEVER registered
 // here — they load from PluginDir via the VMRegistry scan, exactly like any
 // other plugin. Registering an optional VM in-process would shadow its plugin
 // (the registry skips any VMID the manager already has — vms/registry/
