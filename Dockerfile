@@ -277,7 +277,20 @@ RUN . ./build_env.sh && \
 ARG EVM_CGO=0
 ARG EVM_TAGS=""
 
-ARG EVM_VERSION=v1.104.9
+# v1.104.22 realigns the plugin with THIS node's own go.mod: api v1.0.16 ->
+# v1.1.1, vm v1.2.6 -> v1.3.1, geth v1.17.12 -> v1.20.1. Node main pins api
+# v1.1.1, so pinning an evm at api v1.0.16 reintroduces the exact
+# InitializeResponse decode mismatch described above, just in the opposite
+# direction — keep this ARG and node's go.mod on the same api/vm/geth line.
+#
+# v1.104.14 is also the FIRST evm tag carrying the C-Chain fee-split seam
+# (core/fee_split.go creditTxFee + extras.FeeSplitTimestamp/FeeRewardVault).
+# Below it, encoding/json silently DISCARDS the genesis "feeSplitTimestamp"
+# key: a chain configured for the 50/50 split instead routes 100% of every fee
+# to the block coinbase and the reward vault 0x0100..0002 stays 0 forever, with
+# nothing burned. The split stays dormant wherever feeSplitTimestamp is absent
+# (mainnet), so this bump is behaviour-preserving there.
+ARG EVM_VERSION=v1.104.22
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
