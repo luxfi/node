@@ -158,12 +158,54 @@ func TestNetsBootstrapping(t *testing.T) {
 	chain, ok := chains.GetOrCreate(netID)
 	require.True(ok)
 
-	// Start bootstrapping
+	// Start bootstrapping. What comes back is the CHAIN that is syncing, never
+	// the net that holds it — this assertion used to demand netID, which is
+	// how the phantom "11111111111111111111111111111111LpoYY" survived review.
 	chain.AddChain(chainID)
 	bootstrapping := chains.Bootstrapping()
-	require.Contains(bootstrapping, netID)
+	require.Equal([]ids.ID{chainID}, bootstrapping)
+	require.NotContains(bootstrapping, netID)
 
 	// Finish bootstrapping
 	chain.Bootstrapped(chainID)
+	require.Empty(chains.Bootstrapping())
+}
+
+// The "bootstrapped" health check publishes Nets.Bootstrapping() verbatim as
+// its message. s.chains is keyed by NET id, so returning the key reported
+// constants.PrimaryNetworkID (ids.Empty, cb58
+// "11111111111111111111111111111111LpoYY") as though it were an unbootstrapped
+// CHAIN. Operators saw a chain ID the chain manager denies exists, and every
+// stuck chain on the net collapsed into that one phantom entry.
+func TestNetsBootstrappingReportsChainsNotNets(t *testing.T) {
+	require := require.New(t)
+
+	chains, err := NewNets(ids.EmptyNodeID, map[ids.ID]nets.Config{
+		constants.PrimaryNetworkID: {},
+	})
+	require.NoError(err)
+
+	primary, _ := chains.GetOrCreate(constants.PrimaryNetworkID)
+	cChainID := ids.GenerateTestID()
+	dChainID := ids.GenerateTestID()
+	primary.AddChain(cChainID)
+	primary.AddChain(dChainID)
+
+	bootstrapping := chains.Bootstrapping()
+
+	// The phantom: never the net's own ID.
+	require.NotContains(bootstrapping, constants.PrimaryNetworkID)
+	require.NotContains(
+		bootstrapping,
+		ids.Empty,
+		"health check reported the primary NET id as an unbootstrapped chain",
+	)
+	// Both stuck chains must be individually nameable.
+	require.ElementsMatch([]ids.ID{cChainID, dChainID}, bootstrapping)
+
+	primary.Bootstrapped(cChainID)
+	require.Equal([]ids.ID{dChainID}, chains.Bootstrapping())
+
+	primary.Bootstrapped(dChainID)
 	require.Empty(chains.Bootstrapping())
 }
