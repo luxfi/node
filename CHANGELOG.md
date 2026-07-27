@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.31]
+
+### Fixed
+- **`/v1/health` reported a chain the node denies exists.** The `bootstrapped` check publishes `chains.Nets.Bootstrapping()` verbatim as its message, but `Nets.chains` is keyed by **net** ID and the aggregate appended the map **key**, not the chain. Every primary-network chain that failed to converge therefore surfaced as the single ID `11111111111111111111111111111111LpoYY` — `constants.PrimaryNetworkID` (`ids.Empty`) — so an operator resolving it got "there is no chain with alias/ID", and N stuck chains collapsed into one indistinguishable entry (measured on devnet/testnet: `"message":["11111111111111111111111111111111LpoYY"],"contiguousFailures":3213`). The net owns the bootstrapping set, so the net now names its own chains: new `nets.Net.Bootstrapping() []ids.ID` (`nets/net.go`), and `chains/chains.go` aggregates those instead of the keys. `TestNetsBootstrappingReportsChainsNotNets` asserts `ids.Empty` never appears and that two stuck chains are individually named; `TestNetsBootstrapping` no longer asserts the bug (it demanded the net ID).
+- Ships the GET `/v1/health` encoder fix from `dada5a31` (`{"healthy":…,"error":"health reply encode failed"}` on every node — jsonv2 has no representation for `apihealth.Result.Duration`), which was on `main` but had never been tagged.
+
 ## [1.36.13]
 
 ### Fixed

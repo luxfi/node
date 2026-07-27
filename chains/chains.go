@@ -72,15 +72,22 @@ func (s *Nets) IsChainBootstrapped(chainID ids.ID) bool {
 
 // Bootstrapping returns the chainIDs of any chains that are still
 // bootstrapping.
+//
+// s.chains is keyed by NET id, not chain id. Reporting the key named the net
+// instead of the chain: every primary-network chain that failed to converge
+// surfaced in /v1/health as the single ID
+// "11111111111111111111111111111111LpoYY" — constants.PrimaryNetworkID, i.e.
+// ids.Empty — a "chain" the chain manager has never heard of, so the operator
+// chasing it got "there is no chain with alias/ID". Worse, N stuck chains
+// collapsed into one indistinguishable entry. Ask each net which of ITS chains
+// are still bootstrapping; the net owns that set.
 func (s *Nets) Bootstrapping() []ids.ID {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	chainsBootstrapping := make([]ids.ID, 0, len(s.chains))
-	for chainID, chain := range s.chains {
-		if !chain.IsBootstrapped() {
-			chainsBootstrapping = append(chainsBootstrapping, chainID)
-		}
+	for _, chain := range s.chains {
+		chainsBootstrapping = append(chainsBootstrapping, chain.Bootstrapping()...)
 	}
 
 	return chainsBootstrapping
