@@ -34,6 +34,11 @@ type Net interface {
 	// IsBootstrapped returns true if the chains in this chain are done bootstrapping
 	IsBootstrapped() bool
 
+	// Bootstrapping returns the IDs of the chains in this net that have NOT yet
+	// finished initial sync. The net owns the bootstrapping set, so it is the
+	// net — not its caller — that can name those chains.
+	Bootstrapping() []ids.ID
+
 	// IsChainBootstrapped reports whether a SPECIFIC chain in this net has finished
 	// initial sync — i.e. Bootstrapped(chainID) was called for it (the chain reached
 	// the network frontier and its VM went to normal operation). This is the per-chain
@@ -73,6 +78,13 @@ func (s *chain) IsBootstrapped() bool {
 	defer s.lock.RUnlock()
 
 	return s.bootstrapping.Len() == 0
+}
+
+func (s *chain) Bootstrapping() []ids.ID {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	return s.bootstrapping.List()
 }
 
 // IsChainBootstrapped assumes MONOTONIC per-process bootstrapped state: a chain

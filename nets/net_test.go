@@ -68,3 +68,26 @@ func TestIsAllowed(t *testing.T) {
 	require.False(s.IsAllowed(ids.GenerateTestNodeID(), false), "Non-validator should not be allowed with validator only rules and allowed nodes")
 	require.True(s.IsAllowed(allowedNodeID, true), "Non-validator allowed node should be allowed with validator only rules and allowed nodes")
 }
+
+// Bootstrapping must name the CHAINS still syncing. The net-level aggregate
+// IsBootstrapped() only says "something here is unconverged"; only the chain
+// IDs say what.
+func TestNetBootstrappingNamesTheChains(t *testing.T) {
+	require := require.New(t)
+
+	chainID0 := ids.GenerateTestID()
+	chainID1 := ids.GenerateTestID()
+
+	s := New(ids.GenerateTestNodeID(), Config{})
+	require.Empty(s.Bootstrapping())
+
+	s.AddChain(chainID0)
+	s.AddChain(chainID1)
+	require.ElementsMatch([]ids.ID{chainID0, chainID1}, s.Bootstrapping())
+
+	s.Bootstrapped(chainID0)
+	require.Equal([]ids.ID{chainID1}, s.Bootstrapping())
+
+	s.Bootstrapped(chainID1)
+	require.Empty(s.Bootstrapping())
+}
