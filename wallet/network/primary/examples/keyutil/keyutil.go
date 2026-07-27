@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/go-bip32"
 	"github.com/luxfi/go-bip39"
-	"github.com/luxfi/keys"
+	"github.com/luxfi/kms/pkg/mnemonic"
 )
 
 const (
@@ -31,10 +31,10 @@ const (
 
 // MustLoadKey loads a secp256k1 private key from (in order of priority):
 //  1. MNEMONIC environment variable (BIP-39 mnemonic phrase)
-//  2.  via native ZAP — when KMS_ADDR + KMS_ENV +
+//  2. via native ZAP — when KMS_ADDR + KMS_ENV +
 //     KMS_MNEMONIC_PATH are set in the environment. Uses the canonical
-//     luxfi/kms keys.LoadMnemonic loader so every Lux-derived
-//     service resolves keys the same way.
+//     kms/pkg/mnemonic loader so every Lux-derived service resolves
+//     keys the same way.
 //  3. Key name provided as first command-line argument
 //  4. ~/.lux/keys/default/ if it exists
 //
@@ -58,28 +58,31 @@ func MustLoadKey() *secp256k1.PrivateKey {
 // LoadKey attempts to load a private key using the priority order above.
 func LoadKey() (*secp256k1.PrivateKey, error) {
 	// 1. MNEMONIC env var — local dev + CI test seam.
-	if mnemonic := strings.TrimSpace(os.Getenv("MNEMONIC")); mnemonic != "" {
-		return keyFromMnemonic(mnemonic)
+	if phrase := strings.TrimSpace(os.Getenv("MNEMONIC")); phrase != "" {
+		return keyFromMnemonic(phrase)
 	}
 
 	// 2.  via native ZAP — production path for any Lux-derived
 	// service running under a KMS-projected env. The canonical loader
-	// lives in luxfi/keys (alongside the BIP-39 derivation primitives)
-	// so luxd, netrunner, lux/cli, and every descending L1's bootstrap
-	// all resolve mnemonics the same way.
-	// Trust at the network boundary (NetworkPolicy + ZAP wire) — the
-	// staking material itself comes from the KMS-held operational
-	// mnemonic at KMS_MNEMONIC_PATH (default /mnemonic).
+	// lives in kms/pkg/mnemonic, not luxfi/keys: keys must not import
+	// kms, because kms already imports keys for ServiceIdentity, and
+	// the back edge would close an import cycle. luxd, netrunner,
+	// lux/cli, and every descending L1's bootstrap all resolve
+	// mnemonics through it.
+	// Trust at the network boundary (NetworkPolicy + ZAP wire) — hence
+	// a nil ServiceIdentity — the staking material itself comes from
+	// the KMS-held operational mnemonic at KMS_MNEMONIC_PATH.
 	if addr := os.Getenv("KMS_ADDR"); addr != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		mnemonic, err := keys.LoadMnemonicFromKMS(ctx, addr,
+		phrase, err := mnemonic.LoadFromKMS(ctx, addr,
 			os.Getenv("KMS_ENV"),
-			envOr("KMS_MNEMONIC_PATH", "/mnemonic"))
+			envOr("KMS_MNEMONIC_PATH", "/mnemonic"),
+			nil)
 		if err != nil {
 			return nil, fmt.Errorf("load mnemonic from KMS: %w", err)
 		}
-		return keyFromMnemonic(mnemonic)
+		return keyFromMnemonic(phrase)
 	}
 
 	// 3. Key name from command-line arguments.
