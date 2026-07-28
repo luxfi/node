@@ -253,6 +253,46 @@ when v1.36.12 image is ready → set devnet sts image v1.36.12, delete luxd-1, c
 C-Chain inits + reaches tip; then finish devnet (durable-fix proof + RewardManager),
 then gated testnet→mainnet→zoo.
 
+## v1.36.33 — the build→self-verify-fail→drop loop (devnet 96367 / testnet 96368, 2026-07-28)
+
+**Symptom.** Every proposer built a block and then rejected the block it had just
+built, forever: `built block … height=1047` immediately followed by
+`built block failed verification — dropping error="inner parentID didn't match
+expected parent"`, 83–456 drops/min per node, accepted tip frozen two heights BELOW
+what the builder kept proposing (devnet tip 1045, builds 1047).
+
+**Root cause (one line).** `buildChild` asked the inner VM for a block without first
+pointing the inner VM at the parent's inner block. The inner VM builds on ITS OWN
+head (`luxfi/evm` miner reads `bc.CurrentBlock()`); the verify path requires
+`child.innerBlk.Parent() == parent.innerBlk.ID()`. Two different pointers, one
+required equal to the other, nothing asserting it. The head drifts on its own:
+verifying a GOSSIPED block whose parent is the current head optimistically sets the
+head (`core/blockchain.go writeBlockAndSetHead → newTip → writeCanonicalBlockWithLogs`),
+and `VM.SetPreference` short-circuits on an unchanged outer preference so it never
+re-pushes the inner preference to drag the head back. Non-self-correcting by
+construction.
+
+**Fix.** `VM.anchorInnerBuildParent` (vms/proposervm/vm.go) — one inner
+`SetPreference` at the point of use, called from BOTH build delegations
+(`postForkCommonComponents.buildChild`, `preForkBlock.buildChild`). On a healthy node
+the inner `setPreference` early-returns on `current.Hash() == block.Hash()`, so it is
+a lookup and no state change; when it fails, the head is provably not the parent's
+inner block, so refusing to build beats emitting a block we would drop.
+Regression proof: `vms/proposervm/build_inner_parent_test.go` (models the three evm
+head semantics — build-on-head, verify-advances-head, SetPreference-reorgs-head).
+
+**NOT the cause, measured:** the P-Chain. `info.isBootstrapped{"chain":"P"}` = true on
+15/15 nodes and `platform.getHeight` = 0 on 15/15 **including mainnet**, whose built
+blocks also carry `pChainHeight=0`. `bootstrapped.message:["111…LpoYY"]` is the
+primary-network NET id (`chains/chains.go Nets.Bootstrapping` keys by net), not the
+P-Chain — the P-Chain's chain id prints `111…P`. Nothing in the verify path reads
+pChainHeight before the parent check.
+
+**Sibling failure modes on the same fleets (already fixed in 1.36.32, needs the roll):**
+outer index BEHIND the inner tip ⇒ `refusing to build`/boot repair
+(`height_backfill.go`, 7d2f01eb), and preferred-absent-locally ⇒ last-accepted
+fallback (`vm.go BuildBlock`). All three are the same invariant seen from three sides.
+
 ## Essential Commands
 
 ### Release & build (canonical) — via platform.hanzo.ai, NOT GitHub Actions
