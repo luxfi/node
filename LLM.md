@@ -362,6 +362,64 @@ quorum is arithmetically unreachable; devnet demonstrated both directions in one
 (pinned at 1378 on 3 live, 1378→1395→1396 the moment luxd-4 restored a 4th). This is a
 config value, not a code defect, and lowering it lowers the safety margin — left as is.
 
+### Testnet 96368 roll (15:32–16:00Z) — accepted, after two blockers the devnet roll never hit
+
+Testnet was frozen at **1779** with only three live C-Chains, below `--consensus-quorum-size=4`
+(`ceil(2·5/3)+1`), so no block could be accepted. luxd-1 and luxd-4 had no C-Chain at all —
+`/v1/bc/C/rpc` 404 — on `failed to repair accepted chain by height: proposervm finality index
+(height 1453 / 1463) is BEHIND the inner VM tip (height 1491)`. v1.36.35 turns that fatal into
+a repair, and it worked on the first boot of each: `proposervm finality index REBUILT from the
+local block store — index and inner tip agree fromHeight=1453 toHeight=1491`. The freeze broke
+the instant a **fourth** C-Chain came up. Final: five nodes on v1.36.35, every binary
+self-reporting `luxd/1.36.35`, `1779 → 1888` and climbing, tips in exact agreement, and one
+real transaction (`0x333d5bbd…`, block `0x728`) returning `status=0x1` with **identical
+blockHash `0x07fd0c68…` and `gasUsed=0x5208` on all five nodes**. α was NOT lowered.
+
+Two defects had to be fixed first. Both are invisible on devnet and both apply to any fleet.
+
+**1. The RLP startup import is fatal on re-run — it kills the C-Chain on EVERY boot.**
+Testnet's startup script passes `--import-chain-data` on every boot, relying on
+`isNothingToImportError` to make re-importing an already-imported chain a no-op. That guard
+only ever existed on `luxfi/evm` `hotfix/v1.104.9` (commit `c58d307e`, tags
+`v1.104.9-hotfix.2/3/4`); `git merge-base --is-ancestor c58d307e main` = **false**. Only the
+*other* half of that commit was forward-ported. So images built from evm main die with
+`startup import failed: no blocks imported (parsed=0)`. Proven from the two plugin binaries
+in-cluster, with a positive control:
+
+| string in `plugins/mgj786NP7…` | v1.36.24 | v1.36.35 |
+|---|---|---|
+| `ImportChain: resuming from current head` | 1 | 1 ← control |
+| `nothing to import` | 1 | **0** ← the guard |
+| `no blocks imported (parsed=` | 1 | 1 |
+
+Fixed **twice, on purpose**: the guard is restored in `luxfi/evm` main (with
+`startup_import_idempotency_test.go` locking the contract), and the flag is now gated on a
+per-PVC sentinel in `universe/k8s/lux-testnet/luxd-startup.yaml` — a completed one-time
+migration must not re-run forever. Sentinel pre-seeded on all five PVCs before the ConfigMap
+was patched. **Mainnet is NOT exposed**: its `luxd-startup` ConfigMap (39,719 bytes, contains
+`consensus-quorum-size` twice as a control) has zero `--import-chain-data` and no `.rlp` on disk.
+
+**2. 🚨 The `luxfi/vm` map-race fix never reached the C-Chain.** node v1.36.35 bumped
+`luxfi/vm` to v1.3.3 for it, but the C-Chain is a **plugin built from `luxfi/evm`**, which
+still pinned **v1.3.1**. Read off the two binaries inside one v1.36.35 pod:
+
+```
+/luxd/build/luxd                 github.com/luxfi/vm@v1.3.3
+/luxd/build/plugins/mgj786NP7…   github.com/luxfi/vm@v1.3.1   ← verifies the blocks
+```
+
+It fired on testnet luxd-0 five minutes after the roll: `fatal error: concurrent map writes`
+in `luxfi/vm@v1.3.1/components/chain/block.go:44 (*BlockWrapper).Verify` via
+`rpc/vm_server_zap.go:580 handleBlockVerify`. v1.3.3 is precisely the fix for that line — it
+takes `state.blocksLock` around `verifiedBlocks[blkID] = bw`, which v1.3.1 wrote unlocked from
+every concurrent ZAP RPC handler. `luxfi/evm` main is now on v1.3.3; **the next node image
+must be built after that bump, or this race ships again.**
+
+⚠️ **The readiness probe cannot see this.** The plugin dies while luxd survives, so the pod
+stays `ready=true`, `restarts=0`, and `info.isBootstrapped(C)` keeps answering `true` while
+`eth_blockNumber` times out — a dead C-Chain still in the Service, the exact failure the probe
+was redesigned to catch. Only a per-node **tip** probe sees it. Recovery is a pod delete.
+
 ## v1.36.33 — the build→self-verify-fail→drop loop (devnet 96367 / testnet 96368, 2026-07-28)
 
 **Symptom.** Every proposer built a block and then rejected the block it had just
