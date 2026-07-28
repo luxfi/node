@@ -42,11 +42,11 @@ WORKDIR /build
 # deps not registered in the public sum.golang.org / proxy (reading e.g.
 # hanzoai/vfs@v0.4.1's go.mod via the public sumdb 404s and fails the build).
 ENV GONOSUMCHECK=github.com/luxfi/*,github.com/hanzoai/*
-ENV GONOSUMDB=github.com/luxfi/*,github.com/hanzoai/*
+ENV GONOSUMDB=github.com/lux-private/*,github.com/hanzoai/*
 # Use Go proxy for most deps (gonum.org is flaky via direct), direct only for
 # the cross-org private modules.
 ENV GOPROXY=https://proxy.golang.org,direct
-ENV GONOPROXY=github.com/luxfi/*,github.com/hanzoai/*
+ENV GONOPROXY=github.com/lux-private/*,github.com/hanzoai/*
 ENV GOFLAGS="-mod=mod"
 
 # Copy and download lux dependencies using go mod.
