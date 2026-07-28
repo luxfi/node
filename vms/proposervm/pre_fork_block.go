@@ -287,6 +287,16 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	}
 	// else: we ARE the elected proposer for this slot — build the unsigned block.
 
+	// The inner VM builds on ITS OWN head, and verifyPostForkChild below requires the
+	// transition block's inner parent to be exactly THIS block's inner block. Anchor the
+	// two together before delegating (see VM.anchorInnerBuildParent): at the fork height
+	// every validator may emit its own unsigned transition candidate, so a gossiped
+	// sibling that verifies here would otherwise drift the inner head and wedge the
+	// transition — the same self-rejection loop, at chain start.
+	if err := b.vm.anchorInnerBuildParent(ctx, parentID, b.Block.ID()); err != nil {
+		return nil, err
+	}
+
 	var innerBlock chain.Block
 	if b.vm.blockBuilderVM != nil {
 		// VM supports BuildBlockWithRuntime

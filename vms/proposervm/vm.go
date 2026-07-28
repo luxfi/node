@@ -507,6 +507,56 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 	return nil
 }
 
+// anchorInnerBuildParent points the inner VM at [innerParentID] — the inner block wrapped
+// by the outer parent a build is about to extend — and is called from both build
+// delegations (postForkCommonComponents.buildChild and preForkBlock.buildChild) as the
+// last step before asking the inner VM for a block.
+//
+// THE INVARIANT it establishes is the one the verify path enforces:
+// child.innerBlk.Parent() == parent.innerBlk.ID(), else errInnerParentMismatch
+// (block.go, and pre_fork_block.go for the transition block). The inner VM never reads
+// the proposervm's parent — it builds on ITS OWN head (luxfi/evm: the miner reads
+// bc.CurrentBlock()) — so build and verify read two different pointers, and the builder's
+// is not ours to assume.
+//
+// WHY MAINTAINING IT IN SetPreference ALONE IS NOT ENOUGH. The inner head moves for
+// reasons the proposervm never observes: verifying a GOSSIPED block whose parent is the
+// current head optimistically makes it the head (evm core/blockchain.go
+// writeBlockAndSetHead → newTip → writeCanonicalBlockWithLogs → writeHeadBlock), with no
+// proposervm involvement and no accept. SetPreference cannot undo that drift either — it
+// short-circuits on an unchanged outer preference (above), so re-affirming the same tip
+// never re-pushes the inner preference. Every subsequent build then extends the drifted
+// head, the node REJECTS THE BLOCK IT JUST BUILT, drops it, and repeats forever:
+// devnet 96367 / testnet 96368 on 2026-07-28, "built block failed verification —
+// dropping / inner parentID didn't match expected parent", 83–456 drops/min per node,
+// the accepted tip frozen while the builder ran two heights ahead of it. Never
+// self-corrects, on any node, ever.
+//
+// SetPreference on the INNER VM is the right primitive and the only one: it is that VM's
+// own head-reorg entry point (evm VM.SetPreference → BlockChain.SetPreference →
+// writeKnownBlock, which performs the reorg side effects). Asserting it at the point of
+// use — rather than trusting a distant caller to have done it — is what makes the
+// requirement local to the code that depends on it.
+//
+// COST AND SAFETY. On a healthy node the head already IS the parent's inner block and the
+// inner SetPreference returns early on that identity (evm setPreference:
+// `current.Hash() == block.Hash()`), so this is one lookup and no state change — zero
+// behaviour change in the common case. When it fails, the head is provably NOT the
+// parent's inner block, so any child built would fail this node's own Verify; refusing to
+// build is strictly better than emitting a block we are guaranteed to drop.
+func (vm *VM) anchorInnerBuildParent(ctx context.Context, parentID, innerParentID ids.ID) error {
+	if err := vm.ChainVM.SetPreference(ctx, innerParentID); err != nil {
+		vm.logger.Error("unexpected build block failure",
+			log.String("reason", "failed to anchor the inner VM on the parent's inner block"),
+			log.Stringer("parentID", parentID),
+			log.Stringer("innerParentID", innerParentID),
+			log.Err(err),
+		)
+		return fmt.Errorf("failed to anchor inner build parent %s: %w", innerParentID, err)
+	}
+	return nil
+}
+
 func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
 	for {
 		if err := ctx.Err(); err != nil {

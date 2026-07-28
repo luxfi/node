@@ -301,6 +301,12 @@ func (p *postForkCommonComponents) buildChild(
 	_ = pChainHeight
 	contextPChainHeight := epoch.PChainHeight
 
+	// The inner VM builds on ITS OWN head, and Verify above requires the child's inner
+	// parent to be exactly p.innerBlk. Anchor the two together before delegating.
+	if err := p.vm.anchorInnerBuildParent(ctx, parentID, p.innerBlk.ID()); err != nil {
+		return nil, err
+	}
+
 	var innerBlock chain.Block
 	if p.vm.blockBuilderVM != nil {
 		builtBlock, err := p.vm.blockBuilderVM.BuildBlockWithRuntime(ctx, &runtime.Runtime{
