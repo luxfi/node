@@ -293,6 +293,33 @@ outer index BEHIND the inner tip ⇒ `refusing to build`/boot repair
 (`height_backfill.go`, 7d2f01eb), and preferred-absent-locally ⇒ last-accepted
 fallback (`vm.go BuildBlock`). All three are the same invariant seen from three sides.
 
+**Roll surface — measured 2026-07-28T07:5xZ, do not use the LuxNetwork CR.**
+`lux-operator` and `lux-operator-devnet` are **0/0** in `lux-system`, so nothing
+reconciles `luxnetworks.lux.cloud/luxd`; its tags are stale garbage (mainnet
+`v1.34.0`, testnet `v1.32.12` — v1.34.0 exists in no registry). The live image is on
+the **StatefulSet**, hand-maintained: mainnet `ghcr.io/luxfi/node:v1.36.2`
+(`kubectl-patch` 07-25T00:27:04Z), devnet `v1.36.25@sha256:ca497eff…`, testnet
+`v1.36.24@sha256:91e2542b…`, all three `updateStrategy: OnDelete`. Change the image in
+the universe manifest and apply, then delete one pod. Editing the CR and deleting a pod
+reboots it on the OLD image.
+
+**Mainnet 96369 is NOT a clean control — 3 of 5 nodes have Mode B, invisibly.**
+luxd-0/3/4 `eth_blockNumber` = `0x10c1cf` (1098191, block ts 2026-07-24T15:46:19Z) and
+have not moved in 3+ days while luxd-1 mines (1098341, tx status 0x1, 07:58Z); luxd-2
+serves 404 (no C-Chain). Not a fork — 1098191 hashes identically on luxd-0 and luxd-1.
+3998 of luxd-0's last 4000 log lines are the same `built block … height=1098196`. The
+drop line is absent because the **binary** lacks it: `grep -c "built block failed
+verification" /luxd/build/luxd` = **0** on mainnet v1.36.2, **1** on devnet v1.36.25.
+`/v1/health` says `{"healthy":true,"error":"health reply encode failed"}` on the frozen
+node and the mining node alike — never gate on it, use tip parity.
+Two hazards for the roll: the 4 broken mainnet pods are exactly the ones on
+ControllerRevision `luxd-596857c9d6` (rev 147, kubectl-patch 07-25: GOMEMLIMIT=6GiB,
+mem limit 16Gi→12Gi, request 4Gi→7Gi) and the one mining node, luxd-1, is the only pod
+still on rev 144 — **deleting luxd-1 recreates it on the revision every other node
+broke on**. And `ghcr.io/luxfi/node:v1.36.2` has no git tag at all
+(`git ls-remote origin refs/tags/v1.36.2` → empty; v1.36.24/25 → present), so what
+mainnet runs is not reproducible from this repo.
+
 ## Essential Commands
 
 ### Release & build (canonical) — via platform.hanzo.ai, NOT GitHub Actions
