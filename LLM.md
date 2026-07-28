@@ -331,6 +331,31 @@ inner VM. A Go map fatal is unrecoverable: it kills the plugin, **luxd survives 
 answering `info.getNodeVersion` while its chain is gone** — pod-Ready and `/v1/health`
 both stay green — and there is no self-heal.
 
+**Devnet roll result (10:23–10:45Z).** All five pods on v1.36.35, `restarts=0` on every one
+for 20+ minutes. Both fixed defects are GONE fleet-wide: `CONSENSUS-CERTIFIED` fatal = 0
+(previously all five died within minutes), `concurrent map` = 0. luxd-1, whose C-Chain had
+been dead ~45 min with no self-heal, came back at tip parity on first boot; luxd-3, stuck at
+1524, caught up immediately. A transaction of ours got a receipt with identical status,
+blockHash and resulting balance on all five nodes (`0xcb5e9a06…`, block 1636, status 0x1).
+
+**NOT accepted — a THIRD, pre-existing defect blocks five-way parity.** Two nodes (luxd-2 at
+1789, luxd-4 at 1825) freeze their tip while 0/1/3 advance in lockstep, emitting
+
+```
+error unexpected build block failure  error="not found"
+      reason="failed to fetch preferred block; no distinct last-accepted fallback"
+```
+
+from `vms/proposervm/vm.go:380`. That branch is reached when the preferred block is
+unfetchable AND last-accepted is either unreadable or the same id — a local storage/index
+condition, not a steering choice. It is **NOT a regression from this release**: the identical
+line appears on binaries built long before it — mainnet luxd-1 on **v1.36.2** (2,223
+occurrences, and that is the one mainnet node still producing) and testnet luxd-3 on
+**v1.36.24** (35,693). It is also survivable: the stalled node keeps VOTING, so quorum holds
+and the chain keeps finalizing (devnet reached 1913 with two nodes frozen), and devnet luxd-1
+self-recovered from it once (1609 → 1634). Left unfixed and unchained-to — it needs its own
+diagnosis at the proposervm layer.
+
 **Quorum arithmetic (reported, not changed).** Devnet and testnet both run
 `--consensus-sample-size=5 --consensus-quorum-size=4`. With only 3 live C-Chains the
 quorum is arithmetically unreachable; devnet demonstrated both directions in one session
