@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 	zaphttp "github.com/zap-proto/http"
 
 	log "github.com/luxfi/log"
@@ -53,7 +54,10 @@ func startZapRPCListener(logger log.Logger, handler http.Handler, addr string) *
 	if addr == "" {
 		return nil
 	}
-	srv := &zaphttp.Server{Addr: addr, Handler: handler}
+	// zap-proto/http >= v0.2.0 takes a fasthttp.RequestHandler. Adapt the very
+	// same net/http handler chain the HTTP listener serves, so the two
+	// transports stay behaviourally identical — only the wire encoding differs.
+	srv := &zaphttp.Server{Addr: addr, Handler: fasthttpadaptor.NewFastHTTPHandler(handler)}
 	go func() {
 		logger.Info("ZAP-RPC API listening", log.UserString("addr", addr))
 		if err := srv.ListenAndServe(); err != nil {
