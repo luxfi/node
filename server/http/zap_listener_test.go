@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/valyala/fasthttp"
 	zaphttp "github.com/zap-proto/http"
 
 	log "github.com/luxfi/log"
@@ -22,8 +23,8 @@ func TestZapRPCListenAddr(t *testing.T) {
 		val  string
 		want string
 	}{
-		{set: false, want: ""},          // unset → disabled (default)
-		{set: true, val: "", want: ""},  // empty → disabled
+		{set: false, want: ""},         // unset → disabled (default)
+		{set: true, val: "", want: ""}, // empty → disabled
 		{set: true, val: "off", want: ""},
 		{set: true, val: "OFF", want: ""},
 		{set: true, val: "0", want: ""},
@@ -74,18 +75,32 @@ func TestStartZapRPCListener_RoundTrip(t *testing.T) {
 	// Give the goroutine a beat to bind.
 	time.Sleep(150 * time.Millisecond)
 
-	client := &http.Client{Transport: zaphttp.NewTransport(addr)}
-	resp, err := client.Post("http://"+addr+"/v1/bc/C/rpc", "application/json", nil)
-	if err != nil {
+	// zap-proto/http >= v0.2.0 speaks fasthttp on both ends: Transport.Do takes
+	// a fasthttp request/response pair rather than implementing
+	// http.RoundTripper. The round trip being asserted is unchanged — a real
+	// ZAP request over the wire must reach the net/http handler the listener
+	// was given, through the fasthttpadaptor bridge in startZapRPCListener.
+	// v0.3.0 replaced NewTransport with Dial, mirroring net.Dial: the network is
+	// a VALUE ("tcp", "unix") rather than a family of constructors.
+	transport := zaphttp.Dial("tcp", addr)
+	defer transport.CloseIdleConnections()
+
+	req, resp := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+
+	req.SetRequestURI("http://" + addr + "/v1/bc/C/rpc")
+	req.Header.SetMethod(http.MethodPost)
+	req.Header.SetContentType("application/json")
+
+	if err := transport.Do(req, resp); err != nil {
 		t.Fatalf("ZAP round-trip POST failed: %v", err)
 	}
-	defer resp.Body.Close()
 
-	got, _ := io.ReadAll(resp.Body)
-	if string(got) != body {
+	if got := string(resp.Body()); got != body {
 		t.Fatalf("ZAP round-trip body = %q, want %q", got, body)
 	}
-	if ct := resp.Header.Get("Content-Type"); ct != "application/json" {
+	if ct := string(resp.Header.ContentType()); ct != "application/json" {
 		t.Fatalf("ZAP round-trip Content-Type = %q, want application/json", ct)
 	}
 }

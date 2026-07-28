@@ -253,7 +253,18 @@ when v1.36.12 image is ready → set devnet sts image v1.36.12, delete luxd-1, c
 C-Chain inits + reaches tip; then finish devnet (durable-fix proof + RewardManager),
 then gated testnet→mainnet→zoo.
 
-## v1.36.34 — the certified-descendant false halt + the plugin-killing map fatal (devnet 96367, 2026-07-28)
+## v1.36.35 — the certified-descendant false halt + the plugin-killing map fatal (devnet 96367, 2026-07-28)
+
+> Shipped as v1.36.35, not v1.36.34: the v1.36.34 tag inherited a build break that
+> `011e9bf99d` ("deps: drop go.sum lines that disagree with the checksum log") had
+> already pushed to main — it bumped `zap-proto/http` from a pseudo-version to v0.3.0,
+> whose `Server.Handler` is a `fasthttp.RequestHandler` and whose `NewTransport` is now
+> `Dial(network, addr)`, so `server/http/zap_listener.go` no longer compiled. **main was
+> unbuildable from that commit until this one.** Repaired here by bridging the one
+> net/http handler chain with `fasthttpadaptor.NewFastHTTPHandler` (the two transports
+> stay behaviourally identical — only the wire encoding differs) and moving the
+> round-trip test onto the fasthttp request/response pair. v1.36.34 produced no image
+> and its tag was deleted.
 
 Rolling devnet to v1.36.33 fixed the build→verify-fail→drop loop and unmasked two
 DIFFERENT failures. Both are fixed here; each has a regression test that fails before
