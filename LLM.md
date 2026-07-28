@@ -253,6 +253,31 @@ when v1.36.12 image is ready → set devnet sts image v1.36.12, delete luxd-1, c
 C-Chain inits + reaches tip; then finish devnet (durable-fix proof + RewardManager),
 then gated testnet→mainnet→zoo.
 
+## Crash-boot recovery armor + upstream delta verdict (vms/proposervm, test-only, 2026-07-28)
+
+**Upstream review (avalanchego master `bcc851822d..c5d3c8aafe`, 6 commits): ZERO code
+ports.** grpc bump (no named bug; would cascade through luxfi/vm), README typo, typed
+sync-client scaffolding (client-side only, no serving handlers even upstream; our sync
+direction is ZAP-native — reference for task #66 only), a Firewood `debug_intermediateRoots`
+enabler (our tracers API is `.disabled`, twice N/A), and two streaming-VM-only mempool
+guards whose failure modes we already bracket (`miner/worker.go:62 targetTxsSize=1800KiB`
+build cap + txpool `ErrGasLimit`/128KB caps under the 2MiB wire cap). **Nothing in the
+delta or its branches touches proposervm — the open `vm.go:380` preferred-fetch failure
+gets no upstream help.** What WAS worth taking is their recovery-test discipline, ported as:
+
+**`vm_crashboot_test.go`** — copy the COMMITTED bytes out from under a RUNNING proposervm
+(no Shutdown), boot a SECOND, cold VM over the copy (repair + metadata, Initialize order),
+assert source-equality (finality pointer, fork height, every height's envelope openable
+cold) and then BUILD on the recovered tip (outer parent == recovered envelope, inner
+parent == its inner block — the errInnerParentMismatch invariant from a cold boot).
+Matrix: nothing-accepted / first-accept / longer run / copy-while-source-runs-on, plus
+`OuterCommittedInnerNot`: the one crash window the accept path leaves open
+(`acceptPostForkBlock` commits BEFORE the inner accept) must boot via the roll-back arm
+and re-propose. Harness seams added in height_lag_repro_test.go (`testVMOnBase`,
+`acceptRangeThroughProposervm`). **Negative control executed**: deleting the
+`vm.db.Commit()` from `acceptPostForkBlock` fails every persistence-bearing scenario
+(4 of 6) — the armor bites on flush-order regressions, not just on green paths.
+
 ## v1.36.35 — the certified-descendant false halt + the plugin-killing map fatal (devnet 96367, 2026-07-28)
 
 > Shipped as v1.36.35, not v1.36.34: the v1.36.34 tag inherited a build break that
