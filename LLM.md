@@ -1215,3 +1215,31 @@ launch state live in this file, `CHANGELOG.md`, `RELEASE.md`; chain IDs/ports in
 ---
 
 *Last Updated*: 2026-06-06
+
+## ⛔ v1.36.38 — DO NOT DEPLOY (superseded by v1.36.39)
+
+`v1.36.38` (commit `bd2edc135f`, chunked ancestry descent) is **tagged but must not be
+deployed**. The tag is retained for provenance — do not delete it.
+
+Defects, found in owner review after tagging:
+
+1. **Bootstrap ancestry responses are not trust-boundary validated.** `nameFrontier`'s chunk
+   loop adds every returned `BlockRef` to the global index before checking that the response
+   contains the requested cursor, forms exactly one contiguous parent path, decreases in height
+   by exactly one, is cycle-free, and carries no duplicate ID with differing metadata. Fix:
+   a `VerifiedAncestryChunk{Root, Blocks, Next, Complete}` validated as a unit *before* any ref
+   reaches the index.
+
+2. **The traversal deadline is internally inconsistent.** A single `Ancestry` request may take
+   up to 12s while the entire multi-anchor walk is bounded to `bootstrapNamingTimeout = 3s`.
+   A child request must never outlive its parent operation (e.g. 3s per request / 30s per
+   attempt).
+
+3. **Recovery still has a permanent maximum gap.** `bootstrapMaxNamingDepth = 32768` is a
+   recoverability ceiling, not a per-attempt budget. Replace with `MaxBlocksPerAttempt` /
+   `MaxBytesPerAttempt` / `MaxRequestsPerAttempt` / `AttemptTimeout` plus persisted
+   `NamingProgress{Anchor, Cursor, Traversed, VerifiedRefs}`. On exhaustion: save the cursor and
+   return incomplete, then resume from it. **Never translate "attempt budget exhausted" into
+   `ErrNoBootstrapQuorum`.**
+
+No image was ever built for this tag, so nothing is running it. Ship the above as `v1.36.39`.
