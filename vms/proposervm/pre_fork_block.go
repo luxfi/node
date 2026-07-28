@@ -65,8 +65,20 @@ func (b *preForkBlock) Accept(ctx context.Context) error {
 	return b.acceptInnerBlk(ctx)
 }
 
-func (*preForkBlock) acceptOuterBlk() error {
-	return nil
+// acceptOuterBlk is a NO-OP for a genuine pre-fork block — a pre-fork block has no
+// outer envelope, so there is nothing to index — and a hard REFUSAL once the chain
+// has forked.
+//
+// The refusal is the second half of the finality-index root-cause fix (the first is
+// vm.getPreForkBlock). Accepting a pre-fork block at or above the fork height
+// advances the inner VM while leaving the proposervm index exactly where it was:
+// the index silently falls behind the inner tip during normal operation, and the
+// NEXT boot cannot start the chain. Refusing here converts that invisible,
+// deferred, fatal corruption into an immediate, attributable error at the exact
+// accept that would have caused it — and the engine's accept path is fail-closed,
+// so finality stops rather than diverging.
+func (b *preForkBlock) acceptOuterBlk() error {
+	return b.vm.refusePreForkAfterFork(b.Height())
 }
 
 func (b *preForkBlock) acceptInnerBlk(ctx context.Context) error {

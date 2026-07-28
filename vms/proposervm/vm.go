@@ -121,6 +121,16 @@ type VM struct {
 	// [postForkBlock] and its inner block.
 	lastAcceptedTimestampGaugeVec metric.GaugeVec
 
+	// backfillMu guards [backfill]. It is a LEAF lock — never held across a
+	// callout — so it cannot deadlock against [lock], the [Tree] or the inner VM.
+	backfillMu sync.RWMutex
+	// backfill is non-nil ONLY while this node booted with a finality index that
+	// the local block store could not fully rebuild (see height_backfill.go). While
+	// it is set the chain runs read-only-ish: it refuses to BUILD blocks, and
+	// BackfillOuterBlock is the seam that completes the index. nil = index whole,
+	// which is the state of every healthy node.
+	backfill *outerBackfill
+
 	// quasarGate is the OPTIONAL post-quantum finality-cert gate. nil (the
 	// default) means PQ-finality verification is OFF — the accept path is
 	// unchanged classical Snow. When set AND forward-dated activation is reached,
@@ -332,6 +342,18 @@ func (vm *VM) SetState(ctx context.Context, newState uint32) error {
 }
 
 func (vm *VM) BuildBlock(ctx context.Context) (vmchain.Block, error) {
+	// FAIL-SAFE while the finality index has a hole. A node that booted with an
+	// incomplete outer index (height_backfill.go) does not know the canonical
+	// envelope at its own tip, so anything it proposed would extend a parent the
+	// network does not recognise. It stays a follower until BackfillOuterBlock
+	// closes the gap. Serving RPC and following the chain are unaffected — this is
+	// exactly the difference between the old dead C-Chain and a live one.
+	if from, to, pending := vm.NeedsOuterBackfill(); pending {
+		return nil, fmt.Errorf(
+			"proposervm: refusing to build — finality index incomplete, outer envelopes for heights %d..%d are missing",
+			from, to)
+	}
+
 	preferredBlock, err := vm.getBlock(ctx, vm.preferred)
 	if err == nil {
 		return preferredBlock.buildChild(ctx)
@@ -383,6 +405,17 @@ func (vm *VM) BuildBlock(ctx context.Context) (vmchain.Block, error) {
 }
 
 func (vm *VM) ParseBlock(ctx context.Context, b []byte) (vmchain.Block, error) {
+	// SELF-HEAL SEAM. Every outer envelope this node receives — gossip, GetAncestors,
+	// catch-up — arrives here. If this node booted with a hole in its finality index
+	// (height_backfill.go), offer the bytes to the backfill: it takes ONLY the exact
+	// next missing height, only if the envelope verifies AND wraps the inner block we
+	// already accepted there, so a wrong or hostile block cannot land. That makes a
+	// damaged node repair itself from ordinary peer traffic with no new transport and
+	// no operator step. Errors are expected and ignored (almost every block is not the
+	// one we need); when nothing is pending this is one RLock and out.
+	if vm.outerBackfillPending() {
+		_ = vm.BackfillOuterBlock(ctx, b)
+	}
 	if blk, err := vm.parsePostForkBlock(ctx, b, true); err == nil {
 		return blk, nil
 	}
@@ -783,35 +816,51 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return nil
 
 	case heightBehind:
-		// INVARIANT VIOLATION and UNRECOVERABLE LOCALLY: the proposervm's finality
-		// index sits BELOW the inner VM's accepted tip. In a correct system this
-		// never happens — the proposervm last-accepted pointer and height index
-		// commit in the SAME versiondb batch as every inner accept, so they cannot
-		// lag. Reaching here means the on-disk proposervm state was truncated
-		// relative to the inner EVM — e.g. a snapshot restored inconsistently across
-		// the two databases (the devnet-C "index 7 < inner 8").
+		// INVARIANT VIOLATION: the proposervm's finality index sits BELOW the inner
+		// VM's accepted tip. Every post-fork accept commits the envelope, its height
+		// entry and the last-accepted pointer in ONE versiondb batch BEFORE the inner
+		// block is accepted, so this can only mean some accept advanced the inner VM
+		// WITHOUT going through acceptPostForkBlock (the pre-fork fallback — now
+		// prevented, see height_backfill.go) or that the on-disk proposervm state was
+		// truncated relative to the inner EVM.
 		//
-		// We FAIL LOUD rather than "self-heal", because there is no correct local
-		// heal: the proposervm cannot fabricate the missing outer wrapper blocks for
-		// heights (pro, inner]. In particular, dropping the finality pointer
-		// (DeleteLastAccepted) is NOT a heal — proposervm.LastAccepted() would then
-		// fall back to the inner-namespace id (see LastAccepted), whose ParentID is
-		// contiguity-incompatible with the network's OUTER wrappers, permanently
-		// wedging bootstrap (the first-block anchor), catch-up (the parent==tip
-		// guard) and live Verify (the parent lookup) at the inner tip — and since
-		// every path skips blocks at height <= the tip, the missing wrapper is never
-		// rebuilt. That silent wedge is strictly worse than this loud, actionable
-		// stop. The correct remedy is operator action; surface it explicitly.
-		return fmt.Errorf(
-			"proposervm finality index (height %d, id %s) is BEHIND the inner VM tip (height %d, id %s): "+
-				"the on-disk proposervm state is truncated/inconsistent relative to the inner EVM "+
-				"(e.g. a snapshot restored inconsistently across the proposervm and EVM databases). "+
-				"This cannot be repaired locally — the proposervm cannot rebuild the missing outer wrapper "+
-				"blocks. RECOVERY: restore a snapshot that is consistent across BOTH databases, or fully "+
-				"resync this node from peers (wipe this chain's db and re-bootstrap). Refusing to auto-reset "+
-				"the finality pointer, which would silently wedge this node at the inner tip forever",
-			proLastAcceptedHeight, proLastAcceptedID, innerLastAcceptedHeight, innerLastAcceptedID,
+		// This used to be a hard init failure, which killed the chain on the node
+		// ("non-critical chain failed to initialize chainAlias=C") and made every
+		// restart fatal. It is now REPAIRED — outer-only, with no inner
+		// re-execution:
+		//
+		//  1. re-derive the index from the outer envelopes already in this node's
+		//     block store, each bound to the inner block WE accepted at that height;
+		//  2. if that cannot reach the tip, START ANYWAY in an explicit, loud,
+		//     build-gated backfill-pending state that BackfillOuterBlock completes.
+		//
+		// The finality pointer is only ever moved FORWARD onto a proven envelope and
+		// is NEVER dropped: a DeleteLastAccepted here would make LastAccepted() fall
+		// back to an inner-namespace id whose ParentID is contiguity-incompatible
+		// with the network's outer wrappers, silently wedging bootstrap/catch-up/live
+		// Verify at the inner tip forever.
+		vm.logger.Warn("proposervm finality index is BEHIND the inner VM tip — repairing",
+			log.Uint64("indexHeight", proLastAcceptedHeight),
+			log.Stringer("indexID", proLastAcceptedID),
+			log.Uint64("innerTipHeight", innerLastAcceptedHeight),
+			log.Stringer("innerTipID", innerLastAcceptedID),
 		)
+
+		reached, err := vm.rebuildOuterIndexFromStore(
+			ctx, proLastAcceptedHeight, proLastAcceptedID, innerLastAcceptedHeight)
+		if err != nil {
+			return err
+		}
+		if reached >= innerLastAcceptedHeight {
+			vm.logger.Info("proposervm finality index REBUILT from the local block store — index and inner tip agree",
+				log.Uint64("fromHeight", proLastAcceptedHeight),
+				log.Uint64("toHeight", reached),
+			)
+			return nil
+		}
+
+		vm.enterOuterBackfill(reached+1, innerLastAcceptedHeight, innerLastAcceptedID)
+		return nil
 	}
 
 	// heightAhead: the inner vm is BEHIND the proposer vm (the inner rolled back or
@@ -1028,15 +1077,66 @@ func (vm *VM) getPreForkBlock(ctx context.Context, blkID ids.ID) (*preForkBlock,
 	if err != nil {
 		return nil, err
 	}
+	// ROOT-CAUSE GUARD (the finality-index lag). getBlock() falls back here
+	// whenever [blkID] is not an OUTER envelope id — and the id the consensus
+	// ledger records as canonical IS the inner block's id
+	// (postForkCommonComponents.CanonicalID). Without this check, asking the
+	// proposervm for a canonical id post-fork silently returns a preForkBlock
+	// wrapping a post-fork inner block, whose Accept advances the inner VM and
+	// leaves the outer index untouched (preForkBlock.acceptOuterBlk is a no-op).
+	// That is how the index ends up BEHIND the inner tip while everything looks
+	// healthy, and why the NEXT boot could not start the chain.
+	//
+	// Post-fork, a block at or above the recorded fork height is by definition NOT
+	// a pre-fork block: there is no such thing as a legitimate pre-fork block at a
+	// height the proposervm has already claimed. Refuse to construct it.
+	if err := vm.refusePreForkAfterFork(engineBlk.Height()); err != nil {
+		return nil, err
+	}
 	return &preForkBlock{
 		Block: engineBlk,
 		vm:    vm,
 	}, nil
 }
 
+// refusePreForkAfterFork returns errPreForkAfterFork when [height] is at or above
+// the recorded proposervm fork height. Before the fork (no fork height recorded)
+// every block is legitimately pre-fork and this is a no-op, so a chain that has
+// not yet transitioned is completely unaffected. ONE predicate, used by both the
+// construction guard (getPreForkBlock) and the accept guard
+// (preForkBlock.acceptOuterBlk), so the two can never disagree.
+func (vm *VM) refusePreForkAfterFork(height uint64) error {
+	forkHeight, err := vm.State.GetForkHeight()
+	if err == database.ErrNotFound {
+		return nil // chain has not forked; everything is pre-fork
+	}
+	if err != nil {
+		return err
+	}
+	if height < forkHeight {
+		return nil
+	}
+	return fmt.Errorf("%w: height %d >= fork height %d", errPreForkAfterFork, height, forkHeight)
+}
+
 func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	height := blk.Height()
 	blkID := blk.ID()
+
+	// EARLY DETECTOR for the finality-index lag. The index must advance one height
+	// at a time; a jump means some accept moved the inner VM without moving the
+	// index (the pre-fork fallback the guards above now refuse) and the gap will be
+	// fatal at the next boot. Surfacing it HERE names the height where the hole
+	// opened instead of leaving a post-mortem for the next restart. Not fatal: the
+	// accept itself is correct and the boot-time rebuild can close a hole; refusing
+	// finality on a warning would be the worse trade.
+	if vm.lastAcceptedHeight != 0 && height != vm.lastAcceptedHeight+1 {
+		vm.logger.Warn("proposervm finality index is NOT contiguous — a height was accepted without being indexed",
+			log.Uint64("previousIndexedHeight", vm.lastAcceptedHeight),
+			log.Uint64("acceptedHeight", height),
+			log.Stringer("blkID", blkID),
+		)
+	}
 
 	vm.lastAcceptedHeight = height
 	vm.forgetVerifiedBlock(blkID)
