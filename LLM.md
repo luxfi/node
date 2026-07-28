@@ -262,8 +262,13 @@ direction is ZAP-native — reference for task #66 only), a Firewood `debug_inte
 enabler (our tracers API is `.disabled`, twice N/A), and two streaming-VM-only mempool
 guards whose failure modes we already bracket (`miner/worker.go:62 targetTxsSize=1800KiB`
 build cap + txpool `ErrGasLimit`/128KB caps under the 2MiB wire cap). **Nothing in the
-delta or its branches touches proposervm — the open `vm.go:380` preferred-fetch failure
-gets no upstream help.** What WAS worth taking is their recovery-test discipline, ported as:
+delta touches proposervm — the open `vm.go:380` preferred-fetch failure gets no upstream
+help.** One upstream BRANCH does touch proposervm — `containerman17/proposervm-dedup-capability`
+(+72 vm.go): inner-bytes dedup in the block store plus an extra boot-repair arm for the
+unclean-shutdown window where the outer index lands above the inner survivor (the very
+window `OuterCommittedInnerNot` below pins) — storage-layer work, not the build-path
+preferred fetch, so it changes nothing about `vm.go:380` either. What WAS worth taking is
+their recovery-test discipline, ported as:
 
 **`vm_crashboot_test.go`** — copy the COMMITTED bytes out from under a RUNNING proposervm
 (no Shutdown), boot a SECOND, cold VM over the copy (repair + metadata, Initialize order),
