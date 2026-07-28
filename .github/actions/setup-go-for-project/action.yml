@@ -27,8 +27,8 @@ runs:
     - name: Set GOPRIVATE and GONOSUMDB for luxfi packages
       shell: bash
       run: |
-        echo "GOPRIVATE=github.com/luxfi/*" >> $GITHUB_ENV
-        echo "GONOSUMDB=github.com/luxfi/*" >> $GITHUB_ENV
+        echo "GOPRIVATE=github.com/lux-private/*" >> $GITHUB_ENV
+        echo "GONOSUMDB=github.com/lux-private/*" >> $GITHUB_ENV
     - name: Configure git for private repo access
       if: inputs.github-token != ''
       shell: bash
