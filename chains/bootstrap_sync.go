@@ -57,14 +57,28 @@ const (
 	// tip, so a single (even >⅔-stake) validator cannot alone determine the frontier.
 	// Capped at the beacon-set size for tiny networks.
 	bootstrapMinAgreeingBeacons = 2
-	// bootstrapNamingWindow bounds the ancestry the ANCESTOR-TOLERANT frontier tally fetches
-	// per candidate anchor to resolve the bleeding-edge skew between honest beacons. On a live
-	// chain that skew is tiny (the canary was ONE block: 2 producers at N, 1 at N+1), so a
-	// single 256-block window covers it with enormous margin. A ⅔-common height more than this
-	// far below the highest tip is not a healthy bleeding-edge split — the tally names nothing
-	// (the loop then retries / fails safe), never a wrong block. Matches the consensus descent's
-	// per-round fetch size.
+	// bootstrapNamingWindow is the PER-FETCH ancestry chunk of the ANCESTOR-TOLERANT frontier
+	// tally. Ancestry returns FULL BLOCKS, so one fetch must stay inside a network message —
+	// this is a TRANSPORT bound, matching the consensus descent's per-round fetch size.
+	//
+	// It was previously ALSO doing two other jobs: the total ancestry budget, and a HEALTH
+	// HEURISTIC ("a ⅔-common height more than this far below the highest tip is not a healthy
+	// bleeding-edge split"). That heuristic is true for a LIVE chain and FALSE for a HALTED
+	// one, where the skew between a straggler and a node that ran on alone is arbitrarily large
+	// and perfectly healthy — no fork, just a stopped chain. Conflating the three WEDGED
+	// mainnet 96369: responders were split 1098726 (1 node) / 1098191 (2 nodes), 1098191 IS an
+	// ancestor of 1098726, and the ⅔-of-responder floor would have named it — but the gap was
+	// 535 blocks, the single 256-block fetch never reached down far enough for the high tip to
+	// vouch for it, and the tally named nothing on every retry, forever. Recovery from a halt
+	// is exactly when this path matters most, and it was disabled precisely then.
+	// The total budget is now maxNamingDepth; the health heuristic is gone.
 	bootstrapNamingWindow = 256
+	// bootstrapMaxNamingDepth is the TOTAL ancestry one anchor may be walked down, in
+	// bootstrapNamingWindow-sized chunks. Purely a resource bound (with maxNamingAnchors and
+	// bootstrapNamingTimeout): 32768 covers ~9h of 1s blocks of halt-skew, and the common
+	// healthy case never fetches at all — a single tip clearing the floor takes the exact fast
+	// path with zero fetches. Safety does NOT come from this number; see maxNamingDepth().
+	bootstrapMaxNamingDepth = 32768
 	// maxNamingAnchors bounds how many DISTINCT reported tips the ancestor-tolerant tally will
 	// fetch ancestry for in one round. Honest beacons cluster on a handful of adjacent tips, so
 	// this is never reached in practice; it caps the work a Byzantine swarm reporting many
