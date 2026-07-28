@@ -32,6 +32,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
@@ -120,7 +121,15 @@ func (ic *innerChain) vm() *blocktest.VM {
 // the real State, so every write below goes through the production code paths.
 func testVM(t *testing.T, ic *innerChain) *VM {
 	t.Helper()
-	db := versiondb.New(memdb.New())
+	return testVMOnBase(t, ic, memdb.New())
+}
+
+// testVMOnBase is testVM over a caller-supplied base database — the seam the
+// crash-boot tests (vm_crashboot_test.go) use to boot a SECOND, cold VM over
+// bytes copied out of a running one.
+func testVMOnBase(t *testing.T, ic *innerChain, base database.Database) *VM {
+	t.Helper()
+	db := versiondb.New(base)
 	metrics := metric.New("")
 	vm := &VM{
 		ChainVM:        ic.vm(),
@@ -154,9 +163,16 @@ func outerFor(t *testing.T, ic *innerChain, h uint64, parentOuter ids.ID) statel
 // node, and it is what records the fork height.
 func acceptThroughProposervm(t *testing.T, vm *VM, ic *innerChain, through uint64) map[uint64]statelessblock.SignedBlock {
 	t.Helper()
+	return acceptRangeThroughProposervm(t, vm, ic, 1, through, ids.Empty)
+}
+
+// acceptRangeThroughProposervm is acceptThroughProposervm for heights
+// from..through, chaining the first envelope off parentOuter — so a test can
+// keep a source node accepting AFTER a crash copy was taken.
+func acceptRangeThroughProposervm(t *testing.T, vm *VM, ic *innerChain, from, through uint64, parentOuter ids.ID) map[uint64]statelessblock.SignedBlock {
+	t.Helper()
 	outers := map[uint64]statelessblock.SignedBlock{}
-	parentOuter := ids.Empty
-	for h := uint64(1); h <= through; h++ {
+	for h := from; h <= through; h++ {
 		sb := outerFor(t, ic, h, parentOuter)
 		blk := &postForkBlock{
 			SignedBlock:              sb,
