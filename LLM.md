@@ -285,8 +285,13 @@ head semantics — build-on-head, verify-advances-head, SetPreference-reorgs-hea
 15/15 nodes and `platform.getHeight` = 0 on 15/15 **including mainnet**, whose built
 blocks also carry `pChainHeight=0`. `bootstrapped.message:["111…LpoYY"]` is the
 primary-network NET id (`chains/chains.go Nets.Bootstrapping` keys by net), not the
-P-Chain — the P-Chain's chain id prints `111…P`. Nothing in the verify path reads
-pChainHeight before the parent check.
+P-Chain — the P-Chain's chain id prints `111…P` (`constants.PlatformChainID =
+ids.PChainID`, while `PrimaryNetworkID = ids.Empty`). The verify path DOES read
+pChainHeight before the parent check, but only as monotonicity
+(`childPChainHeight < parentPChainHeight`, and 0 < 0 is false, so it passes); every
+P-Chain-DEPENDENT validation — epoch, `GetCurrentHeight`, proposer window — is gated
+behind `consensusState == Ready` and sits AFTER the parent check. So `pChainHeight=0`
+cannot produce `errInnerParentMismatch`.
 
 **Sibling failure modes on the same fleets (already fixed in 1.36.32, needs the roll):**
 outer index BEHIND the inner tip ⇒ `refusing to build`/boot repair
