@@ -916,3 +916,175 @@ func TestBootstrapTrust_EclipseOwnHeightNotNamedRoutesToCaughtUp(t *testing.T) {
 	require.Equal(t, refs[N].ID, f.ID, "boundary: N is named iff its height is STRICTLY ABOVE MinFrontierHeight")
 	require.Equal(t, uint64(N), f.Height)
 }
+
+// ----- H: HALT-SKEW RECOVERY (mainnet 96369 wedge) ---------------------------
+
+// TestBootstrapTrust_H_HaltSkewDeeperThanOneWindow reproduces the live mainnet 96369 wedge and
+// proves the chunked descent fixes it.
+//
+// SHAPE (measured per-node, in-pod, 2026-07-28): the fleet HALTED below its α=4-of-5 threshold.
+// One node ran on alone to 1098726 while two stayed at 1098191; 1098191 IS an ancestor of
+// 1098726 (no fork — luxd-3/luxd-4's `latest` IS 1098191, they hold nothing competing), so the
+// ⅔-of-RESPONDER floor is satisfied at 1098191 by all three responders and it MUST be named.
+//
+// It was not. nameFrontier fetched one bootstrapNamingWindow (256) of ancestry per anchor, and
+// the gap is 535 — so the high tip's ancestry never reached down far enough to vouch for the
+// common block. 1098191 held only its 2 direct responders (2 of 3 = below the ⅔ floor of 2,
+// which the strict `>` rejects), the tally named NOTHING, and every retry did the same. The
+// node sat at height 0 forever and mainnet could not regain quorum.
+//
+// The gap here (535) is deliberately > one window (256) and < maxNamingDepth. With the
+// single-fetch window this FAILS (frontier is nil → ErrNoBootstrapQuorum); with the chunked
+// descent the walk continues past the first chunk and names the common ancestor.
+func TestBootstrapTrust_H_HaltSkewDeeperThanOneWindow(t *testing.T) {
+	const w uint64 = 100
+	const gap = 535 // luxd-1 1098726 - luxd-3/luxd-4 1098191, the measured mainnet skew
+
+	// common is the last block the whole fleet accepted; `ahead` extends it by `gap`.
+	refs, byID := refChain(1000)
+	common := refs[1000]
+	prev := common
+	for i := 0; i < gap; i++ {
+		c := childRef(prev)
+		byID[c.ID] = c
+		prev = c
+	}
+	ahead := prev
+	require.Equal(t, common.Height+gap, ahead.Height)
+	require.Greater(t, gap, bootstrapNamingWindow, "gap MUST exceed one fetch window or this proves nothing")
+	require.Less(t, gap, bootstrapMaxNamingDepth, "gap must stay inside the total depth budget")
+
+	beacons := nodeIDs(3) // the three responders with a live C-Chain
+	policy := &BootstrapPolicy{
+		TrustedBeacons: equalBeacons(beacons, w),
+		MinResponses:   3,
+		Source:         &stubAncestry{byID: byID},
+	}
+	replies := []BeaconReply{
+		reply(beacons[0], ahead.ID, w),  // luxd-1, ran on alone
+		reply(beacons[1], common.ID, w), // luxd-3
+		reply(beacons[2], common.ID, w), // luxd-4
+	}
+
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.NoError(t, err, "a fleet split across ONE chain must name a frontier, not wedge")
+	require.NotNil(t, f)
+	require.Equal(t, common.ID, f.ID,
+		"must name the ⅔-backed COMMON ancestor: the high tip vouches for it via ancestry")
+	require.Equal(t, common.Height, f.Height)
+}
+
+// TestBootstrapTrust_H_HaltSkewBeyondDepthStillFailsSafe pins the resource bound's edge: a skew
+// DEEPER than maxNamingDepth still names nothing rather than guessing. Depth is a work bound, so
+// exhausting it must degrade to the SAME fail-safe as before, never to a wrong block.
+func TestBootstrapTrust_H_HaltSkewBeyondDepthStillFailsSafe(t *testing.T) {
+	const w uint64 = 100
+	refs, byID := refChain(10)
+	common := refs[10]
+	prev := common
+	for i := 0; i < 64; i++ {
+		c := childRef(prev)
+		byID[c.ID] = c
+		prev = c
+	}
+	ahead := prev
+
+	beacons := nodeIDs(3)
+	policy := &BootstrapPolicy{
+		TrustedBeacons: equalBeacons(beacons, w),
+		MinResponses:   3,
+		NamingWindow:   4, // tiny chunk...
+		MaxNamingDepth: 8, // ...and a depth budget far shallower than the 64-block skew
+		Source:         &stubAncestry{byID: byID},
+	}
+	_, err := policy.AcceptsFrontier(context.Background(), []BeaconReply{
+		reply(beacons[0], ahead.ID, w),
+		reply(beacons[1], common.ID, w),
+		reply(beacons[2], common.ID, w),
+	})
+	require.Error(t, err, "a skew beyond the depth budget must fail SAFE, never name a guess")
+}
+
+// TestBootstrapTrust_H_AcceptanceMatrix pins the owner-specified recovery matrix at the policy
+// layer. Each case is the SAME five-validator mainnet shape with a different responder pattern.
+//
+// The rule being pinned is "highest verifiably-vouched descendant wins", NOT "numerically highest
+// tip advertised". A tip whose ancestry does not link into the fleet's chain earns NO credit no
+// matter how high it claims to be, so a Byzantine node cannot pull the fleet onto a fabricated
+// chain by advertising a tall one.
+func TestBootstrapTrust_H_AcceptanceMatrix(t *testing.T) {
+	const w uint64 = 100
+	mk := func() (BlockRef, BlockRef, map[ids.ID]BlockRef) {
+		refs, byID := refChain(600)
+		common := refs[600]
+		prev := common
+		for i := 0; i < 535; i++ { // the measured mainnet skew, > one 256 window
+			c := childRef(prev)
+			byID[c.ID] = c
+			prev = c
+		}
+		return common, prev, byID
+	}
+
+	t.Run("1_high_2_low_2_unavailable__names_common_ancestor", func(t *testing.T) {
+		common, ahead, byID := mk()
+		b := nodeIDs(3)
+		p := &BootstrapPolicy{TrustedBeacons: equalBeacons(b, w), MinResponses: 3, Source: &stubAncestry{byID: byID}}
+		f, err := p.AcceptsFrontier(context.Background(), []BeaconReply{
+			reply(b[0], ahead.ID, w), reply(b[1], common.ID, w), reply(b[2], common.ID, w)})
+		require.NoError(t, err)
+		require.Equal(t, common.ID, f.ID)
+	})
+
+	t.Run("3_high_2_unavailable__names_high_tip", func(t *testing.T) {
+		_, ahead, byID := mk()
+		b := nodeIDs(3)
+		p := &BootstrapPolicy{TrustedBeacons: equalBeacons(b, w), MinResponses: 3, Source: &stubAncestry{byID: byID}}
+		f, err := p.AcceptsFrontier(context.Background(), []BeaconReply{
+			reply(b[0], ahead.ID, w), reply(b[1], ahead.ID, w), reply(b[2], ahead.ID, w)})
+		require.NoError(t, err)
+		require.Equal(t, ahead.ID, f.ID, "unanimous high tip must be named, not an ancestor")
+	})
+
+	t.Run("fabricated_tall_tip_2_low__rejects_fake_names_common", func(t *testing.T) {
+		common, _, byID := mk()
+		// A Byzantine node advertises a tip on a chain of its own that never links into the
+		// fleet's history. Its ancestry earns credit only for ITS OWN blocks, never for the
+		// fleet's — so it cannot outvote the two honest low responders.
+		fakeRefs, fakeByID := refChain(9_000_000)
+		fake := fakeRefs[9_000_000]
+		for id, r := range fakeByID {
+			byID[id] = r
+		}
+		b := nodeIDs(3)
+		p := &BootstrapPolicy{TrustedBeacons: equalBeacons(b, w), MinResponses: 3, Source: &stubAncestry{byID: byID}}
+		f, err := p.AcceptsFrontier(context.Background(), []BeaconReply{
+			reply(b[0], fake.ID, w), reply(b[1], common.ID, w), reply(b[2], common.ID, w)})
+		// The fake tip earns credit ONLY on its own disjoint chain (100), far below the ⅔ floor
+		// of 200, so it can never be named however tall it claims to be. `common` earns exactly
+		// 200 from its two honest backers — and the floor is STRICT (`> floor`), so 200 is not
+		// enough either: the Byzantine node withheld the third vouch by sitting on a chain that
+		// does not link. Correct outcome is a SAFE HALT, not "fall back to the low tip".
+		// This is the honest BFT trade: 1 of 3 responders can cost LIVENESS, never SAFETY.
+		require.Error(t, err, "must halt safely; must NOT follow a taller unvouched chain")
+		require.Nil(t, f)
+	})
+
+	t.Run("two_conflicting_branches_same_height__halts_safely", func(t *testing.T) {
+		refs, byID := refChain(600)
+		common := refs[600]
+		// Two disjoint branches of equal height off the common block, each backed by one node,
+		// and NO responder majority on either. Nothing may be named by height tiebreak.
+		l, r := childRef(common), childRef(common)
+		byID[l.ID], byID[r.ID] = l, r
+		b := nodeIDs(3)
+		p := &BootstrapPolicy{
+			TrustedBeacons: equalBeacons(b, w), MinResponses: 3,
+			MinFrontierHeight: common.Height, // node already holds `common`; only a tip AHEAD may be named
+			Source:            &stubAncestry{byID: byID},
+		}
+		_, err := p.AcceptsFrontier(context.Background(), []BeaconReply{
+			reply(b[0], l.ID, w), reply(b[1], r.ID, w), reply(b[2], common.ID, w)})
+		require.Error(t, err, "conflicting equal-height branches must halt safely, never pick by height")
+	})
+}

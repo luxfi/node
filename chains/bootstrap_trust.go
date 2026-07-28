@@ -243,10 +243,13 @@ type BootstrapPolicy struct {
 	// CheckpointVerifier authenticates the Checkpoint's authority signature (INVARIANT 4). nil ⇒ a
 	// configured Checkpoint is NOT trusted (fail closed) — a bare (id,height) is never enough.
 	CheckpointVerifier CheckpointVerifier
-	// NamingWindow bounds the ancestry fetched per anchor; MaxAnchors bounds how many distinct
-	// reported tips are resolved. Both default to the package constants when zero.
-	NamingWindow int
-	MaxAnchors   int
+	// NamingWindow is the per-FETCH ancestry chunk (Ancestry returns FULL blocks, so one fetch
+	// must stay inside a network message); MaxNamingDepth is the TOTAL ancestry a single anchor
+	// may be walked down in NamingWindow-sized chunks; MaxAnchors bounds how many distinct
+	// reported tips are resolved. All default to the package constants when zero.
+	NamingWindow   int
+	MaxNamingDepth int
+	MaxAnchors     int
 	// NamingTimeout TOTAL-bounds the ancestor-tolerant resolution (all anchor fetches combined) so
 	// a partition that ANSWERS the frontier query but WITHHOLDS ancestry cannot make the decision
 	// hang — it returns what it found (or nothing → ErrNoBootstrapQuorum) and the caller's bounded
@@ -297,6 +300,17 @@ func (p *BootstrapPolicy) namingWindow() int {
 		return p.NamingWindow
 	}
 	return bootstrapNamingWindow
+}
+
+// maxNamingDepth is the TOTAL ancestry one anchor may be walked down, in namingWindow-sized
+// chunks. It is a RESOURCE bound and nothing else. Safety comes from hash-verified ancestry
+// (a forged chain cannot link), MinResponders distinct voters, the ⅔-of-RESPONDER-stake floor,
+// and the full re-Verify every block gets on the descent — none of which depend on this number.
+func (p *BootstrapPolicy) maxNamingDepth() int {
+	if p.MaxNamingDepth > 0 {
+		return p.MaxNamingDepth
+	}
+	return bootstrapMaxNamingDepth
 }
 
 func (p *BootstrapPolicy) maxAnchors() int {
@@ -505,14 +519,41 @@ func (p *BootstrapPolicy) nameFrontier(ctx context.Context, stakeOnTip map[ids.I
 			break
 		}
 		fetches++
-		refs, err := p.Source.Ancestry(ctx, tip, p.namingWindow())
-		if err != nil {
-			continue
-		}
-		for _, ref := range refs {
-			if _, ok := index[ref.ID]; !ok {
-				index[ref.ID] = ref
+		// CHUNKED DESCENT. namingWindow is the per-FETCH size (Ancestry returns FULL blocks, so
+		// one fetch must fit a network message) — NOT the total ancestry worth walking. Keep
+		// following the parent chain in window-sized chunks up to maxNamingDepth, so a fleet
+		// that HALTED with a straggler far below the highest tip still resolves its ⅔-backed
+		// common ancestor. A single un-chunked window silently capped this at 256 and wedged
+		// mainnet at a 535-block gap. ctx already TOTAL-bounds every fetch (namingTimeout).
+		cur := tip
+		for depth := 0; depth < p.maxNamingDepth(); {
+			// The deadline must bind the WALK, not just each fetch: a Byzantine peer serving a
+			// long fabricated chain cheaply (or an in-process Source) would otherwise run the
+			// full depth budget before anyone checked the clock.
+			if ctx.Err() != nil {
+				break
 			}
+			refs, err := p.Source.Ancestry(ctx, cur, p.namingWindow())
+			if err != nil || len(refs) == 0 {
+				break
+			}
+			deepest, first := BlockRef{}, true
+			for _, ref := range refs {
+				if _, ok := index[ref.ID]; !ok {
+					index[ref.ID] = ref
+				}
+				if first || ref.Height < deepest.Height {
+					deepest, first = ref, false
+				}
+			}
+			depth += len(refs) // len(refs) >= 1 here, so depth strictly advances -> terminates
+			if deepest.Parent == ids.Empty {
+				break // reached genesis
+			}
+			if _, covered := index[deepest.Parent]; covered {
+				break // an earlier anchor's chain already covers everything below
+			}
+			cur = deepest.Parent
 		}
 	}
 	if len(index) == 0 {
