@@ -40,6 +40,7 @@ const (
 var (
 	errAliasTooLong = errors.New("alias length is too long")
 	errNoLogLevel   = errors.New("need to specify either displayLevel or logLevel")
+	errNoLoggerName = errors.New("need to specify loggerName: loggers are addressed by name and cannot be enumerated")
 )
 
 // ChainTracker is the interface for tracking chains at runtime.
@@ -209,11 +210,39 @@ func (a *Service) SetLoggerLevel(ctx context.Context, args *apiadmin.SetLoggerLe
 		return nil, errNoLogLevel
 	}
 
+	// Parse before mutating: a rejected level must leave every logger untouched.
+	var logLevel, displayLevel log.Level
+	if args.LogLevel != "" {
+		var err error
+		if logLevel, err = log.ToLevel(args.LogLevel); err != nil {
+			return nil, err
+		}
+	}
+	if args.DisplayLevel != "" {
+		var err error
+		if displayLevel, err = log.ToLevel(args.DisplayLevel); err != nil {
+			return nil, err
+		}
+	}
+
+	loggerNames, err := a.getLoggerNames(args.LoggerName)
+	if err != nil {
+		return nil, err
+	}
+
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	loggerNames := a.getLoggerNames(args.LoggerName)
-	_ = loggerNames
+	for _, name := range loggerNames {
+		// Only the levels the caller supplied — an omitted level keeps its value
+		// instead of being reset to the zero Level.
+		if args.LogLevel != "" {
+			a.LogFactory.SetLogLevel(name, logLevel)
+		}
+		if args.DisplayLevel != "" {
+			a.LogFactory.SetDisplayLevel(name, displayLevel)
+		}
+	}
 	return &apiadmin.EmptyReply{}, nil
 }
 
@@ -225,10 +254,14 @@ func (a *Service) GetLoggerLevel(ctx context.Context, args *apiadmin.GetLoggerLe
 		log.String("loggerName", args.LoggerName),
 	)
 
+	loggerNames, err := a.getLoggerNames(args.LoggerName)
+	if err != nil {
+		return nil, err
+	}
+
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 
-	loggerNames := a.getLoggerNames(args.LoggerName)
 	loggerLevels, err := a.getLogLevels(loggerNames)
 	if err != nil {
 		return nil, err
@@ -401,15 +434,35 @@ func (a *Service) GetTrackedChains(ctx context.Context) (*apiadmin.GetTrackedCha
 	return &apiadmin.GetTrackedChainsReply{TrackedChains: trackedChains}, nil
 }
 
-func (a *Service) getLoggerNames(loggerName string) []string {
-	if len(loggerName) == 0 {
-		return []string{}
+// getLoggerNames resolves the loggerName argument to the loggers to act on — the one
+// place either logger-level endpoint decides what it is addressing.
+//
+// log.Factory addresses loggers BY NAME and exposes no enumeration, so the "every
+// logger" form (an empty name) cannot be served. Refuse it explicitly: answering 200 OK
+// while doing nothing is what made these endpoints unusable.
+func (a *Service) getLoggerNames(loggerName string) ([]string, error) {
+	if loggerName == "" {
+		return nil, errNoLoggerName
 	}
-	return []string{loggerName}
+	return []string{loggerName}, nil
 }
 
 func (a *Service) getLogLevels(loggerNames []string) (map[string]apiadmin.LogAndDisplayLevels, error) {
-	loggerLevels := make(map[string]apiadmin.LogAndDisplayLevels)
+	loggerLevels := make(map[string]apiadmin.LogAndDisplayLevels, len(loggerNames))
+	for _, name := range loggerNames {
+		logLevel, err := a.LogFactory.GetLogLevel(name)
+		if err != nil {
+			return nil, err
+		}
+		displayLevel, err := a.LogFactory.GetDisplayLevel(name)
+		if err != nil {
+			return nil, err
+		}
+		loggerLevels[name] = apiadmin.LogAndDisplayLevels{
+			LogLevel:     logLevel.String(),
+			DisplayLevel: displayLevel.String(),
+		}
+	}
 	return loggerLevels, nil
 }
 
