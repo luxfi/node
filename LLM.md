@@ -253,6 +253,79 @@ when v1.36.12 image is ready → set devnet sts image v1.36.12, delete luxd-1, c
 C-Chain inits + reaches tip; then finish devnet (durable-fix proof + RewardManager),
 then gated testnet→mainnet→zoo.
 
+## v1.36.34 — the certified-descendant false halt + the plugin-killing map fatal (devnet 96367, 2026-07-28)
+
+Rolling devnet to v1.36.33 fixed the build→verify-fail→drop loop and unmasked two
+DIFFERENT failures. Both are fixed here; each has a regression test that fails before
+and passes after.
+
+**P0-1 — five validators `os.Exit(1)` on a benign state.** Each devnet node hit, once:
+
+```
+error VM accepted head is CONSENSUS-CERTIFIED and conflicts with the newly finalized
+      block — refusing to orphan it   orphanedHeight=1364
+fatal SetPreference would orphan a CONSENSUS-CERTIFIED block — refusing (fail-closed)
+      error="cannot orphan finalized block at height: 1364 to common block at height: 1363"
+```
+
+at three distinct height pairs (1258/1259, 1363/1364, 1364/1365), ALWAYS with
+`certified = head − 1`, with every surviving node holding byte-identical blocks at all
+five heights — no fork anywhere. (The "1168/1169" pair in the original report never
+appears in any fatal line; those two blocks are a normal parent/child present on all
+live nodes.)
+
+Two defects in `luxfi/consensus`, one crash — fixed in **consensus v1.36.12**:
+
+- *Producer.* `acceptWithCertCore` releases `t.mu` across every VM call-out, then steers
+  the VM with its STALE local `blockID`. A finalize that completed in that window has
+  already advanced the ledger AND the EVM to `blockID+1`, so the steer is BACKWARDS and
+  the EVM's accepted-irreversibility guard (`evm/core/blockchain.go:1987`,
+  `commonBlock < lastAccepted`) correctly refuses it. **That guard is right and is
+  untouched.** Now steers at the live build anchor (`PreferredBuildTip` →
+  `ledger.BuildAnchor`), which the accept ordering (ApplyCert BEFORE VM.Accept) keeps at
+  or above the VM's own accepted head. Same value the build path already uses.
+- *Classifier.* `reconcileVMToCertified` asked only "is the head the ledger's certified
+  canonical at ITS OWN height?" — trivially true for every healthy node whose head is
+  certified — and called that a two-blocks-at-one-height double-finalization. It never
+  established that `certified` was at that same height. The ledger holds one canonical
+  per height along one contiguous chain, so when both are certified at their own heights
+  they lie on that one chain and the head merely DESCENDS from the target: nothing is
+  orphaned. **The fail-closed halt is not weakened** — it now fires on the state that is
+  actually unsafe (steering off a certified head onto a block our own ledger does not
+  certify at its height).
+
+Direction: NEITHER roll the head back NOR certify forward. The VM head is legitimately
+ahead and already CONTAINS the certified block; `FinalityLedger.BuildAnchor` already
+documents `head > certified` as the designed state, and rolling back is exactly what
+`blockchain.go:1987` exists to refuse. The correct action is no action — plus not issuing
+the backwards steer at all.
+
+**P0-2 — the EVM plugin process dies and never comes back.** devnet luxd-1:
+
+```
+fatal error: concurrent map read and map write
+  vm/components/chain.(*State).getCachedBlock  state.go:216
+  vm/components/chain.(*State).ParseBlock      state.go:267
+  evm/plugin/evm.(*VM).ParseBlock              vm.go:340
+  vm/rpc.(*zapVMServer).handleParseBlock       vm_server_zap.go:477
+```
+
+`chain.State` was written against avalanchego's contract that the consensus engine holds
+the chain lock across every VM call. The ZAP VM server does NOT reinstate it — it
+dispatches ParseBlock/GetBlock and the Verify/Accept/Reject wrappers concurrently.
+`verifiedBlocks` (plain map) and `lastAcceptedBlock` (pointer) are the only State that is
+not self-synchronising; every `cache.Cacher` carries its own mutex. Fixed in **vm v1.3.3**
+by giving State one RWMutex for exactly those two, never held across a call into the
+inner VM. A Go map fatal is unrecoverable: it kills the plugin, **luxd survives and keeps
+answering `info.getNodeVersion` while its chain is gone** — pod-Ready and `/v1/health`
+both stay green — and there is no self-heal.
+
+**Quorum arithmetic (reported, not changed).** Devnet and testnet both run
+`--consensus-sample-size=5 --consensus-quorum-size=4`. With only 3 live C-Chains the
+quorum is arithmetically unreachable; devnet demonstrated both directions in one session
+(pinned at 1378 on 3 live, 1378→1395→1396 the moment luxd-4 restored a 4th). This is a
+config value, not a code defect, and lowering it lowers the safety margin — left as is.
+
 ## v1.36.33 — the build→self-verify-fail→drop loop (devnet 96367 / testnet 96368, 2026-07-28)
 
 **Symptom.** Every proposer built a block and then rejected the block it had just
