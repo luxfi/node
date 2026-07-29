@@ -16,7 +16,7 @@ type connections struct {
 }
 
 func newConnections() *connections {
-	return &connections{}
+	return &connections{conns: set.NewSet[*connection]()}
 }
 
 func (c *connections) Conns() []Filter {
