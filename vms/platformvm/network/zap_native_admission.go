@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/proto/zap_native"
 )
 
 // LP-023 Red round 7 R7V5 — mempool admission gate for zap_native tx
@@ -30,21 +29,18 @@ import (
 // body lands (batch 6 or later), the corresponding entry can be removed
 // from the gate.
 //
-// Gate covers BOTH today's path (legacy txs.* struct Visit dispatch
-// hits the standard_tx_executor stub at line 636) AND tomorrow's path
-// (zap_native wire bytes parse-and-dispatch through a future wire-aware
-// admission flow). The double coverage is intentional: we don't need
-// to track which path is "live" — we refuse on either.
+// The gate names kinds by their concrete txs.UnsignedTx type. It cannot name
+// them by the 1-byte wire discriminator: txs.kind and zap_native.TxKind are
+// separate namespaces that both live at object byte 0 and assign the same byte
+// values to different types, so a byte comparison cannot tell a P-chain
+// CreateChainTx (txs.kind 7) from a zap_native RegisterL1ValidatorTx (TxKind 7).
 //
 // REMOVAL CHECKLIST (when a stub executor body lands):
 //
 //  1. Implement the executor body in
-//     vms/platformvm/txs/executor/standard_tx_executor.go (current
-//     CreateSovereignL1Tx stub at line 636).
-//  2. Remove the matching case from IsZapNativeNotYetExecutable below.
+//     vms/platformvm/txs/executor/standard_tx_executor.go.
+//  2. Remove the matching type from isLegacyTxKindNotYetExecutable below.
 //  3. Drop the matching test from zap_native_admission_test.go.
-//  4. Document the executor-body PR in LP-023 batch-6 (or later) so the
-//     reviewer can cross-check the gate removal against the body landing.
 //
 // Until those steps are complete, every tx of the gated kinds is
 // rejected at admission. Validators NEVER accept them; gossip NEVER
@@ -62,82 +58,20 @@ var ErrZapNativeNotYetExecutable = errors.New(
 		"to prevent zombie txs during Neo ZAP-activation=0 rollout (LP-023 R7V5)",
 )
 
-// notYetExecutableLegacyKinds returns the set of legacy txs.UnsignedTx
-// concrete types whose corresponding zap_native tx kind has no executor
-// body yet. The legacy struct is what enters Visit-dispatch today; the
-// zap_native wire kind is what tomorrow's parser would route through.
+// isLegacyTxKindNotYetExecutable reports whether tx is a concrete
+// txs.UnsignedTx type whose executor body is not implemented yet. It
+// discriminates on the Go type, which is the only unambiguous way to name a
+// tx kind here: the 1-byte wire discriminator is namespace-relative, and
+// txs.kind and zap_native.TxKind number the same byte values differently.
 //
-// TODAY: only txs.CreateSovereignL1Tx has a not-yet-implemented stub.
-// The legacy ConvertNetworkToL1Tx (line 639) and RegisterL1ValidatorTx
-// (line 761) executors are wired and working. They're listed in the
-// brief because the zap_native wire variants of those types may still
-// route through paths that hit the stubbed code — defense-in-depth: the
-// gate covers all three even though only one has a live stub. When the
-// legacy executors definitively cover the zap_native code path, the
-// non-CreateSovereignL1 entries can be dropped.
+// TODAY: none. CreateSovereignL1Tx and ConvertNetworkToL1Tx were folded into
+// CreateNetworkTx, whose executor is implemented, so every kind that reaches
+// admission is executable. New stub types are listed here by type.
 //
 // DO NOT add map lookups here in the hot path — IssueTxFromRPC is on
 // the critical path of every incoming RPC tx. Use a type switch.
 func isLegacyTxKindNotYetExecutable(_ *txs.Tx) bool {
-	// The former CreateSovereignL1Tx / ConvertNetworkToL1Tx legacy struct
-	// kinds were folded into CreateNetworkTx, whose executor is
-	// implemented. No legacy struct kind is not-yet-executable today; the
-	// zap_native wire gate below still covers future stub kinds.
 	return false
-}
-
-// isZapNativeWireKindNotYetExecutable inspects the signed tx bytes. If
-// they parse as a ZAP-native wire buffer (4-byte "ZAP\x00" magic) AND
-// the kind discriminator is one of the not-yet-implemented set, the gate
-// fires. This is the FUTURE-PROOFING half of the defense — today no
-// production path routes ZAP-shaped bytes through the
-// vms/platformvm/network admission flow, but the moment that path lands
-// (batch 6 zap_native parser integration), this check covers it without
-// a second edit.
-//
-// Gate set per brief: CreateSovereignL1 (kind 23), RegisterL1Validator
-// (kind 7), ConvertNetworkToL1 (kind 22). The brief is explicit that
-// the executor coverage gap exists for all three at the zap_native wire
-// level — even though the legacy struct executors for kinds 7 and 22
-// work, the zap_native wire bytes don't necessarily route through them.
-//
-// Returns the zap_native kind that triggered the gate (for the wrapped
-// error message). Returns TxKindReserved (0) when no gate fires —
-// callers compare against 0 to short-circuit.
-func zapNativeWireKindNotYetExecutable(signedBytes []byte) zap_native.TxKind {
-	if !zap_native.IsZAPBytes(signedBytes) {
-		return zap_native.TxKindReserved
-	}
-	// Try to wrap as each gated kind. Each Wrap*Tx confirms the kind
-	// discriminator matches — wrong kind returns ErrWrongTxKind and we
-	// move to the next. Cheap because parseAndCheckKind does a single
-	// header parse + byte compare.
-	if _, err := zap_native.WrapCreateSovereignL1Tx(signedBytes); err == nil {
-		return zap_native.TxKindCreateSovereignL1
-	}
-	if _, err := zap_native.WrapRegisterL1ValidatorTx(signedBytes); err == nil {
-		return zap_native.TxKindRegisterL1Validator
-	}
-	if _, err := zap_native.WrapConvertNetworkToL1Tx(signedBytes); err == nil {
-		return zap_native.TxKindConvertNetworkToL1
-	}
-	return zap_native.TxKindReserved
-}
-
-// zapNativeKindName returns a human-readable name for a TxKind. Only
-// the gated kinds are listed — every other kind returns "unknown".
-// Used only in the gate's error message; not on any hot path.
-func zapNativeKindName(k zap_native.TxKind) string {
-	switch k {
-	case zap_native.TxKindCreateSovereignL1:
-		return "CreateSovereignL1Tx"
-	case zap_native.TxKindRegisterL1Validator:
-		return "RegisterL1ValidatorTx"
-	case zap_native.TxKindConvertNetworkToL1:
-		return "ConvertNetworkToL1Tx"
-	default:
-		return "unknown"
-	}
 }
 
 // zapNativeAdmissionGate wraps a TxVerifier and refuses admission for
@@ -158,25 +92,11 @@ type zapNativeAdmissionGate struct {
 // fire BEFORE any state-machine execution so the executor never sees
 // a not-yet-implemented kind.
 func (g *zapNativeAdmissionGate) VerifyTx(tx *txs.Tx) error {
-	// Path 1 — legacy struct dispatch (today's hot path).
 	if isLegacyTxKindNotYetExecutable(tx) {
 		return fmt.Errorf(
 			"legacy tx type %T: %w",
 			tx.Unsigned, ErrZapNativeNotYetExecutable,
 		)
-	}
-	// Path 2 — zap_native wire bytes (future-proof). Only inspect the
-	// signed bytes when they exist; some test paths construct a Tx
-	// without calling Initialize.
-	if tx != nil {
-		if signedBytes := tx.Bytes(); len(signedBytes) >= 4 {
-			if kind := zapNativeWireKindNotYetExecutable(signedBytes); kind != zap_native.TxKindReserved {
-				return fmt.Errorf(
-					"zap_native wire kind %s (%d): %w",
-					zapNativeKindName(kind), kind, ErrZapNativeNotYetExecutable,
-				)
-			}
-		}
 	}
 	return g.inner.VerifyTx(tx)
 }
