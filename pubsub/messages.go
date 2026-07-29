@@ -4,6 +4,8 @@
 package pubsub
 
 import (
+	"math"
+
 	"github.com/luxfi/address"
 	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/utils/json"
@@ -58,7 +60,10 @@ func (c *Command) String() string {
 
 func (c *NewBloom) IsParamsValid() bool {
 	p := float64(c.CollisionProb)
-	return c.MaxElements > 0 && 0 < p && p <= 1
+	// MaxElements is narrowed to an int before it reaches bloom.New, so a value
+	// past math.MaxInt would wrap negative there and produce a minimum-size
+	// filter that matches every key rather than the requested one.
+	return c.MaxElements > 0 && uint64(c.MaxElements) <= math.MaxInt && 0 < p && p <= 1
 }
 
 // parseAddresses converts the bech32 addresses to their byte format.
