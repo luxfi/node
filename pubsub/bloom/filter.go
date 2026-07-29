@@ -27,7 +27,12 @@ type Filter interface {
 
 func New(maxN int, p float64, maxBytes int) (Filter, error) {
 	numHashes, numEntries := bloom.OptimalParameters(maxN, p)
-	if neededBytes := 1 + numHashes*bytesPerHash + numEntries; neededBytes > maxBytes {
+	// numEntries alone is compared first: bloom.OptimalEntries saturates at
+	// math.MaxInt, and forming the byte total from it wraps negative, which
+	// clears the cap and hands math.MaxInt to make([]byte, ...). Once
+	// numEntries is within maxBytes the sum cannot overflow (numHashes is
+	// capped at 16).
+	if numEntries > maxBytes || 1+numHashes*bytesPerHash+numEntries > maxBytes {
 		return nil, errMaxBytes
 	}
 	// Use the bloom filter struct directly

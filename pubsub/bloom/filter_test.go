@@ -4,6 +4,7 @@
 package bloom
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -29,4 +30,23 @@ func TestNew(t *testing.T) {
 
 	checked = f.Check([]byte("bye"))
 	require.False(checked, "shouldn't have contained the key")
+}
+
+// TestNewRejectsSaturatedEntries pins the size cap against the saturating value
+// bloom.OptimalEntries returns for an extreme request. Forming the byte total as
+// 1+numHashes*bytesPerHash+numEntries wraps past math.MaxInt into a negative
+// number, which clears the cap and reaches make([]byte, math.MaxInt).
+func TestNewRejectsSaturatedEntries(t *testing.T) {
+	require := require.New(t)
+
+	// A collision probability of 0 saturates OptimalEntries at math.MaxInt.
+	f, err := New(1, 0, 1*constants.MiB)
+	require.ErrorIs(err, errMaxBytes)
+	require.Nil(f)
+
+	// A large element count with a small collision probability lands on the
+	// same clamp by way of the entries-per-element multiplier.
+	f, err = New(math.MaxInt, 1e-10, 1*constants.MiB)
+	require.ErrorIs(err, errMaxBytes)
+	require.Nil(f)
 }

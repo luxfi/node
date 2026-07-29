@@ -4,6 +4,7 @@
 package pubsub
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -74,4 +75,17 @@ func TestFilterParam(t *testing.T) {
 func TestNewBloom(t *testing.T) {
 	cm := &NewBloom{}
 	require.False(t, cm.IsParamsValid())
+}
+
+// TestNewBloomIsParamsValidRejectsUnrepresentableMaxElements pins the guard on
+// the wire value that connection.handleNewBloom narrows to an int. int(2^64-1)
+// is -1, which drives bloom.OptimalEntries to its minimum and yields an 8-bit
+// filter that reports a match for nearly every key.
+func TestNewBloomIsParamsValidRejectsUnrepresentableMaxElements(t *testing.T) {
+	require := require.New(t)
+
+	require.True((&NewBloom{MaxElements: 1000, CollisionProb: 0.1}).IsParamsValid())
+	require.False((&NewBloom{MaxElements: 0, CollisionProb: 0.1}).IsParamsValid())
+	require.False((&NewBloom{MaxElements: math.MaxUint64, CollisionProb: 0.1}).IsParamsValid())
+	require.False((&NewBloom{MaxElements: math.MaxInt64 + 1, CollisionProb: 0.1}).IsParamsValid())
 }
