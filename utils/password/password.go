@@ -1,5 +1,3 @@
-//go:build !zxcvbn
-
 // Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -8,19 +6,14 @@ package password
 import (
 	"errors"
 	"fmt"
+
+	"github.com/nbutton23/zxcvbn-go"
 )
 
 // Strength is the strength of a password
 type Strength int
 
 const (
-	// The scoring mechanism of the zxcvbn package is defined as follows:
-	// 0 # too guessable: risky password. (guesses < 10^3)
-	// 1 # very guessable: protection from throttled online attacks. (guesses < 10^6)
-	// 2 # somewhat guessable: protection from unthrottled online attacks. (guesses < 10^8)
-	// 3 # safely unguessable: moderate protection from offline slow-hash scenario. (guesses < 10^10)
-	// 4 # very unguessable: strong protection from offline slow-hash scenario. (guesses >= 10^10)
-
 	// VeryWeak password
 	VeryWeak = 0
 	// Weak password
@@ -38,6 +31,9 @@ const (
 	// maxPassLen is the maximum allowed password length
 	maxPassLen = 1024
 
+	// maxCheckedPassLen limits the length of the password that should be
+	// strength checked to avoid DoS.
+	maxCheckedPassLen = 50
 )
 
 var (
@@ -46,18 +42,14 @@ var (
 	ErrWeakPassword  = errors.New("password is too weak")
 )
 
-// SufficientlyStrong returns true if [password] meets basic length requirements.
-// Build with -tags=zxcvbn for full password strength analysis.
+// SufficientlyStrong returns true if [password] has strength greater than or
+// equal to [minimumStrength], scored by zxcvbn. This is the only
+// implementation: a build tag must not decide how strong a password has to be.
 func SufficientlyStrong(password string, minimumStrength Strength) bool {
-	// VeryWeak (0) accepts any password - this is the minimum bar
-	if minimumStrength == VeryWeak {
-		return true
+	if len(password) > maxCheckedPassLen {
+		password = password[:maxCheckedPassLen]
 	}
-	// Higher strength levels require longer passwords
-	// Weak(1)=12, Fair(2)=20, Strong(3)=28, VeryStrong(4)=36
-	// This is more conservative than zxcvbn but provides basic protection
-	minLen := 4 + int(minimumStrength)*8
-	return len(password) >= minLen
+	return zxcvbn.PasswordStrength(password, nil).Score >= int(minimumStrength)
 }
 
 // IsValid returns nil if [password] is a reasonable length and has strength
