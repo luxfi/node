@@ -1221,8 +1221,8 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 		return
 	}
 
-	port := uint16(msg.IpPort)
-	if msg.IpPort == 0 {
+	port, validPort := wirePort(msg.IpPort)
+	if !validPort {
 		p.Log.Debug(malformedMessageLog,
 			log.Stringer("nodeID", p.id),
 			log.Stringer("messageOp", message.HandshakeOp),
@@ -1414,8 +1414,8 @@ func (p *peer) handlePeerList(msg *p2p.PeerList) {
 			return
 		}
 
-		port := uint16(claimedIPPort.IpPort)
-		if port == 0 {
+		port, validPort := wirePort(claimedIPPort.IpPort)
+		if !validPort {
 			p.Log.Debug(malformedMessageLog,
 				log.Stringer("nodeID", p.id),
 				log.Stringer("messageOp", message.PeerListOp),
@@ -1461,4 +1461,16 @@ func (p *peer) storeLastReceived(time time.Time) {
 	unixTime := time.Unix()
 	atomic.StoreInt64(&p.Config.LastReceived, unixTime)
 	atomic.StoreInt64(&p.lastReceived, unixTime)
+}
+
+// wirePort narrows a port carried as a wire uint32 to the uint16 an address
+// actually holds, reporting whether it is usable. A value that does not fit in
+// uint16 is rejected rather than truncated: 65536 would otherwise narrow to 0
+// and be accepted as a port, then be re-gossiped as 0 and get us closed by every
+// peer that receives it. Port 0 is never a valid peer port.
+func wirePort(p uint32) (uint16, bool) {
+	if p == 0 || p > math.MaxUint16 {
+		return 0, false
+	}
+	return uint16(p), true
 }
