@@ -84,3 +84,24 @@ func TestIsValid(t *testing.T) {
 		})
 	}
 }
+
+// TestIsValidRejectsLongButGuessable pins that strength is scored, not measured
+// in characters. Every password here clears the 20-character bar the length-only
+// fallback applied at OK (Fair), and each is one of the first guesses a cracker
+// makes. The fallback shipped in the default build, so these were accepted by
+// keystore.CreateUser and auth.ChangePassword.
+func TestIsValidRejectsLongButGuessable(t *testing.T) {
+	for _, pw := range []string{
+		"aaaaaaaaaaaaaaaaaaaa",
+		"password1234password",
+		"11111111111111111111",
+		"qwertyuiopqwertyuiop",
+		"passwordpasswordpassword",
+	} {
+		t.Run(pw, func(t *testing.T) {
+			require.GreaterOrEqual(t, len(pw), 20)
+			require.ErrorIs(t, IsValid(pw, OK), ErrWeakPassword)
+			require.False(t, SufficientlyStrong(pw, OK))
+		})
+	}
+}

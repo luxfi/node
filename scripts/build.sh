@@ -85,7 +85,7 @@ case "${profile}" in
     ;;
   full)
     echo "Profile: full (gRPC+ZAP, all VMs, all features, stripped)"
-    tags="${base_tags},grpc,nattraversal,zxcvbn"
+    tags="${base_tags},grpc,nattraversal"
     strip_flags="-s -w"
     ;;
   dev)
