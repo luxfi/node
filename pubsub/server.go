@@ -70,6 +70,7 @@ type Server struct {
 func New(log log.Logger) *Server {
 	return &Server{
 		log:                   log,
+		conns:                 set.NewSet[*connection](),
 		subscribedConnections: newConnections(),
 	}
 }
