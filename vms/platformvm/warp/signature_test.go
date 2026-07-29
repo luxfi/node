@@ -4,6 +4,7 @@
 package warp
 
 import (
+	"bytes"
 	"context"
 	"math"
 	"testing"
@@ -775,4 +776,58 @@ func TestSignatureVerification(t *testing.T) {
 			require.ErrorIs(err, tt.verifyErr)
 		})
 	}
+}
+
+// TestAggregateCoronaPublicKeysRejectsDistinctGroupKeys pins the aggregate
+// against keys that are not the same threshold group key. The function returns
+// publicKeys[0], so admitting differing keys means one signer's key stands in
+// for the whole quorum the caller already tallied.
+func TestAggregateCoronaPublicKeysRejectsDistinctGroupKeys(t *testing.T) {
+	require := require.New(t)
+
+	groupKey := bytes.Repeat([]byte{0xa1}, 32)
+	otherKey := bytes.Repeat([]byte{0xb2}, 32)
+
+	_, err := AggregateCoronaPublicKeys([][]byte{groupKey, otherKey})
+	require.ErrorIs(err, ErrCoronaGroupKeyMismatch)
+
+	// Same length, still a different key: length agreement is not key agreement.
+	_, err = AggregateCoronaPublicKeys([][]byte{groupKey, groupKey, otherKey})
+	require.ErrorIs(err, ErrCoronaGroupKeyMismatch)
+}
+
+// TestHybridCoronaKeysAreBoundToTheValidatorSet pins that the post-quantum leg
+// verifies against the signers' registered Corona keys, not against the keys the
+// signature carries. A message that names its own verification keys authenticates
+// nothing: the author picks the key it is checked against.
+func TestHybridCoronaKeysAreBoundToTheValidatorSet(t *testing.T) {
+	require := require.New(t)
+
+	msg, err := NewUnsignedMessage(constants.UnitTestID, sourceChainID, []byte("payload"))
+	require.NoError(err)
+
+	registeredKey := bytes.Repeat([]byte{0x01}, 32)
+	attackerKey := bytes.Repeat([]byte{0xff}, 32)
+	coronaSig := bytes.Repeat([]byte{0x02}, 64)
+
+	// A signer whose registered key is known: a key from the wire that differs
+	// from it is refused.
+	sig := &HybridBLSCoronaSignature{
+		CoronaSignature:  coronaSig,
+		CoronaPublicKeys: [][]byte{attackerKey},
+	}
+	err = sig.verifyCorona(msg, []*Validator{{CoronaPubKey: registeredKey}})
+	require.ErrorIs(err, ErrCoronaPublicKeyMismatch)
+
+	// A signer that registered no Corona key cannot be vouched for by a key the
+	// message supplies.
+	err = sig.verifyCorona(msg, []*Validator{{}})
+	require.ErrorIs(err, ErrMissingCoronaPublicKey)
+
+	// The binding does not reject a message that presents the registered key;
+	// verification proceeds to the scheme.
+	sig.CoronaPublicKeys = [][]byte{registeredKey}
+	err = sig.verifyCorona(msg, []*Validator{{CoronaPubKey: registeredKey}})
+	require.NotErrorIs(err, ErrCoronaPublicKeyMismatch)
+	require.NotErrorIs(err, ErrMissingCoronaPublicKey)
 }

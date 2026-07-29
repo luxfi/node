@@ -4,6 +4,7 @@
 package warp
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -14,8 +15,8 @@ import (
 	"github.com/cloudflare/circl/kem/mlkem/mlkem768"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/threshold"
-	_ "github.com/luxfi/threshold/scheme/bls" // Register BLS threshold scheme
 	"github.com/luxfi/math/set"
+	_ "github.com/luxfi/threshold/scheme/bls" // Register BLS threshold scheme
 )
 
 var (
@@ -23,15 +24,17 @@ var (
 	_ Signature = (*CoronaSignature)(nil)
 	_ Signature = (*HybridBLSCoronaSignature)(nil) // Deprecated: use CoronaSignature
 
-	ErrInvalidBitSet          = errors.New("bitset is invalid")
-	ErrInsufficientWeight     = errors.New("signature weight is insufficient")
-	ErrInvalidSignature       = errors.New("signature is invalid")
-	ErrParseSignature         = errors.New("failed to parse signature")
-	ErrInvalidCoronaSignature = errors.New("corona signature is invalid")
-	ErrMissingCoronaPublicKey = errors.New("missing corona public key for validator")
-	ErrHybridVerifyFailed     = errors.New("hybrid signature verification failed")
-	ErrDecryptionFailed       = errors.New("ML-KEM decryption failed")
-	ErrInvalidCiphertext      = errors.New("invalid ciphertext")
+	ErrInvalidBitSet           = errors.New("bitset is invalid")
+	ErrInsufficientWeight      = errors.New("signature weight is insufficient")
+	ErrInvalidSignature        = errors.New("signature is invalid")
+	ErrParseSignature          = errors.New("failed to parse signature")
+	ErrInvalidCoronaSignature  = errors.New("corona signature is invalid")
+	ErrMissingCoronaPublicKey  = errors.New("missing corona public key for validator")
+	ErrCoronaPublicKeyMismatch = errors.New("corona public key does not match the validator's registered key")
+	ErrCoronaGroupKeyMismatch  = errors.New("corona public keys are not a single threshold group key")
+	ErrHybridVerifyFailed      = errors.New("hybrid signature verification failed")
+	ErrDecryptionFailed        = errors.New("ML-KEM decryption failed")
+	ErrInvalidCiphertext       = errors.New("invalid ciphertext")
 )
 
 type Signature interface {
@@ -698,8 +701,23 @@ func (s *HybridBLSCoronaSignature) verifyCorona(msg *UnsignedMessage, signers []
 		return ErrInvalidCoronaSignature
 	}
 
+	// Verification keys come from the validator records, and the keys the
+	// message carries must equal them. A key read out of the signature being
+	// checked would let the signature's author pick the key it is checked
+	// against, which leaves the post-quantum leg authenticating nothing.
+	registered := make([][]byte, len(signers))
+	for i, signer := range signers {
+		if len(signer.CoronaPubKey) == 0 {
+			return fmt.Errorf("%w: signer %d", ErrMissingCoronaPublicKey, i)
+		}
+		if !bytes.Equal(s.CoronaPublicKeys[i], signer.CoronaPubKey) {
+			return fmt.Errorf("%w: signer %d", ErrCoronaPublicKeyMismatch, i)
+		}
+		registered[i] = signer.CoronaPubKey
+	}
+
 	// Aggregate the Corona public keys
-	aggregatedCoronaPK, err := AggregateCoronaPublicKeys(s.CoronaPublicKeys)
+	aggregatedCoronaPK, err := AggregateCoronaPublicKeys(registered)
 	if err != nil {
 		return fmt.Errorf("failed to aggregate Corona public keys: %w", err)
 	}
@@ -730,12 +748,13 @@ func AggregateCoronaPublicKeys(publicKeys [][]byte) ([]byte, error) {
 		return nil, errors.New("no public keys to aggregate")
 	}
 
-	// Validate all keys have consistent length
-	keyLen := len(publicKeys[0])
-	for i, pk := range publicKeys {
-		if len(pk) != keyLen {
-			return nil, fmt.Errorf("inconsistent public key lengths: key %d has length %d, expected %d",
-				i, len(pk), keyLen)
+	// Every share of a Corona threshold key verifies against the one group
+	// public key, and the aggregate returned below is publicKeys[0]. Keys that
+	// differ therefore have no aggregate: returning the first would verify one
+	// signer's key while the caller's quorum tally counted all of them.
+	for i, pk := range publicKeys[1:] {
+		if !bytes.Equal(pk, publicKeys[0]) {
+			return nil, fmt.Errorf("%w: key %d differs from key 0", ErrCoronaGroupKeyMismatch, i+1)
 		}
 	}
 
