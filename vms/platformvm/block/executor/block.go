@@ -116,6 +116,7 @@ func (b *Block) Options(context.Context) ([2]chain.Block, error) {
 	options := options{
 		log:                     b.manager.Log,
 		primaryUptimePercentage: b.manager.txExecutorBackend.Config.UptimePercentage,
+		stakingPolicyAt:         b.manager.txExecutorBackend.Config.StakingPolicyAt,
 		uptimes:                 b.manager.txExecutorBackend.Uptimes,
 		state:                   b.manager.backend.state,
 	}
