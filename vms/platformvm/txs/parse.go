@@ -10,12 +10,17 @@ package txs
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/zap"
 )
+
+// errCredSigsOutOfRange is returned when a credential entry names a signature
+// range the buffer's signature array does not contain.
+var errCredSigsOutOfRange = errors.New("txs: credential signature range is outside the signature array")
 
 // zapLen returns the total length of the leading self-delimiting zap message
 // in b (its header size field). This is the split point between the unsigned
@@ -144,10 +149,20 @@ func parseCredsBuf(b []byte) ([]verify.Verifiable, error) {
 	credsList := obj.ListStride(offCredsList, credEntry)
 	sigArr := obj.ListStride(offSigArray, sigLen)
 	n := credsList.Len()
+	total := uint32(sigArr.Len())
 	creds := make([]verify.Verifiable, n)
 	for i := 0; i < n; i++ {
 		e := credsList.Object(i, credEntry)
 		start, count := e.Uint32(0), e.Uint32(4)
+		// The claimed range must lie inside the signature array. Both bounds
+		// come off the wire: an out-of-range index yields a zero zap.Object
+		// whose Uint8 dereferences a nil message, and count on its own sizes
+		// the allocation below. Matches the clamp the input/output slicers in
+		// spending.go apply. start <= total makes total-start safe.
+		if start > total || count > total-start {
+			return nil, fmt.Errorf("%w: credential %d claims signatures [%d, %d) of %d",
+				errCredSigsOutOfRange, i, start, uint64(start)+uint64(count), total)
+		}
 		sigs := make([][sigLen]byte, count)
 		for j := uint32(0); j < count; j++ {
 			blob := sigArr.Object(int(start+j), sigLen)
