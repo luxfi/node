@@ -29,9 +29,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	consensusconfig "github.com/luxfi/consensus/config"
+	"github.com/luxfi/log"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
@@ -216,6 +218,32 @@ func shouldWrapInProposerVM(k int, chainID ids.ID, innerIsDAGNative bool) bool {
 type blsVoteVerifier struct {
 	state     validators.State
 	networkID ids.ID
+
+	// log and the counters below exist because a verification failure here is the
+	// quietest way a chain can die: every node-side counter stays healthy, votes
+	// are broadcast and received in the thousands, and the cert simply never
+	// reaches alpha. Sampled so a fully-failing fleet cannot flood the log.
+	log      log.Logger
+	nOK      atomic.Uint64
+	nNoVdr   atomic.Uint64
+	nNoPK    atomic.Uint64
+	nBadPK   atomic.Uint64
+	nBadSig  atomic.Uint64
+	nVerFail atomic.Uint64
+}
+
+// sample logs the first few of each outcome and then every 500th, so a
+// systematic failure is unmissable without being unbounded.
+func (v *blsVoteVerifier) sample(c *atomic.Uint64, reason string, nodeID ids.NodeID, epochHeight uint64) {
+	n := c.Add(1)
+	if v.log == nil || (n > 3 && n%500 != 0) {
+		return
+	}
+	v.log.Warn("vote signature REJECTED — this vote cannot count toward the quorum",
+		log.String("reason", reason),
+		log.Stringer("voter", nodeID),
+		log.Uint64("epochHeight", epochHeight),
+		log.Uint64("count", n))
 }
 
 func newBLSVoteVerifier(state validators.State, networkID ids.ID) *blsVoteVerifier {
@@ -226,18 +254,37 @@ func newBLSVoteVerifier(state validators.State, networkID ids.ID) *blsVoteVerifi
 // P-chain height; the voter's pubkey is read from the set IN FORCE AT that height.
 func (v *blsVoteVerifier) VerifyVote(nodeID ids.NodeID, message []byte, sig []byte, epochHeight uint64) bool {
 	out, ok := validatorSetAtHeight(v.state, v.networkID, epochHeight)[nodeID]
-	if !ok || out == nil || len(out.PublicKey) == 0 {
+	if !ok || out == nil {
+		v.sample(&v.nNoVdr, "voter not in the validator set at this epoch height", nodeID, epochHeight)
+		return false
+	}
+	if len(out.PublicKey) == 0 {
+		v.sample(&v.nNoPK, "voter has no BLS public key at this epoch height", nodeID, epochHeight)
 		return false
 	}
 	pk, err := bls.PublicKeyFromCompressedBytes(out.PublicKey)
 	if err != nil || pk == nil {
+		v.sample(&v.nBadPK, "voter public key failed to decompress", nodeID, epochHeight)
 		return false
 	}
 	signature, err := bls.SignatureFromBytes(sig)
 	if err != nil || signature == nil {
+		v.sample(&v.nBadSig, "signature bytes failed to parse", nodeID, epochHeight)
 		return false
 	}
-	return bls.Verify(pk, signature, message)
+	if !bls.Verify(pk, signature, message) {
+		// The signature is well-formed and the key is right, so the SIGNED MESSAGE
+		// differs: signer and verifier disagree on the block POSITION.
+		// CanonicalVoteMessage binds (ChainID, Height, Round, BlockID, ParentID) —
+		// a Round or ParentID mismatch fails here while every counter stays green.
+		v.sample(&v.nVerFail, "BLS verify failed — signer/verifier disagree on the vote message (position mismatch)", nodeID, epochHeight)
+		return false
+	}
+	if n := v.nOK.Add(1); v.log != nil && (n <= 3 || n%1000 == 0) {
+		v.log.Info("vote signature verified",
+			log.Stringer("voter", nodeID), log.Uint64("epochHeight", epochHeight), log.Uint64("count", n))
+	}
+	return true
 }
 
 var _ consensuschain.VoteVerifier = (*blsVoteVerifier)(nil)
