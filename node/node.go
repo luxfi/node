@@ -1352,6 +1352,7 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 	n.chainManager, err = chains.New(
 		&chains.ManagerConfig{
 			SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
+			ConsensusOverrides:        n.Config.ConsensusOverrides,
 			StakingTLSSigner:          n.StakingTLSSigner,
 			StakingTLSCert:            n.StakingTLSCert,
 			StakingMLDSASigner:        n.Config.StakingConfig.StakingMLDSA,

@@ -109,6 +109,64 @@ var (
 // custom genesis they pass --genesis-file. No backwards compatibility
 // for the deleted automine-network.json sidecar.
 
+// getConsensusOverrides collects ONLY the consensus parameters the operator set
+// explicitly, so chain creation can layer them over the per-networkID default
+// without a set value being indistinguishable from a default one.
+//
+// getConsensusConfig cannot serve that purpose: it starts from DefaultParams and
+// returns a fully-populated struct, so "operator asked for K=20" and "nobody
+// asked for anything" come back identical. Its result also only ever reaches a
+// nets.Config, which chain creation does not read.
+func getConsensusOverrides(v *viper.Viper) *chains.ConsensusOverrides {
+	o := &chains.ConsensusOverrides{}
+	set := false
+	if v.IsSet(ConsensusSampleSizeKey) {
+		x := v.GetInt(ConsensusSampleSizeKey)
+		o.K, set = &x, true
+	}
+	if v.IsSet(ConsensusQuorumSizeKey) {
+		x := v.GetInt(ConsensusQuorumSizeKey)
+		o.AlphaPreference, o.AlphaConfidence, set = &x, &x, true
+	}
+	// The specific keys win over the combined one, so they are applied after it.
+	if v.IsSet(ConsensusPreferenceQuorumSizeKey) {
+		x := v.GetInt(ConsensusPreferenceQuorumSizeKey)
+		o.AlphaPreference, set = &x, true
+	}
+	if v.IsSet(ConsensusConfidenceQuorumSizeKey) {
+		x := v.GetInt(ConsensusConfidenceQuorumSizeKey)
+		o.AlphaConfidence, set = &x, true
+	}
+	if v.IsSet(ConsensusCommitThresholdKey) {
+		x := v.GetInt(ConsensusCommitThresholdKey)
+		o.Beta, set = &x, true
+	}
+	if v.IsSet(ConsensusConcurrentRepollsKey) {
+		x := v.GetInt(ConsensusConcurrentRepollsKey)
+		o.ConcurrentRepolls, set = &x, true
+	}
+	if v.IsSet(ConsensusOptimalProcessingKey) {
+		x := v.GetInt(ConsensusOptimalProcessingKey)
+		o.OptimalProcessing, set = &x, true
+	}
+	if v.IsSet(ConsensusMaxProcessingKey) {
+		x := v.GetInt(ConsensusMaxProcessingKey)
+		o.MaxOutstandingItems, set = &x, true
+	}
+	if v.IsSet(ConsensusMaxTimeProcessingKey) {
+		x := v.GetDuration(ConsensusMaxTimeProcessingKey)
+		o.MaxItemProcessingTime, set = &x, true
+	}
+	if v.IsSet(ConsensusConvergenceSettleWindowKey) {
+		x := v.GetDuration(ConsensusConvergenceSettleWindowKey)
+		o.ConvergenceSettleWindow, set = &x, true
+	}
+	if !set {
+		return nil
+	}
+	return o
+}
+
 func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 	// Start with default parameters
 	p := consensusconfig.DefaultParams()
@@ -1710,6 +1768,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, fmt.Errorf("invalid GPU configuration: %w", err)
 	}
 
+	nodeConfig.ConsensusOverrides = getConsensusOverrides(v)
 	nodeConfig.ConsensusShutdownTimeout = v.GetDuration(ConsensusShutdownTimeoutKey)
 	if nodeConfig.ConsensusShutdownTimeout < 0 {
 		return node.Config{}, fmt.Errorf("%q must be >= 0", ConsensusShutdownTimeoutKey)
