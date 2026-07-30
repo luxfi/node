@@ -1241,34 +1241,54 @@ Closed on main at `464d1b4dd8`, in `block/timestamp.go`:
 Sub-second cadence — the reason `45a3dcf` existed — waits for that activation.
 `TestSecondsWriteUnitTruncatesSubSecond` records the cost rather than leaving it to be found.
 
-**Not tagged.** v1.36.39 is reserved below for the three bootstrap-ancestry fixes, and none of
-`VerifiedAncestryChunk`, `MaxBlocksPerAttempt` or `NamingProgress` exists yet. Tag v1.36.39
-when those land; this fix rides along.
+Shipped in **v1.36.39** together with the bootstrap-ancestry fixes below.
 
-## ⛔ v1.36.38 — DO NOT DEPLOY (superseded by v1.36.39)
+## ⛔ v1.36.38 — DO NOT DEPLOY (superseded by v1.36.39, shipped)
 
 `v1.36.38` (commit `bd2edc135f`, chunked ancestry descent) is **tagged but must not be
-deployed**. The tag is retained for provenance — do not delete it.
+deployed**. The tag is retained for provenance — do not delete it. No image was ever built for
+it, so nothing is running it.
 
-Defects, found in owner review after tagging:
+Its three defects are **fixed on main in `1d0c2f045e` and shipped as v1.36.39**, each with a
+regression test and an executed negative control.
 
-1. **Bootstrap ancestry responses are not trust-boundary validated.** `nameFrontier`'s chunk
-   loop adds every returned `BlockRef` to the global index before checking that the response
-   contains the requested cursor, forms exactly one contiguous parent path, decreases in height
-   by exactly one, is cycle-free, and carries no duplicate ID with differing metadata. Fix:
-   a `VerifiedAncestryChunk{Root, Blocks, Next, Complete}` validated as a unit *before* any ref
-   reaches the index.
+**1. Bootstrap ancestry responses were not trust-boundary validated.** `nameFrontier`'s chunk
+loop indexed every returned `BlockRef` before checking anything. Fixed with
+`VerifiedAncestryChunk{Root, Blocks, Next, Complete}` in `chains/bootstrap_ancestry.go`,
+validated as a UNIT before any ref reaches the index — a chunk failing any rule is refused
+whole. Rules: the response answers the block asked about, forms exactly one contiguous parent
+path, steps height by exactly one, repeats no id, and never serves a known id with different
+metadata.
 
-2. **The traversal deadline is internally inconsistent.** A single `Ancestry` request may take
-   up to 12s while the entire multi-anchor walk is bounded to `bootstrapNamingTimeout = 3s`.
-   A child request must never outlive its parent operation (e.g. 3s per request / 30s per
-   attempt).
+> **Wire order, measured, because the first version of the verifier got it wrong.** Production
+> builds the response by walking from the requested block toward genesis and PREPENDING each
+> entry — `chains/manager.go`, *"Prepend to keep oldest-first"* — so the batch is **oldest-first
+> and the requested block is LAST**. `chains/bootstrap_sync.go`'s delivery comment says the same.
+> Do not reason from `vms/proposervm/batched_vm.go GetAncestors`, which appends newest-first: that
+> is the VM batched API, a different path from the bootstrap context wire.
+> `stubAncestry` in `bootstrap_trust_test.go` had been serving descending — an order no peer
+> sends — and went unnoticed because the walk it fed was order-agnostic. It now serves the
+> production order, so the double cannot disagree with the wire again.
 
-3. **Recovery still has a permanent maximum gap.** `bootstrapMaxNamingDepth = 32768` is a
-   recoverability ceiling, not a per-attempt budget. Replace with `MaxBlocksPerAttempt` /
-   `MaxBytesPerAttempt` / `MaxRequestsPerAttempt` / `AttemptTimeout` plus persisted
-   `NamingProgress{Anchor, Cursor, Traversed, VerifiedRefs}`. On exhaustion: save the cursor and
-   return incomplete, then resume from it. **Never translate "attempt budget exhausted" into
-   `ErrNoBootstrapQuorum`.**
+**2. The traversal deadline was internally inconsistent.** One `Ancestry` request was configured
+for 12s inside a walk bounded to 3s, so the request bound was dead code and the chunked descent
+3s was meant to permit could not finish a second chunk. `NamingBudget` now orders them
+explicitly — **3s per request inside 30s per attempt** — and clamps a misconfiguration rather
+than refusing to bootstrap over it.
 
-No image was ever built for this tag, so nothing is running it. Ship the above as `v1.36.39`.
+**3. Recovery had a permanent maximum gap.** `bootstrapMaxNamingDepth = 32768` reset every
+attempt while the descent restarted from the tip, so a straggler deeper than the budget could
+never resolve its common ancestor however often it retried. Replaced by a per-attempt budget
+(`MaxBlocks` / `MaxRequests` / `Attempt` / `Request`) plus
+`NamingProgress{Anchor, Cursor, Traversed, VerifiedRefs}` persisted on the `blockHandler`, which
+outlives the per-attempt policy. An attempt that runs out saves its cursor and returns
+**`ErrNamingIncomplete`** — never `ErrNoBootstrapQuorum`: the first is a statement about our own
+budget, the second about the network, and reporting one as the other is what made a 535-block gap
+look like a permanent disagreement. `PruneNamingProgress` bounds retention. There is no separate
+byte budget: `BlockRef` is a fixed 72 bytes, so `MaxBlocks` IS the memory bound.
+
+**Left for the roll, not code:** no image exists for v1.36.39 yet. `hanzo.yml` on platform.hanzo.ai
+builds on the tag push (RELEASE.md). Roll devnet → testnet → mainnet one pod at a time, waiting for
+**tip parity**, never pod-Ready. Two known live hazards are unchanged by this release and still
+apply: `luxfi/evm` must be built after its `luxfi/vm` v1.3.3 bump or the C-Chain ships the map race
+again, and `vms/proposervm/vm.go:380` preferred-fetch freeze is pre-existing and survivable.
