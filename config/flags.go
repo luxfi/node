@@ -365,6 +365,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Int(ConsensusOptimalProcessingKey, defaultParams.OptimalProcessing, "Optimal number of processing containers in consensus")
 	fs.Int(ConsensusMaxProcessingKey, defaultParams.MaxOutstandingItems, "Maximum number of processing items to be considered healthy")
 	fs.Duration(ConsensusMaxTimeProcessingKey, defaultParams.MaxItemProcessingTime, "Maximum amount of time an item should be processing and still be healthy")
+	fs.Duration(ConsensusConvergenceSettleWindowKey, defaultParams.ConvergenceSettleWindow, "How long a contested height is observed before this node casts its one accept signature. MUST exceed the deployment's sibling-gossip latency: a settle shorter than gossip lets each validator sign its own block, a vote split that never reaches the confidence quorum and does not heal. 0 uses the engine default (RoundTO/2, minimum 150ms)")
 
 	// ProposerVM
 	fs.Bool(ProposerVMUseCurrentHeightKey, false, "Have the ProposerVM always report the last accepted P-chain block height")
