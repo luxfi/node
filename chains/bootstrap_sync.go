@@ -44,10 +44,21 @@ const (
 	// replies before tallying the ⅔-by-stake quorum. A beacon answering later just
 	// misses this round (the driver re-samples) — it is not abandoned.
 	bootstrapFrontierWindow = 3 * time.Second
-	// bootstrapAncestorsTimeout bounds how long Ancestors waits for a peer to serve a
-	// batch (longer than the 10s GetAncestors deadline so a slow-but-honest peer is not
-	// abandoned prematurely).
-	bootstrapAncestorsTimeout = 12 * time.Second
+	// bootstrapAncestorsTimeout bounds how long Ancestors waits for a peer to serve ONE
+	// batch. It is a PER-REQUEST bound and must stay well below the per-attempt budget
+	// (bootstrapNamingTimeout), because the ancestor-tolerant descent issues MANY sequential
+	// requests inside one attempt: a child request that can consume the whole parent budget
+	// starves every later chunk.
+	//
+	// It was 12s against a 3s per-attempt budget — four times its own parent. The ctx.Done()
+	// case in the fetch loop meant no request literally outlived the attempt, so nothing hung;
+	// the damage was that the attempt died inside the FIRST chunk and the descent could never
+	// reach a second one. A chunked walk that never completes a walk reports FrontierNoQuorum —
+	// precisely the wedge the chunking was written to fix.
+	//
+	// Kept in step with the GetAncestors WIRE deadline below: asking a peer for more time than
+	// we will wait just wastes its work.
+	bootstrapAncestorsTimeout = 3 * time.Second
 	// bootstrapAncestorSample is how many beacons one Ancestors round asks. The sample
 	// ROTATES (bsRotor) so no single beacon monopolizes the descent or can repeatedly
 	// stall it (M1). Content addressing in the loop makes the fetched ancestry safe
@@ -86,7 +97,13 @@ const (
 	// what it found (or nothing → FrontierNoQuorum), and the loop's bounded retry (F2) tries
 	// again next round against a fresh, rotated beacon sample. Honest beacons that JUST answered
 	// the frontier serve the small skew ancestry near-instantly, well within this window.
-	bootstrapNamingTimeout = 3 * time.Second
+	//
+	// PER-ATTEMPT, and it must exceed bootstrapAncestorsTimeout by enough to fit the SEQUENTIAL
+	// chunk fetches a deep descent needs — at 3s per request this is 10 chunks, i.e. 2560 blocks
+	// of skew resolved in one attempt, with the bounded retry covering more. It was itself 3s,
+	// equal to a single request, so the chunked descent could never advance past its first
+	// fetch. The invariant is simply: a parent operation must be able to outlive its children.
+	bootstrapNamingTimeout = 30 * time.Second
 )
 
 // beaconWeights returns the beacon set's nodeID→stake map and total stake under this
@@ -695,7 +712,10 @@ func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks 
 		b.bsMu.Unlock()
 	}()
 
-	msg, err := b.msgCreator.GetAncestors(b.chainID, requestID, 10*time.Second, blockID, p2p.EngineType_ENGINE_TYPE_CHAIN)
+	// The WIRE deadline we grant the peer is the SAME bound we will actually wait
+	// (bootstrapAncestorsTimeout) — one number, so a peer is never asked to spend longer
+	// building a batch than we are prepared to accept it for.
+	msg, err := b.msgCreator.GetAncestors(b.chainID, requestID, bootstrapAncestorsTimeout, blockID, p2p.EngineType_ENGINE_TYPE_CHAIN)
 	if err != nil {
 		return nil, err
 	}
