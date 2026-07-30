@@ -1243,6 +1243,48 @@ Sub-second cadence — the reason `45a3dcf` existed — waits for that activatio
 
 Shipped in **v1.36.39** together with the bootstrap-ancestry fixes below.
 
+## Fleet state measured 2026-07-30T04:1xZ — v1.36.39 is NOT live, and devnet is down
+
+Two independent blockers. Neither is in the v1.36.39 code.
+
+**1. A `v*` tag push builds NOTHING.** `ghcr.io/luxfi/node` has no manifest for **v1.36.38 or
+v1.36.39** (both 404 to an anonymous GHCR pull token; v1.36.35 and v1.36.37 return 200). `hanzo.yml`
+declares platform.hanzo.ai builds on tag push over the arcd `lux-build-linux-{amd64,arm64}` pools,
+and RELEASE.md calls that the one canonical path — but the last two tags produced no image, so the
+dispatch is not firing. **Until that is fixed, nothing can be rolled**, and a tag is not a release.
+Same failure shape already recorded for `luxfi/engine` and `hanzoai/cloud`: verify with
+`curl ghcr.io/v2/luxfi/node/manifests/<tag>`, never from the tag alone.
+
+**2. lux-devnet is fully down and has been for 26–35h**, on v1.36.37 — before any of this work.
+All five pods `0/1 Running` (luxd-4 has restarted 19×), so `readyReplicas` is unset and the fleet
+has no quorum. The nodes are NOT wedged in consensus: they log
+`bootstrap waiting for beacon connectivity before naming the frontier (not caught up)`
+(`consensus/engine/chain/bootstrap/bootstrapper.go:357`, the `passConnecting` arm) while
+simultaneously gossiping normally — repeatedly receiving and verifying the same block at height
+4244 from a peer. So they are connected enough to gossip and NOT connected enough to reach the
+beacon floor that would let them ask for the frontier. That message logs once per `bs.Run`
+attempt, and it recurs, so each attempt is exhausting `ConnectDeadline` →
+`ErrBeaconsUnreachable` → outer retry, forever.
+
+`vms/proposervm/vm.go:380` (`failed to fetch preferred block; no distinct last-accepted fallback`)
+floods alongside it. **That branch was previously called "survivable"; devnet disproves it** — with
+all five builders wedged there is nothing left to carry the chain. Its fallback bails on
+`lastAcceptedID == vm.preferred`, under a comment asserting "last-accepted is ALWAYS held — it is
+committed state". On these pods that premise is false: the accepted pointer names a block `getBlock`
+cannot return, and there is no repair path, so the builder loops.
+
+**Hypothesis, NOT yet proven — measure before fixing.** All three fleets pass `--bootstrap-nodes`
+(endpoint-only; `config/config.go:488` leaves the NodeID "as the zero value — discovered from peer
+cert during handshake"), while the BootstrapPolicy trust anchor is
+`TrustedBeacons map[ids.NodeID]StakeWeight`, keyed by NodeID *before* any handshake and explicitly
+"never from peer self-report". Readiness tracks version, not flags: mainnet v1.36.2 5/5, testnet
+v1.36.35 3/5, devnet v1.36.37 0/5 — and v1.36.2 predates the policy gate. But
+`blockHandler.beaconWeights()` reads `b.beacons.GetMap(b.networkID)` — the VALIDATOR set, not the
+bootstrappers — so the empty-beacon-map theory is not established. **Next measurement:** the
+beacon-set size and connected count actually observed, from `logFrontierInputs` (debug level, it
+records set size, total stake, connected count and every reply). Set the devnet chain log level to
+Debug and read it rather than reasoning further from the outside.
+
 ## ⛔ v1.36.38 — DO NOT DEPLOY (superseded by v1.36.39, shipped)
 
 `v1.36.38` (commit `bd2edc135f`, chunked ancestry descent) is **tagged but must not be
