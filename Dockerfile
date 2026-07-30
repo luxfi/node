@@ -341,7 +341,14 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     # serves the historical v1.30.6 pin the VCS no longer has). GOSUMDB must go to
     # off, not be left on: line ~317 deliberately strips first-party go.sum lines,
     # so with sum verification active the builds fail INSTANTLY and silently.
-    export GOPRIVATE= GOSUMDB=off GONOSUMDB=github.com/luxfi/*,github.com/hanzoai/* GOFLAGS=-mod=mod && \
+    # GONOPROXY is the variable that actually forces direct-to-VCS; GOPRIVATE only
+    # supplies its DEFAULT. Clearing GOPRIVATE alone therefore still left luxfi
+    # modules resolving direct, and github.com/luxfi/node@v1.30.6 — pinned by every
+    # chain VM — no longer exists in the VCS. It IS on the proxy (.info/.mod 200,
+    # present in @v/list), so clear GONOPROXY too and pin GOPROXY without the
+    # ",direct" fallback so resolution cannot silently drop back to the VCS.
+    export GOPRIVATE= GONOPROXY= GONOSUMDB= GOSUMDB=off \
+           GOPROXY=https://proxy.golang.org GOFLAGS=-mod=mod && \
     mkdir -p /luxd/build/plugins && \
     ( cd /tmp/chains/aivm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA ./cmd/plugin ) || echo "WARN: aivm plugin build skipped" ; \
