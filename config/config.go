@@ -124,7 +124,27 @@ func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 		p.AlphaConfidence = v.GetInt(ConsensusConfidenceQuorumSizeKey)
 	}
 	if v.IsSet(ConsensusCommitThresholdKey) {
-		p.Beta = uint32(v.GetInt(ConsensusCommitThresholdKey))
+		// Beta alone is not enough. A block with no conflict takes the VIRTUOUS
+		// path, so acceptance is gated by BetaVirtuous — and nothing else in this
+		// function writes BetaVirtuous or BetaRogue, which means they are
+		// structurally unreachable by configuration and keep DefaultParams' 14/20
+		// no matter what the operator passes.
+		//
+		// That stranded Hanzo L1 36963: measured effective params were
+		// K=5 AlphaPreference=4 AlphaConfidence=4 Beta=2 BetaVirtuous=14, so an
+		// uncontested block every one of the five validators had verified needed
+		// FOURTEEN consecutive successful polls to accept, any single miss
+		// resetting the run. The chain produced blocks while it could string 14
+		// clean polls together and then froze permanently.
+		//
+		// Mirrors ConsensusQuorumSizeKey below, which already sets both of its
+		// pair (AlphaPreference and AlphaConfidence) from one flag.
+		beta := v.GetInt(ConsensusCommitThresholdKey)
+		p.Beta = uint32(beta)
+		p.BetaVirtuous = beta
+		if p.BetaRogue < beta {
+			p.BetaRogue = beta
+		}
 	}
 	if v.IsSet(ConsensusConcurrentRepollsKey) {
 		p.ConcurrentRepolls = v.GetInt(ConsensusConcurrentRepollsKey)
