@@ -3178,6 +3178,28 @@ func (b *blockHandler) applyQbit(ctx context.Context, ev QbitEvent) {
 		Accept:   accept,
 		SignedAt: ev.ReceivedAt,
 	}
+	// An UNSIGNED vote cannot be counted on a multi-validator chain. The engine
+	// authenticates every vote before tallying it —
+	//
+	//   if len(vote.Signature) == 0 || !voteVerifier.VerifyVote(...) { return }
+	//
+	// and Vote.Signature's contract is explicit: "MUST be present and valid for
+	// multi-validator finality". The verifier is wired exactly when K>1, which is
+	// what ModeQuorumFinality reports. So on such a chain this vote is dropped
+	// BEFORE pending.VoteCount++ and alpha is unreachable by construction: the
+	// block can never accept, however many chits arrive.
+	//
+	// This node cannot fix that here — it cannot sign on ev.From's behalf. The
+	// signed path is BroadcastVote/HandleIncomingVote; deriving a Vote from an
+	// unsigned p2p Chits message is the wrong bridge for K>1. Say so loudly
+	// rather than letting the drop stay silent: it presents as a chain that polls
+	// 4-of-4 forever and never advances, with every node-side counter healthy.
+	if len(vote.Signature) == 0 && b.engine.Mode() == consensuschain.ModeQuorumFinality {
+		b.logger.Warn("vote is UNSIGNED and cannot be counted — engine will drop it before the tally",
+			log.Stringer("blockID", ev.BlockID),
+			log.Stringer("from", ev.From),
+			log.Bool("accept", accept))
+	}
 	queued := b.engine.ReceiveVote(vote)
 
 	// accept and queued are the two booleans that decide whether a poll can ever
