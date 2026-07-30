@@ -100,3 +100,35 @@ func TestOverridesDoNotDisturbMainnetDefaults(t *testing.T) {
 		t.Errorf("ConvergenceSettleWindow = %v, want %v", got.ConvergenceSettleWindow, w)
 	}
 }
+
+// The overridden params must survive the SAME gate the manager applies right
+// after selecting them (manager.go: ValidateForValueNetwork). If they do not,
+// every validator crash-loops at boot simultaneously — there is no canary that
+// catches it, because a quorum parameter is only rolled fleet-wide.
+//
+// For K=5: f = (K-1)/3 = 1, so f>=1 holds, and the BFT quorum floor
+// ceil((K+f+1)/2) = 4 is exactly the alpha 36963 runs. This asserts it rather
+// than trusting that arithmetic.
+func TestOverriddenParamsPassTheValueNetworkGate(t *testing.T) {
+	o := &ConsensusOverrides{K: intp(5), AlphaPreference: intp(4), AlphaConfidence: intp(4), Beta: intp(2)}
+	got := o.ApplyTo(selectConsensusParams(true, hanzoL1NetworkID))
+
+	if err := got.ValidateForValueNetwork(hanzoL1NetworkID); err != nil {
+		t.Fatalf("overridden params rejected by the manager's own gate: %v", err)
+	}
+	if f := got.ByzantineFaultTolerance(); f < 1 {
+		t.Errorf("ByzantineFaultTolerance = %d, want >= 1", f)
+	}
+}
+
+// A hostile override must still be refused. The override path must not become a
+// way to configure an unsafe chain: K=3 gives f=0, which one Byzantine validator
+// forks, and the gate has to reject it exactly as it would without overrides.
+func TestOverridesCannotWeakenPastTheGate(t *testing.T) {
+	o := &ConsensusOverrides{K: intp(3), AlphaPreference: intp(2), AlphaConfidence: intp(2)}
+	got := o.ApplyTo(selectConsensusParams(true, hanzoL1NetworkID))
+
+	if err := got.ValidateForValueNetwork(hanzoL1NetworkID); err == nil {
+		t.Error("K=3 (f=0) was accepted for a value network; the gate must reject it")
+	}
+}
