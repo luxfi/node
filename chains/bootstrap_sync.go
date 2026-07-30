@@ -73,12 +73,6 @@ const (
 	// is exactly when this path matters most, and it was disabled precisely then.
 	// The total budget is now maxNamingDepth; the health heuristic is gone.
 	bootstrapNamingWindow = 256
-	// bootstrapMaxNamingDepth is the TOTAL ancestry one anchor may be walked down, in
-	// bootstrapNamingWindow-sized chunks. Purely a resource bound (with maxNamingAnchors and
-	// bootstrapNamingTimeout): 32768 covers ~9h of 1s blocks of halt-skew, and the common
-	// healthy case never fetches at all — a single tip clearing the floor takes the exact fast
-	// path with zero fetches. Safety does NOT come from this number; see maxNamingDepth().
-	bootstrapMaxNamingDepth = 32768
 	// maxNamingAnchors bounds how many DISTINCT reported tips the ancestor-tolerant tally will
 	// fetch ancestry for in one round. Honest beacons cluster on a handful of adjacent tips, so
 	// this is never reached in practice; it caps the work a Byzantine swarm reporting many
@@ -397,6 +391,8 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 			// accepted=false here, so the loop's Accepted()-shortcut DESCENDS instead of completing
 			// at the stale tip. The diagnostic now distinguishes "in the store" from "finalized".
 			log.Bool("accepted", b.Accepted(ctx, frontier.ID)))
+		// The descent is over, so its retained refs are released.
+		b.namingProgress = nil
 		return frontier.ID, chainbootstrap.FrontierNamed
 	case errors.Is(err, ErrInsufficientBootstrapResponses):
 		// Below the PEER-ONLY response floor. Before WAITING, apply the SELF-VOTE under FULL
@@ -465,6 +461,28 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 				log.Stringer("tip", lastID),
 				log.Uint64("height", lastH))
 			return lastID, chainbootstrap.FrontierNamed
+		}
+		// WHY nothing was named decides whether retrying can ever succeed, so the two
+		// reasons are logged as the different facts they are. ErrNoBootstrapQuorum is a
+		// statement about the network — the responders agree on nothing we may name —
+		// and retrying polls a fresh sample. ErrNamingIncomplete is a statement about
+		// our own budget: the descent ran out mid-walk, its cursors are saved, and the
+		// next round resumes DEEPER. Reported as no-quorum, a wide gap looks like a
+		// permanent disagreement and the descent restarts at the tip every round, which
+		// is how a 535-block gap wedged mainnet forever.
+		if errors.Is(err, ErrNamingIncomplete) {
+			deepest := 0
+			for _, prog := range b.namingProgress {
+				if prog.Traversed > deepest {
+					deepest = prog.Traversed
+				}
+			}
+			b.logger.Debug("bootstrap frontier: INCOMPLETE (attempt budget spent, not a disagreement) — resuming deeper next round",
+				log.Stringer("chainID", b.chainID),
+				log.Uint64("lastAccepted", lastH),
+				log.Int("anchorsInProgress", len(b.namingProgress)),
+				log.Int("deepestTraversed", deepest))
+			return ids.Empty, chainbootstrap.FrontierNoQuorum
 		}
 		b.logger.Debug("bootstrap frontier: NO QUORUM (responders split, not caught up) — retry/fail safe",
 			log.Stringer("chainID", b.chainID),
@@ -556,8 +574,11 @@ func (b *blockHandler) bootstrapPolicy(weights map[ids.NodeID]uint64) *Bootstrap
 		Checkpoint:         b.bootstrapCheckpoint,
 		NamingWindow:       bootstrapNamingWindow,
 		MaxAnchors:         maxNamingAnchors,
-		NamingTimeout:      bootstrapNamingTimeout,
 		Source:             b,
+		// The descent state is the HANDLER's and outlives this policy, so an attempt
+		// that runs out of budget resumes deeper next round instead of restarting at
+		// the tip. Budget fields default in namingBudget().
+		Progress: b.ancestryProgress(),
 	}
 }
 
@@ -1185,4 +1206,15 @@ func decodeContextBlocks(data []byte) [][]byte {
 		}
 	}
 	return out
+}
+
+// ancestryProgress returns the handler's cross-attempt descent state, allocating on
+// first use. The map is the recovery state: the per-attempt budget resets each round
+// and these cursors do not, which is what turns a gap wider than one attempt into
+// progress rather than repetition.
+func (b *blockHandler) ancestryProgress() map[ids.ID]*NamingProgress {
+	if b.namingProgress == nil {
+		b.namingProgress = make(map[ids.ID]*NamingProgress)
+	}
+	return b.namingProgress
 }
