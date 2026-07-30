@@ -3763,7 +3763,7 @@ func (b *blockHandler) PushQuery(ctx context.Context, nodeID ids.NodeID, request
 	nodeSet.Add(nodeID)
 
 	sentTo := b.net.Send(qbitMsg, nodeSet, b.networkID, 0)
-	b.logger.Debug("responded with Chits",
+	b.logger.Info("responded with Chits",
 		log.Stringer("from", nodeID),
 		log.Stringer("preferredID", preferredID),
 		log.Stringer("acceptedID", acceptedBlkID),
@@ -3923,7 +3923,7 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 			switch kind {
 			case quorumKindVote:
 				if b.logger != nil {
-					b.logger.Verbo("quorum: vote RECEIVED",
+					b.logger.Info("quorum: vote RECEIVED",
 						log.Stringer("from", nodeID), log.Stringer("blockID", blockID))
 				}
 				b.engine.HandleIncomingVote(blockID, payload)
@@ -3941,7 +3941,7 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 		// inbound vote and cert falls through to the plain-block path and is
 		// discarded, so a degraded engine looks exactly like a network with
 		// nothing to say. Name it once per gossip so the mode is visible.
-		b.logger.Verbo("quorum: engine NOT in quorum-finality mode — vote/cert demux skipped",
+		b.logger.Warn("quorum: engine NOT in quorum-finality mode — vote/cert demux skipped",
 			log.Stringer("from", nodeID), log.Int("mode", int(b.engine.Mode())))
 	}
 	// Plain block gossip.
@@ -3998,7 +3998,7 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 		// Vote contains a preference signal for a block (preferredID)
 		// Note: msg.Message already contains the extracted PreferredId from the Qbit protobuf
 		// (extracted by chain_router.go via GetContainerBytes which returns m.GetPreferredId())
-		b.logger.Debug("received Chits message",
+		b.logger.Info("received Chits message",
 			log.Stringer("from", msg.NodeID),
 			log.Uint32("requestID", msg.RequestID),
 			log.Int("msgLen", len(msg.Message)))
@@ -4265,7 +4265,7 @@ func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockI
 	}
 	sent := g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
 	if g.log != nil {
-		g.log.Verbo("quorum: vote broadcast",
+		g.log.Info("quorum: vote broadcast",
 			log.Stringer("blockID", blockID),
 			log.Stringer("gossipNetworkID", g.networkID),
 			log.Int("sentToPeers", sent),
