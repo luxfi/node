@@ -37,6 +37,12 @@ type stubAncestry struct {
 	withhold map[ids.ID]bool
 }
 
+// Ancestry serves the PRODUCTION wire order: oldest-first, ending at the requested
+// block. chains/manager.go builds the real response by walking from the requested block
+// down to genesis and PREPENDING each entry ("Prepend to keep oldest-first"), so the
+// requested block is LAST. This double appended in the opposite order, which no peer
+// ever sends; it went unnoticed because the walk it fed was order-agnostic, and it is
+// the reason the ancestry verifier was first written against the wrong contract.
 func (s *stubAncestry) Ancestry(_ context.Context, tip ids.ID, max int) ([]BlockRef, error) {
 	if s.withhold[tip] {
 		return nil, nil
@@ -48,7 +54,7 @@ func (s *stubAncestry) Ancestry(_ context.Context, tip ids.ID, max int) ([]Block
 		if !ok {
 			break
 		}
-		out = append(out, ref)
+		out = append([]BlockRef{ref}, out...) // oldest-first, as production sends
 		if ref.Parent == ids.Empty {
 			break
 		}
@@ -952,7 +958,7 @@ func TestBootstrapTrust_H_HaltSkewDeeperThanOneWindow(t *testing.T) {
 	ahead := prev
 	require.Equal(t, common.Height+gap, ahead.Height)
 	require.Greater(t, gap, bootstrapNamingWindow, "gap MUST exceed one fetch window or this proves nothing")
-	require.Less(t, gap, bootstrapMaxNamingDepth, "gap must stay inside the total depth budget")
+	require.Less(t, gap, bootstrapMaxBlocksPerAttempt, "gap must fit one attempt's block budget")
 
 	beacons := nodeIDs(3) // the three responders with a live C-Chain
 	policy := &BootstrapPolicy{
@@ -974,9 +980,10 @@ func TestBootstrapTrust_H_HaltSkewDeeperThanOneWindow(t *testing.T) {
 	require.Equal(t, common.Height, f.Height)
 }
 
-// TestBootstrapTrust_H_HaltSkewBeyondDepthStillFailsSafe pins the resource bound's edge: a skew
-// DEEPER than maxNamingDepth still names nothing rather than guessing. Depth is a work bound, so
-// exhausting it must degrade to the SAME fail-safe as before, never to a wrong block.
+// TestBootstrapTrust_H_HaltSkewBeyondDepthStillFailsSafe pins the budget's edge: a skew deeper
+// than ONE ATTEMPT's block budget names nothing rather than guessing, and says so with
+// ErrNamingIncomplete rather than ErrNoBootstrapQuorum. Both fail safe; only one of them is
+// recoverable, because only one tells the caller that looking further would help.
 func TestBootstrapTrust_H_HaltSkewBeyondDepthStillFailsSafe(t *testing.T) {
 	const w uint64 = 100
 	refs, byID := refChain(10)
@@ -994,15 +1001,20 @@ func TestBootstrapTrust_H_HaltSkewBeyondDepthStillFailsSafe(t *testing.T) {
 		TrustedBeacons: equalBeacons(beacons, w),
 		MinResponses:   3,
 		NamingWindow:   4, // tiny chunk...
-		MaxNamingDepth: 8, // ...and a depth budget far shallower than the 64-block skew
 		Source:         &stubAncestry{byID: byID},
+		// ...and a per-attempt block budget far shallower than the 64-block skew.
+		Budget: NamingBudget{MaxBlocks: 8},
 	}
 	_, err := policy.AcceptsFrontier(context.Background(), []BeaconReply{
 		reply(beacons[0], ahead.ID, w),
 		reply(beacons[1], common.ID, w),
 		reply(beacons[2], common.ID, w),
 	})
-	require.Error(t, err, "a skew beyond the depth budget must fail SAFE, never name a guess")
+	require.Error(t, err, "a skew beyond the attempt budget must fail SAFE, never name a guess")
+	require.ErrorIs(t, err, ErrNamingIncomplete,
+		"out of budget is not the same fact as out of agreement: reported as no-quorum, a wide "+
+			"gap looks permanent and the descent restarts at the tip every round")
+	require.NotErrorIs(t, err, ErrNoBootstrapQuorum)
 }
 
 // TestBootstrapTrust_H_AcceptanceMatrix pins the owner-specified recovery matrix at the policy

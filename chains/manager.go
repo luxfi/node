@@ -2840,6 +2840,13 @@ type blockHandler struct {
 	// builder — not chain.ChainVM — keeps the engine and the handler on ONE block
 	// codec, so inbound P2P container bytes are parsed by the same code that framed
 	// them (no raw-vs-wrapped mismatch).
+	// namingProgress carries each anchor's ancestry descent ACROSS bootstrap attempts,
+	// keyed by reported tip. It lives HERE, not on the BootstrapPolicy, because a fresh
+	// policy is built every attempt: the per-attempt budget resets and the cursor must
+	// not, or a gap wider than one attempt can never be crossed however often we retry.
+	// Dropped once a frontier is named.
+	namingProgress map[ids.ID]*NamingProgress
+
 	vm         consensuschain.BlockBuilder
 	logger     log.Logger
 	engine     *consensuschain.Runtime    // Consensus engine for proper block handling

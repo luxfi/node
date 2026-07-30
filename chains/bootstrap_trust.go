@@ -84,6 +84,16 @@ var (
 	// ErrNoBootstrapQuorum: enough beacons responded, but no block clears the agreement threshold
 	// over the responders (a genuine partition, or a transient bleeding-edge split the loop retries).
 	ErrNoBootstrapQuorum = errors.New("bootstrap: no responder-agreed frontier")
+	// ErrNamingIncomplete: the ancestor-tolerant walk ran out of ATTEMPT BUDGET before it
+	// could reach a ⅔-backed common block. This is NOT ErrNoBootstrapQuorum, and the
+	// distinction is the whole recovery property: no-quorum says the responders do not
+	// agree on anything we can name, a conclusion about the network, while incomplete says
+	// we have not looked far enough yet, a statement about our own budget. Reported as
+	// no-quorum, a wide gap looks like a network that will never agree and the descent
+	// restarts from the tip every round — which is how a 535-block gap wedged mainnet
+	// forever. Reported as incomplete, the saved cursor makes the next attempt resume
+	// deeper. The caller retries either way; only one of them makes progress.
+	ErrNamingIncomplete = errors.New("bootstrap: ancestry walk incomplete within the attempt budget")
 )
 
 // BeaconReply is one authenticated configured beacon's report of its accepted frontier tip
@@ -243,13 +253,13 @@ type BootstrapPolicy struct {
 	// CheckpointVerifier authenticates the Checkpoint's authority signature (INVARIANT 4). nil ⇒ a
 	// configured Checkpoint is NOT trusted (fail closed) — a bare (id,height) is never enough.
 	CheckpointVerifier CheckpointVerifier
-	// NamingWindow is the per-FETCH ancestry chunk (Ancestry returns FULL blocks, so one fetch
-	// must stay inside a network message); MaxNamingDepth is the TOTAL ancestry a single anchor
-	// may be walked down in NamingWindow-sized chunks; MaxAnchors bounds how many distinct
-	// reported tips are resolved. All default to the package constants when zero.
-	NamingWindow   int
-	MaxNamingDepth int
-	MaxAnchors     int
+	// NamingWindow is the per-REQUEST ancestry chunk (Ancestry returns FULL blocks, so one
+	// response must stay inside a network message). MaxAnchors bounds how many distinct
+	// reported tips are resolved. How FAR a descent goes is Budget's business, not a
+	// separate depth ceiling — that ceiling was the recoverability limit NamingProgress
+	// removes. Both default to the package constants when zero.
+	NamingWindow int
+	MaxAnchors   int
 	// NamingTimeout TOTAL-bounds the ancestor-tolerant resolution (all anchor fetches combined) so
 	// a partition that ANSWERS the frontier query but WITHHOLDS ancestry cannot make the decision
 	// hang — it returns what it found (or nothing → ErrNoBootstrapQuorum) and the caller's bounded
@@ -258,6 +268,19 @@ type BootstrapPolicy struct {
 	// Source resolves content-addressed ancestry for the ancestor-tolerant tally. When nil, the
 	// policy decides on the exact fast path alone (no split resolution).
 	Source AncestrySource
+	// Budget bounds ONE attempt of the ancestor-tolerant walk (blocks, requests, attempt
+	// wall clock, per-request wall clock). Zero fields take the package defaults.
+	Budget NamingBudget
+	// Progress carries each anchor's descent ACROSS attempts, keyed by the reported tip.
+	// It is owned by the CALLER and outlives any one policy object — that is the point:
+	// the budget resets every attempt and the cursor does not, so a gap wider than one
+	// attempt is crossed by a bounded number of attempts rather than never. Nil ⇒ each
+	// attempt descends from the tip, which is correct but cannot cross such a gap.
+	Progress map[ids.ID]*NamingProgress
+
+	// truncated records that the last walk stopped on a BUDGET rather than on peer
+	// disagreement, so the two are reported as the different facts they are.
+	truncated bool
 }
 
 // compile-time: the default policy IS a BootstrapTrust.
@@ -300,17 +323,6 @@ func (p *BootstrapPolicy) namingWindow() int {
 		return p.NamingWindow
 	}
 	return bootstrapNamingWindow
-}
-
-// maxNamingDepth is the TOTAL ancestry one anchor may be walked down, in namingWindow-sized
-// chunks. It is a RESOURCE bound and nothing else. Safety comes from hash-verified ancestry
-// (a forged chain cannot link), MinResponders distinct voters, the ⅔-of-RESPONDER-stake floor,
-// and the full re-Verify every block gets on the descent — none of which depend on this number.
-func (p *BootstrapPolicy) maxNamingDepth() int {
-	if p.MaxNamingDepth > 0 {
-		return p.MaxNamingDepth
-	}
-	return bootstrapMaxNamingDepth
 }
 
 func (p *BootstrapPolicy) maxAnchors() int {
@@ -416,6 +428,11 @@ func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconR
 
 	id, height, weight, ok := p.nameFrontier(ctx, stakeOnTip, votersOf, floor, required)
 	if !ok {
+		if p.truncated {
+			// Out of budget, not out of agreement. The cursor is saved; the next attempt
+			// resumes deeper instead of restarting at the tip.
+			return nil, ErrNamingIncomplete
+		}
 		return nil, ErrNoBootstrapQuorum
 	}
 	return &Frontier{ID: id, Height: height, Weight: weight, Responders: responders}, nil
@@ -500,62 +517,112 @@ func (p *BootstrapPolicy) nameFrontier(ctx context.Context, stakeOnTip map[ids.I
 		return ids.Empty, 0, 0, false
 	}
 
-	// TOTAL-bound all anchor fetches so a partition that answers the frontier query but withholds
-	// ancestry cannot hang the decision — the caller's bounded retry handles it next round.
-	ctx, cancel := context.WithTimeout(ctx, p.namingTimeout())
+	// The ATTEMPT is bounded, and each REQUEST inside it is bounded more tightly, so a
+	// partition that answers the frontier query but withholds ancestry cannot hang the
+	// decision and cannot spend the whole walk on one silent peer. See NamingBudget.
+	budget := p.namingBudget()
+	ctx, cancel := context.WithTimeout(ctx, budget.Attempt)
 	defer cancel()
 
-	// Build ONE union index from the distinct reported tips' ancestries (most stake first; skip a
-	// tip already present from an earlier fetch — a nested tip covers its ancestors). Bounded by
-	// MaxAnchors × NamingWindow blocks, so a Byzantine swarm reporting many forged tips cannot
-	// induce unbounded work.
+	// Retained descent state is bounded here, where the reported set is known: an anchor
+	// nobody reports any more can never be reached by a credit walk, so keeping it is
+	// pure cost.
+	PruneNamingProgress(p.Progress, stakeOnTip, bootstrapMaxRetainedRefs)
+
+	// Build ONE union index from the distinct reported tips' ancestries, most stake first,
+	// skipping a tip already covered by an earlier chain. Only VERIFIED chunks enter it
+	// (verifyAncestryChunk), so every parent link the credit walk below follows was checked
+	// against the block it answers and against everything already believed.
+	//
+	// Descent work from earlier attempts is seeded in: that is what turns a gap larger than
+	// one attempt's budget into progress instead of repetition.
 	index := make(map[ids.ID]BlockRef)
-	fetches := 0
-	for _, tip := range sortedByStakeDesc(stakeOnTip) {
-		if _, have := index[tip]; have {
-			continue
-		}
-		if fetches >= p.maxAnchors() {
-			break
-		}
-		fetches++
-		// CHUNKED DESCENT. namingWindow is the per-FETCH size (Ancestry returns FULL blocks, so
-		// one fetch must fit a network message) — NOT the total ancestry worth walking. Keep
-		// following the parent chain in window-sized chunks up to maxNamingDepth, so a fleet
-		// that HALTED with a straggler far below the highest tip still resolves its ⅔-backed
-		// common ancestor. A single un-chunked window silently capped this at 256 and wedged
-		// mainnet at a 535-block gap. ctx already TOTAL-bounds every fetch (namingTimeout).
-		cur := tip
-		for depth := 0; depth < p.maxNamingDepth(); {
-			// The deadline must bind the WALK, not just each fetch: a Byzantine peer serving a
-			// long fabricated chain cheaply (or an in-process Source) would otherwise run the
-			// full depth budget before anyone checked the clock.
-			if ctx.Err() != nil {
-				break
+	known := func(id ids.ID) (BlockRef, bool) {
+		ref, ok := index[id]
+		return ref, ok
+	}
+	for _, prog := range p.Progress {
+		for _, ref := range prog.VerifiedRefs {
+			if _, have := index[ref.ID]; !have {
+				index[ref.ID] = ref
 			}
-			refs, err := p.Source.Ancestry(ctx, cur, p.namingWindow())
-			if err != nil || len(refs) == 0 {
-				break
-			}
-			deepest, first := BlockRef{}, true
-			for _, ref := range refs {
-				if _, ok := index[ref.ID]; !ok {
-					index[ref.ID] = ref
-				}
-				if first || ref.Height < deepest.Height {
-					deepest, first = ref, false
-				}
-			}
-			depth += len(refs) // len(refs) >= 1 here, so depth strictly advances -> terminates
-			if deepest.Parent == ids.Empty {
-				break // reached genesis
-			}
-			if _, covered := index[deepest.Parent]; covered {
-				break // an earlier anchor's chain already covers everything below
-			}
-			cur = deepest.Parent
 		}
 	}
+
+	blocks, requests, anchors := 0, 0, 0
+	truncated := false
+	for _, tip := range sortedByStakeDesc(stakeOnTip) {
+		if _, have := index[tip]; have && p.progressFor(tip) == nil {
+			continue // covered by another anchor's verified chain, and not mid-descent
+		}
+		if anchors >= p.maxAnchors() {
+			break
+		}
+		anchors++
+
+		// CHUNKED DESCENT, resumed. namingWindow is the per-REQUEST size (Ancestry serves
+		// FULL blocks, so one response must fit a network message) — never the total
+		// ancestry worth walking. A single un-chunked window silently capped this at 256
+		// and wedged mainnet at a 535-block gap.
+		prog := p.ensureProgress(tip)
+		if prog.Complete {
+			continue
+		}
+		for cur := prog.resume(); cur != ids.Empty; {
+			if ctx.Err() != nil {
+				truncated = true
+				break
+			}
+			if blocks >= budget.MaxBlocks || requests >= budget.MaxRequests {
+				truncated = true
+				break
+			}
+
+			// One request, bounded well inside the attempt.
+			reqCtx, reqCancel := context.WithTimeout(ctx, budget.Request)
+			refs, err := p.Source.Ancestry(reqCtx, cur, p.namingWindow())
+			reqCancel()
+			requests++
+			if err != nil {
+				// Unserved or unparseable: this anchor contributes what it already has.
+				// The cursor stays where it is, so a later attempt retries from here
+				// against a freshly rotated sample rather than from the tip.
+				truncated = truncated || ctx.Err() != nil
+				break
+			}
+
+			// VERIFY BEFORE BELIEVING. A chunk that fails any rule is refused WHOLE — no
+			// ref from it reaches the index — and the anchor stops here. Believing the
+			// prefix of a bad response is what let a peer inflate the stake credited to a
+			// chain of its choosing.
+			chunk, verr := verifyAncestryChunk(cur, refs, known)
+			if verr != nil {
+				break
+			}
+			for _, ref := range chunk.Blocks {
+				if _, have := index[ref.ID]; !have {
+					index[ref.ID] = ref
+					blocks++
+				}
+			}
+			prog.VerifiedRefs = append(prog.VerifiedRefs, chunk.Blocks...)
+			prog.Traversed += len(chunk.Blocks)
+
+			if chunk.Complete {
+				prog.Complete = true // genesis
+				prog.Cursor = ids.Empty
+				break
+			}
+			if _, covered := index[chunk.Next]; covered {
+				prog.Complete = true // an earlier anchor's verified chain covers the rest
+				prog.Cursor = ids.Empty
+				break
+			}
+			cur = chunk.Next
+			prog.Cursor = cur
+		}
+	}
+	p.truncated = truncated
 	if len(index) == 0 {
 		return ids.Empty, 0, 0, false
 	}
