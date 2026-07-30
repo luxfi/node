@@ -246,6 +246,39 @@ func (v *blsVoteVerifier) sample(c *atomic.Uint64, reason string, nodeID ids.Nod
 		log.Uint64("count", n))
 }
 
+// blsPublicKeyFromValidatorBytes parses a validator's registered BLS public key
+// in EITHER supported G1 encoding.
+//
+// This is not defensive coding — it is the Hanzo L1 36963 halt. Every validator
+// in that chain's set carries a 96-byte UNCOMPRESSED G1 key, while the verifier
+// called only PublicKeyFromCompressedBytes (48-byte compressed, bls.PublicKeyLen).
+// So key decompression failed for every voter, VerifyVote returned false before
+// ever reaching bls.Verify, no vote could be counted toward the quorum, alpha was
+// unreachable BY CONSTRUCTION and the chain sat at one height forever with every
+// other counter healthy: blocks built, gossiped, chits answered 4-of-4, thousands
+// of signed votes broadcast and received.
+//
+// The stored keys live in chain state and cannot be re-encoded without a genesis
+// change, so the verifier has to read what is actually there. Safety is unchanged:
+// an unparseable or wrong key still yields a key whose bls.Verify FAILS, so this
+// widens what can be PARSED, never what is ACCEPTED.
+func blsPublicKeyFromValidatorBytes(b []byte) (*bls.PublicKey, error) {
+	switch len(b) {
+	case bls.PublicKeyLen: // 48 — compressed G1
+		return bls.PublicKeyFromCompressedBytes(b)
+	case 2 * bls.PublicKeyLen: // 96 — uncompressed G1
+		pk := bls.PublicKeyFromValidUncompressedBytes(b)
+		if pk == nil {
+			return nil, errBadValidatorPublicKey
+		}
+		return pk, nil
+	default:
+		return nil, errBadValidatorPublicKey
+	}
+}
+
+var errBadValidatorPublicKey = errors.New("validator BLS public key is neither 48-byte compressed nor 96-byte uncompressed G1")
+
 func newBLSVoteVerifier(state validators.State, networkID ids.ID) *blsVoteVerifier {
 	return &blsVoteVerifier{state: state, networkID: networkID}
 }
@@ -262,7 +295,7 @@ func (v *blsVoteVerifier) VerifyVote(nodeID ids.NodeID, message []byte, sig []by
 		v.sample(&v.nNoPK, "voter has no BLS public key at this epoch height", nodeID, epochHeight)
 		return false
 	}
-	pk, err := bls.PublicKeyFromCompressedBytes(out.PublicKey)
+	pk, err := blsPublicKeyFromValidatorBytes(out.PublicKey)
 	if err != nil || pk == nil {
 		v.sample(&v.nBadPK, "voter public key failed to decompress", nodeID, epochHeight)
 		return false
