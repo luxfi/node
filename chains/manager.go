@@ -1428,7 +1428,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// followers finalize on the cert). Without a verifier a K>1 engine refuses
 		// to Start; without the gossiper Mode() reports degraded and value-DEX is
 		// refused. For K==1 these stay nil (no quorum, no signatures).
-		gossiper := &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID}
+		gossiper := &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID, log: m.Log}
 		// catchup is the behind-follower self-heal wire. The engine signals through
 		// it (chain.Catchup) when a gossiped child references a parent we lack; it
 		// routes to the blockHandler's GetAncestors transport. The handler wraps the
@@ -3922,12 +3922,27 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 		if kind, blockID, payload, err := decodeQuorumGossip(msg); err == nil {
 			switch kind {
 			case quorumKindVote:
+				if b.logger != nil {
+					b.logger.Verbo("quorum: vote RECEIVED",
+						log.Stringer("from", nodeID), log.Stringer("blockID", blockID))
+				}
 				b.engine.HandleIncomingVote(blockID, payload)
 			case quorumKindCert:
+				if b.logger != nil {
+					b.logger.Info("quorum: CERT received",
+						log.Stringer("from", nodeID), log.Stringer("blockID", blockID))
+				}
 				b.engine.HandleIncomingCert(payload)
 			}
 			return nil
 		}
+	} else if b.engine != nil && b.logger != nil {
+		// The gate is silent by construction: outside quorum-finality mode every
+		// inbound vote and cert falls through to the plain-block path and is
+		// discarded, so a degraded engine looks exactly like a network with
+		// nothing to say. Name it once per gossip so the mode is visible.
+		b.logger.Verbo("quorum: engine NOT in quorum-finality mode — vote/cert demux skipped",
+			log.Stringer("from", nodeID), log.Int("mode", int(b.engine.Mode())))
 	}
 	// Plain block gossip.
 	return b.Put(ctx, nodeID, 0, msg)
@@ -4209,6 +4224,7 @@ type networkGossiper struct {
 	net        network.Network
 	msgCreator message.OutboundMsgBuilder
 	networkID  ids.ID
+	log        log.Logger
 }
 
 // Compile-time check that networkGossiper implements Gossiper
@@ -4228,15 +4244,34 @@ var _ consensuschain.QuorumGossiper = (*networkGossiper)(nil)
 // collects α distinct signed votes can assemble + gossip the cert, so finality
 // no longer hinges on one node's inbound Chits.
 func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockID ids.ID, voteBytes []byte) int {
+	// Every return of 0 here is a vote that never left this node, and all three
+	// paths used to be silent — which is indistinguishable from "no vote was due"
+	// when a chain stops finalizing.
 	if g.net == nil || g.msgCreator == nil {
+		if g.log != nil {
+			g.log.Warn("quorum: vote NOT broadcast — nil transport",
+				log.Stringer("blockID", blockID))
+		}
 		return 0
 	}
 	envelope := encodeQuorumGossip(quorumKindVote, blockID, voteBytes)
 	msg, err := g.msgCreator.Gossip(chainID, envelope)
 	if err != nil {
+		if g.log != nil {
+			g.log.Warn("quorum: vote NOT broadcast — gossip build failed",
+				log.Stringer("blockID", blockID), log.Err(err))
+		}
 		return 0
 	}
-	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
+	sent := g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
+	if g.log != nil {
+		g.log.Verbo("quorum: vote broadcast",
+			log.Stringer("blockID", blockID),
+			log.Stringer("gossipNetworkID", g.networkID),
+			log.Int("sentToPeers", sent),
+			log.Int("voteBytes", len(voteBytes)))
+	}
+	return sent
 }
 
 // v1.36 "Nova": BroadcastPrevote was DELETED — the round-scoped view-change (prevote/POL/lock)
@@ -4254,9 +4289,18 @@ func (g *networkGossiper) GossipCert(chainID ids.ID, networkID ids.ID, blockID i
 	envelope := encodeQuorumGossip(quorumKindCert, blockID, certBytes)
 	msg, err := g.msgCreator.Gossip(chainID, envelope)
 	if err != nil {
+		if g.log != nil {
+			g.log.Warn("quorum: CERT assembled but not gossiped — build failed",
+				log.Stringer("blockID", blockID), log.Err(err))
+		}
 		return 0
 	}
-	return g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
+	sent := g.net.Gossip(msg, nil, g.networkID, -1, 0, 0).Len()
+	if g.log != nil {
+		g.log.Info("quorum: CERT assembled and gossiped",
+			log.Stringer("blockID", blockID), log.Int("sentToPeers", sent))
+	}
+	return sent
 }
 
 // GossipPut broadcasts a Put message with block data to validators.
