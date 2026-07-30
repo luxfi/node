@@ -3027,8 +3027,17 @@ func (b *blockHandler) applyQbit(ctx context.Context, ev QbitEvent) {
 			log.Stringer("blockID", ev.BlockID))
 	}
 
-	// Derive Accept from verification
-	accept := (blk.Verify(ctx) == nil)
+	// Derive Accept from verification. The error is otherwise DISCARDED, so a
+	// systematic re-verify failure (already-verified, missing parent, state
+	// conflict) is indistinguishable from an honest reject.
+	verifyErr := blk.Verify(ctx)
+	accept := (verifyErr == nil)
+	if verifyErr != nil {
+		b.logger.Warn("vote is NEGATIVE — local re-verify failed",
+			log.Stringer("blockID", ev.BlockID),
+			log.Stringer("from", ev.From),
+			log.Err(verifyErr))
+	}
 
 	// Create Vote from QbitEvent + local verification
 	vote := consensuschain.Vote{
@@ -3039,7 +3048,13 @@ func (b *blockHandler) applyQbit(ctx context.Context, ev QbitEvent) {
 	}
 	queued := b.engine.ReceiveVote(vote)
 
-	b.logger.Debug("sent Vote to consensus engine",
+	// accept and queued are the two booleans that decide whether a poll can ever
+	// conclude, and both were Debug — unreachable on this build. accept=false is a
+	// NEGATIVE vote synthesised from a local re-Verify, so a block every node
+	// already verified once can still be voted down; queued=false means the vote
+	// never reached the engine at all. A chain that polls 4-of-4 and never accepts
+	// looks identical in either case until these are visible.
+	b.logger.Info("sent Vote to consensus engine",
 		log.Stringer("from", ev.From),
 		log.Stringer("blockID", ev.BlockID),
 		log.Bool("accept", accept),
@@ -4021,7 +4036,7 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 			// If block is missing, buffer the event and return
 			if !b.hasBlock(ctx, preferredID) {
 				b.bufferQbit(ev)
-				b.logger.Debug("buffered Qbit - block not in pending or VM",
+				b.logger.Info("buffered Qbit - block not in pending or VM",
 					log.Stringer("from", ev.From),
 					log.Stringer("blockID", ev.BlockID))
 				return nil
