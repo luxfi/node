@@ -337,7 +337,11 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     # v1.30.6 (200), so clearing GOPRIVATE for THIS step lets the historical pins
     # resolve from the proxy. Scoped to the plugin build; the main binary above is
     # untouched.
-    export GOPRIVATE= GONOSUMDB= GONOSUMCHECK= GOFLAGS=-mod=mod && \
+    # Clear GOPRIVATE only, so luxfi modules resolve via the PROXY (which still
+    # serves the historical v1.30.6 pin the VCS no longer has). GOSUMDB must go to
+    # off, not be left on: line ~317 deliberately strips first-party go.sum lines,
+    # so with sum verification active the builds fail INSTANTLY and silently.
+    export GOPRIVATE= GOSUMDB=off GONOSUMDB=github.com/luxfi/*,github.com/hanzoai/* GOFLAGS=-mod=mod && \
     mkdir -p /luxd/build/plugins && \
     ( cd /tmp/chains/aivm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA ./cmd/plugin ) || echo "WARN: aivm plugin build skipped" ; \
