@@ -72,10 +72,23 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Write the private-module token for BuildKit
+        # Stripped of trailing whitespace on purpose. The Dockerfile interpolates
+        # this into a URL:
+        #   git config url."https://x-access-token:$(cat /run/secrets/ghtok)@github.com/"
+        # so a single trailing newline in the stored secret truncates the URL at
+        # it, and git resolves the credential prefix as the HOST:
+        #   fatal: unable to access 'https://x-access-token:***@github.com/hanzoai/vfs/':
+        #     Could not resolve host: x-access-token
+        # That is what failed the first run of this workflow. The secret's exact
+        # bytes are not ours to control, so the trim happens here.
         run: |
           set -euo pipefail
           umask 077
-          printf '%s' '${{ secrets.GHCR_TOKEN }}' > "${RUNNER_TEMP}/ghtok"
+          printf '%s' '${{ secrets.GHCR_TOKEN }}' | tr -d '\r\n' > "${RUNNER_TEMP}/ghtok"
+          if [ ! -s "${RUNNER_TEMP}/ghtok" ]; then
+            echo "::error::GHCR_TOKEN is empty — private module fetches will fail"
+            exit 1
+          fi
 
       - name: Build (load for smoke, not yet pushed)
         uses: docker/build-push-action@v6
