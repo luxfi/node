@@ -24,16 +24,18 @@
 # Tagging: a release is a `v*` git-tag push. The webhook decoder maps the tag
 # ref to `branch=<tagname>`, so `tag-pattern: "{{git.branch}}"` yields the
 # image tag `vX.Y.Z` (immutable, semver-only — no :latest, no floating tags).
-build:
-  matrix:
-    - { os: linux, arch: amd64 }
-    - { os: linux, arch: arm64 }
-  dockerfile: ./Dockerfile
-  context: .
-  image: ghcr.io/luxfi/node
-  tag-pattern: "{{git.branch}}"
-  push: true
-  dispatch: native
-# No `deploy:` block. luxd rollout is owned by the lux operator (LuxNetwork CR,
-# ~/work/lux/operator) which the hanzo operator Service-CR rollout does not
-# model. Deploy is a separate, operator-driven step (RELEASE.md §deploy).
+# BUILD IS NOT DECLARED HERE. The image is built by .hanzo/workflows/release.yml
+# on the native forge runners (git.hanzo.ai -> git-runner, pool
+# `lux-build-linux-amd64`), which is the same fabric that builds luxfi/kms and
+# hanzoai/chat.
+#
+# This file previously declared a platform-scheduled build. That declaration and
+# the only mechanism that ever pushed this image disagreed: the pushing job was
+# .github/workflows/docker.yml on `runs-on: lux-build`, an ARC autoscaling
+# runner set that no longer exists — the cluster has no ARC CRDs, no ARC
+# namespace, no such pool. So `v*` tags queued jobs nothing could run and
+# v1.36.38, v1.36.39 and v1.36.41 were tagged with no image behind them.
+#
+# Two declared paths and zero working ones is worse than one of either. The
+# forge workflow is now the single way, docker.yml is deleted, and this file no
+# longer claims a build it does not perform.
