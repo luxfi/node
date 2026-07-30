@@ -83,3 +83,53 @@ func TestCommitThresholdNeverLowersBetaRogue(t *testing.T) {
 		t.Errorf("BetaRogue = %d, want %d", p.BetaRogue, def.BetaRogue+5)
 	}
 }
+
+// Nothing set => nil, so a node passing no consensus flags keeps the exact
+// per-networkID behaviour it had before overrides existed.
+func TestConsensusOverridesNilWhenNothingSet(t *testing.T) {
+	if o := getConsensusOverrides(viper.New()); o != nil {
+		t.Errorf("got %+v, want nil — an all-default node must not override anything", o)
+	}
+}
+
+// The flags an operator actually passes must arrive as overrides. These three are
+// what Hanzo 36963 was started with, and every one of them was being discarded.
+func TestConsensusOverridesCarryTheSetFlags(t *testing.T) {
+	v := viper.New()
+	v.Set(ConsensusSampleSizeKey, 5)
+	v.Set(ConsensusQuorumSizeKey, 4)
+	v.Set(ConsensusCommitThresholdKey, 2)
+
+	o := getConsensusOverrides(v)
+	if o == nil {
+		t.Fatal("got nil, want overrides")
+	}
+	if o.K == nil || *o.K != 5 {
+		t.Errorf("K = %v, want 5", o.K)
+	}
+	if o.AlphaConfidence == nil || *o.AlphaConfidence != 4 {
+		t.Errorf("AlphaConfidence = %v, want 4", o.AlphaConfidence)
+	}
+	if o.Beta == nil || *o.Beta != 2 {
+		t.Errorf("Beta = %v, want 2", o.Beta)
+	}
+	// Untouched keys stay nil so the network default keeps them.
+	if o.MaxItemProcessingTime != nil {
+		t.Errorf("MaxItemProcessingTime = %v, want nil (unset)", o.MaxItemProcessingTime)
+	}
+}
+
+// The specific preference/confidence keys must beat the combined quorum key.
+func TestConsensusOverridesSpecificQuorumKeysWin(t *testing.T) {
+	v := viper.New()
+	v.Set(ConsensusQuorumSizeKey, 4)
+	v.Set(ConsensusConfidenceQuorumSizeKey, 3)
+
+	o := getConsensusOverrides(v)
+	if o.AlphaPreference == nil || *o.AlphaPreference != 4 {
+		t.Errorf("AlphaPreference = %v, want 4", o.AlphaPreference)
+	}
+	if o.AlphaConfidence == nil || *o.AlphaConfidence != 3 {
+		t.Errorf("AlphaConfidence = %v, want 3 (specific key wins)", o.AlphaConfidence)
+	}
+}

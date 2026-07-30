@@ -29,6 +29,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"sort"
+	"time"
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
@@ -37,6 +38,83 @@ import (
 	"github.com/luxfi/ids"
 	validators "github.com/luxfi/validators"
 )
+
+// ConsensusOverrides carries the consensus parameters an operator set EXPLICITLY
+// on the command line. A nil field means "not set", so the network default from
+// selectConsensusParams stands.
+//
+// It exists because parameter selection used to be a pure function of
+// (sybilProtection, networkID) and consulted NO operator input, which stranded
+// Hanzo L1 36963: a five-validator value network falls to the default branch and
+// gets DefaultParams — K=20, α=14, BetaVirtuous=14 — so an uncontested block
+// needed FOURTEEN consecutive clean polls and the chain froze at height 3248
+// while --consensus-sample-size=5 --consensus-quorum-size=4
+// --consensus-commit-threshold=2 sat in the node config reaching nothing. That is
+// the same arithmetic isLocalDevNetwork already carves devnet/localnet out for
+// ("α=14 affirmative votes are unreachable with 3-4 validators"); the carve-out
+// keys on networkID, so it cannot help a sovereign L1 whose networkID is its
+// chainID.
+//
+// Separating the two concerns keeps the policy honest: the networkID switch is
+// the DEFAULT (mainnet and testnet keep their tuned sets untouched), and an
+// explicit operator value is the OVERRIDE. Nothing changes for a node that
+// passes no consensus flags.
+type ConsensusOverrides struct {
+	K                       *int
+	AlphaPreference         *int
+	AlphaConfidence         *int
+	Beta                    *int
+	ConcurrentRepolls       *int
+	OptimalProcessing       *int
+	MaxOutstandingItems     *int
+	MaxItemProcessingTime   *time.Duration
+	ConvergenceSettleWindow *time.Duration
+}
+
+// ApplyTo returns p with every explicitly-set override applied. A nil receiver
+// or an all-nil struct returns p unchanged.
+func (o *ConsensusOverrides) ApplyTo(p consensusconfig.Parameters) consensusconfig.Parameters {
+	if o == nil {
+		return p
+	}
+	if o.K != nil {
+		p.K = *o.K
+	}
+	if o.AlphaPreference != nil {
+		p.AlphaPreference = *o.AlphaPreference
+	}
+	if o.AlphaConfidence != nil {
+		p.AlphaConfidence = *o.AlphaConfidence
+	}
+	if o.Beta != nil {
+		// Beta alone is not enough. A block with no conflict takes the VIRTUOUS
+		// path, so acceptance is gated by BetaVirtuous — leaving it at the
+		// default while Beta drops is precisely how 36963 froze. BetaRogue is
+		// raised to match when it would otherwise sit below Beta, never lowered.
+		b := *o.Beta
+		p.Beta = uint32(b)
+		p.BetaVirtuous = b
+		if p.BetaRogue < b {
+			p.BetaRogue = b
+		}
+	}
+	if o.ConcurrentRepolls != nil {
+		p.ConcurrentRepolls = *o.ConcurrentRepolls
+	}
+	if o.OptimalProcessing != nil {
+		p.OptimalProcessing = *o.OptimalProcessing
+	}
+	if o.MaxOutstandingItems != nil {
+		p.MaxOutstandingItems = *o.MaxOutstandingItems
+	}
+	if o.MaxItemProcessingTime != nil {
+		p.MaxItemProcessingTime = *o.MaxItemProcessingTime
+	}
+	if o.ConvergenceSettleWindow != nil {
+		p.ConvergenceSettleWindow = *o.ConvergenceSettleWindow
+	}
+	return p
+}
 
 // isLocalDevNetwork reports whether networkID is an explicitly-local developer
 // network: devnet (3) or localnet (1337). These are EXACT IDs (per luxfi/constants
