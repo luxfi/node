@@ -158,6 +158,24 @@ func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 	if v.IsSet(ConsensusMaxTimeProcessingKey) {
 		p.MaxItemProcessingTime = v.GetDuration(ConsensusMaxTimeProcessingKey)
 	}
+	if v.IsSet(ConsensusConvergenceSettleWindowKey) {
+		// Same failure shape as BetaVirtuous above: the field exists, the engine
+		// honours it, and nothing here wrote it — so for the PRIMARY network it was
+		// unreachable by configuration. The net-config file cannot supply it either;
+		// getNetConfigs only reads netConfigDir/<netID>.json for TrackedChains, and
+		// naming the primary network there is rejected outright ("cannot track
+		// primary network"). Flags are the only path, so this is it.
+		//
+		// It matters because the auto value is derived from a round budget, not from
+		// the deployment's real gossip latency: max(RoundTO/2, 150ms), and RoundTO is
+		// itself a compatibility field no flag writes. On Hanzo L1 36963 that yields a
+		// 150ms settle against ~560ms measured inter-validator message latency, so each
+		// node binds its ONE per-height accept signature before its peers' siblings
+		// arrive. Five validators each signing a different block is a 5-way split that
+		// can never reach AlphaConfidence=4, and under the height-only vote-once rule
+		// it does not heal — it re-forms identically on every restart.
+		p.ConvergenceSettleWindow = v.GetDuration(ConsensusConvergenceSettleWindowKey)
+	}
 	if v.IsSet(ConsensusQuorumSizeKey) {
 		p.AlphaPreference = v.GetInt(ConsensusQuorumSizeKey)
 		p.AlphaConfidence = p.AlphaPreference
