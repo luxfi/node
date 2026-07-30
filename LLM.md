@@ -1216,6 +1216,35 @@ launch state live in this file, `CHANGELOG.md`, `RELEASE.md`; chain IDs/ports in
 
 *Last Updated*: 2026-06-06
 
+## The proposervm timestamp fork — closed on main, untagged (2026-07-29)
+
+`45a3dcf` ("millisecond-resolution block timestamps") changed the proposervm block
+timestamp from Unix seconds to milliseconds on both sides — `block/build.go` writes it,
+`block/block.go:147` reads it — with **no activation gate and no wire-kind bump**. The wire
+carries a bare int64 at `offTimestamp` with nothing to distinguish the unit, so the change
+forks the network in both directions: seconds read as milliseconds is 1970 and freezes the
+LP-181 epoch (still seconds), milliseconds read as seconds is the year ~58363 and trips the
+too-far-in-the-future bound. That halts a chain during the one-pod-at-a-time roll this file
+prescribes — a second, independent reason not to deploy v1.36.38.
+
+Closed on main at `464d1b4dd8`, in `block/timestamp.go`:
+
+- **`decodeTimestamp` reads both units**, needing no coordination. They are three orders of
+  magnitude apart, so for any time a block can carry they are not confusable:
+  `milliUnitFloor = 100_000_000_000` is the year 5138 read as seconds and 1973-03-03 read as
+  milliseconds. Below the floor is seconds, at or above is milliseconds. Every node on this
+  code reads blocks from both generations of build.
+- **`encodeTimestamp` keeps the write unit at seconds**, which every deployed build reads.
+  Flipping it is the half that needs a coordinated activation; it is one named function with
+  `TestBlocksAreWrittenInSecondsUntilActivation` failing if someone flips it without one.
+
+Sub-second cadence — the reason `45a3dcf` existed — waits for that activation.
+`TestSecondsWriteUnitTruncatesSubSecond` records the cost rather than leaving it to be found.
+
+**Not tagged.** v1.36.39 is reserved below for the three bootstrap-ancestry fixes, and none of
+`VerifiedAncestryChunk`, `MaxBlocksPerAttempt` or `NamingProgress` exists yet. Tag v1.36.39
+when those land; this fix rides along.
+
 ## ⛔ v1.36.38 — DO NOT DEPLOY (superseded by v1.36.39)
 
 `v1.36.38` (commit `bd2edc135f`, chunked ancestry descent) is **tagged but must not be
