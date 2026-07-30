@@ -1533,7 +1533,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// Vote verifier resolves the voter's pubkey from set@epoch (RESIDUAL-B),
 			// the SAME height-pinned source as the stake + set-root — NOT m.Validators
 			// (the current map).
-			netCfg.VoteVerifier = newBLSVoteVerifier(vdrState, networkID)
+			voteVerifier := newBLSVoteVerifier(vdrState, networkID)
+			voteVerifier.log = m.Log
+			netCfg.VoteVerifier = voteVerifier
 			netCfg.VoteSigner = newBLSVoteSigner(m.StakingBLSKey)
 			// Stake-weighted finality (HIGH-3): require a ⅔-of-stake supermajority,
 			// not just the α-of-K count, so a low-stake coalition cannot finalize.
