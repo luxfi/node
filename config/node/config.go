@@ -198,6 +198,10 @@ type Config struct {
 
 	// RouterHealthConfig       router.HealthConfig `json:"routerHealthConfig"` // router.HealthConfig not available
 	ConsensusShutdownTimeout time.Duration `json:"consensusShutdownTimeout"`
+	// ConsensusOverrides are the consensus parameters the operator set
+	// EXPLICITLY. Nil fields keep the per-networkID default; see
+	// chains.ConsensusOverrides.
+	ConsensusOverrides *chains.ConsensusOverrides `json:"consensusOverrides"`
 	// Poll for new frontiers every [FrontierPollFrequency]
 	FrontierPollFrequency time.Duration `json:"consensusGossipFreq"`
 	// ConsensusAppConcurrency defines the maximum number of goroutines to

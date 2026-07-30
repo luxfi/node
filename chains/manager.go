@@ -337,6 +337,10 @@ type ChainConfig struct {
 
 type ManagerConfig struct {
 	SybilProtectionEnabled bool
+
+	// ConsensusOverrides are the consensus parameters the operator set
+	// explicitly; nil (or all-nil fields) leaves the networkID default alone.
+	ConsensusOverrides *ConsensusOverrides
 	StakingTLSSigner       crypto.Signer
 	StakingTLSCert         *staking.Certificate
 	StakingBLSKey          bls.Signer
@@ -1193,7 +1197,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		//                      that does not compose with proposervm's pull/window
 		//                      model without avalanchego's initializeOnLinearizeVM
 		//                      machinery (out of scope). It keeps the existing path.
-		consensusParams := selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID)
+		// The networkID switch is the DEFAULT; explicitly-set --consensus-* flags
+		// are the OVERRIDE. Before this, selection consulted no operator input at
+		// all and a five-validator L1 silently ran DefaultParams (K=20, alpha=14,
+		// BetaVirtuous=14) — unreachable, so nothing ever finalized.
+		consensusParams := m.ConsensusOverrides.ApplyTo(
+			selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID))
 		if m.SybilProtectionEnabled {
 			if err := consensusParams.ValidateForValueNetwork(m.NetworkID); err != nil {
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
