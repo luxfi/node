@@ -328,6 +328,16 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 RUN --mount=type=cache,target=/root/.cache/go-build \
     . /build/build_env.sh && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
+    # scripts/constants.sh exports GOPRIVATE=github.com/luxfi/* ("zip too large for
+    # proxy"), which forces luxfi modules to resolve DIRECT to the VCS and overrides
+    # the GOPROXY set above. Every chain VM here pins github.com/luxfi/node@v1.30.6,
+    # and that tag no longer exists in the repo — the repo now has NO v1.30.x tags at
+    # all — so the direct lookup dies with "unknown revision v1.30.6" and takes the
+    # whole image build down at the plugin stage. proxy.golang.org still serves
+    # v1.30.6 (200), so clearing GOPRIVATE for THIS step lets the historical pins
+    # resolve from the proxy. Scoped to the plugin build; the main binary above is
+    # untouched.
+    export GOPRIVATE= GONOSUMDB= GONOSUMCHECK= GOFLAGS=-mod=mod && \
     mkdir -p /luxd/build/plugins && \
     ( cd /tmp/chains/aivm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA ./cmd/plugin ) || echo "WARN: aivm plugin build skipped" ; \
