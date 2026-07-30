@@ -5,6 +5,7 @@ package config
 
 import (
 	"testing"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -40,6 +41,33 @@ func TestCommitThresholdUnsetKeepsDefaults(t *testing.T) {
 	def := getConsensusConfig(viper.New())
 	if def.BetaVirtuous <= 0 || def.BetaRogue <= 0 {
 		t.Fatalf("defaults look wrong: BetaVirtuous=%d BetaRogue=%d", def.BetaVirtuous, def.BetaRogue)
+	}
+}
+
+// The convergence settle window must be reachable from configuration.
+//
+// Same shape as BetaVirtuous above: the field exists and the engine honours it,
+// but nothing wrote it, and for the PRIMARY network there is no other path — the
+// net-config file is only read for TrackedChains, and naming the primary network
+// there is rejected ("cannot track primary network"). The auto value is derived
+// from a round budget rather than measured latency, max(RoundTO/2, 150ms), which
+// on Hanzo L1 36963 is 150ms against ~560ms real inter-validator latency: every
+// validator signs its own block and the height never reaches the quorum.
+func TestConvergenceSettleWindowIsSettable(t *testing.T) {
+	v := viper.New()
+	v.Set(ConsensusConvergenceSettleWindowKey, 2*time.Second)
+
+	p := getConsensusConfig(v)
+
+	if p.ConvergenceSettleWindow != 2*time.Second {
+		t.Errorf("ConvergenceSettleWindow = %v, want 2s — the operator value never reached the engine", p.ConvergenceSettleWindow)
+	}
+}
+
+// Unset must leave the engine's auto derivation in charge (zero value).
+func TestConvergenceSettleWindowUnsetStaysAuto(t *testing.T) {
+	if w := getConsensusConfig(viper.New()).ConvergenceSettleWindow; w != 0 {
+		t.Errorf("ConvergenceSettleWindow = %v, want 0 so the engine keeps its auto derivation", w)
 	}
 }
 

@@ -1405,6 +1405,17 @@ func allFlags() []FlagSpec {
 			Description: "Maximum amount of time an item should be processing and still be healthy",
 			Category:    CategoryConsensus,
 		},
+		{
+			Key:  "consensus-convergence-settle-window",
+			Type: TypeDuration,
+			// Zero keeps the engine's auto derivation, max(RoundTO/2, 150ms).
+			Default: 0,
+			Description: "How long a contested height is observed before this node casts its one " +
+				"accept signature. MUST exceed the deployment's sibling-gossip latency: a settle " +
+				"shorter than gossip lets each validator sign its own block, a vote split that " +
+				"never reaches the confidence quorum and does not heal. 0 = auto (RoundTO/2, min 150ms)",
+			Category: CategoryConsensus,
+		},
 
 		// ============================================================================
 		// ProposerVM Flags
