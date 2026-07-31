@@ -244,8 +244,22 @@ type BootstrapPolicy struct {
 	// nothing at or below own height is named (→ ErrNoBootstrapQuorum, fail safe), never a
 	// false-complete at the stale height. The exact fast path is exempt: a tip a responder
 	// supermajority ACTIVELY reports is a real frontier even at own height (a genuinely fresh
-	// network, or a fleet unanimously AT the tip).
+	// network, or a fleet unanimously AT the tip). One further exemption, the HALTED-FLEET
+	// recovery case: a block AT this height IS named when Covered and it is exactly Tip — the
+	// complete view proves no ahead beacon is hidden, and nothing above own height is ⅔-backed,
+	// so the node sits exactly at the network's ⅔-backed frontier.
 	MinFrontierHeight uint64
+	// Tip is the node's own last-accepted block — the block AT MinFrontierHeight. Together they
+	// name the node's own frontier by value (id + height), so the own-height exemption below can
+	// require the ⅔-backed block to BE that tip rather than merely share its height (a same-height
+	// sibling is never the node's own tip).
+	Tip ids.ID
+	// Covered reports that EVERY configured beacon is accounted for this round — connected and
+	// replied, or this node itself. It is the caller's full-coverage judgement (the same guard the
+	// self-vote path uses). Under full coverage no eclipse can hide an ahead beacon, so the view is
+	// COMPLETE: the highest ⅔-backed block is the network's frontier. False ⇒ a beacon is missing
+	// and an ahead tip may be hidden, so the own-height exclusion stands (the M1 eclipse case).
+	Covered bool
 	// Checkpoint is the OPTIONAL operator override for the below-floor case (INVARIANT 2). nil ⇒
 	// reject below the floor. When set, it is trusted ONLY if CheckpointVerifier authenticates its
 	// signature (INVARIANT 4).
@@ -664,7 +678,13 @@ func (p *BootstrapPolicy) nameFrontier(ctx context.Context, stakeOnTip map[ids.I
 	found := false
 	for id, st := range backing {
 		ref := index[id]
-		if st <= floor || len(voters[id]) < required || ref.Height <= p.MinFrontierHeight {
+		// A block at the node's OWN tip IS the frontier when the view is COMPLETE (every configured
+		// beacon accounted for): nothing above it is ⅔-backed, and no eclipse can be hiding an ahead
+		// beacon, so this node sits exactly at the network's ⅔-backed frontier. Without the coverage
+		// proof the own-height exclusion stands — an eclipse could throttle honest ahead-tips below
+		// the naming threshold while own height accrues ⅔ as their shared ANCESTOR (M1).
+		ownTip := p.Covered && p.Tip != ids.Empty && id == p.Tip && ref.Height == p.MinFrontierHeight
+		if st <= floor || len(voters[id]) < required || (ref.Height <= p.MinFrontierHeight && !ownTip) {
 			continue
 		}
 		if !found || ref.Height > bestHeight || (ref.Height == bestHeight && st > bestStake) {

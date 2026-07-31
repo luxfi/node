@@ -386,6 +386,15 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 	lastID, lastH, lastErr := b.LastAccepted(ctx)
 	haveLast := lastErr == nil && lastID != ids.Empty
 
+	// Full-coverage judgement for the own-tip frontier exemption: every configured beacon connected
+	// AND replied this round (the same pair of guards the self-vote shortcut uses), so no ahead
+	// beacon can be hidden. Reusing both is deliberate — connectivity alone admits a CONNECTED but
+	// SILENT beacon, which is a strictly weaker capability than an eclipse.
+	if haveLast {
+		policy.Tip = lastID
+		policy.Covered = b.fullyConnectedBeacons(weights, connected) && repliedCovers(replies, connected)
+	}
+
 	frontier, err := policy.AcceptsFrontier(ctx, replies)
 	switch {
 	case err == nil:
