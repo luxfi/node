@@ -2,7 +2,7 @@ name: Release
 
 # Builds ghcr.io/luxfi/node on the native runners (git.hanzo.ai → git-runner).
 #
-# This replaces .github/workflows/docker.yml, which was the only thing pushing
+# This replaces .github/workflows/release.yml, which was the only thing pushing
 # this image and which ran on `runs-on: lux-build` — an ARC autoscaling runner
 # set that no longer exists. The cluster has no ARC CRDs, no ARC namespace and
 # no such pool, so every `v*` tag queued a job nothing could pick up: v1.36.38,

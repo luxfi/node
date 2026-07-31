@@ -1,0 +1,76 @@
+name: Tests
+
+# The repo's tests, on the native runners (git.hanzo.ai → git-runner).
+#
+# This replaces .github/workflows/ci.yml, whose `Unit` job ran a matrix of
+# macos-13, ubuntu-22.04, ubuntu-24.04 and windows-2022. No runner on this forge
+# carries `macos-13` or `windows-2022`, and an unclaimable job does not fail —
+# it waits. Every push therefore left two jobs queued forever, and they
+# accumulated: at the time this was written the fleet held a backlog reaching
+# back 24 hours, which is what starved the release build behind it.
+#
+# So the rule here is that every job names a label the fleet actually carries.
+# Cross-platform coverage is a question of owning runners for those platforms,
+# not of naming them in a matrix and waiting.
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer commit makes the older run irrelevant. Without this the queue grows
+# faster than the fleet drains it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GOPRIVATE: github.com/luxfi/*
+  GONOSUMDB: github.com/luxfi/*
+  GOWORK: off
+  GOEXPERIMENT: runtimesecret
+  CGO_ENABLED: '0'
+
+jobs:
+  test:
+    runs-on: [lux-build-linux-amd64]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - run: ./scripts/build_test.sh
+
+  lint:
+    runs-on: [lux-build-linux-amd64]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - run: scripts/lint.sh
+      - run: scripts/shellcheck.sh
+      - run: scripts/actionlint.sh
+
+  # Generated code and go.mod are inputs to the build, so they are checked the
+  # same way: regenerate, then require the tree to be unchanged.
+  generated:
+    runs-on: [lux-build-linux-amd64]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - run: scripts/mock.gen.sh
+      - run: scripts/check-clean-branch.sh
+      - run: go mod tidy
+      - run: scripts/check-clean-branch.sh
+
+  fuzz:
+    runs-on: [lux-build-linux-amd64]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - run: ./scripts/build_fuzz.sh 20

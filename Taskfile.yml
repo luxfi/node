@@ -53,7 +53,7 @@ tasks:
 
   check-clean-branch:
     desc: Checks that the git working tree is clean
-    cmd: .github/workflows/check-clean-branch.sh
+    cmd: scripts/check-clean-branch.sh
 
   check-generate-canoto:
     desc: Checks that generated canoto is up-to-date (requires a clean git working tree)
