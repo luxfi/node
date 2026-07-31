@@ -845,8 +845,82 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	}
 	proLastAcceptedID, err := vm.State.GetLastAccepted()
 	if err == database.ErrNotFound {
-		// If the last accepted block isn't indexed yet, then the underlying
-		// chain is the only chain and there is nothing to repair.
+		// NO OUTER ANCHOR. The inner chain has accepted blocks but the proposervm
+		// has no last-accepted pointer. There are two ways to reach this state and
+		// they need OPPOSITE handling:
+		//
+		//  1. GENUINELY PRE-FORK — the chain has not crossed the proposervm
+		//     activation boundary, so no outer envelope has ever existed. Nothing
+		//     to repair; the original early return is correct.
+		//
+		//  2. POST-FORK WITH WIPED/ABSENT OUTER STATE — the inner chain was
+		//     restored WITHOUT its outer index. An RLP import into a wiped node is
+		//     exactly this: admin_importChain writes inner EVM blocks directly and
+		//     never creates a single outer envelope. The node then reports a
+		//     healthy inner tip, and every consensus frontier below it is missing.
+		//
+		// Returning nil for case 2 is the missing-outer-anchor blind spot: the
+		// repair below only ever runs when an anchor EXISTS to compare against, so
+		// a node with NO anchor silently skipped repair entirely — no backfill
+		// state, no request, no log — and stayed stranded at its import height
+		// forever while peers advanced (devnet luxd-0/3 at 5092, testnet luxd-1).
+		//
+		// Distinguishing them cannot be done from the empty proposervm database
+		// alone — that database is precisely what was wiped. The fork height is
+		// persisted OUTSIDE the last-accepted pointer, so it survives as evidence:
+		// if this chain has a recorded fork height at or below the inner tip, the
+		// chain is post-fork and the missing anchor is damage, not history.
+		// Without that evidence we CANNOT prove the chain is pre-fork, so we fail
+		// safe INTO repair rather than out of it.
+		innerHeight := innerLastAccepted.Height()
+		if innerHeight == 0 {
+			// Genesis only — nothing accepted above the fork boundary either way.
+			return nil
+		}
+		forkHeight, forkErr := vm.State.GetForkHeight()
+		if forkErr == database.ErrNotFound {
+			// No fork height recorded either. Both proposervm keys are absent, which
+			// is the signature of a chain that has never produced a post-fork block
+			// — the original "the underlying chain is the only chain" case. It is
+			// ALSO what a full wipe of the proposervm prefix leaves behind, so this
+			// branch cannot distinguish them on local evidence alone. Preserve the
+			// historical behaviour here (a genuinely pre-fork chain must start), and
+			// leave the post-fork-wiped case to the node layer, which can prove the
+			// chain is post-fork from a peer's certified checkpoint. Recorded as a
+			// warning so the state is never silent again.
+			vm.logger.Warn("proposervm: no outer last-accepted AND no fork height recorded; treating this "+
+				"chain as pre-fork and starting normally",
+				log.Uint64("innerHeight", innerHeight),
+				log.Stringer("innerID", innerLastAcceptedID),
+				log.String("caveat", "a WIPED post-fork chain is indistinguishable here on local evidence; "+
+					"if this node is a post-fork validator it needs a certified peer checkpoint, not this path"),
+			)
+			return nil
+		}
+		if forkErr != nil {
+			return fmt.Errorf("failed to read fork height while classifying a missing outer anchor: %w", forkErr)
+		}
+		// Post-fork (or unprovable) with no anchor: every height from the fork
+		// boundary up to the inner tip is missing its envelope. Enter backfill so
+		// the state is VISIBLE and BuildBlock stays gated off — a node that cannot
+		// name its own outer tip must never propose. from is the first height that
+		// needs an envelope; with no anchor at all that is the fork height itself
+		// (or 1 when the fork height is unrecorded).
+		from := uint64(1)
+		if forkErr == nil && forkHeight > 0 {
+			from = forkHeight
+		}
+		vm.logger.Warn("proposervm RECOVERY REQUIRED — inner accepted state exists but the outer "+
+			"last-accepted pointer is ABSENT (missing-outer-anchor)",
+			log.Uint64("innerHeight", innerHeight),
+			log.Stringer("innerID", innerLastAcceptedID),
+			log.Uint64("firstMissingHeight", from),
+			log.String("cause", "inner chain restored without its proposervm index — e.g. admin_importChain "+
+				"into a wiped node, which writes inner blocks only"),
+			log.String("effect", "this chain will NOT build blocks and MUST NOT be treated as a caught-up "+
+				"validator until the outer index is rebuilt from certified peer state"),
+		)
+		vm.enterOuterBackfill(from, innerHeight, innerLastAcceptedID)
 		return nil
 	}
 	if err != nil {
