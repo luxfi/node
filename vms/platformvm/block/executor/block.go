@@ -44,7 +44,7 @@ func (*Block) ShouldVerifyWithRuntime(context.Context) (bool, error) {
 func (b *Block) VerifyWithRuntime(ctx context.Context, blockContext *runtime.Runtime) error {
 	blkID := b.ID()
 	blkState, previouslyExecuted := b.manager.backend.getBlockState(blkID)
-	warpAlreadyVerified := previouslyExecuted && blkState.verifiedHeights.Contains(blockContext.PChainHeight)
+	warpAlreadyVerified := previouslyExecuted && blkState.hasVerifiedHeight(blockContext.PChainHeight)
 
 	// If the chain is bootstrapped and the warp messages haven't been verified,
 	// we must verify them.
@@ -64,7 +64,7 @@ func (b *Block) VerifyWithRuntime(ctx context.Context, blockContext *runtime.Run
 	// If the block was previously executed, we don't need to execute it again,
 	// we can just mark that the warp messages are valid at this height.
 	if previouslyExecuted {
-		blkState.verifiedHeights.Add(blockContext.PChainHeight)
+		blkState.markVerifiedHeight(blockContext.PChainHeight)
 		return nil
 	}
 
