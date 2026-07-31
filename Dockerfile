@@ -57,14 +57,32 @@ ENV GOFLAGS="-mod=mod"
 # build still attempts the download (works when all deps are public).
 COPY go.mod .
 COPY go.sum .
-# Configure global git insteadOf so EVERY subsequent step (go mod download
+# Configure global git credentials so EVERY subsequent step (go mod download
 # now, the build step's implicit fetch later) can reach private luxfi/*
 # modules. The token is written into /etc/gitconfig (root-readable in the
 # image), so explicit cleanup is unnecessary on this throwaway builder
 # stage — only the compiled binary is COPYed into the runtime image.
+#
+# The credential goes in an Authorization header rather than in the URL. The
+# obvious spelling,
+#
+#     git config url."https://x-access-token:$(cat …)@github.com/".insteadOf …
+#
+# embeds the token in the authority component of a URL, so any character the
+# token happens to contain that is special there truncates it. A single `/`
+# ends the authority early and git then resolves the credential prefix as the
+# hostname, which fails as
+#
+#     fatal: unable to access 'https://x-access-token:***@github.com/hanzoai/vfs/':
+#       Could not resolve host: x-access-token
+#
+# and reads as a DNS fault rather than a quoting one. That cost two release
+# builds. base64 has no such characters, so the header form is correct for any
+# token, and stays correct when the token is next rotated to a different shape.
 RUN --mount=type=secret,id=ghtok,required=false \
     if [ -s /run/secrets/ghtok ]; then \
-        git config --global url."https://x-access-token:$(cat /run/secrets/ghtok)@github.com/".insteadOf "https://github.com/"; \
+        git config --global http."https://github.com/".extraheader \
+            "Authorization: Basic $(printf 'x-access-token:%s' "$(cat /run/secrets/ghtok)" | base64 | tr -d '\n')"; \
     fi && \
     sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' go.sum && \
     go mod download -x
