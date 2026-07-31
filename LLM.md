@@ -1334,3 +1334,31 @@ builds on the tag push (RELEASE.md). Roll devnet → testnet → mainnet one pod
 **tip parity**, never pod-Ready. Two known live hazards are unchanged by this release and still
 apply: `luxfi/evm` must be built after its `luxfi/vm` v1.3.3 bump or the C-Chain ships the map race
 again, and `vms/proposervm/vm.go:380` preferred-fetch freeze is pre-existing and survivable.
+
+## ⚠️ CORRECTION to `e68b68cae9` (proposervm missing-outer-anchor)
+
+That commit's message claims the blind spot was *"Demonstrated on devnet luxd-0
+and luxd-3, stranded at the 5092 import height while the fleet reached 7321."*
+**That attribution is wrong and is retracted here.**
+
+The code defect is real and the fix stands — an absent outer anchor genuinely was
+read as "nothing to repair", and `missing_outer_anchor_test.go` fails on the old
+code and passes on the new one. But read-only forensics on the live devnet nodes
+afterwards **refuted** it as the cause of those two strands:
+
+- luxd-0 and luxd-3 are **building block 7324**, exactly like healthy luxd-2. The
+  binary gates building off whenever a backfill is pending, so their outer
+  last-accepted pointer is **present**, not missing.
+- Their inner blocks above 5092 exist locally (real canonical hashes resolve with
+  `cannot query unfinalized data`; fabricated hashes return `null`).
+- Consensus `acceptedHeight` reads 7322 on both.
+
+So those nodes were never in the missing-anchor state. `e68b68cae9` fixes a
+**latent** defect that would strand a node imported into a fully wiped
+proposervm; it does not explain, and did not fix, the devnet or testnet stalls.
+
+**The actual cause of both stalls** — found independently by two investigations —
+is that no node emits a SIGNED vote, so α is unreachable and nothing is ever
+accepted. See [[voteguard-silent-sign-refusal]]. Blocks are built, verified by
+every peer, and answered 4-of-4 `accept=true` over unsigned p2p Chits, which
+`chains/manager.go:3184` discards before the tally by design.
