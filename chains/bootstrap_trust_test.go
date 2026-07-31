@@ -923,6 +923,185 @@ func TestBootstrapTrust_EclipseOwnHeightNotNamedRoutesToCaughtUp(t *testing.T) {
 	require.Equal(t, uint64(N), f.Height)
 }
 
+// ----- HALTED FLEET: the own tip IS the frontier under a COMPLETE view -------
+//
+// The LIVENESS HOLE in the seam between the M1 own-height exclusion above and CaughtUp. When the
+// highest ⅔-backed block equals the node's OWN accepted tip AND a SUB-⅔ minority reports tips
+// above it, nameFrontier names nothing (own height excluded) and CaughtUp refuses (the minority
+// tips are un-held): the node neither completes nor syncs. On a LIVE network that is transient —
+// the minority tip gains backing as finalization propagates. On a HALTED network it is a
+// PERMANENT deadlock.
+//
+// MEASURED on lux-devnet C-chain: 5 equal-stake validators; nodes 1,2 at height 5092; nodes 0,3
+// at 5090; node 4 at 4243. Block 5090 is byte-identical on nodes 0,1,2,3 (verified by hash — a
+// pure LAG, not a fork). For node 0: responder weight 200e12, ⅔ floor 133.33e12,
+// backing[5090] = 150e12 (clears the floor) but 5090 == MinFrontierHeight so it is EXCLUDED;
+// backing[5092] = 100e12 (sub-⅔, not nameable). Nodes 0 and 3 retry forever, and because the
+// network is halted nothing ever propagates to break the tie.
+//
+// The safety property that separates this from M1 is COVERAGE: under FULL configured-beacon
+// coverage — every beacon connected AND replied — no eclipse can hide an ahead node, so the view
+// is COMPLETE and the highest ⅔-backed block IS the network frontier. In M1 the 6th beacon is
+// eclipsed, coverage is NOT full, and the exclusion must (and does) still apply.
+
+// TestBootstrapTrust_HaltedFleet_OwnTipNamedUnderFullCoverage reproduces the devnet shape exactly
+// and pins BOTH halves: un-covered it deadlocks (ErrNoBootstrapQuorum — the live bug), covered it
+// names the node's own tip. It also pins that CaughtUp is FALSE for these replies, so the fix
+// provably comes from the naming exemption and NOT from loosening CaughtUp.
+func TestBootstrapTrust_HaltedFleet_OwnTipNamedUnderFullCoverage(t *testing.T) {
+	const (
+		own  = 5090 // the node's own last-accepted height (devnet nodes 0 and 3)
+		high = 5092 // devnet nodes 1 and 2
+		lag  = 4243 // devnet node 4
+	)
+	refs, byID := refChain(high) // genesis..5092, parent-linked; 5092 descends through 5090
+	b := nodeIDs(5)              // 5 equal-stake validators; b[0] is the node itself
+	const w = uint64(100)        // total 500 → MinResponseWeight ⌈500/2⌉=251, MinResponses majority=3
+	policy := &BootstrapPolicy{
+		TrustedBeacons:    equalBeacons(b, w),
+		MinResponses:      3,
+		MinResponseWeight: 251,
+		MinFrontierHeight: own,
+		Tip:               refs[own].ID, // the node's own accepted tip, named by VALUE not just height
+		Source:            &stubAncestry{byID: byID},
+	}
+
+	// All FOUR peers reply — with the node itself that accounts for the whole configured set.
+	replies := []BeaconReply{
+		reply(b[1], refs[high].ID, w), // node 1, two ahead
+		reply(b[2], refs[high].ID, w), // node 2, two ahead
+		reply(b[3], refs[own].ID, w),  // node 3, at the node's own tip
+		reply(b[4], refs[lag].ID, w),  // node 4, far behind
+	}
+
+	// Sanity pins on the devnet arithmetic (R = 400): the ahead pair carries 200, BELOW the ⅔
+	// threshold, so 5092 is not nameable; 5090 carries 300 (the two 5092 tips credit it as their
+	// shared ANCESTOR, plus node 3's direct reply) and DOES clear — at exactly own height.
+	require.Equal(t, uint64(266), Ratio{2, 3}.floorOf(400), "⅔-of-responders floor over R=400 is 266")
+	require.Less(t, uint64(200), uint64(266), "the ahead minority is BELOW the naming threshold — 5092 is not nameable")
+
+	// THE DEADLOCK, reproduced. Without the coverage proof the own-height exclusion stands,
+	// nothing above own height is ⅔-backed, and the node names nothing — every round, forever.
+	_, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.ErrorIs(t, err, ErrNoBootstrapQuorum,
+		"un-covered, the own-height exclusion stands and the halted fleet names NOTHING — the live devnet bug")
+
+	// …and CaughtUp REFUSES these same replies, because the node does not hold 5092. That is the
+	// other jaw of the deadlock, and it pins that the fix below cannot be coming from CaughtUp.
+	held := map[ids.ID]uint64{} // the node holds its accepted chain 0..5090, NOT 5091/5092
+	for h := 0; h <= own; h++ {
+		held[refs[h].ID] = uint64(h)
+	}
+	require.False(t, policy.CaughtUp(replies, own, heldOracle(held)),
+		"the node does not hold 5092, so CaughtUp refuses — the naming exemption, not CaughtUp, is the fix")
+
+	// THE FIX. Under FULL coverage the view is COMPLETE: every configured beacon is accounted for,
+	// so no eclipse can be hiding an ahead node, and blocks above own height are held by < ⅔ of the
+	// full set — never finalized. The node IS at the network's ⅔-backed frontier: name it, go Ready.
+	policy.Covered = true
+	f, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.NoError(t, err, "under a COMPLETE view the node's own tip IS the ⅔-backed frontier")
+	require.Equal(t, refs[own].ID, f.ID, "the named frontier is the node's own tip, by value")
+	require.Equal(t, uint64(own), f.Height)
+}
+
+// TestBootstrapTrust_HaltedFleet_OwnTipNotNamedWhenBeaconMissing pins that COVERAGE is
+// load-bearing: the same fleet with one beacon SILENT is not a complete view, so the own-height
+// exclusion stands and the node fails safe. 5090 still clears the ⅔ floor here (300 > 200), so
+// `Covered` is the only thing keeping it un-named — exactly the M1 eclipse discriminator.
+func TestBootstrapTrust_HaltedFleet_OwnTipNotNamedWhenBeaconMissing(t *testing.T) {
+	const (
+		own  = 5090
+		high = 5092
+	)
+	refs, byID := refChain(high)
+	b := nodeIDs(5)
+	const w = uint64(100)
+	policy := &BootstrapPolicy{
+		TrustedBeacons:    equalBeacons(b, w),
+		MinResponses:      3,
+		MinResponseWeight: 251,
+		MinFrontierHeight: own,
+		Tip:               refs[own].ID,
+		// b[4] is SILENT, so repliedCovers is false and the caller computes Covered=false —
+		// a beacon is missing and an ahead tip may be hidden behind it.
+		Covered: false,
+		Source:  &stubAncestry{byID: byID},
+	}
+
+	// Only 3 of the 4 peers answer. R = 300 (above the 251 stake floor and the 3-beacon count
+	// floor, so the round is JUDGED, not skipped), ⅔ floor = 200, backing[5090] = 300 > 200.
+	replies := []BeaconReply{
+		reply(b[1], refs[high].ID, w),
+		reply(b[2], refs[high].ID, w),
+		reply(b[3], refs[own].ID, w),
+		// b[4] silent — no reply.
+	}
+	require.Equal(t, uint64(200), Ratio{2, 3}.floorOf(300), "⅔-of-responders floor over R=300 is 200")
+
+	_, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.ErrorIs(t, err, ErrNoBootstrapQuorum,
+		"a MISSING beacon means an incomplete view — own height stays excluded and the node fails safe")
+}
+
+// TestBootstrapTrust_HaltedFleet_SameHeightSiblingNotOwnTip pins that the exemption is by VALUE
+// (id AND height), not by height alone: a ⅔-backed SIBLING at the node's own height is a FORK the
+// node is not on, so the exemption's own argument ("this node sits exactly at the network's
+// frontier") does not hold for it and it must NOT be named. It fails safe to CaughtUp, which
+// refuses because the node does not hold the sibling — so the node syncs off its minority fork.
+//
+// The sibling is ⅔-backed as a shared ANCESTOR, never as a directly-reported tip: an actively
+// reported ⅔ tip takes the EXACT FAST PATH, which is exempt from MinFrontierHeight by design and
+// is not what this pins.
+func TestBootstrapTrust_HaltedFleet_SameHeightSiblingNotOwnTip(t *testing.T) {
+	const own = 5090
+	refs, byID := refChain(own) // the node's own accepted chain, genesis..5090
+
+	// A fork branching one block BELOW own height: sibling S at 5090, extended to 5092. The fleet
+	// is on it; the node is not. S is at the node's height but is NOT the node's block.
+	sibling := BlockRef{ID: ids.GenerateTestID(), Height: own, Parent: refs[own-1].ID}
+	byID[sibling.ID] = sibling
+	s1 := childRef(sibling)
+	byID[s1.ID] = s1
+	s2 := childRef(s1)
+	byID[s2.ID] = s2
+
+	bs := nodeIDs(5)
+	const w = uint64(100)
+	policy := &BootstrapPolicy{
+		TrustedBeacons:    equalBeacons(bs, w),
+		MinResponses:      3,
+		MinResponseWeight: 251,
+		MinFrontierHeight: own,
+		Tip:               refs[own].ID, // the node's OWN block at 5090 — not the sibling
+		Covered:           true,         // full coverage: the exemption is armed, only the VALUE check stands
+		Source:            &stubAncestry{byID: byID},
+	}
+
+	// All four peers reply. R = 400, ⅔ floor 266. No single tip clears it (s2 carries 200, S 100,
+	// 4243 100), so the fast path does not fire; S accrues 300 as the shared ANCESTOR of the s2
+	// tips plus one direct reply — ⅔-backed, at exactly own height, and NOT the node's tip.
+	replies := []BeaconReply{
+		reply(bs[1], s2.ID, w),
+		reply(bs[2], s2.ID, w),
+		reply(bs[3], sibling.ID, w),
+		reply(bs[4], refs[4243].ID, w),
+	}
+
+	_, err := policy.AcceptsFrontier(context.Background(), replies)
+	require.ErrorIs(t, err, ErrNoBootstrapQuorum,
+		"a same-height SIBLING is never the node's own tip — the exemption is by value, so it fails safe")
+
+	// …and CaughtUp refuses too (the node holds neither the sibling nor its descendants), so the
+	// node syncs off its minority fork instead of declaring itself at the frontier.
+	held := map[ids.ID]uint64{}
+	for h := 0; h <= own; h++ {
+		held[refs[h].ID] = uint64(h)
+	}
+	require.False(t, policy.CaughtUp(replies, own, heldOracle(held)),
+		"the node holds no block of the fork — it is behind the ⅔-backed chain and must sync")
+}
+
 // ----- H: HALT-SKEW RECOVERY (mainnet 96369 wedge) ---------------------------
 
 // TestBootstrapTrust_H_HaltSkewDeeperThanOneWindow reproduces the live mainnet 96369 wedge and
