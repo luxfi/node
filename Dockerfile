@@ -57,32 +57,37 @@ ENV GOFLAGS="-mod=mod"
 # build still attempts the download (works when all deps are public).
 COPY go.mod .
 COPY go.sum .
-# Configure global git credentials so EVERY subsequent step (go mod download
-# now, the build step's implicit fetch later) can reach private luxfi/*
-# modules. The token is written into /etc/gitconfig (root-readable in the
-# image), so explicit cleanup is unnecessary on this throwaway builder
-# stage — only the compiled binary is COPYed into the runtime image.
+# Every module this builds from is PUBLIC — go.mod names nothing under
+# lux-private/ or luxcpp/ — so the module download authenticates to nothing and
+# fetches anonymously. The credential below is scoped to the two private orgs
+# only, so that a private module added later resolves without this step having
+# to be rediscovered, while github.com at large stays anonymous.
 #
-# The credential goes in an Authorization header rather than in the URL. The
-# obvious spelling,
+# Scoping is the point, not tidiness. Three release builds failed here:
 #
-#     git config url."https://x-access-token:$(cat …)@github.com/".insteadOf …
+#   * Twice because the token was interpolated into a URL's authority —
+#     `url."https://x-access-token:$(cat …)@github.com/".insteadOf` — where a
+#     single `/` in the token ends the authority early and git resolves the
+#     credential prefix as a hostname:
+#         Could not resolve host: x-access-token
+#     which reads as DNS rather than as quoting.
 #
-# embeds the token in the authority component of a URL, so any character the
-# token happens to contain that is special there truncates it. A single `/`
-# ends the authority early and git then resolves the credential prefix as the
-# hostname, which fails as
+#   * Once because the fix for that sent the token as an Authorization header
+#     for ALL of github.com. The token is a registry credential: it logs in to
+#     ghcr.io, and it cannot read repositories. Presenting it made GitHub answer
+#     401 for github.com/hanzoai/vfs — a PUBLIC repository that had been served
+#     anonymously all along:
+#         fatal: could not read Username for 'https://github.com'
+#     A wrong credential is worse than none, because none is a 200.
 #
-#     fatal: unable to access 'https://x-access-token:***@github.com/hanzoai/vfs/':
-#       Could not resolve host: x-access-token
-#
-# and reads as a DNS fault rather than a quoting one. That cost two release
-# builds. base64 has no such characters, so the header form is correct for any
-# token, and stays correct when the token is next rotated to a different shape.
+# base64 is used rather than URL interpolation because a header value has no
+# character that can truncate it, so this stays correct when the token is next
+# rotated to a different shape.
 RUN --mount=type=secret,id=ghtok,required=false \
     if [ -s /run/secrets/ghtok ]; then \
-        git config --global http."https://github.com/".extraheader \
-            "Authorization: Basic $(printf 'x-access-token:%s' "$(cat /run/secrets/ghtok)" | base64 | tr -d '\n')"; \
+        auth="Authorization: Basic $(printf 'x-access-token:%s' "$(cat /run/secrets/ghtok)" | base64 | tr -d '\n')"; \
+        git config --global http."https://github.com/lux-private/".extraheader "$auth"; \
+        git config --global http."https://github.com/luxcpp/".extraheader "$auth"; \
     fi && \
     sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' go.sum && \
     go mod download -x
