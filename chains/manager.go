@@ -1487,7 +1487,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// routes to the blockHandler's GetAncestors transport. The handler wraps the
 		// engine built just below, so its handler ref is late-bound at chainInfo
 		// construction (a no-op until then — see networkCatchup).
-		catchup := &networkCatchup{}
+		catchup := &networkCatchup{log: m.Log}
 		netCfg := consensuschain.NetworkConfig{
 			ChainID:    chainParams.ID,
 			NetworkID:  networkID,
@@ -2882,6 +2882,7 @@ type blockHandler struct {
 	maxContextBlocks int                       // Max context blocks to request/serve (default: 256)
 	contextRequestMu sync.Mutex                // Protects pendingContext and requestIDCounter
 	pollerCancel     context.CancelFunc        // Cancels runFrontierPoller when the handler stops (RED LOW: no goroutine leak on chain re-creation)
+	diag             catchupDiag               // Per-outcome counters that gate the catch-up diagnostics (see catchupSample)
 
 	// Qbit event buffering - when we receive a Qbit for a block we don't have yet,
 	// buffer the event and drain when the block arrives
@@ -3261,29 +3262,86 @@ const (
 	pendingContextTTL = 30 * time.Second
 )
 
+// catchupDiag counts each OUTCOME on the cert-gap fetch path — request, serve,
+// deliver, apply — one counter per outcome, the shape quorum.go's vote verifier
+// already uses. Nothing reads these but the log gate below; they exist so that each
+// outcome is sampled against its OWN rate and a common one cannot bury a rare one.
+type catchupDiag struct {
+	// request side (requestContext)
+	noWire, dedup, reaped, evicted, noPeer, unsent gatomic.Uint64
+	// serve side (GetContext — the inbound GetAncestors)
+	serveNoWire, serveAsked, serveEmpty gatomic.Uint64
+	// deliver side (handleContext — the Ancestors reply)
+	replyIn, replyNoVM, replyEmpty, replyBootstrap gatomic.Uint64
+	// frontier decision (AcceptedFrontier) — the branch that decides whether we fetch
+	frontierBootstrap, frontierCurrent, frontierCertGap gatomic.Uint64
+	frontierPending, frontierAbsent, frontierNoEngine   gatomic.Uint64
+}
+
+// catchupSample is the volume gate for the catch-up diagnostics: the first few of an
+// outcome, then every 500th. Same shape as quorum.go's vote-verifier sampler, for the
+// same reason — these sites sit on per-message paths, and the fleet runs a cert storm
+// (hundreds of signature verifications a second, one node re-gossiping the same certs
+// 763 times in 2000 lines), so an unconditional Info line here buries its own signal.
+// Sampling still names a systematic failure on its FIRST occurrence and keeps naming
+// it while it persists, which is what a single roll needs.
+func catchupSample(c *gatomic.Uint64) (uint64, bool) {
+	n := c.Add(1)
+	return n, n <= 3 || n%500 == 0
+}
+
 // requestContext sends a context request (wire: GetAncestors) to fetch missing blocks from a peer
 func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, blockID ids.ID) {
 	if b.net == nil || b.msgCreator == nil {
+		// The catch-up DECISION was made and there is no wire to carry it. Silence here
+		// reads exactly like a node that was never asked to fetch anything.
+		if n, loud := catchupSample(&b.diag.noWire); loud {
+			b.logger.Warn("catch-up fetch skipped — no network transport on this handler",
+				log.Stringer("blockID", blockID),
+				log.Uint64("count", n))
+		}
 		return
 	}
 
 	b.contextRequestMu.Lock()
 	// Check if we already have a pending request for this block
-	if _, exists := b.pendingContext[blockID]; exists {
+	if prior, exists := b.pendingContext[blockID]; exists {
 		b.contextRequestMu.Unlock()
+		// Suppressed by the per-block dedup. The AGE says which suppression this is: a
+		// few hundred ms is the storm re-asking for a fetch already in flight; tens of
+		// seconds is a request nobody ever answered, still holding the slot.
+		if n, loud := catchupSample(&b.diag.dedup); loud {
+			b.logger.Info("catch-up fetch suppressed — a request for this block is already in flight",
+				log.Stringer("blockID", blockID),
+				log.Stringer("askedOf", prior.nodeID),
+				log.Duration("inFlight", time.Since(prior.timestamp)),
+				log.Uint64("count", n))
+		}
 		return
 	}
 
 	// BOUND the map (RED HIGH + MEDIUM). Reap requests past their TTL first: a
 	// withheld Context no longer pins the slot, so the block is re-requestable.
 	now := time.Now()
+	// Carried out of the critical section — the log lines are emitted after the unlock,
+	// never under it.
+	reaped := 0
+	var reapedID ids.ID
+	var reapedOf ids.NodeID
+	var reapedAge time.Duration
 	for id, req := range b.pendingContext {
-		if now.Sub(req.timestamp) > pendingContextTTL {
+		if age := now.Sub(req.timestamp); age > pendingContextTTL {
 			delete(b.pendingContext, id)
+			reaped++
+			if age > reapedAge {
+				reapedID, reapedOf, reapedAge = id, req.nodeID, age
+			}
 		}
 	}
 	// Then hard-cap: if still at the bound (a genuine flood inside one TTL window),
 	// evict the oldest so the map can NEVER exceed maxPendingContext.
+	evicted := false
+	var evictedID ids.ID
 	if len(b.pendingContext) >= maxPendingContext {
 		var oldestID ids.ID
 		var oldestT time.Time
@@ -3294,6 +3352,7 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 			}
 		}
 		delete(b.pendingContext, oldestID)
+		evicted, evictedID = true, oldestID
 	}
 
 	// Generate a new request ID
@@ -3308,6 +3367,31 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		timestamp: now,
 	}
 	b.contextRequestMu.Unlock()
+
+	// A slot cleared past its TTL is a request that was never resolved by anything but
+	// the reaper — and pendingContext is ONLY cleared here, at the cap, and on the
+	// no-peer release, never on a reply. So this line is not by itself proof that no
+	// reply came; repliesSeen is. Zero replies across the whole run, with slots expiring,
+	// is the Ancestors leg failing, and nothing else on this path says so.
+	if reaped > 0 {
+		if n, loud := catchupSample(&b.diag.reaped); loud {
+			b.logger.Warn("catch-up requests cleared past their TTL — those blocks are requestable again",
+				log.Int("reaped", reaped),
+				log.Stringer("oldestBlockID", reapedID),
+				log.Stringer("oldestAskedOf", reapedOf),
+				log.Duration("oldestAge", reapedAge),
+				log.Uint64("repliesSeen", b.diag.replyIn.Load()),
+				log.Uint64("count", n))
+		}
+	}
+	if evicted {
+		if n, loud := catchupSample(&b.diag.evicted); loud {
+			b.logger.Warn("catch-up request evicted at the pending cap — distinct missing blocks are arriving faster than one TTL window",
+				log.Stringer("blockID", evictedID),
+				log.Int("cap", maxPendingContext),
+				log.Uint64("count", n))
+		}
+	}
 
 	// Create and send context request (wire: GetAncestors message)
 	msg, err := b.msgCreator.GetAncestors(
@@ -3335,8 +3419,14 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 	// cert already gated this request, so asking any network peer is sound (the served
 	// gap is cert-verified on accept).
 	nodeSet := set.NewSet[ids.NodeID](frontierPollSample)
+	// Hoisted out of the range so the peer count is available to the diagnostics below
+	// without a second PeerInfo call; range evaluates the expression exactly once either
+	// way, so this is the same walk it always was.
+	connected := 0
 	if nodeID == ids.EmptyNodeID {
-		for _, p := range b.net.PeerInfo(nil) {
+		peers := b.net.PeerInfo(nil)
+		connected = len(peers)
+		for _, p := range peers {
 			if p.TrackedChains.Contains(b.networkID) {
 				nodeSet.Add(p.ID)
 				if nodeSet.Len() >= frontierPollSample {
@@ -3354,10 +3444,36 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		b.contextRequestMu.Lock()
 		delete(b.pendingContext, blockID)
 		b.contextRequestMu.Unlock()
+		// connected > 0 with an empty sample is the TrackedChains filter matching nothing —
+		// the same networkID-vs-chainID confusion that once made this filter reject every
+		// real peer. connected == 0 is simply an unconnected node.
+		if n, loud := catchupSample(&b.diag.noPeer); loud {
+			b.logger.Warn("catch-up fetch has NO peer to ask — no GetAncestors is sent",
+				log.Stringer("blockID", blockID),
+				log.Stringer("advertisedBy", nodeID),
+				log.Stringer("networkID", b.networkID),
+				log.Int("connectedPeers", connected),
+				log.Uint64("count", n))
+		}
 		return
 	}
 
 	sentTo := b.net.Send(msg, nodeSet, b.networkID, 0)
+	if sentTo.Len() == 0 {
+		// GetAncestors reached ZERO peers: the node holds a verified cert for a block it
+		// cannot fetch, and until this line nothing on the wire said so. This is the known
+		// historical failure of this exact call, so it is Warn — sampled only so a storm
+		// cannot bury its first occurrence.
+		if n, loud := catchupSample(&b.diag.unsent); loud {
+			b.logger.Warn("catch-up GetAncestors reached ZERO peers — the gap cannot be fetched",
+				log.Stringer("blockID", blockID),
+				log.Stringer("advertisedBy", nodeID),
+				log.Uint32("requestID", requestID),
+				log.Int("asked", nodeSet.Len()),
+				log.Uint64("count", n))
+		}
+		return
+	}
 	b.logger.Info("requested context for missing prerequisites",
 		log.Stringer("from", nodeID),
 		log.Stringer("blockID", blockID),
@@ -3444,13 +3560,24 @@ func decodeCatchupEntry(entry []byte) (blockBytes, certBytes []byte, ok bool) {
 // it, the legacy live missing-parent behaviour).
 func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerID ids.ID) error {
 	if b.vm == nil || b.net == nil || b.msgCreator == nil {
+		// A peer asked us to serve a gap and this handler has nothing to serve it with.
+		// Unnamed, that is indistinguishable from the request never arriving.
+		if n, loud := catchupSample(&b.diag.serveNoWire); loud {
+			b.logger.Warn("catch-up request NOT served — no VM or network transport on this handler",
+				log.Stringer("from", nodeID),
+				log.Stringer("containerID", containerID),
+				log.Uint64("count", n))
+		}
 		return nil
 	}
 
-	b.logger.Debug("received context request",
-		log.Stringer("from", nodeID),
-		log.Stringer("containerID", containerID),
-		log.Uint32("requestID", requestID))
+	if n, loud := catchupSample(&b.diag.serveAsked); loud {
+		b.logger.Info("serving a catch-up request",
+			log.Stringer("from", nodeID),
+			log.Stringer("containerID", containerID),
+			log.Uint32("requestID", requestID),
+			log.Uint64("count", n))
+	}
 
 	// Collect context blocks (walk parent chain).
 	//
@@ -3527,9 +3654,16 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 	}
 
 	if len(containers) == 0 {
-		b.logger.Debug("no context found for request",
-			log.Stringer("from", nodeID),
-			log.Stringer("containerID", containerID))
+		// We hold neither the requested block nor any ancestor of it, so NOTHING goes back
+		// on the wire — the requester gets silence, not an empty batch. This is the serving
+		// half of the distinction the requester cannot make on its own.
+		if n, loud := catchupSample(&b.diag.serveEmpty); loud {
+			b.logger.Warn("catch-up request served NOTHING — we do not hold the requested block, and NO reply is sent",
+				log.Stringer("from", nodeID),
+				log.Stringer("containerID", containerID),
+				log.Uint32("requestID", requestID),
+				log.Uint64("count", n))
+		}
 		return nil
 	}
 
@@ -3549,6 +3683,7 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 	b.logger.Info("sent context response",
 		log.Stringer("to", nodeID),
 		log.Stringer("containerID", containerID),
+		log.Uint32("requestID", requestID),
 		log.Int("numBlocks", len(containers)),
 		log.Int("payloadBytes", accumulated),
 		log.Bool("truncatedForSize", truncatedForSize),
@@ -3562,7 +3697,35 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 // Each block in the context is processed via Put to add it to our state.
 // After processing, we drain any buffered Qbits that were waiting for context.
 func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, data []byte) error {
-	if b.vm == nil || len(data) == 0 {
+	// Count EVERY inbound Ancestors reply, whatever becomes of it: this counter is the
+	// answer to "did a reply EVER arrive", which the TTL-expiry line reports and which
+	// nothing else on this path carries.
+	if n, loud := catchupSample(&b.diag.replyIn); loud {
+		b.logger.Info("catch-up response received",
+			log.Stringer("from", nodeID),
+			log.Uint32("requestID", requestID),
+			log.Int("dataLen", len(data)),
+			log.Uint64("count", n))
+	}
+	if b.vm == nil {
+		if n, loud := catchupSample(&b.diag.replyNoVM); loud {
+			b.logger.Warn("catch-up response DROPPED — no VM on this handler",
+				log.Stringer("from", nodeID),
+				log.Uint32("requestID", requestID),
+				log.Uint64("count", n))
+		}
+		return nil
+	}
+	if len(data) == 0 {
+		// An EMPTY reply and NO reply are the same silence downstream and mean opposite
+		// things: the peer answered and had nothing, or the peer never answered at all.
+		// This is the only place the two are distinguishable on the receiving side.
+		if n, loud := catchupSample(&b.diag.replyEmpty); loud {
+			b.logger.Warn("catch-up response arrived EMPTY — the peer replied with zero bytes (this is NOT a missing reply)",
+				log.Stringer("from", nodeID),
+				log.Uint32("requestID", requestID),
+				log.Uint64("count", n))
+		}
 		return nil
 	}
 
@@ -3571,13 +3734,17 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// waiting call (correlated by requestID); the loop decides ordering + re-execution.
 	// See bootstrap_sync.go.
 	if b.deliverBootstrapAncestors(requestID, data) {
+		// Consumed by the bootstrap lane: the live cert path never sees these blocks, so
+		// a reply landing here explains an unchanged live height.
+		if n, loud := catchupSample(&b.diag.replyBootstrap); loud {
+			b.logger.Info("catch-up response consumed by initial sync — the live cert path did not see it",
+				log.Stringer("from", nodeID),
+				log.Uint32("requestID", requestID),
+				log.Int("dataLen", len(data)),
+				log.Uint64("count", n))
+		}
 		return nil
 	}
-
-	b.logger.Debug("received context response",
-		log.Stringer("from", nodeID),
-		log.Uint32("requestID", requestID),
-		log.Int("dataLen", len(data)))
 
 	// The outer framing (added by the Ancestors flattener) is
 	// [entryLen:4][entry][entryLen:4][entry]..., oldest-first. Each entry is either a
@@ -3593,11 +3760,24 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// contiguous one, and a behind node re-polls the frontier on its next tick.
 	processed := 0
 	remaining := data
+	// Per-response disposition. processed counts what LANDED; the rest count what did
+	// not, and firstReason carries the FIRST refusal verbatim. Held as locals and
+	// reported on the one summary line below: the per-entry detail is up to 256 lines a
+	// response, which is exactly the volume that buries the summary.
+	certAccepted, certRejected, voted, voteFailed, badFrame := 0, 0, 0, 0, 0
+	firstReason := ""
+	note := func(reason string) {
+		if firstReason == "" {
+			firstReason = reason
+		}
+	}
 
 	for len(remaining) >= 4 {
 		entryLen := int(binary.BigEndian.Uint32(remaining[:4]))
 		remaining = remaining[4:]
 		if entryLen <= 0 || entryLen > len(remaining) {
+			badFrame++
+			note(fmt.Sprintf("bad frame: entryLen %d with %d bytes remaining", entryLen, len(remaining)))
 			b.logger.Debug("invalid context entry length",
 				log.Stringer("from", nodeID),
 				log.Int("processed", processed),
@@ -3616,12 +3796,15 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		if isV2 && len(certBytes) > 0 {
 			// CERT path: finalize the gap block on its verified cert (no re-vote).
 			if err := b.engine.AcceptCatchupBlock(ctx, blockBytes, certBytes); err != nil {
+				certRejected++
+				note("cert-accept: " + err.Error())
 				b.logger.Debug("catch-up cert-accept rejected (skipping entry)",
 					log.Stringer("from", nodeID),
 					log.Int("processed", processed),
 					log.Err(err))
 				continue // not finalized; the cert-gate held — try the next entry
 			}
+			certAccepted++
 			processed++
 			continue
 		}
@@ -3632,18 +3815,32 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 			blockBytes = entry
 		}
 		if err := b.Put(ctx, nodeID, requestID, blockBytes); err != nil {
+			voteFailed++
+			note("put: " + err.Error())
 			b.logger.Debug("failed to process context block",
 				log.Stringer("from", nodeID),
 				log.Int("processed", processed),
 				log.Err(err))
 			break
 		}
+		voted++
 		processed++
 	}
 
+	// One line per response, carrying the whole disposition: what the peer served, how
+	// much of it LANDED, how much was refused, and the first reason it was refused. A
+	// response of 250 blocks that finalizes none reads identically to a response of one
+	// that finalizes it, until this line separates them.
 	b.logger.Info("processed context entries",
 		log.Stringer("from", nodeID),
-		log.Int("processed", processed))
+		log.Uint32("requestID", requestID),
+		log.Int("processed", processed),
+		log.Int("certAccepted", certAccepted),
+		log.Int("certRejected", certRejected),
+		log.Int("voted", voted),
+		log.Int("voteFailed", voteFailed),
+		log.Int("badFrame", badFrame),
+		log.String("firstReason", firstReason))
 
 	return nil
 }
@@ -3687,6 +3884,7 @@ func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, 
 	// by the beacon's stake in the ⅔ quorum) and do NOT auto-fetch (the loop owns the
 	// descent). See bootstrap_sync.go.
 	if b.deliverBootstrapFrontier(nodeID, containerID) {
+		b.logFrontierDecision(&b.diag.frontierBootstrap, "consumed by initial sync — the loop owns the descent", nodeID, containerID)
 		return nil
 	}
 	if blk, err := b.vm.GetBlock(ctx, containerID); err == nil {
@@ -3699,19 +3897,61 @@ func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, 
 		// here" is truly not-behind; otherwise fall through to fetch the cert-carrying gap so
 		// AcceptCatchupBlock can finalize it on its verified cert (no re-vote).
 		if b.engine == nil {
+			// No engine: finalized and merely-held cannot be told apart, so nothing is
+			// fetched. That is a degraded handler, not a trace — Warn, as with the mode gate.
+			if n, loud := catchupSample(&b.diag.frontierNoEngine); loud {
+				b.logger.Warn("frontier reply cannot be judged — no consensus engine on this handler; NOT fetching",
+					log.Stringer("from", nodeID),
+					log.Stringer("containerID", containerID),
+					log.Uint64("count", n))
+			}
 			return nil
 		}
 		if fin, ok := b.engine.FinalizedBlockAtHeight(blk.Height()); ok && fin == containerID {
+			b.logFrontierDecision(&b.diag.frontierCurrent, "have the block and finalized it — not behind", nodeID, containerID)
 			return nil // have the block AND finalized it — truly not behind
 		}
 		// have the block but not finalized here → behind on the cert → fetch below
+		b.logFrontierDecision(&b.diag.frontierCertGap, "have the block but NOT finalized — behind on the CERT, fetching the gap", nodeID, containerID)
 	} else if b.engine != nil {
 		if _, found := b.engine.GetPendingBlock(containerID); found {
+			b.logFrontierDecision(&b.diag.frontierPending, "already tracked as pending by the live path — NOT fetching", nodeID, containerID)
 			return nil // already tracked (pending) — the live path is handling it
 		}
+		b.logFrontierDecision(&b.diag.frontierAbsent, "block absent — fetching the gap", nodeID, containerID)
+	} else {
+		b.logFrontierDecision(&b.diag.frontierAbsent, "block absent and no engine — fetching the gap", nodeID, containerID)
 	}
 	b.requestContext(ctx, nodeID, containerID) // behind (missing block OR its cert) → fetch the gap
 	return nil
+}
+
+// logFrontierDecision names WHICH branch of the frontier decision ran, because that
+// branch IS whether we fetch. Every one of them used to be silent, so a node that
+// concluded "not behind" and a node that received no reply at all produced byte-
+// identical output — the same unanswerable question the Chits sites had.
+//
+// Sampled per branch: each outcome carries its own counter, so a common decision
+// cannot bury a rare one and the first occurrence of every branch is visible.
+// ourAcceptedHeight is read from the IN-PROCESS finalized ledger only — never a VM
+// round trip, which over ZAP would put an RPC on an inbound message path.
+func (b *blockHandler) logFrontierDecision(c *gatomic.Uint64, decision string, nodeID ids.NodeID, containerID ids.ID) {
+	n, loud := catchupSample(c)
+	if !loud {
+		return
+	}
+	var ourHeight uint64
+	if b.engine != nil {
+		if _, h, set := b.engine.FinalizedLedger(); set {
+			ourHeight = h
+		}
+	}
+	b.logger.Info("frontier reply decision",
+		log.String("decision", decision),
+		log.Stringer("from", nodeID),
+		log.Stringer("containerID", containerID),
+		log.Uint64("ourAcceptedHeight", ourHeight),
+		log.Uint64("count", n))
 }
 
 // frontierPollInterval is the heartbeat at which a node proactively asks a small
@@ -3756,6 +3996,10 @@ func (b *blockHandler) runFrontierPoller(ctx context.Context) {
 func (b *blockHandler) pollFrontierOnce(ctx context.Context) {
 	peers := b.net.PeerInfo(nil)
 	if len(peers) == 0 {
+		// Nothing to ask. Per-event: this is the 15s heartbeat, four lines a minute at
+		// worst, and its absence is exactly as informative as its presence.
+		b.logger.Info("frontier poll skipped — no connected peers",
+			log.Stringer("chainID", b.chainID))
 		return
 	}
 	// Filter on the NETWORK id, not the chain id. A peer advertises in its handshake the NETS it
@@ -3779,6 +4023,14 @@ func (b *blockHandler) pollFrontierOnce(ctx context.Context) {
 		}
 	}
 	if sample.Len() == 0 {
+		// Peers ARE connected and none of them matched the filter above. That is the exact
+		// shape of the failure this filter has already caused once: matching on the wrong
+		// id emptied every sample, no GetAcceptedFrontier was ever sent, and a behind node
+		// never learned it was behind — with no line saying so.
+		b.logger.Warn("frontier poll skipped — no connected peer tracks this network; the tip is never asked for",
+			log.Stringer("chainID", b.chainID),
+			log.Stringer("networkID", b.networkID),
+			log.Int("connectedPeers", len(peers)))
 		return
 	}
 
@@ -3789,12 +4041,13 @@ func (b *blockHandler) pollFrontierOnce(ctx context.Context) {
 
 	msg, err := b.msgCreator.GetAcceptedFrontier(b.chainID, requestID, 10*time.Second)
 	if err != nil {
-		b.logger.Debug("frontier poll: failed to build GetAcceptedFrontier", log.Err(err))
+		b.logger.Warn("frontier poll: failed to build GetAcceptedFrontier", log.Err(err))
 		return
 	}
 	sentTo := b.net.Send(msg, sample, b.networkID, 0)
-	b.logger.Debug("frontier poll sent",
+	b.logger.Info("frontier poll sent",
 		log.Stringer("chainID", b.chainID),
+		log.Uint32("requestID", requestID),
 		log.Int("asked", sample.Len()),
 		log.Int("sentTo", sentTo.Len()))
 }
@@ -4461,15 +4714,41 @@ type ancestorRequester interface {
 // The handler wraps the engine and is built after it, so `handler` is late-bound
 // once both exist. Until then RequestAncestors is a harmless no-op: no block can
 // be missing before the engine has even started.
-type networkCatchup struct{ handler ancestorRequester }
+type networkCatchup struct {
+	handler ancestorRequester
+	log     log.Logger     // nil before late-binding and in tests — every use is guarded
+	nWired  gatomic.Uint64 // catch-up signals routed to the wire
+	nNoWire gatomic.Uint64 // catch-up signals that found no wire to route to
+}
 
 // RequestAncestors satisfies chain.Catchup. chainID/networkID are already fixed
 // per-handler (one handler per chain), so the wire needs only the missing block
 // and the peer that advertised its child.
 func (c *networkCatchup) RequestAncestors(_ ids.ID, _ ids.ID, missingBlockID ids.ID, from ids.NodeID) error {
-	if c.handler != nil {
-		c.handler.requestContext(context.Background(), from, missingBlockID)
+	if c.handler == nil {
+		// The engine holds a VERIFIED cert for a block it does not track and asked for the
+		// gap, and there is no wire to ask over. That is the stranded-follower bug with its
+		// fix present but unbound, and it is INVISIBLE: a node that never fetches looks
+		// exactly like a node that was never asked to. Warn, not trace.
+		if n, loud := catchupSample(&c.nNoWire); loud && c.log != nil {
+			c.log.Warn("catch-up requested but the wire is NOT bound — no GetAncestors will be sent",
+				log.Stringer("missingBlockID", missingBlockID),
+				log.Stringer("from", from),
+				log.Uint64("count", n))
+		}
+		return nil
 	}
+	// from is EMPTY when the engine holds a verified cert for an untracked block and
+	// leaves peer selection to the node layer (requestContext samples), and a real peer
+	// when a gossiped child named its missing parent. Which one it is decides which
+	// selection path runs, so it is on the line.
+	if n, loud := catchupSample(&c.nWired); loud && c.log != nil {
+		c.log.Info("catch-up requested for a block we do not track",
+			log.Stringer("missingBlockID", missingBlockID),
+			log.Stringer("from", from),
+			log.Uint64("count", n))
+	}
+	c.handler.requestContext(context.Background(), from, missingBlockID)
 	return nil
 }
 
