@@ -376,10 +376,29 @@ func (vm *VM) BuildBlock(ctx context.Context) (vmchain.Block, error) {
 	// builder on an unheld preference. Only surface the original error when last-accepted
 	// is itself the unfetchable id (nothing better to build on).
 	lastAcceptedID, laErr := vm.LastAccepted(ctx)
-	if laErr != nil || lastAcceptedID == vm.preferred {
+	if laErr != nil {
 		vm.logger.Error("unexpected build block failure",
-			log.String("reason", "failed to fetch preferred block; no distinct last-accepted fallback"),
+			log.String("reason", "failed to fetch preferred block, and LastAccepted() itself errored"),
 			log.Stringer("parentID", vm.preferred),
+			log.Err(err),
+			log.String("lastAcceptedErr", laErr.Error()),
+		)
+		return nil, err
+	}
+	if lastAcceptedID == vm.preferred {
+		// The fallback below can only help when the preference is some OTHER block —
+		// a pending tip consensus later dropped. Here the preference IS the committed
+		// tip and that is what is unfetchable, so there is nothing better to build on.
+		//
+		// This is not an exotic state: a node idling at its accepted tip has
+		// preferred == lastAccepted, so this is the COMMON shape, and the surrounding
+		// fallback does not cover it. Observed on hanzo-mainnet mv-4 twice inside 90
+		// minutes (2026-08-01); an operator restart cleared it each time, which means
+		// the block is on disk and only the live read path could not see it.
+		vm.logger.Error("unexpected build block failure",
+			log.String("reason", "preferred block IS last-accepted and is unfetchable — no distinct fallback exists"),
+			log.Stringer("parentID", vm.preferred),
+			log.Stringer("lastAccepted", lastAcceptedID),
 			log.Err(err),
 		)
 		return nil, err
