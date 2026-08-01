@@ -1719,7 +1719,13 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// engineVM is the connectable VM (the proposervm on a wrapped chain, the
 		// inner VM otherwise); it carries Connected/Disconnected, which the router
 		// dispatches so the P-chain uptime tracker observes validator connectivity.
-		bh := newBlockHandler(blockBuilder, engineVM, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, m.NodeID, expectsStakedBeacons)
+		//
+		// consensusParams.K > 1 is the SAME predicate that wired netCfg.VoteVerifier
+		// above, and the verifier is exactly what makes the engine authenticate a
+		// vote before tallying it. Passing it here tells the handler that an inbound
+		// unsigned Chits can never become a counted vote on this chain, so it must
+		// not be converted into one (nova_poll.go).
+		bh := newBlockHandler(blockBuilder, engineVM, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, m.NodeID, expectsStakedBeacons, consensusParams.K > 1)
 		// Gate this native chain's bootstrap frontier-TRUST on the P-chain having finished its
 		// initial sync, so the staked beacon set (and thus the stake-majority floor denominator)
 		// is the TRUE full validator set, not a partial mid-replay set. Wired ONLY for native
@@ -2884,10 +2890,24 @@ type blockHandler struct {
 	pollerCancel     context.CancelFunc        // Cancels runFrontierPoller when the handler stops (RED LOW: no goroutine leak on chain re-creation)
 	diag             catchupDiag               // Per-outcome counters that gate the catch-up diagnostics (see catchupSample)
 
-	// Qbit event buffering - when we receive a Qbit for a block we don't have yet,
-	// buffer the event and drain when the block arrives
-	pendingQbits  map[ids.ID][]QbitEvent // Map from blockID to buffered Qbit events
-	pendingQbitMu sync.Mutex             // Protects pendingQbits
+	// signedVotesRequired is true exactly when this chain's engine AUTHENTICATES
+	// every vote before tallying it — i.e. a VoteVerifier is wired, which the node
+	// does for exactly the chains with K>1. It is the Nova/Quasar boundary: on
+	// such a chain an unsigned Chits-derived value must never be handed to the
+	// engine as a Vote (see nova_poll.go). Deliberately NOT derived from the
+	// engine's Mode(), which also demands a cert gossiper and a stake source and
+	// therefore under-reports a degraded engine that drops those votes identically.
+	signedVotesRequired bool
+	// pollUnsignedCount is the volume gate for the unsigned-poll-response
+	// diagnostic (see catchupSample); it sits on a per-message path.
+	pollUnsignedCount gatomic.Uint64
+
+	// Poll-response buffering — when a peer's preference arrives for a block we do
+	// not hold yet, park it and drain when the block arrives. Only a K==1 chain
+	// ever parks anything: on a signed-vote chain the response stops at the
+	// Nova/Quasar boundary before it can be buffered.
+	pendingPollResponses map[ids.ID][]NovaPollResponse // blockID -> parked poll responses
+	pendingPollMu        sync.Mutex                    // Protects pendingPollResponses
 
 	// INITIAL SYNC (bootstrap). The handler is BOTH the fetch transport (BlockSource)
 	// and the execute sink (Chain) the engine/chain/bootstrap loop drives — see
@@ -3032,16 +3052,6 @@ type bsFrontierReply struct {
 	tip    ids.ID
 }
 
-// QbitEvent is the normalized internal representation of a received Qbit message.
-// This is pure data - no VM calls, no Verify, no Accept derivation.
-// Vote creation happens separately in applyQbit when the block is available.
-type QbitEvent struct {
-	From       ids.NodeID // The node that sent the Qbit
-	BlockID    ids.ID     // The block being signaled (preferredID)
-	RequestID  uint32     // Request ID for dedup and stale detection
-	ReceivedAt time.Time  // When the Qbit was received
-}
-
 // contextRequest tracks a pending context request (wire: GetAncestors)
 type contextRequest struct {
 	nodeID    ids.NodeID
@@ -3050,7 +3060,11 @@ type contextRequest struct {
 	timestamp time.Time
 }
 
-func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager, selfNodeID ids.NodeID, expectsStakedBeacons bool) *blockHandler {
+// newBlockHandler builds the per-chain inbound handler. signedVotesRequired is a
+// CONSTRUCTOR parameter, not a field set afterwards, because its zero value is
+// the permissive K==1 legacy path: a site that forgot to state it would silently
+// resurrect the unsigned-Chits-to-Vote braid on a quorum chain.
+func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager, selfNodeID ids.NodeID, expectsStakedBeacons bool, signedVotesRequired bool) *blockHandler {
 	return &blockHandler{
 		vm:                   vm,
 		connector:            connector,
@@ -3063,41 +3077,17 @@ func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, lo
 		beacons:              beacons,
 		selfNodeID:           selfNodeID,
 		expectsStakedBeacons: expectsStakedBeacons,
+		signedVotesRequired:  signedVotesRequired,
 		pendingContext:       make(map[ids.ID]contextRequest),
 		maxContextBlocks:     256, // Default max context blocks to request/serve
-		pendingQbits:         make(map[ids.ID][]QbitEvent),
+		pendingPollResponses: make(map[ids.ID][]NovaPollResponse),
 		connectedNodes:       set.NewSet[ids.NodeID](16),
 		bsAncestorCh:         make(map[uint32]chan [][]byte),
 	}
 }
 
-// bufferQbit stores a QbitEvent for later processing when the block isn't available yet
-func (b *blockHandler) bufferQbit(ev QbitEvent) {
-	b.pendingQbitMu.Lock()
-	defer b.pendingQbitMu.Unlock()
-
-	// Add to buffer, limiting max buffered Qbits per block to prevent memory growth
-	const maxQbitsPerBlock = 100
-	existing := b.pendingQbits[ev.BlockID]
-	if len(existing) >= maxQbitsPerBlock {
-		return // Don't buffer more
-	}
-
-	b.pendingQbits[ev.BlockID] = append(existing, ev)
-}
-
-// popBufferedQbits removes and returns all buffered QbitEvents for a given block
-func (b *blockHandler) popBufferedQbits(blockID ids.ID) []QbitEvent {
-	b.pendingQbitMu.Lock()
-	defer b.pendingQbitMu.Unlock()
-
-	evs := b.pendingQbits[blockID]
-	delete(b.pendingQbits, blockID)
-	return evs
-}
-
 // hasBlock returns true if the block is available (either in consensus pendingBlocks or VM storage).
-// This is critical for Qbit handling: when we receive votes for a block we've built or received,
+// This is critical for poll-response handling: when a peer names a block we've built or received,
 // the block may only be in pendingBlocks (not yet verified/stored in VM).
 func (b *blockHandler) hasBlock(ctx context.Context, blockID ids.ID) bool {
 	// First check if the block is in consensus pending (built or received but not yet finalized).
@@ -3112,127 +3102,6 @@ func (b *blockHandler) hasBlock(ctx context.Context, blockID ids.ID) bool {
 	}
 	_, err := b.vm.GetBlock(ctx, blockID)
 	return err == nil
-}
-
-// enqueueQbit immediately processes a QbitEvent when the block is available
-func (b *blockHandler) enqueueQbit(ctx context.Context, ev QbitEvent) {
-	b.applyQbit(ctx, ev)
-}
-
-// applyQbit derives a Vote from a QbitEvent and sends it to the consensus engine.
-// This is the ONLY place where Vote creation happens.
-func (b *blockHandler) applyQbit(ctx context.Context, ev QbitEvent) {
-	if b.engine == nil || b.vm == nil {
-		b.logger.Warn("engine or vm is nil",
-			log.Stringer("from", ev.From),
-			log.Stringer("blockID", ev.BlockID))
-		return
-	}
-
-	// Skip stale Qbits (older than 30 seconds)
-	if time.Since(ev.ReceivedAt) > 30*time.Second {
-		b.logger.Debug("skipping stale Qbit",
-			log.Stringer("from", ev.From),
-			log.Stringer("blockID", ev.BlockID),
-			log.Duration("age", time.Since(ev.ReceivedAt)))
-		return
-	}
-
-	// First check if the block is in consensus pending (recently proposed but not yet finalized).
-	var blk chain.Block
-	var err error
-
-	if pendingBlk, ok := b.engine.GetPendingBlock(ev.BlockID); ok {
-		blk = pendingBlk
-		b.logger.Debug("found block in consensus pending",
-			log.Stringer("from", ev.From),
-			log.Stringer("blockID", ev.BlockID))
-	} else {
-		// Fall back to VM storage for already-verified blocks
-		blk, err = b.vm.GetBlock(ctx, ev.BlockID)
-		if err != nil {
-			b.logger.Warn("block not found in pending or VM",
-				log.Stringer("from", ev.From),
-				log.Stringer("blockID", ev.BlockID),
-				log.Err(err))
-			return
-		}
-		b.logger.Debug("found block in VM storage",
-			log.Stringer("from", ev.From),
-			log.Stringer("blockID", ev.BlockID))
-	}
-
-	// Derive Accept from verification. The error is otherwise DISCARDED, so a
-	// systematic re-verify failure (already-verified, missing parent, state
-	// conflict) is indistinguishable from an honest reject.
-	verifyErr := blk.Verify(ctx)
-	accept := (verifyErr == nil)
-	if verifyErr != nil {
-		b.logger.Warn("vote is NEGATIVE — local re-verify failed",
-			log.Stringer("blockID", ev.BlockID),
-			log.Stringer("from", ev.From),
-			log.Err(verifyErr))
-	}
-
-	// Create Vote from QbitEvent + local verification
-	vote := consensuschain.Vote{
-		BlockID:  ev.BlockID,
-		NodeID:   ev.From,
-		Accept:   accept,
-		SignedAt: ev.ReceivedAt,
-	}
-	// An UNSIGNED vote cannot be counted on a multi-validator chain. The engine
-	// authenticates every vote before tallying it —
-	//
-	//   if len(vote.Signature) == 0 || !voteVerifier.VerifyVote(...) { return }
-	//
-	// and Vote.Signature's contract is explicit: "MUST be present and valid for
-	// multi-validator finality". The verifier is wired exactly when K>1, which is
-	// what ModeQuorumFinality reports. So on such a chain this vote is dropped
-	// BEFORE pending.VoteCount++ and alpha is unreachable by construction: the
-	// block can never accept, however many chits arrive.
-	//
-	// This node cannot fix that here — it cannot sign on ev.From's behalf. The
-	// signed path is BroadcastVote/HandleIncomingVote; deriving a Vote from an
-	// unsigned p2p Chits message is the wrong bridge for K>1. Say so loudly
-	// rather than letting the drop stay silent: it presents as a chain that polls
-	// 4-of-4 forever and never advances, with every node-side counter healthy.
-	if len(vote.Signature) == 0 && b.engine.Mode() == consensuschain.ModeQuorumFinality {
-		b.logger.Warn("vote is UNSIGNED and cannot be counted — engine will drop it before the tally",
-			log.Stringer("blockID", ev.BlockID),
-			log.Stringer("from", ev.From),
-			log.Bool("accept", accept))
-	}
-	queued := b.engine.ReceiveVote(vote)
-
-	// accept and queued are the two booleans that decide whether a poll can ever
-	// conclude, and both were Debug — unreachable on this build. accept=false is a
-	// NEGATIVE vote synthesised from a local re-Verify, so a block every node
-	// already verified once can still be voted down; queued=false means the vote
-	// never reached the engine at all. A chain that polls 4-of-4 and never accepts
-	// looks identical in either case until these are visible.
-	b.logger.Info("sent Vote to consensus engine",
-		log.Stringer("from", ev.From),
-		log.Stringer("blockID", ev.BlockID),
-		log.Bool("accept", accept),
-		log.Bool("queued", queued))
-}
-
-// onBlockArrived is called when a block becomes available locally.
-// It drains all buffered QbitEvents for that block and applies them.
-func (b *blockHandler) onBlockArrived(ctx context.Context, blockID ids.ID) {
-	evs := b.popBufferedQbits(blockID)
-	if len(evs) == 0 {
-		return
-	}
-
-	b.logger.Info("draining buffered Qbits for arrived block",
-		log.Stringer("blockID", blockID),
-		log.Int("count", len(evs)))
-
-	for _, ev := range evs {
-		b.enqueueQbit(ctx, ev)
-	}
 }
 
 // isMissingContextError returns true if the error indicates missing prerequisite blocks
@@ -4501,9 +4370,14 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 			return b.PullQuery(ctx, msg.NodeID, msg.RequestID, time.Now().Add(10*time.Second), containerID)
 		}
 	case handler.Vote:
-		// Vote contains a preference signal for a block (preferredID)
-		// Note: msg.Message already contains the extracted PreferredId from the Qbit protobuf
-		// (extracted by chain_router.go via GetContainerBytes which returns m.GetPreferredId())
+		// Wire op "Vote" is a MISNOMER carried over from the router: the message is
+		// an UNSIGNED Chits, i.e. a peer's PREFERENCE. It becomes a NovaPollResponse
+		// — a type with no Signature and no Accept field — and can no longer be
+		// widened into a consensuschain.Vote. See nova_poll.go.
+		//
+		// msg.Message already holds the extracted PreferredId (chain_router.go ->
+		// GetContainerBytes returns m.GetPreferredId()); AcceptedId/AcceptedHeight
+		// are discarded there and never reach this handler.
 		b.logger.Info("received Chits message",
 			log.Stringer("from", msg.NodeID),
 			log.Uint32("requestID", msg.RequestID),
@@ -4516,30 +4390,12 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 				log.Stringer("from", msg.NodeID),
 				log.Stringer("preferredID", preferredID))
 
-			// Create QbitEvent - pure data, no VM calls here
-			ev := QbitEvent{
-				From:       msg.NodeID,
-				BlockID:    preferredID,
-				RequestID:  msg.RequestID,
-				ReceivedAt: time.Now(),
-			}
-
-			// If block is missing, buffer the event and return
-			if !b.hasBlock(ctx, preferredID) {
-				b.bufferQbit(ev)
-				b.logger.Info("buffered Qbit - block not in pending or VM",
-					log.Stringer("from", ev.From),
-					log.Stringer("blockID", ev.BlockID))
-				return nil
-			}
-
-			b.logger.Debug("block found - enqueuing for processing",
-				log.Stringer("from", ev.From),
-				log.Stringer("blockID", ev.BlockID))
-
-			// Block is available - enqueue for processing
-			// Vote creation happens in applyQbit, not here
-			b.enqueueQbit(ctx, ev)
+			b.receivePollResponse(ctx, NovaPollResponse{
+				From:        msg.NodeID,
+				PreferredID: preferredID,
+				RequestID:   msg.RequestID,
+				ReceivedAt:  time.Now(),
+			})
 		} else {
 			b.logger.Warn("message too short for preferredID",
 				log.Stringer("from", msg.NodeID),
@@ -4911,43 +4767,7 @@ func (g *networkGossiper) SendPushQuery(chainID ids.ID, networkID ids.ID, blockD
 	return g.net.Send(pushMsg, validatorSet, chainID, 0).Len()
 }
 
-// SendQbit sends a preference response (Qbit) back to the node that requested our preference.
-// This is called after verifying a block received via PullQuery.
-func (g *networkGossiper) SendQbit(toNodeID ids.NodeID, chainID ids.ID, requestID uint32, preferredID ids.ID) error {
-	if g.net == nil || g.msgCreator == nil {
-		return nil
-	}
-
-	// Create Qbit message (wire: p2p.Chits) with the preferred block ID
-	// Uses preferredID as both preferred and accepted (block is verified)
-	qbitMsg, err := g.msgCreator.Chits(chainID, requestID, preferredID, preferredID, preferredID, 0)
-	if err != nil {
-		return err
-	}
-
-	// Send to the specific node
-	nodeSet := set.Of(toNodeID)
-	g.net.Send(qbitMsg, nodeSet, g.networkID, 0)
-	return nil
-}
-
-// SendVote sends a vote response back to the proposer node after fast-follow acceptance.
-// This is required by the consensuschain.Gossiper interface.
-func (g *networkGossiper) SendVote(chainID ids.ID, toNodeID ids.NodeID, blockID ids.ID) error {
-	if g.net == nil || g.msgCreator == nil {
-		return nil
-	}
-
-	// Create a Chits message to send the vote
-	// Use blockID as all three IDs (preferred, accepted, last accepted)
-	// since this is a positive vote confirming we've accepted the block
-	voteMsg, err := g.msgCreator.Chits(chainID, 0, blockID, blockID, blockID, 0)
-	if err != nil {
-		return err
-	}
-
-	// Send to the proposer node
-	nodeSet := set.Of(toNodeID)
-	g.net.Send(voteMsg, nodeSet, g.networkID, 0)
-	return nil
-}
+// The outbound poll-response transport (SendPollResponse, and the SendVote
+// misnomer the consensuschain.Gossiper interface still demands) lives with the
+// rest of the Nova poll path in nova_poll.go. SendQbit was a byte-identical
+// duplicate of it with zero callers and is gone — one implementation, one name.

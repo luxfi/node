@@ -66,6 +66,7 @@ func TestBlockHandlerConnectedWithVersionDeliversRealVersion(t *testing.T) {
 		nil,          // beacons
 		ids.NodeID{}, // selfNodeID
 		false,        // expectsStakedBeacons
+		true,         // signedVotesRequired
 	)
 
 	nodeID := ids.GenerateTestNodeID()
@@ -90,7 +91,7 @@ func TestBlockHandlerConnectedDedupsButStillCarriesVersion(t *testing.T) {
 	require := require.New(t)
 
 	rc := &recordingConnector{}
-	bh := newBlockHandler(nil, rc, log.Noop(), nil, nil, nil, ids.Empty, ids.Empty, nil, ids.NodeID{}, false)
+	bh := newBlockHandler(nil, rc, log.Noop(), nil, nil, nil, ids.Empty, ids.Empty, nil, ids.NodeID{}, false, true)
 
 	nodeID := ids.GenerateTestNodeID()
 	peerVersion := &version.Application{Name: "lux", Major: 1, Minor: 36, Patch: 27}
