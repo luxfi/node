@@ -26,7 +26,7 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.36.16
+	github.com/luxfi/consensus v1.36.18
 	github.com/luxfi/crypto v1.20.3
 	github.com/luxfi/database v1.21.1
 	github.com/luxfi/ids v1.3.2
@@ -191,7 +191,6 @@ require (
 	github.com/hanzos3/go-sdk v1.0.2 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.6.0 // indirect
-	github.com/luxfi/bft v0.1.5 // indirect
 	github.com/luxfi/corona v0.10.4 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
