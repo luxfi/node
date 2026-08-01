@@ -32,7 +32,6 @@ import (
 	"context"
 	"time"
 
-	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -75,24 +74,6 @@ const (
 	pollResponseTTL = 30 * time.Second
 )
 
-// unsignedVoteForSoleValidatorChain is the ONLY conversion from a poll response
-// to a consensuschain.Vote left in the tree, and it is legal on exactly one kind
-// of chain: K==1, where NO VoteVerifier is wired, the engine's authentication
-// branch is skipped entirely, and an unsigned preference IS the Nova signal.
-//
-// Calling it on a K>1 chain produces a value the engine drops before counting
-// anything, which is why receivePollResponse returns before reaching it whenever
-// signedVotesRequired is set. Quasar votes are produced by exactly one path —
-// the engine's own signer, broadcast through networkGossiper.BroadcastVote — and
-// never here: this node cannot sign on the sending peer's behalf.
-func (r NovaPollResponse) unsignedVoteForSoleValidatorChain(accept bool) consensuschain.Vote {
-	return consensuschain.Vote{
-		BlockID:  r.PreferredID,
-		NodeID:   r.From,
-		Accept:   accept,
-		SignedAt: r.ReceivedAt,
-	}
-}
 
 // receivePollResponse is the SINGLE ingestion point for an inbound Chits, and
 // the single site where the Nova/Quasar split is decided.
@@ -109,22 +90,24 @@ func (b *blockHandler) receivePollResponse(ctx context.Context, resp NovaPollRes
 	// additionally requires a cert gossiper and a stake source: a degraded engine
 	// drops these responses identically while reporting ModeUnknown, and the old
 	// warning keyed on Mode() went silent in exactly that case.
-	if b.signedVotesRequired {
-		// Sampled (first few, then every 500th — the volume gate the catch-up
-		// diagnostics use) because this sits on a per-message path: an
-		// unconditional line here buries its own signal under poll traffic.
-		if n, loud := catchupSample(&b.pollUnsignedCount); loud {
-			b.logger.Warn("poll response is UNSIGNED — Nova preference only; it can never reach the alpha tally (finality rides the signed BroadcastVote path)",
-				log.Stringer("from", resp.From),
-				log.Stringer("preferredID", resp.PreferredID),
-				log.Uint64("count", n))
-		}
-		return
-	}
+	// ONE PATH. Every inbound Chits is handled the same way regardless of K,
+	// because the property that makes it countable does not depend on K: the
+	// sender's identity came from the authenticated transport (msg.NodeID), not
+	// from anything the sender serialized.
+	//
+	// This used to return here on any chain requiring signed votes, because a
+	// Chits carries no signature and the engine's only entry point read origin
+	// out of the payload. That was correct given those two facts, and it is also
+	// exactly why testnet stopped at 16820 and devnet at 7323: no inbound
+	// preference could ever reach the tally, so alpha was unreachable BY
+	// CONSTRUCTION while every node logged the drop once per peer per poll.
+	//
+	// The engine now takes origin as a PARAMETER (ReceiveAuthenticatedVote), so
+	// the preference counts toward NOVA only. Quasar is untouched: certs are
+	// still assembled solely from signed votes on the BroadcastVote path, since
+	// a cert must convince nodes that never saw this connection.
 
-	// K==1 (sole validator, no verifier): the unsigned preference is the Nova
-	// signal, so the legacy path below is preserved exactly. Buffer until the
-	// block is local, then apply.
+	// Buffer until the block is local, then apply.
 	if !b.hasBlock(ctx, resp.PreferredID) {
 		b.bufferPollResponse(resp)
 		b.logger.Info("buffered poll response — block not in pending or VM",
@@ -230,13 +213,15 @@ func (b *blockHandler) applyPollResponse(ctx context.Context, resp NovaPollRespo
 			log.Err(verifyErr))
 	}
 
-	queued := b.engine.ReceiveVote(resp.unsignedVoteForSoleValidatorChain(accept))
+	// Origin is a PARAMETER, taken from the authenticated inbound message — never
+	// from a field the peer could have set to any value.
+	queued := b.engine.ReceiveAuthenticatedVote(resp.From, resp.PreferredID, accept)
 
 	// accept and queued are the two booleans that decide whether a poll can ever
 	// conclude. accept=false is a NEGATIVE vote synthesised from a local
 	// re-Verify, so a block every node already verified once can still be voted
 	// down; queued=false means the vote never reached the engine at all.
-	b.logger.Info("sent sole-validator Nova vote to consensus engine",
+	b.logger.Info("sent authenticated Nova vote to consensus engine",
 		log.Stringer("from", resp.From),
 		log.Stringer("preferredID", resp.PreferredID),
 		log.Bool("accept", accept),

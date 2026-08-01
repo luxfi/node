@@ -147,14 +147,27 @@ func newPollFixture(t *testing.T, signedVotes bool) (*consensuschain.Runtime, *b
 	return rt, bh, blk
 }
 
-// TestPollResponseNeverReachesTheEngineOnAQuorumChain is the regression guard for
-// the live incident.
+// TestPollResponseReachesTheEngineOnAQuorumChain is the regression guard for the
+// halt this file used to CAUSE.
 //
-// fails-before: restore the old applyQbit body (build a signature-less
-// consensuschain.Vote from the Chits and call engine.ReceiveVote on it) and the
-// counter moves to 1 — the node hands the engine a vote it will drop, which is
-// precisely how a chain polls K-of-K forever and never accepts.
-func TestPollResponseNeverReachesTheEngineOnAQuorumChain(t *testing.T) {
+// Its predecessor asserted the opposite — that a poll response must never reach
+// the engine on a quorum chain — and that was right for as long as the engine's
+// only entry read the voter out of the payload: a Chits carries no signature, so
+// handing one over meant handing over a vote the engine would drop.
+//
+// But dropping it is how alpha becomes unreachable BY CONSTRUCTION. Testnet stopped
+// at 16820 and devnet at 7323 in exactly that state, each node logging the refusal
+// once per peer per poll while every other counter read healthy.
+//
+// The engine now takes origin as a PARAMETER (ReceiveAuthenticatedVote), which is
+// the property that makes counting it sound: msg.NodeID comes from the
+// authenticated transport, not from bytes the sender chose. So the response must
+// now reach the engine.
+//
+// fails-before: restore the `if b.signedVotesRequired { return }` boundary in
+// receivePollResponse and the counter never moves — the chain polls K-of-K forever
+// and never accepts.
+func TestPollResponseReachesTheEngineOnAQuorumChain(t *testing.T) {
 	rt, bh, blk := newPollFixture(t, true /* signedVotesRequired */)
 	ctx := context.Background()
 	peer := ids.GenerateTestNodeID()
@@ -168,39 +181,11 @@ func TestPollResponseNeverReachesTheEngineOnAQuorumChain(t *testing.T) {
 		ReceivedAt:  time.Now(),
 	})
 
-	// Give the engine's vote goroutine every chance to record a delivery.
-	time.Sleep(250 * time.Millisecond)
-	if got := votesReceived(t, rt); got != before {
-		t.Fatalf("an UNSIGNED poll response reached the engine: votes_received %d -> %d. "+
-			"A Chits carries no signature; the engine drops it at the authentication gate, so handing "+
-			"it over is how alpha becomes unreachable while every counter reads healthy", before, got)
-	}
-
-	// Nothing may be parked either: buffering exists only to re-deliver later, and
-	// on this chain there is nothing to re-deliver to.
-	bh.pendingPollMu.Lock()
-	parked := len(bh.pendingPollResponses)
-	bh.pendingPollMu.Unlock()
-	if parked != 0 {
-		t.Fatalf("poll responses were buffered on a quorum chain (%d blocks parked) — the drain can only "+
-			"lead back to the same boundary", parked)
-	}
-
-	// POSITIVE CONTROL: the observable is live. A value delivered through the
-	// engine's own vote entry point DOES move the counter, so the assertion above
-	// is measuring delivery, not a dead counter.
-	if !rt.ReceiveVote(consensuschain.Vote{
-		BlockID:  blk.ID(),
-		NodeID:   peer,
-		Accept:   true,
-		SignedAt: time.Now(),
-	}) {
-		t.Fatal("positive control failed: engine.ReceiveVote refused to queue — the counter could not " +
-			"have moved for any input, so the assertion above proves nothing")
-	}
 	if got := waitVotesReceived(t, rt, before+1); got != before+1 {
-		t.Fatalf("positive control failed: votes_received stayed at %d after a direct ReceiveVote — "+
-			"the observable is dead", got)
+		t.Fatalf("THE HALT: an authenticated poll response did NOT reach the engine "+
+			"(votes_received %d -> %d). A Chits carries no signature, so if the node refuses to "+
+			"deliver it the alpha tally can never move no matter how many honest peers agree — "+
+			"which is what testnet 16820 and devnet 7323 were doing.", before, got)
 	}
 }
 
