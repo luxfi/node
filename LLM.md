@@ -10,7 +10,7 @@ Lux blockchain node implementation - a high-performance, multi-chain blockchain 
 - Original Lux Network node — NOT a fork
 - Latest Tag: v1.26.31
 - Network ID: 96369 (Lux Mainnet), 96368 (Testnet), 96370 (Devnet)
-- Go Version: 1.26.1+
+- Go Version: go.mod floor `1.26.4`; builder images pin `1.26.5` (see [Go toolchain policy](#go-toolchain-policy))
 - Database: ZapDB (primary, default)
 
 ## Post-E2E-PQ State (current)
@@ -533,6 +533,31 @@ build yields BOTH artifacts: the node image (`ghcr.io/luxfi/node:vX.Y.Z`, luxd
 + 12 baked VM plugins) and, via [`scripts/publish_plugin_set.sh`](./scripts/publish_plugin_set.sh),
 the plugin set to `s3://lux-plugins-<env>/<pluginset>/` (operator `pluginSource`).
 The `.github/workflows/*` build/release workflows are retired (RELEASE.md §Retire).
+
+### Go toolchain policy
+Two rules, both required, for every Dockerfile stage that compiles Go:
+
+1. **Pin the base to the latest stable patch** (currently `1.26.5`) — never
+   below the go.mod `go` directive.
+2. **Set `ENV GOTOOLCHAIN=auto`** in that stage.
+
+The official `golang` images ship `GOTOOLCHAIN=local`, which turns "base older
+than the governing `go` directive" into a hard failure —
+`go: go.mod requires go >= X (running go Y; GOTOOLCHAIN=local)` — rather than
+fetching the needed toolchain. Rule 2 is what stops that class recurring; rule 1
+is what keeps current compiler/stdlib security fixes in the image. A dependency
+can floor above this module, so rule 2 applies even where the base tracks
+go.mod exactly (`vms/example/xsvm`, fed by `go list -m -f {{.GoVersion}}`).
+
+**The `go` directive stays at 1.26.4 — do not raise it casually.** node is a
+dependency hub for much of the luxfi fleet plus external OSS consumers; raising
+it pushes a hard patch-level floor onto all of them, and any consumer on
+`GOTOOLCHAIN=local` then fails exactly as above. Building an older directive
+with a newer toolchain is always valid, so pinning the image already gets the
+newer compiler. Raise it only for a genuinely required language/stdlib feature.
+
+`Dockerfile.bootnode` and `docker/Dockerfile.prebuilt` are exempt: they copy
+prebuilt binaries and compile no Go.
 
 ### Building (local dev only)
 ```bash
