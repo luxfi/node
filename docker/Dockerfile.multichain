@@ -1,5 +1,10 @@
 # Multi-chain node builder
-FROM golang:1.26.3-alpine AS builder
+FROM golang:1.26.5-alpine AS builder
+
+# The golang images set GOTOOLCHAIN=local, which turns a go.mod `go` directive
+# newer than this base into a hard build failure. `auto` lets go fetch the
+# required toolchain (checksum-verified via sum.golang.org) instead.
+ENV GOTOOLCHAIN=auto
 
 ARG CHAIN_TYPE=platform
 

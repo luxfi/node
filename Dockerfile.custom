@@ -1,5 +1,9 @@
 # Custom build with local EVM plugin
-ARG GO_VERSION=1.26
+# Must be a full patch version: the go-installer stage below fetches
+# go${GO_VERSION}.linux-<arch>.tar.gz, and go.dev publishes no such tarball for
+# a bare "1.26" (only 1.26.0, 1.26.1, ...), so a minor-only value 404s.
+# Must also be >= the `go` directive in go.mod (1.26.4).
+ARG GO_VERSION=1.26.5
 
 # ============= Go Installation Stage ================
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS go-installer
@@ -21,6 +25,11 @@ FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS builder
 
 COPY --from=go-installer /usr/local/go /usr/local/go
 ENV PATH="/usr/local/go/bin:${PATH}"
+
+# A go.mod `go` directive newer than the toolchain above is a hard failure
+# under GOTOOLCHAIN=local. `auto` lets go fetch the required toolchain
+# (checksum-verified via sum.golang.org) instead of dying at the floor.
+ENV GOTOOLCHAIN=auto
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libc6-dev make git ca-certificates \

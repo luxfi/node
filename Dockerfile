@@ -1,8 +1,10 @@
 # The version is supplied as a build argument rather than hard-coded
 # to minimize the cost of version changes. Must be >= the `go` directive
 # in go.mod (1.26.4); the EVM plugin pulls luxfi/upgrade@v1.0.1 which
-# floors the toolchain at 1.26.4.
-ARG GO_VERSION=1.26.4
+# floors the toolchain at 1.26.4. Pinned to the latest stable patch so the
+# image ships current compiler/stdlib security fixes; the builder stage also
+# sets GOTOOLCHAIN=auto so a future floor bump downloads rather than fails.
+ARG GO_VERSION=1.26.5
 
 # ============= Go Installation Stage ================
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS go-installer
@@ -27,6 +29,11 @@ FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS builder
 # Copy Go from installer stage
 COPY --from=go-installer /usr/local/go /usr/local/go
 ENV PATH="/usr/local/go/bin:${PATH}"
+
+# A go.mod `go` directive newer than the toolchain above is a hard failure
+# under GOTOOLCHAIN=local. `auto` lets go fetch the required toolchain
+# (checksum-verified via sum.golang.org) instead of dying at the floor.
+ENV GOTOOLCHAIN=auto
 
 # Install build dependencies (ca-certificates needed for go mod download)
 # libc6-dev-arm64-cross needed for cross-compiling to ARM64
