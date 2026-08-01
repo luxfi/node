@@ -4,13 +4,18 @@
 # the same luxfi/geth + luxfi/crypto + luxfi/go-bip{32,39} versions as
 # the rest of the stack.
 
-ARG GO_VERSION=1.26.3
+ARG GO_VERSION=1.26.5
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-bookworm AS build
 
 # luxfi tags get rewritten; bypass the proxy sum DB for those modules.
 ENV GONOSUMCHECK=github.com/luxfi/*
 ENV GOSUMDB=off
+
+# The golang images set GOTOOLCHAIN=local, which turns a go.mod `go` directive
+# newer than this base into a hard build failure. `auto` lets go fetch the
+# required toolchain (checksum-verified via sum.golang.org) instead.
+ENV GOTOOLCHAIN=auto
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates tzdata \

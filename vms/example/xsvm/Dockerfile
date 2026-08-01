@@ -8,6 +8,14 @@ ARG LUXD_NODE_IMAGE="invalid-image" # This value is not intended to be used but 
 # ============= Compilation Stage ================
 FROM golang:$GO_VERSION-bookworm AS builder
 
+# GO_VERSION tracks the main module's `go` directive (build_xsvm_image.sh reads
+# it from `go list -m -f {{.GoVersion}}`), so this base can never be below the
+# main module's floor -- but a *dependency* can require a newer toolchain than
+# the main module does. The golang images set GOTOOLCHAIN=local, which turns
+# that into a hard build failure; `auto` fetches the required toolchain
+# (checksum-verified via sum.golang.org) instead.
+ENV GOTOOLCHAIN=auto
+
 WORKDIR /build
 
 # Copy and download lux dependencies using go mod
