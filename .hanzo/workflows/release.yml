@@ -102,6 +102,17 @@ jobs:
           push: false
           provenance: false
           tags: ${{ steps.meta.outputs.tags }}
+          # Provenance in the image itself, because the TAG has already lied. The
+          # image published as v1.36.47 stamps a commit whose tree does not contain
+          # a string the shipped binary carries, so "which tag is it" and "which code
+          # is in it" are separate questions and only the first was answerable without
+          # pulling the image. These make the second answerable from the registry
+          # alone — `docker buildx imagetools inspect` names the commit and ref the
+          # artifact was actually built from.
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
+            org.opencontainers.image.source=https://github.com/luxfi/node
 
       - name: Smoke — luxd runs, and its plugins agree with it on luxfi/vm
         # Two things this image has actually shipped broken, both invisible to a
