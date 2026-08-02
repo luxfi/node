@@ -405,8 +405,6 @@ func (e *proposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 	// Calculate split of reward between delegator/delegatee
 	delegateeReward, delegatorReward := reward.Split(delegator.PotentialReward, vdrTx.Shares())
 
-	utxosOffset := 0
-
 	// Reward the delegator here
 	reward := delegatorReward
 	if reward > 0 {
@@ -430,8 +428,6 @@ func (e *proposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 
 		e.onCommitState.AddUTXO(utxo)
 		e.onCommitState.AddRewardUTXO(txID, utxo)
-
-		utxosOffset++
 	}
 
 	if delegateeReward == 0 {
