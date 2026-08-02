@@ -1250,8 +1250,25 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		consensusParams := m.ConsensusOverrides.ApplyTo(
 			selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID))
 		if m.SybilProtectionEnabled {
-			if err := consensusParams.ValidateForValueNetwork(m.NetworkID); err != nil {
-				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params: %w", chainParams.ID, err)
+			// LIVE-AWARE, not static. ValidateForValueNetwork applies the STATIC tier
+			// floor (mainnet K>=11) — a decentralisation TARGET for a mature set. A
+			// running 5-validator mainnet cannot satisfy it, and refusing to start
+			// does not add validators: it freezes the fleet on whatever code it last
+			// booted. Mainnet 96369 (K=5/alpha=4) was stranded on v1.36.2 by exactly
+			// this, missing every later consensus fix — strictly worse than running a
+			// small set on current code.
+			//
+			// ValidateForLiveValueNetwork exists for precisely this and is NOT a
+			// bypass: it still rejects f=0 committees (ErrKTooLowForValue) and an
+			// operator under-sampling the live set (ErrKBelowLiveFloor, effective
+			// floor = min(tier, liveN)). The BFT overlap bound in Valid() applies
+			// either way — K=5/alpha=4 satisfies it (2*4-5 = 3 >= f+1 = 2).
+			// Native/primary chains register their validators under
+			// constants.PrimaryNetworkID (ids.Empty), not their own chain ID — the
+			// same resolution the proposervm windower does a few lines below.
+			liveN := m.Validators.Count(constants.PrimaryNetworkID)
+			if err := consensusParams.ValidateForLiveValueNetwork(m.NetworkID, liveN); err != nil {
+				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params (liveValidators=%d): %w", chainParams.ID, liveN, err)
 			}
 		}
 		// v1.36 "Nova": the round-scoped VIEW-CHANGE (prevote/POL/lock) was DELETED from the
