@@ -947,7 +947,39 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 	}
 	proLastAccepted, err := vm.getPostForkBlock(ctx, proLastAcceptedID)
 	if err != nil {
-		return fmt.Errorf("failed to get last accepted block: %w", err)
+		// THE ANCHOR POINTER EXISTS BUT ITS BLOCK DOES NOT.
+		//
+		// This was the last hard-fail left in this function, and it is the same
+		// class of damage every other branch here already absorbs: outer state
+		// that disagrees with what is actually on disk. A snapshot-clone or a
+		// truncated copy can carry the last-accepted KEY while the envelope it
+		// names is missing, and returning an error here fails VM init, which the
+		// node reports as "error creating required chain" and exits 1 — every
+		// restart fatal, on a chain that is otherwise intact.
+		//
+		// Killing the node is strictly worse than starting degraded: a node that
+		// cannot name its outer tip is exactly what enterOuterBackfill exists to
+		// handle, and it gates BuildBlock off so this node never proposes while
+		// the index is rebuilt from certified peer state. So fail INTO repair,
+		// not out of it — the same choice the missing-anchor branch above makes.
+		innerHeight := innerLastAccepted.Height()
+		from := uint64(1)
+		if fh, fhErr := vm.State.GetForkHeight(); fhErr == nil && fh > 0 {
+			from = fh
+		}
+		vm.logger.Warn("proposervm RECOVERY REQUIRED — the outer last-accepted POINTER exists but its "+
+			"block is not retrievable (dangling anchor); starting in backfill instead of failing init",
+			log.Stringer("proLastAcceptedID", proLastAcceptedID),
+			log.Uint64("innerHeight", innerHeight),
+			log.Uint64("firstMissingHeight", from),
+			log.Err(err),
+			log.String("cause", "outer index references an envelope absent on disk — e.g. a snapshot clone "+
+				"or a truncated copy that kept the pointer but not the block"),
+			log.String("effect", "this node will NOT build blocks until the outer index is rebuilt; it no "+
+				"longer kills chain init, which made every restart fatal"),
+		)
+		vm.enterOuterBackfill(from, innerHeight, innerLastAcceptedID)
+		return nil
 	}
 
 	proLastAcceptedHeight := proLastAccepted.Height()
