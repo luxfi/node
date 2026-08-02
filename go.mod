@@ -145,7 +145,7 @@ require (
 	github.com/luxfi/utils v1.3.1
 	github.com/luxfi/utxo v0.5.8
 	github.com/luxfi/validators v1.3.1
-	github.com/luxfi/vm v1.3.3
+	github.com/luxfi/vm v1.3.5
 	github.com/luxfi/warp v1.24.1
 	github.com/luxfi/zap v1.2.6
 	github.com/luxfi/zwing v0.6.1
