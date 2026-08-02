@@ -1270,6 +1270,19 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			if err := consensusParams.ValidateForLiveValueNetwork(m.NetworkID, liveN); err != nil {
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params (liveValidators=%d): %w", chainParams.ID, liveN, err)
 			}
+			// SAFE BUT SMALL. The decentralisation target is REPORTED, never
+			// enforced — a set that satisfies the BFT overlap bound must run, but an
+			// operator should still see that it is one fault away from the tier the
+			// network is meant to have. Silent acceptance is how a 5-validator
+			// mainnet stops being a temporary state.
+			if err := consensusParams.MeetsDecentralizationTarget(m.NetworkID); err != nil {
+				m.Log.Warn("consensus params are Byzantine-SAFE but below the network decentralisation target — grow the validator set",
+					log.Stringer("chainID", chainParams.ID),
+					log.Int("K", consensusParams.K),
+					log.Int("liveValidators", liveN),
+					log.Err(err),
+				)
+			}
 		}
 		// v1.36 "Nova": the round-scoped VIEW-CHANGE (prevote/POL/lock) was DELETED from the
 		// consensus engine (174af3c31). Nova metastable sampling is the sole decider and the ⅔
