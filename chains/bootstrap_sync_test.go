@@ -1277,6 +1277,50 @@ func TestDeliverBootstrap_GatedByActive(t *testing.T) {
 	require.Equal(t, [][]byte{[]byte("blk")}, <-ach)
 }
 
+// TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath is the behind-follower
+// convergence proof.
+//
+// bsActive means "initial sync is running", NOT "initial sync owns every Ancestors
+// reply on this chain". The live cert catch-up path issues its OWN requests
+// concurrently — that is how a node that is merely behind fetches the blocks a
+// vote or cert referenced. While this hook claimed every reply unconditionally,
+// those live replies were swallowed by the bootstrap lane and the live path never
+// saw them, so a behind node fetched the right blocks forever and never applied
+// one. Devnet luxd-0 sat at 12639 while its peers ran 16933, logging
+// "catch-up response consumed by initial sync — the live cert path did not see it"
+// against 1000-block, 430KB replies it had successfully fetched.
+//
+// A reply is the bootstrap lane's only if the bootstrap lane ASKED for it.
+func TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath(t *testing.T) {
+	bh := &blockHandler{bsAncestorCh: make(map[uint32]chan [][]byte)}
+	bh.bsActive.Store(true)
+
+	entry := encodeCatchupEntry([]byte("blk"), nil)
+	var lp [4]byte
+	binary.BigEndian.PutUint32(lp[:], uint32(len(entry)))
+	data := append(lp[:], entry...)
+
+	// No waiter registered for this requestID: nothing in the bootstrap lane wants
+	// this reply, so it must NOT be claimed — the live path is its only consumer.
+	require.False(t, bh.deliverBootstrapAncestors(99, data),
+		"an Ancestors reply the bootstrap lane never requested must fall through to the live cert path")
+
+	// A registered-but-unread waiter must not swallow it either. The send is
+	// non-blocking, so claiming the reply here drops the payload AND denies it to
+	// the live path — the blocks are lost twice.
+	full := make(chan [][]byte) // unbuffered, nobody receiving
+	bh.bsAncestorCh[42] = full
+	require.False(t, bh.deliverBootstrapAncestors(42, data),
+		"a reply that could not be handed to its waiter must fall through, not be dropped")
+
+	// Control: a waiter that CAN take it still consumes it, so this fix does not
+	// hand the live path replies that initial sync is legitimately driving.
+	ready := make(chan [][]byte, 1)
+	bh.bsAncestorCh[43] = ready
+	require.True(t, bh.deliverBootstrapAncestors(43, data))
+	require.Equal(t, [][]byte{[]byte("blk")}, <-ready)
+}
+
 // ----- H2: progress-based bootstrap watchdog --------------------------------
 
 // TestWatchBootstrapProgress_SlowButAdvancingNotKilled is the H2 proof: a sync that takes

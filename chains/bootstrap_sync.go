@@ -998,22 +998,37 @@ func (b *blockHandler) deliverBootstrapFrontier(nodeID ids.NodeID, containerID i
 }
 
 // deliverBootstrapAncestors routes an Ancestors reply (framed block batch) to the
-// waiting Ancestors call when the bootstrap loop is driving. Returns true iff consumed.
+// waiting Ancestors call when the bootstrap loop is driving. Returns true iff this
+// lane actually TOOK the reply — the caller hands anything else to the live path.
+//
+// bsActive means "initial sync is running", NOT "initial sync owns every Ancestors
+// reply on this chain". The live cert catch-up path issues its own requests
+// concurrently — that is how a node which is merely behind fetches the block a
+// vote or cert referenced. Claiming a reply this lane never asked for strands such
+// a node permanently: it fetches the right blocks and applies none of them. Devnet
+// luxd-0 sat at 12639 against peers at 16933, logging "catch-up response consumed
+// by initial sync — the live cert path did not see it" over 1000-block replies it
+// had successfully fetched. A reply belongs to this lane only if this lane asked
+// for it.
 func (b *blockHandler) deliverBootstrapAncestors(requestID uint32, data []byte) bool {
 	if !b.bsActive.Load() {
 		return false
 	}
-	raw := decodeContextBlocks(data)
 	b.bsMu.Lock()
 	ch := b.bsAncestorCh[requestID]
 	b.bsMu.Unlock()
-	if ch != nil {
-		select {
-		case ch <- raw:
-		default:
-		}
+	if ch == nil {
+		return false
 	}
-	return true
+	select {
+	case ch <- decodeContextBlocks(data):
+		return true
+	default:
+		// The waiter exists but is not receiving (it timed out and moved on). The
+		// send is non-blocking, so claiming the reply would drop the payload AND
+		// deny it to the live path — losing the blocks twice. Let the live path try.
+		return false
+	}
 }
 
 // runBootstrapThenPoll is the chain's startup sync driver (the goroutine buildChain
