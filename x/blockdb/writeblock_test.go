@@ -213,6 +213,10 @@ func TestWriteBlock_Errors(t *testing.T) {
 		disableCompression bool
 		wantErr            error
 		wantErrMsg         string
+		// needsUnprivileged marks a case whose failure is provoked by FILE
+		// PERMISSIONS. root ignores the permission bits, so the operation
+		// succeeds there and the case cannot prove anything.
+		needsUnprivileged bool
 	}{
 		{
 			name:    "empty block nil",
@@ -280,7 +284,8 @@ func TestWriteBlock_Errors(t *testing.T) {
 				file.Close()
 				require.NoError(t, os.Chmod(filePath, 0o444))
 			},
-			wantErrMsg: "failed to get data file for writing block",
+			wantErrMsg:        "failed to get data file for writing block",
+			needsUnprivileged: true,
 		},
 		{
 			name:   "writeIndexEntryAt - index file write failure",
@@ -300,6 +305,10 @@ func TestWriteBlock_Errors(t *testing.T) {
 				config = DefaultConfig()
 			}
 
+			if tt.needsUnprivileged && os.Geteuid() == 0 {
+				t.Skip("runs as root, which bypasses the permission bits this case relies on")
+			}
+
 			store, cleanup := newTestDatabase(t, config)
 			if tt.disableCompression {
 				store.compressor = compress.NewNoCompressor()
@@ -312,6 +321,10 @@ func TestWriteBlock_Errors(t *testing.T) {
 
 			err := store.WriteBlock(tt.height, tt.block)
 			if tt.wantErrMsg != "" {
+				// require.Error FIRST: err.Error() on a nil err panics, and a
+				// panic in a subtest aborts the entire package -- which is how
+				// one wrong case took down all of x/blockdb and hid its own name.
+				require.Error(t, err, "expected an error starting with %s", tt.wantErrMsg)
 				require.True(t, strings.HasPrefix(err.Error(), tt.wantErrMsg), "expected error message to start with %s, got %s", tt.wantErrMsg, err.Error())
 			} else {
 				require.ErrorIs(t, err, tt.wantErr)
