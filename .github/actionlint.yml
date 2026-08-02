@@ -1,5 +1,12 @@
+# Self-hosted pools this repo dispatches to. actionlint has no way to know them,
+# and an undeclared label is reported as
+#   label "lux-build-linux-amd64" is unknown. available labels are "windows-latest", …
+#
+# luxfi/* MUST run on the lux pool. The previous contents declared
+# hanzo-build-linux-amd64 — a DIFFERENT org's pool that nothing here uses and
+# that a luxfi workflow must never target, since a cross-org runs-on queues
+# silently until the 24h timeout — plus custom-arm64-focal/jammy, which no
+# workflow references either.
 self-hosted-runner:
   labels:
-    - custom-arm64-focal
-    - custom-arm64-jammy
-    - hanzo-build-linux-amd64
+    - lux-build-linux-amd64
