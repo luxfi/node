@@ -100,3 +100,48 @@ func TestPendingContext_StaleEntriesReaped(t *testing.T) {
 		t.Fatalf("stale pendingContext entry (%v old) not reaped → re-strand persists", 2*pendingContextTTL)
 	}
 }
+
+// TestPendingContext_StaleEntryForTheSameBlockIsReRequested: the case the test
+// above CANNOT see. It reaps by asking for a *different* block, which reaches the
+// sweep. A node that is behind asks for exactly one block -- the one it is missing
+// -- so it never takes that path: the dedup early-return fires first, every time,
+// and the sweep is unreachable for the only blockID that matters.
+//
+// Measured on testnet luxd-3: one slot held 10.9 HOURS past a 30s TTL, 38k
+// suppressions deep, while the node sat 1738 blocks behind a live chain. The
+// suppression was self-sustaining -- the wedge kept the node asking for the same
+// block, and asking for the same block is what kept it wedged.
+//
+// Fails against the pre-fix code: sends stays 1, because the expired slot
+// suppresses forever.
+func TestPendingContext_StaleEntryForTheSameBlockIsReRequested(t *testing.T) {
+	stubNet := &redStubNet{}
+	bh := newRedTestHandler(stubNet)
+	from := ids.GenerateTestNodeID()
+	missing := ids.GenerateTestID() // the ONE block this node needs
+
+	bh.requestContext(context.Background(), from, missing)
+	if stubNet.sends != 1 {
+		t.Fatalf("setup: want 1 send, got %d", stubNet.sends)
+	}
+
+	// Positive control: while genuinely in flight, a re-ask MUST still be
+	// suppressed. Expiry must not become "no dedup at all".
+	bh.requestContext(context.Background(), from, missing)
+	if stubNet.sends != 1 {
+		t.Fatalf("live in-flight request was not deduped: sends=%d, want 1", stubNet.sends)
+	}
+
+	// The peer took the request and never answered. Age the slot past its TTL.
+	req := bh.pendingContext[missing]
+	req.timestamp = time.Now().Add(-2 * pendingContextTTL)
+	bh.pendingContext[missing] = req
+
+	// Same block, asked again -- the only thing a behind node ever does.
+	bh.requestContext(context.Background(), from, missing)
+	if stubNet.sends != 2 {
+		t.Fatalf("expired request still suppressed its own block: sends=%d, want 2 "+
+			"-- the block a behind node needs is the block it can never ask for again",
+			stubNet.sends)
+	}
+}
