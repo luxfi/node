@@ -460,16 +460,32 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # every node, diff the trade rows + head root) and to feed markets-display (native
 # fills are trade: rows). Bump with every dex release that changes the VM, like
 # CHAINS_REF for the other 10 VMs.
-ARG DEX_REF=v1.5.15
+# The dexvm plugin and the node must link the SAME luxfi/api, or the D-Chain
+# dies at startup with "zap decode initialize response: unexpected EOF" and
+# takes the node's `bootstrapped` check -- and therefore readiness -- with it.
+#
+# This used to be forced here with `go mod edit -require=luxfi/api@v1.0.16`,
+# written when dex was on v1.0.15 and node on v1.0.16. Node has since moved to
+# v1.1.1, so the hardcode had become the skew it was added to prevent: it
+# pinned dexvm one release BEHIND on every build, no matter which dex ref was
+# used. That is what halted Lux mainnet -- all five validators restarting, D
+# never created. A version written down in two places drifts; the ref is the
+# one place, so the force is gone and dex's own go.mod decides.
+#
+# v1.14.3 is the first dex tag pinning luxfi/api v1.1.1 (dex f551df0). Keep it
+# in step with node's own go.mod require, and bump with every dex release that
+# changes the VM, like CHAINS_REF for the other 10 VMs.
+ARG DEX_REF=v1.14.3
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     cd /tmp/dex && \
-    # Align the dexvm plugin's ZAP wire (luxfi/api) with the node. No dex release
-    # pins api v1.0.16 yet (all <=v1.5.20 carry v1.0.15), so force it here; the
-    # bump is code-free (adds InitializeResponse.Capabilities, capability-gated),
-    # so dexvm emits the field the node decodes -> no "unexpected EOF" on D-Chain.
-    go mod edit -require=github.com/luxfi/api@v1.0.16 && \
+    # Fail the BUILD, not the chain, if the two ever disagree again. Read go.mod
+    # with `go mod edit -json` rather than `go list -m`: it is purely local, so a
+    # network hiccup cannot turn this guard into a false build failure.
+    DEX_API=$(go mod edit -json | grep -A1 '"Path": "github.com/luxfi/api"' | grep '"Version"' | head -1 | sed -E 's/.*: "(.*)".*/\1/') && \
+    { [ "$DEX_API" = "v1.1.1" ] \
+        || { echo "FATAL: dexvm links luxfi/api ${DEX_API:-<none>}, node links v1.1.1 — D-Chain would fail to initialize with 'zap decode initialize response: unexpected EOF'"; exit 1; }; } && \
     . /build/build_env.sh && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=0 GOFLAGS=-mod=mod \
