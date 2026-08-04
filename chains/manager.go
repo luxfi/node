@@ -3202,26 +3202,50 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		return
 	}
 
+	now := time.Now()
+
 	b.contextRequestMu.Lock()
-	// Check if we already have a pending request for this block
+	// Check if we already have a pending request for this block -- but only an
+	// UNEXPIRED one suppresses. "A request exists" and "that request is still
+	// live" are two different facts; keying suppression on the first alone is
+	// what wedged the fleet.
+	//
+	// The sweep below expires stale slots, but it is reachable ONLY on a cache
+	// MISS -- this early return runs first. A node that is behind asks for
+	// exactly one block, the one it is missing, so it produces nothing BUT
+	// cache hits: the sweep never runs, the slot never expires, and the one
+	// block it needs becomes the one block it can never ask for again. Measured
+	// on testnet luxd-3: a single slot held 10.9 HOURS past a 30s TTL, 38k
+	// suppressions deep, while the node sat 1738 blocks behind a live chain.
 	if prior, exists := b.pendingContext[blockID]; exists {
-		b.contextRequestMu.Unlock()
-		// Suppressed by the per-block dedup. The AGE says which suppression this is: a
-		// few hundred ms is the storm re-asking for a fetch already in flight; tens of
-		// seconds is a request nobody ever answered, still holding the slot.
-		if n, loud := catchupSample(&b.diag.dedup); loud {
-			b.logger.Info("catch-up fetch suppressed — a request for this block is already in flight",
+		if age := now.Sub(prior.timestamp); age <= pendingContextTTL {
+			b.contextRequestMu.Unlock()
+			// Genuinely in flight -- the storm re-asking for a fetch already sent.
+			if n, loud := catchupSample(&b.diag.dedup); loud {
+				b.logger.Info("catch-up fetch suppressed — a request for this block is already in flight",
+					log.Stringer("blockID", blockID),
+					log.Stringer("askedOf", prior.nodeID),
+					log.Duration("inFlight", age),
+					log.Uint64("count", n))
+			}
+			return
+		}
+		// Past TTL: the peer took the request and never answered. Drop the slot and
+		// fall through to re-request, exactly as the sweep would have. Same policy,
+		// now applied to the block actually being asked for.
+		delete(b.pendingContext, blockID)
+		if n, loud := catchupSample(&b.diag.reaped); loud {
+			b.logger.Warn("catch-up request expired in place — re-requesting the block it was holding",
 				log.Stringer("blockID", blockID),
 				log.Stringer("askedOf", prior.nodeID),
-				log.Duration("inFlight", time.Since(prior.timestamp)),
+				log.Duration("age", now.Sub(prior.timestamp)),
+				log.Uint64("repliesSeen", b.diag.replyIn.Load()),
 				log.Uint64("count", n))
 		}
-		return
 	}
 
 	// BOUND the map (RED HIGH + MEDIUM). Reap requests past their TTL first: a
 	// withheld Context no longer pins the slot, so the block is re-requestable.
-	now := time.Now()
 	// Carried out of the critical section — the log lines are emitted after the unlock,
 	// never under it.
 	reaped := 0
