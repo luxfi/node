@@ -302,26 +302,39 @@ func (p *postForkCommonComponents) buildChild(
 	contextPChainHeight := epoch.PChainHeight
 
 	// The inner VM builds on ITS OWN head, and Verify above requires the child's inner
-	// parent to be exactly p.innerBlk. Anchor the two together before delegating.
-	if err := p.vm.anchorInnerBuildParent(ctx, parentID, p.innerBlk.ID()); err != nil {
+	// parent to be exactly p.innerBlk. Anchor the two together before delegating, and
+	// hold [innerHead] ACROSS both calls: the anchor is a precondition established here
+	// and consumed by the inner VM one ZAP round-trip later, and a concurrent inner
+	// Verify would otherwise move the head inside that window (see VM.innerHead).
+	innerBlock, err := func() (chain.Block, error) {
+		p.vm.innerHead.Lock()
+		defer p.vm.innerHead.Unlock()
+
+		if err := p.vm.anchorInnerBuildParent(ctx, parentID, p.innerBlk.ID()); err != nil {
+			return nil, err
+		}
+		if p.vm.blockBuilderVM != nil {
+			return p.vm.blockBuilderVM.BuildBlockWithRuntime(ctx, &runtime.Runtime{
+				PChainHeight: contextPChainHeight,
+			})
+		}
+		return p.vm.ChainVM.BuildBlock(ctx)
+	}()
+	if err != nil {
 		return nil, err
 	}
 
-	var innerBlock chain.Block
-	if p.vm.blockBuilderVM != nil {
-		builtBlock, err := p.vm.blockBuilderVM.BuildBlockWithRuntime(ctx, &runtime.Runtime{
-			PChainHeight: contextPChainHeight,
-		})
-		if err != nil {
-			return nil, err
-		}
-		innerBlock = builtBlock
-	} else {
-		engineBlock, err := p.vm.ChainVM.BuildBlock(ctx)
-		if err != nil {
-			return nil, err
-		}
-		innerBlock = engineBlock
+	// FAIL CLOSED ON THE ARTIFACT, not on the precondition. The lock above closes the
+	// known race, but this is the property that actually matters and it is cheap to
+	// check on the block we are holding, so check it rather than assume it: a child
+	// whose inner parent is not the outer parent's inner block is one THIS NODE'S OWN
+	// Verify will reject (errInnerParentMismatch, above), and emitting it produces the
+	// "built block failed verification — dropping" loop that freezes the tip. Refusing
+	// to build is strictly better — the next trigger re-anchors and retries — and the
+	// message names both inner ids, which the engine's outer-id-only log cannot.
+	if innerBlock.Parent() != p.innerBlk.ID() {
+		return nil, fmt.Errorf("%w: built inner %s extends %s, expected the outer parent's inner block %s",
+			errInnerParentMismatch, innerBlock.ID(), innerBlock.Parent(), p.innerBlk.ID())
 	}
 
 	// Build the child

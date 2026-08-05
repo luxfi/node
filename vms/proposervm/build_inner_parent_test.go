@@ -22,6 +22,7 @@ package proposervm
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -53,10 +54,16 @@ import (
 // Nothing else is stubbed: the test drives the REAL postForkBlock.buildChild.
 type evmLikeInner struct {
 	vmchain.ChainVM
+	mu           sync.Mutex                  // the inner VM's own head lock (luxfi/evm bc.chainmu)
 	blocks       map[ids.ID]*blocktest.Block // every block inserted into the inner chain
 	head         ids.ID
 	setPrefCalls int
 	reorgs       int
+
+	// beforeBuild, when set, runs at the top of BuildBlock — i.e. INSIDE the window
+	// between the anchor and the miner reading the head. It is the seam the race tests
+	// use to observe (or attempt) head movement at exactly the moment that matters.
+	beforeBuild func()
 }
 
 func newEVMLikeInner(genesis *blocktest.Block) *evmLikeInner {
@@ -85,17 +92,32 @@ func (c *evmLikeInner) child(parent *blocktest.Block) *blocktest.Block {
 // verifyGossiped is the drift mechanism: verifying a peer's block whose parent is the
 // current head OPTIMISTICALLY makes it the head — no accept, no proposervm involvement.
 func (c *evmLikeInner) verifyGossiped(b *blocktest.Block) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.insert(b)
 	if b.ParentV == c.head { // core/blockchain.go newTip
 		c.head = b.IDV
 	}
 }
 
+func (c *evmLikeInner) currentHead() ids.ID {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.head
+}
+
 func (c *evmLikeInner) BuildBlock(context.Context) (vmchain.Block, error) {
+	if c.beforeBuild != nil {
+		c.beforeBuild()
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.child(c.blocks[c.head]), nil
 }
 
 func (c *evmLikeInner) SetPreference(_ context.Context, id ids.ID) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.setPrefCalls++
 	blk, ok := c.blocks[id]
 	if !ok {
@@ -110,6 +132,8 @@ func (c *evmLikeInner) SetPreference(_ context.Context, id ids.ID) error {
 }
 
 func (c *evmLikeInner) GetBlock(_ context.Context, id ids.ID) (vmchain.Block, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	blk, ok := c.blocks[id]
 	if !ok {
 		return nil, fmt.Errorf("evm-like inner VM: block %s not found", id)
