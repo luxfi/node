@@ -81,6 +81,37 @@ type VM struct {
 	validatorState validators.State
 	netIDsCache    cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache for GetNetworkID lookups
 
+	// innerHead serializes the inner VM's canonical head against the operations that
+	// move it and the one operation that requires it to hold still.
+	//
+	// WHY IT IS NEEDED. anchorInnerBuildParent (below) points the inner VM at the outer
+	// parent's inner block, and then buildChild asks the inner VM to build — but the
+	// inner VM builds on ITS OWN head, which it reads at BuildBlock time, not at
+	// SetPreference time (luxfi/evm miner/worker.go: parent = chain.CurrentBlock()).
+	// The anchor is therefore a PRECONDITION established at T and consumed at T+Δ, where
+	// Δ is a full ZAP round-trip. Nothing kept it true across Δ: the engine drives this
+	// VM from multiple goroutines (see [verifiedBlocksLock]), the ZAP server dispatches
+	// every request on its own goroutine, and a first-time inner Verify of a gossiped
+	// block whose parent is the current head OPTIMISTICALLY takes the head (luxfi/evm
+	// core/blockchain.go writeBlockAndSetHead → newTip). A gossiped block landing inside
+	// the window makes the miner extend the sibling, and the node then REJECTS THE BLOCK
+	// IT JUST BUILT with errInnerParentMismatch. Fresh-genesis chains hit it hardest:
+	// the accepted tip is stationary and poll traffic is dense, so the population of
+	// gossiped blocks that will move the head is at its maximum.
+	//
+	// WHY A LOCK RATHER THAN A RETRY. The head is a single shared resource with two
+	// classes of user; serializing them is the only thing that makes the anchor's
+	// guarantee hold at the point of use. avalanchego got this from the per-chain
+	// consensus lock it held across VM calls; that lock went away when VM↔node moved to
+	// ZAP, and proposervm's invariants were written assuming it.
+	//
+	// DEADLOCK SAFETY. Held across callouts into the inner VM, deliberately. That is
+	// safe because the inner VM's callbacks into the node reach [block_server] and
+	// [service], which take [lock] — never this mutex — and no path takes [lock] or
+	// [verifiedBlocksLock] and then takes this one. It is the outermost proposervm lock
+	// wherever it appears.
+	innerHead sync.Mutex
+
 	// verifiedBlocksLock guards [verifiedBlocks]. The consensus engine drives
 	// the proposervm from multiple goroutines concurrently (e.g. a
 	// PullQuery/Put handler verifying a block — which writes the map — while a
@@ -510,7 +541,11 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 	// For pre-fork blocks, getInnerBlk() returns the block itself (same ID).
 	// Always use the inner block ID to avoid passing wrapper IDs to the inner VM.
 	innerBlkID := blk.getInnerBlk().ID()
-	if err := vm.ChainVM.SetPreference(ctx, innerBlkID); err != nil {
+	// Moves the inner head — see [innerHead].
+	vm.innerHead.Lock()
+	err = vm.ChainVM.SetPreference(ctx, innerBlkID)
+	vm.innerHead.Unlock()
+	if err != nil {
 		return err
 	}
 
@@ -1360,6 +1395,13 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockRuntime *runtime
 	//            function must return nil. This maintains the inner block's
 	//            invariant that successful verification will eventually result
 	//            in accepted or rejected being called.
+	//
+	// A first-time inner Verify MOVES THE INNER HEAD when the block extends it (luxfi/evm
+	// writeBlockAndSetHead → newTip), so it is serialized against the anchor+build pair
+	// that requires the head to hold still — see [innerHead]. Scoped to the verify calls
+	// alone: recordVerifiedBlock below takes [verifiedBlocksLock], and the two are never
+	// held together.
+	vm.innerHead.Lock()
 	if shouldVerifyWithCtx {
 		// This block needs to know the P-Chain height during verification.
 		// Note that [VerifyWithRuntime] with context may be called multiple
@@ -1369,6 +1411,7 @@ func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockRuntime *runtime
 		// This isn't a [vmchain.WithVerifyRuntime] so we only call [Verify] once.
 		err = innerBlk.Verify(ctx)
 	}
+	vm.innerHead.Unlock()
 	if err != nil {
 		return err
 	}

@@ -293,25 +293,34 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	// every validator may emit its own unsigned transition candidate, so a gossiped
 	// sibling that verifies here would otherwise drift the inner head and wedge the
 	// transition — the same self-rejection loop, at chain start.
-	if err := b.vm.anchorInnerBuildParent(ctx, parentID, b.Block.ID()); err != nil {
+	// [innerHead] is held ACROSS the anchor and the build for the same reason as in
+	// postForkCommonComponents.buildChild: the anchor is consumed a ZAP round-trip
+	// later, and a concurrent inner Verify would move the head inside that window.
+	innerBlock, err := func() (chain.Block, error) {
+		b.vm.innerHead.Lock()
+		defer b.vm.innerHead.Unlock()
+
+		if err := b.vm.anchorInnerBuildParent(ctx, parentID, b.Block.ID()); err != nil {
+			return nil, err
+		}
+		if b.vm.blockBuilderVM != nil {
+			// VM supports BuildBlockWithRuntime
+			return b.vm.blockBuilderVM.BuildBlockWithRuntime(ctx, &runtime.Runtime{})
+		}
+		// VM doesn't support BuildBlockWithRuntime, use BuildBlock
+		return b.vm.ChainVM.BuildBlock(ctx)
+	}()
+	if err != nil {
 		return nil, err
 	}
 
-	var innerBlock chain.Block
-	if b.vm.blockBuilderVM != nil {
-		// VM supports BuildBlockWithRuntime
-		builtBlock, err := b.vm.blockBuilderVM.BuildBlockWithRuntime(ctx, &runtime.Runtime{})
-		if err != nil {
-			return nil, err
-		}
-		innerBlock = builtBlock
-	} else {
-		// VM doesn't support BuildBlockWithRuntime, use BuildBlock
-		engineBlock, err := b.vm.ChainVM.BuildBlock(ctx)
-		if err != nil {
-			return nil, err
-		}
-		innerBlock = engineBlock
+	// Fail closed on the artifact — see the equivalent check in
+	// postForkCommonComponents.buildChild. At the fork height every validator may emit
+	// its own transition candidate, so this is exactly where a drifted head is most
+	// likely and where an emitted-then-dropped block wedges the transition.
+	if innerBlock.Parent() != b.Block.ID() {
+		return nil, fmt.Errorf("%w: built inner %s extends %s, expected this block's inner %s",
+			errInnerParentMismatch, innerBlock.ID(), innerBlock.Parent(), b.Block.ID())
 	}
 
 	// Calculate the epoch for the child block (LP-181, always-on under
