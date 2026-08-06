@@ -320,7 +320,7 @@ ARG EVM_TAGS=""
 # to the block coinbase and the reward vault 0x0100..0002 stays 0 forever, with
 # nothing burned. The split stays dormant wherever feeSplitTimestamp is absent
 # (mainnet), so this bump is behaviour-preserving there.
-ARG EVM_VERSION=v1.104.23
+ARG EVM_VERSION=v1.104.24
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
@@ -437,7 +437,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # the D-Chain state transition, sequenced by luxd's multi-validator engine. This
 # REPLACES the former chains/dexvm proxy (which relayed clob_* over ZAP to a
 # standalone dchain-venue): there is no DexZapEndpoint and no standalone venue in
-# the trading path. cmd/dchain wraps the VM in the SAME rpc.Serve plugin harness
+# the trading path. cmd/dexd (renamed from cmd/dchain in the v1.14 line — it is
+# the ONE D-Chain binary, plugin mode by default) wraps the VM in the SAME rpc.Serve plugin harness
 # luxfi/evm boots through, and is pure-Go (CGO=0) — the optional GPU AMM
 # accelerator in pkg/lx is a separate concern gated by its own cuda/metal tags and
 # is NOT linked here. v1.5.10 is the first tag whose cmd/dchain builds CGO=0
@@ -460,21 +461,34 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # every node, diff the trade rows + head root) and to feed markets-display (native
 # fills are trade: rows). Bump with every dex release that changes the VM, like
 # CHAINS_REF for the other 10 VMs.
-ARG DEX_REF=v1.5.15
+#
+# v1.5.15 -> v1.14.4 IS A LINEAGE CHANGE, NOT A PATCH. v1.5.15 is not an ancestor
+# of main (278 commits diverged) and its pkg/dchain has NO atomic.go and NO
+# drive.go: that D-Chain cannot import a C->D intent or export a D->C fill at
+# all. Every fleet running it has a structurally absent settlement seam, so
+# fixing the ZAP atomic transport and the intent discovery trait changes nothing
+# while this pin stands. The v1.14 line is where the seam lives, and v1.14.4
+# pins luxfi/vm v1.3.6 so the plugin actually receives shared memory.
+#
+# Treat this as a D-Chain VM upgrade and roll it like one: it changes block
+# production (the autonomous seam drive emits import/export txs inside
+# BuildBlock), so a mixed fleet across this line does NOT agree on block
+# contents. One validator at a time, D-Chain only, and never below quorum.
+ARG DEX_REF=v1.14.4
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
     cd /tmp/dex && \
-    # Align the dexvm plugin's ZAP wire (luxfi/api) with the node. No dex release
-    # pins api v1.0.16 yet (all <=v1.5.20 carry v1.0.15), so force it here; the
-    # bump is code-free (adds InitializeResponse.Capabilities, capability-gated),
-    # so dexvm emits the field the node decodes -> no "unexpected EOF" on D-Chain.
-    go mod edit -require=github.com/luxfi/api@v1.0.16 && \
+    # dex v1.14.4 pins luxfi/api v1.1.3 and luxfi/vm v1.3.6 itself, so the ZAP
+    # wire aligns with the node without an override here. The former forced
+    # api@v1.0.16 is GONE: forcing an api version below what luxfi/vm requires
+    # would strip the cross-chain atomic messages back out of the dexvm plugin
+    # and re-dark the seam this bump exists to open.
     . /build/build_env.sh && \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=0 GOFLAGS=-mod=mod \
     go build -ldflags="-s -w" \
-        -o /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr ./cmd/dchain && \
+        -o /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr ./cmd/dexd && \
     chmod +x /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr && \
     test -s /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr \
         || { echo "FATAL: native D-Chain (dexvm) plugin missing — D-Chain cannot start"; exit 1; } && \
