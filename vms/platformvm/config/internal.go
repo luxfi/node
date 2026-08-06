@@ -7,17 +7,18 @@ import (
 	"time"
 
 	consensusconfig "github.com/luxfi/consensus/config"
-	validators "github.com/luxfi/validators"
-	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/stakingparams"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/node/vms/txs/auth"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 )
 
 // Internal contains all of the parameters for the PlatformVM that are
@@ -103,6 +104,46 @@ type Internal struct {
 	// registry refuses everything classical) and for legacy networks
 	// (the mempool gate is bypassed entirely).
 	ClassicalCompatRegistry auth.ClassicalCompatRegistry
+
+	// StakingParams is the governed primary-network staking policy, as an
+	// append-only history of activations. Empty means ungoverned: the
+	// compiled-in fields above are used verbatim, which is exactly today's
+	// behaviour — so a node that carries no history behaves identically to one
+	// built before this field existed.
+	//
+	// This is the seam. Every primary-network staking rule is read through
+	// StakingPolicyAt, so replacing the source of this history (config today,
+	// P-Chain state once the proposal tx lands) changes nothing else.
+	StakingParams stakingparams.History
+}
+
+// StakingPolicyAt returns the primary-network staking policy that binds a party
+// which committed at unix time t.
+//
+// The time argument is the whole non-retroactivity guarantee, and callers must
+// pass the moment the party bound itself, not the moment of the check:
+//
+//   - Admission (getValidatorRules, getDelegatorRules) passes the current chain
+//     time, because a joiner is choosing to accept the rules in force now.
+//   - The reward gate (block/executor prefersCommit) passes the staker's
+//     StartTime, because a validator that bonded under an 80% uptime rule must
+//     be judged at 80% however stake votes afterwards.
+//
+// Getting that second call wrong would make the uptime requirement retroactive
+// and hand a stake majority the power to raise the bar the day before a rival's
+// stake matures and take its reward.
+func (c *Internal) StakingPolicyAt(t int64) stakingparams.Params {
+	if len(c.StakingParams) == 0 {
+		return stakingparams.Params{
+			MinValidatorStake: c.MinValidatorStake,
+			MaxValidatorStake: c.MaxValidatorStake,
+			MinStakeDuration:  uint32(c.MinStakeDuration / time.Second),
+			MaxStakeDuration:  uint32(c.MaxStakeDuration / time.Second),
+			MinDelegationFee:  c.MinDelegationFee,
+			UptimeRequirement: uint32(c.UptimePercentage * reward.PercentDenominator),
+		}
+	}
+	return c.StakingParams.At(t)
 }
 
 // Create the blockchain described in [tx], but only if this node is a member of
