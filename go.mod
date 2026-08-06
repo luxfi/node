@@ -26,8 +26,8 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.36.20
-	github.com/luxfi/crypto v1.20.3
+	github.com/luxfi/consensus v1.36.21
+	github.com/luxfi/crypto v1.20.4
 	github.com/luxfi/database v1.21.1
 	github.com/luxfi/ids v1.3.2
 	github.com/luxfi/keychain v1.1.1
