@@ -450,6 +450,58 @@ stays `ready=true`, `restarts=0`, and `info.isBootstrapped(C)` keeps answering `
 `eth_blockNumber` times out — a dead C-Chain still in the Service, the exact failure the probe
 was redesigned to catch. Only a per-node **tip** probe sees it. Recovery is a pod delete.
 
+## v1.36.57 — the SAME drop loop, concurrent half (2026-08-05)
+
+The v1.36.33 fix below (a57251c318, the anchor) closed the deterministic half and
+was already live in v1.36.56. The loop came back anyway, on lux-testnet @2766,
+lux-devnet, hanzo-mainnet and zoo-mainnet. Two independent causes, and the first
+one masqueraded as the second.
+
+**Cause 1 — the tag lied, and re-genesis could not cure it.** lux-testnet and
+lux-devnet were digest-pinned to `sha256:09d542a9…`, built 2026-08-01T04:13Z,
+≈ commit `8dbae203c6`. The real v1.36.56 is `sha256:cd5ef858…` (2026-08-05T00:44Z,
+`revision=1d30e74470`). Different luxd (`57179c5e…` vs `1004f180…`) AND different
+C-Chain plugin (`a67cafda…` vs `a8a4f32c…`) under ONE tag. Those fleets had never
+run .56 at all; every re-genesis re-pulled the same stale digest, which is exactly
+why "re-genesis does not cure it" looked like a code property. lux-mainnet,
+hanzo-mainnet and zoo-mainnet were on cd5ef858 and produced normally.
+
+⛔ **A missing label is the tell.** `.hanzo/workflows/release.yml` stamps
+`org.opencontainers.image.revision/ref.name/source`; `18571f524b` added it on
+2026-08-01. An image with NO labels predates that commit, whatever its tag says.
+`crane config <img>` before believing any tag. ⛔ `POST /v1/runner` does NOT stamp
+those labels and does NOT run release.yml's smoke gate — it is not the release
+path. It is also idempotent per (repo, sha, image): re-POSTing returns the ORIGINAL
+job, so a bad build cannot be retried into a good one under the same tag.
+
+**Cause 2 — the anchor had nothing holding it true (fixed here).** The anchor is a
+precondition established at T and consumed by the miner at T+Δ, Δ = one ZAP
+round-trip. proposervm holds NO lock on that path (`vm.lock` is only block_server /
+service / timeToBuild), the engine deliberately unlocks across `BuildBlock`, the ZAP
+server dispatches each request on its own goroutine, and a first-time inner Verify
+of a block extending the head optimistically TAKES the head (luxfi/evm
+`writeBlockAndSetHead → newTip`) from a different goroutine. A gossiped block
+landing inside the window made the miner extend the sibling. avalanchego got this
+exclusion free from the per-chain consensus lock held across VM calls; that lock
+went away with the ZAP migration and was never replaced.
+
+Fresh-genesis chains hit it hardest — stationary accepted tip + dense poll traffic
+is the maximum population of blocks that will move the head.
+
+**Fix.** `VM.innerHead` (vm.go) — one mutex over the inner VM's canonical head,
+taken by the anchor+BuildBlock pair (block.go, pre_fork_block.go), the inner
+`SetPreference`, and the inner `Verify` in `verifyAndRecordInnerBlk`. Held across
+callouts deliberately: the inner VM's callbacks reach block_server/service which
+take `vm.lock`, never this one. Plus both buildChilds now FAIL CLOSED on the built
+block (`innerBlock.Parent() != parent inner ID`) rather than emitting one this node
+will reject — an infinite drop loop becomes one failed attempt the next trigger
+re-anchors.
+
+Tests: `build_inner_parent_race_test.go`. `TryLock` asserted from INSIDE the window
+makes the exclusion deterministic instead of timing-dependent. Negative control run
+for each half — removing the locks fails the two exclusion tests, removing the
+assert fails the fail-closed test.
+
 ## v1.36.33 — the build→self-verify-fail→drop loop (devnet 96367 / testnet 96368, 2026-07-28)
 
 **Symptom.** Every proposer built a block and then rejected the block it had just
