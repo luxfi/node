@@ -25,6 +25,8 @@ import (
 	rpcdbzap "github.com/luxfi/node/db/rpcdb"
 	"github.com/luxfi/version"
 	"github.com/luxfi/vm/chain"
+	atomicmem "github.com/luxfi/vm/chains/atomic"
+	"github.com/luxfi/vm/chains/atomic/atomiczap"
 )
 
 var (
@@ -68,6 +70,14 @@ type Client struct {
 	dbListener  net.Listener
 	dbServerCtx context.Context
 	dbServerCxl context.CancelFunc
+
+	// atomicServer hosts this chain's atomic shared-memory handle for the plugin
+	// to dial, exactly as dbServer hosts init.DB. It exists because the handle
+	// is an interface over a live database and so cannot be copied into the
+	// Runtime the plugin rebuilds from InitializeRequest — the reason every
+	// plugin-hosted VM saw a nil SharedMemory. Lifetime bound to this Client.
+	atomicMu   sync.Mutex
+	atomicStop func()
 
 	// quasarCapable records whether the plugin advertised CapQuasarExport in the
 	// Initialize handshake — i.e. its concrete VM tracks a Quasar (⅔-by-stake)
@@ -121,6 +131,30 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		return fmt.Errorf("zap: start db server: %w", err)
 	}
 
+	// CROSS-CHAIN ATOMIC CAPABILITY. Serve this chain's shared-memory handle and
+	// resolve the one chain alias the DEX settlement seam needs, because neither
+	// the handle nor BCLookup can be copied into the Runtime the plugin rebuilds
+	// on the far side. Without these the plugin's SharedMemory is nil and
+	// DChainID is empty, which is exactly why every 0x9999 settlement reverted.
+	var (
+		atomicServerAddr string
+		dChainID         ids.ID
+	)
+	if init.Runtime != nil {
+		if atomicServerAddr, err = c.startAtomicServer(init.Runtime.SharedMemory); err != nil {
+			return fmt.Errorf("zap: start atomic server: %w", err)
+		}
+		// BCLookup is the node's chain manager. Resolve "D" here, once, rather
+		// than proxy a lookup service: the seam needs exactly this one alias and
+		// its value is fixed for the life of the network. A network with no
+		// dexvm leaves it empty and the seam stays honestly closed.
+		if bc := init.Runtime.GetBCLookup(); bc != nil {
+			if id, lerr := bc.Lookup("D"); lerr == nil {
+				dChainID = id
+			}
+		}
+	}
+
 	req := &zapwire.InitializeRequest{
 		NetworkID:    networkID,
 		ChainID:      chainID,
@@ -134,6 +168,9 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		UpgradeBytes: init.Upgrade,
 		ConfigBytes:  init.Config,
 		DBServerAddr: dbServerAddr,
+
+		AtomicServerAddr: atomicServerAddr,
+		DChainID:         dChainIDBytes(dChainID),
 	}
 
 	buf := zapwire.GetBuffer()
@@ -198,7 +235,20 @@ func (c *Client) Shutdown(ctx context.Context) error {
 		c.logger.Warn("ZAP shutdown error", "error", err)
 	}
 	c.stopDBServer()
+	c.stopAtomicServer()
 	return c.conn.Close()
+}
+
+// dChainIDBytes renders an optional chain id for the wire: an unresolved alias
+// travels as a ZERO-LENGTH field, never as 32 zero bytes. ids.Empty is a
+// legitimate 32-byte value, so encoding "absent" as those bytes would be
+// indistinguishable from a real id and the plugin could not tell "no dexvm on
+// this network" from "the dexvm is the zero chain".
+func dChainIDBytes(id ids.ID) []byte {
+	if id == ids.Empty {
+		return nil
+	}
+	return id[:]
 }
 
 // startDBServer binds a fresh TCP listener and serves init.DB over the
@@ -210,6 +260,42 @@ func (c *Client) Shutdown(ctx context.Context) error {
 // Returns "" if init.DB is nil — some VMs (the platform VM bootstrap)
 // init the DB elsewhere; in that case the plugin falls back to its
 // LocalZapDB path. Production cevm always gets a non-nil DB.
+// startAtomicServer binds a fresh listener and serves the chain's atomic
+// shared-memory handle over ZAP against it, returning the bound addr to hand the
+// plugin via InitializeRequest.AtomicServerAddr. Same shape and lifetime as
+// startDBServer.
+//
+// Returns "" when sm is nil — the node wired no shared memory for this chain, so
+// the plugin must leave its handle nil and let settlement revert fail-closed.
+// Never fabricate a server over a nil handle: that would turn a clean "capability
+// absent" revert into a nil dereference inside block execution.
+func (c *Client) startAtomicServer(sm atomicmem.SharedMemory) (string, error) {
+	addr, stop, err := atomiczap.Serve(sm)
+	if err != nil {
+		return "", err
+	}
+	if addr == "" {
+		c.logger.Warn("zap: no shared memory for this chain — cross-chain atomic seam stays closed")
+		return "", nil
+	}
+
+	c.atomicMu.Lock()
+	c.atomicStop = stop
+	c.atomicMu.Unlock()
+
+	c.logger.Info("zap atomic shared-memory server listening", "addr", addr)
+	return addr, nil
+}
+
+func (c *Client) stopAtomicServer() {
+	c.atomicMu.Lock()
+	defer c.atomicMu.Unlock()
+	if c.atomicStop != nil {
+		c.atomicStop()
+		c.atomicStop = nil
+	}
+}
+
 func (c *Client) startDBServer(db database.Database) (string, error) {
 	if db == nil {
 		c.logger.Warn("zap: init.DB is nil — VM will fall back to local backend")
