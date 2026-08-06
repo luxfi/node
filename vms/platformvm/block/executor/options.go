@@ -11,6 +11,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/reward"
+	"github.com/luxfi/node/vms/platformvm/stakingparams"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
@@ -34,8 +35,13 @@ type options struct {
 	// inputs populated before calling this struct's methods:
 	log                     log.Logger
 	primaryUptimePercentage float64
-	uptimes                 uptime.Calculator
-	state                   state.Chain
+	// stakingPolicyAt resolves the governed primary-network policy binding a
+	// staker that bonded at a given unix time. Nil falls back to
+	// primaryUptimePercentage, so an ungoverned node is byte-for-byte
+	// unchanged.
+	stakingPolicyAt func(int64) stakingparams.Params
+	uptimes         uptime.Calculator
+	state           state.Chain
 
 	// outputs populated by this struct's methods:
 	preferredBlock block.Block
@@ -125,7 +131,18 @@ func (o *options) prefersCommit(tx *txs.Tx) (bool, error) {
 	}
 
 	netID := staker.ChainID()
+	// Judge the validator on the uptime rule that was in force when it BONDED,
+	// not the one in force now. Passing StartTime rather than the current chain
+	// time is what stops a governed uptime requirement from being retroactive —
+	// otherwise a stake majority could raise the bar the day before a rival's
+	// stake matures and take its reward. With no governed history this is the
+	// compiled-in --uptime-requirement, unchanged.
 	expectedUptimePercentage := o.primaryUptimePercentage
+	if o.stakingPolicyAt != nil {
+		expectedUptimePercentage = float64(
+			o.stakingPolicyAt(primaryNetworkValidator.StartTime.Unix()).UptimeRequirement,
+		) / reward.PercentDenominator
+	}
 	if netID != constants.PrimaryNetworkID {
 		transformNet, err := txexecutor.GetTransformChainTx(o.state, netID)
 		if err != nil {

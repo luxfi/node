@@ -29,13 +29,17 @@ func getValidatorRules(
 	netID ids.ID,
 ) (*addValidatorRules, error) {
 	if netID == constants.PrimaryNetworkID {
+		// A joiner accepts the policy in force at the moment it joins, so the
+		// current chain time is the right instant to resolve. With no governed
+		// history this returns the compiled-in constants verbatim.
+		p := backend.Config.StakingPolicyAt(chainState.GetTimestamp().Unix())
 		return &addValidatorRules{
 			assetID:           backend.Runtime.UTXOAssetID,
-			minValidatorStake: backend.Config.MinValidatorStake,
-			maxValidatorStake: backend.Config.MaxValidatorStake,
-			minStakeDuration:  backend.Config.MinStakeDuration,
-			maxStakeDuration:  backend.Config.MaxStakeDuration,
-			minDelegationFee:  backend.Config.MinDelegationFee,
+			minValidatorStake: p.MinValidatorStake,
+			maxValidatorStake: p.MaxValidatorStake,
+			minStakeDuration:  time.Duration(p.MinStakeDuration) * time.Second,
+			maxStakeDuration:  time.Duration(p.MaxStakeDuration) * time.Second,
+			minDelegationFee:  p.MinDelegationFee,
 		}, nil
 	}
 
@@ -69,12 +73,17 @@ func getDelegatorRules(
 	netID ids.ID,
 ) (*addDelegatorRules, error) {
 	if netID == constants.PrimaryNetworkID {
+		p := backend.Config.StakingPolicyAt(chainState.GetTimestamp().Unix())
 		return &addDelegatorRules{
-			assetID:                  backend.Runtime.UTXOAssetID,
+			assetID: backend.Runtime.UTXOAssetID,
+			// MinDelegatorStake is deliberately NOT governed: it is the floor on
+			// who may delegate at all, and delegators are the one constituency
+			// that cannot defend itself by voting, because the vote belongs to
+			// the validator they delegate to.
 			minDelegatorStake:        backend.Config.MinDelegatorStake,
-			maxValidatorStake:        backend.Config.MaxValidatorStake,
-			minStakeDuration:         backend.Config.MinStakeDuration,
-			maxStakeDuration:         backend.Config.MaxStakeDuration,
+			maxValidatorStake:        p.MaxValidatorStake,
+			minStakeDuration:         time.Duration(p.MinStakeDuration) * time.Second,
+			maxStakeDuration:         time.Duration(p.MaxStakeDuration) * time.Second,
 			maxValidatorWeightFactor: MaxValidatorWeightFactor,
 		}, nil
 	}
