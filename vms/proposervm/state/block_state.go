@@ -5,6 +5,7 @@ package state
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/luxfi/consensus/core/choices"
 	"github.com/luxfi/constants"
@@ -36,6 +37,24 @@ type blockState struct {
 	// in storage.
 	blkCache cache.Cacher[ids.ID, *blockWrapper]
 
+	// Serialises cache MUTATION only. Never held across database IO, so reads
+	// stay concurrent; it exists so that "is this key already cached?" and the
+	// write that follows cannot be split by another goroutine.
+	//
+	// Without it the read path poisons itself. GetBlock caches a miss, so:
+	//
+	//   A: db.Get(X) -> ErrNotFound          (X not written yet)
+	//   B: PutBlock(X): cache.Put(X, blk); db.Put(X)   -- X is now durable
+	//   A: cache.Put(X, nil)                 -- overwrites B with a tombstone
+	//
+	// and every later GetBlock(X) answers ErrNotFound from that tombstone while
+	// X sits on disk. That is the "preferred block IS last-accepted and is
+	// unfetchable" wedge in proposervm BuildBlock: the builder cannot fetch its
+	// own committed tip, goes mute, and only an operator restart clears it —
+	// because a restart drops the cache and the next read comes off disk.
+	// Observed on hanzo-mainnet mv-4 (2026-08-01) and lux-mainnet luxd-0
+	// (2026-08-06, ~200 errors per 200 log lines).
+	mu sync.Mutex
 	db database.Database
 }
 
@@ -88,7 +107,11 @@ func (s *blockState) GetBlock(blkID ids.ID) (block.Block, error) {
 
 	blkWrapperBytes, err := s.db.Get(blkID[:])
 	if err == database.ErrNotFound {
-		s.blkCache.Put(blkID, nil)
+		// Cache the miss, unless a writer landed while the read above was in
+		// flight — in which case serve what it wrote rather than a stale miss.
+		if w := s.cacheFill(blkID, nil); w != nil {
+			return w.block, nil
+		}
 		return nil, database.ErrNotFound
 	}
 	if err != nil {
@@ -108,8 +131,29 @@ func (s *blockState) GetBlock(blkID ids.ID) (block.Block, error) {
 	blkWrapper.block = blk
 	blkWrapper.status = choices.Status(blkWrapper.StatusInt) // Convert back from uint32
 
-	s.blkCache.Put(blkID, &blkWrapper)
+	if w := s.cacheFill(blkID, &blkWrapper); w != nil {
+		return w.block, nil
+	}
 	return blk, nil
+}
+
+// cacheFill installs [bw] for [blkID] on behalf of a database read that has
+// already completed, and returns the entry that is authoritative afterwards
+// (nil when that entry says "not in storage").
+//
+// The rule is one line: a fill derived from a read NEVER overwrites an entry a
+// writer installed. PutBlock and DeleteBlock publish to the cache under [mu]
+// before touching the database, so an entry present here is always newer than
+// the read that produced [bw] — keeping it is what stops the read path from
+// clobbering a durable block with a tombstone.
+func (s *blockState) cacheFill(blkID ids.ID, bw *blockWrapper) *blockWrapper {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if existing, found := s.blkCache.Get(blkID); found {
+		return existing
+	}
+	s.blkCache.Put(blkID, bw)
+	return bw
 }
 
 func (s *blockState) PutBlock(blk block.Block) error {
@@ -122,11 +166,20 @@ func (s *blockState) PutBlock(blk block.Block) error {
 	bytes := marshalBlockWrapper(&blkWrapper)
 
 	blkID := blk.ID()
+	s.mu.Lock()
 	s.blkCache.Put(blkID, &blkWrapper)
+	s.mu.Unlock()
 	return s.db.Put(blkID[:], bytes)
 }
 
 func (s *blockState) DeleteBlock(blkID ids.ID) error {
-	s.blkCache.Evict(blkID)
+	// A tombstone, not an eviction. Evicting leaves the key absent, so a read
+	// that fetched the block from the database just before this delete would
+	// find nothing cached and install its now-stale bytes — resurrecting a
+	// deleted block. nil already means "not in storage" (see blkCache above),
+	// so the tombstone is the same statement the read path makes on a miss.
+	s.mu.Lock()
+	s.blkCache.Put(blkID, nil)
+	s.mu.Unlock()
 	return s.db.Delete(blkID[:])
 }
