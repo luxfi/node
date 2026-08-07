@@ -320,7 +320,7 @@ ARG EVM_TAGS=""
 # to the block coinbase and the reward vault 0x0100..0002 stays 0 forever, with
 # nothing burned. The split stays dormant wherever feeSplitTimestamp is absent
 # (mainnet), so this bump is behaviour-preserving there.
-ARG EVM_VERSION=v1.104.24
+ARG EVM_VERSION=v1.104.26
 ARG EVM_VM_ID=mgj786NP7uDwBCcq6YwThhaN8FLyybkCa4zBWTQbNgmK6k9A6
 # the pinned evm go.mod may pin a dead luxfi/upgrade pseudo-version
 # (v1.0.1-0.20260603055252-f51810805436 — commit pruned from origin). Heal it to
@@ -474,7 +474,35 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # production (the autonomous seam drive emits import/export txs inside
 # BuildBlock), so a mixed fleet across this line does NOT agree on block
 # contents. One validator at a time, D-Chain only, and never below quorum.
-ARG DEX_REF=v1.14.4
+#
+# v1.14.4 -> v1.14.6 IS A WIRE FLAG DAY, and two separate things ride on it.
+#
+# (1) THE SEAM ONLY NOW PLACES AN ORDER. Through v1.14.5 the C->D object carried
+# VALUE only, so the D-Chain consumed an intent, credited the taker, and stopped.
+# Nothing crossed, nothing was exported, and 0x9999 emitted zero events on every
+# chain since genesis. v1.14.6 carries the taker's operation (market, side,
+# limit, size) in the object and builds their order from it. It REQUIRES
+# precompile >= v0.19.7 on the C side (hence EVM_VERSION v1.104.26): the two
+# repos pin the same 118-byte golden vector and the same .v2 discovery trait.
+#
+# (2) THE TxImport BODY WIDENED, 32 -> 150 bytes, because the object's own bytes
+# now ride in the transaction (execution that reads shared memory cannot be
+# replayed: the consuming Remove lands at Accept, so the next node to sync finds
+# the object gone and dies on `execution root mismatch`). An OLD node's
+# bodySize(TxImport) is 32, so a new seam block fails ParseBlock outright — it is
+# rejected as UNPARSEABLE, never executed differently. A mixed fleet across this
+# line STALLS on seam blocks; it cannot fork. No historical block on any network
+# contains a TxImport, so there is no retroactive effect and no re-sync risk
+# below the line.
+#
+# Roll every D validator to this image BEFORE the first v2 intent is minted on C.
+# Until then the drive finds nothing (it enumerates the .v2 trait, which no
+# pre-v0.19.7 C node writes) and emits no seam tx at all.
+#
+# v1.14.6 also MOUNTS THE D-CHAIN HTTP SURFACE. ingest.go landed in v1.14.5, so
+# every node built at v1.14.4 serves 404 on every /v1/bc/D/* path while the chain
+# itself is healthy and bootstrapped — that is a stale pin, not a dead chain.
+ARG DEX_REF=v1.14.6
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
