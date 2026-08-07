@@ -350,6 +350,24 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=${EVM_CGO} GOFLAGS=-mod=mod \
     go build -ldflags="-s -w" -tags "${EVM_TAGS}" -o /luxd/build/plugins/${EVM_VM_ID} ./plugin && \
     chmod +x /luxd/build/plugins/${EVM_VM_ID} && \
+    # SEAM PIN ASSERTION — the C-Chain half. See the D-Chain twin at the dex build.
+    #
+    # The node serves each chain's shared memory to its plugin, so SharedMemory here is
+    # the ZAP client, and atomiczap.Apply REFUSES a database batch outright
+    # (ErrBatchUnsupported). A plugin pinned below the batch-less Accept therefore turns
+    # every block that stages an atomic op into a FATAL Accept — and Accept failure is
+    # fail-closed in the engine ("refusing to advance finality past the VM's applied
+    # state"), so the first 0x9999 settlement would STOP THE CHAIN. That is exactly what
+    # v1.36.60 shipped: shared memory served, plugins pinned pre-fix.
+    #
+    # This is a BUILD CHECK, not a runtime gate. It cannot skip, defer or disable
+    # anything; it only refuses to produce an image whose pins contradict the transport.
+    # Positive signal AND negative signal, so neither a rename nor a deletion passes
+    # silently.
+    grep -qE 'atomicSM\.Apply\(atomicReqs\)' plugin/evm/block.go \
+        || { echo "FATAL: evm ${EVM_VERSION} plugin/evm/block.go has no batch-less 'atomicSM.Apply(atomicReqs)'. A pin below the fix halts the chain on the first atomic op."; exit 1; } && \
+    ! grep -nE '\.Apply\([^)]+,' plugin/evm/block.go \
+        || { echo "FATAL: evm ${EVM_VERSION} passes a second argument to Apply — atomiczap refuses a batch across the process boundary (ErrBatchUnsupported)."; exit 1; } && \
     rm -rf /tmp/evm
 
 # ============= Chain VM Plugin Stage ================
@@ -540,6 +558,20 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     chmod +x /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr && \
     test -s /luxd/build/plugins/mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr \
         || { echo "FATAL: native D-Chain (dexvm) plugin missing — D-Chain cannot start"; exit 1; } && \
+    # SEAM PIN ASSERTION — the D-Chain half. Twin of the C-Chain check at the evm build;
+    # the same ErrBatchUnsupported refusal halts D on its first seam settle.
+    grep -qE 'sm\.Apply\(ar\.reqs\)' pkg/dchain/atomic.go \
+        || { echo "FATAL: dex ${DEX_REF} pkg/dchain/atomic.go has no batch-less 'sm.Apply(ar.reqs)'. A pin below v1.14.5 halts D-Chain on the first seam settle."; exit 1; } && \
+    ! grep -nE '\.Apply\([^)]+,' pkg/dchain/atomic.go \
+        || { echo "FATAL: dex ${DEX_REF} passes a second argument to Apply — atomiczap refuses a batch across the process boundary (ErrBatchUnsupported)."; exit 1; } && \
+    # The D-side reproducibility defect: executeImport must take the object as a
+    # PARAMETER (it travels in the tx body), never read it from shared memory during
+    # execute(). execute() is compared against the block's execRoot, and sm.Get reads
+    # live cross-chain memory outside that root — a node re-executing an accepted block
+    # finds the object already consumed, derives a different root, and can never sync
+    # past the first swap the seam settles. Fixed in v1.14.10; pinned here so it stays fixed.
+    grep -qE 'func \(vm \*VM\) executeImport\(.*object \[\]byte' pkg/dchain/atomic.go \
+        || { echo "FATAL: dex ${DEX_REF} executeImport does not carry the object as a parameter — a re-executing node will fail 'execution root mismatch' and can never bootstrap past a settle."; exit 1; } && \
     rm -rf /tmp/dex
 
 # lpm (Lux Plugin Manager) -- optional, skip if build fails
