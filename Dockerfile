@@ -371,12 +371,16 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     rm -rf /tmp/evm
 
 # ============= Chain VM Plugin Stage ================
-# Build all 11 chain VM plugins from github.com/luxfi/chains
+# Build the 10 chain VM plugins that github.com/luxfi/chains implements.
+#
+# The D-Chain is NOT among them. Its slot is filled by luxfi/dex cmd/dexd in the
+# next stage, so dexvm is absent from both the table and the build list below. A
+# slot holds one binary: adding a D build here would not add a fallback, it would
+# race the matcher and win or lose by ordering.
 #
 # VM ID table (CB58-encoded ids.ID byte arrays from each factory.go):
 #   aivm         -> juFxSrbCM4wszxddKepj1GWwmrn9YgN1g4n3VUWPpRo9JjERA
 #   bridgevm     -> kMhHABHM8j4bH94MCc4rsTNdo5E9En37MMyiujk4WdNxgXFsY
-#   dexvm        -> mDVT5EWMumBp3LCqvKwuyZQeY1VXr1jvjGNAt8nL4UFiXvqXr
 #   graphvm      -> nZQm4Dmg1rjX18rb8maL9gamYyXPf1xCvF7ymWzxp6a1nSQTt
 #   identityvm   -> oR6tnZHezwogyf9fRnomNXC9ojwCEBAU6jdUzpgy2PB1tD7fM
 #   keyvm        -> pJJCSV7hHYVY6TUZwR8qUPAfuhX8JLb2C1AzNSezrYNbgau8M
@@ -386,7 +390,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 #   mpcvm        -> qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS
 #   zkvm         -> vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9
 
-# MUST track node's go.mod luxfi/chains (the D-Chain dexvm + 10 VM plugins).
+# MUST track node's go.mod luxfi/chains (the 10 VM plugins above).
 # Bump with every chains release or the bundled VM plugins go stale vs node's deps.
 # v1.4.7 == node go.mod's luxfi/chains pin: warp consolidated to ONE luxfi/warp
 # helper (bridgevm/zkvm/mpcvm), graphvm genesis-last-accepted fix, built on
@@ -453,11 +457,15 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # block.ChainVM and runs the lx.OrderBook matcher INSIDE luxd consensus
 # (Block.Verify against a versiondb overlay; Block.Accept commits) — the trade IS
 # the D-Chain state transition, sequenced by luxd's multi-validator engine. This
-# REPLACES the former chains/dexvm proxy (which relayed clob_* over ZAP to a
-# standalone dchain-venue): there is no DexZapEndpoint and no standalone venue in
-# the trading path. cmd/dexd (renamed from cmd/dchain in the v1.14 line — it is
-# the ONE D-Chain binary, plugin mode by default) wraps the VM in the SAME rpc.Serve plugin harness
-# luxfi/evm boots through, and is pure-Go (CGO=0) — the optional GPU AMM
+# REPLACES the chains/dexvm proxy (which relayed clob_* over ZAP to a standalone
+# dchain-venue): there is no DexZapEndpoint and no standalone venue in the trading
+# path. That proxy is deleted — it kept building for this slot after losing it, and
+# its clob_* wire had stopped matching the venue's dex_* names, so installing it
+# produced a node that loaded, passed health, and answered nothing.
+#
+# cmd/dexd (renamed from cmd/dchain in the v1.14 line — it is the ONE D-Chain
+# binary, plugin mode by default) wraps the VM in the SAME rpc.Serve plugin
+# harness luxfi/evm boots through, and is pure-Go (CGO=0) — the optional GPU AMM
 # accelerator in pkg/lx is a separate concern gated by its own cuda/metal tags and
 # is NOT linked here. v1.5.10 is the first tag whose cmd/dchain builds CGO=0
 # (drops the phantom dchain+cgo gate); v1.5.11 wires CLOB order ingestion over the
@@ -572,6 +580,16 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     # past the first swap the seam settles. Fixed in v1.14.10; pinned here so it stays fixed.
     grep -qE 'func \(vm \*VM\) executeImport\(.*object \[\]byte' pkg/dchain/atomic.go \
         || { echo "FATAL: dex ${DEX_REF} executeImport does not carry the object as a parameter — a re-executing node will fail 'execution root mismatch' and can never bootstrap past a settle."; exit 1; } && \
+    # WIRE NAMESPACE ASSERTION. A VM is reachable only through the method names it
+    # answers, and a plugin that answers names nobody dials still loads and still
+    # passes health — every order is a silent no-op on a chain that reports up. The
+    # venue registers dex_*; clob_* was the wire of a proxy (formerly chains/dexvm)
+    # that spoke to nothing and has been deleted. Checked here because this is where
+    # the source exists; no runtime probe distinguishes the two.
+    grep -rq '"dex_place"' pkg/ \
+        || { echo "FATAL: dex ${DEX_REF} does not register the dex_* wire namespace — a D-Chain plugin built from it would load into the slot and answer nothing."; exit 1; } && \
+    ! grep -rq '"clob_' pkg/ \
+        || { echo "FATAL: dex ${DEX_REF} carries the dead clob_* wire namespace. Nothing answers those names on either side."; exit 1; } && \
     rm -rf /tmp/dex
 
 # lpm (Lux Plugin Manager) -- optional, skip if build fails

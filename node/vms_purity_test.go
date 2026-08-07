@@ -35,7 +35,8 @@ func countContaining(deps []string, needle string) int {
 }
 
 // TestOptionalVMsNotLinkedInProcess enforces the directive "all VMs as plugins
-// 100% to keep luxd small" for the nine optional / NFT-gated chain VMs.
+// 100% to keep luxd small" for the eight optional / NFT-gated chain VMs that
+// luxfi/chains implements.
 //
 // These VMs build as CGO=0 plugins (Dockerfile Chain VM Plugin Stage, placed at
 // <plugin-dir>/<VMID>) and load through VMRegistry.Reload's PluginDir scan,
@@ -48,11 +49,16 @@ func countContaining(deps []string, needle string) int {
 // X(xvm) are foundational primary-network VMs, and Q(quantumvm)/Z(zkvm) stay
 // in-process for now (Q is the post-quantum chain and is critical by default).
 // Turning Q/Z into plugins is a separate design-first phase.
+//
+// D is absent from this list because luxfi/chains does not implement it: the
+// D-Chain VM is luxfi/dex cmd/dexd. Naming chains/dexvm here would match its
+// surviving asset registry by prefix and fail on a package that is not a VM.
+// D's own invariant — one artifact for the slot, speaking dex_* — is in
+// dslot_test.go.
 func TestOptionalVMsNotLinkedInProcess(t *testing.T) {
 	optionalVMs := []string{
 		"github.com/luxfi/chains/aivm",
 		"github.com/luxfi/chains/bridgevm",
-		"github.com/luxfi/chains/dexvm",
 		"github.com/luxfi/chains/graphvm",
 		"github.com/luxfi/chains/identityvm",
 		"github.com/luxfi/chains/keyvm",
