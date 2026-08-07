@@ -506,9 +506,22 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # keyless D account while C's deadline reclaim refunded them. Any proposer could do it to
 # any swap, for free. Do not pin a DEX_REF below v1.14.10 with the seam enabled.
 #
-# v1.14.6 also MOUNTS THE D-CHAIN HTTP SURFACE. ingest.go landed in v1.14.5, so
-# every node built at v1.14.4 serves 404 on every /v1/bc/D/* path while the chain
-# itself is healthy and bootstrapped — that is a stale pin, not a dead chain.
+# THE DEPLOYED FLEET IS NOT ON THE PIN ABOVE IT. Probing devnet's running plugin
+# (grep the vendored module strings out of /data/plugins/mDVT5...) shows luxfi/dex
+# v1.5.15, not v1.14.x — the image predates this ARG. That matters twice:
+#
+#   - v1.5.15 HAS the HTTP surface, under the OLD method names: /v1/bc/D/dex/clob_*
+#     answers 200 today (clob_get_markets returns height 0, markets []). A probe of
+#     /v1/bc/D/dex/dex_* returning 404 means "old names", NOT "no surface". The
+#     rename landed in dex 28970d8 (clob_* -> dex_*).
+#   - v1.5.15 has NO atomic.go and NO drive.go, so that D-Chain cannot import a C->D
+#     intent or export a D->C fill AT ALL. Every fleet on it has a structurally
+#     absent seam, which is the real reason nothing has ever traded — not the wire,
+#     not the trait, not funding.
+#
+# So this bump is a D-Chain LINEAGE change on the running fleet (v1.5.15 -> v1.14.x),
+# not a patch. Devnet's D-Chain is at height 0 with 0 markets on all 5 validators, so
+# there is no accumulated state for it to disagree with.
 ARG DEX_REF=v1.14.10
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
