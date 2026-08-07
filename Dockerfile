@@ -499,10 +499,17 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # Until then the drive finds nothing (it enumerates the .v2 trait, which no
 # pre-v0.19.7 C node writes) and emits no seam tx at all.
 #
+# THE DRIVE IS STATUS-DRIVEN as of v1.14.10, and that is a correctness fix, not a
+# refactor: through v1.14.9 the drive emitted the import and the taker's order as a PAIR
+# in one block, so a proposer that included the import and omitted the order produced a
+# valid block whose escrow was stuck open forever — the taker's value stranded in a
+# keyless D account while C's deadline reclaim refunded them. Any proposer could do it to
+# any swap, for free. Do not pin a DEX_REF below v1.14.10 with the seam enabled.
+#
 # v1.14.6 also MOUNTS THE D-CHAIN HTTP SURFACE. ingest.go landed in v1.14.5, so
 # every node built at v1.14.4 serves 404 on every /v1/bc/D/* path while the chain
 # itself is healthy and bootstrapped — that is a stale pin, not a dead chain.
-ARG DEX_REF=v1.14.7
+ARG DEX_REF=v1.14.10
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
