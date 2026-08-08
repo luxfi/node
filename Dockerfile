@@ -390,13 +390,17 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 #   mpcvm        -> qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS
 #   zkvm         -> vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9
 
-# MUST track node's go.mod luxfi/chains (the 10 VM plugins above).
-# Bump with every chains release or the bundled VM plugins go stale vs node's deps.
-# v1.4.7 == node go.mod's luxfi/chains pin: warp consolidated to ONE luxfi/warp
-# helper (bridgevm/zkvm/mpcvm), graphvm genesis-last-accepted fix, built on
-# evm v1.99.48 + precompile v0.16.0 (enable-everything builder surface). Keeps the
-# baked VM plugins in lockstep with the host node.
-ARG CHAINS_REF=v1.7.6
+# This ref MUST equal node's go.mod luxfi/chains pin. go.mod is the authority;
+# naming the release's contents here is what let the two drift apart unnoticed.
+#
+# The plugins are baked into the image and nothing else delivers them, so a ref
+# behind go.mod ships VMs the host node was not built against and no operator
+# action can correct it short of a new image. It reached eleven tags behind: the
+# mpcvm plugin was built from v1.7.6, which predates M-Chain's state and custody
+# implementations entirely and still declared the retired `thresholdvm` VMID.
+# That last part stayed harmless only because the node resolves a plugin by its
+# FILENAME (vms/registry/registry.go), never by the ID the binary declares.
+ARG CHAINS_REF=v1.7.17
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
