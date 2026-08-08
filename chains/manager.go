@@ -2243,51 +2243,105 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 	// Run the progress-based watchdog (decomplected into watchBootstrapProgress so the
 	// loop is unit-testable), then handle the manager-side outcome.
 	const bootstrapStallTimeout = 5 * time.Minute
-	outcome, stalledAtHeight := watchBootstrapProgress(ready, failed, connecting, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
-	switch outcome {
-	case bootstrapReady:
-		m.Log.Info("chain finished bootstrapping, notifying chain",
-			log.Stringer("chainID", chainID))
-		// The P-chain completing initial sync means the staked primary-network validator set is
-		// now FULLY loaded (every staker tx replayed). Publish that so native non-platform chains
-		// can safely begin trusting their beacon set (blockHandler.primaryNetworkReady → the canary
-		// partial-set gate). Set BEFORE sb.Bootstrapped so the signal is never lagging the readiness.
-		if chainID == constants.PlatformChainID {
-			m.pChainBootstrapped.Store(true)
-		}
-		sb.Bootstrapped(chainID)
-		// The M-Chain's committed state is now readable, so entitlement can be
-		// decided. Drain any restricted chains parked waiting for it. This must
-		// happen HERE rather than at M-Chain creation: M is an engine chain marked
-		// bootstrapped asynchronously, so draining at creation would re-run the
-		// check while the answer was still "not ready", re-park every chain, and
-		// leave them parked with nothing left to drain them.
-		if chainID == m.MChainID {
-			m.retryPendingRestrictedChains()
-		}
-		return
-	case bootstrapShutdown:
-		// Manager is shutting down.
-		return
-	case bootstrapStalled:
-		// NO-PROGRESS stall — a real bootstrap failure. DO NOT mark as bootstrapped
-		// (masking real failures causes unpredictable behavior).
-		m.failBootstrapChain(engine, chainID, errBootstrapTimeout, stalledAtHeight, "bootstrap stalled (no progress)")
-		return
-	case bootstrapFailed:
-		// F5: the sync loop RETURNED a fail-safe error (eclipse / partition / deep gap). Surface
-		// it PROMPTLY with the real reason — not after the 5-min no-progress watchdog. Same
-		// manager-side handling as a stall (stop engine + failing health check), but the instant
-		// Run returns and with the precise diagnostic so the operator knows to fix peering or
-		// state-sync rather than wait.
-		reason := errBootstrapTimeout
-		if failure != nil {
-			if e := failure(); e != nil {
-				reason = e
+	stallReported := false
+	for {
+		outcome, stalledAtHeight := watchBootstrapProgress(ready, failed, connecting, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
+		switch outcome {
+		case bootstrapReady:
+			m.Log.Info("chain finished bootstrapping, notifying chain",
+				log.Stringer("chainID", chainID))
+			// The P-chain completing initial sync means the staked primary-network validator set is
+			// now FULLY loaded (every staker tx replayed). Publish that so native non-platform chains
+			// can safely begin trusting their beacon set (blockHandler.primaryNetworkReady → the canary
+			// partial-set gate). Set BEFORE sb.Bootstrapped so the signal is never lagging the readiness.
+			if chainID == constants.PlatformChainID {
+				m.pChainBootstrapped.Store(true)
 			}
+			sb.Bootstrapped(chainID)
+			// The M-Chain's committed state is now readable, so entitlement can be
+			// decided. Drain any restricted chains parked waiting for it. This must
+			// happen HERE rather than at M-Chain creation: M is an engine chain marked
+			// bootstrapped asynchronously, so draining at creation would re-run the
+			// check while the answer was still "not ready", re-park every chain, and
+			// leave them parked with nothing left to drain them.
+			if chainID == m.MChainID {
+				m.retryPendingRestrictedChains()
+			}
+			return
+		case bootstrapShutdown:
+			// Manager is shutting down.
+			return
+		case bootstrapStalled:
+			// A no-progress window says the sync did not advance during THAT WINDOW. It does
+			// not say the chain cannot finish, and stopping the engine here turns a slow sync
+			// into a chain that can never sync: StopWithError cancels the chain's context, so
+			// every later VM.Accept returns "context canceled", the finality guard refuses to
+			// advance past the VM's applied state, and the only exit is a pod restart that can
+			// stall again the same way.
+			//
+			// Measured on lux-testnet: a node was declared stalled at height 13955 and its
+			// engine stopped — then its EVM went on to reach 14154, the healthy fleet's exact
+			// height. The chain had the blocks and was still refusing every incoming cert,
+			// because the verdict outlived the condition that produced it.
+			//
+			// So report it and KEEP WATCHING. The chain stays out of Bootstrapped (it is not
+			// synced, and masking that is the other failure), the health check shows exactly
+			// why, and if the sync converges the next pass marks it bootstrapped by itself.
+			// Only bootstrapFailed below — where the sync loop ITSELF returned "I cannot
+			// proceed" — is terminal, because there the engine is reporting its own verdict
+			// rather than a watchdog inferring one.
+			if !stallReported {
+				m.reportBootstrapStall(chainID, ready, stalledAtHeight)
+				stallReported = true
+			}
+			continue
+		case bootstrapFailed:
+			// F5: the sync loop RETURNED a fail-safe error (eclipse / partition / deep gap). Surface
+			// it PROMPTLY with the real reason — not after the 5-min no-progress watchdog. Same
+			// manager-side handling as a stall (stop engine + failing health check), but the instant
+			// Run returns and with the precise diagnostic so the operator knows to fix peering or
+			// state-sync rather than wait.
+			reason := errBootstrapTimeout
+			if failure != nil {
+				if e := failure(); e != nil {
+					reason = e
+				}
+			}
+			m.failBootstrapChain(engine, chainID, reason, stalledAtHeight, "bootstrap failed safe (eclipsed/partitioned/too-far-behind)")
+			return
 		}
-		m.failBootstrapChain(engine, chainID, reason, stalledAtHeight, "bootstrap failed safe (eclipsed/partitioned/too-far-behind)")
-		return
+	}
+}
+
+// reportBootstrapStall publishes a no-progress stall on the chain's health check and
+// leaves the engine RUNNING, so the sync can still finish. The check re-reads ready()
+// on every call rather than freezing the verdict, which means it clears itself the
+// moment the chain converges — a stall that has since been falsified stops being
+// reported as a failure. Compare failBootstrapChain, which stops the engine and is
+// reserved for a sync loop that reported its own failure.
+func (m *manager) reportBootstrapStall(chainID ids.ID, ready func() bool, atHeight uint64) {
+	m.Log.Warn("chain bootstrap made no progress in the stall window - NOT marked bootstrapped, still trying",
+		log.Stringer("chainID", chainID),
+		log.Uint64("height", atHeight))
+
+	chainAlias := m.PrimaryAliasOrDefault(chainID)
+	if err := m.Health.RegisterHealthCheck(
+		chainAlias+"-bootstrap",
+		health.CheckerFunc(func(context.Context) (interface{}, error) {
+			if ready != nil && ready() {
+				return map[string]interface{}{"chainID": chainID.String()}, nil
+			}
+			return map[string]interface{}{
+				"chainID": chainID.String(),
+				"error":   "bootstrap stalled (no progress)",
+				"height":  atHeight,
+			}, errBootstrapTimeout
+		}),
+		health.ApplicationTag,
+	); err != nil {
+		m.Log.Error("failed to register bootstrap stall health check",
+			log.Stringer("chainID", chainID),
+			log.Err(err))
 	}
 }
 
