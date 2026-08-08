@@ -548,7 +548,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # So this bump is a D-Chain LINEAGE change on the running fleet (v1.5.15 -> v1.14.x),
 # not a patch. Devnet's D-Chain is at height 0 with 0 markets on all 5 validators, so
 # there is no accumulated state for it to disagree with.
-ARG DEX_REF=v1.14.10
+ARG DEX_REF=v1.14.25
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
@@ -590,6 +590,16 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
         || { echo "FATAL: dex ${DEX_REF} does not register the dex_* wire namespace — a D-Chain plugin built from it would load into the slot and answer nothing."; exit 1; } && \
     ! grep -rq '"clob_' pkg/ \
         || { echo "FATAL: dex ${DEX_REF} carries the dead clob_* wire namespace. Nothing answers those names on either side."; exit 1; } && \
+    # GENESIS ASSERTION. The D-Chain's height-0 block must come from the document
+    # recorded in its P-Chain CreateChainTx, never from this binary. A pin that
+    # derives genesis from compiled-in defaults gives every wiped node a chain of
+    # its own, silently and while reporting healthy — and wiping chainData is the
+    # ordinary repair, so the ordinary repair is what strands the validator. Both
+    # halves are required: read the delivered document, and refuse to found from
+    # one that never arrived. Asserted here because this line selects the source
+    # and no runtime probe distinguishes a right genesis from a lucky one.
+    grep -q 'refusing to found a chain with no creation document' pkg/dchain/genesis.go \
+        || { echo "FATAL: dex ${DEX_REF} founds a chain from an empty creation document — a wiped node would adopt this binary's genesis and partition alone. Pin v1.14.25 or later."; exit 1; } && \
     rm -rf /tmp/dex
 
 # lpm (Lux Plugin Manager) -- optional, skip if build fails
