@@ -335,7 +335,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// Chain tracking
 	fs.String(TrackChainsKey, "", "Comma-separated list of chain IDs to track. A node tracking chains will sync those chains and track validator uptimes. Use --track-all-chains for development networks")
 	fs.Bool(TrackAllChainsKey, false, "If true, track all chains automatically. Useful for development and testing networks where you want to sync all deployed chains without specifying each one")
-	fs.Bool(DexValidatorKey, false, "If true, this node activates and participates in the D-Chain DEX: it tracks/validates the D-Chain and dials the venue matcher engine. Default off — the DEXVM factory is always linked (D-Chain is a genesis chain), but a node does NOT activate the D-Chain unless this flag is set, even under --track-all-chains. When a network configures the dex-operator NFT collection, activation also requires the node's X-Chain staking address to hold that NFT (flag AND NFT)")
+	fs.Bool(DexValidatorKey, false, "If true, this node asks to participate in the D-Chain DEX: track/validate the D-Chain and dial the venue matcher engine. Default off — a node does NOT activate the D-Chain unless this flag is set, even under --track-all-chains. This flag is necessary but NOT sufficient: activation also requires an M-Chain ownership attestation naming this node, so setting it alone does not entitle a node to the DEX")
 
 	// State syncing
 	fs.String(StateSyncIPsKey, "", "Comma separated list of state sync peer ips to connect to. Example: 127.0.0.1:9630,127.0.0.1:9631")

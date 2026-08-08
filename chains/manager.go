@@ -409,28 +409,27 @@ type ManagerConfig struct {
 	DChainID                  ids.ID          // ID of the D-Chain (DEX),
 	CriticalChains            set.Set[ids.ID] // Chains that can't exit gracefully
 
-	// ChainAuthorizations gates per-validator activation of specific chains on
-	// X-Chain NFT ownership: a validator may track/validate a listed chain
-	// only if its staking X-address (StakingXAddress) holds the required
-	// nftfx NFT. A nil/empty map means no chain is NFT-gated, so every chain
-	// behaves exactly as before. Critical chains are never gated regardless of
-	// this map. Node wiring (e.g. DChainID -> dex-validator collection) is set
-	// in node.go; see authorizeChainActivation.
-	ChainAuthorizations map[ids.ID]NFTAuthorization
-	// StakingXAddress is this node's X-Chain address derived from its staking
-	// keys; it is the owner whose UTXOs the NFT-authorization gate inspects.
-	// Empty when no chain is gated; an empty address with a gated chain causes
-	// that chain to be opted out (fail closed).
-	StakingXAddress ids.ShortID
+	// MChainID is the ID of the M-Chain (MPC), whose committed state holds the
+	// ownership attestations that entitle a node to a restricted chain. Empty when
+	// this network's genesis has no M-Chain, in which case no entitlement can be
+	// verified and every restricted chain refuses.
+	MChainID ids.ID
+	// RestrictedChains are the chains a node may activate only when it is entitled
+	// — that is, when the M-Chain holds an ownership attestation naming this node.
+	// A nil/empty set means no chain is restricted, so every chain behaves exactly
+	// as before. Critical chains are never restricted regardless of this set.
+	// Derived in node.go from the single OptionalVMs registry; see
+	// authorizeChainActivation.
+	RestrictedChains set.Set[ids.ID]
 	// DexValidator is the operator's opt-in to PARTICIPATE in the D-Chain DEX
 	// (track/validate it + dial the venue matcher). It is a NECESSARY condition
-	// for D-Chain activation that composes AND-wise with the NFT gate: the
-	// D-Chain (DChainID) activates only if DexValidator is true AND the NFT
-	// requirement (if any) is satisfied. Default false means a node does NOT
-	// activate the D-Chain even when it is queued by --track-all-chains; the
-	// activation authority is authorizeChainActivation, not the platformvm
-	// tracking set. Only the D-Chain consults this flag; every other chain is
-	// untouched. Sourced from node Config.DexValidator (see node.go).
+	// for D-Chain activation that composes AND-wise with the entitlement: the
+	// D-Chain (DChainID) activates only if DexValidator is true AND this node is
+	// entitled. Default false means a node does NOT activate the D-Chain even when
+	// it is queued by --track-all-chains; the activation authority is
+	// authorizeChainActivation, not the platformvm tracking set. Only the D-Chain
+	// consults this flag; every other chain is untouched. Sourced from node
+	// Config.DexValidator (see node.go).
 	DexValidator   bool
 	TimeoutManager timeout.Manager // Manages request timeouts when sending messages to other validators
 	Health         health.Registerer
@@ -505,15 +504,15 @@ type manager struct {
 	pendingVMChainsLock sync.RWMutex
 	pendingVMChains     map[ids.ID][]ChainParameters
 
-	// gatedChainsLock guards the NFT-authorization gate's defer state.
-	// pendingGatedChains holds chains parked because the X-Chain was not yet
-	// bootstrapped when their activation was attempted; they are re-queued once
-	// the X-Chain is created (retryPendingGatedChains). gatedAttempts caps
-	// re-attempts per chain so a never-bootstrapping X-Chain cannot park a
-	// chain forever. See manager_authz.go.
-	gatedChainsLock    sync.Mutex
-	pendingGatedChains []ChainParameters
-	gatedAttempts      map[ids.ID]int
+	// restrictedChainsLock guards the entitlement check's defer state.
+	// pendingRestrictedChains holds chains parked because the M-Chain was not yet
+	// bootstrapped when their activation was attempted; they are re-queued once the
+	// M-Chain converges (retryPendingRestrictedChains). restrictedAttempts caps
+	// re-attempts per chain so a never-converging M-Chain cannot park a chain
+	// forever. See manager_authz.go.
+	restrictedChainsLock    sync.Mutex
+	pendingRestrictedChains []ChainParameters
+	restrictedAttempts      map[ids.ID]int
 
 	chainsLock sync.Mutex
 	// Key: Chain's ID
@@ -604,7 +603,7 @@ func New(config *ManagerConfig) (Manager, error) {
 		unblockChainCreatorCh:  make(chan struct{}),
 		chainCreatorShutdownCh: make(chan struct{}),
 		pendingVMChains:        make(map[ids.ID][]ChainParameters),
-		gatedAttempts:          make(map[ids.ID]int),
+		restrictedAttempts:     make(map[ids.ID]int),
 
 		luxGatherer:          luxGatherer,
 		handlerGatherer:      handlerGatherer,
@@ -666,36 +665,37 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 	sb, _ := m.Nets.GetOrCreate(chainParams.ChainID)
 
-	// NFT-authorization gate: a chain listed in ChainAuthorizations may only be
-	// activated if this validator's staking X-address holds the required
-	// X-Chain NFT. Ungated and critical chains short-circuit to authorized, so
-	// this is a no-op for P/C/X/Q/… and whenever ChainAuthorizations is empty.
+	// Entitlement check: a chain in RestrictedChains may only be activated by a node
+	// the M-Chain holds an ownership attestation for. Unrestricted and critical
+	// chains short-circuit to authorized, so this is a no-op for P/C/X/Q/… and
+	// whenever RestrictedChains is empty.
 	if authorized, ready := m.authorizeChainActivation(chainParams.ID); !ready {
-		// The X-Chain is not bootstrapped yet, so the gate cannot decide.
-		// Park the chain out of the queue and retry once the X-Chain is
-		// created; do not skip permanently. The attempt cap bounds this.
-		if m.deferGatedChain(chainParams) {
-			m.Log.Info("deferring gated chain activation until X-Chain bootstrapped",
+		// The M-Chain is not bootstrapped yet, so entitlement cannot be read. Park
+		// the chain out of the queue and retry once the M-Chain converges; do not
+		// skip permanently. The attempt cap bounds this.
+		if m.deferRestrictedChain(chainParams) {
+			m.Log.Info("deferring restricted chain activation until M-Chain bootstrapped",
 				log.Stringer("chainID", chainParams.ID),
 				log.Stringer("vmID", chainParams.VMID),
 			)
 			return
 		}
-		// Cap exhausted: the X-Chain never became queryable. Opt out cleanly,
-		// exactly like an unauthorized chain — mark bootstrapped, no failing
-		// health check.
-		m.Log.Warn("opting out of gated chain: X-Chain did not bootstrap in time",
+		// Cap exhausted: the M-Chain never became queryable. Opt out cleanly,
+		// exactly like an unentitled chain — mark bootstrapped, no failing health
+		// check.
+		m.Log.Warn("opting out of restricted chain: M-Chain did not bootstrap in time",
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
 		)
 		sb.Bootstrapped(chainParams.ID)
 		return
 	} else if !authorized {
-		// Clean opt-out: this validator does not hold the required NFT. Mirror
-		// the VM-plugin-not-loaded skip exactly — mark the slot bootstrapped
-		// and return WITHOUT a failing health check, so the node stays healthy
-		// while declining to validate a chain it is not authorized for.
-		m.Log.Info("chain activation not authorized — validator X-address does not hold the required NFT",
+		// Clean opt-out: this node is not entitled. Mirror the
+		// VM-plugin-not-loaded skip exactly — mark the slot bootstrapped and
+		// return WITHOUT a failing health check, so the node stays healthy while
+		// declining to validate a chain it is not authorized for. The specific
+		// reason was already logged by authorizeChainActivation.
+		m.Log.Info("chain activation not authorized: no ownership attestation entitles this node",
 			log.Stringer("chainID", chainParams.ChainID),
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("vmID", chainParams.VMID),
@@ -840,13 +840,6 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	m.chainsLock.Unlock()
 
 	m.stateChainIdentity(chainParams)
-
-	// The X-Chain is now tracked, so the NFT-authorization gate can query it.
-	// Re-queue any gated chains that were parked waiting for it (no-op when
-	// nothing is parked or this is not the X-Chain).
-	if chainParams.ID == m.XChainID {
-		m.retryPendingGatedChains()
-	}
 
 	// Associate the newly created chain with its default alias
 	if err := m.Alias(chainParams.ID, chainParams.ID.String()); err != nil {
@@ -2263,6 +2256,15 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 			m.pChainBootstrapped.Store(true)
 		}
 		sb.Bootstrapped(chainID)
+		// The M-Chain's committed state is now readable, so entitlement can be
+		// decided. Drain any restricted chains parked waiting for it. This must
+		// happen HERE rather than at M-Chain creation: M is an engine chain marked
+		// bootstrapped asynchronously, so draining at creation would re-run the
+		// check while the answer was still "not ready", re-park every chain, and
+		// leave them parked with nothing left to drain them.
+		if chainID == m.MChainID {
+			m.retryPendingRestrictedChains()
+		}
 		return
 	case bootstrapShutdown:
 		// Manager is shutting down.

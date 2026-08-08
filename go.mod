@@ -120,7 +120,7 @@ require (
 	github.com/luxfi/accel v1.2.4
 	github.com/luxfi/api v1.1.3
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.7.9
+	github.com/luxfi/chains v1.7.17
 	github.com/luxfi/codec v1.2.1
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.2
@@ -139,7 +139,7 @@ require (
 	github.com/luxfi/runtime v1.3.1
 	github.com/luxfi/sdk v1.18.1
 	github.com/luxfi/sys v0.1.0
-	github.com/luxfi/threshold v1.12.3
+	github.com/luxfi/threshold v1.12.6
 	github.com/luxfi/timer v1.1.1
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.3.1

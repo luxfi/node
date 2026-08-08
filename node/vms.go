@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/chains/zkvm"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/chains"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/vms"
 )
@@ -22,12 +22,12 @@ import (
 // that disjointness is what makes static (in-process) registration unable to
 // shadow a PluginDir plugin.
 //
-//   - CoreVMs:     in-process, no NFT gate, available at genesis/core boot.
+//   - CoreVMs:     in-process, never restricted, available at genesis/core boot.
 //                  {P platformvm, X xvm, Q quantumvm, Z zkvm}.
 //   - OptionalVMs: plugin-only (loaded from PluginDir via the upstream
-//                  VMRegistry scan), NFT-gated activation when RequiredNFT is
-//                  set. {D dexvm, B bridgevm, C evm, A/G/I/K/O/R/T, future app
-//                  VMs}.
+//                  VMRegistry scan), activation restricted to entitled nodes
+//                  when Restricted is set. {D dexvm, B bridgevm, C evm,
+//                  A/G/I/K/O/R/T, future app VMs}.
 //
 // The accessor rule that makes shadowing impossible: a VMID is resolved as
 // core (in-process factory) IFF it is in CoreVMs; otherwise it is resolved
@@ -40,7 +40,7 @@ import (
 // always wins because the in-process registry never contains it.
 
 // CoreVM describes a VM that runs in-process (linked into luxd), never loaded
-// from PluginDir and never NFT-gated.
+// from PluginDir and never restricted.
 //
 // Factory is the concrete in-process factory for VMs whose construction needs
 // no node runtime state (Q, Z) — registerCoreVMs installs these. It is nil for
@@ -54,27 +54,8 @@ type CoreVM struct {
 	RegisteredInNodeGo bool
 }
 
-// NFTRequirement is the per-network-independent POLICY half of a VM's
-// activation gate: which X-Chain nftfx collection a validator's staking
-// address must hold, and which group within it (0 = any group). The per-network
-// VALUE half — the concrete collection AssetID — is supplied separately from
-// network config (Config.NFTAuthorizationAssets) and joined with this policy in
-// chainAuthorizationsFor. Splitting policy (here) from per-network value
-// (config) keeps one declaration of "which VMs need an operator NFT" while the
-// asset IDs vary per network/genesis.
-type NFTRequirement struct {
-	// Collection is the human label of the operator NFT collection (e.g.
-	// "dex-operator", "bridge-operator"). It exists for logging/clarity and to
-	// key the per-network asset lookup conceptually; the authoritative join key
-	// is the VMID (see chainAuthorizationsFor).
-	Collection string
-	// GroupID is the nftfx group within the collection that authorizes
-	// activation; 0 means any group in the collection.
-	GroupID uint32
-}
-
 // PluginSpec describes a VM that is loaded ONLY from PluginDir (never linked
-// in-process), optionally gated on an X-Chain operator NFT.
+// in-process), and whether its chain is restricted to entitled nodes.
 type PluginSpec struct {
 	// Name is the chain VM's package/plugin name (e.g. "dexvm"). For the nine
 	// luxfi/chains VMs the plugin main is github.com/luxfi/chains/<Name>/cmd/
@@ -82,10 +63,15 @@ type PluginSpec struct {
 	// Dockerfile Chain VM Plugin Stage. The C-Chain EVM ("evm") is also
 	// plugin-loaded but its plugin main lives in the EVM repo, not chains.
 	Name string
-	// RequiredNFT, when non-nil, gates this VM's activation on X-Chain operator
-	// NFT ownership (see NFTRequirement). Nil means the VM is plugin-loaded but
-	// ungated (any node that tracks the chain may activate it).
-	RequiredNFT *NFTRequirement
+	// Restricted means a node may activate this VM's chain only when the M-Chain
+	// holds an ownership attestation naming it. False means plugin-loaded but open
+	// to any node that tracks the chain.
+	//
+	// WHICH collection confers the entitlement is deliberately not stated here. It
+	// is asserted once, by whoever reads that collection and asks the M-Chain to
+	// sign; a second copy of that pin in the node would be a second source of
+	// truth, able to drift from the first.
+	Restricted bool
 }
 
 // CoreVMs is the authoritative set of in-process VMs. Q and Z carry their
@@ -103,24 +89,22 @@ var CoreVMs = map[ids.ID]CoreVM{
 }
 
 // OptionalVMs is the authoritative set of plugin-only VMs and their activation
-// gates. It is the single source for both (a) which VMs MUST NOT be linked
-// in-process, and (b) which chains require an operator NFT to activate.
+// rules. It is the single source for both (a) which VMs MUST NOT be linked
+// in-process, and (b) which chains are restricted to entitled nodes.
 //
-// D (dexvm) and B (bridgevm) are NFT-gated: a node may only track/validate
-// them if its staking X-address holds the corresponding operator NFT. The
-// concrete collection AssetID is per-network and supplied via
-// Config.NFTAuthorizationAssets; minting the real collections is a follow-up,
-// so until a network configures an asset the chain stays ungated (preserving
-// today's opt-in-flag behavior) while the gate itself remains fail-closed.
+// D (dexvm) and B (bridgevm) are restricted: a node may track/validate them only
+// if the M-Chain holds an ownership attestation naming it. That attestation is
+// what makes the credential unforgeable by the node's own operator — it lives in
+// consensus state, not in local config.
 //
-// C (evm) and the remaining app VMs are plugin-loaded but ungated today.
+// C (evm) and the remaining app VMs are plugin-loaded but open.
 //
 // Declaring a VM here is a statement of intent, not a guarantee that a binary
 // exists: the registry scan simply finds nothing and the chain cannot start.
 // fhevm (F-Chain) is exactly that case today — see its entry below.
 var OptionalVMs = map[ids.ID]PluginSpec{
-	constants.DexVMID:      {Name: "dexvm", RequiredNFT: &NFTRequirement{Collection: "dex-operator", GroupID: 0}},
-	constants.BridgeVMID:   {Name: "bridgevm", RequiredNFT: &NFTRequirement{Collection: "bridge-operator", GroupID: 0}},
+	constants.DexVMID:      {Name: "dexvm", Restricted: true},
+	constants.BridgeVMID:   {Name: "bridgevm", Restricted: true},
 	constants.EVMID:        {Name: "evm"},
 	constants.AIVMID:       {Name: "aivm"},
 	constants.GraphVMID:    {Name: "graphvm"},
@@ -225,39 +209,26 @@ func (n *Node) assertNoOptionalShadows(ctx context.Context) error {
 	return nil
 }
 
-// chainAuthorizationsFor builds the manager's ChainAuthorizations map — the
-// single mapping of "which chain requires which operator NFT" — from
-// OptionalVMs (the policy) joined with the per-network asset IDs (the values)
-// and genesis (the chain IDs). It is the ONE place this mapping is derived, so
-// OptionalVMs[id].RequiredNFT is the sole declaration of NFT-gating; node.go
+// restrictedChainsFor resolves OptionalVMs' Restricted flags into the set of
+// chain IDs the manager enforces. It is the ONE place that mapping is derived, so
+// OptionalVMs is the sole declaration of which chains are restricted; node.go
 // merely passes the result to chains.ManagerConfig.
 //
-// For each OptionalVMs entry with a RequiredNFT:
-//   - if the network has not configured a collection AssetID for that VMID,
-//     the chain is left UNGATED (no map entry) — collections are minted as a
-//     follow-up, so until then the chain behaves as today (opt-in flag only);
-//   - if the chain is not present in this network's genesis, it is skipped;
-//   - otherwise the genesis-derived chain ID maps to NFTAuthorization{asset,
-//     group}, so authorizeChainActivation fails closed for any node whose
-//     staking X-address does not hold the NFT.
-func chainAuthorizationsFor(genesisBytes []byte, assets map[ids.ID]ids.ID) map[ids.ID]chains.NFTAuthorization {
-	out := make(map[ids.ID]chains.NFTAuthorization)
+// A restricted VM absent from this network's genesis is skipped — there is no
+// chain to restrict. Everything else in the set refuses to activate unless the
+// M-Chain holds an ownership attestation for this node, so the set can only ever
+// withhold activation, never grant it.
+func restrictedChainsFor(genesisBytes []byte) set.Set[ids.ID] {
+	out := set.NewSet[ids.ID](len(OptionalVMs))
 	for vmID, spec := range OptionalVMs {
-		if spec.RequiredNFT == nil {
-			continue
-		}
-		asset, ok := assets[vmID]
-		if !ok || asset == ids.Empty {
+		if !spec.Restricted {
 			continue
 		}
 		createTx, err := builder.VMGenesis(genesisBytes, vmID)
 		if err != nil {
 			continue
 		}
-		out[createTx.ID()] = chains.NFTAuthorization{
-			AssetID: asset,
-			GroupID: spec.RequiredNFT.GroupID,
-		}
+		out.Add(createTx.ID())
 	}
 	return out
 }
@@ -268,22 +239,19 @@ func chainAuthorizationsFor(genesisBytes []byte, assets map[ids.ID]ids.ID) map[i
 // log line; the SAME bool is passed to ManagerConfig.DexValidator, where the
 // chain manager actually ENFORCES it (authorizeChainActivation declines the
 // D-Chain when the flag is off). So there is one source of truth (the config
-// flag) with one enforcement point (the gate); this accessor is sugar for the
-// log, not a parallel policy.
+// flag) with one enforcement point (authorizeChainActivation); this accessor is
+// sugar for the log, not a parallel policy.
 //
 // Default is false: most validators never run the DEX. The licensed/private
 // piece is the GPU venue ENGINE (lx/dex cmd/dvenue, cgo) — never the node.
 //
-// The effective activation rule for the D-Chain is flag AND NFT: the chain
-// manager's authorizeChainActivation requires DexValidator=true AND, when a
-// network has configured the dex-operator collection (OptionalVMs[DexVMID].
-// RequiredNFT joined with Config.NFTAuthorizationAssets), the node's staking
-// X-address to hold that NFT. With the flag off the D-Chain is declined even
-// under --track-all-chains; with the flag on but the NFT unheld the gate fails
-// closed. (Phase-2 seam: wiring the node's staking X-address into
-// ManagerConfig.StakingXAddress and minting the dex-operator collection per
-// network; until a collection is configured the NFT half is a no-op and the
-// flag alone governs.)
+// The effective activation rule for the D-Chain is opt-in AND entitlement:
+// authorizeChainActivation requires DexValidator=true AND an M-Chain ownership
+// attestation naming this node. With the flag off the D-Chain is declined even
+// under --track-all-chains; with the flag on but no attestation it refuses. The
+// flag alone is never sufficient — it states what the operator WANTS, while the
+// attestation states what they are entitled to, and only the latter lives
+// somewhere the operator cannot rewrite.
 func (n *Node) participatesInDEXChain() bool {
 	return n.Config.DexValidator
 }

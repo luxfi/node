@@ -1325,6 +1325,17 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 		n.Log.Info("D-Chain not in genesis, skipping")
 	}
 
+	// Resolve the M-Chain ID. Its committed state holds the ownership attestations
+	// that entitle a node to a restricted chain, so without an M-Chain in genesis
+	// no entitlement is provable and every restricted chain refuses to activate.
+	var mChainID ids.ID
+	if createMPCVMTx, err := builder.VMGenesis(n.Config.GenesisBytes, constants.MPCVMID); err == nil {
+		mChainID = createMPCVMTx.ID()
+		n.Log.Info("M-Chain resolved: ownership attestations verify against its state", "chainID", mChainID)
+	} else {
+		n.Log.Warn("M-Chain not in genesis: restricted chains cannot be entitled and will refuse to activate")
+	}
+
 	_, err := metric.MakeAndRegister(
 		n.MetricsGatherer,
 		requestsNamespace,
@@ -1381,14 +1392,15 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 			CChainID:                  cChainID,
 			DChainID:                  dChainID,
 			CriticalChains:            criticalChains,
-			// ChainAuthorizations is derived from the single OptionalVMs
-			// registry (which VMs need which operator NFT) joined with the
-			// per-network collection assets in Config.NFTAuthorizationAssets and
-			// genesis-resolved chain IDs. Empty until a network configures an
-			// operator collection — so gated optional chains (D/B) behave as
-			// today and ungated ones are untouched — while the gate itself fails
-			// closed for any configured-but-unheld NFT (chains/manager_authz.go).
-			ChainAuthorizations: chainAuthorizationsFor(n.Config.GenesisBytes, n.Config.NFTAuthorizationAssets),
+			// MChainID is where ownership attestations live. Empty when this
+			// network's genesis has no M-Chain, in which case every restricted
+			// chain refuses — there is no way to prove entitlement.
+			MChainID: mChainID,
+			// RestrictedChains is derived from the single OptionalVMs registry
+			// (which VMs are restricted) resolved against genesis chain IDs.
+			// A restricted chain activates only for a node the M-Chain holds an
+			// ownership attestation for (chains/manager_authz.go).
+			RestrictedChains: restrictedChainsFor(n.Config.GenesisBytes),
 			// DexValidator is the operator's D-Chain opt-in. It is enforced as a
 			// necessary activation condition by authorizeChainActivation (composed
 			// AND with the NFT gate), so a node WITHOUT dex-validator does not
