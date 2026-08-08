@@ -130,6 +130,12 @@ type Network interface {
 	// validator set sequences blocks for a given blockchain, and to check
 	// whether peers track the chain network that owns the blockchain.
 	RegisterBlockchainNetwork(blockchainID, networkID ids.ID)
+
+	// RegisterChainIdentity records which chain a blockchain this node runs
+	// actually is, so every handshake states it and peers running a different
+	// one are excluded from it. Called by the chain manager as each chain
+	// starts, including chains created long after boot.
+	RegisterChainIdentity(id peer.ChainIdentity)
 }
 
 type UptimeResult struct {
@@ -474,6 +480,7 @@ func NewNetwork(
 		VersionCompatibility: version.GetCompatibility(minCompatibleTime),
 		MyNodeID:             config.MyNodeID,
 		MyChains:             config.TrackedChains,
+		MyChainIdentities:    &peer.Chains{},
 		Beacons:              config.Beacons,
 		Validators:           config.Validators,
 		NetworkID:            config.NetworkID,
@@ -1279,6 +1286,16 @@ func (n *network) getPeers(
 			continue
 		}
 
+		// A peer that stated a different chain for this blockchain is not
+		// asked about it. This is the outbound half of the exclusion; the
+		// inbound half drops what such a peer sends. Without it the local
+		// chain keeps polling a node that will never answer and pays a
+		// timeout for every request — one misconfigured validator slowing a
+		// chain it cannot take part in.
+		if isIncompatible(peer, chainID) {
+			continue
+		}
+
 		// Use sequencerID for validator membership check
 		_, areTheyAValidator := n.config.Validators.GetValidator(sid, nodeID)
 		// check if the peer is allowed to connect to the net
@@ -1343,6 +1360,11 @@ func (n *network) samplePeers(
 	return n.connectedPeers.Sample(
 		numValidatorsToSample+config.NonValidators+config.Peers,
 		func(p peer.Peer) bool {
+			// Never sample a peer that stated a different chain for this one.
+			if isIncompatible(p, chainID) {
+				return false
+			}
+
 			trackedChains := p.TrackedChains()
 
 			// Native chains (P, C, X, Q, A, B, T, Z, G, K, D) are all part of
@@ -2036,6 +2058,31 @@ func (n *network) RegisterBlockchainNetwork(blockchainID, networkID ids.ID) {
 	n.peerConfig.Log.Info("registered blockchain-to-network mapping",
 		"blockchainID", blockchainID,
 		"networkID", networkID,
+	)
+}
+
+// isIncompatible reports whether a peer stated a DIFFERENT chain for this
+// blockchain. Kept as a named function because the peer-selection loops shadow
+// the peer package with their loop variable, and a comparison written inline
+// there reads as if it were a property of the peer rather than of the pair.
+func isIncompatible(p peer.Peer, chainID ids.ID) bool {
+	return p.ChainState(chainID) == peer.ChainIncompatible
+}
+
+// RegisterChainIdentity records this node's identity for a blockchain it runs.
+//
+// Peers already connected keep the identity they stated when they connected; a
+// chain that starts now was not comparable at the time they handshook, and
+// re-deriving the comparison for every live connection would trade a clean
+// once-per-connection decision for a moving one. The next handshake settles it,
+// and a chain that just started has no consensus in flight to protect.
+func (n *network) RegisterChainIdentity(id peer.ChainIdentity) {
+	n.peerConfig.MyChainIdentities.Add(id)
+	n.peerConfig.Log.Info("running chain",
+		"chainID", id.ChainID,
+		"vmID", id.VMID,
+		"genesis", fmt.Sprintf("%x", id.Genesis),
+		"rules", fmt.Sprintf("%x", id.Rules),
 	)
 }
 

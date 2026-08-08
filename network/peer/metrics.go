@@ -25,6 +25,7 @@ var (
 	opLabels             = []string{opLabel}
 	ioOpLabels           = []string{ioLabel, opLabel}
 	ioOpCompressedLabels = []string{ioLabel, opLabel, compressedLabel}
+	chainMismatchLabels  = []string{"peer", "chain", "local_genesis", "peer_genesis"}
 )
 
 type Metrics struct {
@@ -37,6 +38,20 @@ type Metrics struct {
 	Messages   metric.CounterVec // io + op + compressed
 	Bytes      metric.CounterVec // io + op
 	BytesSaved metric.GaugeVec   // io + op
+
+	// ChainIdentityMismatch names both sides of a disagreement, because the
+	// question an operator has is never "did one happen" but "which of these two
+	// nodes is on the wrong chain", and that is unanswerable without the digests.
+	// The peer and digest labels are unbounded in principle; in practice this
+	// series only ever appears when something is misconfigured, and a fleet where
+	// it is high-cardinality has a much larger problem than its metrics.
+	ChainIdentityMismatch metric.GaugeVec // peer + chain + local_genesis + peer_genesis
+	// ChainDivergentMsgs counts messages dropped in either direction because the
+	// peer is on a different chain. A number that climbs is a peer still trying.
+	ChainDivergentMsgs metric.Counter
+	// ChainRulesDiffer counts peers on the same chain running a different rule
+	// generation: compatible now, scheduled to diverge later.
+	ChainRulesDiffer metric.Counter
 }
 
 func NewMetrics(registerer metric.Registerer) (*Metrics, error) {
@@ -56,6 +71,13 @@ func NewMetrics(registerer metric.Registerer) (*Metrics, error) {
 			"number of message bytes", ioOpLabels),
 		BytesSaved: registerer.NewGaugeVec("msgs_bytes_saved",
 			"number of message bytes saved", ioOpLabels),
+		ChainIdentityMismatch: registerer.NewGaugeVec("chain_identity_mismatch",
+			"1 while a peer states a different chain for a blockchain this node runs",
+			chainMismatchLabels),
+		ChainDivergentMsgs: registerer.NewCounter("chain_divergent_msgs",
+			"number of messages dropped because the peer is on a different chain"),
+		ChainRulesDiffer: registerer.NewCounter("chain_rules_differ",
+			"number of peers on the same chain under a different rule generation"),
 	}
 	return m, errors.Join()
 }

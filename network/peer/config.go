@@ -48,7 +48,13 @@ type Config struct {
 	VersionCompatibility version.Compatibility
 	MyNodeID             ids.NodeID
 	// MyChains does not include the primary network ID
-	MyChains           set.Set[ids.ID]
+	MyChains set.Set[ids.ID]
+	// MyChainIdentities states which chain each blockchain this node runs
+	// actually is — the digest of the record it was created from, not just its
+	// id. Peers that state a different one for the same blockchain are excluded
+	// from it. Populated by the chain manager as chains start, including long
+	// after boot.
+	MyChainIdentities  *Chains
 	Beacons            validators.Manager
 	Validators         validators.Manager
 	NetworkID          uint32

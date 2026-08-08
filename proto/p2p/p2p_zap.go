@@ -41,6 +41,7 @@ type (
 	Pong                    = p2p.Pong
 	ChainUptime             = p2p.ChainUptime
 	Handshake               = p2p.Handshake
+	ChainIdentity           = p2p.ChainIdentity
 	Client                  = p2p.Client
 	BloomFilter             = p2p.BloomFilter
 	GetPeerList             = p2p.GetPeerList
