@@ -233,32 +233,14 @@ type Config struct {
 	// Enforcement is real, not advisory: this flag flows into
 	// chains.ManagerConfig.DexValidator and the chain manager's
 	// authorizeChainActivation declines the D-Chain when it is false — even when
-	// --track-all-chains queued the chain. It composes AND-wise with the
-	// X-Chain operator-NFT gate (OptionalVMs[DexVMID].RequiredNFT joined with
-	// NFTAuthorizationAssets): the D-Chain activates only if DexValidator is
-	// true AND (when a network configures the dex-operator collection) the
-	// node's staking X-address holds that NFT.
+	// --track-all-chains queued the chain.
 	//
-	// Phase-2 (NOT built here — see participatesInDEXChain in node/node.go and
-	// the StakingXAddress seam in chains.ManagerConfig): binding the NFT check
-	// to proof-of-possession of the staking key, and mDNS local-fiber geofence
-	// discovery among the HFT DEX cluster. Until a network configures the
-	// dex-operator collection the NFT half is a no-op and this flag alone gates.
+	// It is NECESSARY but never SUFFICIENT. It composes AND-wise with the
+	// entitlement: the D-Chain activates only if DexValidator is true AND the
+	// M-Chain holds an ownership attestation naming this node. This flag says what
+	// the operator wants; the attestation says what they are entitled to, and only
+	// the attestation lives somewhere the operator cannot rewrite.
 	DexValidator bool `json:"dexValidator"`
-
-	// NFTAuthorizationAssets supplies, per network, the X-Chain operator-NFT
-	// collection asset for each NFT-gated optional VM, keyed by VMID (e.g.
-	// DexVMID -> the dex-operator collection asset; BridgeVMID -> the
-	// bridge-operator collection asset). It is the per-network VALUE half of the
-	// activation gate; the POLICY half (which VMs need an NFT + which group)
-	// lives in node.OptionalVMs. node.chainAuthorizationsFor joins the two into
-	// the chain manager's ChainAuthorizations map.
-	//
-	// Empty by default: minting the real operator collections is a follow-up, so
-	// until a network sets an asset here the corresponding chain is ungated
-	// (today's opt-in-flag behavior) while the gate itself stays fail-closed for
-	// any configured-but-unheld NFT.
-	NFTAuthorizationAssets map[ids.ID]ids.ID `json:"nftAuthorizationAssets"`
 
 	NetConfigs map[ids.ID]nets.Config `json:"chainConfigs"`
 
