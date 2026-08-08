@@ -2203,3 +2203,39 @@ func TestNodeBootstrap_BehindValidator_StakedSet_CatchesUpNoWipe(t *testing.T) {
 	require.True(t, bh.Accepted(ctx, chain[N].id),
 		"node holds + ACCEPTED the frontier tip after the rejoin (genuine catch-up, not a stale false-complete)")
 }
+
+// TestWatchBootstrapProgress_StallThenConvergeIsRecoverable pins the semantics
+// monitorBootstrap relies on after a stall stopped being terminal.
+//
+// The bug it guards: a no-progress window used to stop the engine, which cancels the
+// chain's context, so every later VM.Accept returned "context canceled" and the
+// finality guard refused to advance forever. Measured on lux-testnet, a node declared
+// stalled at 13955 went on to reach 14154 — the healthy fleet's exact height — while
+// refusing every incoming cert, because the verdict outlived the condition.
+//
+// monitorBootstrap now keeps watching after a stall, so what has to hold is that the
+// SAME source, watched again, still reports ready once it converges. Watching once and
+// abandoning the chain is what made the stall permanent.
+func TestWatchBootstrapProgress_StallThenConvergeIsRecoverable(t *testing.T) {
+	var height uint64 = 100
+	stuck := true
+	heightOf := func() uint64 {
+		if !stuck {
+			height++ // moving again
+		}
+		return height
+	}
+	ready := func() bool { return !stuck && height > 105 }
+
+	// First pass: pinned height for the whole window => a genuine stall.
+	outcome, at := watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	require.Equal(t, bootstrapStalled, outcome, "a pinned height must still be reported as a stall")
+	require.Equal(t, uint64(100), at, "the stall must report the height it stalled at")
+
+	// The sync was slow, not dead. Under the old behavior the engine was already stopped
+	// here and this second pass never happened.
+	stuck = false
+	outcome, _ = watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	require.Equal(t, bootstrapReady, outcome,
+		"a chain that converges AFTER a stall window must still be able to finish bootstrapping")
+}
