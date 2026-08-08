@@ -548,7 +548,27 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # So this bump is a D-Chain LINEAGE change on the running fleet (v1.5.15 -> v1.14.x),
 # not a patch. Devnet's D-Chain is at height 0 with 0 markets on all 5 validators, so
 # there is no accumulated state for it to disagree with.
-ARG DEX_REF=v1.14.25
+# v1.14.31, not v1.14.25. Two things landed in between that a fleet must not run
+# without:
+#
+#   1. executeImport guarded only the C chain id while executeExport also guarded
+#      shared memory. The halves disagreed, and Block.verifyImports returned nil
+#      when shared memory was nil on the reasoning that "executeImport rejects
+#      without a C chain id" — it rejects without a chain ID, not without shared
+#      memory. Both ends guard both conditions now.
+#
+#   2. A duplicate delivery of an already-consumed claim read as unbacked, so the
+#      block was rejected, Reject requeued every tx, and the next build failed
+#      identically — a permanent halt, measured at four rounds stuck on one
+#      height. Delivery is permissionless by design, so duplicates are the steady
+#      state rather than an attack. verifyImports rejects the block for safety;
+#      BuildBlock holds the delivery and retries for liveness.
+#
+# The genesis construction is byte-identical across that range — pkg/dchain
+# genesis.go and state.go do not differ between v1.14.25 and v1.14.31, and all
+# twelve genesis vectors including TestGenesisLiveFleets pass at v1.14.31. So the
+# founding values published for the re-foundation are unchanged by this bump.
+ARG DEX_REF=v1.14.31
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${DEX_REF} https://github.com/luxfi/dex.git /tmp/dex && \
     find /tmp/dex -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} + && \
