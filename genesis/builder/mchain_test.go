@@ -41,6 +41,29 @@ func parsePolicy(t *testing.T, s string) (k, n int) {
 // the plugin under while genesis declared MPCVMID, so the two never met.
 const canonicalMPCVMID = "qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS"
 
+// mchainNetworks is every network whose genesis must carry M-Chain, stated once
+// so no network can be checked for one M-Chain property and skipped for
+// another. Devnet was missing from these loops while lux-devnet ran a genesis
+// with no mchain.json at all: nine chains where eleven were declared, MChainID
+// empty, and every restricted chain therefore unentitled. The omission was
+// invisible because no assertion covered network 3.
+var mchainNetworks = []uint32{
+	constants.MainnetID,
+	constants.TestnetID,
+	constants.DevnetID,
+	constants.LocalID,
+}
+
+// wantPolicy is the quorum each network's genesis must declare. Keyed by the
+// same set, so adding a network without deciding its quorum fails the test
+// rather than silently exempting it.
+var wantPolicy = map[uint32]string{
+	constants.MainnetID: "3-of-5",
+	constants.TestnetID: "3-of-5",
+	constants.DevnetID:  "3-of-5",
+	constants.LocalID:   "2-of-3",
+}
+
 // M-Chain must be a GENESIS chain — in the P-Chain's chain set at height 0,
 // tracked by every validator from boot — not a chain created later by a
 // CreateChainTx someone has to remember to submit.
@@ -51,11 +74,7 @@ const canonicalMPCVMID = "qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS"
 // operator action that can be forgotten or fumbled. Bridged funds should not
 // depend on that.
 func TestMChainIsAGenesisChain(t *testing.T) {
-	for _, networkID := range []uint32{
-		constants.MainnetID,
-		constants.TestnetID,
-		constants.LocalID,
-	} {
+	for _, networkID := range mchainNetworks {
 		cfg := GetConfig(networkID)
 		require.NotNilf(t, cfg, "network %d has no genesis config", networkID)
 		require.NotEmptyf(t, cfg.MChainGenesis,
@@ -93,31 +112,27 @@ func TestMChainIsAGenesisChain(t *testing.T) {
 // degree. A bare `"threshold": 3` reads as the signer count to an operator and
 // as the degree to every threshold library, and those differ by one.
 func TestMChainGenesisPolicyIsUnambiguousAndDeployable(t *testing.T) {
-	for _, tc := range []struct {
-		networkID uint32
-		want      string
-	}{
-		{constants.MainnetID, "3-of-5"},
-		{constants.TestnetID, "3-of-5"},
-		{constants.LocalID, "2-of-3"},
-	} {
-		cfg := GetConfig(tc.networkID)
+	for _, networkID := range mchainNetworks {
+		cfg := GetConfig(networkID)
 		require.NotNil(t, cfg)
+
+		want, ok := wantPolicy[networkID]
+		require.Truef(t, ok, "network %d has no expected quorum; decide it rather than skipping it", networkID)
 
 		var blob struct {
 			Policy string `json:"policy"`
 			VM     string `json:"vm"`
 		}
 		require.NoErrorf(t, json.Unmarshal([]byte(cfg.MChainGenesis), &blob),
-			"network %d mchain.json must decode, policy included", tc.networkID)
+			"network %d mchain.json must decode, policy included", networkID)
 
-		require.Equalf(t, tc.want, blob.Policy, "network %d policy", tc.networkID)
+		require.Equalf(t, want, blob.Policy, "network %d policy", networkID)
 		k, n := parsePolicy(t, blob.Policy)
 		require.Greaterf(t, 2*k, n,
 			"network %d: %s admits two disjoint quorums, so two halves of the committee could authorise contradictory releases",
-			tc.networkID, blob.Policy)
+			networkID, blob.Policy)
 		require.Equalf(t, "mpcvm", blob.VM,
-			"network %d must name the current VM, not the retired ThresholdVM", tc.networkID)
+			"network %d must name the current VM, not the retired ThresholdVM", networkID)
 	}
 }
 
@@ -125,7 +140,7 @@ func TestMChainGenesisPolicyIsUnambiguousAndDeployable(t *testing.T) {
 // means the next reader has two numbers to choose between, and the whole point
 // of the policy field is that there is exactly one.
 func TestMChainGenesisHasNoAmbiguousThresholdFields(t *testing.T) {
-	for _, networkID := range []uint32{constants.MainnetID, constants.TestnetID, constants.LocalID} {
+	for _, networkID := range mchainNetworks {
 		cfg := GetConfig(networkID)
 		require.NotNil(t, cfg)
 
@@ -150,7 +165,7 @@ func TestMChainGenesisHasNoAmbiguousThresholdFields(t *testing.T) {
 // existed, harmlessly, because nothing read it. This test is what keeps it
 // harmless now that the policy is authoritative.
 func TestMChainPolicyIsSatisfiableByTheGenesisValidatorSet(t *testing.T) {
-	for _, networkID := range []uint32{constants.MainnetID, constants.TestnetID, constants.LocalID} {
+	for _, networkID := range mchainNetworks {
 		cfg := GetConfig(networkID)
 		require.NotNil(t, cfg)
 
