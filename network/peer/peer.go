@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/metric"
 	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/p2p"
@@ -95,6 +96,12 @@ type Peer interface {
 	// be called after [Ready] returns true.
 	TrackedChains() set.Set[ids.ID]
 
+	// ChainState reports what this peer said about ONE chain: nothing
+	// (ChainUnknown), the same chain we run (ChainCompatible), or a different
+	// one (ChainIncompatible). Only ChainIncompatible excludes anything, and
+	// only for that chain.
+	ChainState(chainID ids.ID) ChainState
+
 	// ObservedUptime returns the local node's primary network uptime according to the
 	// peer. The value ranges from [0, 100]. It should only be called after
 	// [Ready] returns true.
@@ -147,6 +154,24 @@ type peer struct {
 	// trackedChains are the chainIDs the peer sent us in the Handshake
 	// message. The primary network ID is always included.
 	trackedChains set.Set[ids.ID]
+	// chainStates is what this peer said about each chain we both run. Absent
+	// means it said nothing, which is ChainUnknown and is permitted.
+	//
+	// Written once, on the reader goroutine, while handling the Handshake, then
+	// read by the sender goroutine and by peer selection; published atomically
+	// and never mutated in place.
+	//
+	// Per CONNECTION, deliberately. A peer whose configuration is corrected
+	// reconnects and is judged again from what it says then — a verdict cached
+	// against a nodeID would outlive the mistake, and an operator who fixed the
+	// problem would have no way to see that they had.
+	chainStates utils.Atomic[map[ids.ID]ChainState]
+	// mismatchSeries are the ChainIdentityMismatch label sets this connection
+	// raised, kept so close() can lower them. The gauge reads "a peer is
+	// currently stating a different chain", so it has to stop reading 1 when
+	// that peer is gone — otherwise correcting a misconfigured node leaves its
+	// alarm standing forever and the operator cannot tell that they fixed it.
+	mismatchSeries utils.Atomic[[]metric.Labels]
 	// options of LPs provided in the Handshake message.
 	supportedLPs set.Set[uint32]
 	objectedLPs  set.Set[uint32]
@@ -600,6 +625,11 @@ func (p *peer) close() {
 		p.IngressConnectionCount.Add(-1)
 	}
 
+	// A peer that is gone is not currently stating anything.
+	for _, labels := range p.mismatchSeries.Get() {
+		p.Metrics.ChainIdentityMismatch.With(labels).Set(0)
+	}
+
 	p.Network.Disconnected(p.id)
 	close(p.onClosed)
 }
@@ -760,6 +790,13 @@ func (p *peer) writeMessages() {
 	myVersion := p.VersionCompatibility.Version()
 	knownPeersFilter, knownPeersSalt := p.Network.KnownPeers()
 
+	var myChains []*p2p.ChainIdentity
+	if p.MyChainIdentities != nil {
+		for _, c := range p.MyChainIdentities.List() {
+			myChains = append(myChains, c.wire())
+		}
+	}
+
 	_, areWeAPrimaryNetworkValidator := p.Validators.GetValidator(constants.PrimaryNetworkID, p.MyNodeID)
 	msg, err := p.MessageCreator.Handshake(
 		p.NetworkID,
@@ -779,6 +816,7 @@ func (p *peer) writeMessages() {
 		knownPeersSalt,
 		areWeAPrimaryNetworkValidator,
 		mySignedIP.MLDSASignature,
+		myChains,
 	)
 	if err != nil {
 		p.Log.Error(failedToCreateMessageLog,
@@ -1010,10 +1048,121 @@ func (p *peer) handle(msg message.InboundMessage) {
 		return
 	}
 
-	// Consensus and app-level messages
+	// Consensus and app-level messages. A peer running a different chain is not
+	// heard on it — this is the inbound half of the exclusion; the outbound half
+	// is peer selection in network.getPeers/samplePeers, so neither node spends
+	// a poll on the other.
+	if chainID, err := message.GetChainID(msg.Message()); err == nil && p.ChainState(chainID) == ChainIncompatible {
+		p.Log.Debug("dropping message",
+			log.Stringer("nodeID", p.id),
+			log.Stringer("messageOp", msg.Op()),
+			log.Stringer("chainID", chainID),
+			log.String("reason", "peer is running a different chain"),
+		)
+		p.Metrics.ChainDivergentMsgs.Inc()
+		msg.OnFinishedHandling()
+		return
+	}
+
 	// Route the message to the application layer handler
 	p.Router.HandleInbound(context.Background(), msg)
 	msg.OnFinishedHandling()
+}
+
+// compareChains decides, per blockchain, whether this peer is running the same
+// chain we are, and records the ones it is not.
+//
+// ABSENCE IS NOT DISAGREEMENT. A peer that states nothing for a chain — because
+// it does not run that chain, or because it predates this field entirely — is
+// UNKNOWN, and unknown peers participate exactly as they did before. Only a
+// statement that is PRESENT AND DIFFERENT excludes anything.
+//
+// That asymmetry is deliberate and it is the thing not to "tighten" later. The
+// handshake wire format is positional, so a peer too old to carry the field and a
+// peer that chose to say nothing are literally the same bytes; there is no way to
+// tell them apart, and treating silence as disagreement therefore means treating
+// every not-yet-upgraded node as a stranger. On a five-node fleet upgraded one
+// node at a time — which is the only safe way to upgrade one, since the fleet
+// cannot lose quorum — the first node to get the new build would exclude the four
+// still carrying consensus and isolate itself. The check would become the outage
+// it exists to prevent. Once every node states its chains, nothing is silent and
+// the tolerance costs nothing.
+//
+// A disagreement is loud, because it is never routine: it means two nodes are
+// building on different histories and one of them is misconfigured.
+func (p *peer) compareChains(stated []*p2p.ChainIdentity) {
+	if p.MyChainIdentities == nil {
+		return
+	}
+
+	states := make(map[ids.ID]ChainState, len(stated))
+	var raised []metric.Labels
+	for _, w := range stated {
+		theirs, err := parseChainIdentity(w)
+		if err != nil {
+			p.Log.Debug(malformedMessageLog,
+				log.Stringer("nodeID", p.id),
+				log.Stringer("messageOp", message.HandshakeOp),
+				log.String("field", "chains"),
+				log.Reflect("error", err),
+			)
+			p.StartClose()
+			return
+		}
+
+		// A chain we do not run is not ours to have an opinion about.
+		ours, run := p.MyChainIdentities.Get(theirs.ChainID)
+		if !run {
+			continue
+		}
+
+		if ours.Agrees(theirs) {
+			states[theirs.ChainID] = ChainCompatible
+			if ours.Rules != theirs.Rules {
+				// Reported, never acted on: a rule generation is a claim about
+				// the peer's binary that this node cannot check. Worth seeing
+				// early — two nodes on one chain with different scheduled rules
+				// are compatible now and will fork when those rules apply — but
+				// acting on it would let a peer decide whether we participate.
+				p.Metrics.ChainRulesDiffer.Inc()
+				p.Log.Info("peer runs the same chain under a different rule generation",
+					log.Stringer("nodeID", p.id),
+					log.Stringer("chainID", theirs.ChainID),
+					log.String("localRules", fmt.Sprintf("%x", ours.Rules)),
+					log.String("peerRules", fmt.Sprintf("%x", theirs.Rules)),
+				)
+			}
+			continue
+		}
+
+		states[theirs.ChainID] = ChainIncompatible
+		labels := metric.Labels{
+			"peer":          p.id.String(),
+			"chain":         theirs.ChainID.String(),
+			"local_genesis": fmt.Sprintf("%x", ours.Genesis),
+			"peer_genesis":  fmt.Sprintf("%x", theirs.Genesis),
+		}
+		p.Metrics.ChainIdentityMismatch.With(labels).Set(1)
+		raised = append(raised, labels)
+		p.Log.Warn("peer is running a different chain; excluding it from this chain only",
+			log.Stringer("nodeID", p.id),
+			log.Stringer("chainID", theirs.ChainID),
+			log.String("difference", ours.Disagreement(theirs)),
+			log.String("localGenesis", fmt.Sprintf("%x", ours.Genesis)),
+			log.String("peerGenesis", fmt.Sprintf("%x", theirs.Genesis)),
+		)
+	}
+	p.chainStates.Set(states)
+	p.mismatchSeries.Set(raised)
+}
+
+// ChainState reports what this peer said about one chain. The answer drives both
+// directions identically: an incompatible peer is neither heard on that chain nor
+// spoken to on it, so neither node wastes a poll on the other and neither can be
+// reached by the other's blocks. One-directional exclusion would be worse than
+// none — writing a peer off while still accepting its blocks, or the reverse.
+func (p *peer) ChainState(chainID ids.ID) ChainState {
+	return p.chainStates.Get()[chainID]
 }
 
 func (p *peer) handlePing(msg *p2p.Ping) {
@@ -1154,6 +1303,8 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 		}
 		p.trackedChains.Add(chainID)
 	}
+
+	p.compareChains(msg.GetChains())
 
 	for _, lp := range msg.SupportedLps {
 		if constants.CurrentLPs.Contains(lp) {

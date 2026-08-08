@@ -36,6 +36,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/proto/p2p"
 	// vmpb "github.com/luxfi/node/proto/vm" // Removed - using vm.Ready instead
 	"github.com/luxfi/warp"
@@ -367,8 +368,8 @@ type ManagerConfig struct {
 	// ConsensusOverrides are the consensus parameters the operator set
 	// explicitly; nil (or all-nil fields) leaves the networkID default alone.
 	ConsensusOverrides *ConsensusOverrides
-	StakingTLSSigner       crypto.Signer
-	StakingTLSCert         *staking.Certificate
+	StakingTLSSigner   crypto.Signer
+	StakingTLSCert     *staking.Certificate
 	// Strict-PQ proposer identity. When StakingMLDSASigner is non-nil, chains wrap
 	// their proposervm with ML-DSA-65 block signing so the signed block's
 	// Proposer() matches the ML-DSA-keyed validator set. Nil ⇒ classical TLS-leaf.
@@ -837,6 +838,8 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	m.chainsLock.Lock()
 	m.chains[chainParams.ID] = chain
 	m.chainsLock.Unlock()
+
+	m.stateChainIdentity(chainParams)
 
 	// The X-Chain is now tracked, so the NFT-authorization gate can query it.
 	// Re-queue any gated chains that were parked waiting for it (no-op when
@@ -2605,6 +2608,41 @@ func (m *manager) notifyRegistrants(name string, rt *runtime.Runtime, vmImpl int
 			registrant.RegisterChain(name, rt, coreVM)
 		}
 	}
+}
+
+// stateChainIdentity publishes which chain this blockchain actually is, so every
+// handshake states it and a peer running a different one is excluded from it.
+//
+// Everything here is creation data, and this is the one place it is all in hand
+// at once: GenesisData is the record the chain was created from — for a chain
+// created by a CreateChainTx, the bytes recorded in that transaction, delivered
+// to the VM verbatim — and it is digested exactly as delivered, never parsed. Two
+// honest nodes on one chain therefore derive identical values with no
+// coordination, and two nodes handed different records cannot help but differ.
+//
+// The upgrade bytes are reported separately and never enforced: a difference
+// there means the two nodes agree today and are scheduled to diverge, which is
+// worth seeing early and is not grounds for either to exclude the other.
+func (m *manager) stateChainIdentity(chainParams ChainParameters) {
+	if m.Net == nil {
+		return
+	}
+	cfg, err := m.getChainConfig(chainParams.ID)
+	if err != nil {
+		// A chain runs without operator config; only the rule generation is
+		// unknown, and that is reported rather than enforced.
+		m.Log.Debug("no chain config while stating chain identity",
+			log.Stringer("chainID", chainParams.ID),
+			log.Err(err),
+		)
+	}
+	m.Net.RegisterChainIdentity(peer.ChainIdentity{
+		NetworkID: m.NetworkID,
+		ChainID:   chainParams.ID,
+		VMID:      chainParams.VMID,
+		Genesis:   peer.GenesisDigest(chainParams.GenesisData),
+		Rules:     peer.RulesDigest(cfg.Upgrade),
+	})
 }
 
 // getChainConfig returns value of a entry by looking at ID key and alias key

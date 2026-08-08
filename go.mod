@@ -223,7 +223,7 @@ require (
 
 require (
 	github.com/luxfi/concurrent v0.1.1
-	github.com/luxfi/proto v1.4.2
+	github.com/luxfi/proto v1.4.3
 	github.com/luxfi/upgrade v1.0.3 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
