@@ -188,7 +188,9 @@ require (
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.2.0 // indirect
 	github.com/hanzoai/vfs v0.4.3 // indirect
-	github.com/hanzos3/go-sdk v1.0.2 // indirect
+	github.com/hanzos3/crc64nvme v1.1.2 // indirect
+	github.com/hanzos3/go v1.0.2 // indirect
+	github.com/hanzos3/md5-simd v1.1.3 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.6.0 // indirect
 	github.com/luxfi/corona v0.10.4 // indirect
@@ -207,11 +209,9 @@ require (
 	github.com/luxfi/pulsar v1.9.2 // indirect
 	github.com/luxfi/staking v1.6.1 // indirect
 	github.com/luxfi/trace v1.2.1 // indirect
-	github.com/luxfi/zapdb v1.10.1 // indirect
+	github.com/luxfi/zapdb v1.10.6 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20220103164710-9a04d6ca976b // indirect
-	github.com/minio/crc64nvme v1.1.1 // indirect
-	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
