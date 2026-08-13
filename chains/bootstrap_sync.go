@@ -160,10 +160,41 @@ func (b *blockHandler) connectedBeacons(weights map[ids.NodeID]uint64) []ids.Nod
 		beaconIDs = append(beaconIDs, id)
 	}
 	var connected []ids.NodeID
+	var beaconPeers []ids.NodeID
 	for _, p := range b.net.PeerInfo(beaconIDs) {
-		if _, isBeacon := weights[p.ID]; isBeacon && p.TrackedChains.Contains(b.networkID) {
+		if _, isBeacon := weights[p.ID]; !isBeacon {
+			continue
+		}
+		// Connected AND staked — this peer counts unless the tracked-nets filter
+		// below can positively exclude it.
+		beaconPeers = append(beaconPeers, p.ID)
+		if p.TrackedChains.Contains(b.networkID) {
 			connected = append(connected, p.ID)
 		}
+	}
+	// THE FILTER IS AN OPTIMISATION, NOT A SAFETY PROPERTY, so it must never be the
+	// thing that decides a node cannot bootstrap. avalanchego has no equivalent: its
+	// startup gate accumulates ConnectedWeight from the network's own Connected()
+	// callbacks and LATCHES (`shouldStart = shouldStart || weight >= threshold`), so
+	// once enough stake has connected the node starts and never un-starts. Ours
+	// re-derives the answer from PeerInfo on every poll, which means a predicate that
+	// matches nothing produces zero connected stake forever, however many peers are
+	// genuinely there.
+	//
+	// That is not hypothetical: it already happened once with b.chainID (see the note
+	// above), and it happened again on lux-devnet 2026-08-13 — two validators sat at
+	// their frozen heights for hours reporting numPeers: 5 while FrontierTip answered
+	// FrontierConnecting on every pass, because the beacon set was populated and the
+	// filter still admitted nobody.
+	//
+	// So: if the filter admits NO ONE while staked beacons are demonstrably connected,
+	// trust the connection. C1 is preserved either way — a peer is admitted only if it
+	// is in `weights`, the staked validator set, so a non-staked peer never counts.
+	if len(connected) == 0 && len(beaconPeers) > 0 {
+		b.logger.Warn("tracked-nets filter admitted no beacon; counting connected staked beacons instead",
+			log.Stringer("networkID", b.networkID),
+			log.Int("connectedStakedBeacons", len(beaconPeers)))
+		return beaconPeers
 	}
 	return connected
 }
