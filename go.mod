@@ -117,10 +117,10 @@ require (
 	github.com/go-json-experiment/json v0.0.0-20260601182631-00ed12fed2a6
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/accel v1.2.4
+	github.com/luxfi/accel v1.3.1
 	github.com/luxfi/api v1.1.3
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.7.17
+	github.com/luxfi/chains v1.7.19
 	github.com/luxfi/codec v1.2.1
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.2
@@ -204,7 +204,7 @@ require (
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/mlwe v0.3.0 // indirect
 	github.com/luxfi/pq v1.1.0 // indirect
-	github.com/luxfi/precompile v0.19.3 // indirect
+	github.com/luxfi/precompile v0.19.8 // indirect
 	github.com/luxfi/protocol v0.0.2 // indirect
 	github.com/luxfi/pulsar v1.9.2 // indirect
 	github.com/luxfi/staking v1.6.1 // indirect
