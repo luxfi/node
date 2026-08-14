@@ -37,6 +37,7 @@ var (
 	_ chainbootstrap.BlockSource = (*blockHandler)(nil)
 	_ chainbootstrap.Chain       = (*blockHandler)(nil)
 	_ AncestrySource             = (*blockHandler)(nil)
+	_ AcceptanceSource           = (*blockHandler)(nil)
 )
 
 const (
@@ -59,6 +60,12 @@ const (
 	// Kept in step with the GetAncestors WIRE deadline below: asking a peer for more time than
 	// we will wait just wastes its work.
 	bootstrapAncestorsTimeout = 3 * time.Second
+	// bootstrapAcceptedCandidates bounds the SECOND naming question in both directions: an asker
+	// names at most this many candidate tips, and a responder refuses a larger question rather
+	// than walking a list of ids someone else chose. Honest beacons report one tip each and
+	// cluster on a handful, so the bound is never why a frontier is not named; it is what stops
+	// one message from turning into an unbounded number of block lookups on the answering node.
+	bootstrapAcceptedCandidates = 64
 	// bootstrapAncestorSample is how many beacons one Ancestors round asks. The sample
 	// ROTATES (bsRotor) so no single beacon monopolizes the descent or can repeatedly
 	// stall it (M1). Content addressing in the loop makes the fetched ancestry safe
@@ -375,7 +382,6 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 	// own configured CustomBeacons; a native chain only waits the bounded extra moment for it.
 	if b.expectsStakedBeacons && b.primaryNetworkReady != nil && !b.primaryNetworkReady() {
 		b.logger.Debug("bootstrap frontier: staked validator set not yet fully loaded (P-chain still syncing) — waiting, NOT concluding caught-up",
-			log.Stringer("chainID", b.chainID),
 			log.Int("partialBeaconCount", len(weights)))
 		return ids.Empty, chainbootstrap.FrontierConnecting
 	}
@@ -390,8 +396,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 	// This is the sybil-protected single-validator counterpart to the empty-set FrontierNoBeacons
 	// path: a multi-validator staked set (the ≥2 case) still runs the ⅔-by-stake quorum below.
 	if !b.hasExternalBeacons(weights) {
-		b.logger.Debug("bootstrap frontier: self-only staked set (single validator) — NoBeacons, nothing to sync to",
-			log.Stringer("chainID", b.chainID))
+		b.logger.Debug("bootstrap frontier: self-only staked set (single validator) — NoBeacons, nothing to sync to")
 		return ids.Empty, chainbootstrap.FrontierNoBeacons
 	}
 
@@ -440,7 +445,6 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// one; that stricter rule belongs to the dual CaughtUp path below, which decides the
 		// no-quorum/own-height case).
 		b.logger.Debug("bootstrap frontier: NAMED",
-			log.Stringer("chainID", b.chainID),
 			log.Stringer("tip", frontier.ID),
 			log.Uint64("namedHeight", frontier.Height),
 			log.Int("responders", frontier.Responders),
@@ -472,7 +476,6 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 			repliedCovers(replies, connected) &&
 			policy.CaughtUp(b.withSelfVote(replies, weights, lastID), lastH, b.acceptedHeight) {
 			b.logger.Debug("bootstrap frontier: CAUGHT UP at own tip (full beacon set + self all at/below it, peer-only weight below the naming floor)",
-				log.Stringer("chainID", b.chainID),
 				log.Stringer("tip", lastID),
 				log.Uint64("height", lastH),
 				log.Int("beaconSetSize", len(weights)),
@@ -483,7 +486,6 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// full connectivity) — not a partition-capture-safe quorum yet. More may connect: WAIT (bounded
 		// by the loop's ConnectDeadline, then fail safe). Never false-complete; never trust the few.
 		b.logger.Debug("bootstrap frontier: CONNECTING (below the MinResponses floor)",
-			log.Stringer("chainID", b.chainID),
 			log.Int("beaconSetSize", len(weights)),
 			log.Int("connected", len(connected)),
 			log.Int("replies", len(replies)))
@@ -514,7 +516,6 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// "split AND I am at the top of every responder" — provably DONE, not waiting.
 		if haveLast && policy.CaughtUp(replies, lastH, b.acceptedHeight) {
 			b.logger.Debug("bootstrap frontier: CAUGHT UP at own tip (floor met, no responder ahead, hold every reported tip)",
-				log.Stringer("chainID", b.chainID),
 				log.Stringer("tip", lastID),
 				log.Uint64("height", lastH))
 			return lastID, chainbootstrap.FrontierNamed
@@ -535,14 +536,12 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 				}
 			}
 			b.logger.Debug("bootstrap frontier: INCOMPLETE (attempt budget spent, not a disagreement) — resuming deeper next round",
-				log.Stringer("chainID", b.chainID),
 				log.Uint64("lastAccepted", lastH),
 				log.Int("anchorsInProgress", len(b.namingProgress)),
 				log.Int("deepestTraversed", deepest))
 			return ids.Empty, chainbootstrap.FrontierNoQuorum
 		}
 		b.logger.Debug("bootstrap frontier: NO QUORUM (responders split, not caught up) — retry/fail safe",
-			log.Stringer("chainID", b.chainID),
 			log.Uint64("lastAccepted", lastH),
 			log.Int("replies", len(replies)))
 		return ids.Empty, chainbootstrap.FrontierNoQuorum
@@ -564,7 +563,6 @@ func (b *blockHandler) logFrontierInputs(weights map[ids.NodeID]uint64, connecte
 	for _, r := range replies {
 		h, accepted := b.acceptedHeight(r.Tip)
 		b.logger.Debug("bootstrap frontier reply",
-			log.Stringer("chainID", b.chainID),
 			log.Stringer("from", r.NodeID),
 			log.Stringer("reportedTip", r.Tip),
 			log.Uint64("beaconWeight", r.Weight),
@@ -575,7 +573,6 @@ func (b *blockHandler) logFrontierInputs(weights map[ids.NodeID]uint64, connecte
 			log.Uint64("resolvedHeight", h))
 	}
 	b.logger.Debug("bootstrap frontier inputs",
-		log.Stringer("chainID", b.chainID),
 		log.Int("beaconSetSize", len(weights)),
 		log.Uint64("beaconSetTotalStake", total),
 		log.Int("connectedBeacons", len(connected)),
@@ -632,6 +629,7 @@ func (b *blockHandler) bootstrapPolicy(weights map[ids.NodeID]uint64) *Bootstrap
 		NamingWindow:       bootstrapNamingWindow,
 		MaxAnchors:         maxNamingAnchors,
 		Source:             b,
+		Acceptance:         b,
 		// The descent state is the HANDLER's and outlives this policy, so an attempt
 		// that runs out of budget resumes deeper next round instead of restarting at
 		// the tip. Budget fields default in namingBudget().
@@ -715,6 +713,81 @@ func (b *blockHandler) collectFrontierReplies(ctx context.Context, connected []i
 	}
 }
 
+// Acceptance implements AcceptanceSource: ask `from` which of `candidates` they have ACCEPTED and
+// gather ONE answer per beacon within the reply window. Pure TRANSPORT — which answers count and
+// which candidate is named is the policy's (bootstrap_trust.go), the same split collectFrontierReplies
+// keeps for the first question. It reuses that question's window: it is the same round trip to the
+// same peers, moments later.
+//
+// A candidate this node has ALREADY ACCEPTED is dropped before asking. That is what keeps the second
+// question from ever moving the node sideways or backwards: every block it can name is one this node
+// lacks, so a named block always makes the loop DESCEND and fetch it, and can never be read as
+// "already synced" at a height the node is stuck on. A node at the top of every reported tip
+// therefore asks NOTHING and sends no message at all.
+func (b *blockHandler) Acceptance(ctx context.Context, candidates []ids.ID, from []ids.NodeID) []AcceptedReply {
+	if b.net == nil || b.msgCreator == nil || len(from) == 0 {
+		return nil
+	}
+	want := make([]ids.ID, 0, len(candidates))
+	for _, id := range candidates {
+		if _, accepted := b.acceptedHeightCtx(ctx, id); !accepted {
+			want = append(want, id)
+		}
+	}
+	if len(want) == 0 {
+		return nil
+	}
+
+	b.contextRequestMu.Lock()
+	b.requestIDCounter++
+	requestID := b.requestIDCounter
+	b.contextRequestMu.Unlock()
+
+	sample := set.NewSet[ids.NodeID](len(from))
+	sample.Add(from...)
+	round := bsAcceptedRound{asked: sample, ch: make(chan bsAcceptedReply, len(from))}
+	b.bsMu.Lock()
+	// Self-arming, as the serve limiter is: a handler assembled as a struct literal rather than
+	// through newBlockHandler must not nil-map-panic on a path that only recovery reaches.
+	if b.bsAccepted == nil {
+		b.bsAccepted = make(map[uint32]bsAcceptedRound)
+	}
+	b.bsAccepted[requestID] = round
+	b.bsMu.Unlock()
+	defer func() {
+		b.bsMu.Lock()
+		delete(b.bsAccepted, requestID)
+		b.bsMu.Unlock()
+	}()
+
+	msg, err := b.msgCreator.GetAccepted(b.chainID, requestID, bootstrapFrontierWindow, want)
+	if err != nil {
+		return nil
+	}
+	b.net.Send(msg, sample, b.networkID, 0)
+
+	answers := make([]AcceptedReply, 0, len(from))
+	seen := make(map[ids.NodeID]struct{}, len(from))
+	deadline := time.After(bootstrapFrontierWindow)
+	for {
+		select {
+		case rep := <-round.ch:
+			if _, dup := seen[rep.nodeID]; dup {
+				continue // one answer per beacon
+			}
+			seen[rep.nodeID] = struct{}{}
+			answers = append(answers, AcceptedReply{NodeID: rep.nodeID, Accepted: rep.accepted})
+			if len(seen) >= len(from) {
+				return answers // everyone asked has answered — resolve now, do not wait the window
+			}
+		case <-deadline:
+			return answers
+		case <-ctx.Done():
+			return answers
+		}
+	}
+}
+
 // Ancestors implements chainbootstrap.BlockSource: fetch up to maxBlocks blocks ending
 // at blockID, OLDEST-FIRST, from a ROTATED sample of beacons (wire: GetAncestors ->
 // Ancestors). An empty result (no error) means the sampled beacon did not serve — the
@@ -745,10 +818,19 @@ func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks 
 	ch := make(chan [][]byte, bootstrapAncestorSample)
 	b.bsMu.Lock()
 	b.bsAncestorCh[requestID] = ch
+	// Remember WHO was asked. A request id is ours, not a secret: any connected peer
+	// can send a reply carrying it. Correlating on the id alone lets an unsampled peer
+	// answer a fetch we never made of it, and one such reply abandons the pass — a
+	// stranger can stall a node's initial sync indefinitely by answering promptly.
+	if b.bsAncestorPeers == nil {
+		b.bsAncestorPeers = make(map[uint32]set.Set[ids.NodeID])
+	}
+	b.bsAncestorPeers[requestID] = sample
 	b.bsMu.Unlock()
 	defer func() {
 		b.bsMu.Lock()
 		delete(b.bsAncestorCh, requestID)
+		delete(b.bsAncestorPeers, requestID)
 		b.bsMu.Unlock()
 	}()
 
@@ -1028,6 +1110,32 @@ func (b *blockHandler) deliverBootstrapFrontier(nodeID ids.NodeID, containerID i
 	return true
 }
 
+// deliverBootstrapAccepted routes an Accepted reply — a beacon's answer to the second naming
+// question — to the waiting Acceptance call. Returns true iff this lane TOOK it.
+//
+// An answer is taken only if this lane asked THAT peer under THAT request id. Both halves matter:
+// the id keeps an answer out of a round it was not part of, and the sender keeps a peer nobody
+// asked from occupying a slot in the round's buffer — which would deny it to a beacon whose answer
+// the tally needs. Non-blocking, so a full buffer drops the answer rather than holding the message
+// goroutine.
+func (b *blockHandler) deliverBootstrapAccepted(requestID uint32, nodeID ids.NodeID, accepted []ids.ID) bool {
+	if !b.bsActive.Load() {
+		return false
+	}
+	b.bsMu.Lock()
+	round, open := b.bsAccepted[requestID]
+	b.bsMu.Unlock()
+	if !open || !round.asked.Contains(nodeID) {
+		return false
+	}
+	select {
+	case round.ch <- bsAcceptedReply{nodeID: nodeID, accepted: accepted}:
+		return true
+	default:
+		return false
+	}
+}
+
 // deliverBootstrapAncestors routes an Ancestors reply (framed block batch) to the
 // waiting Ancestors call when the bootstrap loop is driving. Returns true iff this
 // lane actually TOOK the reply — the caller hands anything else to the live path.
@@ -1041,14 +1149,19 @@ func (b *blockHandler) deliverBootstrapFrontier(nodeID ids.NodeID, containerID i
 // by initial sync — the live cert path did not see it" over 1000-block replies it
 // had successfully fetched. A reply belongs to this lane only if this lane asked
 // for it.
-func (b *blockHandler) deliverBootstrapAncestors(requestID uint32, data []byte) bool {
+func (b *blockHandler) deliverBootstrapAncestors(nodeID ids.NodeID, requestID uint32, data []byte) bool {
 	if !b.bsActive.Load() {
 		return false
 	}
 	b.bsMu.Lock()
 	ch := b.bsAncestorCh[requestID]
+	asked := b.bsAncestorPeers[requestID]
 	b.bsMu.Unlock()
 	if ch == nil {
+		return false
+	}
+	// A reply belongs to this fetch only if we asked THIS peer for it.
+	if !asked.Contains(nodeID) {
 		return false
 	}
 	select {
@@ -1119,8 +1232,7 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 			b.engine.FinishBootstrap()
 		}
 		if err := b.transitionVMReady(ctx); err != nil {
-			b.logger.Error("degenerate chain: VM SetState(Ready) failed — NOT marking bootstrapped",
-				log.Stringer("chainID", b.chainID), log.Err(err))
+			b.logger.Error("degenerate chain: VM SetState(Ready) failed — NOT marking bootstrapped", log.Err(err))
 			b.bootstrapFailed.Store(&bsFailure{err: err})
 			return false
 		}
@@ -1170,14 +1282,12 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 			b.bootstrapConnecting.Store(false)
 			b.engine.FinishBootstrap()
 			if verr := b.transitionVMReady(ctx); verr != nil {
-				b.logger.Error("chain reached the frontier but VM SetState(Ready) failed — NOT marking bootstrapped",
-					log.Stringer("chainID", b.chainID), log.Err(verr))
+				b.logger.Error("chain reached the frontier but VM SetState(Ready) failed — NOT marking bootstrapped", log.Err(verr))
 				b.bootstrapFailed.Store(&bsFailure{err: verr})
 				return false
 			}
 			b.bootstrapDone.Store(true)
-			b.logger.Info("chain initial sync complete — VM live (normal operation) at the network frontier",
-				log.Stringer("chainID", b.chainID))
+			b.logger.Info("chain initial sync complete — VM live (normal operation) at the network frontier")
 			return true
 		}
 
@@ -1209,7 +1319,6 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 	// monitorBootstrap surfaces it (F5).
 	b.bootstrapConnecting.Store(false)
 	b.logger.Warn("chain initial sync did not reach the frontier — VM stays bootstrapping (NOT serving normal-op), failing safe",
-		log.Stringer("chainID", b.chainID),
 		log.Err(lastErr))
 	b.bootstrapFailed.Store(&bsFailure{err: lastErr})
 	return false

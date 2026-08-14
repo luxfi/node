@@ -34,6 +34,7 @@ import (
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
 )
 
 // BootstrapTrust is not a consensus-finality oracle.
@@ -108,8 +109,9 @@ type BeaconReply struct {
 
 // Frontier is the weak-subjective sync anchor BootstrapTrust selects: the block a node descends
 // to and re-executes. It is NOT a consensus certificate (see BootstrapTrust). Height is the
-// tallied height when named via the ancestor-tolerant path, and 0 (unknown) when named via the
-// exact fast path before any ancestry fetch — the sync loop uses ID; Height is diagnostic.
+// tallied height when named via the ancestor-tolerant path, and 0 (unknown) when named from the
+// tips or from acceptance, neither of which fetches the block — the sync loop uses ID; Height is
+// diagnostic.
 type Frontier struct {
 	ID             ids.ID
 	Height         uint64
@@ -133,6 +135,31 @@ type AncestrySource interface {
 	// Ancestry returns up to max blocks ending at tip, parsed to (id, height, parent). An empty
 	// result (no error) means the tip's ancestry was not served — that anchor contributes nothing.
 	Ancestry(ctx context.Context, tip ids.ID, max int) ([]BlockRef, error)
+}
+
+// AcceptedReply is one authenticated configured beacon's answer to the SECOND question: which of
+// the candidate tips it has ACCEPTED.
+//
+// The first question asks each beacon for ONE tip, and on a live chain those answers legitimately
+// disagree — the chain moves while the answers are in flight, so healthy honest peers name
+// different blocks and no set of them clears an agreement threshold. Acceptance does not disagree
+// that way: peers at different heights have all accepted the lower tips, so a quorum exists in
+// these answers when it does not exist in the tips.
+//
+// NodeID is authenticated at the transport handshake, so "which beacon said this" is unforgeable;
+// the weight applied is that beacon's CONFIGURED stake (TrustedBeacons), never a self-reported one.
+type AcceptedReply struct {
+	NodeID   ids.NodeID
+	Accepted []ids.ID
+}
+
+// AcceptanceSource asks beacons which of `candidates` they have ACCEPTED, injected so the trust
+// DECISION stays free of the transport exactly as AncestrySource is. `from` is who to ask: the
+// beacons that answered the first question, since they are the ones whose tips the candidates are.
+// An implementation returns one reply per answering beacon and returns nothing — rather than
+// blocking — when there is nobody to ask.
+type AcceptanceSource interface {
+	Acceptance(ctx context.Context, candidates []ids.ID, from []ids.NodeID) []AcceptedReply
 }
 
 // Checkpoint is an operator-pinned (id, height) the recovering node may anchor to when too few
@@ -282,6 +309,10 @@ type BootstrapPolicy struct {
 	// Source resolves content-addressed ancestry for the ancestor-tolerant tally. When nil, the
 	// policy decides on the exact fast path alone (no split resolution).
 	Source AncestrySource
+	// Acceptance asks the responders which of their reported tips they have ACCEPTED — the
+	// second question, whose answers a quorum can be found in when the tips alone split. Nil ⇒
+	// the step is skipped and naming falls to the ancestry walk.
+	Acceptance AcceptanceSource
 	// Budget bounds ONE attempt of the ancestor-tolerant walk (blocks, requests, attempt
 	// wall clock, per-request wall clock). Zero fields take the package defaults.
 	Budget NamingBudget
@@ -359,29 +390,59 @@ func (p *BootstrapPolicy) namingTimeout() time.Duration {
 // tally walks. The authenticated NodeID (transport handshake) is what makes "configured"
 // unforgeable. Shared by AcceptsFrontier (which names a frontier AHEAD) and CaughtUp (which
 // concludes NONE is ahead) so both judge the IDENTICAL responder set under the SAME eligibility
-// rule — the eligibility decision lives in exactly one place.
+// rule — the eligibility decision lives in exactly one place. It is the one-tip view of tally.
 func (p *BootstrapPolicy) tallyResponders(replies []BeaconReply) (responders int, responderWeight StakeWeight, stakeOnTip map[ids.ID]StakeWeight, votersOf map[ids.ID]map[ids.NodeID]struct{}) {
-	seen := make(map[ids.NodeID]struct{}, len(replies))
-	stakeOnTip = make(map[ids.ID]StakeWeight)
-	votersOf = make(map[ids.ID]map[ids.NodeID]struct{})
-	for _, r := range replies {
-		w, ok := p.TrustedBeacons[r.NodeID]
-		if !ok || r.Tip == ids.Empty {
-			continue
-		}
-		if _, dup := seen[r.NodeID]; dup {
-			continue
-		}
-		seen[r.NodeID] = struct{}{}
-		responders++
-		responderWeight += w
-		stakeOnTip[r.Tip] += w
-		if votersOf[r.Tip] == nil {
-			votersOf[r.Tip] = make(map[ids.NodeID]struct{})
-		}
-		votersOf[r.Tip][r.NodeID] = struct{}{}
+	answers := make([]AcceptedReply, len(replies))
+	for i, r := range replies {
+		answers[i] = AcceptedReply{NodeID: r.NodeID, Accepted: []ids.ID{r.Tip}}
 	}
-	return responders, responderWeight, stakeOnTip, votersOf
+	return p.tally(answers)
+}
+
+// tally is THE stake tally, and there is only one: both questions are "which blocks does this
+// authenticated beacon vouch for", differing only in how many blocks one answer names — exactly
+// one for a frontier reply, the accepted subset for an accepted reply. Writing the second question
+// its own tally is how two thresholds drift apart, so it does not get one.
+//
+// One beacon vouches ONCE: a second answer from the same NodeID is dropped whole (a beacon cannot
+// vote twice), and inside one answer a repeated id is credited once (a beacon cannot vote twice for
+// the same block either). An answer naming no block at all — an empty tip, or a beacon that has
+// accepted none of the candidates — is not a responder: it neither backs anything nor inflates the
+// denominator the agreement threshold is taken over.
+func (p *BootstrapPolicy) tally(answers []AcceptedReply) (responders int, responderWeight StakeWeight, stakeOn map[ids.ID]StakeWeight, votersOf map[ids.ID]map[ids.NodeID]struct{}) {
+	seen := make(map[ids.NodeID]struct{}, len(answers))
+	stakeOn = make(map[ids.ID]StakeWeight)
+	votersOf = make(map[ids.ID]map[ids.NodeID]struct{})
+	for _, a := range answers {
+		w, ok := p.TrustedBeacons[a.NodeID]
+		if !ok {
+			continue
+		}
+		if _, dup := seen[a.NodeID]; dup {
+			continue
+		}
+		counted := false
+		for _, id := range a.Accepted {
+			if id == ids.Empty {
+				continue
+			}
+			if _, twice := votersOf[id][a.NodeID]; twice {
+				continue
+			}
+			if !counted {
+				seen[a.NodeID] = struct{}{}
+				responders++
+				responderWeight += w
+				counted = true
+			}
+			stakeOn[id] += w
+			if votersOf[id] == nil {
+				votersOf[id] = make(map[ids.NodeID]struct{})
+			}
+			votersOf[id][a.NodeID] = struct{}{}
+		}
+	}
+	return responders, responderWeight, stakeOn, votersOf
 }
 
 // floorMet reports whether the responder set clears INVARIANT 2's partition-capture FLOOR: at
@@ -527,6 +588,16 @@ func (p *BootstrapPolicy) nameFrontier(ctx context.Context, stakeOnTip map[ids.I
 			return tip, 0, st, true
 		}
 	}
+
+	// SECOND QUESTION. The tips do not agree, so ask the beacons that named them which of those
+	// blocks they have ACCEPTED, and take the answer. It is ONE round trip to peers that just
+	// answered, and it needs nothing served: a beacon answers about its own chain. Height is not
+	// known for a block we do not hold, so a named block reports height 0 (diagnostic only — the
+	// loop syncs by id).
+	if id, st, ok := p.nameAccepted(ctx, stakeOnTip, votersOf); ok {
+		return id, 0, st, true
+	}
+
 	if p.Source == nil {
 		return ids.Empty, 0, 0, false
 	}
@@ -692,6 +763,64 @@ func (p *BootstrapPolicy) nameFrontier(ctx context.Context, stakeOnTip map[ids.I
 		}
 	}
 	return bestID, bestHeight, bestStake, found
+}
+
+// nameAccepted asks the beacons that reported the candidate tips which of them they have ACCEPTED,
+// and names the HIGHEST one a responder supermajority holds.
+//
+// This is the whole difference between a frontier that can be named on a live chain and one that
+// cannot. Tips are a snapshot of a moving chain and so they split; acceptance is cumulative and so
+// it does not. A fleet spread over three heights reports three tips and agrees on none of them,
+// while every one of those nodes has accepted the lowest — and most of them the next.
+//
+// The gate is the SAME one AcceptsFrontier already applies to the tips: the same eligibility
+// (configured beacons only, weighted by configured stake), the same response floor, the same
+// agreement threshold over responder weight, the same distinct-voter minimum. Nothing here relaxes
+// what makes a block nameable; it only asks a question the answers can agree on. So a peer cannot
+// make this node start above what a quorum actually holds — a block is named only when beacons
+// carrying more than the threshold share of responder stake each say they have accepted it.
+//
+// HIGHEST is read off the backing itself. Acceptance is contiguous — a node that accepted a block
+// accepted every block beneath it on that chain — so backing is non-increasing in height and the
+// clearing candidate the FEWEST of them hold is the furthest along. Two candidates can only tie
+// when exactly the same beacons accepted both; both are then quorum-held and either is a safe
+// start, so the first in candidate order (most reported stake first) is taken.
+func (p *BootstrapPolicy) nameAccepted(ctx context.Context, stakeOnTip map[ids.ID]StakeWeight, votersOf map[ids.ID]map[ids.NodeID]struct{}) (ids.ID, StakeWeight, bool) {
+	if p.Acceptance == nil {
+		return ids.Empty, 0, false
+	}
+	candidates := sortedByStakeDesc(stakeOnTip)
+	if len(candidates) > bootstrapAcceptedCandidates {
+		// The best-supported tips are first, so the cut drops the outliers a swarm of forged
+		// tips would add — and the bound is the same one a responder enforces on the question.
+		candidates = candidates[:bootstrapAcceptedCandidates]
+	}
+	asked := set.NewSet[ids.NodeID](len(votersOf))
+	for _, voters := range votersOf {
+		for id := range voters {
+			asked.Add(id)
+		}
+	}
+
+	responders, weight, held, heldBy := p.tally(p.Acceptance.Acceptance(ctx, candidates, asked.List()))
+	if !p.floorMet(responders, weight) {
+		return ids.Empty, 0, false
+	}
+	floor := p.effectiveAgreement().floorOf(weight)
+	required := p.effectiveMinResponders(responders)
+
+	var bestID ids.ID
+	var best StakeWeight
+	for _, id := range candidates { // only blocks we asked about can be named
+		st := held[id]
+		if st <= floor || len(heldBy[id]) < required {
+			continue
+		}
+		if bestID == ids.Empty || st < best {
+			bestID, best = id, st
+		}
+	}
+	return bestID, best, bestID != ids.Empty
 }
 
 // sortedByStakeDesc returns the reported tips most-stake-first (stable id tiebreak) — the order
