@@ -3917,6 +3917,31 @@ func (b *blockHandler) descend(next ids.ID, nextHeight uint64) bool {
 	return true
 }
 
+// catchupTarget is the height this node actually needs next.
+//
+// FinalizedLedger reports what CONSENSUS certified; AppliedHead reports what the VM
+// committed. The two persist separately, so an unclean stop brings a node back with
+// finality above the block its VM holds — and then nothing moves. Finality cannot
+// advance, because the fail-closed guard refuses to run past applied state; and
+// catch-up, steering by the ledger, asks for the height ABOVE the gap, so the blocks
+// the VM is missing are never fetched. Measured on mainnet luxd-3: ledger 1160628,
+// EVM 1159050, every cert refused "expected accepted block to have parent
+// ...:1159050 but got ...:1161398", zero descents running because certs were being
+// accepted.
+//
+// A block can only be applied on top of the one before it, so the LOWER of the two is
+// what to ask a peer for.
+func (b *blockHandler) catchupTarget(ctx context.Context) (uint64, bool) {
+	_, fh, set := b.engine.FinalizedLedger()
+	if !set {
+		return fh, false // nothing certified yet — unchanged, descend freely
+	}
+	if _, applied, err := b.engine.AppliedHead(ctx); err == nil && applied < fh {
+		return applied, true // the VM is the binding constraint
+	}
+	return fh, true
+}
+
 // retire drops the walk once finality has passed the window it was looking for.
 //
 // The walk exists to FIND the gap — the window holding our next contiguous height.
@@ -4145,7 +4170,7 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// empty cert for any block outside its window, so the common batch — every entry
 	// above us, none of them certified — reported certRejected=0 and was read as
 	// nothing to descend from. Measured on lux-testnet: 2,614 requests, 5 descents.
-	_, fh, set := b.engine.FinalizedLedger()
+	fh, set := b.catchupTarget(ctx)
 
 	// A walk ends when our own finality reaches it — not on the first block it wins.
 	// Retiring it on ANY successful fold restarts the descent from the network tip
