@@ -20,23 +20,17 @@ name: Release
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
-# One release at a time per IMAGE, not per ref.
+# A release is a tag. Only a tag.
 #
-# A branch push and a tag push carry different github.ref, so keying the group on
-# the ref put them in different groups and let them run together — both pushing
-# layers to ghcr.io/luxfi/node at the same moment. The registry answers the loser
-# "unknown blob" and the job exits 1 with no image, which reads exactly like a
-# build failure. v1.36.89 died that way: `git push main v1.36.89` fired four jobs,
-# all four raced, none produced an image. The tag-only push before it fired one and
-# succeeded.
-#
-# The contention is the registry repository, so that is what the group names.
-# Queued, not cancelled: a tag release must never be dropped because a branch push
-# happened to arrive first.
+# Building on branch pushes as well meant two runs raced to push layers for the same
+# image, and the registry answers the loser "unknown blob" — a job that exits 1 with
+# no image, indistinguishable from a build failure. Serialising them needs the runner
+# to honour this group, which is not something to depend on; publishing from one
+# trigger removes the race instead of coordinating it. Branch pushes are covered by
+# ci.yml, which tests without publishing.
 concurrency:
   group: release-${{ github.repository }}
   cancel-in-progress: false
