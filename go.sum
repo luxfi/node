@@ -319,6 +319,8 @@ github.com/luxfi/concurrent v0.1.1 h1:LkAmNXybOsAm97nFILqMDBp/YLgleuLmyGomFT7YNx
 github.com/luxfi/concurrent v0.1.1/go.mod h1:GlkfiJtPBpatNxvROf7hkPi4gsnmdHGmqhDnVWFrkZE=
 github.com/luxfi/consensus v1.36.32 h1:F+roJ5fsnr9Fe1Iann0Dn6pbAzHZkfbnAi5FW0KpDqc=
 github.com/luxfi/consensus v1.36.32/go.mod h1:jut60kDakiSN/3CAEafbtC3jPOvhfgfC9bn8OEiXnQ4=
+github.com/luxfi/consensus v1.36.33 h1:BATNh1apcSzOIeGny4xsm7dD2oj1QygNbQtCZ+4h5TY=
+github.com/luxfi/consensus v1.36.33/go.mod h1:jut60kDakiSN/3CAEafbtC3jPOvhfgfC9bn8OEiXnQ4=
 github.com/luxfi/constants v1.6.2 h1:pXHdKIFbfE9qX4xOjq2LxYvagNhhNvspUVEbPcIEKfA=
 github.com/luxfi/constants v1.6.2/go.mod h1:r0oH8C/+r/XFYBq1AJxt6zWRKKRKgDzrEMop/CCs9rI=
 github.com/luxfi/container v0.2.2 h1:/IunVpvNuwsqwAYjJSibDskmH/39y4pRKQxrrMLF5Qk=
