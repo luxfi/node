@@ -3029,6 +3029,23 @@ type blockHandler struct {
 	requestIDCounter uint32                    // Counter for generating unique request IDs
 	maxContextBlocks int                       // Max context blocks to request/serve (default: 256)
 	contextRequestMu sync.Mutex                // Protects pendingContext and requestIDCounter
+
+	// serving bounds how much of this node's memory a catch-up request can claim.
+	// Answering one walks up to maxContextBlocks blocks out of the VM and assembles
+	// them into a single multi-hundred-kilobyte message, so the number of answers
+	// being built at once is a memory multiplier — and nothing about the request
+	// rate is ours to choose. A node that has fallen behind asks every peer, as
+	// fast as its own timer allows, and keeps asking for as long as it stays
+	// behind. Unbounded, that turns one lagging peer into this node's memory
+	// ceiling.
+	//
+	// GetAncestors is best-effort and multi-round by design, so declining a request
+	// costs the asker one retry. servingPeers keeps one answer in flight per peer
+	// (a second question from a peer we are already answering is that same peer
+	// asking twice); servingSlots caps the total across all peers.
+	servingMu    sync.Mutex
+	servingPeers set.Set[ids.NodeID]
+	servingSlots chan struct{}
 	pollerCancel     context.CancelFunc        // Cancels runFrontierPoller when the handler stops (RED LOW: no goroutine leak on chain re-creation)
 	diag             catchupDiag               // Per-outcome counters that gate the catch-up diagnostics (see catchupSample)
 
@@ -3225,6 +3242,58 @@ func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, lo
 		pendingPollResponses: make(map[ids.ID][]NovaPollResponse),
 		connectedNodes:       set.NewSet[ids.NodeID](16),
 		bsAncestorCh:         make(map[uint32]chan [][]byte),
+		servingPeers:         set.NewSet[ids.NodeID](16),
+		servingSlots:         make(chan struct{}, maxConcurrentServes),
+	}
+}
+
+// maxConcurrentServes is how many catch-up answers this node will assemble at once,
+// across every peer. Each one holds up to maxContextBlocks blocks plus the message
+// built from them, so this number times the message cap is the memory this path can
+// claim — a few tens of megabytes, rather than however much peers ask for.
+const maxConcurrentServes = 8
+
+// beginServe claims the right to answer nodeID, or reports false when this node is
+// already answering that peer or is at its overall limit. A false is not an error:
+// the asker retries, and it is better to answer a few peers well than to run every
+// peer out of memory.
+func (b *blockHandler) beginServe(nodeID ids.NodeID) bool {
+	b.servingMu.Lock()
+	// Self-arming. A handler assembled as a struct literal rather than through
+	// newBlockHandler still gets the bound: the limit protects memory, so it must not
+	// be something a construction path can be missing.
+	if b.servingSlots == nil {
+		b.servingSlots = make(chan struct{}, maxConcurrentServes)
+	}
+	if b.servingPeers == nil {
+		b.servingPeers = set.NewSet[ids.NodeID](16)
+	}
+	slots := b.servingSlots
+	if b.servingPeers.Contains(nodeID) {
+		b.servingMu.Unlock()
+		return false
+	}
+	b.servingPeers.Add(nodeID)
+	b.servingMu.Unlock()
+
+	select {
+	case slots <- struct{}{}:
+		return true
+	default:
+		b.servingMu.Lock()
+		b.servingPeers.Remove(nodeID)
+		b.servingMu.Unlock()
+		return false
+	}
+}
+
+func (b *blockHandler) endServe(nodeID ids.NodeID) {
+	b.servingMu.Lock()
+	slots := b.servingSlots
+	b.servingPeers.Remove(nodeID)
+	b.servingMu.Unlock()
+	if slots != nil {
+		<-slots
 	}
 }
 
@@ -3281,7 +3350,7 @@ type catchupDiag struct {
 	// request side (requestContext)
 	noWire, dedup, reaped, evicted, noPeer, unsent gatomic.Uint64
 	// serve side (GetContext — the inbound GetAncestors)
-	serveNoWire, serveAsked, serveEmpty gatomic.Uint64
+	serveNoWire, serveAsked, serveEmpty, serveBusy gatomic.Uint64
 	// deliver side (handleContext — the Ancestors reply)
 	replyIn, replyNoVM, replyEmpty, replyBootstrap gatomic.Uint64
 	// frontier decision (AcceptedFrontier) — the branch that decides whether we fetch
@@ -3605,6 +3674,21 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 		}
 		return nil
 	}
+
+	// Claim a serving slot BEFORE touching the VM. Everything below this line — the
+	// block walk, the assembled containers, the wire message — is memory a peer asked
+	// us to spend, and a peer that has fallen behind asks continuously, of everyone.
+	// Declining costs the asker one retry on a protocol that already retries.
+	if !b.beginServe(nodeID) {
+		if n, loud := catchupSample(&b.diag.serveBusy); loud {
+			b.logger.Info("catch-up request declined — already answering this peer, or at the serving limit",
+				log.Stringer("from", nodeID),
+				log.Stringer("containerID", containerID),
+				log.Uint64("count", n))
+		}
+		return nil
+	}
+	defer b.endServe(nodeID)
 
 	if n, loud := catchupSample(&b.diag.serveAsked); loud {
 		b.logger.Info("serving a catch-up request",
