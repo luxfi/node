@@ -3948,19 +3948,42 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 			continue
 		}
 
-		// VOTE path: a v2 entry with an empty cert (still-pending block on the live
-		// missing-parent path) carries just the block; a legacy entry IS the block.
+		// An entry that arrives WITHOUT its own cert. This is ancestry we asked for,
+		// not live gossip: a responder attaches a cert only for blocks inside its
+		// served window, so a node behind by more than that window receives a whole
+		// response of blocks carrying none.
+		//
+		// EVERY BLOCK STILL REQUIRES A CERT TO FINALIZE. Nothing is accepted on a
+		// peer's say-so. The entry is parsed and locally Verified, then TRACKED —
+		// tracking is not finalizing, and AcceptCatchupBlock returns an error for it
+		// precisely because it did not finalize. Finality happens in exactly one
+		// place, HandleIncomingCert, behind the same α-floor, set-root and
+		// VerifyWeighted ⅔-of-stake checks as every other path.
+		//
+		// What a tracked block buys is that a LATER verified cert can finalize it.
+		// That is sound because the chain is hash-linked: a block commits to its
+		// parent by hash, so a verified quorum cert on a descendant certifies its
+		// entire ancestry — no block can be substituted into that path without
+		// breaking the commitment. The fold walks only that certified ancestry, so an
+		// uncertified branch is never reachable no matter what a peer sends us.
+		//
+		// They must NOT go through Put. Put is the live missing-parent path and
+		// self-fetches context for each block it cannot place, so routing a 256-entry
+		// response through it turned ONE answer into 256 new requests — measured on
+		// lux-testnet at 2,614 requests per three minutes against a node that applied
+		// nothing. Voting is also the wrong instrument: the network does not re-vote a
+		// height it has already decided.
 		if !isV2 {
 			blockBytes = entry
 		}
-		if err := b.Put(ctx, nodeID, requestID, blockBytes); err != nil {
+		if err := b.engine.AcceptCatchupBlock(ctx, blockBytes, nil); err != nil {
 			voteFailed++
-			note("put: " + err.Error())
-			b.logger.Debug("failed to process context block",
+			note("track: " + err.Error())
+			b.logger.Debug("catch-up entry verified and tracked, awaiting a cert (or refused)",
 				log.Stringer("from", nodeID),
 				log.Int("processed", processed),
 				log.Err(err))
-			break
+			continue // never finalized without a cert — keep draining the batch
 		}
 		voted++
 		processed++
