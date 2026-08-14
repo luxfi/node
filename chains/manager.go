@@ -3815,6 +3815,30 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 // This is called when we previously requested context for a block we couldn't verify.
 // Each block in the context is processed via Put to add it to our state.
 // After processing, we drain any buffered Qbits that were waiting for context.
+// shouldDescend is the whole descent rule, as one question about values.
+//
+// A batch that accepted nothing is answering the wrong question: the responder
+// serves a window ending at the id it was asked for, so a node further behind than
+// that window sees every entry above its tip and refuses all of them. Asking the
+// same peer for the same tip returns the same window forever, so we ask instead for
+// the oldest entry's PARENT — the next window down — and walk toward our own tip.
+//
+// The walk ends at genesis. Genesis has height 0 and the empty id for a parent, so a
+// batch that starts there has nothing below it; asking a peer for the empty id asks
+// for a block that cannot exist. The peer answers "not found" or the plugin answers
+// with a zero-length parent, the response carries nothing, and we arrive back here to
+// ask the same impossible question of the next peer. Nothing ends that on its own:
+// with no finalized ledger every window reads as "above" a tip of zero.
+func shouldDescend(certAccepted int, haveOldest bool, oldestHeight uint64, oldestParent ids.ID, finalized uint64, finalizedSet bool) bool {
+	if certAccepted > 0 || !haveOldest {
+		return false
+	}
+	if oldestHeight == 0 || oldestParent == ids.Empty {
+		return false
+	}
+	return !finalizedSet || oldestHeight > finalized+1
+}
+
 func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, data []byte) error {
 	// Count EVERY inbound Ancestors reply, whatever becomes of it: this counter is the
 	// answer to "did a reply EVER arrive", which the TTL-expiry line reports and which
@@ -4030,15 +4054,13 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// empty cert for any block outside its window, so the common batch — every entry
 	// above us, none of them certified — reported certRejected=0 and was read as
 	// nothing to descend from. Measured on lux-testnet: 2,614 requests, 5 descents.
-	if certAccepted == 0 && haveOldest {
-		if _, fh, set := b.engine.FinalizedLedger(); !set || oldestHeight > fh+1 {
-			b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
-				log.Stringer("from", nodeID),
-				log.Uint64("oldestHeight", oldestHeight),
-				log.Uint64("finalized", fh),
-				log.Stringer("requesting", oldestParent))
-			b.requestContext(ctx, nodeID, oldestParent)
-		}
+	if _, fh, set := b.engine.FinalizedLedger(); shouldDescend(certAccepted, haveOldest, oldestHeight, oldestParent, fh, set) {
+		b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
+			log.Stringer("from", nodeID),
+			log.Uint64("oldestHeight", oldestHeight),
+			log.Uint64("finalized", fh),
+			log.Stringer("requesting", oldestParent))
+		b.requestContext(ctx, nodeID, oldestParent)
 	}
 
 	return nil
