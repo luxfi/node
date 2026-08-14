@@ -3026,6 +3026,21 @@ type blockHandler struct {
 	// Context sync support - when a block fails verification due to missing context,
 	// we request the prerequisite blocks from the peer to catch up
 	pendingContext   map[ids.ID]contextRequest // Map from blockID to pending context request
+
+	// descentAnchor is the one block this handler walks toward while it is behind.
+	// Upstream keeps a single outstanding-request registry (blkReqs, a bimap in
+	// snow/engine/snowman/engine.go) so every fetch is deduped and exactly one driver
+	// walks the gap. Five callers here can request context and four anchor at the
+	// network tip, which asks the wrong question when we are behind: a responder
+	// serves the window ENDING at the id it is asked for, so a tip anchor returns
+	// blocks above us every time. The descent computes the right next anchor and kept
+	// it in a local, so the walk was discarded as soon as another caller re-anchored
+	// and it restarted forever.
+	//
+	// Liveness only. This decides which block we ASK a peer for and grants nothing:
+	// finality still requires a verified quorum cert and still advances in contiguous
+	// order.
+	descentAnchor ids.ID
 	requestIDCounter uint32                    // Counter for generating unique request IDs
 	maxContextBlocks int                       // Max context blocks to request/serve (default: 256)
 	contextRequestMu sync.Mutex                // Protects pendingContext and requestIDCounter
@@ -3372,6 +3387,25 @@ func catchupSample(c *gatomic.Uint64) (uint64, bool) {
 
 // requestContext sends a context request (wire: GetAncestors) to fetch missing blocks from a peer
 func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, blockID ids.ID) {
+	// FOLLOW THE WALK. While a descent is under way, every caller asks for the block
+	// the descent is walking toward rather than whatever it happened to see. Upstream
+	// keeps one outstanding-request registry and one driver for exactly this reason;
+	// here five callers can request context and four of them see the network tip. A
+	// responder serves the window ENDING at the id it is asked for, so a tip-anchored
+	// request returns blocks above a behind node every time — and replaces the anchor
+	// the descent had just earned. Measured: four interleaved walks whose oldest
+	// heights bounced (24171, 24366, 25288, 26201), none reaching the node's own next
+	// height.
+	//
+	// The anchor clears when the descent connects, so a caught-up node asks for
+	// exactly what its caller named. Liveness only: this chooses the question, never
+	// the answer, and nothing finalizes without a verified cert.
+	b.contextRequestMu.Lock()
+	if anchor := b.descentAnchor; anchor != ids.Empty && anchor != blockID {
+		blockID = anchor
+	}
+	b.contextRequestMu.Unlock()
+
 	if b.net == nil || b.msgCreator == nil {
 		// The catch-up DECISION was made and there is no wire to carry it. Silence here
 		// reads exactly like a node that was never asked to fetch anything.
@@ -4054,12 +4088,23 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// empty cert for any block outside its window, so the common batch — every entry
 	// above us, none of them certified — reported certRejected=0 and was read as
 	// nothing to descend from. Measured on lux-testnet: 2,614 requests, 5 descents.
+	// The walk connected — finality advanced — so the anchor has served its purpose
+	// and callers go back to naming their own blocks.
+	if certAccepted > 0 {
+		b.contextRequestMu.Lock()
+		b.descentAnchor = ids.Empty
+		b.contextRequestMu.Unlock()
+	}
+
 	if _, fh, set := b.engine.FinalizedLedger(); shouldDescend(certAccepted, haveOldest, oldestHeight, oldestParent, fh, set) {
 		b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
 			log.Stringer("from", nodeID),
 			log.Uint64("oldestHeight", oldestHeight),
 			log.Uint64("finalized", fh),
 			log.Stringer("requesting", oldestParent))
+		b.contextRequestMu.Lock()
+		b.descentAnchor = oldestParent
+		b.contextRequestMu.Unlock()
 		b.requestContext(ctx, nodeID, oldestParent)
 	}
 
