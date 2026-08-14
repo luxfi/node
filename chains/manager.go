@@ -3917,6 +3917,19 @@ func (b *blockHandler) descend(next ids.ID, nextHeight uint64) bool {
 	return true
 }
 
+// retire drops the walk once finality has passed the window it was looking for.
+//
+// The walk exists to FIND the gap — the window holding our next contiguous height.
+// While finality is still below that window the walk is still the right question to
+// be asking, and dropping it there costs a full descent to ask it again.
+func (b *blockHandler) retire(finalized uint64) {
+	b.contextRequestMu.Lock()
+	defer b.contextRequestMu.Unlock()
+	if b.descentAnchor != ids.Empty && finalized >= b.descentHeight {
+		b.descentAnchor, b.descentHeight = ids.Empty, 0
+	}
+}
+
 func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, data []byte) error {
 	// Count EVERY inbound Ancestors reply, whatever becomes of it: this counter is the
 	// answer to "did a reply EVER arrive", which the TTL-expiry line reports and which
@@ -4132,15 +4145,19 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// empty cert for any block outside its window, so the common batch — every entry
 	// above us, none of them certified — reported certRejected=0 and was read as
 	// nothing to descend from. Measured on lux-testnet: 2,614 requests, 5 descents.
-	// The walk connected — finality advanced — so the anchor has served its purpose
-	// and callers go back to naming their own blocks.
-	if certAccepted > 0 {
-		b.contextRequestMu.Lock()
-		b.descentAnchor, b.descentHeight = ids.Empty, 0
-		b.contextRequestMu.Unlock()
+	_, fh, set := b.engine.FinalizedLedger()
+
+	// A walk ends when our own finality reaches it — not on the first block it wins.
+	// Retiring it on ANY successful fold restarts the descent from the network tip
+	// after every single block, so a node N blocks behind pays the whole descent N
+	// times and advances one height per full walk. Measured on mainnet: luxd-1 sat at
+	// finalized=1159170, exactly one block above the peers it was stuck with, ~2,000
+	// short of the fleet, re-descending eight windows for each next height.
+	if certAccepted > 0 && set {
+		b.retire(fh)
 	}
 
-	if _, fh, set := b.engine.FinalizedLedger(); shouldDescend(certAccepted, haveOldest, oldestHeight, oldestParent, fh, set) {
+	if shouldDescend(certAccepted, haveOldest, oldestHeight, oldestParent, fh, set) {
 		if b.descend(oldestParent, oldestHeight-1) {
 			b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
 				log.Stringer("from", nodeID),

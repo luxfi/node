@@ -45,17 +45,42 @@ func TestDescentOnlyGoesDown(t *testing.T) {
 	}
 }
 
-// TestDescentResumesAfterTheWalkConnects: clearing the anchor on a successful fold is
-// what lets the next stall start a fresh walk. If a cleared anchor could not be
-// re-armed, one recovery would be all a node ever got.
-func TestDescentResumesAfterTheWalkConnects(t *testing.T) {
+// TestWalkOutlivesOneFoldedBlock is the cost of ending a walk too early. A node
+// thousands of blocks behind folds ONE block out of the window the walk found; if
+// that retires the walk, the next height pays another full descent, and finality
+// creeps up one block per walk instead of one window per walk.
+func TestWalkOutlivesOneFoldedBlock(t *testing.T) {
 	b := walker()
-	b.descend(ids.GenerateTestID(), 1_159_744)
+	b.descend(ids.GenerateTestID(), 1_159_400) // the window holding our next height
 
-	b.descentAnchor, b.descentHeight = ids.Empty, 0 // the fold clears it
+	b.retire(1_159_170) // one block folded; still ~2000 short of the fleet
 
+	if b.descentAnchor == ids.Empty {
+		t.Fatal("one folded block ended the walk — the next height re-descends from the tip")
+	}
+	if b.descentHeight != 1_159_400 {
+		t.Fatalf("walk moved to %d on a fold; it should be where it was", b.descentHeight)
+	}
+}
+
+// TestWalkEndsWhenFinalityPassesIt: the other side. Once our finality is at or above
+// the window, the walk is asking about blocks that are already ours, so it must let
+// callers name their own blocks again.
+func TestWalkEndsWhenFinalityPassesIt(t *testing.T) {
+	b := walker()
+	b.descend(ids.GenerateTestID(), 1_159_400)
+
+	b.retire(1_159_399)
+	if b.descentAnchor == ids.Empty {
+		t.Fatal("walk retired one block early")
+	}
+
+	b.retire(1_159_400)
+	if b.descentAnchor != ids.Empty {
+		t.Fatal("finality reached the walk and it is still running — callers stay pinned to a stale anchor")
+	}
 	if !b.descend(ids.GenerateTestID(), 2_000_000) {
-		t.Fatal("a cleared walk must accept any candidate, including a higher one")
+		t.Fatal("a retired walk must accept any candidate, including a higher one")
 	}
 }
 
