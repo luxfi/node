@@ -58,15 +58,30 @@ func (n *redSilentNet) PeerInfo(nodeIDs []ids.NodeID) []peer.Info {
 
 func (n *redSilentNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ uint32) set.Set[ids.NodeID] {
 	m, ok := msg.(*bsOutMsg)
-	if !ok || m.op != "frontier" {
+	if !ok {
 		return nil
 	}
 	for id := range nodeIDs {
 		if n.silent.Contains(id) {
-			continue // CONNECTED, but withholds its frontier reply this round
+			continue // CONNECTED, but withholds its answers this round
 		}
-		if tip, ok := n.tipFor[id]; ok {
+		tip, vocal := n.tipFor[id]
+		if !vocal {
+			continue
+		}
+		switch m.op {
+		case "frontier":
 			n.bh.deliverBootstrapFrontier(id, tip)
+		case "getaccepted":
+			// A vocal beacon answers the second question too, about its own tip: it has
+			// accepted that tip, and nothing above it.
+			var accepted []ids.ID
+			for _, c := range m.containerIDs {
+				if c == tip {
+					accepted = append(accepted, c)
+				}
+			}
+			n.bh.deliverBootstrapAccepted(m.requestID, id, accepted)
 		}
 	}
 	return nil

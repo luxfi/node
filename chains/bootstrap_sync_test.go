@@ -182,9 +182,10 @@ func (m *bsTestVM) SetPreference(_ context.Context, id ids.ID) error {
 // ----- mock outbound message + builder --------------------------------------
 
 type bsOutMsg struct {
-	op        string
-	blockID   ids.ID
-	requestID uint32
+	op           string
+	blockID      ids.ID
+	requestID    uint32
+	containerIDs []ids.ID
 }
 
 func (*bsOutMsg) BypassThrottling() bool     { return true }
@@ -199,6 +200,12 @@ func (bsMsgBuilder) GetAcceptedFrontier(_ ids.ID, requestID uint32, _ time.Durat
 }
 func (bsMsgBuilder) GetAncestors(_ ids.ID, requestID uint32, _ time.Duration, blockID ids.ID, _ p2p.EngineType) (message.OutboundMessage, error) {
 	return &bsOutMsg{op: "ancestors", blockID: blockID, requestID: requestID}, nil
+}
+func (bsMsgBuilder) GetAccepted(_ ids.ID, requestID uint32, _ time.Duration, containerIDs []ids.ID) (message.OutboundMessage, error) {
+	return &bsOutMsg{op: "getaccepted", requestID: requestID, containerIDs: containerIDs}, nil
+}
+func (bsMsgBuilder) Accepted(_ ids.ID, requestID uint32, containerIDs []ids.ID) (message.OutboundMessage, error) {
+	return &bsOutMsg{op: "accepted", requestID: requestID, containerIDs: containerIDs}, nil
 }
 
 // ----- beacon-aware mock peer net -------------------------------------------
@@ -228,6 +235,14 @@ type bsBeaconNet struct {
 	// tipFor optionally overrides the tip a specific beacon reports (models DISAGREEMENT —
 	// beacons connected but split across tips, so no ⅔ quorum forms → FrontierNoQuorum).
 	tipFor map[ids.NodeID]ids.ID
+
+	// withhold names blocks no sampled beacon serves ancestry for WHILE THE FLEET IS SPREAD. The
+	// bleeding edge of a live chain is exactly this: the highest blocks are held by one or two
+	// nodes, so a walk that must fetch them to compare heads gets empties, while the settled chain
+	// below is served by everyone. Once the fleet settles (tipFor2) those blocks are held
+	// everywhere and serve normally. Acceptance answers are unaffected either way — a beacon
+	// answers about its own chain without serving anything.
+	withhold set.Set[ids.ID]
 
 	// connectAfterCalls models the CANARY boot race over the REAL transport: while
 	// peerInfoCalls ≤ connectAfterCalls the beacons are reported as NOT yet connected (so
@@ -323,18 +338,22 @@ func (n *bsBeaconNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.Node
 		// Each queried beacon answers with the honest tip (or its tipFor override, modeling
 		// disagreement) — and, once the node has accepted through propagateAtHeight, its tipFor2
 		// (modeling finalization propagating across the fleet so the bleeding edge resolves).
-		propagated := n.tipFor2 != nil && n.nodeAcceptedHeight() >= n.propagateAtHeight
 		for id := range nodeIDs {
-			tip := n.tip.id
-			if t, ok := n.tipFor[id]; ok {
-				tip = t
-			}
-			if propagated {
-				if t, ok := n.tipFor2[id]; ok {
-					tip = t
+			n.bh.deliverBootstrapFrontier(id, n.tipOf(id))
+		}
+	case "getaccepted":
+		// A beacon answers the SECOND question about its OWN chain: it has accepted every asked
+		// candidate at or below its own tip's height. This needs nothing SERVED — that is the
+		// point of the question — so a beacon whose ancestry is withheld still answers it.
+		for id := range nodeIDs {
+			h := n.heightOf(n.tipOf(id))
+			var accepted []ids.ID
+			for _, c := range m.containerIDs {
+				if blk, ok := n.byID[c]; ok && blk.height <= h {
+					accepted = append(accepted, c)
 				}
 			}
-			n.bh.deliverBootstrapFrontier(id, tip)
+			n.bh.deliverBootstrapAccepted(m.requestID, id, accepted)
 		}
 		// The malicious peer ALSO tries to inject its forged tip (it spams the channel),
 		// modeling an attacker shouting a frontier. It must be IGNORED (not a beacon).
@@ -349,31 +368,67 @@ func (n *bsBeaconNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.Node
 			var servers []ids.NodeID
 			for id := range nodeIDs {
 				if n.emptyResponders.Contains(id) {
-					n.bh.deliverBootstrapAncestors(m.requestID, nil)
+					n.bh.deliverBootstrapAncestors(id, m.requestID, nil)
 				} else {
 					servers = append(servers, id)
 				}
 			}
-			for range servers {
-				n.bh.deliverBootstrapAncestors(m.requestID, n.frame(m.blockID))
+			for _, id := range servers {
+				n.bh.deliverBootstrapAncestors(id, m.requestID, n.frame(m.blockID))
 			}
 			return nil
 		}
-		if n.serveAncestors {
-			n.bh.deliverBootstrapAncestors(m.requestID, n.frame(m.blockID))
-		} else if n.ancestorsEmpty {
-			// The peer REPLIES but serves NOTHING — the cross-version / withholding case the canary
-			// risked. The descent gets an empty batch and must fail safe (ErrStalled), never silently
-			// conclude caught-up at the stale height.
-			n.bh.deliverBootstrapAncestors(m.requestID, nil)
+		for id := range nodeIDs {
+			if n.serveAncestors {
+				n.bh.deliverBootstrapAncestors(id, m.requestID, n.frame(m.blockID))
+			} else if n.ancestorsEmpty {
+				// The peer REPLIES but serves NOTHING — the cross-version / withholding case the
+				// canary risked. The descent gets an empty batch and must fail safe (ErrStalled),
+				// never silently conclude caught-up at the stale height.
+				n.bh.deliverBootstrapAncestors(id, m.requestID, nil)
+			}
 		}
 	}
 	return nil
 }
 
+// tipOf is the tip a beacon reports: the honest tip, its tipFor override (modeling a fleet spread
+// over several heads), or — once the node has accepted through propagateAtHeight — its tipFor2
+// (modeling finalization propagating across the fleet).
+func (n *bsBeaconNet) tipOf(nodeID ids.NodeID) ids.ID {
+	tip := n.tip.id
+	if t, ok := n.tipFor[nodeID]; ok {
+		tip = t
+	}
+	if n.settled() {
+		if t, ok := n.tipFor2[nodeID]; ok {
+			tip = t
+		}
+	}
+	return tip
+}
+
+// settled reports that finalization has propagated across the fleet — the laggards have ratcheted
+// up to the tip that was the bleeding edge, so the fleet no longer disagrees and what was held by
+// one or two nodes is now held by all of them.
+func (n *bsBeaconNet) settled() bool {
+	return n.tipFor2 != nil && n.nodeAcceptedHeight() >= n.propagateAtHeight
+}
+
+// heightOf resolves a block's height on the honest chain (0 when unknown).
+func (n *bsBeaconNet) heightOf(blockID ids.ID) uint64 {
+	if blk, ok := n.byID[blockID]; ok {
+		return blk.height
+	}
+	return 0
+}
+
 // frame serves up to 256 blocks ending at blockID, OLDEST-FIRST, in the same outer
 // [entryLen:4][entry] framing GetContext produces (entry = encodeCatchupEntry).
 func (n *bsBeaconNet) frame(blockID ids.ID) []byte {
+	if n.withhold.Contains(blockID) && !n.settled() {
+		return nil // still the bleeding edge: too few nodes hold it for a sample to fetch it
+	}
 	tip, ok := n.byID[blockID]
 	if !ok {
 		return nil
@@ -1250,11 +1305,15 @@ func TestDecodeContextBlocks_RoundTrip(t *testing.T) {
 // loop is driving (bsActive). When inactive they return false so the live cert/vote
 // path runs unchanged. The frontier reply now carries the responding beacon's nodeID.
 func TestDeliverBootstrap_GatedByActive(t *testing.T) {
-	bh := &blockHandler{bsAncestorCh: make(map[uint32]chan [][]byte)}
+	bh := &blockHandler{
+		bsAncestorCh:    make(map[uint32]chan [][]byte),
+		bsAncestorPeers: make(map[uint32]set.Set[ids.NodeID]),
+	}
+	asked := ids.GenerateTestNodeID()
 
 	// Inactive: both hooks are inert (return false → caller uses the live path).
 	require.False(t, bh.deliverBootstrapFrontier(ids.GenerateTestNodeID(), ids.GenerateTestID()))
-	require.False(t, bh.deliverBootstrapAncestors(1, nil))
+	require.False(t, bh.deliverBootstrapAncestors(asked, 1, nil))
 
 	// Active: a registered FrontierTip channel receives the tagged reply.
 	bh.bsActive.Store(true)
@@ -1270,11 +1329,15 @@ func TestDeliverBootstrap_GatedByActive(t *testing.T) {
 	// Active: a registered Ancestors channel receives the decoded blocks.
 	ach := make(chan [][]byte, 1)
 	bh.bsAncestorCh[7] = ach
+	bh.bsAncestorPeers[7] = set.Of(asked)
 	entry := encodeCatchupEntry([]byte("blk"), nil)
 	var lp [4]byte
 	binary.BigEndian.PutUint32(lp[:], uint32(len(entry)))
-	require.True(t, bh.deliverBootstrapAncestors(7, append(lp[:], entry...)))
+	require.True(t, bh.deliverBootstrapAncestors(asked, 7, append(lp[:], entry...)))
 	require.Equal(t, [][]byte{[]byte("blk")}, <-ach)
+
+	// A peer we never asked cannot feed this fetch, however well-formed its reply.
+	require.False(t, bh.deliverBootstrapAncestors(ids.GenerateTestNodeID(), 7, append(lp[:], entry...)))
 }
 
 // TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath is the behind-follower
@@ -1292,7 +1355,10 @@ func TestDeliverBootstrap_GatedByActive(t *testing.T) {
 //
 // A reply is the bootstrap lane's only if the bootstrap lane ASKED for it.
 func TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath(t *testing.T) {
-	bh := &blockHandler{bsAncestorCh: make(map[uint32]chan [][]byte)}
+	bh := &blockHandler{
+		bsAncestorCh:    make(map[uint32]chan [][]byte),
+		bsAncestorPeers: make(map[uint32]set.Set[ids.NodeID]),
+	}
 	bh.bsActive.Store(true)
 
 	entry := encodeCatchupEntry([]byte("blk"), nil)
@@ -1302,7 +1368,8 @@ func TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath(t *testing.T) {
 
 	// No waiter registered for this requestID: nothing in the bootstrap lane wants
 	// this reply, so it must NOT be claimed — the live path is its only consumer.
-	require.False(t, bh.deliverBootstrapAncestors(99, data),
+	peer := ids.GenerateTestNodeID()
+	require.False(t, bh.deliverBootstrapAncestors(peer, 99, data),
 		"an Ancestors reply the bootstrap lane never requested must fall through to the live cert path")
 
 	// A registered-but-unread waiter must not swallow it either. The send is
@@ -1310,14 +1377,16 @@ func TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath(t *testing.T) {
 	// the live path — the blocks are lost twice.
 	full := make(chan [][]byte) // unbuffered, nobody receiving
 	bh.bsAncestorCh[42] = full
-	require.False(t, bh.deliverBootstrapAncestors(42, data),
+	bh.bsAncestorPeers[42] = set.Of(peer)
+	require.False(t, bh.deliverBootstrapAncestors(peer, 42, data),
 		"a reply that could not be handed to its waiter must fall through, not be dropped")
 
 	// Control: a waiter that CAN take it still consumes it, so this fix does not
 	// hand the live path replies that initial sync is legitimately driving.
 	ready := make(chan [][]byte, 1)
 	bh.bsAncestorCh[43] = ready
-	require.True(t, bh.deliverBootstrapAncestors(43, data))
+	bh.bsAncestorPeers[43] = set.Of(peer)
+	require.True(t, bh.deliverBootstrapAncestors(peer, 43, data))
 	require.Equal(t, [][]byte{[]byte("blk")}, <-ready)
 }
 

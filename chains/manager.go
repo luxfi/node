@@ -1010,8 +1010,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		return nil, fmt.Errorf("error while creating chain data directory %w", err)
 	}
 
-	// Create the log and context of the chain
-	chainLog := m.Log // Use main log instead of creating chain-specific log
+	// Create the log and context of the chain. Every collaborator built below takes
+	// THIS logger, so a line is attributable without its emitter naming the chain.
+	chainLog := speaksFor(m.Log, chainParams.ID)
 
 	// Create metrics gatherer for this chain
 	// The coreth EVM expects metric.MultiGatherer, not a legacy registry type
@@ -1507,19 +1508,19 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// followers finalize on the cert). Without a verifier a K>1 engine refuses
 		// to Start; without the gossiper Mode() reports degraded and value-DEX is
 		// refused. For K==1 these stay nil (no quorum, no signatures).
-		gossiper := &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID, log: m.Log}
+		gossiper := &networkGossiper{net: m.Net, msgCreator: m.MsgCreator, networkID: networkID, log: chainLog}
 		// catchup is the behind-follower self-heal wire. The engine signals through
 		// it (chain.Catchup) when a gossiped child references a parent we lack; it
 		// routes to the blockHandler's GetAncestors transport. The handler wraps the
 		// engine built just below, so its handler ref is late-bound at chainInfo
 		// construction (a no-op until then — see networkCatchup).
-		catchup := &networkCatchup{log: m.Log}
+		catchup := &networkCatchup{log: chainLog}
 		netCfg := consensuschain.NetworkConfig{
 			ChainID:    chainParams.ID,
 			NetworkID:  networkID,
 			NodeID:     m.NodeID,
 			Validators: m.Validators, // CRITICAL: Pass validator sampler for k-peer polling
-			Logger:     speaksFor(m.Log, chainParams.ID),
+			Logger:     chainLog,
 			Gossiper:   gossiper,
 			Catchup:    catchup, // fetch missing ancestors so a behind follower converges
 			VM:         blockBuilder,
@@ -1578,7 +1579,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// the SAME height-pinned source as the stake + set-root — NOT m.Validators
 			// (the current map).
 			voteVerifier := newBLSVoteVerifier(vdrState, networkID)
-			voteVerifier.log = m.Log
+			voteVerifier.log = chainLog
 			netCfg.VoteVerifier = voteVerifier
 			netCfg.VoteSigner = newBLSVoteSigner(m.StakingBLSKey)
 			// Stake-weighted finality (HIGH-3): require a ⅔-of-stake supermajority,
@@ -1769,7 +1770,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// vote before tallying it. Passing it here tells the handler that an inbound
 		// unsigned Chits can never become a counted vote on this chain, so it must
 		// not be converted into one (nova_poll.go).
-		bh := newBlockHandler(blockBuilder, engineVM, m.Log, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, m.NodeID, expectsStakedBeacons, consensusParams.K > 1)
+		bh := newBlockHandler(blockBuilder, engineVM, chainLog, consensusEngine, m.Net, m.MsgCreator, chainParams.ID, networkID, beacons, m.NodeID, expectsStakedBeacons, consensusParams.K > 1)
 		// Gate this native chain's bootstrap frontier-TRUST on the P-chain having finished its
 		// initial sync, so the staked beacon set (and thus the stake-majority floor denominator)
 		// is the TRUE full validator set, not a partial mid-replay set. Wired ONLY for native
@@ -3025,7 +3026,7 @@ type blockHandler struct {
 
 	// Context sync support - when a block fails verification due to missing context,
 	// we request the prerequisite blocks from the peer to catch up
-	pendingContext   map[ids.ID]contextRequest // Map from blockID to pending context request
+	pendingContext map[ids.ID]contextRequest // Map from blockID to pending context request
 
 	// descentAnchor is the one block this handler walks toward while it is behind.
 	// Upstream keeps a single outstanding-request registry (blkReqs, a bimap in
@@ -3042,11 +3043,11 @@ type blockHandler struct {
 	// order.
 	// descentHeight is where that walk currently stands, so a reply from above it
 	// cannot drag the walk back up. See descend.
-	descentAnchor ids.ID
-	descentHeight uint64
-	requestIDCounter uint32                    // Counter for generating unique request IDs
-	maxContextBlocks int                       // Max context blocks to request/serve (default: 256)
-	contextRequestMu sync.Mutex                // Protects pendingContext and requestIDCounter
+	descentAnchor    ids.ID
+	descentHeight    uint64
+	requestIDCounter uint32     // Counter for generating unique request IDs
+	maxContextBlocks int        // Max context blocks to request/serve (default: 256)
+	contextRequestMu sync.Mutex // Protects pendingContext and requestIDCounter
 
 	// serving bounds how much of this node's memory a catch-up request can claim.
 	// Answering one walks up to maxContextBlocks blocks out of the VM and assembles
@@ -3064,8 +3065,8 @@ type blockHandler struct {
 	servingMu    sync.Mutex
 	servingPeers set.Set[ids.NodeID]
 	servingSlots chan struct{}
-	pollerCancel     context.CancelFunc        // Cancels runFrontierPoller when the handler stops (RED LOW: no goroutine leak on chain re-creation)
-	diag             catchupDiag               // Per-outcome counters that gate the catch-up diagnostics (see catchupSample)
+	pollerCancel context.CancelFunc // Cancels runFrontierPoller when the handler stops (RED LOW: no goroutine leak on chain re-creation)
+	diag         catchupDiag        // Per-outcome counters that gate the catch-up diagnostics (see catchupSample)
 
 	// signedVotesRequired is true exactly when this chain's engine AUTHENTICATES
 	// every vote before tallying it — i.e. a VoteVerifier is wired, which the node
@@ -3106,11 +3107,13 @@ type blockHandler struct {
 	// force-STOP a node that is correctly failing safe and waiting, which (given the K8s probes only
 	// poll the always-green /v1/health/liveness) would otherwise be a permanent brick.
 	bootstrapConnecting gatomic.Bool
-	bsActive            gatomic.Bool             // true while the bootstrap loop is driving
-	bsMu                sync.Mutex               // guards bsFrontierCh + bsAncestorCh + bsAheadBeacons
-	bsFrontierCh        chan bsFrontierReply     // weighted frontier replies for the current FrontierTip
-	bsAncestorCh        map[uint32]chan [][]byte // requestID -> ancestors reply for the current Ancestors
-	bsRotor             gatomic.Uint32           // round-robins the Ancestors peer sample (M1: no monopoly)
+	bsActive            gatomic.Bool                   // true while the bootstrap loop is driving
+	bsMu                sync.Mutex                     // guards bsFrontierCh + bsAccepted + bsAncestorCh + bsAheadBeacons
+	bsFrontierCh        chan bsFrontierReply           // weighted frontier replies for the current FrontierTip
+	bsAccepted          map[uint32]bsAcceptedRound     // requestID -> the open second-question round
+	bsAncestorCh        map[uint32]chan [][]byte       // requestID -> ancestors reply for the current Ancestors
+	bsAncestorPeers     map[uint32]set.Set[ids.NodeID] // requestID -> the beacons that request was sent to
+	bsRotor             gatomic.Uint32                 // round-robins the Ancestors peer sample (M1: no monopoly)
 	// bsAheadBeacons is the set of beacons whose accepted tip, reported in the most recent
 	// FrontierTip round, is a block this node does NOT hold — i.e. beacons genuinely AHEAD that
 	// therefore HAVE the ancestry the descent needs. sampleAncestorBeacons prefers them so a
@@ -3229,6 +3232,23 @@ type bsFrontierReply struct {
 	tip    ids.ID
 }
 
+// bsAcceptedReply is one beacon's answer to the second naming question: which of the candidate
+// tips it has ACCEPTED. Tagged with the responder for the same reason bsFrontierReply is — the
+// answer is worth exactly that beacon's configured stake, and nothing without a name attached.
+type bsAcceptedReply struct {
+	nodeID   ids.NodeID
+	accepted []ids.ID
+}
+
+// bsAcceptedRound is one open second-question round: who it was asked of, and where the answers
+// go. The asked set lives WITH the channel so an answer can be refused at the door — a peer that
+// was not asked cannot take a slot in the round's buffer, let alone be tallied. Correlating on
+// request id alone leaves that slot open to whoever answers first.
+type bsAcceptedRound struct {
+	asked set.Set[ids.NodeID]
+	ch    chan bsAcceptedReply
+}
+
 // contextRequest tracks a pending context request (wire: GetAncestors)
 type contextRequest struct {
 	nodeID    ids.NodeID
@@ -3245,7 +3265,7 @@ func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, lo
 	return &blockHandler{
 		vm:                   vm,
 		connector:            connector,
-		logger:               speaksFor(logger, chainID),
+		logger:               logger,
 		engine:               engine,
 		net:                  net,
 		msgCreator:           msgCreator,
@@ -3260,6 +3280,7 @@ func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, lo
 		pendingPollResponses: make(map[ids.ID][]NovaPollResponse),
 		connectedNodes:       set.NewSet[ids.NodeID](16),
 		bsAncestorCh:         make(map[uint32]chan [][]byte),
+		bsAncestorPeers:      make(map[uint32]set.Set[ids.NodeID]),
 		servingPeers:         set.NewSet[ids.NodeID](16),
 		servingSlots:         make(chan struct{}, maxConcurrentServes),
 	}
@@ -3388,16 +3409,17 @@ func catchupSample(c *gatomic.Uint64) (uint64, bool) {
 	return n, n <= 3 || n%500 == 0
 }
 
-// speaksFor tags a logger with the chain whose behaviour it reports.
+// speaksFor tags a logger with the chain whose behaviour it reports. It is called
+// exactly once per chain, at the top of buildChain; everything a chain is built from
+// takes that logger, so no emitter carries the identity itself and a field applied
+// twice cannot appear.
 //
 // Every chain on a node writes to ONE writer, and the lines that matter most here —
 // the catch-up descent, the served window, the cert the finality guard refused —
 // carry heights and block ids and nothing else. Chains created together produce
 // blocks at the same cadence, so their heights sit in the same range: a reader
 // cannot tell from "finalized=23587 oldestHeight=33232" which of eight chains is
-// speaking, and every attempt to diagnose the stalled C-Chain from these lines has
-// been reading whichever chain was loudest. The identity is known at construction
-// and costs one field.
+// speaking. The identity is known at construction and costs one field.
 func speaksFor(base log.Logger, chainID ids.ID) log.Logger {
 	if base == nil || base.IsZero() {
 		return base
@@ -3992,7 +4014,7 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// oldest-first batch the loop's Ancestors() requested — hand the raw blocks to that
 	// waiting call (correlated by requestID); the loop decides ordering + re-execution.
 	// See bootstrap_sync.go.
-	if b.deliverBootstrapAncestors(requestID, data) {
+	if b.deliverBootstrapAncestors(nodeID, requestID, data) {
 		// Consumed by the bootstrap lane: the live cert path never sees these blocks, so
 		// a reply landing here explains an unchanged live height.
 		if n, loud := catchupSample(&b.diag.replyBootstrap); loud {
@@ -4352,8 +4374,7 @@ func (b *blockHandler) pollFrontierOnce(ctx context.Context) {
 	if len(peers) == 0 {
 		// Nothing to ask. Per-event: this is the 15s heartbeat, four lines a minute at
 		// worst, and its absence is exactly as informative as its presence.
-		b.logger.Info("frontier poll skipped — no connected peers",
-			log.Stringer("chainID", b.chainID))
+		b.logger.Info("frontier poll skipped — no connected peers")
 		return
 	}
 	// Filter on the NETWORK id, not the chain id. A peer advertises in its handshake the NETS it
@@ -4382,7 +4403,6 @@ func (b *blockHandler) pollFrontierOnce(ctx context.Context) {
 		// id emptied every sample, no GetAcceptedFrontier was ever sent, and a behind node
 		// never learned it was behind — with no line saying so.
 		b.logger.Warn("frontier poll skipped — no connected peer tracks this network; the tip is never asked for",
-			log.Stringer("chainID", b.chainID),
 			log.Stringer("networkID", b.networkID),
 			log.Int("connectedPeers", len(peers)))
 		return
@@ -4400,15 +4420,70 @@ func (b *blockHandler) pollFrontierOnce(ctx context.Context) {
 	}
 	sentTo := b.net.Send(msg, sample, b.networkID, 0)
 	b.logger.Info("frontier poll sent",
-		log.Stringer("chainID", b.chainID),
 		log.Uint32("requestID", requestID),
 		log.Int("asked", sample.Len()),
 		log.Int("sentTo", sentTo.Len()))
 }
 
+// GetAccepted answers which of the asked ids this node has ACCEPTED. It is the second half of
+// naming a frontier, and it exists because the first half cannot be answered in agreement on a
+// live chain: GetAcceptedFrontier returns ONE tip per peer, the chain moves while those answers
+// are in flight, and healthy honest peers therefore name different blocks. Acceptance is
+// cumulative, so peers at different heights have all accepted the lower blocks — a behind node
+// asks about the tips it collected and learns which of them a stake quorum actually holds.
+//
+// ACCEPTED, not held. A block sitting in the store because it was gossiped ahead of acceptance is
+// not on this node's chain; answering for it would vouch for a block this node never finalized,
+// which is precisely the store-vs-acceptance distinction the frontier path turns on. The oracle is
+// the one that path already uses.
+//
+// The id list is chosen by the sender, so it is bounded: a question naming more ids than one
+// naming round can legitimately ask is refused whole rather than walked. An empty answer is still
+// sent — "I have accepted none of these" is an answer, and it lets the asker finish its round
+// instead of waiting out the window on a peer that has already replied.
 func (b *blockHandler) GetAccepted(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, containerIDs []ids.ID) error {
+	if b.vm == nil || b.net == nil || b.msgCreator == nil {
+		return nil
+	}
+	if len(containerIDs) > bootstrapAcceptedCandidates {
+		b.logger.Debug("refusing an oversized accepted question",
+			log.Stringer("from", nodeID),
+			log.Int("asked", len(containerIDs)),
+			log.Int("limit", bootstrapAcceptedCandidates))
+		return nil
+	}
+	accepted := make([]ids.ID, 0, len(containerIDs))
+	for _, id := range containerIDs {
+		if _, ok := b.acceptedHeightCtx(ctx, id); ok {
+			accepted = append(accepted, id)
+		}
+	}
+	msg, err := b.msgCreator.Accepted(b.chainID, requestID, accepted)
+	if err != nil {
+		return nil
+	}
+	nodeSet := set.NewSet[ids.NodeID](1)
+	nodeSet.Add(nodeID)
+	b.net.Send(msg, nodeSet, b.networkID, 0)
 	return nil
 }
+
+// decodeIDs reads a concatenated run of 32-byte ids — the wire form of a container-id list
+// (message.GetContainerBytes writes GetAccepted and Accepted that way). It materialises at most
+// `limit` ids, so a caller asking for one more than it will accept can tell an oversized list from
+// a legitimate one without ever holding it. A trailing partial id names no block and is ignored.
+func decodeIDs(data []byte, limit int) []ids.ID {
+	n := len(data) / len(ids.Empty)
+	if n > limit {
+		n = limit
+	}
+	out := make([]ids.ID, n)
+	for i := range out {
+		copy(out[i][:], data[i*len(ids.Empty):])
+	}
+	return out
+}
+
 func (b *blockHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uint32, container []byte) error {
 	// Route incoming block through consensus engine instead of auto-accepting
 	// This enables proper quorum-based block acceptance
@@ -4903,6 +4978,18 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 			copy(containerID[:], msg.Message[:32])
 			return b.AcceptedFrontier(ctx, msg.NodeID, msg.RequestID, containerID)
 		}
+	case handler.GetAccepted:
+		// A peer asks "which of these blocks have you accepted?" — the question that HAS an
+		// agreeing answer when the frontier tips do not. Decoding one more id than the responder
+		// will answer about leaves an oversized list detectable there, where the bound belongs.
+		return b.GetAccepted(ctx, msg.NodeID, msg.RequestID, time.Now().Add(10*time.Second),
+			decodeIDs(msg.Message, bootstrapAcceptedCandidates+1))
+	case handler.Accepted:
+		// A peer's answer. It is meaningful only to the naming round that asked, which is why the
+		// lane correlates on requestID; anything else — including every such message on a node
+		// that is not syncing — is dropped here.
+		b.deliverBootstrapAccepted(msg.RequestID, msg.NodeID, decodeIDs(msg.Message, bootstrapAcceptedCandidates))
+		return nil
 	case handler.GetContext:
 		// GetContext requests verification context (parent chain) for a block
 		if len(msg.Message) >= 32 {
