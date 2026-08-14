@@ -26,9 +26,9 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
-	github.com/luxfi/consensus v1.36.26
+	github.com/luxfi/consensus v1.36.28
 	github.com/luxfi/crypto v1.20.4
-	github.com/luxfi/database v1.21.1
+	github.com/luxfi/database v1.21.5
 	github.com/luxfi/ids v1.3.2
 	github.com/luxfi/keychain v1.1.1
 	github.com/luxfi/log v1.4.3
@@ -124,11 +124,11 @@ require (
 	github.com/luxfi/codec v1.2.1
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.2
-	github.com/luxfi/container v0.2.1
+	github.com/luxfi/container v0.2.2
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.16.4
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
-	github.com/luxfi/geth v1.20.1
+	github.com/luxfi/geth v1.20.2
 	github.com/luxfi/go-bip39 v1.2.0
 	github.com/luxfi/kms v1.12.10
 	github.com/luxfi/math/safe v0.0.1

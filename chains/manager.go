@@ -1525,6 +1525,24 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			VM:         blockBuilder,
 			Params:     &consensusParams,
 		}
+		// Keep the finality certs this node assembles on disk, next to the chain they
+		// belong to. A peer that fell behind rejoins ONLY by being served the cert for
+		// each block in its gap — the network will not re-vote a decided height — so a
+		// memory-only cert lasts exactly as long as this process, and how far back we
+		// can help a straggler ends up depending on when we last started rather than on
+		// the window maxServedCerts names. Opened for EVERY chain, not just a signing
+		// one: any node that finalizes can answer a catch-up request, and the more nodes
+		// that can, the shallower the hole a restart leaves.
+		//
+		// Fails OPEN, unlike the vote guard below: an unreadable cert costs a peer one
+		// fetch elsewhere, while unreadable equivocation memory risks a fork.
+		if certs, certErr := consensuschain.OpenCerts(filepath.Join(chainDataDir, "certs")); certErr != nil {
+			m.Log.Warn("could not open the durable finality-cert store — this node can only catch a peer up through heights it finalized since this process started",
+				log.Stringer("chainID", chainParams.ID),
+				log.Err(certErr))
+		} else {
+			netCfg.Certs = certs
+		}
 		if consensusParams.K > 1 {
 			// CRITICAL-1 FAIL-CLOSED GUARD (c): a K>1 quorum chain finalizes ONLY
 			// on a ⅔-by-stake supermajority read from the HEIGHT-INDEXED validator
