@@ -3884,6 +3884,11 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// reported on the one summary line below: the per-entry detail is up to 256 lines a
 	// response, which is exactly the volume that buries the summary.
 	certAccepted, certRejected, voted, voteFailed, badFrame := 0, 0, 0, 0, 0
+	// Where this batch starts, kept so a batch that lands NOTHING can still walk the
+	// request window down toward our tip. See the descent after the loop.
+	var oldestHeight uint64
+	var oldestParent ids.ID
+	haveOldest := false
 	firstReason := ""
 	note := func(reason string) {
 		if firstReason == "" {
@@ -3911,6 +3916,21 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		// One decode decides the route. A v2 frame yields (block, cert); a legacy raw
 		// container yields !isV2, and the whole entry IS the block.
 		blockBytes, certBytes, isV2 := decodeCatchupEntry(entry)
+
+		// Remember where this batch STARTS. The responder serves a window ending at the
+		// id it was asked for, so on a node further behind than that window the oldest
+		// entry still sits above our tip and every entry is refused. The parent of that
+		// oldest entry is the next window down, and asking for it is the only thing that
+		// moves the window toward us.
+		if !haveOldest {
+			raw := blockBytes
+			if !isV2 {
+				raw = entry
+			}
+			if parsed, perr := b.vm.ParseBlock(ctx, raw); perr == nil {
+				oldestHeight, oldestParent, haveOldest = parsed.Height(), parsed.Parent(), true
+			}
+		}
 
 		if isV2 && len(certBytes) > 0 {
 			// CERT path: finalize the gap block on its verified cert (no re-vote).
@@ -3960,6 +3980,35 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		log.Int("voteFailed", voteFailed),
 		log.Int("badFrame", badFrame),
 		log.String("firstReason", firstReason))
+
+	// DESCENT. A batch that landed nothing because every entry sits above our next
+	// contiguous height is not a failure to be logged — it is the answer to the wrong
+	// question. The responder serves a window ending at the id it was asked for, and we
+	// asked for the peer's TIP, so on a node further behind than that window the whole
+	// batch is above us and AcceptCatchupBlock refuses all of it. Asking again for the
+	// same tip gets the same window forever.
+	//
+	// So ask for the oldest entry's PARENT: that is the next window down. Each response
+	// walks the request one window closer until it reaches finalized+1, at which point
+	// the batch connects and the normal path drains the rest. One request per response,
+	// so this descends rather than amplifies, and requestContext's own TTL gate bounds
+	// it.
+	//
+	// Without this a node between "further behind than one served window" and "far
+	// enough behind to bootstrap" has no way home at all: runtime catch-up refuses to
+	// descend and the bootstrapper refuses the gap. lux-mainnet luxd-2 and luxd-3 sat
+	// in exactly that hole at 1,159,050, ~2,400 blocks behind a live fleet, holding
+	// every block they needed.
+	if processed == 0 && certRejected > 0 && haveOldest {
+		if _, fh, set := b.engine.FinalizedLedger(); !set || oldestHeight > fh+1 {
+			b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
+				log.Stringer("from", nodeID),
+				log.Uint64("oldestHeight", oldestHeight),
+				log.Uint64("finalized", fh),
+				log.Stringer("requesting", oldestParent))
+			b.requestContext(ctx, nodeID, oldestParent)
+		}
+	}
 
 	return nil
 }
