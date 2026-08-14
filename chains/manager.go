@@ -1519,7 +1519,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			NetworkID:  networkID,
 			NodeID:     m.NodeID,
 			Validators: m.Validators, // CRITICAL: Pass validator sampler for k-peer polling
-			Logger:     m.Log,
+			Logger:     speaksFor(m.Log, chainParams.ID),
 			Gossiper:   gossiper,
 			Catchup:    catchup, // fetch missing ancestors so a behind follower converges
 			VM:         blockBuilder,
@@ -3040,7 +3040,10 @@ type blockHandler struct {
 	// Liveness only. This decides which block we ASK a peer for and grants nothing:
 	// finality still requires a verified quorum cert and still advances in contiguous
 	// order.
+	// descentHeight is where that walk currently stands, so a reply from above it
+	// cannot drag the walk back up. See descend.
 	descentAnchor ids.ID
+	descentHeight uint64
 	requestIDCounter uint32                    // Counter for generating unique request IDs
 	maxContextBlocks int                       // Max context blocks to request/serve (default: 256)
 	contextRequestMu sync.Mutex                // Protects pendingContext and requestIDCounter
@@ -3242,7 +3245,7 @@ func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, lo
 	return &blockHandler{
 		vm:                   vm,
 		connector:            connector,
-		logger:               logger,
+		logger:               speaksFor(logger, chainID),
 		engine:               engine,
 		net:                  net,
 		msgCreator:           msgCreator,
@@ -3383,6 +3386,23 @@ type catchupDiag struct {
 func catchupSample(c *gatomic.Uint64) (uint64, bool) {
 	n := c.Add(1)
 	return n, n <= 3 || n%500 == 0
+}
+
+// speaksFor tags a logger with the chain whose behaviour it reports.
+//
+// Every chain on a node writes to ONE writer, and the lines that matter most here —
+// the catch-up descent, the served window, the cert the finality guard refused —
+// carry heights and block ids and nothing else. Chains created together produce
+// blocks at the same cadence, so their heights sit in the same range: a reader
+// cannot tell from "finalized=23587 oldestHeight=33232" which of eight chains is
+// speaking, and every attempt to diagnose the stalled C-Chain from these lines has
+// been reading whichever chain was loudest. The identity is known at construction
+// and costs one field.
+func speaksFor(base log.Logger, chainID ids.ID) log.Logger {
+	if base == nil || base.IsZero() {
+		return base
+	}
+	return base.New("chain", chainID.String())
 }
 
 // requestContext sends a context request (wire: GetAncestors) to fetch missing blocks from a peer
@@ -3873,6 +3893,30 @@ func shouldDescend(certAccepted int, haveOldest bool, oldestHeight uint64, oldes
 	return !finalizedSet || oldestHeight > finalized+1
 }
 
+// descend moves the walk to next and reports whether it moved.
+//
+// A walk only ever goes DOWN. Every peer answers the same behind node at once, and
+// each reply names the window IT served, so adopting whichever reply landed last lets
+// a peer far above the gap re-anchor a walk that had already descended past it. The
+// highest reply wins that race most rounds, and the walk sits at the same distance
+// from our tip forever. Measured on mainnet: finalized=1159169 held while successive
+// replies anchored at 1160267, 1160176, 1160786, 1160410 and 1159415 — the one reply
+// within one window of the gap was overwritten before its request went out.
+//
+// Strictly decreasing, the walk reaches our tip in gap/window steps and stops.
+//
+// Liveness only, like the anchor it maintains: this picks which block we ask a peer
+// for. Finality still requires a verified quorum cert and still advances in order.
+func (b *blockHandler) descend(next ids.ID, nextHeight uint64) bool {
+	b.contextRequestMu.Lock()
+	defer b.contextRequestMu.Unlock()
+	if b.descentAnchor != ids.Empty && nextHeight >= b.descentHeight {
+		return false
+	}
+	b.descentAnchor, b.descentHeight = next, nextHeight
+	return true
+}
+
 func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, requestID uint32, data []byte) error {
 	// Count EVERY inbound Ancestors reply, whatever becomes of it: this counter is the
 	// answer to "did a reply EVER arrive", which the TTL-expiry line reports and which
@@ -4092,19 +4136,21 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// and callers go back to naming their own blocks.
 	if certAccepted > 0 {
 		b.contextRequestMu.Lock()
-		b.descentAnchor = ids.Empty
+		b.descentAnchor, b.descentHeight = ids.Empty, 0
 		b.contextRequestMu.Unlock()
 	}
 
 	if _, fh, set := b.engine.FinalizedLedger(); shouldDescend(certAccepted, haveOldest, oldestHeight, oldestParent, fh, set) {
-		b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
-			log.Stringer("from", nodeID),
-			log.Uint64("oldestHeight", oldestHeight),
-			log.Uint64("finalized", fh),
-			log.Stringer("requesting", oldestParent))
-		b.contextRequestMu.Lock()
-		b.descentAnchor = oldestParent
-		b.contextRequestMu.Unlock()
+		if b.descend(oldestParent, oldestHeight-1) {
+			b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
+				log.Stringer("from", nodeID),
+				log.Uint64("oldestHeight", oldestHeight),
+				log.Uint64("finalized", fh),
+				log.Stringer("requesting", oldestParent))
+		}
+		// Re-drive either way. requestContext asks for the anchor, so a reply from
+		// above the walk still pushes the walk's own next request out — that is what
+		// keeps the descent moving when a reply is lost.
 		b.requestContext(ctx, nodeID, oldestParent)
 	}
 
