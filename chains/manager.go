@@ -3999,7 +3999,15 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// descend and the bootstrapper refuses the gap. lux-mainnet luxd-2 and luxd-3 sat
 	// in exactly that hole at 1,159,050, ~2,400 blocks behind a live fleet, holding
 	// every block they needed.
-	if processed == 0 && certRejected > 0 && haveOldest {
+	// The test is whether the batch ADVANCED us, which is certAccepted — the only
+	// counter that means a block became ours. `processed` counts entries handled, and
+	// a batch of 250 blocks that finalizes none still reports processed=250, so gating
+	// on processed==0 meant the descent almost never fired. Requiring certRejected>0
+	// narrowed it further to batches that carried certs at all: a responder serves an
+	// empty cert for any block outside its window, so the common batch — every entry
+	// above us, none of them certified — reported certRejected=0 and was read as
+	// nothing to descend from. Measured on lux-testnet: 2,614 requests, 5 descents.
+	if certAccepted == 0 && haveOldest {
 		if _, fh, set := b.engine.FinalizedLedger(); !set || oldestHeight > fh+1 {
 			b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
 				log.Stringer("from", nodeID),
