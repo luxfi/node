@@ -24,8 +24,21 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+# One release at a time per IMAGE, not per ref.
+#
+# A branch push and a tag push carry different github.ref, so keying the group on
+# the ref put them in different groups and let them run together — both pushing
+# layers to ghcr.io/luxfi/node at the same moment. The registry answers the loser
+# "unknown blob" and the job exits 1 with no image, which reads exactly like a
+# build failure. v1.36.89 died that way: `git push main v1.36.89` fired four jobs,
+# all four raced, none produced an image. The tag-only push before it fired one and
+# succeeded.
+#
+# The contention is the registry repository, so that is what the group names.
+# Queued, not cancelled: a tag release must never be dropped because a branch push
+# happened to arrive first.
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
