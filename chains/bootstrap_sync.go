@@ -1369,7 +1369,21 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 // it is surfaced (bootstrapFailed → monitorBootstrap) for operator action.
 func isRetryableBootstrapFailure(err error) bool {
 	return errors.Is(err, chainbootstrap.ErrBeaconsUnreachable) ||
-		errors.Is(err, chainbootstrap.ErrNoBeaconQuorum)
+		errors.Is(err, chainbootstrap.ErrNoBeaconQuorum) ||
+		// ErrStalled says NO PEER SERVED THE ANCESTRY THIS ROUND. That is a statement
+		// about one pass over a sampled set of peers, not about the chain: the peers
+		// that could serve may be busy, mid-restart, or simply not the ones this round
+		// happened to draw. Treating it as structural ends initial sync for the life of
+		// the process, and the node then has only the live catch-up path — which cannot
+		// close a gap wider than a served window, so it re-asks forever and the chain
+		// never rejoins. The only exit was a restart, which draws a new sample and can
+		// stall again on the next unlucky round.
+		//
+		// Retrying costs one backoff interval and re-samples. Not retrying costs the
+		// bootstrap. The attempt bound still terminates it, and a genuinely structural
+		// failure — a gap too deep for the window — has its own error and is still not
+		// retried, because a retry cannot fix that one.
+		errors.Is(err, chainbootstrap.ErrStalled)
 }
 
 // pauseBootstrapRetry backs off one RetryInterval between bootstrap re-attempts (never a hot loop),
