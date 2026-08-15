@@ -40,6 +40,14 @@ report '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' \
 report '\b(ghcr\.io/[a-z]+/[a-z-]+:v?[0-9]+\.[0-9]+\.[0-9]+)' \
   'pinned image references — these belong in manifests, not source'
 
+# A mutation left in the tree is not a style problem. One found in this repo replaced
+# the height in the signed vote message with a constant — signatures valid at any
+# height — and it sat uncommitted where any `git add -u` would have swept it into a
+# public consensus repo. Whoever injects one is responsible for restoring it; this
+# refuses to let the tree be committed while one is still there.
+report '(//|/\*).*MUTAT(ION|ED) *:' \
+  'mutation-test artifacts — restore the original before committing'
+
 if [ "$fail" -ne 0 ]; then
   cat <<'EOF'
 
