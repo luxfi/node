@@ -813,6 +813,11 @@ func TestRED_SubQuorumCannotNameFrontier(t *testing.T) {
 	tip, status := bh.FrontierTip(ctx)
 	require.Equal(t, chainbootstrap.FrontierConnecting, status, "3/6 beacons (below the majority response floor) cannot name the frontier — still connecting")
 	require.Equal(t, ids.Empty, tip)
+	// The status says only CONNECTING; the distance from the floor exists nowhere else, so the round
+	// that measures it records it. This is the number an operator needs to tell a chain that is one
+	// beacon short from one that is hearing nothing.
+	require.Equal(t, "3 of 6 beacons responded, need 4", *bh.shortfall.Load(),
+		"the round that measured the shortfall must record it — the status it returns carries no numbers")
 
 	// 4 of 6 connected (= the majority floor) and all agreeing → the policy names the tip. Note
 	// the OLD ⅔-of-total gate would have REJECTED this (4*100 = 400 is NOT > the 400 floor) — that
@@ -821,6 +826,10 @@ func TestRED_SubQuorumCannotNameFrontier(t *testing.T) {
 	tip, status = bh.FrontierTip(ctx)
 	require.Equal(t, chainbootstrap.FrontierNamed, status, "4/6 beacons (≥ the majority floor) all agreeing must name the frontier")
 	require.Equal(t, chain[N].id, tip)
+	// A round that clears the floor measures no shortfall, so the previous round's number must not
+	// survive it. A stale count is worse than none: it describes a condition that has passed.
+	require.Nil(t, bh.shortfall.Load(),
+		"a round that names a frontier must leave no shortfall behind — the number belongs to the round that measured it")
 }
 
 // TestNodeBootstrap_StaleNodeWaitsForBeaconConnect REPRODUCES THE MAINNET CANARY over the
@@ -1400,7 +1409,7 @@ func TestWatchBootstrapProgress_SlowButAdvancingNotKilled(t *testing.T) {
 	var calls int
 	heightOf := func() uint64 { calls++; return uint64(calls) } // advances every poll
 	ready := func() bool { return calls >= 120 }                // done only after 120 polls (≫ the 60ms window)
-	outcome, _ := watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	outcome, _, _ := watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
 	require.Equal(t, bootstrapReady, outcome, "a slow-but-ADVANCING sync must complete, not be timed out")
 }
 
@@ -1410,7 +1419,7 @@ func TestWatchBootstrapProgress_GenuineStallFails(t *testing.T) {
 	heightOf := func() uint64 { return 5 } // pinned — no progress
 	ready := func() bool { return false }
 	start := time.Now()
-	outcome, last := watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	outcome, last, _ := watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
 	require.Equal(t, bootstrapStalled, outcome, "a no-progress sync must stall out")
 	require.Equal(t, uint64(5), last, "the stall diagnostic must report the height it stalled at")
 	require.GreaterOrEqual(t, time.Since(start), 60*time.Millisecond, "must wait the full stall window before failing")
@@ -1421,7 +1430,7 @@ func TestWatchBootstrapProgress_GenuineStallFails(t *testing.T) {
 func TestWatchBootstrapProgress_Shutdown(t *testing.T) {
 	shutdown := make(chan struct{})
 	go func() { time.Sleep(20 * time.Millisecond); close(shutdown) }()
-	outcome, _ := watchBootstrapProgress(
+	outcome, _, _ := watchBootstrapProgress(
 		func() bool { return false }, nil, nil, func() uint64 { return 0 },
 		time.Millisecond, time.Hour, shutdown,
 	)
@@ -1436,7 +1445,7 @@ func TestWatchBootstrapProgress_Shutdown(t *testing.T) {
 func TestWatchBootstrapProgress_FailSafeSurfacesPromptly(t *testing.T) {
 	failed := func() bool { return true } // the loop has already returned a fail-safe error
 	start := time.Now()
-	outcome, _ := watchBootstrapProgress(
+	outcome, _, _ := watchBootstrapProgress(
 		func() bool { return false }, // not ready
 		failed,
 		nil,                        // not connecting
@@ -1450,7 +1459,7 @@ func TestWatchBootstrapProgress_FailSafeSurfacesPromptly(t *testing.T) {
 // TestWatchBootstrapProgress_ReadyBeatsFailed: if the sync completed in the SAME tick the
 // predicates are evaluated, ready wins (success is never masked by a stale failure flag).
 func TestWatchBootstrapProgress_ReadyBeatsFailed(t *testing.T) {
-	outcome, _ := watchBootstrapProgress(
+	outcome, _, _ := watchBootstrapProgress(
 		func() bool { return true }, // ready
 		func() bool { return true }, // and failed — ready must take precedence
 		nil,                         // connecting (irrelevant — ready wins)
@@ -1758,10 +1767,17 @@ func TestRED_MajorityOutageSelfHealsWhenQuorumReturns(t *testing.T) {
 	// While the quorum is down the node must fail safe DOWN and ENTER its connectivity-retry wait —
 	// NOT go live at the stale height, NOT give up. (Asserted via the ATOMIC status — no non-atomic
 	// read of the bootstrap goroutine's state while it runs.)
-	require.Eventually(t, bh.BootstrapConnecting, 3*time.Second, 2*time.Millisecond,
+	require.Eventually(t, func() bool { return bh.BootstrapWait() != "" }, 3*time.Second, 2*time.Millisecond,
 		"an outage must put the node into the connectivity-retry wait (failing safe DOWN), not live or given-up")
 	require.False(t, bh.bootstrapDone.Load(), "must NOT be bootstrapped while the quorum is unreachable")
 	require.False(t, bh.BootstrapFailed(), "a retryable connectivity outage is NOT a terminal fail-safe — it keeps trying")
+
+	// The wait must say WHY, in numbers, end to end. Here the outage is total — none of the 5
+	// configured beacons is reachable against a majority floor of 3 — and saying so is the whole
+	// point: "a quorum is missing" reads identically whether four beacons answered or none did,
+	// and a total outage and a one-short quorum call for different actions.
+	require.Equal(t, "waiting for the beacon quorum: 0 of 5 beacons responded, need 3", bh.BootstrapWait(),
+		"the wait must carry the responder count, the configured set size, and the floor")
 
 	// The quorum RETURNS. The node must SELF-HEAL in-process: converge to the frontier and go live.
 	net.gate.Store(false)
@@ -1868,23 +1884,46 @@ func TestRED_EclipseOwnHeightNotNamedRoutesToSync(t *testing.T) {
 }
 
 // TestWatchBootstrapProgress_ConnectingNotStalled is the RED MEDIUM #2 watchdog guard: a node in its
-// connectivity-RETRY wait reports connecting()==true, so the no-progress watchdog must NOT declare it
+// connectivity-RETRY wait reports a non-empty reason, so the no-progress watchdog must NOT declare it
 // stalled — force-STOPPING a node that is correctly waiting for its quorum would be a permanent brick
-// (the K8s probes never restart it). The clock is reset while connecting; only a NON-connecting
-// no-progress node stalls (the converse is TestWatchBootstrapProgress_GenuineStallFails).
+// (the K8s probes never restart it). The clock is reset while it waits; only a node with NO reason to
+// be waiting stalls (the converse is TestWatchBootstrapProgress_GenuineStallFails).
+//
+// The reason itself is returned, not just the verdict: the watchdog read it to decide, and that read
+// is the one the operator should see. Asking a second time is how the answer that justified the
+// verdict and the answer that gets published come to differ.
 func TestWatchBootstrapProgress_ConnectingNotStalled(t *testing.T) {
-	outcome, at := watchBootstrapProgress(
+	const why = "waiting for the beacon quorum: 3 of 6 beacons responded, need 4"
+	outcome, at, reason := watchBootstrapProgress(
 		func() bool { return false }, // never ready
 		func() bool { return false }, // never a terminal fail
-		func() bool { return true },  // ALWAYS connecting (deliberate quorum wait)
+		func() string { return why }, // ALWAYS waiting (deliberate quorum wait)
 		func() uint64 { return 5 },   // height pinned — no progress
 		time.Millisecond, 20*time.Millisecond, nil,
 	)
 	require.Equal(t, bootstrapWaiting, outcome,
-		"a CONNECTING node must NEVER be stalled out (it is waiting for its quorum) — the wait is REPORTED instead")
+		"a WAITING node must NEVER be stalled out (it is waiting for its quorum) — the wait is REPORTED instead")
 	require.NotEqual(t, bootstrapStalled, outcome,
 		"reporting the wait must not turn it into a stall — a stall stops nothing here but says the wrong thing")
 	require.Equal(t, uint64(5), at, "the wait must carry the height it is waiting at")
+	require.Equal(t, why, reason,
+		"the watchdog must carry OUT the reason it decided on — the counts are the whole diagnostic and it already had them")
+}
+
+// TestWatchBootstrapProgress_NoReasonIsAStall is the converse, and it is what keeps the wait from
+// swallowing every stall: a driver that reports no reason is not waiting, so a no-progress window is
+// the genuine stall it looks like. Empty means not waiting — there is no second flag to disagree with.
+func TestWatchBootstrapProgress_NoReasonIsAStall(t *testing.T) {
+	outcome, _, reason := watchBootstrapProgress(
+		func() bool { return false },
+		func() bool { return false },
+		func() string { return "" }, // present but NOT waiting
+		func() uint64 { return 5 },
+		time.Millisecond, 20*time.Millisecond, nil,
+	)
+	require.Equal(t, bootstrapStalled, outcome,
+		"an empty reason means the driver is not waiting — a no-progress window is then a real stall")
+	require.Empty(t, reason, "a stall has no wait reason to carry")
 }
 
 // TestWatchBootstrapProgress_WaitIsNotTerminal: reporting the quorum wait must not end the
@@ -1893,15 +1932,20 @@ func TestWatchBootstrapProgress_ConnectingNotStalled(t *testing.T) {
 func TestWatchBootstrapProgress_WaitIsNotTerminal(t *testing.T) {
 	var polls int
 	ready := func() bool { polls++; return polls > 40 } // sync completes only after the wait
-	connecting := func() bool { return polls <= 40 }    // quorum away until then
-	height := func() uint64 { return 5 }                // pinned — no progress either way
+	waiting := func() string {                          // quorum away until then
+		if polls <= 40 {
+			return "waiting for the beacon quorum"
+		}
+		return ""
+	}
+	height := func() uint64 { return 5 } // pinned — no progress either way
 
-	outcome, _ := watchBootstrapProgress(ready, nil, connecting, height,
+	outcome, _, _ := watchBootstrapProgress(ready, nil, waiting, height,
 		time.Millisecond, 10*time.Millisecond, nil)
 	require.Equal(t, bootstrapWaiting, outcome, "while the quorum is away the wait is reported")
 
 	// The caller keeps watching. With the quorum back, the same chain completes normally.
-	outcome, _ = watchBootstrapProgress(ready, nil, connecting, height,
+	outcome, _, _ = watchBootstrapProgress(ready, nil, waiting, height,
 		time.Millisecond, time.Minute, nil)
 	require.Equal(t, bootstrapReady, outcome,
 		"a reported wait is not terminal — the chain completes when the quorum returns")
@@ -2317,14 +2361,14 @@ func TestWatchBootstrapProgress_StallThenConvergeIsRecoverable(t *testing.T) {
 	ready := func() bool { return !stuck && height > 105 }
 
 	// First pass: pinned height for the whole window => a genuine stall.
-	outcome, at := watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	outcome, at, _ := watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
 	require.Equal(t, bootstrapStalled, outcome, "a pinned height must still be reported as a stall")
 	require.Equal(t, uint64(100), at, "the stall must report the height it stalled at")
 
 	// The sync was slow, not dead. Under the old behavior the engine was already stopped
 	// here and this second pass never happened.
 	stuck = false
-	outcome, _ = watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
+	outcome, _, _ = watchBootstrapProgress(ready, nil, nil, heightOf, time.Millisecond, 60*time.Millisecond, nil)
 	require.Equal(t, bootstrapReady, outcome,
 		"a chain that converges AFTER a stall window must still be able to finish bootstrapping")
 }

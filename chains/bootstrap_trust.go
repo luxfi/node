@@ -460,6 +460,22 @@ func (p *BootstrapPolicy) floorMet(responders int, responderWeight StakeWeight) 
 	return true
 }
 
+// shortfall says, in numbers, which floor condition the responder set missed. It is the
+// difference between "nobody answered" and "one short of the majority" — two situations an
+// operator acts on differently and which a single sentence about an unreachable quorum does
+// not separate.
+//
+// The floor has two conditions and only the BINDING one is reported. Naming the count when it
+// is the weight that binds reads as a contradiction (five of six responded, need four) and
+// sends the reader after the wrong thing. Written once here, next to floorMet, so the reason
+// and the rule it explains cannot drift apart.
+func (p *BootstrapPolicy) shortfall(responders int, responderWeight StakeWeight) string {
+	if need := p.effectiveMinResponses(); responders < need {
+		return fmt.Sprintf("%d of %d beacons responded, need %d", responders, len(p.TrustedBeacons), need)
+	}
+	return fmt.Sprintf("responders carry %d of the %d stake needed", responderWeight, p.MinResponseWeight)
+}
+
 // AcceptsFrontier implements BootstrapTrust. It (1) keeps ONLY configured-beacon replies
 // (INVARIANT 1, tallyResponders), (2) enforces the MinResponses / MinResponseWeight floor or falls
 // back to the operator checkpoint (INVARIANT 2, floorMet), then (3) names the highest block a
@@ -491,8 +507,7 @@ func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconR
 				FromCheckpoint: true,
 			}, nil
 		}
-		return nil, fmt.Errorf("%w: %d configured beacons responded (weight %d), need %d",
-			ErrInsufficientBootstrapResponses, responders, responderWeight, p.effectiveMinResponses())
+		return nil, fmt.Errorf("%w: %s", ErrInsufficientBootstrapResponses, p.shortfall(responders, responderWeight))
 	}
 
 	// The agreement threshold is over the RESPONDERS, not the whole configured set — this is what
