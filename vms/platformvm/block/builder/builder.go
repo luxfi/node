@@ -501,7 +501,25 @@ func packEtnaBlockTxs(
 
 		txComplexity, err := fee.TxComplexity(tx.Unsigned)
 		if err != nil {
-			return nil, err
+			// A transaction nothing can price can never be included, so keeping
+			// it costs the chain everything and buys nothing.
+			//
+			// This check runs BEFORE executeTx, and executeTx is the only place
+			// the loop takes a transaction off the mempool. Returning here
+			// therefore aborts the block with the transaction still at the front
+			// of the queue, so the next build peeks the same one and aborts
+			// again — for the life of the chain, surviving restarts because
+			// peers re-gossip it. One transaction, and the chain stops.
+			//
+			// Drop it exactly as an unexecutable transaction is already dropped
+			// below, and keep packing.
+			logger.Debug("transaction failed complexity",
+				log.Stringer("txID", tx.ID()),
+				zap.Error(err),
+			)
+			mempool.Remove(tx)
+			mempool.MarkDropped(tx.ID(), err)
+			continue
 		}
 		newBlockComplexity, err := blockComplexity.Add(&txComplexity)
 		if err != nil {
