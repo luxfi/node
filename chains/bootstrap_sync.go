@@ -197,11 +197,33 @@ func (b *blockHandler) connectedBeacons(weights map[ids.NodeID]uint64) []ids.Nod
 	// So: if the filter admits NO ONE while staked beacons are demonstrably connected,
 	// trust the connection. C1 is preserved either way — a peer is admitted only if it
 	// is in `weights`, the staked validator set, so a non-staked peer never counts.
-	if len(connected) == 0 && len(beaconPeers) > 0 {
-		b.logger.Warn("tracked-nets filter admitted no beacon; counting connected staked beacons instead",
-			log.Stringer("networkID", b.networkID),
-			log.Int("connectedStakedBeacons", len(beaconPeers)))
-		return beaconPeers
+	// The filter ORDERS; it does not EXCLUDE. Rescuing only the all-or-nothing case
+	// leaves the partial one, which is worse because it looks like it worked: some
+	// beacons pass, `connected` is non-empty, the rescue never fires, and a peer that
+	// holds exactly the ancestry we are missing is dropped for the life of the
+	// process. Measured on a devnet node that could not rejoin — connected to a peer
+	// at the tip, sampling three peers that were all behind it, and reporting "no peer
+	// served the missing ancestry" while never once asking the one that could.
+	//
+	// So: peers that advertise the chain come first, and the remaining staked beacons
+	// follow. Asking a peer that turns out not to serve costs one empty reply; not
+	// asking the only peer that can costs the bootstrap.
+	//
+	// C1 is unchanged — every id here came from `weights`, the staked validator set,
+	// so a non-staked peer is still never admitted.
+	if len(connected) < len(beaconPeers) {
+		if len(connected) == 0 {
+			b.logger.Warn("tracked-nets filter admitted no beacon; asking the connected staked beacons instead",
+				log.Stringer("networkID", b.networkID),
+				log.Int("connectedStakedBeacons", len(beaconPeers)))
+		}
+		seen := set.NewSet[ids.NodeID](len(beaconPeers))
+		seen.Add(connected...)
+		for _, id := range beaconPeers {
+			if !seen.Contains(id) {
+				connected = append(connected, id)
+			}
+		}
 	}
 	return connected
 }
