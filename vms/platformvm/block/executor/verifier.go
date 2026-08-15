@@ -73,8 +73,16 @@ func (v *verifier) ProposalBlock(b *block.ProposalBlock) error {
 	}
 
 	feeCalculator := state.PickFeeCalculator(v.txExecutorBackend.Config, onDecisionState)
+	// DecisionTxs, not Txs: the proposal tx is the LAST element of Txs(), and
+	// processing it here charges a fee for a transaction the chain emitted about
+	// itself. Neither calculator will price one — the static visitor and the
+	// complexity visitor both refuse it — so asking costs the block its
+	// verification, and it is asked again on every rebuild.
+	//
+	// The proposal tx has its own path immediately below, which executes it
+	// without pricing it. That is the one that should see it.
 	inputs, atomicRequests, onAcceptFunc, gasConsumed, _, err := v.processStandardTxs(
-		b.Txs(),
+		b.DecisionTxs(),
 		feeCalculator,
 		onDecisionState,
 		b.Parent(),
