@@ -498,6 +498,11 @@ type manager struct {
 	chainCreatorShutdownCh chan struct{}
 	chainCreatorExited     sync.WaitGroup
 
+	// stallWindow is how long a chain may make no progress before monitorBootstrap reports on
+	// it. Zero ⇒ 5 minutes. A test shortens it to reach the report without sitting out a real
+	// window, the same way the sync driver's own attempt bound and connect deadline are pinned.
+	stallWindow time.Duration
+
 	// pendingVMChains tracks chains waiting for VMs to be loaded (for hot-loading).
 	// Key: VM ID that the chain needs
 	// Value: List of chain parameters waiting for this VM
@@ -2248,23 +2253,26 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 		failure = f.BootstrapFailure
 	}
 
-	// CONNECTING predicate (RED MEDIUM #2 self-heal). A handler that is in its bounded
-	// connectivity-RETRY wait (a transient quorum-unreachable fail-safe it is re-attempting) reports
-	// this true. The no-progress watchdog treats it as a deliberate quorum WAIT, not a stall: it must
-	// NOT force-STOP a node that is correctly failing safe DOWN and waiting for its quorum to return
-	// (the network cannot progress without the quorum, and the K8s probes — all polling the
-	// always-green /v1/health/liveness — would never restart it, so a stop here is a permanent
-	// brick). The node stays in Bootstrapping (serving nothing as head) and converges when the quorum
-	// returns. nil for degenerate handlers (legacy behavior).
-	type bootstrapConnector interface{ BootstrapConnecting() bool }
-	var connecting func() bool
-	if c, ok := h.(bootstrapConnector); ok {
-		connecting = c.BootstrapConnecting
+	// WAIT reason (RED MEDIUM #2 self-heal). A handler that is in its bounded connectivity-RETRY
+	// wait (a transient quorum-unreachable fail-safe it is re-attempting) reports why; anything else
+	// reports empty. The no-progress watchdog treats a non-empty reason as a deliberate quorum WAIT,
+	// not a stall: it must NOT force-STOP a node that is correctly failing safe DOWN and waiting for
+	// its quorum to return (the network cannot progress without the quorum, and the K8s probes — all
+	// polling the always-green /v1/health/liveness — would never restart it, so a stop here is a
+	// permanent brick). The node stays in Bootstrapping (serving nothing as head) and converges when
+	// the quorum returns. nil for degenerate handlers (legacy behavior).
+	type bootstrapWaiter interface{ BootstrapWait() string }
+	var waiting func() string
+	if w, ok := h.(bootstrapWaiter); ok {
+		waiting = w.BootstrapWait
 	}
 
 	// Run the progress-based watchdog (decomplected into watchBootstrapProgress so the
 	// loop is unit-testable), then handle the manager-side outcome.
-	const bootstrapStallTimeout = 5 * time.Minute
+	bootstrapStallTimeout := m.stallWindow
+	if bootstrapStallTimeout <= 0 {
+		bootstrapStallTimeout = 5 * time.Minute
+	}
 	// ONE per-chain check carries WHY this chain has not finished initial sync. The reason is
 	// swapped as the condition changes, so a quorum wait that later becomes a no-progress stall
 	// (or the reverse) reports what is true NOW rather than whichever arrived first.
@@ -2279,7 +2287,7 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 		m.reportBootstrap(chainID, ready, atHeight, &reason)
 	}
 	for {
-		outcome, stalledAtHeight := watchBootstrapProgress(ready, failed, connecting, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
+		outcome, stalledAtHeight, why := watchBootstrapProgress(ready, failed, waiting, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
 		switch outcome {
 		case bootstrapReady:
 			m.Log.Info("chain finished bootstrapping, notifying chain",
@@ -2330,10 +2338,10 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 			// The driver is in its bounded connectivity RETRY, waiting for the beacon quorum to
 			// become reachable. It is neither stopped nor failed and converges the instant the
 			// quorum returns, so the handling is unchanged — keep watching. What changes is that
-			// it now SAYS SO. This is the one state a chain can hold forever, and it published
-			// nothing: the node answered 503 naming a chain id and no reason, which reads exactly
-			// like a chain nobody has looked at.
-			report("waiting for the beacon quorum to become reachable", stalledAtHeight)
+			// it now SAYS SO, in the driver's own numbers. This is the one state a chain can hold
+			// forever, and it published nothing: the node answered 503 naming a chain id and no
+			// reason, which reads exactly like a chain nobody has looked at.
+			report(why, stalledAtHeight)
 			continue
 		case bootstrapFailed:
 			// F5: the sync loop RETURNED a fail-safe error (eclipse / partition / deep gap). Surface
@@ -2461,28 +2469,30 @@ const (
 //     timed out, while a genuine no-progress stall fails after the window;
 //   - bootstrapShutdown when shutdown fires.
 //
-// It also returns the last observed height (the stall diagnostic). heightOf may be nil
-// (then the window is a fixed wall-clock budget from the start — the legacy behavior).
+// It also returns the last observed height (the stall diagnostic) and, for bootstrapWaiting, the
+// wait reason it decided on — the value it already read, rather than leaving the caller to ask a
+// second time and get a different answer. heightOf may be nil (then the window is a fixed
+// wall-clock budget from the start — the legacy behavior).
 //
 // failed (F5) is the PROMPT fail-safe predicate: when the sync loop RETURNS a fail-safe error
 // (deep gap / disjoint peer / exhausted attempt bound) the driver flips it, and the watchdog returns
 // bootstrapFailed the next tick — instead of waiting out stallTimeout for a chain that has already
 // stopped trying. nil disables it (degenerate handlers with no fail-safe signal — legacy behavior).
 //
-// connecting (RED MEDIUM #2 self-heal) is the deliberate-WAIT predicate: when the driver is in its
-// bounded connectivity-RETRY (a transient quorum-unreachable fail-safe it is re-attempting), the
-// no-progress window is NOT a stall — the node is correctly failing safe DOWN and waiting for its
-// quorum to return, so the clock is reset rather than force-STOPPING it (which the K8s probes would
-// never undo → a permanent brick). A genuine stall (NOT connecting, no height progress) still fails.
-// nil disables it (legacy behavior).
+// waiting (RED MEDIUM #2 self-heal) is the deliberate-WAIT reason, empty when the driver is not
+// waiting: when it is in its bounded connectivity-RETRY (a transient quorum-unreachable fail-safe it
+// is re-attempting), the no-progress window is NOT a stall — the node is correctly failing safe DOWN
+// and waiting for its quorum to return, so the clock is reset rather than force-STOPPING it (which
+// the K8s probes would never undo → a permanent brick). A genuine stall (not waiting, no height
+// progress) still fails. nil disables it (legacy behavior).
 func watchBootstrapProgress(
 	ready func() bool,
 	failed func() bool,
-	connecting func() bool,
+	waiting func() string,
 	heightOf func() uint64,
 	tick, stallTimeout time.Duration,
 	shutdown <-chan struct{},
-) (bootstrapOutcome, uint64) {
+) (bootstrapOutcome, uint64, string) {
 	ticker := time.NewTicker(tick)
 	defer ticker.Stop()
 
@@ -2494,12 +2504,12 @@ func watchBootstrapProgress(
 		select {
 		case <-ticker.C:
 			if ready() {
-				return bootstrapReady, lastHeight
+				return bootstrapReady, lastHeight, ""
 			}
 			// F5: a fail-safe RETURN from the sync loop is surfaced immediately — no point
 			// waiting out the no-progress window for a chain that has already given up.
 			if failed != nil && failed() {
-				return bootstrapFailed, lastHeight
+				return bootstrapFailed, lastHeight, ""
 			}
 			if heightOf != nil {
 				if cur := heightOf(); !heightKnown || cur > lastHeight {
@@ -2514,13 +2524,15 @@ func watchBootstrapProgress(
 				// REPORTED. The caller re-enters, which resets the clock exactly as before — the
 				// only change is that the state now leaves the process, because a wait with no end
 				// and no signal is indistinguishable from a broken chain to anyone outside it.
-				if connecting != nil && connecting() {
-					return bootstrapWaiting, lastHeight
+				if waiting != nil {
+					if why := waiting(); why != "" {
+						return bootstrapWaiting, lastHeight, why
+					}
 				}
-				return bootstrapStalled, lastHeight
+				return bootstrapStalled, lastHeight, ""
 			}
 		case <-shutdown:
-			return bootstrapShutdown, lastHeight
+			return bootstrapShutdown, lastHeight, ""
 		}
 	}
 }
@@ -3141,20 +3153,28 @@ type blockHandler struct {
 	// Run returning and the 5-min no-progress watchdog (where the chain was neither syncing nor
 	// stopped). bootstrapDone XOR bootstrapFailed XOR still-syncing.
 	bootstrapFailed gatomic.Pointer[bsFailure]
-	// bootstrapConnecting is true while runInitialSync is in its bounded connectivity-RETRY wait —
-	// a transient beacon-quorum-unreachable fail-safe it is re-attempting (the SELF-HEAL path). It
-	// tells monitorBootstrap's no-progress watchdog this is a deliberate WAIT for the quorum to
-	// return (the network cannot make progress without it), NOT a stall — so the watchdog does not
-	// force-STOP a node that is correctly failing safe and waiting, which (given the K8s probes only
-	// poll the always-green /v1/health/liveness) would otherwise be a permanent brick.
-	bootstrapConnecting gatomic.Bool
-	bsActive            gatomic.Bool                   // true while the bootstrap loop is driving
-	bsMu                sync.Mutex                     // guards bsFrontierCh + bsAccepted + bsAncestorCh + bsAheadBeacons
-	bsFrontierCh        chan bsFrontierReply           // weighted frontier replies for the current FrontierTip
-	bsAccepted          map[uint32]bsAcceptedRound     // requestID -> the open second-question round
-	bsAncestorCh        map[uint32]chan [][]byte       // requestID -> ancestors reply for the current Ancestors
-	bsAncestorPeers     map[uint32]set.Set[ids.NodeID] // requestID -> the beacons that request was sent to
-	bsRotor             gatomic.Uint32                 // round-robins the Ancestors peer sample (M1: no monopoly)
+	// bootstrapWait is WHY runInitialSync is in its bounded connectivity-RETRY wait — a transient
+	// beacon-quorum-unreachable fail-safe it is re-attempting (the SELF-HEAL path) — and nil when it
+	// is not waiting. It tells monitorBootstrap's no-progress watchdog this is a deliberate WAIT for
+	// the quorum to return (the network cannot make progress without it), NOT a stall — so the
+	// watchdog does not force-STOP a node that is correctly failing safe and waiting, which (given
+	// the K8s probes only poll the always-green /v1/health/liveness) would otherwise be a permanent
+	// brick. Carrying the reason rather than a bare flag is what lets the health check name the
+	// condition instead of restating that a chain is not bootstrapped.
+	bootstrapWait gatomic.Pointer[string]
+	// shortfall is the last round's measured distance from the beacon response floor, recorded by
+	// FrontierTip because that is the only place it exists: the status FrontierTip returns carries
+	// a state and no numbers, and bs.Run fails safe on a bare sentinel. Dropped at the start of
+	// every round, so it is never older than the round that measured it, and nil when the last
+	// round did not reach the floor check at all.
+	shortfall       gatomic.Pointer[string]
+	bsActive        gatomic.Bool                   // true while the bootstrap loop is driving
+	bsMu            sync.Mutex                     // guards bsFrontierCh + bsAccepted + bsAncestorCh + bsAheadBeacons
+	bsFrontierCh    chan bsFrontierReply           // weighted frontier replies for the current FrontierTip
+	bsAccepted      map[uint32]bsAcceptedRound     // requestID -> the open second-question round
+	bsAncestorCh    map[uint32]chan [][]byte       // requestID -> ancestors reply for the current Ancestors
+	bsAncestorPeers map[uint32]set.Set[ids.NodeID] // requestID -> the beacons that request was sent to
+	bsRotor         gatomic.Uint32                 // round-robins the Ancestors peer sample (M1: no monopoly)
 	// bsAheadBeacons is the set of beacons whose accepted tip, reported in the most recent
 	// FrontierTip round, is a block this node does NOT hold — i.e. beacons genuinely AHEAD that
 	// therefore HAVE the ancestry the descent needs. sampleAncestorBeacons prefers them so a
