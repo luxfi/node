@@ -494,7 +494,24 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// caught-up. self also only ever vouches for its OWN accepted tip, so C1 (forged-frontier
 		// naming) is untouched, and a genuinely behind node has an ahead peer in the full set → CaughtUp
 		// is false → it keeps waiting/syncing.
-		if haveLast && b.fullyConnectedBeacons(weights, connected) &&
+		// EXECUTED, not merely DECIDED. The acceptance oracle answers from the consensus
+		// ledger, which is the right source for "has this block been accepted" and the
+		// wrong one for "may this node go live": the ledger advances when a quorum
+		// decides, and the VM advances when this node runs the block. They diverge, and
+		// on the divergence the ledger is HIGHER — so a node whose VM is behind reads as
+		// caught up, goes live at its stale height, and then serves and votes there
+		// while never converging. That is the failure this whole gate exists to make
+		// impossible, arriving through the one input nobody checked.
+		//
+		// Measured: a validator reporting bootstrapped with its ledger at 19008, its EVM
+		// at 18784, and the network at 19010 — live, polling normally, 226 blocks behind.
+		//
+		// So going live additionally requires the VM to have EXECUTED to the head we are
+		// claiming. This can only ever REFUSE, never permit: a node that has genuinely
+		// executed to its head is unaffected, and a node that has not stays syncing,
+		// which is the safe side of a go-live decision. Both caught-up branches consult
+		// the same rule — there is one way to be allowed live.
+		if haveLast && b.executedTo(ctx, lastH) && b.fullyConnectedBeacons(weights, connected) &&
 			repliedCovers(replies, connected) &&
 			policy.CaughtUp(b.withSelfVote(replies, weights, lastID), lastH, b.acceptedHeight) {
 			b.logger.Debug("bootstrap frontier: CAUGHT UP at own tip (full beacon set + self all at/below it, peer-only weight below the naming floor)",
@@ -536,7 +553,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// CaughtUp is false → it fails safe. Distinct from the transient finality-skew retry the loop
 		// runs on a bare FrontierNoQuorum ("connected but momentarily split" — keep polling): this is
 		// "split AND I am at the top of every responder" — provably DONE, not waiting.
-		if haveLast && policy.CaughtUp(replies, lastH, b.acceptedHeight) {
+		if haveLast && b.executedTo(ctx, lastH) && policy.CaughtUp(replies, lastH, b.acceptedHeight) {
 			b.logger.Debug("bootstrap frontier: CAUGHT UP at own tip (floor met, no responder ahead, hold every reported tip)",
 				log.Stringer("tip", lastID),
 				log.Uint64("height", lastH))
@@ -924,6 +941,27 @@ func (b *blockHandler) ParseBlock(ctx context.Context, raw []byte) (cblock.Block
 // "unfreezes but stalls". AcceptBootstrapBlock's own contiguity guard already trusts the
 // in-process ledger (consensus.GetFinalizedHeight); driving lastH/the caught-up oracle off the
 // SAME ledger is the decomplect — the loop trusts the ledger it is building, not a VM cache.
+// executedTo reports whether this node's VM has actually RUN the chain up to h.
+//
+// The acceptance oracle answers from the consensus ledger — what a quorum decided —
+// which is right for "has this block been accepted" and wrong for "may this node go
+// live". The two diverge, and on the divergence the ledger is HIGHER: a quorum
+// decides a block before this node executes it, and if execution then fails or lags
+// the ledger keeps the higher number. A gate reading only the ledger therefore lets
+// a node whose VM is far below the head declare itself at the frontier, go live, and
+// serve and vote at a stale height while nothing is left trying to converge it.
+//
+// A VM that cannot be read is not a VM that has executed: an unproven measurement is
+// not a passing one, so it refuses. This can only ever REFUSE go-live, never permit
+// it, which is the safe side of the decision.
+func (b *blockHandler) executedTo(ctx context.Context, h uint64) bool {
+	if b.vm == nil {
+		return false
+	}
+	_, ran, err := b.vmLastAccepted(ctx)
+	return err == nil && ran >= h
+}
+
 func (b *blockHandler) LastAccepted(ctx context.Context) (ids.ID, uint64, error) {
 	return b.finalizedTip(ctx)
 }
