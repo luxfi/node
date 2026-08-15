@@ -1873,17 +1873,38 @@ func TestRED_EclipseOwnHeightNotNamedRoutesToSync(t *testing.T) {
 // (the K8s probes never restart it). The clock is reset while connecting; only a NON-connecting
 // no-progress node stalls (the converse is TestWatchBootstrapProgress_GenuineStallFails).
 func TestWatchBootstrapProgress_ConnectingNotStalled(t *testing.T) {
-	shutdown := make(chan struct{})
-	go func() { time.Sleep(120 * time.Millisecond); close(shutdown) }() // ~6 stall windows later
-	outcome, _ := watchBootstrapProgress(
+	outcome, at := watchBootstrapProgress(
 		func() bool { return false }, // never ready
 		func() bool { return false }, // never a terminal fail
 		func() bool { return true },  // ALWAYS connecting (deliberate quorum wait)
 		func() uint64 { return 5 },   // height pinned — no progress
-		time.Millisecond, 20*time.Millisecond, shutdown,
+		time.Millisecond, 20*time.Millisecond, nil,
 	)
-	require.Equal(t, bootstrapShutdown, outcome,
-		"a CONNECTING node must NEVER be stalled out (it is waiting for its quorum) — only shutdown ends it")
+	require.Equal(t, bootstrapWaiting, outcome,
+		"a CONNECTING node must NEVER be stalled out (it is waiting for its quorum) — the wait is REPORTED instead")
+	require.NotEqual(t, bootstrapStalled, outcome,
+		"reporting the wait must not turn it into a stall — a stall stops nothing here but says the wrong thing")
+	require.Equal(t, uint64(5), at, "the wait must carry the height it is waiting at")
+}
+
+// TestWatchBootstrapProgress_WaitIsNotTerminal: reporting the quorum wait must not end the
+// watch. The caller re-enters and the chain still completes the moment the quorum returns —
+// this is the property that keeps a reported wait from becoming the brick it replaced.
+func TestWatchBootstrapProgress_WaitIsNotTerminal(t *testing.T) {
+	var polls int
+	ready := func() bool { polls++; return polls > 40 } // sync completes only after the wait
+	connecting := func() bool { return polls <= 40 }    // quorum away until then
+	height := func() uint64 { return 5 }                // pinned — no progress either way
+
+	outcome, _ := watchBootstrapProgress(ready, nil, connecting, height,
+		time.Millisecond, 10*time.Millisecond, nil)
+	require.Equal(t, bootstrapWaiting, outcome, "while the quorum is away the wait is reported")
+
+	// The caller keeps watching. With the quorum back, the same chain completes normally.
+	outcome, _ = watchBootstrapProgress(ready, nil, connecting, height,
+		time.Millisecond, time.Minute, nil)
+	require.Equal(t, bootstrapReady, outcome,
+		"a reported wait is not terminal — the chain completes when the quorum returns")
 }
 
 // ============================================================================

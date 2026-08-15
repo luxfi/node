@@ -11,9 +11,13 @@ package chains
 
 import (
 	"context"
+	"encoding/binary"
 	"testing"
 	"time"
 
+	consensuschain "github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 )
 
@@ -160,5 +164,48 @@ func TestObserveSurvivesAHandlerWithNoEngine(t *testing.T) {
 	got := sample(t, b, "catchup_outcomes")
 	if got["serve_asked"] != 5 {
 		t.Fatalf("serve_asked = %v, want 5", got["serve_asked"])
+	}
+}
+
+// TestObserveReportsUnparsedBlocks: a block that arrives and does not parse is dropped —
+// nothing is finalized, the sender is not penalised, and the node carries on. That is the
+// right call and it is exactly why the drop needs a count: from outside the process "no
+// blocks parsed" and "no blocks arrived" produce the same silence.
+func TestObserveReportsUnparsedBlocks(t *testing.T) {
+	b := &blockHandler{}
+	b.diag.blockUnparsed.Store(4)
+
+	got := sample(t, b, "blocks_unparsed")
+
+	if got[""] != 4 {
+		t.Errorf("blocks_unparsed = %v, want 4 — a dropped block must be countable without reading a log", got[""])
+	}
+}
+
+// TestCatchupCountsAnUnparsableBlock: a catch-up entry that does not parse costs the descent
+// its next step — the oldest entry's parent is the only thing that moves the window down —
+// and the node otherwise carries on looking idle. So it is counted where it is dropped,
+// rather than at a Debug line on one of eight chains.
+func TestCatchupCountsAnUnparsableBlock(t *testing.T) {
+	b := &blockHandler{
+		logger: log.NewNoOpLogger(),
+		vm:     &bsTestVM{}, // ParseBlock fails for any bytes it was not given
+		engine: consensuschain.NewRuntime(consensuschain.NetworkConfig{}),
+	}
+
+	// One legacy (non-v2) entry in the outer framing: [entryLen:4][entry].
+	entry := []byte("not a block")
+	data := make([]byte, 4+len(entry))
+	binary.BigEndian.PutUint32(data[:4], uint32(len(entry)))
+	copy(data[4:], entry)
+
+	if got := b.diag.blockUnparsed.Load(); got != 0 {
+		t.Fatalf("counter started at %d, want 0", got)
+	}
+
+	_ = b.handleContext(context.Background(), ids.GenerateTestNodeID(), 1, data)
+
+	if got := b.diag.blockUnparsed.Load(); got != 1 {
+		t.Errorf("blockUnparsed = %d, want 1 — an entry that did not parse must be counted where it is dropped", got)
 	}
 }
