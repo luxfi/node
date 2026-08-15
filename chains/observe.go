@@ -44,6 +44,8 @@ func (b *blockHandler) observe(ctx context.Context, m metric.Metrics) {
 		"height the VM has executed; below finalized_height means blocks are decided but not run")
 	syncing := m.NewGauge("syncing",
 		"1 while initial sync is driving this chain, 0 once it is live")
+	unparsed := m.NewGauge("blocks_unparsed",
+		"blocks received that did not parse, cumulative since start; a rise means blocks are being dropped")
 
 	// Cumulative since start, so a rise means the arm was taken. The names are the
 	// question each answers: did we ask, were we served, did a reply arrive, and
@@ -90,6 +92,8 @@ func (b *blockHandler) observe(ctx context.Context, m metric.Metrics) {
 		for _, a := range arms {
 			outcome.WithLabelValues(a.name).Set(float64(a.read()))
 		}
+
+		unparsed.Set(float64(b.diag.blockUnparsed.Load()))
 
 		if b.bsActive.Load() {
 			syncing.Set(1)

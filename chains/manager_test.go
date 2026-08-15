@@ -4,7 +4,9 @@
 package chains
 
 import (
+	"context"
 	"sync"
+	gatomic "sync/atomic"
 	"testing"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/service/health"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/vm"
 )
@@ -332,4 +335,68 @@ func TestToEngineMessageTypes(t *testing.T) {
 
 	require.Equal(2, pendingCount, "Expected 2 PendingTxs messages")
 	require.Equal(2, otherCount, "Expected 2 other messages")
+}
+
+// reasonReader captures what a chain publishes about itself, so a test can read the
+// same thing an operator reads.
+type reasonReader struct {
+	mu     sync.Mutex
+	checks map[string]health.Checker
+}
+
+func (r *reasonReader) RegisterHealthCheck(name string, c health.Checker, _ ...string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.checks == nil {
+		r.checks = map[string]health.Checker{}
+	}
+	r.checks[name] = c
+	return nil
+}
+func (r *reasonReader) RegisterReadinessCheck(string, health.Checker, ...string) error { return nil }
+func (r *reasonReader) RegisterLivenessCheck(string, health.Checker, ...string) error  { return nil }
+
+// TestReportBootstrapNamesTheCurrentReason: a chain that has not finished initial sync has
+// to say WHY. The node-level check names a chain id and nothing else, so without this the
+// only difference between "waiting for a quorum that will come back" and "wedged" is a log
+// line nobody is reading. The reason is re-read on every call, so it tracks the condition
+// instead of freezing whichever one happened first.
+func TestReportBootstrapNamesTheCurrentReason(t *testing.T) {
+	require := require.New(t)
+
+	published := &reasonReader{}
+	m := &manager{}
+	m.Log = log.NewNoOpLogger()
+	m.Health = published
+	m.Aliaser = ids.NewAliaser()
+
+	chainID := ids.GenerateTestID()
+	converged := false
+
+	var reason gatomic.Pointer[string]
+	wait := "waiting for the beacon quorum to become reachable"
+	reason.Store(&wait)
+
+	m.reportBootstrap(chainID, func() bool { return converged }, 42, &reason)
+
+	check, ok := published.checks[chainID.String()+"-bootstrap"]
+	require.True(ok, "a chain that has not bootstrapped must publish a check an operator can read")
+
+	details, err := check.HealthCheck(context.Background())
+	require.Error(err, "an unbootstrapped chain must report unhealthy")
+	require.Equal(wait, details.(map[string]interface{})["error"],
+		"the check must name WHY the chain is not bootstrapped, not just that it is not")
+
+	// The condition changes. The SAME check must state what is true now.
+	stalled := "bootstrap stalled (no progress)"
+	reason.Store(&stalled)
+	details, err = check.HealthCheck(context.Background())
+	require.Error(err)
+	require.Equal(stalled, details.(map[string]interface{})["error"],
+		"the check must re-read the reason rather than freeze the first one")
+
+	// And it clears itself the moment the chain converges.
+	converged = true
+	_, err = check.HealthCheck(context.Background())
+	require.NoError(err, "a reason that has since been falsified must stop being reported as a failure")
 }

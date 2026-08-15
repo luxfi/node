@@ -2265,7 +2265,19 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 	// Run the progress-based watchdog (decomplected into watchBootstrapProgress so the
 	// loop is unit-testable), then handle the manager-side outcome.
 	const bootstrapStallTimeout = 5 * time.Minute
-	stallReported := false
+	// ONE per-chain check carries WHY this chain has not finished initial sync. The reason is
+	// swapped as the condition changes, so a quorum wait that later becomes a no-progress stall
+	// (or the reverse) reports what is true NOW rather than whichever arrived first.
+	var reason gatomic.Pointer[string]
+	reported := false
+	report := func(why string, atHeight uint64) {
+		reason.Store(&why)
+		if reported {
+			return
+		}
+		reported = true
+		m.reportBootstrap(chainID, ready, atHeight, &reason)
+	}
 	for {
 		outcome, stalledAtHeight := watchBootstrapProgress(ready, failed, connecting, heightOf, 100*time.Millisecond, bootstrapStallTimeout, m.chainCreatorShutdownCh)
 		switch outcome {
@@ -2312,10 +2324,16 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 			// Only bootstrapFailed below — where the sync loop ITSELF returned "I cannot
 			// proceed" — is terminal, because there the engine is reporting its own verdict
 			// rather than a watchdog inferring one.
-			if !stallReported {
-				m.reportBootstrapStall(chainID, ready, stalledAtHeight)
-				stallReported = true
-			}
+			report("bootstrap stalled (no progress)", stalledAtHeight)
+			continue
+		case bootstrapWaiting:
+			// The driver is in its bounded connectivity RETRY, waiting for the beacon quorum to
+			// become reachable. It is neither stopped nor failed and converges the instant the
+			// quorum returns, so the handling is unchanged — keep watching. What changes is that
+			// it now SAYS SO. This is the one state a chain can hold forever, and it published
+			// nothing: the node answered 503 naming a chain id and no reason, which reads exactly
+			// like a chain nobody has looked at.
+			report("waiting for the beacon quorum to become reachable", stalledAtHeight)
 			continue
 		case bootstrapFailed:
 			// F5: the sync loop RETURNED a fail-safe error (eclipse / partition / deep gap). Surface
@@ -2335,15 +2353,27 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 	}
 }
 
-// reportBootstrapStall publishes a no-progress stall on the chain's health check and
-// leaves the engine RUNNING, so the sync can still finish. The check re-reads ready()
-// on every call rather than freezing the verdict, which means it clears itself the
-// moment the chain converges — a stall that has since been falsified stops being
-// reported as a failure. Compare failBootstrapChain, which stops the engine and is
-// reserved for a sync loop that reported its own failure.
-func (m *manager) reportBootstrapStall(chainID ids.ID, ready func() bool, atHeight uint64) {
-	m.Log.Warn("chain bootstrap made no progress in the stall window - NOT marked bootstrapped, still trying",
+// reportBootstrap publishes WHY a chain has not finished initial sync on the chain's own
+// health check, and leaves the engine RUNNING so the sync can still finish. The check
+// re-reads ready() on every call rather than freezing the verdict, so it clears itself the
+// moment the chain converges — a reason that has since been falsified stops being reported
+// as a failure. It also re-reads `reason`, so the check states the CURRENT condition
+// (quorum wait / no progress) rather than the one that happened to be first.
+//
+// This is the only place a not-yet-bootstrapped chain speaks, and it covers BOTH the
+// no-progress stall and the deliberate quorum wait. Without the wait, a chain that is
+// working as designed — retrying until its beacons return — was reported by the node-level
+// check as a bare chain id with no reason, and the reason existed nowhere outside the
+// process. Compare failBootstrapChain, which stops the engine and is reserved for a sync
+// loop that reported its own failure.
+func (m *manager) reportBootstrap(chainID ids.ID, ready func() bool, atHeight uint64, reason *gatomic.Pointer[string]) {
+	why := "not bootstrapped"
+	if r := reason.Load(); r != nil {
+		why = *r
+	}
+	m.Log.Warn("chain has not finished initial sync - NOT marked bootstrapped, still trying",
 		log.Stringer("chainID", chainID),
+		log.String("reason", why),
 		log.Uint64("height", atHeight))
 
 	chainAlias := m.PrimaryAliasOrDefault(chainID)
@@ -2353,15 +2383,19 @@ func (m *manager) reportBootstrapStall(chainID ids.ID, ready func() bool, atHeig
 			if ready != nil && ready() {
 				return map[string]interface{}{"chainID": chainID.String()}, nil
 			}
+			current := "not bootstrapped"
+			if r := reason.Load(); r != nil {
+				current = *r
+			}
 			return map[string]interface{}{
 				"chainID": chainID.String(),
-				"error":   "bootstrap stalled (no progress)",
+				"error":   current,
 				"height":  atHeight,
 			}, errBootstrapTimeout
 		}),
 		health.ApplicationTag,
 	); err != nil {
-		m.Log.Error("failed to register bootstrap stall health check",
+		m.Log.Error("failed to register bootstrap health check",
 			log.Stringer("chainID", chainID),
 			log.Err(err))
 	}
@@ -2415,6 +2449,7 @@ const (
 	bootstrapStalled                          // no height progress for the stall window
 	bootstrapShutdown                         // shutdown was signaled
 	bootstrapFailed                           // the sync loop RETURNED a fail-safe error — surface PROMPTLY (F5), not via the no-progress watchdog
+	bootstrapWaiting                          // the driver is waiting for its beacon quorum — a deliberate WAIT, reported so it is not silent
 )
 
 // watchBootstrapProgress is the PROGRESS-BASED bootstrap watchdog (H2), decomplected from
@@ -2474,11 +2509,13 @@ func watchBootstrapProgress(
 			}
 			if time.Since(lastProgress) >= stallTimeout {
 				// A node in its connectivity-RETRY wait is NOT stalled — it is deliberately failing
-				// safe DOWN and waiting for its quorum to return (self-heal). Reset the clock and keep
-				// waiting; never force-stop it (the K8s probes would never restart it → brick).
+				// safe DOWN and waiting for its quorum to return (self-heal), and force-stopping it
+				// is the brick the K8s probes would never undo. So the WAIT is not a failure; it is
+				// REPORTED. The caller re-enters, which resets the clock exactly as before — the
+				// only change is that the state now leaves the process, because a wait with no end
+				// and no signal is indistinguishable from a broken chain to anyone outside it.
 				if connecting != nil && connecting() {
-					lastProgress = time.Now()
-					continue
+					return bootstrapWaiting, lastHeight
 				}
 				return bootstrapStalled, lastHeight
 			}
@@ -3399,6 +3436,12 @@ type catchupDiag struct {
 	// frontier decision (AcceptedFrontier) — the branch that decides whether we fetch
 	frontierBootstrap, frontierCurrent, frontierCertGap gatomic.Uint64
 	frontierPending, frontierAbsent, frontierNoEngine   gatomic.Uint64
+	// blocks that arrived on the wire and did NOT parse. Dropping one is recoverable and
+	// stays recoverable — nothing is finalized, the sender is not penalised — but the node
+	// cannot place that block, and on the catch-up path it is what keeps the window from
+	// descending. Counted so the drop is visible to a scrape instead of only to whoever
+	// thinks to raise the log level on the right one of eight chains.
+	blockUnparsed gatomic.Uint64
 }
 
 // catchupSample is the volume gate for the catch-up diagnostics: the first few of an
@@ -4104,6 +4147,14 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 			}
 			if parsed, perr := b.vm.ParseBlock(ctx, raw); perr == nil {
 				oldestHeight, oldestParent, haveOldest = parsed.Height(), parsed.Parent(), true
+			} else if n, loud := catchupSample(&b.diag.blockUnparsed); loud {
+				// The oldest entry's parent is the only thing that steps the window down. Losing
+				// it does not stop the node, it stops the DESCENT — which presents as a chain
+				// sitting still, the one symptom that looks identical to having nothing to do.
+				b.logger.Warn("catch-up block did not parse - window cannot descend",
+					log.Stringer("from", nodeID),
+					log.Uint64("count", n),
+					log.Err(perr))
 			}
 		}
 
@@ -4544,9 +4595,10 @@ func (b *blockHandler) Put(ctx context.Context, nodeID ids.NodeID, requestID uin
 				missingBlk, parseErr := b.vm.ParseBlock(ctx, container)
 				if parseErr == nil {
 					b.requestContext(ctx, nodeID, missingBlk.ID())
-				} else {
-					b.logger.Debug("failed to parse missing-context block",
+				} else if n, loud := catchupSample(&b.diag.blockUnparsed); loud {
+					b.logger.Warn("incoming block did not parse - dropped",
 						log.Stringer("from", nodeID),
+						log.Uint64("count", n),
 						log.Err(parseErr))
 				}
 			}
