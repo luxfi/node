@@ -48,10 +48,17 @@ WORKDIR /build
 # Skip checksum verification for luxfi + hanzoai packages: both are cross-org
 # deps not registered in the public sum.golang.org / proxy (reading e.g.
 # hanzoai/vfs@v0.4.1's go.mod via the public sumdb 404s and fails the build).
-ENV GONOSUMCHECK=github.com/luxfi/*,github.com/hanzoai/*
-ENV GONOSUMDB=github.com/lux-private/*,github.com/hanzoai/*
-# Use Go proxy for most deps (gonum.org is flaky via direct), direct only for
-# the cross-org private modules.
+# GOPRIVATE is the one that governs checksum verification; GONOSUMCHECK predates
+# modules and Go ignores it. Our own modules must be listed here: a tag that was
+# ever moved no longer matches what the public checksum database recorded for it,
+# and every later build that resolves that version dies on
+#   verifying go.mod: checksum mismatch / SECURITY ERROR
+# even though nothing in the build is wrong. The plugin stages resolve transitive
+# luxfi versions we do not choose, so the exclusion has to cover the whole org.
+ENV GOPRIVATE=github.com/luxfi/*,github.com/lux-private/*,github.com/hanzoai/*
+# GONOPROXY is narrower than GOPRIVATE on purpose: keep fetching through the proxy
+# (gonum.org is flaky direct), and go direct only for the modules the proxy cannot
+# see. Setting GOPRIVATE alone would silently take everything off the proxy.
 ENV GOPROXY=https://proxy.golang.org,direct
 ENV GONOPROXY=github.com/lux-private/*,github.com/hanzoai/*
 ENV GOFLAGS="-mod=mod"
