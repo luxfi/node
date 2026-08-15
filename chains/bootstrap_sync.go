@@ -958,8 +958,31 @@ func (b *blockHandler) executedTo(ctx context.Context, h uint64) bool {
 	if b.vm == nil {
 		return false
 	}
-	_, ran, err := b.vmLastAccepted(ctx)
-	return err == nil && ran >= h
+	// On a wrapped chain the VM's last-accepted is the OUTER block, and the outer is
+	// committed before the inner is accepted — so it leads during every accept, and
+	// keeps leading if the inner one never lands. Asking it whether we executed to h
+	// gets the wrapper's answer, not the chain's. A VM that can speak for its inner
+	// self is asked that instead; one that cannot is its own inner self already.
+	id, err := b.innerLastAccepted(ctx)
+	if err != nil || id == ids.Empty {
+		return false
+	}
+	blk, err := b.vm.GetBlock(ctx, id)
+	if err != nil {
+		return false // cannot prove execution ⇒ do not go live
+	}
+	return blk.Height() >= h
+}
+
+// innerLastAccepted is the head of the VM that actually executes blocks.
+func (b *blockHandler) innerLastAccepted(ctx context.Context) (ids.ID, error) {
+	type innerAccepted interface {
+		InnerLastAccepted(context.Context) (ids.ID, error)
+	}
+	if inner, ok := b.vm.(innerAccepted); ok {
+		return inner.InnerLastAccepted(ctx)
+	}
+	return b.vm.LastAccepted(ctx)
 }
 
 func (b *blockHandler) LastAccepted(ctx context.Context) (ids.ID, uint64, error) {
