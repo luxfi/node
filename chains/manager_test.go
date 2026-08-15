@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -355,6 +356,98 @@ func (r *reasonReader) RegisterHealthCheck(name string, c health.Checker, _ ...s
 }
 func (r *reasonReader) RegisterReadinessCheck(string, health.Checker, ...string) error { return nil }
 func (r *reasonReader) RegisterLivenessCheck(string, health.Checker, ...string) error  { return nil }
+
+// waitingHandler is a chain that is not bootstrapped and says why — the smallest thing
+// monitorBootstrap needs to reach its report. Handler's four transport methods are never called
+// on this path; only the bootstrap accessors are.
+type waitingHandler struct {
+	handler.Handler
+	why string
+}
+
+func (waitingHandler) BootstrapComplete() bool { return false }
+func (waitingHandler) BootstrapHeight() uint64 { return 7 }
+func (w waitingHandler) BootstrapWait() string { return w.why }
+
+// TestMonitorBootstrapPublishesTheWaitReason closes the last hop: the reason the driver computed
+// has to survive all the way to the payload an operator reads. Everything upstream of here can be
+// right and the chain still answers with a sentence that fits any outage, which is the state this
+// change exists to end — so the assertion is on the published check, not on an intermediate.
+func TestMonitorBootstrapPublishesTheWaitReason(t *testing.T) {
+	require := require.New(t)
+
+	published := &reasonReader{}
+	m := &manager{}
+	m.Log = log.NewNoOpLogger()
+	m.Health = published
+	m.Aliaser = ids.NewAliaser()
+	m.chainCreatorShutdownCh = make(chan struct{})
+	m.stallWindow = 10 * time.Millisecond // reach the report without sitting out a real window
+
+	const why = "waiting for the beacon quorum: 3 of 6 beacons responded, need 4"
+	chainID := ids.GenerateTestID()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		m.monitorBootstrap(nil, waitingHandler{why: why}, nil, chainID)
+	}()
+
+	check := func() health.Checker {
+		published.mu.Lock()
+		defer published.mu.Unlock()
+		return published.checks[chainID.String()+"-bootstrap"]
+	}
+	require.Eventually(func() bool { return check() != nil }, 5*time.Second, time.Millisecond,
+		"a chain waiting on its quorum must publish a check an operator can read")
+
+	details, err := check().HealthCheck(context.Background())
+	require.Error(err, "a chain that has not bootstrapped must report unhealthy")
+	require.Equal(why, details.(map[string]interface{})["error"],
+		"the published reason must be the driver's own numbers, not a generic sentence that fits any outage")
+	require.Equal(uint64(7), details.(map[string]interface{})["height"],
+		"and the height it is waiting at")
+
+	close(m.chainCreatorShutdownCh)
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("monitorBootstrap must return on shutdown — a reported wait keeps watching, it does not detach")
+	}
+}
+
+// TestMonitorBootstrapWaitsOutTheDefaultWindow guards the window a manager gets when nobody sets
+// one. Zero has to mean the long default and not zero itself: a zero window makes every tick a
+// no-progress window, so a healthy slow sync is written up as stalled within the first tick and
+// the report says nothing about anything.
+func TestMonitorBootstrapWaitsOutTheDefaultWindow(t *testing.T) {
+	require := require.New(t)
+
+	published := &reasonReader{}
+	m := &manager{}
+	m.Log = log.NewNoOpLogger()
+	m.Health = published
+	m.Aliaser = ids.NewAliaser()
+	m.chainCreatorShutdownCh = make(chan struct{})
+	// stallWindow deliberately left unset.
+
+	chainID := ids.GenerateTestID()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		m.monitorBootstrap(nil, waitingHandler{why: "waiting for the beacon quorum"}, nil, chainID)
+	}()
+
+	time.Sleep(time.Second) // ≫ the 100ms poll tick, ≪ the 5-minute default
+	published.mu.Lock()
+	_, reported := published.checks[chainID.String()+"-bootstrap"]
+	published.mu.Unlock()
+	require.False(reported,
+		"an unset window must mean the long default — a chain must not be written up a tick after it starts")
+
+	close(m.chainCreatorShutdownCh)
+	<-done
+}
 
 // TestReportBootstrapNamesTheCurrentReason: a chain that has not finished initial sync has
 // to say WHY. The node-level check names a chain id and nothing else, so without this the
