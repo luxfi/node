@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	chainbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
+	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/stretchr/testify/require"
 )
@@ -83,4 +84,52 @@ func TestGoLiveAllowedWhenTheVMHasExecuted(t *testing.T) {
 	require.Equal(t, chainbootstrap.FrontierCaughtUp, status,
 		"a node that executed to its head must go live — refusing here hangs every healthy restart")
 	require.Equal(t, chain[0].id, tip)
+}
+
+// wrappedVM models a wrapped chain: LastAccepted answers with the OUTER head,
+// which leads the inner one, and InnerLastAccepted answers with what actually ran.
+type wrappedVM struct {
+	*bsTestVM
+	outer *bsTestBlock
+	inner *bsTestBlock
+}
+
+func (v *wrappedVM) LastAccepted(context.Context) (ids.ID, error) { return v.outer.id, nil }
+func (v *wrappedVM) InnerLastAccepted(context.Context) (ids.ID, error) {
+	return v.inner.id, nil
+}
+
+// TestExecutedToAsksTheVMThatExecutes is the production divergence exactly: the
+// wrapper's head is at the frontier and the executing VM is far below it. Asking
+// the wrapper returns the frontier and lets the node go live having run nothing;
+// asking the VM that executes returns the truth.
+func TestExecutedToAsksTheVMThatExecutes(t *testing.T) {
+	const N = 6
+	chain, _ := buildBSChain(N, -1)
+	// Every block is resolvable, so the ONLY variable is which head is asked for.
+	vm := newBSVMAt(chain, N-1)
+
+	bh := &blockHandler{logger: log.NewNoOpLogger()}
+	bh.vm = &wrappedVM{bsTestVM: vm, outer: chain[N-1], inner: chain[0]}
+
+	if bh.executedTo(context.Background(), uint64(N-1)) {
+		t.Fatalf("the wrapper's head (%d) was accepted as proof of execution while the "+
+			"executing VM had only run to %d — the node goes live having run nothing",
+			N-1, 0)
+	}
+}
+
+// TestExecutedToTrustsTheInnerWhenItHasCaughtUp: once the executing VM has run to
+// the head, the same node must be allowed live.
+func TestExecutedToTrustsTheInnerWhenItHasCaughtUp(t *testing.T) {
+	const N = 6
+	chain, _ := buildBSChain(N, -1)
+	vm := newBSVMAt(chain, N-1) // this node HAS executed to the head
+
+	bh := &blockHandler{logger: log.NewNoOpLogger()}
+	bh.vm = &wrappedVM{bsTestVM: vm, outer: chain[N-1], inner: chain[N-1]}
+
+	if !bh.executedTo(context.Background(), uint64(N-1)) {
+		t.Fatal("the executing VM was at the head and go-live was still refused")
+	}
 }

@@ -798,6 +798,23 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return lastAccepted, err
 }
 
+// InnerLastAccepted reports the block the INNER VM has accepted, which is not the
+// same question as LastAccepted.
+//
+// LastAccepted answers with the OUTER block, and the outer block is committed
+// before the inner one is accepted (see postForkBlock.Accept). So the outer height
+// leads the inner by design during an accept, and if the inner accept then fails or
+// lags, it keeps leading — durably. A reader asking "has this node executed to h"
+// and receiving the outer height is told yes for blocks the inner VM never got.
+//
+// Callers deciding what this node has RUN — whether it may go live, how far
+// catch-up must fetch — want this one. Callers identifying the chain's head still
+// want LastAccepted, which is why this is added beside it rather than folded into
+// it.
+func (vm *VM) InnerLastAccepted(ctx context.Context) (ids.ID, error) {
+	return vm.ChainVM.LastAccepted(ctx)
+}
+
 // CreateHandlers returns HTTP handlers for both the proposervm API and the inner ChainVM
 func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
 	// Create the proposervm-specific handler
