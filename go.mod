@@ -27,7 +27,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.36.49
-	github.com/luxfi/crypto v1.20.4
+	github.com/luxfi/crypto v1.20.5
 	github.com/luxfi/database v1.21.5
 	github.com/luxfi/ids v1.3.2
 	github.com/luxfi/keychain v1.1.1
@@ -196,7 +196,7 @@ require (
 	github.com/luxfi/corona v0.10.4 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
-	github.com/luxfi/keys v1.4.1 // indirect
+	github.com/luxfi/keys v1.4.2 // indirect
 	github.com/luxfi/lattice/v7 v7.1.4 // indirect
 	github.com/luxfi/lens v0.2.1 // indirect
 	github.com/luxfi/light v1.0.0 // indirect
