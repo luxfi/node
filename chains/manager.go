@@ -1016,7 +1016,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 	// Create metrics gatherer for this chain
 	// The coreth EVM expects metric.MultiGatherer, not a legacy registry type
-	m.Log.Info("Creating metrics gatherer", log.String("primaryAlias", primaryAlias))
+	chainLog.Info("Creating metrics gatherer", log.String("primaryAlias", primaryAlias))
 	chainMetricsGatherer := metrics.NewMultiGatherer()
 
 	// Create a registry and register it with the gatherer
@@ -1027,12 +1027,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 
 	// Also register with the global gatherer for metrics collection
 	if err := m.linearGatherer.Register(primaryAlias, chainMetricsReg); err != nil {
-		m.Log.Warn("Failed to register chain metrics with global gatherer",
+		chainLog.Warn("Failed to register chain metrics with global gatherer",
 			log.String("primaryAlias", primaryAlias),
 			log.Err(err),
 		)
 	}
-	m.Log.Info("Metrics gatherer created",
+	chainLog.Info("Metrics gatherer created",
 		log.String("primaryAlias", primaryAlias),
 		log.Bool("isNil", chainMetricsGatherer == nil),
 	)
@@ -1075,7 +1075,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	}
 
 	// Get a factory for the vm we want to use on our chain
-	m.Log.Info("Getting VM factory", log.Stringer("vmID", chainParams.VMID))
+	chainLog.Info("Getting VM factory", log.Stringer("vmID", chainParams.VMID))
 	vmFactory, err := m.VMManager.GetFactory(context.Background(), chainParams.VMID)
 	if err != nil {
 		// Check if this is a VM not found error - if so, add to pending chains for hot-loading
@@ -1083,16 +1083,16 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			m.pendingVMChainsLock.Lock()
 			m.pendingVMChains[chainParams.VMID] = append(m.pendingVMChains[chainParams.VMID], chainParams)
 			m.pendingVMChainsLock.Unlock()
-			m.Log.Warn("VM not found - chain queued for hot-loading",
+			chainLog.Warn("VM not found - chain queued for hot-loading",
 				log.Stringer("vmID", chainParams.VMID),
 				log.Stringer("chainID", chainParams.ID),
 			)
 			return nil, fmt.Errorf("VM %s not found (chain queued for hot-loading): %w", chainParams.VMID, err)
 		}
-		m.Log.Error("Failed to get VM factory", log.Stringer("vmID", chainParams.VMID), log.Err(err))
+		chainLog.Error("Failed to get VM factory", log.Stringer("vmID", chainParams.VMID), log.Err(err))
 		return nil, fmt.Errorf("error while getting vmFactory: %w", err)
 	}
-	m.Log.Info("Got VM factory successfully")
+	chainLog.Info("Got VM factory successfully")
 
 	// Create the chain
 	vmImpl, err := vmFactory.New(chainLog)
@@ -1113,12 +1113,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 	}
 
-	m.Log.Info("DEBUG: About to check VM type", log.Stringer("chainID", chainParams.ID), log.String("vmType", fmt.Sprintf("%T", vmImpl)))
+	chainLog.Info("DEBUG: About to check VM type", log.Stringer("chainID", chainParams.ID), log.String("vmType", fmt.Sprintf("%T", vmImpl)))
 	var createdChain *chainInfo
 	switch vmTyped := vmImpl.(type) {
 	// DAG VM support - for X-Chain and Q-Chain
 	case interface{ GetEngine() consensusdag.Engine }:
-		m.Log.Info("detected DAG VM with GetEngine()",
+		chainLog.Info("detected DAG VM with GetEngine()",
 			log.Stringer("chainID", chainParams.ID),
 		)
 		createdChain, err = m.createDAG(chainRuntime, chainParams, vmTyped, chainFxs)
@@ -1155,7 +1155,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// native chains still fall here and get the empty-beacon immediate-start path.
 		if m.SkipBootstrap && !expectsStakedBeacons {
 			beacons = &emptyValidatorManager{}
-			m.Log.Info("skip-bootstrap enabled - using empty beacons for single-node mode")
+			chainLog.Info("skip-bootstrap enabled - using empty beacons for single-node mode")
 		}
 		// The beacon set is the ANCHOR for INITIAL SYNC (bootstrap): the blockHandler
 		// names the network frontier ONLY from a ⅔-by-stake quorum of these beacons —
@@ -1167,13 +1167,13 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// case the frontier quorum is inert and the node treats itself as already synced.
 
 		// Create simple linear chain with basic consensus engine
-		m.Log.Info("creating linear chain", log.Stringer("chainID", chainRuntime.ChainID))
+		chainLog.Info("creating linear chain", log.Stringer("chainID", chainRuntime.ChainID))
 
 		// Initialize the VM before creating the chain
 		// Get chain configuration
 		chainConfig, err := m.getChainConfig(chainParams.ID)
 		if err != nil {
-			m.Log.Warn("failed to get chain config, using empty config",
+			chainLog.Warn("failed to get chain config, using empty config",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(err))
 			chainConfig = ChainConfig{}
@@ -1273,7 +1273,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// network is meant to have. Silent acceptance is how a 5-validator
 			// mainnet stops being a temporary state.
 			if err := consensusParams.MeetsDecentralizationTarget(m.NetworkID); err != nil {
-				m.Log.Warn("consensus params are Byzantine-SAFE but below the network decentralisation target — grow the validator set",
+				chainLog.Warn("consensus params are Byzantine-SAFE but below the network decentralisation target — grow the validator set",
 					log.Stringer("chainID", chainParams.ID),
 					log.Int("K", consensusParams.K),
 					log.Int("liveValidators", liveN),
@@ -1307,7 +1307,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 		if m.Validators != nil && networkID != constants.PrimaryNetworkID {
 			if m.Validators.Count(networkID) == 0 {
-				m.Log.Warn("no validators found for network ID; falling back to primary network validators",
+				chainLog.Warn("no validators found for network ID; falling back to primary network validators",
 					log.Stringer("chainID", chainParams.ID),
 					log.Stringer("networkID", networkID),
 					log.Stringer("fallbackNetworkID", constants.PrimaryNetworkID),
@@ -1345,14 +1345,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				ProposerWindowDuration: m.ProposerWindowDuration,
 				Registerer:             proposervmReg,
 			})
-			m.Log.Info("wrapping chain VM in proposervm for single-proposer-per-height block production",
+			chainLog.Info("wrapping chain VM in proposervm for single-proposer-per-height block production",
 				log.Stringer("chainID", chainParams.ID),
 				log.Int("K", consensusParams.K),
 				log.Stringer("windowerNetworkID", networkID),
 				log.Duration("minBlockDelay", minBlkDelay))
 		}
 
-		m.Log.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
+		chainLog.Info("initializing VM", log.Stringer("chainID", chainParams.ID))
 		initCtx, initCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 		defer initCancel()
 		// Initialize THROUGH engineVM. proposervm.Initialize builds its windower
@@ -1374,12 +1374,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			},
 		)
 		if err != nil {
-			m.Log.Error("VM initialization failed",
+			chainLog.Error("VM initialization failed",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(err))
 			return nil, fmt.Errorf("failed to initialize VM: %w", err)
 		}
-		m.Log.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
+		chainLog.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
 
 		// CRITICAL-1(a): publish the P-Chain's HEIGHT-INDEXED validators.State so
 		// every K>1 chain built AFTER it (C-Chain, L1s, …) resolves the weighted
@@ -1398,7 +1398,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		if chainParams.ID == constants.PlatformChainID {
 			if vdrState, ok := vmImpl.(validators.State); ok {
 				m.validatorState = vdrState
-				m.Log.Info("published P-Chain height-indexed validator state to chain manager (MEDIUM-1/CRITICAL-1)",
+				chainLog.Info("published P-Chain height-indexed validator state to chain manager (MEDIUM-1/CRITICAL-1)",
 					log.Stringer("chainID", chainParams.ID))
 			} else {
 				// The P-Chain MUST be a validators.State; if it is not, every K>1
@@ -1419,12 +1419,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		if linearVM, ok := vmTyped.(interface {
 			Linearize(context.Context, ids.ID, chan<- vm.Message) error
 		}); ok {
-			m.Log.Info("linearizing DAG-native VM into linear block mode",
+			chainLog.Info("linearizing DAG-native VM into linear block mode",
 				log.Stringer("chainID", chainParams.ID))
 			linCtx, linCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 			if err := linearVM.Linearize(linCtx, ids.Empty, toEngine); err != nil {
 				linCancel()
-				m.Log.Error("failed to linearize VM",
+				chainLog.Error("failed to linearize VM",
 					log.Stringer("chainID", chainParams.ID),
 					log.Err(err))
 				return nil, fmt.Errorf("failed to linearize VM into linear block mode: %w", err)
@@ -1452,12 +1452,12 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		if stateVM, ok := engineVM.(interface {
 			SetState(context.Context, uint32) error
 		}); ok {
-			m.Log.Info("transitioning VM to bootstrapping (initial sync gates normal operation)",
+			chainLog.Info("transitioning VM to bootstrapping (initial sync gates normal operation)",
 				log.Stringer("chainID", chainParams.ID))
 			stateCtx, stateCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 			if err := stateVM.SetState(stateCtx, uint32(vm.Bootstrapping)); err != nil {
 				stateCancel()
-				m.Log.Error("failed to transition VM to bootstrapping",
+				chainLog.Error("failed to transition VM to bootstrapping",
 					log.Stringer("chainID", chainParams.ID),
 					log.Err(err))
 				return nil, fmt.Errorf("failed to transition VM to bootstrapping: %w", err)
@@ -1477,17 +1477,17 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		var blockBuilder consensuschain.BlockBuilder
 		if bb, ok := engineVM.(consensuschain.BlockBuilder); ok {
 			blockBuilder = bb
-			m.Log.Info("registered VM with consensus engine for block building",
+			chainLog.Info("registered VM with consensus engine for block building",
 				log.Stringer("chainID", chainParams.ID))
 		} else {
-			m.Log.Warn("VM does not implement BlockBuilder interface, block building disabled",
+			chainLog.Warn("VM does not implement BlockBuilder interface, block building disabled",
 				log.Stringer("chainID", chainParams.ID))
 		}
 
 		// networkID + isNative were resolved ONCE above (before the proposervm wrap)
 		// so the windower and the cert side share the IDENTICAL validator-set ID
 		// (CRITICAL-3). Do not re-resolve here.
-		m.Log.Info("[CONSENSUS DEBUG] Creating consensus engine for chain",
+		chainLog.Info("[CONSENSUS DEBUG] Creating consensus engine for chain",
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("chainParams.ChainID", chainParams.ChainID),
 			log.Bool("isNativeChain", isNative),
@@ -1538,7 +1538,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// Fails OPEN, unlike the vote guard below: an unreadable cert costs a peer one
 		// fetch elsewhere, while unreadable equivocation memory risks a fork.
 		if certs, certErr := consensuschain.OpenCerts(filepath.Join(chainDataDir, "certs")); certErr != nil {
-			m.Log.Warn("could not open the durable finality-cert store — this node can only catch a peer up through heights it finalized since this process started",
+			chainLog.Warn("could not open the durable finality-cert store — this node can only catch a peer up through heights it finalized since this process started",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(certErr))
 		} else {
@@ -1624,7 +1624,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			if blockBuilder != nil && !wrapInProposerVM {
 				blockBuilder = newPChainHeightVM(blockBuilder, vdrState, networkID)
 				netCfg.VM = blockBuilder
-				m.Log.Info("wired P-chain epoch height into consensus block builder (b2)",
+				chainLog.Info("wired P-chain epoch height into consensus block builder (b2)",
 					log.Stringer("chainID", chainParams.ID),
 					log.Stringer("networkID", networkID))
 			}
@@ -1661,7 +1661,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				netCfg.QuasarObserver = func(_ ids.ID, height uint64) {
 					qvm.SetLastQuasarFinalized(height)
 				}
-				m.Log.Info("wired EXPORT-frontier (quasar) bridge into the VM (finalized/safe + warp gate track ⅔-stake finality)",
+				chainLog.Info("wired EXPORT-frontier (quasar) bridge into the VM (finalized/safe + warp gate track ⅔-stake finality)",
 					log.Stringer("chainID", chainParams.ID))
 			}
 		}
@@ -1674,7 +1674,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		if exportVM != nil {
 			if h := exportVM.LastQuasarHeight(); h > 0 {
 				consensusEngine.SyncQuasarFrontier(ids.Empty, h)
-				m.Log.Info("re-seeded consensus export (quasar) frontier from the VM's durable height on boot",
+				chainLog.Info("re-seeded consensus export (quasar) frontier from the VM's durable height on boot",
 					log.Stringer("chainID", chainParams.ID), log.Uint64("quasarHeight", h))
 			}
 		}
@@ -1685,25 +1685,25 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// chain starts and the quorum cert never assembles — the finality wedge
 		// fixed in v1.30.55 (ba3561778e). Do not reintroduce a timeout here.
 		if err := consensusEngine.Start(context.Background(), true); err != nil {
-			m.Log.Error("failed to start consensus engine",
+			chainLog.Error("failed to start consensus engine",
 				log.Stringer("chainID", chainParams.ID),
 				log.Err(err))
 			return nil, fmt.Errorf("failed to start consensus engine: %w", err)
 		}
-		m.Log.Info("consensus engine started with Lux consensus (Photon → Wave → Focus)",
+		chainLog.Info("consensus engine started with Lux consensus (Photon → Wave → Focus)",
 			log.Stringer("chainID", chainParams.ID))
 		if blockBuilder != nil {
 			syncCtx, syncCancel := context.WithTimeout(context.Background(), vmStartupTimeout)
 			defer syncCancel()
 			lastAcceptedID, height, err := consensuschain.SyncStateFromVM(syncCtx, blockBuilder, consensusEngine.Transitive)
 			if err != nil {
-				m.Log.Warn("failed to sync consensus state from VM",
+				chainLog.Warn("failed to sync consensus state from VM",
 					log.Stringer("chainID", chainParams.ID),
 					log.Stringer("lastAccepted", lastAcceptedID),
 					log.Uint64("height", height),
 					log.Err(err))
 			} else {
-				m.Log.Info("synced consensus state from VM",
+				chainLog.Info("synced consensus state from VM",
 					log.Stringer("chainID", chainParams.ID),
 					log.Stringer("lastAccepted", lastAcceptedID),
 					log.Uint64("height", height))
@@ -1732,7 +1732,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 						// Context cancelled, exit gracefully
 						return
 					}
-					m.Log.Warn("WaitForEvent error, retrying",
+					chainLog.Warn("WaitForEvent error, retrying",
 						log.Stringer("chainID", chainParams.ID),
 						log.Err(err))
 					time.Sleep(time.Second)
@@ -1740,11 +1740,11 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 				}
 
 				// WaitForEvent now returns vm.Message directly
-				m.Log.Debug("[VM NOTIFICATION] WaitForEvent returned",
+				chainLog.Debug("[VM NOTIFICATION] WaitForEvent returned",
 					log.Stringer("chainID", chainParams.ID),
 					log.Uint32("messageType", uint32(msg.Type)))
 				toEngine <- msg
-				m.Log.Debug("[VM NOTIFICATION] Sent to toEngine channel",
+				chainLog.Debug("[VM NOTIFICATION] Sent to toEngine channel",
 					log.Stringer("chainID", chainParams.ID),
 					log.Uint32("msgType", uint32(msg.Type)))
 			}
@@ -1795,7 +1795,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}); ok {
 			chainID := chainParams.ID
 			bh.vmReady = func(ctx context.Context) error {
-				m.Log.Info("initial sync reached the frontier — transitioning VM to normal operation",
+				chainLog.Info("initial sync reached the frontier — transitioning VM to normal operation",
 					log.Stringer("chainID", chainID))
 				return stateVM.SetState(ctx, uint32(vm.Ready))
 			}
@@ -1818,6 +1818,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// poller. bootstrapDone is the REAL ready signal monitorBootstrap gates on. See
 		// bootstrap_sync.go.
 		go bh.runBootstrapThenPoll(pollerCtx)
+		// A chain that stops moving must be visible without reading a log. Shares the
+		// poller's lifetime, so it ends when the handler does. See observe.go.
+		go bh.observe(pollerCtx, chainMetricsReg)
 		createdChain = &chainInfo{
 			Name:    chainName,
 			VMID:    chainParams.VMID,
@@ -3066,6 +3069,7 @@ type blockHandler struct {
 	servingPeers set.Set[ids.NodeID]
 	servingSlots chan struct{}
 	pollerCancel context.CancelFunc // Cancels runFrontierPoller when the handler stops (RED LOW: no goroutine leak on chain re-creation)
+
 	diag         catchupDiag        // Per-outcome counters that gate the catch-up diagnostics (see catchupSample)
 
 	// signedVotesRequired is true exactly when this chain's engine AUTHENTICATES
@@ -4046,6 +4050,15 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// reported on the one summary line below: the per-entry detail is up to 256 lines a
 	// response, which is exactly the volume that buries the summary.
 	certAccepted, certRejected, voted, voteFailed, badFrame := 0, 0, 0, 0, 0
+	// deferred counts blocks verified and TRACKED, waiting for the fold to reach their
+	// height — the engine's one non-failure refusal. It was counted among the failures,
+	// so a node doing exactly the right thing read as a node being refused.
+	deferred := 0
+	// The applied head, read before and after the batch. Every other counter here says
+	// what this loop DID; only the head delta says whether the node MOVED. certAccepted
+	// once counted ledger-gate skips as successes — 253 per batch on a node applying
+	// nothing — and every diagnosis made from that number started from a lie.
+	_, appliedBefore, _ := b.vmLastAccepted(ctx)
 	// Where this batch starts, kept so a batch that lands NOTHING can still walk the
 	// request window down toward our tip. See the descent after the loop.
 	var oldestHeight uint64
@@ -4097,6 +4110,14 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		if isV2 && len(certBytes) > 0 {
 			// CERT path: finalize the gap block on its verified cert (no re-vote).
 			if err := b.engine.AcceptCatchupBlock(ctx, blockBytes, certBytes); err != nil {
+				if errors.Is(err, consensuschain.ErrCatchupDeferred) {
+					// Verified and tracked, finality deferred until the fold reaches its
+					// height — progress, not a refusal. Counting it as rejected is how a
+					// converging node logged hundreds of failures per batch.
+					deferred++
+					processed++
+					continue
+				}
 				certRejected++
 				note("cert-accept: " + err.Error())
 				b.logger.Debug("catch-up cert-accept rejected (skipping entry)",
@@ -4139,6 +4160,11 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 			blockBytes = entry
 		}
 		if err := b.engine.AcceptCatchupBlock(ctx, blockBytes, nil); err != nil {
+			if errors.Is(err, consensuschain.ErrCatchupDeferred) {
+				deferred++
+				processed++
+				continue
+			}
 			voteFailed++
 			note("track: " + err.Error())
 			b.logger.Debug("catch-up entry verified and tracked, awaiting a cert (or refused)",
@@ -4155,12 +4181,25 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// much of it LANDED, how much was refused, and the first reason it was refused. A
 	// response of 250 blocks that finalizes none reads identically to a response of one
 	// that finalizes it, until this line separates them.
+	//
+	// advanced is the one honest number: the applied-head delta across the batch. The
+	// other counters describe what this loop did with what it was served; only the
+	// delta says whether the NODE moved. A batch reporting hundreds accepted with
+	// advanced=0 is a node discarding its own recovery, whatever the other columns say.
+	_, appliedAfter, _ := b.vmLastAccepted(ctx)
+	var advanced uint64
+	if appliedAfter > appliedBefore {
+		advanced = appliedAfter - appliedBefore
+	}
 	b.logger.Info("processed context entries",
 		log.Stringer("from", nodeID),
 		log.Uint32("requestID", requestID),
 		log.Int("processed", processed),
+		log.Uint64("advanced", advanced),
+		log.Uint64("appliedHead", appliedAfter),
 		log.Int("certAccepted", certAccepted),
 		log.Int("certRejected", certRejected),
+		log.Int("deferred", deferred),
 		log.Int("voted", voted),
 		log.Int("voteFailed", voteFailed),
 		log.Int("badFrame", badFrame),
