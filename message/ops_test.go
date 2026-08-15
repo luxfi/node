@@ -49,6 +49,13 @@ func TestToConsensusOp_TableAlignedWithRouter(t *testing.T) {
 		router.GetContext:          GetAncestorsOp, // wire op is still GetAncestors
 		router.Context:             AncestorsOp,    // wire op is still Ancestors
 		router.Gossip:              GossipOp,       // α-of-K vote/cert transport
+		router.GetStateSummaryFrontier: GetStateSummaryFrontierOp,
+		router.StateSummaryFrontier:    StateSummaryFrontierOp,
+		router.GetAcceptedStateSummary: GetAcceptedStateSummaryOp,
+		router.AcceptedStateSummary:    AcceptedStateSummaryOp,
+		router.AppRequest:              RequestOp,  // AppRequest — EVM state-sync leaf/code fetch
+		router.AppResponse:             ResponseOp, // AppResponse
+		router.AppError:                ErrorOp,    // AppError
 	}
 
 	// EXHAUSTIVE: the table must name every router op exactly once. Pinned to

@@ -281,6 +281,20 @@ func ToConsensusOp(op Op) (byte, bool) {
 		return byte(router.Context), true // wire op is still Ancestors
 	case GossipOp:
 		return byte(router.Gossip), true // α-of-K vote/cert transport
+	case GetStateSummaryFrontierOp:
+		return byte(router.GetStateSummaryFrontier), true
+	case StateSummaryFrontierOp:
+		return byte(router.StateSummaryFrontier), true
+	case GetAcceptedStateSummaryOp:
+		return byte(router.GetAcceptedStateSummary), true
+	case AcceptedStateSummaryOp:
+		return byte(router.AcceptedStateSummary), true
+	case RequestOp:
+		return byte(router.AppRequest), true // AppRequest — EVM trie-leaf/code fetch
+	case ResponseOp:
+		return byte(router.AppResponse), true // AppResponse
+	case ErrorOp:
+		return byte(router.AppError), true // AppError
 	default:
 		return 0, false
 	}
