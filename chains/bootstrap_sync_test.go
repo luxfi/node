@@ -88,16 +88,6 @@ type bsTestVM struct {
 	acceptedByHeight map[uint64]ids.ID // canonical height→id index (coreth GetBlockIDAtHeight)
 	stored           map[ids.ID]bool   // present in the store but NOT (yet) accepted (gossiped-ahead)
 	lastAcc          ids.ID
-
-	// frozenLastAccepted models the REAL ZAP VM client (vms/rpcchainvm/zap/client.go before the
-	// option-b refresh): a fire-and-forget Accept advances the plugin's on-disk store (so GetBlock /
-	// the accepted map still advance) but NEVER the cached LastAccepted id, which stays frozen at the
-	// boot snapshot for the process life. When true, SetPreference advances the store but does NOT
-	// move lastAcc — the exact freeze red HIGH-1 traced. A node whose bootstrap height/caught-up
-	// signals read this frozen cache "unfreezes but stalls"; reading the consensus finalized ledger
-	// instead converges. The mock bsTestVM otherwise advanced lastAcc on SetPreference, which HID the
-	// bug (units passed while the real client did not advance).
-	frozenLastAccepted bool
 }
 
 func newBSVM(chain []*bsTestBlock) *bsTestVM {
@@ -171,11 +161,10 @@ func (m *bsTestVM) SetPreference(_ context.Context, id ids.ID) error {
 		m.acceptedByHeight[blk.height] = id
 	}
 	delete(m.stored, id) // accepting a stored-ahead block promotes it onto the finalized chain
-	if !m.frozenLastAccepted {
-		m.lastAcc = id
-	}
-	// else: model the ZAP client — the plugin (store/accepted above) advances, but the cached
-	// LastAccepted id stays FROZEN at the boot snapshot for the process life.
+	// The real ZAP client refreshes its cached LastAccepted on every successful Accept
+	// (vms/rpcchainvm/zap/client.go) — a live cache is the client contract the position
+	// rule stands on, so the mock honors it.
+	m.lastAcc = id
 	return nil
 }
 
@@ -652,56 +641,66 @@ func TestSampleAncestorBeacons_PrefersAheadBeacons(t *testing.T) {
 	}
 }
 
-// TestRED_FrozenVMLastAccepted_ConvergesOffFinalizedLedger is the regression guard for red
-// HIGH-1: the convergence-recognition must ride the IN-PROCESS consensus finalized ledger, NOT
-// the VM's LastAccepted cache — which the real ZAP client FREEZES at the boot snapshot for the
-// process life (a fire-and-forget Accept advances the plugin but never the cache).
+// TestRED_LedgerAheadOfApplied_ConvergesOffAppliedHead guards the wedge measured on five
+// live fleets: the consensus finalized ledger sits AHEAD of the VM's applied head, and a
+// loop positioned at the LEDGER believes it stands past blocks it has not executed. It
+// skips exactly the band it must fetch, reports full batches landed, and re-asks forever
+// — isBootstrapped stays false while every counter reads success.
 //
-// THE GAP THE PRIOR MOCK COULD NOT EXPRESS. bsTestVM.SetPreference advanced lastAcc, so every
-// unit "passed" while the real client did NOT advance it. Here frozenLastAccepted models the real
-// client faithfully: a STALE node boots at M, the descent finalizes M+1..N (the consensus
-// finalized ledger AND the store both advance), but VM.LastAccepted stays pinned at M. With the
-// pre-fix wiring (lastH / Accepted / BootstrapHeight read the frozen cache) the loop re-descends
-// every pass while AcceptBootstrapBlock no-ops each already-finalized block (advanced=false) →
-// ErrStalled: "unfreezes but stalls". The fix drives those signals off the finalized ledger (the
-// same source AcceptBootstrapBlock's contiguity guard trusts), so the node converges in ONE Run.
+// The seam is produced the way production produces it: the node finalizes through F,
+// then crash-restarts, and the VM reopens at an older commit M — the EVM persists on a
+// commit interval, so reopening below the finalized tip is its documented recovery
+// behavior, not an anomaly. The ledger says F; the VM says M; blocks M+1..F are decided
+// and unexecuted.
 //
-// RED-before / GREEN-after: with LastAccepted/Accepted/BootstrapHeight reading the frozen cache
-// this require.NoError FAILS (runBS returns ErrStalled); reading the finalized ledger it PASSES.
-func TestRED_FrozenVMLastAccepted_ConvergesOffFinalizedLedger(t *testing.T) {
+// The position rule under test: the loop stands at the LOWER of the two heads, and the
+// bootstrap accept path EXECUTES the band the ledger decided. The VM cache is live — the
+// real ZAP client refreshes LastAccepted on every successful Accept — so positioning on
+// it is honest.
+func TestRED_LedgerAheadOfApplied_ConvergesOffAppliedHead(t *testing.T) {
 	const N = 40
-	const M = 24 // a STALE node booted at height M; the descent must finalize M+1..N
+	const M = 24 // where the VM reopens after the crash
+	const F = 31 // where the ledger stands (finalized before the crash)
 	chain, byID := buildBSChain(N, -1)
 	vm := newBSVMAt(chain, M)
-	vm.frozenLastAccepted = true // the ZAP freeze: VM.LastAccepted stays pinned at M for the run
 	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 4)
+
+	// Finalize M+1..F through the real bootstrap accept path (ledger AND VM advance)…
+	for i := M + 1; i <= F; i++ {
+		require.NoError(t, bh.engine.AcceptBootstrapBlock(context.Background(), chain[i].bytes),
+			"finalize height %d before the crash", i)
+	}
+	// …then the crash: the VM reopens at its last durable commit, M. The ledger keeps F.
+	vm.lastAcc = chain[M].id
+	if _, h, set := bh.engine.FinalizedLedger(); !set || h != uint64(F) {
+		t.Fatalf("precondition: ledger at (%d,%v), want %d", h, set, F)
+	}
 
 	bh.net = &bsBeaconNet{bh: bh, chainID: chainID, connected: beacons, byID: byID, tip: chain[N], serveAncestors: true}
 	bh.msgCreator = bsMsgBuilder{}
 
 	ctx := context.Background()
-	require.NoError(t, runBS(t, bh),
-		"must converge off the advancing finalized ledger even though VM.LastAccepted is frozen")
 
-	// Test premise still holds: the VM cache NEVER moved (faithful to the real ZAP client).
-	frozen, err := vm.LastAccepted(ctx)
+	// Position must be the applied head, not the ledger — this is what makes the loop
+	// fetch the band instead of believing it already stands past it.
+	posID, posH, err := bh.LastAccepted(ctx)
 	require.NoError(t, err)
-	require.Equal(t, chain[M].id, frozen,
-		"premise: VM.LastAccepted must stay frozen at the boot height M — the bug only matters because it does")
+	require.Equal(t, chain[M].id, posID, "position must be the VM applied head, not the ledger")
+	require.Equal(t, uint64(M), posH)
 
-	// Yet every bootstrap signal advanced to the true frontier N off the consensus finalized ledger.
+	require.NoError(t, runBS(t, bh),
+		"must converge by EXECUTING the band the ledger decided and the VM never ran")
+
+	// The one honest number: the VM applied everything through the tip.
+	last, err := vm.LastAccepted(ctx)
+	require.NoError(t, err)
+	require.Equal(t, chain[N].id, last, "the applied head must reach the frontier — counters that say otherwise lie")
+
 	tip, h, set := bh.engine.FinalizedLedger()
 	require.True(t, set)
-	require.Equal(t, chain[N].id, tip, "consensus finalized ledger must have advanced to the frontier")
+	require.Equal(t, chain[N].id, tip)
 	require.Equal(t, uint64(N), h)
-
-	lastID, lastH, err := bh.LastAccepted(ctx)
-	require.NoError(t, err)
-	require.Equal(t, chain[N].id, lastID, "Chain.LastAccepted must read the advancing finalized tip, not the frozen cache")
-	require.Equal(t, uint64(N), lastH)
-	require.Equal(t, uint64(N), bh.BootstrapHeight(), "BootstrapHeight (monitorBootstrap progress) must advance off the ledger")
-	require.True(t, bh.Accepted(ctx, chain[N].id), "caught-up oracle must recognize the finalized frontier")
-	// And a block ABOVE the finalized head is still correctly NOT accepted (the freeze direction).
+	require.True(t, bh.Accepted(ctx, chain[N].id), "caught-up oracle must recognize the frontier")
 	require.False(t, bh.Accepted(ctx, ids.GenerateTestID()), "an unknown/ahead id must never read as accepted")
 }
 

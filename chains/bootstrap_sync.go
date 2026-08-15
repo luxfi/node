@@ -917,6 +917,21 @@ func (b *blockHandler) LastAccepted(ctx context.Context) (ids.ID, uint64, error)
 func (b *blockHandler) finalizedTip(ctx context.Context) (ids.ID, uint64, error) {
 	if b.engine != nil {
 		if tip, h, set := b.engine.FinalizedLedger(); set {
+			// Position is the LOWER of the two heads. The ledger records what a quorum
+			// decided; the VM records what this node executed, and finalization can fold
+			// the ledger across blocks the VM never ran. A loop positioned at the ledger
+			// then believes it stands past blocks it has not executed, skips exactly the
+			// band it must fetch, and re-asks forever while reporting full batches landed.
+			//
+			// Reading the VM here used to be forbidden because its ZAP client froze
+			// LastAccepted at Initialize; the client refreshes it on every successful
+			// Accept now (vms/rpcchainvm/zap/client.go), so the applied head is live —
+			// that refresh is the contract this rule stands on. A VM naming NO block
+			// still reports nothing — absence is not a reading of zero — so only a VM
+			// that names a block lowers the position.
+			if id, applied, err := b.vmLastAccepted(ctx); err == nil && id != ids.Empty && applied < h {
+				return id, applied, nil
+			}
 			return tip, h, nil
 		}
 	}
