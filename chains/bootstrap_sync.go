@@ -366,6 +366,11 @@ func repliedCovers(replies []BeaconReply, connected []ids.NodeID) bool {
 // A non-beacon peer, a single peer, or any sub-⅔-stake set can NEVER reach FrontierNamed,
 // so a forged chain can never be the thing an empty/behind node syncs to.
 func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.FrontierStatus) {
+	// A measurement from the previous round says nothing about this one, and a round that
+	// never reaches the floor check (no beacon set yet, no transport, P-chain still loading)
+	// measures nothing at all. Dropping it here is what keeps runInitialSync from reporting a
+	// count that some earlier round took.
+	b.shortfall.Store(nil)
 	weights, _, haveBeacons := b.beaconWeights()
 	if !haveBeacons {
 		if b.expectsStakedBeacons {
@@ -524,7 +529,15 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// Fewer than MinResponses configured beacons have RESPONDED (and not provably caught-up under
 		// full connectivity) — not a partition-capture-safe quorum yet. More may connect: WAIT (bounded
 		// by the loop's ConnectDeadline, then fail safe). Never false-complete; never trust the few.
+		//
+		// This is the only place the shortfall is known: the status this returns carries a state and
+		// no numbers, and the loop above it fails safe on a bare sentinel. So record it for
+		// runInitialSync, which is where the wait an operator asks about is declared.
+		responders, responderWeight, _, _ := policy.tallyResponders(replies)
+		short := policy.shortfall(responders, responderWeight)
+		b.shortfall.Store(&short)
 		b.logger.Debug("bootstrap frontier: CONNECTING (below the MinResponses floor)",
+			log.String("shortfall", short),
 			log.Int("beaconSetSize", len(weights)),
 			log.Int("connected", len(connected)),
 			log.Int("replies", len(replies)))
@@ -1161,15 +1174,25 @@ func (b *blockHandler) BootstrapFailure() error {
 	return nil
 }
 
-// BootstrapConnecting reports whether initial sync is in its bounded connectivity-RETRY wait — a
-// transient beacon-quorum-unreachable fail-safe it is re-attempting (the SELF-HEAL path). The node
-// is correctly failing safe DOWN (VM in Bootstrapping, serving nothing as head) and waiting for the
-// quorum to return; the network cannot make progress without it. monitorBootstrap's no-progress
-// watchdog polls this so it does NOT force-STOP a node that is deliberately waiting — which, given
-// the K8s probes only poll the always-green /v1/health/liveness, would be a permanent brick. It is
-// the discriminator between "stuck on a served gap" (a real stall → stop) and "waiting for the
-// quorum" (self-heal → keep waiting). Distinct from BootstrapFailed (a terminal/structural fail).
-func (b *blockHandler) BootstrapConnecting() bool { return b.bootstrapConnecting.Load() }
+// BootstrapWait reports WHY initial sync is in its bounded connectivity-RETRY wait — a transient
+// beacon-quorum-unreachable fail-safe it is re-attempting (the SELF-HEAL path) — and empty when it
+// is not waiting. The node is correctly failing safe DOWN (VM in Bootstrapping, serving nothing as
+// head) and waiting for the quorum to return; the network cannot make progress without it.
+// monitorBootstrap's no-progress watchdog polls this so it does NOT force-STOP a node that is
+// deliberately waiting — which, given the K8s probes only poll the always-green
+// /v1/health/liveness, would be a permanent brick. It is the discriminator between "stuck on a
+// served gap" (a real stall → stop) and "waiting for the quorum" (self-heal → keep waiting).
+// Distinct from BootstrapFailed (a terminal/structural fail).
+//
+// Whether the node is waiting and why it is waiting are one question, so they are one value:
+// asking twice admits an answer where the two halves disagree, and the reason is what the
+// operator came for anyway.
+func (b *blockHandler) BootstrapWait() string {
+	if w := b.bootstrapWait.Load(); w != nil {
+		return *w
+	}
+	return ""
+}
 
 // BootstrapHeight reports the node's current ACCEPTED height — the PROGRESS signal
 // monitorBootstrap uses (H2) to tell a slow-but-advancing sync (reset the stall timer) from a
@@ -1313,7 +1336,7 @@ func (b *blockHandler) runBootstrapThenPoll(ctx context.Context) {
 // BOUNDED: it WAITS for beacon connectivity (re-sampling every RetryInterval up to ConnectDeadline)
 // then returns rather than hanging. A TRANSIENT connectivity fail-safe (ErrBeaconsUnreachable /
 // ErrNoBeaconQuorum — the quorum was not reachable this attempt) is RE-ATTEMPTED (bootstrapMaxAttempts
-// ≤ 0 ⇒ until the quorum returns or shutdown), with bootstrapConnecting set so monitorBootstrap's
+// ≤ 0 ⇒ until the quorum returns or shutdown), with the wait reason published so monitorBootstrap's
 // no-progress watchdog treats it as a deliberate WAIT, not a stall: the node stays in Bootstrapping
 // (serving nothing as head, NEVER live at the stale height) and CONVERGES the instant the quorum
 // returns — the in-process self-heal the K8s probes do NOT provide (they poll the always-green
@@ -1377,7 +1400,7 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 			// building/serving while the cert-less accept path is still open. FinishBootstrap is
 			// idempotent and void; if the VM transition then fails we fail safe (record the reason,
 			// return false). A VM that REFUSES normal-op is a real failure: do NOT mark ready.
-			b.bootstrapConnecting.Store(false)
+			b.bootstrapWait.Store(nil)
 			b.engine.FinishBootstrap()
 			if verr := b.transitionVMReady(ctx); verr != nil {
 				b.logger.Error("chain reached the frontier but VM SetState(Ready) failed — NOT marking bootstrapped", log.Err(verr))
@@ -1390,23 +1413,31 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 		}
 
 		if ctx.Err() != nil {
-			b.bootstrapConnecting.Store(false)
+			b.bootstrapWait.Store(nil)
 			return false // shutdown — not a bootstrap failure
 		}
 		lastErr = err
 
 		// Decide whether to RE-ATTEMPT. A transient connectivity fail-safe self-heals when the
 		// quorum returns (retry); a structural failure or an exhausted attempt bound does not (break
-		// → surface). While we wait between attempts, mark bootstrapConnecting so the monitor's
+		// → surface). While we wait between attempts, publish the reason so the monitor's
 		// no-progress watchdog treats this as a deliberate quorum WAIT, not a stall — a node failing
 		// safe DOWN and waiting must not be force-stopped (that is the brick this avoids).
 		boundReached := b.bootstrapMaxAttempts > 0 && attempt >= b.bootstrapMaxAttempts
 		if boundReached || !isRetryableBootstrapFailure(err) {
 			break
 		}
-		b.bootstrapConnecting.Store(true)
+		// The wait is declared here because this is where it is decided. bs.Run fails safe on a
+		// bare sentinel, so the counts come from the last round that measured them; without them
+		// this says only that a quorum is missing, which reads the same whether five beacons
+		// answered or none did.
+		wait := "waiting for the beacon quorum"
+		if s := b.shortfall.Load(); s != nil {
+			wait += ": " + *s
+		}
+		b.bootstrapWait.Store(&wait)
 		if perr := b.pauseBootstrapRetry(ctx); perr != nil {
-			b.bootstrapConnecting.Store(false)
+			b.bootstrapWait.Store(nil)
 			return false // shutdown during the inter-attempt backoff
 		}
 	}
@@ -1415,7 +1446,7 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 	// transition to normal operation — leaving the VM in Bootstrapping is the fail-safe: it does not
 	// serve / build at the stale local height (that was the freeze defect). Record the reason so
 	// monitorBootstrap surfaces it (F5).
-	b.bootstrapConnecting.Store(false)
+	b.bootstrapWait.Store(nil)
 	b.logger.Warn("chain initial sync did not reach the frontier — VM stays bootstrapping (NOT serving normal-op), failing safe",
 		log.Err(lastErr))
 	b.bootstrapFailed.Store(&bsFailure{err: lastErr})

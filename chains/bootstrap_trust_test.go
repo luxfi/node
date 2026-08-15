@@ -187,6 +187,44 @@ func TestBootstrapTrust_B_OneBeaconCaptureRejected(t *testing.T) {
 		"1 of 5 reachable must be REJECTED (capture) — below the MinResponses floor")
 }
 
+// TestBootstrapTrust_ShortfallNamesTheBindingCondition: the floor has two conditions, and the
+// refusal has to name the one that actually bound. Reporting the count when it is the weight that
+// binds prints a contradiction — five of six responded, need four — and sends the reader after
+// beacons that are already answering. The numbers ride out on the error, which is where everything
+// downstream reads them from.
+func TestBootstrapTrust_ShortfallNamesTheBindingCondition(t *testing.T) {
+	beacons := nodeIDs(6)
+	frontier := ids.GenerateTestID()
+
+	// COUNT binds: 3 of 6 responded against a majority floor of 4.
+	byCount := &BootstrapPolicy{TrustedBeacons: equalBeacons(beacons, equalStake)}
+	_, err := byCount.AcceptsFrontier(context.Background(), []BeaconReply{
+		reply(beacons[0], frontier, equalStake),
+		reply(beacons[1], frontier, equalStake),
+		reply(beacons[2], frontier, equalStake),
+	})
+	require.ErrorContains(t, err, "3 of 6 beacons responded, need 4",
+		"the refusal must carry the responder count, the configured set size, and the floor")
+
+	// WEIGHT binds: 5 of 6 responded (clearing the count floor of 4) but carry less stake than
+	// MinResponseWeight demands. The count is satisfied, so naming it would state a falsehood.
+	byWeight := &BootstrapPolicy{
+		TrustedBeacons:    equalBeacons(beacons, equalStake),
+		MinResponseWeight: 6*equalStake + 1, // unreachable by any subset — weight is what binds
+	}
+	_, err = byWeight.AcceptsFrontier(context.Background(), []BeaconReply{
+		reply(beacons[0], frontier, equalStake),
+		reply(beacons[1], frontier, equalStake),
+		reply(beacons[2], frontier, equalStake),
+		reply(beacons[3], frontier, equalStake),
+		reply(beacons[4], frontier, equalStake),
+	})
+	require.ErrorContains(t, err, "stake",
+		"when weight is what binds, the refusal must say so rather than name a count that was met")
+	require.NotContains(t, err.Error(), "5 of 6 beacons responded",
+		"naming a count that IS satisfied reads as a contradiction and misdirects the reader")
+}
+
 // ----- C: TWO-BEACON PARTITION REJECTED -------------------------------------
 
 // TestBootstrapTrust_C_TwoBeaconPartitionRejected: 5 configured, 2 reachable AGREEING. Two beacons
