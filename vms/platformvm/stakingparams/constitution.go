@@ -6,6 +6,7 @@ package stakingparams
 import (
 	"time"
 
+	"github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/reward"
 )
@@ -93,14 +94,18 @@ var MainnetRate = Rate{
 
 // MainnetHistory is the policy in force on Lux mainnet, oldest first. The
 // first entry is what the chain was born with; the second raises the validator
-// floor to 1,000,000 LUX from its activation — the same floor testnet and local
-// have always had, and the one that makes an operator holding 50M a fifty-fold
-// participant rather than a fifty-thousand-fold one. Anyone bonding at the old
-// floor before then is judged on the terms they agreed to. Every node reads the
-// same activation, which is what makes the floor change at one height everywhere.
+// floor to 1,000,000 LUX — the same floor testnet and local have always had,
+// and the one that makes an operator holding 50M a fifty-fold participant
+// rather than a fifty-thousand-fold one. Anyone bonding at the old floor before
+// the activation is judged on the terms they agreed to.
+//
+// The activation is genesis.Activation, the one instant every mainnet rule
+// turns on at. It is defined once, in genesis, and read here — so the staking
+// floor cannot activate at a moment the precompile schedule does not know.
+
 var MainnetHistory = History{
 	{Activation: 0, Params: MainnetGenesis},
-	{Activation: 1787443200, Params: Params{ // 2026-08-23T00:00:00Z
+	{Activation: genesis.Activation, Params: Params{
 		MinValidatorStake: 1_000_000 * Lux,
 		MaxValidatorStake: MainnetGenesis.MaxValidatorStake,
 		MinStakeDuration:  MainnetGenesis.MinStakeDuration,
