@@ -32,8 +32,8 @@ func (s *catchupSpy) requestContext(_ context.Context, from ids.NodeID, blockID 
 // stranded-follower bug: node never set netCfg.Catchup, so the engine's
 // requestCatchup hit a nil interface and a follower that fell behind during
 // consensus never fetched the missing ancestors — it looped on an unfinalizable
-// orphan forever (observed live: mainnet luxd-0/2 stuck at 1082780 while peers
-// reached 1082793). The wire must (a) be nil-safe before its handler is
+// orphan forever, falling further behind the peers it can still hear with
+// nothing able to converge it. The wire must (a) be nil-safe before its handler is
 // late-bound and (b) route the engine's RequestAncestors to the handler's
 // GetAncestors transport (requestContext), once, for the right block and peer.
 func TestNetworkCatchup_BridgesEngineSignalToWire(t *testing.T) {

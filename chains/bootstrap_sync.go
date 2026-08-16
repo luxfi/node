@@ -83,12 +83,12 @@ const (
 	// HEURISTIC ("a ⅔-common height more than this far below the highest tip is not a healthy
 	// bleeding-edge split"). That heuristic is true for a LIVE chain and FALSE for a HALTED
 	// one, where the skew between a straggler and a node that ran on alone is arbitrarily large
-	// and perfectly healthy — no fork, just a stopped chain. Conflating the three WEDGED
-	// mainnet 96369: responders were split 1098726 (1 node) / 1098191 (2 nodes), 1098191 IS an
-	// ancestor of 1098726, and the ⅔-of-responder floor would have named it — but the gap was
-	// 535 blocks, the single 256-block fetch never reached down far enough for the high tip to
-	// vouch for it, and the tally named nothing on every retry, forever. Recovery from a halt
-	// is exactly when this path matters most, and it was disabled precisely then.
+	// and perfectly healthy — no fork, just a stopped chain. Conflating the three WEDGES exactly
+	// the split a halt produces: responders divide between a high tip and a low one that IS an
+	// ancestor of it, the ⅔-of-responder floor would name the low block, but when the gap exceeds
+	// one fetch the high tip never reaches down far enough to vouch for it and the tally names
+	// nothing on every retry, forever. Recovery from a halt is exactly when this path matters
+	// most, and it was disabled precisely then.
 	// The total budget is now maxNamingDepth; the health heuristic is gone.
 	bootstrapNamingWindow = 256
 	// maxNamingAnchors bounds how many DISTINCT reported tips the ancestor-tolerant tally will
@@ -149,9 +149,9 @@ func (b *blockHandler) beaconWeights() (weights map[ids.NodeID]uint64, total uin
 //
 // The tracking filter matches against b.networkID (the NET the beacon set is anchored to —
 // constants.PrimaryNetworkID for native chains, the L1 net ID for sovereign chains), NOT
-// b.chainID. This is the mainnet-canary fix: a peer advertises the NETS it tracks in its
-// handshake (network/peer/peer.go adds constants.PrimaryNetworkID plus every tracked L1 net
-// ID to peer.Info.TrackedChains) — it NEVER advertises an individual native chain ID like
+// b.chainID. The filter must match what a peer actually advertises: a peer names the NETS it
+// tracks in its handshake (network/peer/peer.go adds constants.PrimaryNetworkID plus every
+// tracked L1 net ID to peer.Info.TrackedChains) — it NEVER advertises an individual native chain ID like
 // the C-Chain's. Filtering on b.chainID therefore matched ZERO real peers, so connectedStake
 // stayed 0, FrontierTip reported FrontierConnecting forever, and a healthy stale node failed
 // safe at the connect deadline instead of converging. Matching on b.networkID counts exactly
@@ -188,11 +188,10 @@ func (b *blockHandler) connectedBeacons(weights map[ids.NodeID]uint64) []ids.Nod
 	// matches nothing produces zero connected stake forever, however many peers are
 	// genuinely there.
 	//
-	// That is not hypothetical: it already happened once with b.chainID (see the note
-	// above), and it happened again on lux-devnet 2026-08-13 — two validators sat at
-	// their frozen heights for hours reporting numPeers: 5 while FrontierTip answered
-	// FrontierConnecting on every pass, because the beacon set was populated and the
-	// filter still admitted nobody.
+	// That is not hypothetical: the b.chainID case above (see the note there) is exactly
+	// it. A validator sits frozen at its own height reporting a healthy peer count while
+	// FrontierTip answers FrontierConnecting on every pass, because the beacon set is
+	// populated and the filter still admits nobody.
 	//
 	// So: if the filter admits NO ONE while staked beacons are demonstrably connected,
 	// trust the connection. C1 is preserved either way — a peer is admitted only if it
@@ -201,9 +200,9 @@ func (b *blockHandler) connectedBeacons(weights map[ids.NodeID]uint64) []ids.Nod
 	// leaves the partial one, which is worse because it looks like it worked: some
 	// beacons pass, `connected` is non-empty, the rescue never fires, and a peer that
 	// holds exactly the ancestry we are missing is dropped for the life of the
-	// process. Measured on a devnet node that could not rejoin — connected to a peer
-	// at the tip, sampling three peers that were all behind it, and reporting "no peer
-	// served the missing ancestry" while never once asking the one that could.
+	// process. A node connected to a peer at the tip then samples only peers behind it
+	// and reports that no peer served the missing ancestry, without ever once asking
+	// the one that could.
 	//
 	// So: peers that advertise the chain come first, and the remaining staked beacons
 	// follow. Asking a peer that turns out not to serve costs one empty reply; not
@@ -348,10 +347,10 @@ func repliedCovers(replies []BeaconReply, connected []ids.NodeID) bool {
 }
 
 // FrontierTip implements chainbootstrap.BlockSource. It returns a FrontierStatus that
-// decomplects the THREE reasons a tip may not be named — the fix for the mainnet canary
-// where a freshly-booted STALE node, asking the frontier BEFORE any beacon had connected,
-// concluded "caught up" at its local stale height (a single ok=false meant both "no beacon
-// quorum reachable yet" and "nothing ahead — done"):
+// decomplects the THREE reasons a tip may not be named. A single ok=false meant both "no
+// beacon quorum reachable yet" and "nothing ahead — done", so a freshly-booted STALE node
+// asking the frontier BEFORE any beacon had connected concluded "caught up" at its local
+// stale height:
 //
 //   - FrontierNoBeacons   — no beacon set configured (single-node / dev). Nothing to sync to.
 //   - FrontierConnecting  — beacons configured but not enough stake CONNECTED yet to even
@@ -395,7 +394,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		return ids.Empty, chainbootstrap.FrontierConnecting
 	}
 
-	// THE CANARY ROOT-CAUSE GATE. A native chain's beacon set is the STAKED primary-network
+	// THE PARTIAL-SET GATE. A native chain's beacon set is the STAKED primary-network
 	// validator set the P-chain populates as it replays its blocks (genesis stakers + every later
 	// AddValidatorTx). This bootstrap goroutine starts right after the chain's VM.Initialize — NOT
 	// after the P-chain has finished syncing — so without this gate FrontierTip can run while that
@@ -403,8 +402,9 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 	// stake-majority floor (total/2+1) is fail-secure only when `total` is the TRUE full-set stake,
 	// and under a partial denominator a degenerate set of at-or-below responders (the genuinely-ahead
 	// producers not yet loaded / not yet connected) clears the floor and the decision below
-	// false-completes the node at its stale local height — the mainnet luxd-2 freeze. WAIT (→ the
-	// loop's ConnectDeadline → fail safe) until the staked set is fully loaded, so every branch below
+	// false-completes the node at its stale local height, leaving a validator serving and voting
+	// behind the network with nothing left converging it. WAIT (→ the loop's ConnectDeadline →
+	// fail safe) until the staked set is fully loaded, so every branch below
 	// judges the TRUE full validator set. Deadlock-free: the P-chain converges independently from its
 	// own configured CustomBeacons; a native chain only waits the bounded extra moment for it.
 	if b.expectsStakedBeacons && b.primaryNetworkReady != nil && !b.primaryNetworkReady() {
@@ -440,10 +440,10 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 	policy := b.bootstrapPolicy(weights)
 	replies := b.collectFrontierReplies(ctx, connected, weights)
 
-	// INSTRUMENTATION (canary ground truth). Per attempt, record the FULL beacon-set size + total
-	// stake (the floor DENOMINATOR — a partial value here is the smoking gun), the connected count,
-	// and every reply's tip + LOCALLY-resolved height + held-or-not. Debug level so production is
-	// silent; set the chain's log level to Debug on the canary to capture the real decision data.
+	// INSTRUMENTATION (ground truth for the decision below). Per attempt, record the FULL
+	// beacon-set size + total stake (the floor DENOMINATOR — a partial value here is the smoking
+	// gun), the connected count, and every reply's tip + LOCALLY-resolved height + held-or-not.
+	// Debug level so production is silent; raise the chain's log level to Debug to capture it.
 	b.logFrontierInputs(weights, connected, replies)
 
 	lastID, lastH, lastErr := b.LastAccepted(ctx)
@@ -475,7 +475,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 			log.Stringer("tip", frontier.ID),
 			log.Uint64("namedHeight", frontier.Height),
 			log.Int("responders", frontier.Responders),
-			// ACCEPTED, not merely held: a gossiped-but-unaccepted frontier (the freeze) logs
+			// ACCEPTED, not merely held: a gossiped-but-unaccepted frontier logs
 			// accepted=false here, so the loop's Accepted()-shortcut DESCENDS instead of completing
 			// at the stale tip. The diagnostic now distinguishes "in the store" from "finalized".
 			log.Bool("accepted", b.Accepted(ctx, frontier.ID)))
@@ -508,8 +508,9 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// while never converging. That is the failure this whole gate exists to make
 		// impossible, arriving through the one input nobody checked.
 		//
-		// Measured: a validator reporting bootstrapped with its ledger at 19008, its EVM
-		// at 18784, and the network at 19010 — live, polling normally, 226 blocks behind.
+		// A validator can therefore report itself bootstrapped with its ledger at the
+		// network's height and its VM hundreds of blocks below it — live, polling
+		// normally, and behind the whole time.
 		//
 		// So going live additionally requires the VM to have EXECUTED to the head we are
 		// claiming. This can only ever REFUSE, never permit: a node that has genuinely
@@ -578,8 +579,8 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// and retrying polls a fresh sample. ErrNamingIncomplete is a statement about
 		// our own budget: the descent ran out mid-walk, its cursors are saved, and the
 		// next round resumes DEEPER. Reported as no-quorum, a wide gap looks like a
-		// permanent disagreement and the descent restarts at the tip every round, which
-		// is how a 535-block gap wedged mainnet forever.
+		// permanent disagreement and the descent restarts at the tip every round, so a
+		// gap wider than one attempt's budget is never crossed.
 		if errors.Is(err, ErrNamingIncomplete) {
 			deepest := 0
 			for _, prog := range b.namingProgress {
@@ -601,12 +602,12 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 }
 
 // logFrontierInputs records, at Debug level, the raw inputs to one FrontierTip decision — the
-// canary ground-truth instrumentation. The FULL beacon-set size + total stake is the floor's
+// ground truth for it. The FULL beacon-set size + total stake is the floor's
 // DENOMINATOR: if it is a PARTIAL value (the staked set still loading), the stake-majority floor
 // is non-representative and a degenerate at-or-below responder subset can false-complete the node
 // — so logging the denominator alongside every reply's tip + locally-resolved height + held-or-not
 // is exactly what distinguishes "caught up" from "tricked by a partial set". Silent in production
-// (Debug); enable Debug on the chain to capture it on the canary.
+// (Debug); raise the chain's log level to Debug to capture it.
 func (b *blockHandler) logFrontierInputs(weights map[ids.NodeID]uint64, connected []ids.NodeID, replies []BeaconReply) {
 	var total uint64
 	for _, w := range weights {
@@ -620,7 +621,7 @@ func (b *blockHandler) logFrontierInputs(weights map[ids.NodeID]uint64, connecte
 			log.Uint64("beaconWeight", r.Weight),
 			// ACCEPTED (on our finalized chain), not merely present in the store: a beacon tip we
 			// hold-but-have-not-accepted logs accepted=false with resolvedHeight 0 — the smoking gun
-			// that distinguishes a genuine catch-up from the stored-but-unaccepted freeze.
+			// that distinguishes a genuine catch-up from a stored-but-unaccepted tip.
 			log.Bool("accepted", accepted),
 			log.Uint64("resolvedHeight", h))
 	}
@@ -1069,8 +1070,8 @@ func (b *blockHandler) Accepted(ctx context.Context, id ids.ID) bool {
 // acceptedHeight is the ACCEPTANCE oracle injected into BootstrapPolicy.CaughtUp (as heightOf):
 // it returns id's height and TRUE iff the node has ACCEPTED id (id is on the node's finalized
 // chain), and (0,false) when id is merely PRESENT IN THE STORE but NOT accepted — the store-vs-
-// acceptance distinction the luxd-2 freeze hinged on. CaughtUp uses it to (c) require the node to
-// have ACCEPTED every reported tip and (b) read those tips' heights to confirm none is above the
+// acceptance distinction the caught-up decision hinges on. CaughtUp uses it to (c) require the
+// node to have ACCEPTED every reported tip and (b) read those tips' heights to confirm none is above the
 // node's accepted height; a stored-but-unaccepted tip now makes CaughtUp FALSE (the node is behind
 // in ACCEPTANCE → it syncs). It NEVER fetches over the network — an unaccepted/unheld tip simply
 // makes the node not-caught-up, the safe direction.
@@ -1265,11 +1266,10 @@ func (b *blockHandler) deliverBootstrapAccepted(requestID uint32, nodeID ids.Nod
 // reply on this chain". The live cert catch-up path issues its own requests
 // concurrently — that is how a node which is merely behind fetches the block a
 // vote or cert referenced. Claiming a reply this lane never asked for strands such
-// a node permanently: it fetches the right blocks and applies none of them. Devnet
-// luxd-0 sat at 12639 against peers at 16933, logging "catch-up response consumed
-// by initial sync — the live cert path did not see it" over 1000-block replies it
-// had successfully fetched. A reply belongs to this lane only if this lane asked
-// for it.
+// a node permanently: it fetches the right blocks and applies none of them, logging
+// that the catch-up response was consumed by initial sync over full replies it had
+// just successfully fetched, while it stays thousands of blocks behind its peers.
+// A reply belongs to this lane only if this lane asked for it.
 func (b *blockHandler) deliverBootstrapAncestors(nodeID ids.NodeID, requestID uint32, data []byte) bool {
 	if !b.bsActive.Load() {
 		return false

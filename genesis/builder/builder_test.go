@@ -329,9 +329,10 @@ func TestFromConfigExplicitStakers(t *testing.T) {
 	}
 }
 
-// TestFromConfigExplicitStakersNoStakedFunds reproduces the bug: when
-// InitialStakedFunds is empty but stakers have explicit Weight, the validators
-// end up with empty StakeOuts and the P-Chain rejects them.
+// TestFromConfigExplicitStakersNoStakedFunds locks the rule for the config
+// shape where InitialStakedFunds is empty but stakers carry an explicit
+// Weight: those validators must still be emitted with stake outputs. With
+// empty StakeOuts the P-Chain rejects them.
 func TestFromConfigExplicitStakersNoStakedFunds(t *testing.T) {
 	require := require.New(t)
 

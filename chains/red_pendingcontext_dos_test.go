@@ -107,10 +107,10 @@ func TestPendingContext_StaleEntriesReaped(t *testing.T) {
 // -- so it never takes that path: the dedup early-return fires first, every time,
 // and the sweep is unreachable for the only blockID that matters.
 //
-// Measured on testnet luxd-3: one slot held 10.9 HOURS past a 30s TTL, 38k
-// suppressions deep, while the node sat 1738 blocks behind a live chain. The
-// suppression was self-sustaining -- the wedge kept the node asking for the same
-// block, and asking for the same block is what kept it wedged.
+// So the suppression is unbounded in time: the slot for that block sits expired
+// indefinitely past pendingContextTTL, since only a request for some OTHER block
+// would sweep it. It is also self-sustaining -- the wedge keeps the node asking
+// for the same block, and asking for the same block is what keeps it wedged.
 //
 // Fails against the pre-fix code: sends stays 1, because the expired slot
 // suppresses forever.

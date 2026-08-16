@@ -6,11 +6,10 @@
 // symbol introduced by the fix), so it fails on the unfixed code and passes on the
 // fixed code without being tautological.
 //
-// The production failure it reproduces (lux-devnet luxd-3, C-Chain, verbatim):
+// The failure it reproduces, in the shape the node reports it:
 //
 //	VM initialization failed error="failed to repair accepted chain by height:
-//	proposervm finality index (height 6, id ns5qGN4i…) is BEHIND the inner VM tip
-//	(height 98, id TUTR74eA…)" chainID=21HieZng…
+//	proposervm finality index (height N) is BEHIND the inner VM tip (height M)"
 //	non-critical chain failed to initialize … chainAlias=C
 //
 // THE MECHANISM. Every post-fork accept commits the envelope, its height index
@@ -215,8 +214,8 @@ func indexHeight(t *testing.T, vm *VM) uint64 {
 //
 // UNFIXED, getBlock hands back a preForkBlock, its Accept is a silent no-op on the
 // outer index, the inner VM advances to 6, and this test fails on (1) — printing
-// the same divergence luxd-3 died of. FIXED, the pre-fork construction/accept is
-// refused, nothing diverges, and both assertions hold.
+// the divergence that makes the next boot fatal. FIXED, the pre-fork
+// construction/accept is refused, nothing diverges, and both assertions hold.
 //
 // It uses NO symbol introduced by the fix, so it is a genuine before/after probe.
 func TestFinalityIndexLag_IndexMustNeverFallBehindInnerTip(t *testing.T) {
@@ -246,7 +245,7 @@ func TestFinalityIndexLag_IndexMustNeverFallBehindInnerTip(t *testing.T) {
 	// ASSERTION 1 — the invariant.
 	if got := indexHeight(t, vm); got < ic.tip {
 		// Errorf, not Fatalf: assertion 2 below must also run, so one failing run
-		// shows the WHOLE production symptom chain (lag now -> dead chain at boot).
+		// shows the WHOLE symptom chain (lag now -> dead chain at boot).
 		t.Errorf("FINALITY INDEX LAG REPRODUCED: index is at height %d but the inner VM tip is %d "+
 			"(fork height %d). An accept advanced the inner VM without writing the proposervm index; "+
 			"this node is now unbootable", got, ic.tip, forkHeight)

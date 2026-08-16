@@ -76,7 +76,8 @@ const (
 // bsTestVM models a node VM with the REAL store-vs-acceptance distinction (the prior mock
 // conflated them — GetBlock returned only accepted blocks). It can PARSE any block on the chain
 // (the wire codec is deterministic). It GETS a block that is either ACCEPTED or merely STORED (a
-// block GOSSIPED into the store ahead of acceptance — the luxd-2 freeze precondition). `accepted`
+// block GOSSIPED into the store ahead of acceptance — the state a node must not read as being
+// caught up, since the block is present without being finalized). `accepted`
 // is the FINALIZED chain; `acceptedByHeight` is the canonical height→id index the real coreth VM
 // maintains (GetBlockIDAtHeight); `stored` holds present-but-unaccepted blocks. SetPreference
 // marks a block accepted — the engine calls it right after Accept, so LastAccepted/the index
@@ -123,8 +124,8 @@ func newBSVMAt(chain []*bsTestBlock, m int) *bsTestVM {
 }
 
 // store marks blocks PRESENT in the block store WITHOUT accepting them — models blocks GOSSIPED
-// into the store ahead of acceptance (the luxd-2 freeze precondition: GetBlock returns them, but
-// they are not on the accepted chain and not in the canonical height index).
+// into the store ahead of acceptance: GetBlock returns them, but they are not on the accepted
+// chain and not in the canonical height index, so presence alone must never read as progress.
 func (m *bsTestVM) store(blocks ...*bsTestBlock) {
 	for _, b := range blocks {
 		m.stored[b.id] = true
@@ -233,7 +234,7 @@ type bsBeaconNet struct {
 	// answers about its own chain without serving anything.
 	withhold set.Set[ids.ID]
 
-	// connectAfterCalls models the CANARY boot race over the REAL transport: while
+	// connectAfterCalls models the boot race over the REAL transport: while
 	// peerInfoCalls ≤ connectAfterCalls the beacons are reported as NOT yet connected (so
 	// FrontierTip must return FrontierConnecting and the loop WAITS); afterward they connect.
 	connectAfterCalls int
@@ -293,7 +294,7 @@ func (n *bsBeaconNet) nodeAcceptedHeight() uint64 {
 // native chain ID. So beacons report the handler's networkID (the NET the beacon set is
 // anchored to), the value connectedBeacons now filters on. The pre-fix code filtered on the
 // chain ID, which no real peer advertises; the old mock reported set.Of(n.chainID), masking
-// that bug. Reporting set.Of(networkID) is what makes the canary-convergence tests meaningful.
+// that bug. Reporting set.Of(networkID) is what makes the convergence tests below meaningful.
 func (n *bsBeaconNet) PeerInfo(nodeIDs []ids.NodeID) []peer.Info {
 	n.peerInfoCalls++
 	// gate (atomic) is the dynamic eclipse: when set, NO beacon is reported connected this round.
@@ -371,9 +372,9 @@ func (n *bsBeaconNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.Node
 			if n.serveAncestors {
 				n.bh.deliverBootstrapAncestors(id, m.requestID, n.frame(m.blockID))
 			} else if n.ancestorsEmpty {
-				// The peer REPLIES but serves NOTHING — the cross-version / withholding case the
-				// canary risked. The descent gets an empty batch and must fail safe (ErrStalled),
-				// never silently conclude caught-up at the stale height.
+				// The peer REPLIES but serves NOTHING — the cross-version / withholding case. The
+				// descent gets an empty batch and must fail safe (ErrStalled), never silently
+				// conclude caught-up at the stale height.
 				n.bh.deliverBootstrapAncestors(id, m.requestID, nil)
 			}
 		}
@@ -641,11 +642,11 @@ func TestSampleAncestorBeacons_PrefersAheadBeacons(t *testing.T) {
 	}
 }
 
-// TestRED_LedgerAheadOfApplied_ConvergesOffAppliedHead guards the wedge measured on five
-// live fleets: the consensus finalized ledger sits AHEAD of the VM's applied head, and a
-// loop positioned at the LEDGER believes it stands past blocks it has not executed. It
-// skips exactly the band it must fetch, reports full batches landed, and re-asks forever
-// — isBootstrapped stays false while every counter reads success.
+// TestRED_LedgerAheadOfApplied_ConvergesOffAppliedHead guards the wedge where the consensus
+// finalized ledger sits AHEAD of the VM's applied head: a loop positioned at the LEDGER
+// believes it stands past blocks it has not executed. It skips exactly the band it must
+// fetch, reports full batches landed, and re-asks forever — isBootstrapped stays false while
+// every counter reads success.
 //
 // The seam is produced the way production produces it: the node finalizes through F,
 // then crash-restarts, and the VM reopens at an older commit M — the EVM persists on a
@@ -786,8 +787,8 @@ func TestRED_HonestBeaconQuorumIgnoresMaliciousFrontier(t *testing.T) {
 
 // TestRED_SubQuorumCannotNameFrontier: a minority of configured beacons cannot name the
 // frontier — the partition-capture floor (INVARIANT 2). This REPLACES the prior
-// SubAlphaStakeCannotNameFrontier, which asserted the ⅔-of-CURRENT-TOTAL-STAKE connect gate that
-// was THE MASS-RECOVERY BUG: it required ⅔ of the WHOLE validator set to be connected, which is
+// SubAlphaStakeCannotNameFrontier, which asserted a ⅔-of-CURRENT-TOTAL-STAKE connect gate that no
+// mass recovery can satisfy: it required ⅔ of the WHOLE validator set to be connected, which is
 // unsatisfiable when the down validators ARE the recovery targets. Under the BootstrapTrust
 // policy the floor is MinResponses (a count of authenticated CONFIGURED beacons that must
 // respond), defaulting to a MAJORITY of the set — so an attacker who partitions the node down to
@@ -832,16 +833,17 @@ func TestRED_SubQuorumCannotNameFrontier(t *testing.T) {
 		"a round that names a frontier must leave no shortfall behind — the number belongs to the round that measured it")
 }
 
-// TestNodeBootstrap_StaleNodeWaitsForBeaconConnect REPRODUCES THE MAINNET CANARY over the
+// TestNodeBootstrap_StaleNodeWaitsForBeaconConnect exercises the beacon-connect race over the
 // REAL GetAcceptedFrontier/GetAncestors transport. A STALE node at height M boots while its
 // beacons are still handshaking: the first PeerInfo polls report NO beacon connected, so
 // FrontierTip returns FrontierConnecting and the loop WAITS — it must NOT conclude caught-up
-// at M (the canary bug: luxd-2 declared "bootstrap complete" at its stale height 1082780
-// BEFORE the beacons connected, then could never pull the gap). Once the beacons connect, a
-// ⅔ quorum names tip N and the node descends, executes the gap, and converges to N.
+// at M. A node that declares bootstrap complete before it can reach a single beacon has
+// answered a question it never asked, and nothing reopens it: the gap is never pulled. Once
+// the beacons connect, a ⅔ quorum names tip N and the node descends, executes the gap, and
+// converges to N.
 func TestNodeBootstrap_StaleNodeWaitsForBeaconConnect(t *testing.T) {
 	const N = 40 // beacon-named frontier height (the producers)
-	const M = 23 // our STALE local height (gap N-M = 17 — the canary's gap-17, within window)
+	const M = 23 // our STALE local height (gap N-M = 17, inside the naming window)
 	chain, byID := buildBSChain(N, -1)
 	vm := newBSVMAt(chain, M) // STALE: already accepted 0..M
 	bh, chainID, beacons := newBSHandlerAndEngine(t, vm, 4)
@@ -986,10 +988,10 @@ func TestNodeBootstrap_SelfVote_PartialConnectivityFailsSafe(t *testing.T) {
 		"partial connectivity (an eclipse could hide an ahead-tip) → the self-vote must NOT apply → fail safe, NOT caught up")
 }
 
-// TestRED_PeersTrackNetNotChain_StaleNodeConverges is THE MAINNET-CANARY (luxd-2) intended
-// SUCCESS and the regression guard for the beacon-connectivity bug.
+// TestRED_PeersTrackNetNotChain_StaleNodeConverges is the SUCCESS side of the stale-node boot
+// race and the regression guard for the beacon-connectivity filter.
 //
-// THE BUG (canary): the beacon set IS the stake-weighted primary-network validator set, but
+// THE BUG: the beacon set IS the stake-weighted primary-network validator set, but
 // connectedBeacons filtered connected peers by p.TrackedChains.Contains(chainID). Real peers
 // advertise the NETS they track (always constants.PrimaryNetworkID + tracked L1 net IDs),
 // NEVER an individual native chain ID — so the filter matched ZERO peers, connectedStake
@@ -1003,7 +1005,7 @@ func TestNodeBootstrap_SelfVote_PartialConnectivityFailsSafe(t *testing.T) {
 // content-addressed descent are unchanged.
 func TestRED_PeersTrackNetNotChain_StaleNodeConverges(t *testing.T) {
 	const N = 40 // producer (beacon-named) frontier height
-	const M = 23 // our stale local height (gap-17, within the window) — the canary's gap
+	const M = 23 // our stale local height (gap N-M = 17, inside the window)
 	chain, byID := buildBSChain(N, -1)
 	vm := newBSVMAt(chain, M)
 
@@ -1011,7 +1013,7 @@ func TestRED_PeersTrackNetNotChain_StaleNodeConverges(t *testing.T) {
 	o1, o2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 	// Producers 100 each (300), two lighter validators 25 each (50): total 350, ⅔ floor = 233.
 	// The 3 producers (300) clear it; any 2 of them (200) do not — the quorum genuinely needs
-	// the producers' ⅔-stake supermajority, exactly the mainnet shape.
+	// the producers' ⅔-stake supermajority, the shape of any set where producers hold the weight.
 	weights := map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100, o1: 25, o2: 25}
 	bh, chainID := newBSHandlerWeighted(t, vm, weights)
 
@@ -1097,32 +1099,33 @@ func TestRED_EmptyStakedSetFailsSafe(t *testing.T) {
 	require.False(t, bh.Accepted(ctx, chain[N].id), "no frontier tip may be adopted from a non-staked endpoint")
 }
 
-// TestRED_TipSplitConvergesToCommonHeight is THE MAINNET CANARY (luxd-2 on v1.30.78) the
-// ancestor-tolerant frontier quorum fixes — restated FAITHFULLY to the responder semantics
-// (chains/manager.go answers GetAcceptedFrontier with vm.LastAccepted — the last-ACCEPTED block,
-// NEVER an un-finalized preferred tip). The 3 producers hold > ⅔ stake but are SPLIT at the
-// bleeding edge of ACTIVE finalization: producer luxd-3 finalized block TOP first, while luxd-1/2
-// are momentarily one ACCEPTED block behind at N (TOP's parent). A behind node at M must (1) name
-// the ⅔-COMMON committed height N via ancestor tolerance even though no single tip holds ⅔, and
+// TestRED_TipSplitConvergesToCommonHeight is the case the ancestor-tolerant frontier quorum
+// exists for — restated FAITHFULLY to the responder semantics (chains/manager.go answers
+// GetAcceptedFrontier with vm.LastAccepted — the last-ACCEPTED block, NEVER an un-finalized
+// preferred tip). The 3 producers hold > ⅔ stake but are SPLIT at the bleeding edge of ACTIVE
+// finalization: producer p3 finalized block TOP first, while p1/p2 are momentarily one ACCEPTED
+// block behind at N (TOP's parent). A behind node at M must (1) name the ⅔-COMMON committed
+// height N via ancestor tolerance even though no single tip holds ⅔, and
 // (2) RATCHET on to the true finalized tip TOP as finalization propagates across the fleet —
 // ending caught-up at TOP, never stuck at M, never falsely caught-up below the network frontier.
 //
 // THE NAMING BUG this guards: the EXACT-tip tally required ⅔-by-stake to report the IDENTICAL id.
-// N drew only luxd-1/2 (200 of 300; the floor is `> 200`, so 200 does NOT clear it) and TOP drew
-// only luxd-3 (100) — neither cleared ⅔, so FrontierTip returned NoQuorum and the healthy stale
-// node failed safe at its stale height. Ancestor tolerance fixes it: a beacon reporting TOP also
-// has N in its accepted chain, so N draws ALL THREE producers (300 > 200) and is NAMED.
+// N draws only p1/p2 (200 of 300; the floor is `> 200`, so 200 does NOT clear it) and TOP draws
+// only p3 (100) — neither clears ⅔, so FrontierTip returns NoQuorum and a perfectly healthy stale
+// node fails safe at its stale height while the chain it must join is right there. Ancestor
+// tolerance fixes it: a beacon reporting TOP also has N in its accepted chain, so N draws ALL
+// THREE producers (300 > 200) and is NAMED.
 //
 // WHY PROPAGATION, not a STATIC minority-above: a beacon never reports an UN-finalized tip
 // (manager.go: vm.LastAccepted), so a PERMANENT "2 at N, 1 at N+1" split on an idle chain cannot
-// occur — luxd-3 reporting TOP means TOP is FINALIZED for it, and on a live chain luxd-1/2's
+// occur — p3 reporting TOP means TOP is FINALIZED for it, and on a live chain p1/p2's
 // last-accepted ratchets to TOP too. Modeling it static would assert a node going Ready while a
 // genuinely-finalized higher tip is reported — a gap-1 instance of the M1 stale-go-live the
 // own-height-exclusion fix closes. The faithful model converges to the TRUE frontier TOP.
 func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
-	const M = 23   // our STALE local height (gap-17 — the canary's gap, within the window)
+	const M = 23   // our STALE local height (gap N-M = 17, inside the window)
 	const N = 40   // the ⅔-agreed COMMON committed height (all 3 producers have it accepted)
-	const top = 41 // luxd-3 finalized this first; luxd-1/2 ratchet to it as finalization propagates
+	const top = 41 // p3 finalized this first; p1/p2 ratchet to it as finalization propagates
 	chain, byID := buildBSChain(top, -1)
 	vm := newBSVMAt(chain, M)
 
@@ -1130,7 +1133,7 @@ func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
 	weights := map[ids.NodeID]uint64{p1: 100, p2: 100, p3: 100} // total 300, ⅔ floor = 200 (need > 200)
 	bh, chainID := newBSHandlerWeighted(t, vm, weights)
 
-	// luxd-3 reports the true finalized tip TOP throughout; luxd-1/2 report their last-accepted N
+	// p3 reports the true finalized tip TOP throughout; p1/p2 report their last-accepted N
 	// UNTIL the node has accepted through N, then ratchet to TOP (finalization propagated). So while
 	// the node is BEHIND it sees {N, N, TOP} (ancestor tolerance names the ⅔-common N), and once it
 	// reaches N it sees {TOP, TOP, TOP} (names TOP, the true frontier).
@@ -1149,7 +1152,8 @@ func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
 	require.Equal(t, uint64(200), consensusconfig.TwoThirdsStakeFloor(300))
 
 	// BEHIND-NODE NAMING (node at M, pre-propagation sees {N, N, TOP}): ancestor tolerance names the
-	// ⅔-COMMON N — NOT NoQuorum, NOT the lone-producer TOP (only 100, sub-⅔). This is the canary fix.
+	// ⅔-COMMON N — NOT NoQuorum, NOT the lone-producer TOP (only 100, sub-⅔). This is what
+	// ancestor tolerance buys.
 	bh.bsActive.Store(true)
 	tip, status := bh.FrontierTip(ctx)
 	bh.bsActive.Store(false)
@@ -1185,7 +1189,7 @@ func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
 func TestRED_ForgedHighTipFromMinorityNotNamed(t *testing.T) {
 	const M = 23   // stale local height
 	const N = 40   // the ⅔-common committed height the honest laggards share
-	const top = 41 // the real bleeding-edge tip luxd-3 finalized first; the laggards ratchet to it
+	const top = 41 // the real bleeding-edge tip p3 finalized first; the laggards ratchet to it
 	chain, byID := buildBSChain(top, -1)
 	vm := newBSVMAt(chain, M)
 
@@ -1357,9 +1361,9 @@ func TestDeliverBootstrap_GatedByActive(t *testing.T) {
 // vote or cert referenced. While this hook claimed every reply unconditionally,
 // those live replies were swallowed by the bootstrap lane and the live path never
 // saw them, so a behind node fetched the right blocks forever and never applied
-// one. Devnet luxd-0 sat at 12639 while its peers ran 16933, logging
-// "catch-up response consumed by initial sync — the live cert path did not see it"
-// against 1000-block, 430KB replies it had successfully fetched.
+// one. Every fetch succeeds, every reply is large and well-formed, and the
+// distance to the peers does not close — the failure hides inside a working
+// transport, which is why it is worth a test rather than a metric.
 //
 // A reply is the bootstrap lane's only if the bootstrap lane ASKED for it.
 func TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath(t *testing.T) {
@@ -1483,15 +1487,15 @@ func TestBootstrapFailure_AccessorSurfacesReason(t *testing.T) {
 	require.ErrorIs(t, bh.BootstrapFailure(), chainbootstrap.ErrNoBeaconQuorum, "the precise fail-safe reason must surface for the health check")
 }
 
-// ----- VM normal-operation GATING (the restart-freeze fix) -------------------
+// ----- VM normal-operation GATING (the restart ordering fix) -----------------
 //
 // These prove the ORDERING fix in runInitialSync: the VM transitions to NORMAL OPERATION
 // (vm.Ready → the EVM's onNormalOperationsStarted: block building / mempool / validator
 // dispatch) ONLY AFTER initial sync has fetch+executed up to the network frontier — never at
 // the LOCAL (possibly stale) height. Before the fix buildChain put the VM into normal
-// operation UNCONDITIONALLY right after Initialize, so a restarted STALE validator served /
-// built at its stale height and never converged (the luxd-2 mainnet freeze: stuck at 1082780
-// while producers finalized 1082796). vmHeightAtReady records the height the VM was at the
+// operation UNCONDITIONALLY right after Initialize, so a restarted STALE validator served and
+// built at its stale height and never converged — it votes and answers behind the network with
+// nothing left to pull it forward. vmHeightAtReady records the height the VM was at the
 // instant it was told to go live; the gate makes that the frontier, not the stale tip.
 
 // recordVMReady wires bh.vmReady to capture (a) how many times the VM was transitioned to
@@ -1510,20 +1514,20 @@ func recordVMReady(bh *blockHandler, vm *bsTestVM) (calls *int, heightAtReady *u
 	return calls, heightAtReady
 }
 
-// TestRED_StaleValidatorGoesReadyOnlyAfterReachingFrontier reproduces the EXACT production
-// scenario: a node with stale local state (height N) restarts against a live network whose
+// TestRED_StaleValidatorGoesReadyOnlyAfterReachingFrontier models the restart case in full:
+// a node with stale local state (height N) restarts against a live network whose
 // finalized frontier is N+k, validator set loaded. It MUST fetch+execute to N+k BEFORE the VM
 // is transitioned to normal operation — never go live at the stale N.
 //
 // FAILS before the fix (the VM was transitioned to normal operation at N, in buildChain,
 // before this sync ran) and PASSES after (the transition is gated on reaching N+k).
 func TestRED_StaleValidatorGoesReadyOnlyAfterReachingFrontier(t *testing.T) {
-	const N, K = 30, 16 // stale at 30; live frontier at 46 — the luxd-2 16-block gap shape
+	const N, K = 30, 16 // stale at 30; live frontier at 46 — a 16-block gap
 	chain, byID := buildBSChain(N+K, -1)
 	vm := newBSVMAt(chain, N) // node ALREADY at height N (restarted spare), gap N+1..N+K ahead
 
-	// 5-validator equal-stake beacon set (the mainnet shape), all connected and serving — the
-	// "validator set IS loaded, 9 peers incl. producers" live condition.
+	// 5-validator equal-stake beacon set, all connected and serving — the condition where the
+	// staked set is fully loaded and the producers are reachable, so nothing excuses staying put.
 	bIDs := make([]ids.NodeID, 5)
 	weights := map[ids.NodeID]uint64{}
 	for i := range bIDs {
@@ -1583,9 +1587,9 @@ func TestNodeBootstrap_FreshGenesisNoBeaconsReadyImmediately(t *testing.T) {
 
 // TestRED_EclipsedValidatorNeverGoesReadyAtStaleHeight is the FAIL-SAFE proof: a stale node
 // whose beacons are UNREACHABLE (eclipse / isolation) must NOT go to normal operation at its
-// stale height (that was the freeze defect). Within the bounded connect deadline it fails safe
-// — VM stays in Bootstrapping (vmReady never called), bootstrapFailed records the reason — and
-// it does NOT hang (the deadline bounds it). monitorBootstrap then stops the chain; the
+// stale height — going live there is exactly the defect. Within the bounded connect deadline it
+// fails safe — VM stays in Bootstrapping (vmReady never called), bootstrapFailed records the
+// reason — and it does NOT hang (the deadline bounds it). monitorBootstrap then stops the chain; the
 // orchestrator restarts and the node re-syncs.
 func TestRED_EclipsedValidatorNeverGoesReadyAtStaleHeight(t *testing.T) {
 	const N, K = 30, 16
@@ -1666,7 +1670,7 @@ func TestNodeBootstrap_ProducerAtTipReadyFast(t *testing.T) {
 }
 
 // TestRED_TipHolderCoRestartGoesReadyAtOwnTip is THE CRITICAL regression RED found and the hinge of
-// this round. A PRODUCER at the tip N, on a simultaneous co-restart, sees the production fleet SPLIT
+// this round. A PRODUCER at the tip N, on a simultaneous co-restart, sees the fleet SPLIT
 // across heights: 2 other producers at N, one node at N-16, one at genesis. The tip-holders are only
 // ½ of the 4 responders (< ⅔), so NO frontier is NAMED, and the ⅔-backed common ancestor N-16 is
 // below the node's own last-accepted (MinFrontierHeight filters it). WITHOUT the caught-up
@@ -1677,13 +1681,13 @@ func TestNodeBootstrap_ProducerAtTipReadyFast(t *testing.T) {
 // after: CaughtUp proves the node is at the top of every responder and holds every reported tip, so
 // the network frontier IS the node's own accepted tip → the loop's Has()-shortcut → Ready at N, once.
 func TestRED_TipHolderCoRestartGoesReadyAtOwnTip(t *testing.T) {
-	const N = 80   // the producer's tip (models the mainnet 1082796 — the RELATIVE shape is the point)
-	const gap = 16 // luxd-2's lag (the canary's 16-block gap → N-16)
+	const N = 80   // the producer's tip (only the RELATIVE shape matters, not the absolute height)
+	const gap = 16 // the lagging peer's distance behind the tip → N-16
 	chain, byID := buildBSChain(N, -1)
 	vm := newBSVMAt(chain, N) // the PRODUCER holds its full accepted chain 0..N (a co-restart spare)
 
-	// 5 equal-weight beacons (the mainnet shape). The node is the 5th; its 4 PEERS report the SPLIT:
-	// two producers at the tip N, luxd-2 at N-16, luxd-0 at genesis.
+	// 5 equal-weight beacons. The node is the 5th; its 4 PEERS report the SPLIT:
+	// two producers at the tip N, one peer at N-16, one still at genesis.
 	bIDs := make([]ids.NodeID, 5)
 	weights := map[ids.NodeID]uint64{}
 	for i := range bIDs {
@@ -1696,8 +1700,8 @@ func TestRED_TipHolderCoRestartGoesReadyAtOwnTip(t *testing.T) {
 	bh.net = &bsBeaconNet{
 		bh: bh, chainID: chainID, connected: bIDs[:4], byID: byID, tip: chain[N], serveAncestors: true,
 		tipFor: map[ids.NodeID]ids.ID{
-			bIDs[2]: chain[N-gap].id, // luxd-2 at N-16
-			bIDs[3]: chain[0].id,     // luxd-0 at genesis
+			bIDs[2]: chain[N-gap].id, // a lagging peer at N-16
+			bIDs[3]: chain[0].id,     // a peer still at genesis
 		},
 	}
 	bh.msgCreator = bsMsgBuilder{}
@@ -1952,34 +1956,33 @@ func TestWatchBootstrapProgress_WaitIsNotTerminal(t *testing.T) {
 }
 
 // ============================================================================
-// PRODUCTION-MODELING REPRO (mainnet luxd-2 freeze, v1.30.84 → fix/bootstrap-vm-ready-ordering)
+// THE STAKED SET IS PARTIAL AT BOOT
 //
-// The v1.30.84 fix passed 50 unit tests + a BFT proof but FAILED the real mainnet canary: a
-// STALE spare (luxd-2) at C-Chain accepted height N went Ready at N instead of fetching the 16
-// blocks to the producers' frontier Top. The mocks injected the FULL, STABLE validator set from
-// t=0, masking the real trigger: a native chain's bootstrap goroutine starts right after its
-// VM.Initialize — BEFORE the P-chain has finished replaying its blocks — so the staked beacon set
-// (m.Validators) is a PARTIAL set at boot. The MinResponseWeight stake-majority floor (total/2+1)
-// is fail-secure ONLY when `total` is the TRUE full-set stake; under a partial denominator a
-// degenerate at-or-below responder subset (the genuinely-ahead producers not yet loaded) clears
-// the floor and the frontier decision concludes "caught up" at the stale local height.
+// A mock that injects the FULL, STABLE validator set from t=0 cannot express the trigger, and a
+// suite built only on such a mock passes while the property fails: a native chain's bootstrap
+// goroutine starts right after its VM.Initialize — BEFORE the P-chain has finished replaying its
+// blocks — so the staked beacon set (m.Validators) is a PARTIAL set at boot. The
+// MinResponseWeight stake-majority floor (total/2+1) is fail-secure ONLY when `total` is the TRUE
+// full-set stake; under a partial denominator a degenerate at-or-below responder subset (the
+// genuinely-ahead producers not yet loaded) clears the floor and the frontier decision concludes
+// "caught up" at the stale local height.
 //
-// These tests model the REAL conditions (not the ideal full set): not-held producer tips, an
+// These tests model that boot window rather than the ideal full set: not-held producer tips, an
 // empty ancestry fetch, a peer-connect delay, and — the headline — a PARTIAL staked set at boot.
 // ============================================================================
 
-// TestRED_PartialStakedSet_BehindNodeMustNotGoLiveStale is THE production reproduction. It models
+// TestRED_PartialStakedSet_BehindNodeMustNotGoLiveStale is the headline of that window. It models
 // the staked validator set being PARTIAL while the P-chain is still syncing (the producers not yet
 // loaded), and proves:
 //   - WITHOUT the P-ready gate (the f882142c81 behavior): the partial at-or-below responder subset
-//     clears the floor and FrontierTip NAMES the node's OWN stale tip → go-live-at-stale (the freeze).
+//     clears the floor and FrontierTip NAMES the node's OWN stale tip → the node goes live stale.
 //   - WITH the gate: a native chain WAITS (FrontierConnecting) for the staked set to load, never
 //     concluding caught-up on a non-representative partial set.
 //   - Once the P-chain finishes (full set, producers now loaded at Top), the node names Top and
 //     converges — never stopping at its stale N.
 func TestRED_PartialStakedSet_BehindNodeMustNotGoLiveStale(t *testing.T) {
-	const M = 40   // our STALE local height (luxd-2's 1082780, scaled)
-	const Top = 56 // producers' real accepted frontier (gap 16 — the canary's 16 blocks)
+	const M = 40   // our STALE local height
+	const Top = 56 // producers' real accepted frontier (a 16-block gap)
 	chain, byID := buildBSChain(Top, -1)
 	vm := newBSVMAt(chain, M) // behind by 16
 
@@ -1996,7 +1999,7 @@ func TestRED_PartialStakedSet_BehindNodeMustNotGoLiveStale(t *testing.T) {
 	bh.msgCreator = bsMsgBuilder{}
 	ctx := context.Background()
 
-	// (1) NO GATE == f882142c81: the partial set false-names the stale own tip — the production freeze.
+	// (1) NO GATE == f882142c81: the partial set false-names the stale own tip.
 	bh.bsActive.Store(true)
 	tip, status := bh.FrontierTip(ctx)
 	bh.bsActive.Store(false)
@@ -2063,10 +2066,10 @@ func TestNodeBootstrap_BehindNodeNotHeldTips_SyncsToFrontier(t *testing.T) {
 	require.True(t, bh.Accepted(ctx, chain[Top].id), "node must hold the producer tip after sync")
 }
 
-// TestNodeBootstrap_StoredButUnacceptedFrontier_DrivesAcceptance is the NODE-LAYER reproduction of
-// THE mainnet luxd-2 freeze with production ground truth — the case the prior mocks could not even
-// express (their VM conflated store and acceptance). A behind node at M holds blocks M+1..Top
-// ALREADY IN ITS STORE (gossiped / a prior incomplete sync) but UNACCEPTED, and the ⅔-stake
+// TestNodeBootstrap_StoredButUnacceptedFrontier_DrivesAcceptance is the NODE-LAYER case the prior
+// mocks could not even express, since their VM conflated store and acceptance and so could never
+// produce this state. A behind node at M holds blocks M+1..Top ALREADY IN ITS STORE (gossiped / a
+// prior incomplete sync) but UNACCEPTED, and the ⅔-stake
 // producers name the frontier at Top — a tip the node HOLDS but has NOT accepted. THE BUG: the
 // node-side Has()/heldHeight reported "present" for those stored-but-unaccepted blocks, the loop's
 // Has()-shortcut concluded caught-up at the stale M, and the node went Ready at M forever (self-
@@ -2076,7 +2079,7 @@ func TestNodeBootstrap_BehindNodeNotHeldTips_SyncsToFrontier(t *testing.T) {
 // at the stale M.
 func TestNodeBootstrap_StoredButUnacceptedFrontier_DrivesAcceptance(t *testing.T) {
 	const M = 40
-	const Top = 56 // gap 16, the exact ground-truth skew (1082780 → 1082796)
+	const Top = 56 // gap 16 — the band held in the store but never accepted
 	chain, byID := buildBSChain(Top, -1)
 	vm := newBSVMAt(chain, M)
 	// GROUND TRUTH: M+1..Top are PRESENT IN THE STORE (gossiped ahead) but UNACCEPTED.
@@ -2094,7 +2097,7 @@ func TestNodeBootstrap_StoredButUnacceptedFrontier_DrivesAcceptance(t *testing.T
 	bh.msgCreator = bsMsgBuilder{}
 	ctx := context.Background()
 
-	// Precondition — the EXACT freeze state: the node HOLDS the named frontier in its store yet has
+	// Precondition — the exact wedged state: the node HOLDS the named frontier in its store yet has
 	// NOT accepted it (last-accepted is M). The store-vs-acceptance distinction the conflation missed.
 	require.True(t, vm.stored[chain[Top].id], "precondition: the frontier must be present in the store (gossiped ahead)")
 	require.False(t, bh.Accepted(ctx, chain[Top].id), "precondition: the held-in-store frontier must NOT be accepted (last-accepted is M)")
@@ -2108,8 +2111,8 @@ func TestNodeBootstrap_StoredButUnacceptedFrontier_DrivesAcceptance(t *testing.T
 
 // TestBootstrap_AcceptedHeight_StoreVsAcceptance pins the ACCEPTANCE oracle the whole fix turns on:
 // acceptedHeight / Accepted report a block ACCEPTED only when it is on the FINALIZED chain — never
-// merely because it is PRESENT in the store. This is the store-vs-acceptance distinction the luxd-2
-// freeze conflated, isolated from the network so the predicate itself is the unit under test.
+// merely because it is PRESENT in the store. This is the store-vs-acceptance distinction, isolated
+// from the network so the predicate itself is the unit under test.
 func TestBootstrap_AcceptedHeight_StoreVsAcceptance(t *testing.T) {
 	const M = 30
 	const Top = 40
@@ -2127,7 +2130,7 @@ func TestBootstrap_AcceptedHeight_StoreVsAcceptance(t *testing.T) {
 		t.Fatalf("a finalized ancestor must resolve accepted at height %d, got (%d,%v)", M-5, h, ok)
 	}
 	// (b) stored-but-unaccepted blocks (ABOVE the accepted head) are present in the store yet NOT
-	// accepted — the freeze conflation. acceptedHeight AND Accepted must both report not-accepted.
+	// accepted — the conflation this pins. acceptedHeight AND Accepted must both report not-accepted.
 	for _, h := range []int{M + 1, Top} {
 		if _, err := vm.GetBlock(ctx, chain[h].id); err != nil {
 			t.Fatalf("precondition: chain[%d] must be present in the store", h)
@@ -2147,7 +2150,7 @@ func TestBootstrap_AcceptedHeight_StoreVsAcceptance(t *testing.T) {
 
 // TestNodeBootstrap_BehindNode_EmptyAncestry_StaysBootstrapping (variant B). A behind node names the
 // real higher frontier Top (the producers report it), but the ancestry fetch returns EMPTY (the
-// cross-version / unreachable case the canary risked). The node MUST stay un-synced (fail safe),
+// cross-version / unreachable case). The node MUST stay un-synced (fail safe),
 // NEVER concluding caught-up at its stale M: bs.Run returns a real error and the local height is
 // unchanged — runInitialSync would leave the VM in Bootstrapping, not Ready.
 func TestNodeBootstrap_BehindNode_EmptyAncestry_StaysBootstrapping(t *testing.T) {
@@ -2294,8 +2297,9 @@ func TestNodeBootstrap_SelfOnlyStakedSet_ReportsNoBeacons(t *testing.T) {
 }
 
 // TestNodeBootstrap_BehindValidator_StakedSet_CatchesUpNoWipe is THE REJOIN INVARIANT (tasks
-// #66/#74), the code reproduction of the mainnet luxd-0 wedge: a staked validator that fell behind
-// must sync from its peers on restart and reach the network frontier WITHOUT a chaindata wipe.
+// #66/#74): a staked validator that fell behind must sync from its peers on restart and reach the
+// network frontier WITHOUT a chaindata wipe. Needing a wipe to rejoin is the same thing as having
+// no rejoin path — it destroys the local chain to work around a sync that should have run.
 //
 // The node reloads its STALE on-disk tip at height M (the "restart" — no wipe) and holds a
 // sybil-protected native-chain staked beacon set (expectsStakedBeacons=true — exactly what
@@ -2309,7 +2313,7 @@ func TestNodeBootstrap_BehindValidator_StakedSet_CatchesUpNoWipe(t *testing.T) {
 	vm := newBSVMAt(chain, M) // reload the stale on-disk tip (the restart)
 
 	// A 5-validator staked set (equal stake): this node is one, the other 4 are the connected,
-	// serving producers at the frontier N. This mirrors lux-mainnet's 5-validator C-Chain.
+	// serving producers at the frontier N — the shape of a 5-validator native chain.
 	weights := map[ids.NodeID]uint64{}
 	producers := make([]ids.NodeID, 4)
 	for i := range producers {
@@ -2342,9 +2346,9 @@ func TestNodeBootstrap_BehindValidator_StakedSet_CatchesUpNoWipe(t *testing.T) {
 //
 // The bug it guards: a no-progress window used to stop the engine, which cancels the
 // chain's context, so every later VM.Accept returned "context canceled" and the
-// finality guard refused to advance forever. Measured on lux-testnet, a node declared
-// stalled at 13955 went on to reach 14154 — the healthy fleet's exact height — while
-// refusing every incoming cert, because the verdict outlived the condition.
+// finality guard refused to advance forever. A node declared stalled can go on to
+// reach the fleet's height and still refuse every incoming cert, because the verdict
+// outlived the condition that produced it.
 //
 // monitorBootstrap now keeps watching after a stall, so what has to hold is that the
 // SAME source, watched again, still reports ready once it converges. Watching once and

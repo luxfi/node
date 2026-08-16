@@ -14,9 +14,8 @@
 // that ErrNotFound as "the underlying chain is the only chain and there is
 // nothing to repair" and returned nil — so no backfill was recorded, no request
 // was made, nothing was logged, and the node sat at its import height forever
-// while its peers advanced. Observed on devnet luxd-0/luxd-3 (stuck at 5092
-// while the fleet reached 7321) and testnet luxd-1 (stuck at its import height
-// while four peers climbed past it).
+// while its peers advanced. Nothing in its own state and nothing arriving on the
+// wire could move it, and nothing it emitted said so.
 //
 // The distinction that must be preserved: a GENUINELY pre-fork chain also has no
 // anchor, and it must still boot normally. The two are told apart by the fork
@@ -108,16 +107,17 @@ func TestMissingOuterAnchor_PreFork_BootsClean(t *testing.T) {
 	}
 }
 
-// TestDanglingOuterAnchor_StartsInBackfill is the mainnet-upgrade regression.
+// TestDanglingOuterAnchor_StartsInBackfill is the upgrade regression.
 //
 // A snapshot clone (or any truncated copy) can carry the proposervm's
 // last-accepted POINTER while the envelope it names is absent. That branch used
 // to `return fmt.Errorf("failed to get last accepted block: …")`, which fails VM
 // init — the node logs "error creating required chain" and exits 1, so EVERY
-// restart is fatal on a chain that is otherwise intact. Observed on mainnet
-// 96369: v1.36.49 exited code 1 twice within ~3 minutes while testnet and
-// devnet ran the same image happily, which is what stranded mainnet on v1.36.2
-// without any of the consensus fixes.
+// restart is fatal on a chain that is otherwise intact. The damage is per-node
+// and invisible to every other node on the same image, so it reads as a bad
+// release rather than as local damage: the only way off the wedged node is a
+// restart, and the restart is what is fatal. A fleet in that state cannot take
+// the version carrying the fix for anything else, either.
 //
 // Starting degraded is strictly better: enterOuterBackfill makes the damage
 // visible AND gates BuildBlock off, so the node cannot propose while its index

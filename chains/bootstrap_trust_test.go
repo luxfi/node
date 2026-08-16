@@ -105,7 +105,7 @@ func reply(id ids.NodeID, tip ids.ID, w uint64) BeaconReply {
 	return BeaconReply{NodeID: id, Tip: tip, Weight: w}
 }
 
-// equalStake is the owner's mainnet shape: 5 validators each 0.5e18, total 2.5e18.
+// equalStake is the shape the policy is sized against: 5 validators each 0.5e18, total 2.5e18.
 const equalStake uint64 = 500_000_000_000_000_000
 
 // ----- A: MASS RECOVERY SUCCESS ---------------------------------------------
@@ -122,7 +122,7 @@ func TestBootstrapTrust_A_MassRecoverySucceeds(t *testing.T) {
 	require.LessOrEqual(t, 3*equalStake, consensusconfig.TwoThirdsStakeFloor(5*equalStake),
 		"precondition: 3 of 5 equal validators is BELOW ⅔ of total — the prior connect gate's deadlock")
 
-	// Policy decision: 5 configured, 3 reachable agree on the frontier (mainnet analog 1082796).
+	// Policy decision: 5 configured, 3 reachable agree on the frontier.
 	beacons := nodeIDs(5)
 	frontier := ids.GenerateTestID()
 	policy := &BootstrapPolicy{
@@ -725,9 +725,9 @@ func refs5BSBlocks(refs []BlockRef) []*bsTestBlock {
 // CaughtUp is the DUAL of AcceptsFrontier — "nobody is ahead" vs "here is the block ahead to sync
 // to". It is the go-live path for a TIP-HOLDER on a mixed-height co-restart, where the responders
 // SPLIT below the ⅔ naming threshold so AcceptsFrontier names NOTHING yet the node is plainly not
-// behind. Getting its SAFETY exactly right is the hinge between "fixes the freeze" and "reopens the
-// stale-go-live bug": these pin all three conditions (floor met, none-ahead, holds-every-tip) and
-// prove the two adversarial fake-caught-up attempts FAIL.
+// behind. Getting its SAFETY exactly right is the hinge between "a tip-holder proceeds" and "a
+// stale node declares itself ready": these pin all three conditions (floor met, none-ahead,
+// holds-every-tip) and prove the two adversarial fake-caught-up attempts FAIL.
 
 // heldOracle builds the height ORACLE CaughtUp injects: a block's height, ok=false when not held.
 func heldOracle(held map[ids.ID]uint64) func(ids.ID) (uint64, bool) {
@@ -735,7 +735,7 @@ func heldOracle(held map[ids.ID]uint64) func(ids.ID) (uint64, bool) {
 }
 
 // TestBootstrapTrust_CaughtUp_TipHolderSplitGoesReady is the CRITICAL regression at the policy layer:
-// the EXACT mainnet co-restart shape. A producer at N sees 4 responders split {N, N, N-16, genesis};
+// the shape a whole fleet comes back in. A producer at N sees 4 responders split {N, N, N-16, genesis};
 // the tip-holders are only ½ (< ⅔), so AcceptsFrontier names NOTHING (ErrNoBootstrapQuorum) — yet the
 // node holds every reported tip and none is above N, so CaughtUp is TRUE. It pins BOTH halves: the
 // SAME replies yield no NAMED frontier (the case the tip-holder fails safe DOWN without this fix) but
@@ -970,27 +970,27 @@ func TestBootstrapTrust_EclipseOwnHeightNotNamedRoutesToCaughtUp(t *testing.T) {
 // the minority tip gains backing as finalization propagates. On a HALTED network it is a
 // PERMANENT deadlock.
 //
-// MEASURED on lux-devnet C-chain: 5 equal-stake validators; nodes 1,2 at height 5092; nodes 0,3
-// at 5090; node 4 at 4243. Block 5090 is byte-identical on nodes 0,1,2,3 (verified by hash — a
-// pure LAG, not a fork). For node 0: responder weight 200e12, ⅔ floor 133.33e12,
-// backing[5090] = 150e12 (clears the floor) but 5090 == MinFrontierHeight so it is EXCLUDED;
-// backing[5092] = 100e12 (sub-⅔, not nameable). Nodes 0 and 3 retry forever, and because the
-// network is halted nothing ever propagates to break the tie.
+// THE SHAPE: 5 equal-stake validators on ONE chain — a minority two blocks ahead, a peer at the
+// node's own tip, one far behind. The ahead blocks are a pure LAG, not a fork, so the node's own
+// tip is an ancestor of every tip reported to it. The ahead pair's stake therefore credits the
+// node's OWN height as their shared ancestor: own height clears the ⅔-of-responders floor and the
+// height above it does not. Naming excludes the one block that clears (it is the node's own),
+// CaughtUp refuses the tips the node does not hold, and every retry reproduces both jaws.
 //
 // The safety property that separates this from M1 is COVERAGE: under FULL configured-beacon
 // coverage — every beacon connected AND replied — no eclipse can hide an ahead node, so the view
 // is COMPLETE and the highest ⅔-backed block IS the network frontier. In M1 the 6th beacon is
 // eclipsed, coverage is NOT full, and the exclusion must (and does) still apply.
 
-// TestBootstrapTrust_HaltedFleet_OwnTipNamedUnderFullCoverage reproduces the devnet shape exactly
-// and pins BOTH halves: un-covered it deadlocks (ErrNoBootstrapQuorum — the live bug), covered it
-// names the node's own tip. It also pins that CaughtUp is FALSE for these replies, so the fix
+// TestBootstrapTrust_HaltedFleet_OwnTipNamedUnderFullCoverage reproduces that shape exactly and
+// pins BOTH halves: un-covered it deadlocks (ErrNoBootstrapQuorum), covered it names the node's
+// own tip. It also pins that CaughtUp is FALSE for these replies, so the fix
 // provably comes from the naming exemption and NOT from loosening CaughtUp.
 func TestBootstrapTrust_HaltedFleet_OwnTipNamedUnderFullCoverage(t *testing.T) {
 	const (
-		own  = 5090 // the node's own last-accepted height (devnet nodes 0 and 3)
-		high = 5092 // devnet nodes 1 and 2
-		lag  = 4243 // devnet node 4
+		own  = 5090 // the node's own last-accepted height, shared with one peer
+		high = 5092 // the minority sitting two blocks ahead
+		lag  = 4243 // the far-behind peer
 	)
 	refs, byID := refChain(high) // genesis..5092, parent-linked; 5092 descends through 5090
 	b := nodeIDs(5)              // 5 equal-stake validators; b[0] is the node itself
@@ -1006,15 +1006,15 @@ func TestBootstrapTrust_HaltedFleet_OwnTipNamedUnderFullCoverage(t *testing.T) {
 
 	// All FOUR peers reply — with the node itself that accounts for the whole configured set.
 	replies := []BeaconReply{
-		reply(b[1], refs[high].ID, w), // node 1, two ahead
-		reply(b[2], refs[high].ID, w), // node 2, two ahead
-		reply(b[3], refs[own].ID, w),  // node 3, at the node's own tip
-		reply(b[4], refs[lag].ID, w),  // node 4, far behind
+		reply(b[1], refs[high].ID, w), // two ahead
+		reply(b[2], refs[high].ID, w), // two ahead
+		reply(b[3], refs[own].ID, w),  // at the node's own tip
+		reply(b[4], refs[lag].ID, w),  // far behind
 	}
 
-	// Sanity pins on the devnet arithmetic (R = 400): the ahead pair carries 200, BELOW the ⅔
+	// Sanity pins on the arithmetic (R = 400): the ahead pair carries 200, BELOW the ⅔
 	// threshold, so 5092 is not nameable; 5090 carries 300 (the two 5092 tips credit it as their
-	// shared ANCESTOR, plus node 3's direct reply) and DOES clear — at exactly own height.
+	// shared ANCESTOR, plus the direct reply at that height) and DOES clear — at exactly own height.
 	require.Equal(t, uint64(266), Ratio{2, 3}.floorOf(400), "⅔-of-responders floor over R=400 is 266")
 	require.Less(t, uint64(200), uint64(266), "the ahead minority is BELOW the naming threshold — 5092 is not nameable")
 
@@ -1140,28 +1140,28 @@ func TestBootstrapTrust_HaltedFleet_SameHeightSiblingNotOwnTip(t *testing.T) {
 		"the node holds no block of the fork — it is behind the ⅔-backed chain and must sync")
 }
 
-// ----- H: HALT-SKEW RECOVERY (mainnet 96369 wedge) ---------------------------
+// ----- H: HALT-SKEW RECOVERY -------------------------------------------------
 
-// TestBootstrapTrust_H_HaltSkewDeeperThanOneWindow reproduces the live mainnet 96369 wedge and
-// proves the chunked descent fixes it.
+// TestBootstrapTrust_H_HaltSkewDeeperThanOneWindow is the wedge the chunked descent exists for.
 //
-// SHAPE (measured per-node, in-pod, 2026-07-28): the fleet HALTED below its α=4-of-5 threshold.
-// One node ran on alone to 1098726 while two stayed at 1098191; 1098191 IS an ancestor of
-// 1098726 (no fork — luxd-3/luxd-4's `latest` IS 1098191, they hold nothing competing), so the
-// ⅔-of-RESPONDER floor is satisfied at 1098191 by all three responders and it MUST be named.
+// SHAPE: a fleet halts below its α threshold. One node runs on alone while the rest stay at a
+// lower height that IS an ancestor of the high tip (no fork — the low nodes' `latest` is that
+// block and they hold nothing competing), so the ⅔-of-RESPONDER floor is satisfied at the common
+// block by all three responders and it MUST be named.
 //
-// It was not. nameFrontier fetched one bootstrapNamingWindow (256) of ancestry per anchor, and
-// the gap is 535 — so the high tip's ancestry never reached down far enough to vouch for the
-// common block. 1098191 held only its 2 direct responders (2 of 3 = below the ⅔ floor of 2,
-// which the strict `>` rejects), the tally named NOTHING, and every retry did the same. The
-// node sat at height 0 forever and mainnet could not regain quorum.
+// A single-fetch nameFrontier does not name it. It fetches one bootstrapNamingWindow (256) of
+// ancestry per anchor, so once the skew exceeds that window the high tip's ancestry never reaches
+// down far enough to vouch for the common block. The common block then holds only its 2 direct
+// responders (2 of 3 = below the ⅔ floor of 2, which the strict `>` rejects), the tally names
+// NOTHING, and every retry does the same — the node sits at height 0 and the fleet, already below
+// α, cannot regain quorum.
 //
 // The gap here (535) is deliberately > one window (256) and < maxNamingDepth. With the
 // single-fetch window this FAILS (frontier is nil → ErrNoBootstrapQuorum); with the chunked
 // descent the walk continues past the first chunk and names the common ancestor.
 func TestBootstrapTrust_H_HaltSkewDeeperThanOneWindow(t *testing.T) {
 	const w uint64 = 100
-	const gap = 535 // luxd-1 1098726 - luxd-3/luxd-4 1098191, the measured mainnet skew
+	const gap = 535 // a halt skew wider than one 256-block fetch window
 
 	// common is the last block the whole fleet accepted; `ahead` extends it by `gap`.
 	refs, byID := refChain(1000)
@@ -1177,16 +1177,16 @@ func TestBootstrapTrust_H_HaltSkewDeeperThanOneWindow(t *testing.T) {
 	require.Greater(t, gap, bootstrapNamingWindow, "gap MUST exceed one fetch window or this proves nothing")
 	require.Less(t, gap, bootstrapMaxBlocksPerAttempt, "gap must fit one attempt's block budget")
 
-	beacons := nodeIDs(3) // the three responders with a live C-Chain
+	beacons := nodeIDs(3) // the three responders still answering
 	policy := &BootstrapPolicy{
 		TrustedBeacons: equalBeacons(beacons, w),
 		MinResponses:   3,
 		Source:         &stubAncestry{byID: byID},
 	}
 	replies := []BeaconReply{
-		reply(beacons[0], ahead.ID, w),  // luxd-1, ran on alone
-		reply(beacons[1], common.ID, w), // luxd-3
-		reply(beacons[2], common.ID, w), // luxd-4
+		reply(beacons[0], ahead.ID, w),  // the node that ran on alone
+		reply(beacons[1], common.ID, w), // held at the common block
+		reply(beacons[2], common.ID, w), // held at the common block
 	}
 
 	f, err := policy.AcceptsFrontier(context.Background(), replies)
@@ -1235,7 +1235,7 @@ func TestBootstrapTrust_H_HaltSkewBeyondDepthStillFailsSafe(t *testing.T) {
 }
 
 // TestBootstrapTrust_H_AcceptanceMatrix pins the owner-specified recovery matrix at the policy
-// layer. Each case is the SAME five-validator mainnet shape with a different responder pattern.
+// layer. Each case is the SAME five-validator shape with a different responder pattern.
 //
 // The rule being pinned is "highest verifiably-vouched descendant wins", NOT "numerically highest
 // tip advertised". A tip whose ancestry does not link into the fleet's chain earns NO credit no
@@ -1247,7 +1247,7 @@ func TestBootstrapTrust_H_AcceptanceMatrix(t *testing.T) {
 		refs, byID := refChain(600)
 		common := refs[600]
 		prev := common
-		for i := 0; i < 535; i++ { // the measured mainnet skew, > one 256 window
+		for i := 0; i < 535; i++ { // the same halt skew, > one 256 window
 			c := childRef(prev)
 			byID[c.ID] = c
 			prev = c

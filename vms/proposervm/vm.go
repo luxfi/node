@@ -50,8 +50,9 @@ const (
 )
 
 var (
-	_ vmchain.ChainVM        = (*VM)(nil)
-	_ vmchain.BatchedChainVM = (*VM)(nil)
+	_ vmchain.ChainVM         = (*VM)(nil)
+	_ vmchain.BatchedChainVM  = (*VM)(nil)
+	_ vmchain.StateSyncableVM = (*VM)(nil)
 
 	dbPrefix = []byte("proposervm")
 )
@@ -65,6 +66,7 @@ type VM struct {
 	Config
 	blockBuilderVM vmchain.BuildBlockWithRuntimeChainVM
 	batchedVM      vmchain.BatchedChainVM
+	ssVM           vmchain.StateSyncableVM
 
 	state.State
 
@@ -204,11 +206,13 @@ func New(
 ) *VM {
 	blockBuilderVM, _ := vm.(vmchain.BuildBlockWithRuntimeChainVM)
 	batchedVM, _ := vm.(vmchain.BatchedChainVM)
+	ssVM, _ := vm.(vmchain.StateSyncableVM)
 	return &VM{
 		ChainVM:        vm,
 		Config:         config,
 		blockBuilderVM: blockBuilderVM,
 		batchedVM:      batchedVM,
+		ssVM:           ssVM,
 	}
 }
 
@@ -386,16 +390,16 @@ func (vm *VM) BuildBlock(ctx context.Context) (vmchain.Block, error) {
 		return preferredBlock.buildChild(ctx)
 	}
 
-	// FAIL-SECURE FALLBACK — the build-side companion to the defect #1
-	// SetPreference hardening (validate-before-assign, see SetPreference above).
+	// FAIL-SECURE FALLBACK — the build-side companion to the validate-before-assign
+	// hardening in SetPreference (below).
 	//
 	// SetPreference only adopts vm.preferred after a successful getBlock, but a block
 	// that was fetchable at preference time can later become unfetchable: an unaccepted
 	// sibling that consensus dropped, or a never-persisted outer block referenced after
-	// heavy sibling churn. On affected versions BuildBlock then failed `not found` in a
-	// tight loop and the node's voter went mute (~170 err/s). Quasar cert-finality has no
-	// polling re-converge path, so the node never recovered on its own — a fleet-wide
-	// liveness wedge under churn (mainnet 1082879→1085755 window; postmortem residual #1).
+	// heavy sibling churn. Without a fallback BuildBlock then fails `not found` in a
+	// tight loop and the node's voter goes mute. Quasar cert-finality has no polling
+	// re-converge path, so nothing brings that node back on its own: one node's churn
+	// becomes a standing liveness wedge that only an operator can clear.
 	//
 	// last-accepted is ALWAYS held — it is committed state. Build the child on it: the node
 	// keeps producing on a valid tip while the catch-up path pulls the gap, and a later
@@ -419,9 +423,9 @@ func (vm *VM) BuildBlock(ctx context.Context) (vmchain.Block, error) {
 		//
 		// This is not an exotic state: a node idling at its accepted tip has
 		// preferred == lastAccepted, so this is the COMMON shape, and the surrounding
-		// fallback does not cover it. Observed on hanzo-mainnet mv-4 twice inside 90
-		// minutes (2026-08-01); an operator restart cleared it each time, which means
-		// the block is on disk and only the live read path could not see it.
+		// fallback does not cover it. When a restart clears it, the block was on disk
+		// the whole time and only the live read path could not see it — a cache
+		// tombstone over durable bytes rather than missing state (state/block_state.go).
 		vm.logger.Error("unexpected build block failure",
 			log.String("reason", "preferred block IS last-accepted and is unfetchable — no distinct fallback exists"),
 			log.Stringer("parentID", vm.preferred),
@@ -490,7 +494,7 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 		return err
 	}
 
-	// VALIDATE BEFORE ASSIGN (defect #1 — the luxd-1 rejoin wedge).
+	// VALIDATE BEFORE ASSIGN — the wedge a rejoining validator falls into.
 	//
 	// The prior code assigned vm.preferred = preferred BEFORE fetching the block. A
 	// preference for a block this proposervm does not hold therefore POISONED
@@ -500,7 +504,7 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 	// node never recovers — it just spams the failure.
 	//
 	// A validator that fell behind is steered by the consensus engine
-	// (consensus/engine/chain/integration.go — defect #2) to a DAG build-tip ABOVE its
+	// (consensus/engine/chain/integration.go) to a DAG build-tip ABOVE its
 	// own frontier, which is exactly such an unheld id. Ava never hits this because it
 	// upholds the single-store invariant (it only ever calls SetPreference with a block
 	// Consensus already Verified-into-VM); Lux's build-tip steering does not, so the
@@ -576,11 +580,10 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 // proposervm involvement and no accept. SetPreference cannot undo that drift either — it
 // short-circuits on an unchanged outer preference (above), so re-affirming the same tip
 // never re-pushes the inner preference. Every subsequent build then extends the drifted
-// head, the node REJECTS THE BLOCK IT JUST BUILT, drops it, and repeats forever:
-// devnet 96367 / testnet 96368 on 2026-07-28, "built block failed verification —
-// dropping / inner parentID didn't match expected parent", 83–456 drops/min per node,
-// the accepted tip frozen while the builder ran two heights ahead of it. Never
-// self-corrects, on any node, ever.
+// head, the node REJECTS THE BLOCK IT JUST BUILT ("built block failed verification —
+// dropping / inner parentID didn't match expected parent"), drops it, and repeats at the
+// full rate it attempts builds: the accepted tip freezes while the builder runs ahead of
+// it. Never self-corrects, on any node, ever.
 //
 // SetPreference on the INNER VM is the right primitive and the only one: it is that VM's
 // own head-reorg entry point (evm VM.SetPreference → BlockChain.SetPreference →
@@ -930,7 +933,8 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		// repair below only ever runs when an anchor EXISTS to compare against, so
 		// a node with NO anchor silently skipped repair entirely — no backfill
 		// state, no request, no log — and stayed stranded at its import height
-		// forever while peers advanced (devnet luxd-0/3 at 5092, testnet luxd-1).
+		// forever while its peers advanced, with nothing local or on the wire able
+		// to move it.
 		//
 		// Distinguishing them cannot be done from the empty proposervm database
 		// alone — that database is precisely what was wiped. The fork height is
