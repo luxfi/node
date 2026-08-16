@@ -9,6 +9,7 @@ import (
 	"github.com/luxfi/consensus/engine/chain/summary"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/vm/chain"
 )
 
 // A reply reaches the round that asked for it. Without this the adoption round
@@ -119,3 +120,17 @@ func TestTheTwoRoundsDoNotShareAMailbox(t *testing.T) {
 }
 
 var _ summary.Source = (*summarySource)(nil)
+
+// The assertion adoption stands on. A VM that can sync state and one whose
+// summary type simply did not match look identical from a silent return, so this
+// failing is what a client wired into a shipped build and doing nothing looks
+// like from the outside.
+func TestTheSyncSurfaceIsReachable(t *testing.T) {
+	// Two links, and either breaking is silent at runtime: the VM must offer the
+	// sync surface, and what adoption hands the round must satisfy it.
+	var vm chain.ChainVM
+	if _, ok := vm.(chain.StateSyncableVM); ok {
+		t.Fatal("precondition: a bare ChainVM must not pass for a state-syncable one")
+	}
+	var _ summary.VM[chain.StateSummary] = (*syncVM)(nil)
+}
