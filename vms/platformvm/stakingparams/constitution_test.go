@@ -36,7 +36,7 @@ func TestUnitsAreTheNodesUnits(t *testing.T) {
 }
 
 // The floor moves at the activation and nowhere else. A validator bonding one
-// second before it is held to 2,000; one bonding at it is admitted at 1,000.
+// second before it is held to 2,000; one bonding at it must bring 1,000,000.
 func TestMainnetFloorMovesAtTheActivation(t *testing.T) {
 	if err := MainnetHistory.Valid(); err != nil {
 		t.Fatalf("history: %v", err)
@@ -45,8 +45,8 @@ func TestMainnetFloorMovesAtTheActivation(t *testing.T) {
 	if got := MainnetHistory.At(activation - 1).MinValidatorStake; got != 2_000*Lux {
 		t.Fatalf("one second before activation: floor = %d, want 2,000 LUX", got)
 	}
-	if got := MainnetHistory.At(activation).MinValidatorStake; got != 1_000*Lux {
-		t.Fatalf("at activation: floor = %d, want 1,000 LUX", got)
+	if got := MainnetHistory.At(activation).MinValidatorStake; got != 1_000_000*Lux {
+		t.Fatalf("at activation: floor = %d, want 1,000,000 LUX", got)
 	}
 	// Nothing else moved: the change is the floor and only the floor.
 	before, after := MainnetHistory.At(activation-1), MainnetHistory.At(activation)

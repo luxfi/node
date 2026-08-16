@@ -92,14 +92,16 @@ var MainnetRate = Rate{
 }
 
 // MainnetHistory is the policy in force on Lux mainnet, oldest first. The
-// first entry is what the chain was born with; the second lowers the validator
-// floor to 1,000 LUX from its activation, so anyone bonding at the old floor
-// before then is judged on the terms they agreed to. Every node reads the same
-// activation, which is what makes the floor change at one height everywhere.
+// first entry is what the chain was born with; the second raises the validator
+// floor to 1,000,000 LUX from its activation — the same floor testnet and local
+// have always had, and the one that makes an operator holding 50M a fifty-fold
+// participant rather than a fifty-thousand-fold one. Anyone bonding at the old
+// floor before then is judged on the terms they agreed to. Every node reads the
+// same activation, which is what makes the floor change at one height everywhere.
 var MainnetHistory = History{
 	{Activation: 0, Params: MainnetGenesis},
 	{Activation: 1787443200, Params: Params{ // 2026-08-23T00:00:00Z
-		MinValidatorStake: 1_000 * Lux,
+		MinValidatorStake: 1_000_000 * Lux,
 		MaxValidatorStake: MainnetGenesis.MaxValidatorStake,
 		MinStakeDuration:  MainnetGenesis.MinStakeDuration,
 		MaxStakeDuration:  MainnetGenesis.MaxStakeDuration,
