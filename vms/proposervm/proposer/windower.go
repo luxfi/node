@@ -28,7 +28,7 @@ const (
 )
 
 // WindowDuration is the proposer-slot spacing: a validator's minimum build delay
-// is its slot index times WindowDuration. Default 5s (the avalanchego mainnet
+// is its slot index times WindowDuration. Default 5s (the settled mainnet
 // value, tuned for large validator sets). It is a startup-configurable VAR — small
 // local/dev networks shrink it via SetWindowDuration (proposervm Config →
 // --proposer-window-duration) so block cadence is not floored at 5s per proposer

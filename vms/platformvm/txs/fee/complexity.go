@@ -79,14 +79,6 @@ const (
 
 	intrinsicSECP256k1FxSignatureCompute = 200 // secp256k1 signature verification time is around 200us
 
-	intrinsicConvertNetworkToL1ValidatorBandwidth = wireIntLen + // nodeID length
-		wireLongLen + // weight
-		wireLongLen + // balance
-		wireIntLen + // remaining balance owner threshold
-		wireIntLen + // remaining balance owner num addresses
-		wireIntLen + // deactivation owner threshold
-		wireIntLen // deactivation owner num addresses
-
 	intrinsicBLSAggregateCompute           = 5     // BLS public key aggregation time is around 5us
 	intrinsicBLSVerifyCompute              = 1_000 // BLS verification time is around 1000us
 	intrinsicBLSPublicKeyValidationCompute = 50    // BLS public key validation time is around 50us
@@ -99,9 +91,8 @@ const (
 
 	intrinsicInputDBRead = 1
 
-	intrinsicInputDBWrite                     = 1
-	intrinsicOutputDBWrite                    = 1
-	intrinsicConvertNetworkToL1ValidatorDBWrite = 4 // weight diff + pub key diff + chainID/nodeID + validationID
+	intrinsicInputDBWrite  = 1
+	intrinsicOutputDBWrite = 1
 )
 
 var (
@@ -181,27 +172,6 @@ var (
 		gas.DBRead:  1, // read net auth
 		gas.DBWrite: 1, // set net owner
 	}
-	IntrinsicTransformChainTxComplexities = gas.Dimensions{
-		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
-			ids.IDLen + // netID
-			ids.IDLen + // assetID
-			wireIntLen + // initialSupply
-			wireIntLen + // maximumSupply
-			wireIntLen + // minConsumptionRate
-			wireIntLen + // maxConsumptionRate
-			wireLongLen + // minValidatorStake
-			wireLongLen + // maxValidatorStake
-			wireIntLen + // minStakeDuration
-			wireIntLen + // maxStakeDuration
-			wireIntLen + // minDelegationFee
-			wireIntLen + // minDelegatorStake
-			wireIntLen + // maxValidatorWeightFactor
-			wireIntLen + // uptimeRequirement
-			wireIntLen + // netAuth typeID
-			wireIntLen, // netAuthCredential typeID
-		gas.DBRead:  2, // get net auth + check for net transformation
-		gas.DBWrite: 1, // write net transformation
-	}
 	IntrinsicBaseTxComplexities = gas.Dimensions{
 		gas.Bandwidth: wireVersionLen + // codecVersion
 			wireIntLen + // typeID
@@ -211,17 +181,6 @@ var (
 			wireIntLen + // number of inputs
 			wireIntLen + // length of memo
 			wireIntLen, // number of credentials
-	}
-	IntrinsicConvertNetworkToL1TxComplexities = gas.Dimensions{
-		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
-			ids.IDLen + // subchainID
-			ids.IDLen + // chainID
-			wireIntLen + // address length
-			wireIntLen + // validators length
-			wireIntLen + // chainAuth typeID
-			wireIntLen, // chainAuthCredential typeID
-		gas.DBRead:  3, // chain auth + transformation lookup + conversion lookup
-		gas.DBWrite: 2, // write conversion manager + total weight
 	}
 	IntrinsicRegisterL1ValidatorTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
@@ -491,35 +450,9 @@ func (*complexityVisitor) AddDelegatorTx(*txs.AddDelegatorTx) error {
 	return ErrUnsupportedTx
 }
 
-func (*complexityVisitor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return ErrUnsupportedTx
-}
-
 func (*complexityVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return ErrUnsupportedTx
 }
-
-// Removed in regenesis
-// func (*complexityVisitor) TransformChainTx(*txs.TransformChainTx) error {
-// 	return ErrUnsupportedTx
-// }
-
-// Removed in regenesis
-// func (c *complexityVisitor) AddChainValidatorTx(tx *txs.AddChainValidatorTx) error {
-// 	baseTxComplexity, err := baseTxComplexity(tx)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	authComplexity, err := AuthComplexity(tx.ChainAuth())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	c.output, err = IntrinsicAddChainValidatorTxComplexities.Add(
-// 		&baseTxComplexity,
-// 		&authComplexity,
-// 	)
-// 	return err
-// }
 
 func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	bandwidth, err := math.Mul(uint64(len(tx.FxIDs())), ids.IDLen)
@@ -554,23 +487,6 @@ func (c *complexityVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 	return err
 }
 
-// Removed in regenesis
-// func (c *complexityVisitor) CreateNetTx(tx *txs.CreateNetTx) error {
-// 	baseTxComplexity, err := baseTxComplexity(tx)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	ownerComplexity, err := OwnerComplexity(tx.Owner())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	c.output, err = IntrinsicCreateNetTxComplexities.Add(
-// 		&baseTxComplexity,
-// 		&ownerComplexity,
-// 	)
-// 	return err
-// }
-
 func (c *complexityVisitor) ImportTx(tx *txs.ImportTx) error {
 	baseTxComplexity, err := baseTxComplexity(tx)
 	if err != nil {
@@ -602,23 +518,6 @@ func (c *complexityVisitor) ExportTx(tx *txs.ExportTx) error {
 	)
 	return err
 }
-
-// Removed in regenesis
-// func (c *complexityVisitor) RemoveChainValidatorTx(tx *txs.RemoveChainValidatorTx) error {
-// 	baseTxComplexity, err := baseTxComplexity(tx)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	authComplexity, err := AuthComplexity(tx.ChainAuth())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	c.output, err = IntrinsicRemoveChainValidatorTxComplexities.Add(
-// 		&baseTxComplexity,
-// 		&authComplexity,
-// 	)
-// 	return err
-// }
 
 func (c *complexityVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
 	baseTxComplexity, err := baseTxComplexity(tx)
@@ -671,28 +570,6 @@ func (c *complexityVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionle
 	)
 	return err
 }
-
-// Removed in regenesis
-// func (c *complexityVisitor) TransferChainOwnershipTx(tx *txs.TransferChainOwnershipTx) error {
-// 	baseTxComplexity, err := baseTxComplexity(tx)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	authComplexity, err := AuthComplexity(tx.ChainAuth())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	ownerComplexity, err := OwnerComplexity(tx.Owner())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	c.output, err = IntrinsicTransferChainOwnershipTxComplexities.Add(
-// 		&baseTxComplexity,
-// 		&authComplexity,
-// 		&ownerComplexity,
-// 	)
-// 	return err
-// }
 
 func (c *complexityVisitor) BaseTx(tx *txs.BaseTx) error {
 	baseTxComplexity, err := baseTxComplexity(tx)

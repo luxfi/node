@@ -4,7 +4,7 @@
 // Package quasar is the node-side integration of the luxfi/consensus Quasar
 // post-quantum finality-certificate layer.
 //
-// luxd finalizes blocks on the classical Snow/Avalanche path (fast, every
+// luxd finalizes blocks on the classical sampling path (fast, every
 // block). On top, at CHECKPOINTS (epoch boundaries — NOT every block), a sampled
 // committee produces a QuasarCert over the finalized digest and validators
 // VERIFY it. This package wires the VERIFY half: it consumes
@@ -123,7 +123,7 @@ type Checkpoint struct {
 }
 
 // Gate enforces (or, dormant, ignores) PQ-finality at checkpoints. It is the
-// single node-side seam between the classical accept path and the consensus
+// one node-side connection between the classical accept path and the consensus
 // Quasar verifier.
 type Gate struct {
 	cfg        Config

@@ -9,14 +9,13 @@ import (
 	"sync/atomic"
 
 	"github.com/luxfi/consensus/networking/handler"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/timer"
+	validators "github.com/luxfi/validators"
 )
 
 var _ Router = (*ValidatorManager)(nil)
@@ -252,18 +251,6 @@ func (v *ValidatorManager) Initialize(
 		peerNotConnectedF,
 		connectedPeers...,
 	)
-}
-
-func (v *ValidatorManager) RegisterRequest(
-	ctx context.Context,
-	nodeID ids.NodeID,
-	chainID ids.ID,
-	requestID uint32,
-	op message.Op,
-	failedMsg message.InboundMessage,
-	engineType p2p.EngineType,
-) {
-	v.Router.RegisterRequest(ctx, nodeID, chainID, requestID, op, failedMsg, engineType)
 }
 
 func (v *ValidatorManager) HandleInbound(ctx context.Context, msg message.InboundMessage) {

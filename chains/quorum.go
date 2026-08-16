@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 // quorum.go — the node-layer wiring that makes the consensus engine's α-of-K
-// quorum-cert finality LIVE (HIGH-4). The consensus engine (luxfi/consensus
+// quorum-cert finality LIVE. The consensus engine (luxfi/consensus
 // engine/chain) defines the quorum RULE and the vote/cert topology interfaces;
 // THIS file supplies the concrete node implementations the engine needs:
 //
@@ -12,7 +12,7 @@
 //   - blsVoteSigner    — signs THIS node's accept votes with its staking BLS key
 //     so its signature can be collected into a cert.
 //   - validatorStakeSource — supplies per-validator stake so finality is a
-//     ⅔-by-STAKE supermajority (HIGH-3), not a raw voter count.
+//     ⅔-by-STAKE supermajority, not a raw voter count.
 //   - networkGossiper.BroadcastVote / GossipCert — the QuorumGossiper transport:
 //     a follower broadcasts its signed vote to ALL validators and any node that
 //     collects α distinct signed votes gossips the assembled cert, so finality
@@ -135,7 +135,7 @@ func isLocalDevNetwork(networkID uint32) bool {
 //     accept is the 1-of-1 quorum (no peer signatures).
 //   - sybilProtection == true, VALUE network: a large BYZANTINE-fault-tolerant
 //     param set — NEVER LocalParams() (K=3/α=2, f=0, which a single Byzantine
-//     validator forks; this was CRITICAL-2). Mainnet→K=21, Testnet→K=11, every
+//     validator forks). Mainnet→K=21, Testnet→K=11, every
 //     other value net→Default K=20.
 //   - sybilProtection == true, LOCAL DEV network (devnet 3 / localnet 1337):
 //     LocalBFTParams() (K=4/α=3, f=1) — the MINIMAL real-BFT committee. Default
@@ -143,8 +143,8 @@ func isLocalDevNetwork(networkID uint32) bool {
 //     are unreachable with 3-4 validators, so no block ever finalizes and the
 //     P-Chain freezes at height 0 (no C-Chain is ever created). K=4 makes quorum
 //     reachable (3 of 4) while staying genuinely BFT — it still clears
-//     ValidateForValueNetwork (K≥4, f≥1) and the CRITICAL-2 multi-node-is-BFT
-//     regression, so production safety is untouched. (A local devnet should run
+//     ValidateForValueNetwork (K≥4, f≥1) and the multi-node-is-BFT rule, so a
+//     value network's safety is untouched. (A local devnet should run
 //     ≥4 validators to realise f=1; with 3 it degrades to near-unanimous f=0,
 //     which is safe though not live under a fault.)
 //
@@ -182,13 +182,12 @@ func selectConsensusParams(sybilProtection bool, networkID uint32) consensusconf
 //     fall back to anyone-can-propose with a P-chain-height-0 stamp. The P-Chain
 //     keeps the existing newPChainHeightVM path (which DOES get the live state).
 //   - inner is NOT DAG-native (no Linearize): a linearized DAG VM (X-Chain) is
-//     driven by a push-notification bridge that does not compose with
-//     proposervm's pull/window model without avalanchego's initializeOnLinearizeVM
-//     machinery. It keeps the existing path.
+//     driven by a push-notification bridge, and a push bridge does not compose
+//     with proposervm's pull/window model. It keeps the existing path.
 //
 // The C-Chain and sovereign-L1 EVM chains satisfy all three (multi-validator,
-// not the P-Chain, not DAG) — they are exactly the chains that exhibited the
-// equivocation crash, and exactly the chains avalanchego wraps in proposervm.
+// not the P-Chain, not DAG) — exactly the chains where two proposers at one
+// height is possible, which is what the proposer window rules out.
 func shouldWrapInProposerVM(k int, chainID ids.ID, innerIsDAGNative bool) bool {
 	return k > 1 && chainID != constants.PlatformChainID && !innerIsDAGNative
 }
@@ -197,7 +196,7 @@ func shouldWrapInProposerVM(k int, chainID ids.ID, innerIsDAGNative bool) bool {
 
 // blsVoteVerifier verifies a validator's BLS signature over the canonical vote
 // message. The validator's BLS public key is resolved FROM THE HEIGHT-INDEXED
-// validators.State AT THE BLOCK'S P-CHAIN EPOCH HEIGHT (RESIDUAL-B) — the SAME
+// validators.State AT THE BLOCK'S P-CHAIN EPOCH HEIGHT — the SAME
 // height-pinned source the set-root and the ⅔-by-stake tally read from
 // (validatorSetAtHeight). It is NOT resolved from the CURRENT validator map.
 //
@@ -347,7 +346,7 @@ func (s *blsVoteSigner) SignVote(message []byte) ([]byte, error) {
 
 var _ consensuschain.VoteSigner = (*blsVoteSigner)(nil)
 
-// --- height-pinned epoch read (MEDIUM-1) -------------------------------------
+// --- height-pinned epoch read -------------------------------------
 
 // validatorSetAtHeight reads the validator set IN FORCE AT a value-chain height
 // from the height-indexed validators.State. This is the SINGLE source of epoch
@@ -362,7 +361,7 @@ var _ consensuschain.VoteSigner = (*blsVoteSigner)(nil)
 // current-map skew during a validator-set change. (The previous Manager.GetMap()
 // read hashed the CURRENT map, which diverges between the signer and the
 // assembler across that skew window → mismatched canonical messages → dropped
-// votes → finality stall at every staking change. That was MEDIUM-1.)
+// votes → finality stall at every staking change.)
 //
 // A nil state, a lookup error, or an empty set yields a nil map, which the
 // callers fold into their fail-soft answers (0 weight / Empty root). An error is
@@ -380,12 +379,12 @@ func validatorSetAtHeight(state validators.State, networkID ids.ID, height uint6
 	return set
 }
 
-// --- stake source (HIGH-3, height-pinned by MEDIUM-1) ------------------------
+// --- stake source, height-pinned ---------------------------------------------
 
 // validatorStakeSource supplies validator voting weights so the engine can
-// require a ⅔-by-stake supermajority for finality (HIGH-3). Weights are read
+// require a ⅔-by-stake supermajority for finality. Weights are read
 // from the HEIGHT-INDEXED validators.State at the cert-position height, the same
-// height the set-root commits to (MEDIUM-1). Reading the tally at the same epoch
+// height the set-root commits to. Reading the tally at the same epoch
 // as the signed membership means a validator whose vote is in the cert (its
 // signature verifies against the height-H set-root) also contributes its height-H
 // weight to the tally — eliminating the second skew (a current-map weight read
@@ -447,7 +446,7 @@ var _ consensuschain.StakeSource = (*validatorStakeSource)(nil)
 // invariant (a cross-epoch cert fails verification because every signature was
 // over this root).
 //
-// HEIGHT-PINNED (MEDIUM-1). The root is read from the HEIGHT-INDEXED
+// HEIGHT-PINNED. The root is read from the HEIGHT-INDEXED
 // validators.State at the value-chain block height, NOT from the Manager's
 // CURRENT map. At a given height H, GetValidatorSet returns the set the network
 // already agreed on, so every honest node — signer and assembler alike — computes

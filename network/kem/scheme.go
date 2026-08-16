@@ -19,9 +19,8 @@
 //
 // KeyExchangeID is a type alias of config.KeyExchangeID; the canonical wire
 // bytes (0x01 = ML-KEM-768, 0x02 = ML-KEM-1024, 0x90 = X25519Unsafe) live
-// in the consensus config package and are shared with protocol/auth. Closes
-// the "three disjoint KEM ID registries" drift named in the spec/code audit
-// under Bug 3.
+// in the consensus config package and are shared with protocol/auth. One
+// registry, so a KEM id means the same byte to every reader of the wire.
 package kem
 
 import (

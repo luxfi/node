@@ -432,7 +432,8 @@ func (id *HybridIdentity) Close() error {
 	for i := range id.xPrivateKey {
 		id.xPrivateKey[i] = 0
 	}
-	// Note: ML-DSA and ML-KEM keys should also be zeroed in production
+	// mldsaPrivateKey and hybridKEMPrivate hold their own bytes behind the
+	// crypto packages' types, so clearing them is those packages' erase to give.
 	return nil
 }
 

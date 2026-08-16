@@ -107,17 +107,15 @@ func TestMissingOuterAnchor_PreFork_BootsClean(t *testing.T) {
 	}
 }
 
-// TestDanglingOuterAnchor_StartsInBackfill is the upgrade regression.
+// TestDanglingOuterAnchor_StartsInBackfill pins how a truncated index boots.
 //
 // A snapshot clone (or any truncated copy) can carry the proposervm's
-// last-accepted POINTER while the envelope it names is absent. That branch used
-// to `return fmt.Errorf("failed to get last accepted block: …")`, which fails VM
-// init — the node logs "error creating required chain" and exits 1, so EVERY
-// restart is fatal on a chain that is otherwise intact. The damage is per-node
-// and invisible to every other node on the same image, so it reads as a bad
-// release rather than as local damage: the only way off the wedged node is a
-// restart, and the restart is what is fatal. A fleet in that state cannot take
-// the version carrying the fix for anything else, either.
+// last-accepted POINTER while the envelope it names is absent. Failing VM init
+// on that state — "failed to get last accepted block" — makes every restart
+// fatal on a chain that is otherwise intact, and the only way off such a node is
+// a restart. The damage is per-node and invisible to every other node running
+// the same binary, so it reads as a bad build rather than as local damage, and a
+// fleet holding it cannot take a new binary for any other reason either.
 //
 // Starting degraded is strictly better: enterOuterBackfill makes the damage
 // visible AND gates BuildBlock off, so the node cannot propose while its index

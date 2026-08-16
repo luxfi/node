@@ -1,17 +1,17 @@
 // Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// Command repair-proposervm is a ONE-TIME, fail-closed surgical tool to reconcile
-// a proposervm chain-state DB onto a known-canonical outer block at a single height.
+// Command repair-proposervm is a fail-closed surgical tool to reconcile a
+// proposervm chain-state DB onto a known-canonical outer block at a single height.
 //
-// Motivation (incident 1082814, Lux mainnet C-Chain): a sub-quorum proposervm
-// envelope A (3-of-5 ACCEPT) was locally accepted on some nodes while the network
-// finalized the supermajority sibling B (4-of-5) that wraps the IDENTICAL inner EVM
-// block. The two siblings differ ONLY in the proposervm outer envelope; the inner
-// EVM state is byte-identical (no EVM divergence). On restart those nodes re-seed
-// finality from their persisted proposervm lastAccepted=A and fatal on B's cert
-// (EQUIVOCATION). This tool swaps the persisted record of `height` from A to the
-// canonical B, leaving the inner EVM completely untouched (no EVM rollback).
+// The condition it repairs: a node locally accepted a sub-quorum proposervm
+// envelope A while the network finalized the supermajority sibling B, which wraps
+// the IDENTICAL inner EVM block. The two siblings differ ONLY in the proposervm
+// outer envelope; the inner EVM state is byte-identical, so nothing about the EVM
+// diverged. Such a node re-seeds finality from its persisted proposervm
+// lastAccepted=A on restart and then fatals on B's cert as equivocation. This tool
+// swaps the persisted record of `height` from A to the canonical B, leaving the
+// inner EVM completely untouched (no EVM rollback).
 //
 // It is NOT a blind hex edit: it opens the exact same typed proposervm state
 // (luxfi/node/vms/proposervm/state) over the exact same nested keyspace luxd uses

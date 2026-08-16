@@ -90,8 +90,8 @@ func (ic *innerChain) snapshot(tip uint64) *innerChain {
 	return cp
 }
 
-// buildableVM is ic.vm() plus the two calls a build needs. SetPreference is
-// anchorInnerBuildParent's seam — it moves the head exactly as the EVM does.
+// buildableVM is ic.vm() plus the two calls a build needs. SetPreference is what
+// anchorInnerBuildParent reaches: it moves the head exactly as the EVM does.
 // BuildBlock mints a FRESH child of the head (building is not accepting, and a
 // replacement proposal after a crash is a new block, not the lost one).
 func (ic *innerChain) buildableVM() *blocktest.VM {

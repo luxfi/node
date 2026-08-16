@@ -96,10 +96,10 @@ func BenchmarkIDFromString(b *testing.B) {
 	}
 }
 
-// BenchmarkVerifySignature benchmarks signature verification
+// BenchmarkVerifySignature times the loop around a signature verification, not
+// the verification: the body below does arithmetic on the operand lengths and
+// calls no crypto at all, so the number it reports is the harness floor.
 func BenchmarkVerifySignature(b *testing.B) {
-	// This is a placeholder for actual signature verification
-	// In real implementation, this would use actual crypto operations
 	message := []byte("message to sign")
 	signature := make([]byte, 65) // typical signature size
 

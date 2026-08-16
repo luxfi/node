@@ -66,7 +66,7 @@ const (
 // commonZapBlock is the embedded base for every block type. It holds the zap
 // buffer plus the cached block ID and serves the whole shared surface
 // (Bytes/ID/Parent/Height/Timestamp/InitRuntime), so each type file only adds
-// its constructor, Txs()/Tx() delta accessors, and Visit.
+// its constructor, DecisionTxs()/Tx() delta accessors, and Visit.
 type commonZapBlock struct {
 	msg *zap.Message
 	id  ids.ID
@@ -84,7 +84,7 @@ func (b commonZapBlock) Timestamp() time.Time {
 // InitRuntime binds the runtime into every embedded tx. It dispatches on the
 // wire kind so the base — which owns the layout knowledge — is the one place
 // that knows where a block's txs live, without depending on the concrete
-// type's Txs() (Go embedding has no virtual dispatch).
+// type's accessors (Go embedding has no virtual dispatch).
 func (b commonZapBlock) InitRuntime(rt *runtime.Runtime) {
 	obj := b.msg.Root()
 	switch blockKind(obj.Uint8(offBlkKind)) {
@@ -164,7 +164,7 @@ func buildBlock(k blockKind, parentID ids.ID, height, ts uint64, decisionTxs []*
 	}
 	if k == blkProposal {
 		if proposalTx == nil {
-			return nil, fmt.Errorf("proposal block requires a proposal tx")
+			return nil, errNoProposalTx
 		}
 		ob.SetBytes(offBlkProposalTx, proposalTx.Bytes())
 	}

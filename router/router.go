@@ -55,28 +55,6 @@ type Router interface {
 	// Disconnected is called when a peer disconnects
 	Disconnected(nodeID ids.NodeID)
 
-	// RegisterRequest registers an outbound request
-	RegisterRequest(
-		ctx context.Context,
-		nodeID ids.NodeID,
-		chainID ids.ID,
-		requestID uint32,
-		op message.Op,
-		timeoutMsg message.InboundMessage,
-		engineType p2p.EngineType,
-	)
-
-	// RegisterRequests registers outbound requests to multiple nodes
-	RegisterRequests(
-		ctx context.Context,
-		nodeIDs set.Set[ids.NodeID],
-		chainID ids.ID,
-		requestID uint32,
-		op message.Op,
-		timeoutMsg message.InboundMessage,
-		engineType p2p.EngineType,
-	)
-
 	// HealthCheck returns the router's health status
 	HealthCheck(ctx context.Context) (interface{}, error)
 
@@ -275,41 +253,6 @@ func (r *routerImpl) Disconnected(nodeID ids.NodeID) {
 		}); ok {
 			ch.Disconnected(nodeID)
 		}
-	}
-}
-
-func (r *routerImpl) RegisterRequest(
-	ctx context.Context,
-	nodeID ids.NodeID,
-	chainID ids.ID,
-	requestID uint32,
-	op message.Op,
-	timeoutMsg message.InboundMessage,
-	engineType p2p.EngineType,
-) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	r.requests[requestID] = &requestInfo{
-		chainID:    chainID,
-		op:         op,
-		timeoutMsg: timeoutMsg,
-		engineType: engineType,
-	}
-}
-
-func (r *routerImpl) RegisterRequests(
-	ctx context.Context,
-	nodeIDs set.Set[ids.NodeID],
-	chainID ids.ID,
-	requestID uint32,
-	op message.Op,
-	timeoutMsg message.InboundMessage,
-	engineType p2p.EngineType,
-) {
-	// Register for each node
-	for nodeID := range nodeIDs {
-		r.RegisterRequest(ctx, nodeID, chainID, requestID, op, timeoutMsg, engineType)
 	}
 }
 

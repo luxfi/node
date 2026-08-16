@@ -19,8 +19,9 @@ type StandardBlock struct {
 	commonZapBlock
 }
 
-// Txs returns the decision txs in wire order.
-func (b *StandardBlock) Txs() []*txs.Tx {
+// DecisionTxs returns the decision txs in wire order. A standard block carries
+// nothing else.
+func (b *StandardBlock) DecisionTxs() []*txs.Tx {
 	list, _ := readTxList(b.msg.Root(), offBlkTxLengths, offBlkTxBlob)
 	return list
 }

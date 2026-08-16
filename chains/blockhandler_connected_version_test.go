@@ -37,19 +37,17 @@ func (c *recordingConnector) Connected(_ context.Context, _ ids.NodeID, nodeVers
 
 func (c *recordingConnector) Disconnected(context.Context, ids.NodeID) error { return nil }
 
-// TestBlockHandlerConnectedWithVersionDeliversRealVersion is the regression
-// guard for RED CRITICAL #1 (C-Chain nil-version panic).
+// TestBlockHandlerConnectedWithVersionDeliversRealVersion pins that a peer's
+// version survives the handler.
 //
-// Before the fix blockHandler.Connected forwarded connector.Connected(ctx,
-// nodeID, nil) — a hardcoded nil version. proposervm promotes Connected to the
-// inner C-Chain VM (coreth), whose state-sync peer tracker compares peer
-// versions; a nil version there dereferences nil (version.Application.Compare)
-// and PANICS a state-syncing node (a fresh join, or a validator rejoining after
-// falling behind — the launch's core invariant).
+// blockHandler.Connected must forward the REAL peer version, never a hardcoded
+// nil. proposervm promotes Connected to the inner C-Chain VM, whose state-sync
+// peer tracker compares peer versions; a nil version there dereferences nil
+// (version.Application.Compare) and panics a state-syncing node — a fresh join,
+// or a validator rejoining after falling behind.
 //
-// The fix plumbs the REAL peer version through ConnectedWithVersion to the
-// connector. This test drives the real blockHandler with a real version and
-// asserts the connector receives that non-nil version — never nil.
+// This test drives the real blockHandler with a real version and asserts the
+// connector receives that non-nil version.
 func TestBlockHandlerConnectedWithVersionDeliversRealVersion(t *testing.T) {
 	require := require.New(t)
 
@@ -77,7 +75,7 @@ func TestBlockHandlerConnectedWithVersionDeliversRealVersion(t *testing.T) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 	require.True(rc.called, "connector.Connected must be invoked")
-	require.NotNil(rc.gotVersion, "connector must receive a NON-nil version (coreth dereferences it in state-sync)")
+	require.NotNil(rc.gotVersion, "connector must receive a NON-nil version — the EVM dereferences it in state-sync")
 	require.Equal("lux", rc.gotVersion.Name)
 	require.Equal(1, rc.gotVersion.Major)
 	require.Equal(36, rc.gotVersion.Minor)

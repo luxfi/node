@@ -26,7 +26,7 @@ func mainnetInternal() *Internal {
 
 // TestUngovernedNodeIsUnchanged is the adoption safety property. A node with no
 // staking history must resolve exactly the constants it was built with, so
-// shipping this seam changes nothing on any live network until stake votes.
+// shipping the lookup changes nothing on any live network until stake votes.
 func TestUngovernedNodeIsUnchanged(t *testing.T) {
 	require := require.New(t)
 
@@ -42,7 +42,7 @@ func TestUngovernedNodeIsUnchanged(t *testing.T) {
 	require.Equal(got, c.StakingPolicyAt(1<<40))
 }
 
-// TestGovernedPolicyBindsOnlyTheFuture drives the real seam function through
+// TestGovernedPolicyBindsOnlyTheFuture drives the real lookup through
 // the exact scenario the reward gate faces: a validator that bonded under the
 // old rule, and a vote that lands afterwards.
 func TestGovernedPolicyBindsOnlyTheFuture(t *testing.T) {
@@ -71,7 +71,7 @@ func TestGovernedPolicyBindsOnlyTheFuture(t *testing.T) {
 	require.Equal(uint32(880_000), c.StakingPolicyAt(votedAt+1).UptimeRequirement)
 }
 
-// TestGovernedAdmissionThresholdsAreLive proves the other seam: a vote that
+// TestGovernedAdmissionThresholdsAreLive proves the other direction: a vote that
 // opens the network up is visible to admission immediately.
 func TestGovernedAdmissionThresholdsAreLive(t *testing.T) {
 	require := require.New(t)
@@ -100,7 +100,7 @@ func TestGovernedAdmissionThresholdsAreLive(t *testing.T) {
 }
 
 // TestDurationRoundTripDoesNotTruncate guards the one lossy conversion in the
-// seam: config carries time.Duration, the governed value carries seconds.
+// lookup: config carries time.Duration, the governed value carries seconds.
 func TestDurationRoundTripDoesNotTruncate(t *testing.T) {
 	require := require.New(t)
 

@@ -48,13 +48,13 @@ func (h *fakeVersionedHandler) ConnectedWithVersion(_ context.Context, _ ids.Nod
 	return nil
 }
 
-// TestChainRouterConnectedDeliversConvertedVersion is the router half of the
-// RED CRITICAL #1 fix: chainRouter.Connected must deliver the REAL peer version
-// to a version-capable handler, converting it from the node's peer version type
+// TestChainRouterConnectedDeliversConvertedVersion is the router half of that
+// rule: chainRouter.Connected must deliver the REAL peer version to a
+// version-capable handler, converting it from the node's peer version type
 // (github.com/luxfi/node/version) to the VM boundary type
-// (github.com/luxfi/version, aka chain.VersionInfo). The old code dropped the
-// version at dispatch (h.Connected(ctx, nodeID)); the fix routes through the
-// versionedConnector capability so the real, converted version survives.
+// (github.com/luxfi/version, aka chain.VersionInfo). Dispatching through the
+// plain h.Connected(ctx, nodeID) drops the version; routing through the
+// versionedConnector capability is what carries it across the boundary.
 func TestChainRouterConnectedDeliversConvertedVersion(t *testing.T) {
 	require := require.New(t)
 

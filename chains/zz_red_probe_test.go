@@ -1,17 +1,15 @@
 // Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// zz_red_probe_test.go — RED adversarial security-regression probe for the fresh-net self-vote
-// caught-up path. Demonstrates the connected-vs-replied divergence: the fix gates the self-vote
-// on fullyConnectedBeacons (CONNECTIVITY, from net.PeerInfo) but tallies CaughtUp over `replies`
-// (from collectFrontierReplies). A beacon that is CONNECTED but does NOT answer the frontier
-// query this round counts as "fully connected" yet contributes nothing to the caught-up tally —
-// and the self-vote backfills its missing weight, so a HEAVY validator self-completes caught-up
-// at a STALE height while an honest connected beacon is genuinely ahead. Blue's bsBeaconNet
-// cannot express this (its Send answers for EVERY connected beacon), so the regression slipped
-// through. These assertions encode the DESIRED safe behavior: they FAIL on the current code (the
-// break) and will PASS once the self-vote gate also requires every connected beacon to have
-// REPLIED this round.
+// zz_red_probe_test.go — the fresh-net self-vote caught-up path must key on the same thing
+// twice. Gate the self-vote on fullyConnectedBeacons (CONNECTIVITY, from net.PeerInfo) while
+// tallying CaughtUp over `replies` (from collectFrontierReplies) and the two diverge: a beacon
+// that is CONNECTED but does NOT answer the frontier query this round counts as "fully
+// connected" yet contributes nothing to the tally, the self-vote backfills its missing weight,
+// and a HEAVY validator self-completes caught-up at a STALE height while an honest connected
+// beacon is genuinely ahead. A network double whose Send answers for EVERY connected beacon
+// cannot express that, which is why the double here withholds one reply. These assertions hold
+// only when the self-vote also requires every connected beacon to have REPLIED this round.
 package chains
 
 import (
@@ -91,10 +89,9 @@ func (n *redSilentNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.Nod
 // CONTRAST: the ONLY difference between the two runs is whether the CONNECTED ahead-beacon B
 // delivers its frontier reply. B is fully connected in both runs, so fullyConnectedBeacons is
 // TRUE in both. Yet B-replies → safe (status != FrontierCaughtUp); B-connected-but-silent →
-// FrontierCaughtUp at the stale height (the break). This falsifies Blue's safety claim ("a
-// genuinely behind node has an ahead peer in the full set → CaughtUp is false → it keeps
-// waiting/syncing"): the gate keys on CONNECTIVITY while the caught-up decision keys on REPLIES,
-// and the two diverge.
+// FrontierCaughtUp at the stale height. So "a genuinely behind node has an ahead peer in the
+// full set → CaughtUp is false → it keeps waiting/syncing" does not hold on its own: the gate
+// keys on CONNECTIVITY while the caught-up decision keys on REPLIES, and the two diverge.
 //
 // Why K is genuinely finalized-ahead (a real safety break, not a minority fork): a heavy
 // validator (self=60%) finalizes K WITH a minority (B=33%, so self+B=93% ≥ ⅔), then LOSES K to a
@@ -158,11 +155,11 @@ func TestRED_PROBE_ConnectedButSilentAheadBeacon_SelfVoteFalseCompletesAtStale(t
 			"full-connectivity gate cannot see the reply suppression")
 }
 
-// TestRED_PROBE_EqualStakeNeedsNoSelfVote answers deploy-question #5: 5 EQUAL-stake beacons, node
+// TestRED_PROBE_EqualStakeNeedsNoSelfVote pins the equal-stake case: 5 EQUAL-stake beacons, node
 // a beacon, all four peers connected and reporting a common tip — the node concludes caught-up via
 // the ORDINARY AcceptsFrontier path (peers clear the stake-majority floor: 4·w of 5·w = 80% >
-// 50%). The self-vote is NEVER needed for equal stake, so the equal-stake devnet hang is NOT this
-// self-exclusion floor (look at primaryNetworkReady / P-chain bootstrap / beacon connectivity).
+// 50%). The self-vote is NEVER needed for equal stake, so an equal-stake network that hangs is
+// hanging on something else — primaryNetworkReady, P-chain bootstrap, or beacon connectivity.
 func TestRED_PROBE_EqualStakeNeedsNoSelfVote(t *testing.T) {
 	chain, byID := buildBSChain(8, -1)
 	vm := newBSVM(chain) // node at genesis (height 0)

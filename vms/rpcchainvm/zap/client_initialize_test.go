@@ -18,13 +18,11 @@ import (
 	luxruntime "github.com/luxfi/runtime"
 )
 
-// TestInitialize_SuccessResponseNotMistakenForError is a regression guard
-// for a wire-protocol misread that bricked every C-Chain start in a
-// downstream EVM L1 stack: the client treated every response with
-// MsgResponseFlag set (i.e. ALL responses) as an error, then printed the
-// binary InitializeResponse payload as if it were the error string. The
-// result was "vm error: <unprintable bytes>" and a chain that never came up
-// despite the plugin reporting "VM initialized successfully".
+// TestInitialize_SuccessResponseNotMistakenForError pins the response decode.
+// Treating every response with MsgResponseFlag set — that is, ALL responses —
+// as an error, and printing the binary InitializeResponse payload as the error
+// string, yields "vm error: <unprintable bytes>" and a chain that never starts
+// while the plugin reports "VM initialized successfully".
 //
 // What this test asserts: when the plugin returns a well-formed
 // InitializeResponse (with MsgResponseFlag — the normal success encoding),
@@ -34,10 +32,9 @@ import (
 //
 // Why this matters: the transport already converts true error responses
 // (MsgErrorFlag set) into a non-nil err from Conn.Call, so the client's
-// only job after Call returns success is to decode the response. The
-// previous code's defense against "error responses" was both wrong AND
-// unreachable — defense against a case that can't happen, that fired
-// every time anyway.
+// only job after Call returns success is to decode the response. A second
+// defense against "error responses" here guards a case the transport has
+// already handled, and fires on every success.
 func TestInitialize_SuccessResponseNotMistakenForError(t *testing.T) {
 	wantLastAccepted := ids.ID{0xa1, 0xcc, 0xa4, 0xae, 0xb9, 0x08, 0x14, 0x8c}
 	wantParent := ids.ID{}

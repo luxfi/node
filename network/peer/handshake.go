@@ -86,10 +86,9 @@ const (
 )
 
 // ProfileID is the per-handshake commitment to the chain-wide security
-// profile. Mirrors consensus/config.ProfileID; declared locally because
-// the published consensus v1.23.2 does not yet export
-// security_profile.go. Once consensus rolls a release that ships it,
-// this becomes a type alias.
+// profile. It mirrors consensus/config.ProfileID, and the byte values below
+// ARE the wire commitment: a peer resolves them through that enum, so the two
+// must agree byte for byte or the handshake fails on the value alone.
 type ProfileID uint8
 
 const (

@@ -4,7 +4,7 @@
 // Usage:
 //
 //	MNEMONIC="..." go run . --uri=http://localhost:19640 --network=testnet \
-//	  --genesis=/Users/z/work/lux/genesis/configs/hanzo-testnet/genesis.json \
+//	  --genesis=$LUX_GENESIS/configs/hanzo/testnet/genesis.json \
 //	  --hrp=test --bip44-idx=5
 //
 // Deprecated post-chain-create flow: after CreateChainTx, this binary

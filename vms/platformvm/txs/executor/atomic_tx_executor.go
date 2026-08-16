@@ -76,10 +76,6 @@ func (*atomicTxExecutor) CreateNetworkTx(*txs.CreateNetworkTx) error {
 	return ErrWrongTxType
 }
 
-func (*atomicTxExecutor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return ErrWrongTxType
-}
-
 func (*atomicTxExecutor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return ErrWrongTxType
 }

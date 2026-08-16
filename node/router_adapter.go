@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/math/set"
 	metric "github.com/luxfi/metric"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/router"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/timer"
@@ -97,35 +96,6 @@ func (r *routerAdapter) Connected(nodeID ids.NodeID, nodeVersion *version.Applic
 // Disconnected is called when a peer disconnects
 func (r *routerAdapter) Disconnected(nodeID ids.NodeID) {
 	r.router.Disconnected(nodeID)
-}
-
-// RegisterRequest registers an outbound request
-func (r *routerAdapter) RegisterRequest(
-	ctx context.Context,
-	nodeID ids.NodeID,
-	chainID ids.ID,
-	requestID uint32,
-	op message.Op,
-	timeoutMsg message.InboundMessage,
-	engineType p2p.EngineType,
-) {
-	r.router.RegisterRequest(ctx, nodeID, chainID, requestID, op, timeoutMsg, engineType)
-}
-
-// RegisterRequests registers outbound requests to multiple nodes
-func (r *routerAdapter) RegisterRequests(
-	ctx context.Context,
-	nodeIDs set.Set[ids.NodeID],
-	chainID ids.ID,
-	requestID uint32,
-	op message.Op,
-	timeoutMsg message.InboundMessage,
-	engineType p2p.EngineType,
-) {
-	// Delegate to RegisterRequest for each node
-	for nodeID := range nodeIDs {
-		r.RegisterRequest(ctx, nodeID, chainID, requestID, op, timeoutMsg, engineType)
-	}
 }
 
 // HealthCheck returns the router's health status

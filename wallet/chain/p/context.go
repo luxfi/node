@@ -45,9 +45,9 @@ func NewContextFromClients(
 
 	// LUX_WALLET_UTXO_ASSET_ID_OVERRIDE pins the fee-payment asset to a
 	// specific 32-byte asset ID, bypassing the platform.getStakingAssetID
-	// result. Required on networks where the live staking asset differs
-	// from the legacy LUX asset on existing P-chain UTXOs (lux-mainnet
-	// today, where staking == pmSJ7BfZ... but UTXOs hold HrJCm4yvN...).
+	// result. Required on a network whose live staking asset differs from
+	// the legacy LUX asset held by its existing P-chain UTXOs, where the two
+	// ids do not agree and the UTXOs are the ones that must be spendable.
 	// Empty / unset is a no-op.
 	if override := os.Getenv("LUX_WALLET_UTXO_ASSET_ID_OVERRIDE"); override != "" {
 		overrideID, perr := ids.FromString(override)

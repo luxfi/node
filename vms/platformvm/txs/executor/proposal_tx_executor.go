@@ -15,7 +15,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/node/vms/platformvm/txs/fee"
 	lux "github.com/luxfi/utxo"
 )
 
@@ -39,10 +38,11 @@ var (
 	ErrWrongTxType                     = errors.New("wrong transaction type")
 	ErrInvalidID                       = errors.New("invalid ID")
 	ErrProposedAddStakerTxNotPermitted = errors.New("staker transaction not permitted")
-	ErrAdvanceTimeTxNotPermitted       = errors.New("AdvanceTimeTx not permitted")
 )
 
-// ProposalTx executes the proposal transaction [tx].
+// ProposalTx executes the proposal transaction [tx] — the one the chain emits
+// about itself. No fee is charged and no calculator is consulted: neither will
+// price a chain-emitted tx, so this path never asks.
 //
 // [onCommitState] will be modified to reflect the changes made to the state if
 // the proposal is committed.
@@ -54,14 +54,12 @@ var (
 // the same state when passed into this function.
 func ProposalTx(
 	backend *Backend,
-	feeCalculator fee.Calculator,
 	tx *txs.Tx,
 	onCommitState state.Diff,
 	onAbortState state.Diff,
 ) error {
 	proposalExecutor := proposalTxExecutor{
 		backend:       backend,
-		feeCalculator: feeCalculator,
 		tx:            tx,
 		onCommitState: onCommitState,
 		onAbortState:  onAbortState,
@@ -75,9 +73,8 @@ func ProposalTx(
 
 type proposalTxExecutor struct {
 	// inputs, to be filled before visitor methods are called
-	backend       *Backend
-	feeCalculator fee.Calculator
-	tx            *txs.Tx
+	backend *Backend
+	tx      *txs.Tx
 	// [onCommitState] is the state used for validation.
 	// [onCommitState] is modified by this struct's methods to
 	// reflect changes made to the state if the proposal is committed.
@@ -163,10 +160,6 @@ func (*proposalTxExecutor) AddDelegatorTx(*txs.AddDelegatorTx) error {
 	// Proposal-style AddDelegatorTx is permanently rejected; only standard
 	// blocks may carry staker txs.
 	return ErrProposedAddStakerTxNotPermitted
-}
-
-func (*proposalTxExecutor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return ErrAdvanceTimeTxNotPermitted
 }
 
 func (e *proposalTxExecutor) RewardValidatorTx(tx *txs.RewardValidatorTx) error {

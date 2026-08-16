@@ -132,9 +132,8 @@ func TestKEMSession_DistinctTranscriptsDifferentKeys(t *testing.T) {
 // accept the classical KEM marker. This is the wire-level enforcement of
 // HIP-0077 "no classical primitives in strict-PQ mode". The canonical
 // config.KeyExchangeID enum exposes a single classical marker
-// (X25519Unsafe at 0x90); the P-256 / P-384 markers that used to live
-// in this package have been collapsed onto X25519Unsafe in the
-// canonical numbering (Bug 3 fix).
+// (X25519Unsafe at 0x90); the P-256 / P-384 markers this package once
+// declared separately are collapsed onto X25519Unsafe there.
 func TestKEMSession_RefusesClassicalKEM(t *testing.T) {
 	require := require.New(t)
 
@@ -277,7 +276,7 @@ func TestKeyExchangeID_Predicates(t *testing.T) {
 	require.EqualValues(3, NISTCategory(KeyExchangeMLKEM768))
 	require.EqualValues(5, NISTCategory(KeyExchangeMLKEM1024))
 
-	// Canonical wire bytes — pins the Bug 3 fix at 0x01/0x02.
+	// Canonical wire bytes — 0x01 and 0x02, as the consensus config declares them.
 	require.EqualValues(0x01, uint8(KeyExchangeMLKEM768))
 	require.EqualValues(0x02, uint8(KeyExchangeMLKEM1024))
 	require.EqualValues(0x90, uint8(KeyExchangeX25519Unsafe))

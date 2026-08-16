@@ -57,7 +57,7 @@ func MustLoadKey() *secp256k1.PrivateKey {
 
 // LoadKey attempts to load a private key using the priority order above.
 func LoadKey() (*secp256k1.PrivateKey, error) {
-	// 1. MNEMONIC env var — local dev + CI test seam.
+	// 1. MNEMONIC env var — local dev and CI.
 	if phrase := strings.TrimSpace(os.Getenv("MNEMONIC")); phrase != "" {
 		return keyFromMnemonic(phrase)
 	}

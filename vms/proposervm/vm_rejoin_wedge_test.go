@@ -69,7 +69,7 @@ func TestSetPreference_UnheldBlock_DoesNotPoison(t *testing.T) {
 	err := vm.SetPreference(context.Background(), unheld)
 
 	// An unheld build hint must be a non-fatal no-op — NEVER a hard error that also leaves
-	// the id poisoned (the old behavior that wedged BuildBlock).
+	// the id poisoned, which wedges BuildBlock.
 	require.NoError(err, "unheld SetPreference must not be fatal")
 
 	// THE anti-wedge invariant: vm.preferred is NOT poisoned to the unheld id.

@@ -10,9 +10,13 @@ import "github.com/luxfi/zap"
 // accessor. There is no codec, no version, no slot map.
 type kind uint8
 
+// Every number here is the wire, so a slot that stops naming a type stays a
+// hole rather than letting the ones after it shift down. Slot 0 names nothing
+// so a zeroed buffer decodes to no type; slot 1 named a time-advance tx that no
+// executor would run.
 const (
-	kindReserved kind = iota
-	kindAdvanceTime
+	_ kind = iota
+	_
 	kindRewardValidator
 	kindBase
 	kindImport

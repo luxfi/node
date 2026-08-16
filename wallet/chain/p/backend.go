@@ -84,10 +84,6 @@ type backendVisitor struct {
 	txID ids.ID
 }
 
-func (v *backendVisitor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return nil
-}
-
 func (v *backendVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return nil
 }

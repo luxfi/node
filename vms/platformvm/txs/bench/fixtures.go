@@ -332,13 +332,6 @@ func NewExportTxFixture() *txs.ExportTx {
 	return utx
 }
 
-// NewAdvanceTimeTxFixture is the minimal scheduled-time-advance tx.
-// 4 fields in the wire layout: codec version, type ID, then a single
-// uint64. Smallest of the smalls.
-func NewAdvanceTimeTxFixture() *txs.AdvanceTimeTx {
-	return txs.NewAdvanceTimeTx(1_700_000_000)
-}
-
 // NewRewardValidatorTxFixture is the "reward this validator" tx.
 // Carries a single ids.ID. Tiny.
 func NewRewardValidatorTxFixture() *txs.RewardValidatorTx {
@@ -425,7 +418,6 @@ func FixtureMap() map[string]txs.UnsignedTx {
 		"AddPermissionlessDelegatorTx": NewAddPermissionlessDelegatorTxFixture(),
 		"ImportTx":                     NewImportTxFixture(),
 		"ExportTx":                     NewExportTxFixture(),
-		"AdvanceTimeTx":                NewAdvanceTimeTxFixture(),
 		"RewardValidatorTx":            NewRewardValidatorTxFixture(),
 		"CreateChainTx":                NewCreateChainTxFixture(),
 		"CreateNetworkTx":              NewCreateNetworkTxFixture(),

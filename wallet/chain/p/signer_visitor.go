@@ -43,10 +43,6 @@ type signerVisitor struct {
 	tx      *txs.Tx
 }
 
-func (*signerVisitor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return errUnsupportedTxType
-}
-
 func (*signerVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return errUnsupportedTxType
 }

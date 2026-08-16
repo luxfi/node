@@ -52,7 +52,11 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 		return nil
 	}
 
-	for _, tx := range b.Txs() {
+	// Only the decision txs go back. They were submitted by someone else and
+	// are still theirs to have included. A proposal block's own tx is not
+	// reachable from here at all: it belongs to the height that was rejected,
+	// and the next builder emits a fresh one from current state.
+	for _, tx := range b.DecisionTxs() {
 		if err := r.Mempool.Add(tx); err != nil {
 			log.Debug(
 				"failed to reissue tx",

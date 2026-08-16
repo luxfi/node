@@ -181,12 +181,12 @@ func TestIsBootstrapped(t *testing.T) {
 	require.False(m.IsBootstrapped(chainID))
 }
 
-// TestIsBootstrappedTracksRealConvergence is the regression guard for the
-// premature-true masking bug: manager.IsBootstrapped must report true ONLY once the
-// chain has ACTUALLY finished initial sync (its net marked it Bootstrapped), NOT the
-// instant it is merely tracked (added to m.chains with its sync goroutine launched).
-// Before the fix, a C-Chain stalled at genesis (head 0x0) reported
-// info.isBootstrapped(C)=true, masking the stall from any readiness gate.
+// TestIsBootstrappedTracksRealConvergence: manager.IsBootstrapped must report true
+// ONLY once the chain has ACTUALLY finished initial sync (its net marked it
+// Bootstrapped), NOT the instant it is merely tracked (added to m.chains with its
+// sync goroutine launched). Reporting true on tracking alone makes a chain stalled
+// at genesis answer info.isBootstrapped=true, which hides the stall from every
+// reader that asks.
 func TestIsBootstrappedTracksRealConvergence(t *testing.T) {
 	require := require.New(t)
 
@@ -371,8 +371,8 @@ func (w waitingHandler) BootstrapWait() string { return w.why }
 
 // TestMonitorBootstrapPublishesTheWaitReason closes the last hop: the reason the driver computed
 // has to survive all the way to the payload an operator reads. Everything upstream of here can be
-// right and the chain still answers with a sentence that fits any outage, which is the state this
-// change exists to end — so the assertion is on the published check, not on an intermediate.
+// right and the chain still answers with a sentence that fits any failure equally well — so the
+// assertion is on the published check, not on an intermediate.
 func TestMonitorBootstrapPublishesTheWaitReason(t *testing.T) {
 	require := require.New(t)
 

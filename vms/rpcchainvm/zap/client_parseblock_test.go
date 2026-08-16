@@ -24,7 +24,7 @@ import (
 //	warn ParseBlock failed, cannot vote correctly
 //	     error="invalid hash length: expected 32 bytes but got 0"
 //
-// THE MECHANISM: the C-Chain EVM (coreth) runs as an rpcchainvm plugin across
+// THE MECHANISM: the C-Chain EVM runs as an rpcchainvm plugin across
 // the ZAP boundary. A node sitting on a divergent, already-accepted fork block,
 // asked via PushQuery to ParseBlock a CANONICAL block that does not connect to
 // its chain, is answered with a BlockResponse whose ID/ParentID are EMPTY
@@ -130,7 +130,7 @@ func TestParseBlock_MalformedBlockID_IsTypedAndQuarantined(t *testing.T) {
 
 // newParseBlockTestClient spins an in-process ZAP server whose MsgParseBlock
 // handler returns the supplied BlockResponse verbatim — modelling exactly what
-// a VM plugin (coreth over rpcchainvm) puts on the wire — and returns a Client
+// a VM plugin over rpcchainvm puts on the wire — and returns a Client
 // connected to it.
 func newParseBlockTestClient(t *testing.T, resp *zapwire.BlockResponse) *Client {
 	t.Helper()

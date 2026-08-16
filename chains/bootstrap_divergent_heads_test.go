@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestRefute_DivergentHeadsStillNameAFrontier reproduces the EXACT lux-testnet 96368 head
-// distribution (36,060 / 36,169 / 36,841 / 36,841 / 30,622 with the deciding node at 36,060)
-// and proves the claim "a live chain whose validators sit on different heads never fetches a
-// single block" is false: the ancestor-tolerant tally names the highest ⅔-backed common block
-// above the node's own height, so syncOnce gets FrontierNamed and descends.
+// TestRefute_DivergentHeadsStillNameAFrontier models a live chain whose five validators sit
+// on five different heads, none of them a majority, with the deciding node below all but one.
+// The claim "such a chain never fetches a single block" is false: the ancestor-tolerant tally
+// names the highest ⅔-backed common block above the node's own height, so syncOnce gets
+// FrontierNamed and descends.
 func TestRefute_DivergentHeadsStillNameAFrontier(t *testing.T) {
 	const w uint64 = 100
 	const own = 36060

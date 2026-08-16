@@ -28,9 +28,19 @@ report() { # pattern, what it leaks, [exempt pattern]
 
 report 'luxd-[0-9]|zood-[a-z0-9-]*[0-9]|parsd-[a-z0-9-]*[0-9]' \
   'pod names — these are our hosts'
-report 'NodeID-[A-Za-z0-9]{8}' \
-  'validator node ids'
-report '\b(lux|zoo|pars|hanzo)-(mainnet|testnet|devnet)\b' \
+# A node id in a COMMENT is the leak: it names a validator to every reader of the public
+# repository, and it ages out while the rule around it stays true. A node id passed as a
+# VALUE — a fixture the test builds a set from, an example program's argument, the string
+# an assertion compares against — names nothing outside the test that made it, and the
+# encoding itself is public. Flagging those buried the real hits under dozens of fixtures,
+# and a check that mostly cries wolf gets ignored, which is the same end as a check that
+# cannot fire.
+report '(//|/\*)[^"]*NodeID-[A-Za-z0-9]{8}' \
+  'validator node ids in prose'
+# No \b anywhere in these patterns: git grep -E is POSIX ERE, where \b is not a word
+# boundary, so a rule written with one matches nothing and reads green forever. Every
+# pattern here spells its own boundaries or needs none.
+report '(lux|zoo|pars|hanzo)-(mainnet|testnet|devnet)' \
   'cluster namespaces'
 report '[Ii]ncident-[0-9]|INCIDENT' \
   'incident references — the ticket is not the reason the rule holds'
@@ -46,8 +56,30 @@ report '[Mm]easured (on|at) (lux|zoo|pars|hanzo|host|prod)' \
 report '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' \
   'IP addresses' \
   '127\.0\.0\.1|0\.0\.0\.0|255\.255\.255\.255|1\.2\.3\.4|::1|10\.[0-9]|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|8\.8\.8\.8'
-report '\b(ghcr\.io/[a-z]+/[a-z-]+:v?[0-9]+\.[0-9]+\.[0-9]+)' \
+report 'ghcr\.io/[a-z]+/[a-z-]+:v?[0-9]+\.[0-9]+\.[0-9]+' \
   'pinned image references — these belong in manifests, not source'
+
+# The audit that found a defect is not the reason the fix holds. A reader six months
+# out has no access to the round, the severity or the ticket number, so a comment that
+# leans on one has said nothing. State the rule and what breaks it.
+report '(RED|red|Red) (HIGH|MEDIUM|LOW|CRITICAL)|(HIGH|MEDIUM|LOW|CRITICAL|RESIDUAL)-[0-9A-Z]([^A-Za-z0-9]|$)' \
+  'audit-round labels — name the rule, not the finding'
+
+# A phrase that recurs stops carrying meaning and starts reading as a tic; these two
+# earned their way onto the list by appearing in file after file with no content.
+report 'load-bearing|the case this exists for' \
+  'phrases repeated as a tic'
+
+# A marker is a promise to come back, and it is kept by deleting the code or finishing
+# it — never by leaving the marker.
+report '(//|/\*) *(TODO|FIXME|XXX)[^A-Za-z]|(//|/\*)[^"]*[^A-Za-z](TODO|FIXME|XXX)[^A-Za-z]' \
+  'deferral markers — finish it or delete it'
+
+# Lux consensus is Nova, Nebula and Quasar. Naming another project's engine, its org
+# or its EVM in our source teaches a reader to go read that project instead of this
+# one, and describes behaviour we do not control.
+report 'avalanche|Avalanche|AVALANCHE|ava-labs|coreth|Coreth|snowman|snowball|snowflake' \
+  'another project, its org or its engine — say what OUR code does'
 
 # A private key in source is public the moment it is pushed, and no amount of
 # "it is only a scratch file" changes that. Two were found here: a fourteen-line

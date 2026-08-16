@@ -212,8 +212,8 @@ func advanceTimeTo(
 		// Invariant: Permissioned stakers are encountered first for a given
 		//            timestamp because their priority is the smallest.
 		if stakerToRemove.Priority != txs.ChainPermissionedValidatorCurrentPriority {
-			// Permissionless stakers are removed by the RewardValidatorTx, not
-			// an AdvanceTimeTx.
+			// A permissionless staker leaves by its RewardValidatorTx, which
+			// pays it; advancing the clock alone must not drop it unpaid.
 			break
 		}
 

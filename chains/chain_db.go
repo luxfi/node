@@ -47,9 +47,9 @@ func NewChainDBManager(config ChainDBManagerConfig) *ChainDBManager {
 	}
 }
 
-// GetDatabase returns a prefixed database for the given chain.
+// chainDB returns a prefixed database for the given chain.
 // Uses prefix-based isolation on the single global ZapDB.
-func (m *ChainDBManager) GetDatabase(chainID ids.ID, chainAlias string) (database.Database, error) {
+func (m *ChainDBManager) chainDB(chainID ids.ID, chainAlias string) (database.Database, error) {
 	if m.db == nil {
 		return nil, fmt.Errorf("global database not initialized")
 	}
@@ -79,46 +79,11 @@ func (m *ChainDBManager) GetDatabase(chainID ids.ID, chainAlias string) (databas
 // GetVMDatabase returns a VM-prefixed database for the given chain.
 // Adds a "vm" prefix within the chain's prefix for VM-specific data.
 func (m *ChainDBManager) GetVMDatabase(chainID ids.ID, chainAlias string) (database.Database, error) {
-	chainDB, err := m.GetDatabase(chainID, chainAlias)
+	chainDB, err := m.chainDB(chainID, chainAlias)
 	if err != nil {
 		return nil, err
 	}
 
 	// Add VM prefix to isolate VM data from other chain data
 	return prefixdb.New(VMDBPrefix, chainDB), nil
-}
-
-// GetGlobalDB returns the underlying global database.
-// This is useful for G-Chain (dgraph-powered GraphQL VM) to query across all chains.
-func (m *ChainDBManager) GetGlobalDB() database.Database {
-	return m.db
-}
-
-// Close is a no-op since the global database lifecycle is managed elsewhere.
-// Chain-specific prefixed databases don't need to be closed separately.
-func (m *ChainDBManager) Close() error {
-	// Clear cache
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.chainDBs = make(map[ids.ID]database.Database)
-	return nil
-}
-
-// GetAllChainIDs returns all chain IDs that have databases allocated.
-// Useful for G-Chain to enumerate chains for indexing.
-func (m *ChainDBManager) GetAllChainIDs() []ids.ID {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	result := make([]ids.ID, 0, len(m.chainDBs))
-	for id := range m.chainDBs {
-		result = append(result, id)
-	}
-	return result
-}
-
-// GetDatabasePrefix returns the prefix used for a chain's data.
-// This is the chainID bytes, which can be used by G-Chain to iterate chain data.
-func (m *ChainDBManager) GetDatabasePrefix(chainID ids.ID) []byte {
-	return chainID[:]
 }

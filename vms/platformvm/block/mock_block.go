@@ -110,18 +110,18 @@ func (mr *MockBlockMockRecorder) Parent() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parent", reflect.TypeOf((*MockBlock)(nil).Parent))
 }
 
-// Txs mocks base method.
-func (m *MockBlock) Txs() []*txs.Tx {
+// DecisionTxs mocks base method.
+func (m *MockBlock) DecisionTxs() []*txs.Tx {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Txs")
+	ret := m.ctrl.Call(m, "DecisionTxs")
 	ret0, _ := ret[0].([]*txs.Tx)
 	return ret0
 }
 
-// Txs indicates an expected call of Txs.
-func (mr *MockBlockMockRecorder) Txs() *gomock.Call {
+// DecisionTxs indicates an expected call of DecisionTxs.
+func (mr *MockBlockMockRecorder) DecisionTxs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Txs", reflect.TypeOf((*MockBlock)(nil).Txs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecisionTxs", reflect.TypeOf((*MockBlock)(nil).DecisionTxs))
 }
 
 // Visit mocks base method.

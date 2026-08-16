@@ -28,7 +28,7 @@ const (
 	// baseURL is the canonical — and only — prefix for every luxd HTTP route
 	// (/v1/bc/C/rpc, /v1/info, /v1/health, ...). Single source of truth:
 	// AddRoute/AddAliases and the root/health helpers in router.go all derive
-	// their paths from it. The legacy Avalanche-heritage /ext prefix is gone;
+	// their paths from it. The legacy /ext prefix is gone;
 	// one way, no backward compatibility (activation Dec 25 2025).
 	baseURL              = "/v1"
 	maxConcurrentStreams = 64

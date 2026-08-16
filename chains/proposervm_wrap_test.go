@@ -45,7 +45,7 @@ func TestShouldWrapInProposerVM(t *testing.T) {
 			chainID:          cChainID,
 			innerIsDAGNative: false,
 			want:             true,
-			why:              "large multi-validator EVM is wrapped exactly as avalanchego wraps it",
+			why:              "a large multi-validator EVM is wrapped",
 		},
 		{
 			name:             "P-Chain is excluded even at K>1",

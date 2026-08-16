@@ -38,7 +38,6 @@ var (
 	ErrInvalidTeleportVersion = errors.New("invalid teleport version")
 	ErrInvalidTeleportType    = errors.New("invalid teleport type")
 	ErrMissingPayload         = errors.New("teleport message missing payload")
-	ErrDecryptRequired        = errors.New("payload is encrypted but no decryption key provided")
 )
 
 // TeleportMessage wraps a Warp message for cross-chain bridging operations.

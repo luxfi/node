@@ -31,8 +31,8 @@ func TestRejectMiddleware(t *testing.T) {
 		Log:       log.NoLog{},
 	}
 
-	// rejectMiddleware currently just returns the handler
-	// TODO: When state checking is implemented, add more comprehensive tests
+	// rejectMiddleware passes the handler through, so the wrapped handler's own
+	// status is what reaches the recorder.
 	middleware := rejectMiddleware(testHandler, rt)
 	w := httptest.NewRecorder()
 	middleware.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))

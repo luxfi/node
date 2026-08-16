@@ -881,7 +881,7 @@ func pemBytesOrFile(v *viper.Viper, contentKey, pathKey, expectType string) ([]b
 	// a deploy template that rendered to "") is treated identically to an
 	// absent flag: fall through to the *-file path below. Short-circuiting on
 	// the empty value here would silently degrade a strict-PQ validator to a
-	// classical ECDSA NodeID — the strict-PQ activation outage this guards.
+	// classical ECDSA NodeID, which is the whole thing this refuses to do.
 	if raw := v.GetString(contentKey); raw != "" {
 		decoded, err := base64.StdEncoding.DecodeString(raw)
 		if err != nil {
@@ -1206,8 +1206,8 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 			// luxd doesn't recognise a type the cached blob still
 			// uses). Drop the cache and rebuild from the file rather
 			// than wedging in a CrashLoop. Hash stability is forfeit
-			// for this single restart — intentional, the alternative
-			// is a permanent outage on every binary bump.
+			// for this single restart — intentional, since the
+			// alternative wedges the node on every binary bump.
 			log.Warn("cached genesis bytes failed to parse — invalidating cache and rebuilding from genesis-file",
 				"cacheFile", cacheFile,
 				"size", len(cachedBytes),

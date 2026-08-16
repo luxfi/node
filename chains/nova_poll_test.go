@@ -5,11 +5,11 @@
 // path are separated AT THE TYPE LEVEL, and that separating them changed nothing
 // about which votes are counted.
 //
-// The incident this encodes: every peer answered the poll with an unsigned Chits,
-// the node widened each one into a signature-less consensuschain.Vote, and the
-// engine dropped all of them at its authentication gate — 807/807 votes UNSIGNED,
-// zero finalizations, every node-side counter healthy. alpha was unreachable by
-// construction.
+// The failure the separation rules out: peers answer the poll with an unsigned
+// Chits, the node widens each one into a signature-less consensuschain.Vote, and
+// the engine drops every one at its authentication gate. Nothing finalizes, alpha
+// is unreachable by construction, and every node-side counter still reads
+// healthy — so the shape has to be excluded by the types, not watched for.
 package chains
 
 import (

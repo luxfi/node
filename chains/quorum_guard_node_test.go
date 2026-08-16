@@ -1,11 +1,10 @@
 // Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// quorum_guard_node_test.go — CRITICAL-1(c) fail-closed guard + the wiring proof
-// the MEDIUM-1 round lacked. The round-1 tests injected a validators.State into
-// the source constructors directly and never exercised the path where
-// m.validatorState is nil (the production default until the P-Chain publishes
-// its State). These tests pin:
+// quorum_guard_node_test.go — the fail-closed guard and the wiring that carries
+// it. A test that injects a validators.State straight into the source
+// constructors never exercises the path where m.validatorState is nil, which is
+// the default until the P-Chain publishes its State. These tests pin:
 //
 //	(1) the guard predicate: a K>1 chain with NO height-indexed state is refused
 //	    (would otherwise stall finality forever);
@@ -27,12 +26,12 @@ import (
 	"github.com/luxfi/validators/validatorstest"
 )
 
-// TestQuorumGuard_RefusesNoopState pins the guard predicate (CRITICAL-1(c)): a
+// TestQuorumGuard_RefusesNoopState pins the guard predicate: a
 // nil (unpublished) validator state is NOT live, so a K>1 chain must refuse to
 // start; a published state IS live.
 func TestQuorumGuard_RefusesNoopState(t *testing.T) {
 	if quorumValidatorStateLive(nil) {
-		t.Fatal("CRITICAL-1(c): a nil validator state must NOT be considered live (would stall finality)")
+		t.Fatal("a nil validator state must NOT be considered live (would stall finality)")
 	}
 	live := validatorstest.NewTestState()
 	if !quorumValidatorStateLive(live) {

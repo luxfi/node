@@ -54,7 +54,7 @@ func (b *Block) VerifyWithRuntime(ctx context.Context, blockContext *runtime.Run
 			b.manager.rt.NetworkID,
 			b.manager.validatorManager,
 			blockContext.PChainHeight,
-			b,
+			b.Block,
 		)
 		if err != nil {
 			return err
@@ -93,8 +93,8 @@ func (b *Block) Accept(context.Context) error {
 	// goroutines the consensus engine does not serialize against accept (it
 	// invokes VM.Accept as a lock-free call-out). Holding the VM's stateLock for
 	// the whole visit makes accept atomic w.r.t. those commits, closing the
-	// concurrent-map-write in state.write(). Mirrors avalanchego's ctx.Lock,
-	// which serializes block accept with engine.Connected/Disconnected.
+	// concurrent-map-write in state.write(). One lock serializes block accept
+	// with engine.Connected/Disconnected; there is no second one.
 	b.manager.stateLock.Lock()
 	defer b.manager.stateLock.Unlock()
 	return b.Visit(b.manager.acceptor)

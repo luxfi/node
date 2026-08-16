@@ -75,7 +75,7 @@ func (f *fakeUptimeState) GetStartTime(nodeID ids.NodeID, _ ids.ID) (time.Time, 
 //   - OLD tracker: returns ~0.0 — stored upDuration is 0 and the tracker had no
 //     baseline for the un-measured window, so upDuration/total = 0/30d = 0.
 //   - FIXED tracker: returns ~1.0 — before tracking begins, a validator is
-//     assumed online since its last persisted update (avalanchego semantics).
+//     assumed online since its last persisted update.
 func TestUptimeTrackerLongRunningValidatorAccruesUptime(t *testing.T) {
 	require := require.New(t)
 

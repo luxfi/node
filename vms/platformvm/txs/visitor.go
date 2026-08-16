@@ -13,7 +13,6 @@ type Visitor interface {
 	CreateChainTx(*CreateChainTx) error
 	ImportTx(*ImportTx) error
 	ExportTx(*ExportTx) error
-	AdvanceTimeTx(*AdvanceTimeTx) error
 	RewardValidatorTx(*RewardValidatorTx) error
 
 	RemoveChainValidatorTx(*RemoveChainValidatorTx) error

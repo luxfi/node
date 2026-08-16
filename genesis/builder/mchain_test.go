@@ -43,10 +43,10 @@ const canonicalMPCVMID = "qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS"
 
 // mchainNetworks is every network whose genesis must carry M-Chain, stated once
 // so no network can be checked for one M-Chain property and skipped for
-// another. Devnet was missing from these loops while lux-devnet ran a genesis
-// with no mchain.json at all: nine chains where eleven were declared, MChainID
-// empty, and every restricted chain therefore unentitled. The omission was
-// invisible because no assertion covered network 3.
+// another. A network left out of one of these loops is a network whose genesis
+// can ship with no mchain.json at all — fewer chains than it declares, an empty
+// MChainID, and every restricted chain therefore unentitled — with no assertion
+// anywhere that would say so.
 var mchainNetworks = []uint32{
 	constants.MainnetID,
 	constants.TestnetID,

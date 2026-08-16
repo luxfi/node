@@ -16,10 +16,10 @@ import (
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
 )
 
-var (
-	ErrCantIssueAdvanceTimeTx     = errors.New("can not issue an advance time tx")
-	ErrCantIssueRewardValidatorTx = errors.New("can not issue a reward validator tx")
-)
+// ErrCantIssueRewardValidatorTx refuses the one tx the chain emits about
+// itself: it is produced by the block builder from current state, never
+// submitted.
+var ErrCantIssueRewardValidatorTx = errors.New("can not issue a reward validator tx")
 
 type Mempool struct {
 	txmempool.Mempool[*txs.Tx]
@@ -70,10 +70,7 @@ func (m *Mempool) authPolicySnapshot() (*config.ChainSecurityProfile, auth.Class
 }
 
 func (m *Mempool) Add(tx *txs.Tx) error {
-	switch tx.Unsigned.(type) {
-	case *txs.AdvanceTimeTx:
-		return ErrCantIssueAdvanceTimeTx
-	case *txs.RewardValidatorTx:
+	if _, ok := tx.Unsigned.(*txs.RewardValidatorTx); ok {
 		return ErrCantIssueRewardValidatorTx
 	}
 

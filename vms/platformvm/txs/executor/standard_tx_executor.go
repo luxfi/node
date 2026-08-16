@@ -45,9 +45,6 @@ var (
 	_ txs.Visitor = (*standardTxExecutor)(nil)
 
 	errEmptyNodeID                     = errors.New("validator nodeID cannot be empty")
-	errMaxStakeDurationTooLarge        = errors.New("max stake duration must be less than or equal to the global max stake duration")
-	errStakerStartTimeMissing          = errors.New("staker transactions must have a StartTime")
-	errL1FeatureNotActive              = errors.New("L1 validator feature not active")
 	errTransformChainTxNotPermitted    = errors.New("TransformChainTx is not permitted")
 	errMaxNumActiveValidators          = errors.New("already at the max number of active validators")
 	errCouldNotLoadChainToL1Conversion = errors.New("could not load chain conversion")
@@ -103,10 +100,6 @@ type standardTxExecutor struct {
 	onAccept       func() // may be nil
 	inputs         set.Set[ids.ID]
 	atomicRequests map[ids.ID]*atomic.Requests // may be nil
-}
-
-func (*standardTxExecutor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return ErrWrongTxType
 }
 
 func (*standardTxExecutor) RewardValidatorTx(*txs.RewardValidatorTx) error {

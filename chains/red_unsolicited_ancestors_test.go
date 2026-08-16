@@ -12,7 +12,7 @@
 // wants, and nothing reads it back — the TTL reaper, the cap and the no-peer release
 // clear it, a reply never does.
 //
-// avalanchego cannot express this: snow/engine/snowman/bootstrap/bootstrapper.go
+// A bootstrapper that indexes by id alone cannot express this:
 // Ancestors() looks up {NodeID, RequestID} in outstandingRequests and drops anything
 // that is not a pair it created.
 //

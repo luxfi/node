@@ -27,8 +27,16 @@ type Block interface {
 	Bytes() []byte
 	Height() uint64
 
-	// Txs returns the transactions contained in the block.
-	Txs() []*txs.Tx
+	// DecisionTxs returns the transactions this block charges for: the ones
+	// submitted to this chain by someone else, paid for by whoever submitted
+	// them, and priceable by both fee calculators.
+	//
+	// A transaction the chain emits about itself is never among them. A
+	// proposal block's own tx is reachable only as (*ProposalBlock).Tx() —
+	// typed and singular, so it cannot be handed to anything that takes a
+	// list of transactions to price, re-issue, or otherwise treat as an
+	// assertion someone else made.
+	DecisionTxs() []*txs.Tx
 
 	// Visit calls [visitor] with this block's concrete type.
 	Visit(visitor Visitor) error

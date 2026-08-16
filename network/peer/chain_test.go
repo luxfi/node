@@ -23,8 +23,8 @@ import (
 //   - a peer that declares NOTHING is not excluded from anything, so a fleet
 //     upgraded one node at a time never partitions itself.
 //
-// The second is the one that would turn this feature into an outage if it were
-// wrong, so it is tested at every step of a real five-node rolling upgrade.
+// The second is the one that partitions a fleet if it is wrong, so it is tested
+// at every step of a five-node rolling upgrade.
 
 var (
 	dChainID = ids.GenerateTestID()
@@ -135,8 +135,8 @@ func TestChainIdentity_VMAndNetworkAlsoIsolate(t *testing.T) {
 }
 
 // TestChainIdentity_SilenceIsUnknownNotIncompatible. A node that says nothing is
-// UNKNOWN, and unknown is permitted. This is the property that keeps the check
-// from becoming the outage.
+// UNKNOWN, and unknown is permitted. This is what keeps the check from
+// excluding every node that has not been upgraded yet.
 func TestChainIdentity_SilenceIsUnknownNotIncompatible(t *testing.T) {
 	require := require.New(t)
 
@@ -150,14 +150,14 @@ func TestChainIdentity_SilenceIsUnknownNotIncompatible(t *testing.T) {
 	require.Equal(ChainUnknown, viewOfUpgraded.ChainState(dChainID))
 }
 
-// TestChainIdentity_RollingUpgradeNeverPartitions walks the exact procedure used
-// on a real fleet: five validators, upgraded one at a time, never more than one
-// down at once because the remaining four carry quorum.
+// TestChainIdentity_RollingUpgradeNeverPartitions walks the only safe upgrade
+// procedure: five validators, one at a time, never more than one down at once
+// because the remaining four carry quorum.
 //
 // At every step each upgraded node must still exchange D traffic with every
-// other node, upgraded or not. If silence were treated as disagreement the first
-// node upgraded would exclude the four still carrying consensus and isolate
-// itself — the safety feature causing the outage it exists to prevent.
+// other node, upgraded or not. Treat silence as disagreement and the first node
+// upgraded excludes the four still carrying consensus and isolates itself: the
+// safety check causing exactly the partition it exists to prevent.
 func TestChainIdentity_RollingUpgradeNeverPartitions(t *testing.T) {
 	const fleet = 5
 

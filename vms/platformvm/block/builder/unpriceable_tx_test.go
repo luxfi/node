@@ -42,7 +42,7 @@ func (noMetrics) Update(int, int) {}
 // stopped holding.
 func unpriceableTx(t *testing.T) *txs.Tx {
 	t.Helper()
-	tx := &txs.Tx{Unsigned: txs.NewAdvanceTimeTx(uint64(time.Now().Unix()))}
+	tx := &txs.Tx{Unsigned: txs.NewRewardValidatorTx(ids.GenerateTestID())}
 	require.NoError(t, tx.Initialize())
 
 	_, err := fee.TxComplexity(tx.Unsigned)

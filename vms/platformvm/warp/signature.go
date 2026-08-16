@@ -32,7 +32,6 @@ var (
 	ErrMissingCoronaPublicKey  = errors.New("missing corona public key for validator")
 	ErrCoronaPublicKeyMismatch = errors.New("corona public key does not match the validator's registered key")
 	ErrCoronaGroupKeyMismatch  = errors.New("corona public keys are not a single threshold group key")
-	ErrHybridVerifyFailed      = errors.New("hybrid signature verification failed")
 	ErrDecryptionFailed        = errors.New("ML-KEM decryption failed")
 	ErrInvalidCiphertext       = errors.New("invalid ciphertext")
 )

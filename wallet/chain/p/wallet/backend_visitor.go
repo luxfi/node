@@ -30,10 +30,6 @@ type backendVisitor struct {
 	txID ids.ID
 }
 
-func (*backendVisitor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return ErrUnsupportedTxType
-}
-
 func (*backendVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return ErrUnsupportedTxType
 }

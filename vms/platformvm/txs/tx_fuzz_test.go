@@ -267,7 +267,6 @@ func (*visitor) ConvertNetworkTx(*ConvertNetworkTx) error                       
 func (*visitor) CreateChainTx(*CreateChainTx) error                               { return nil }
 func (*visitor) ImportTx(*ImportTx) error                                         { return nil }
 func (*visitor) ExportTx(*ExportTx) error                                         { return nil }
-func (*visitor) AdvanceTimeTx(*AdvanceTimeTx) error                               { return nil }
 func (*visitor) RewardValidatorTx(*RewardValidatorTx) error                       { return nil }
 func (*visitor) RemoveChainValidatorTx(*RemoveChainValidatorTx) error             { return nil }
 func (*visitor) TransformChainTx(*TransformChainTx) error                         { return nil }

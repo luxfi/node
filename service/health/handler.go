@@ -61,7 +61,7 @@ func NewGetHandler(reporter func(tags ...string) (map[string]apihealth.Result, b
 		// path already encodes it through that codec; encoding it here the
 		// same way is what makes GET and POST agree. jsonv2 cannot encode
 		// this type at all — time.Duration has no default representation
-		// there — so every GET reply used to degrade to the error fallback
+		// there — so a GET encoded through it degrades to the error fallback
 		// below. encoding/json also replaces invalid UTF-8 (check Details
 		// may embed raw chain-ID bytes) with U+FFFD rather than failing.
 		//

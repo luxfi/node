@@ -325,9 +325,9 @@ func (c *StakingConfig) IsStrictPQ() bool {
 //     this branch at the validator-set boundary; the choice lives
 //     in the consensus profile, not here.
 //
-// This is the single seam every "what's my NodeID" call site should
-// route through. Direct calls to ids.NodeIDFromCert in new code are
-// a bug — they bypass the strict-PQ pivot.
+// Every "what's my NodeID" call site routes through here. A direct
+// call to ids.NodeIDFromCert bypasses the strict-PQ branch below and
+// derives the wrong id for a strict-PQ chain.
 func (c *StakingConfig) DeriveNodeID(chainID ids.ID) (ids.NodeID, error) {
 	if c.IsStrictPQ() {
 		id, _, err := ids.NodeIDSchemeMLDSA65.DeriveMLDSA(chainID, c.StakingMLDSAPub)

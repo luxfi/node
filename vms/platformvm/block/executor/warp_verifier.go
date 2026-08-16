@@ -17,8 +17,14 @@ import (
 	validators "github.com/luxfi/validators"
 )
 
-// VerifyWarpMessages verifies all warp messages in the block. If any of the
-// warp messages are invalid, an error is returned.
+// VerifyWarpMessages verifies every warp message the block carries. If any of
+// them is invalid, an error is returned.
+//
+// Every transaction means every transaction: the decision txs a block charges
+// for, and — on a proposal block — the tx the chain emitted about itself. A
+// warp message is an assertion about another chain no matter who put it in the
+// block, so which of the two sets it arrived in cannot decide whether its
+// signature is checked.
 //
 // When GPU acceleration is available and the block contains multiple BLS
 // warp signatures, verification is batched through the GPU for throughput.
@@ -30,6 +36,11 @@ func VerifyWarpMessages(
 	pChainHeight uint64,
 	b block.Block,
 ) error {
+	blockTxs := b.DecisionTxs()
+	if proposal, ok := b.(*block.ProposalBlock); ok {
+		blockTxs = append(blockTxs, proposal.Tx())
+	}
+
 	// Collect warp messages that need BLS verification.
 	type blsJob struct {
 		aggPubKey *bls.PublicKey
@@ -40,7 +51,7 @@ func VerifyWarpMessages(
 
 	var blsJobs []blsJob
 
-	for txIdx, tx := range b.Txs() {
+	for txIdx, tx := range blockTxs {
 		rawMsg, hasWarp := extractWarpMessageBytes(tx.Unsigned)
 		if !hasWarp {
 			continue

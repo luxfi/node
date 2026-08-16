@@ -299,7 +299,8 @@ func benchmarkChainPerformance(b *testing.B, chainType string, enableGPU bool) {
 	if results.GPUStats.Enabled && results.GPUStats.Operations > 0 {
 		results.GPUStats.Throughput = float64(results.GPUStats.Operations) / results.Duration.Seconds()
 
-		// Calculate speedup factor (simulated for now)
+		// The CPU side of this ratio is a constant, not a measurement, so the
+		// speedup below is arithmetic on an assumption rather than an observation.
 		cpuTime := float64(results.BlocksGenerated) * 0.15 // 150μs per block CPU
 		gpuTime := results.GPUStats.AvgGPUTime * float64(results.GPUStats.Operations) / 1000
 		if gpuTime > 0 {

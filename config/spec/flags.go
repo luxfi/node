@@ -1275,7 +1275,7 @@ func allFlags() []FlagSpec {
 			Key:         "state-sync-ids",
 			Type:        TypeString,
 			Default:     "",
-			Description: "Comma separated list of state sync peer ids to connect to. Example: NodeID-JR4dVmy6ffUGAKCBDkyCbeZbyHQBeDsET,NodeID-8CrVPQZ4VSqgL8zTdvL14G8HqAfrBr4z",
+			Description: "Comma separated list of state sync peer ids to connect to, each in NodeID-<base58> form",
 			Category:    CategoryBootstrap,
 		},
 
@@ -1293,7 +1293,7 @@ func allFlags() []FlagSpec {
 			Key:         "bootstrap-ids",
 			Type:        TypeString,
 			Default:     "",
-			Description: "Comma separated list of bootstrap peer ids to connect to. Example: NodeID-JR4dVmy6ffUGAKCBDkyCbeZbyHQBeDsET,NodeID-8CrVPQZ4VSqgL8zTdvL14G8HqAfrBr4z",
+			Description: "Comma separated list of bootstrap peer ids to connect to, each in NodeID-<base58> form",
 			Category:    CategoryBootstrap,
 		},
 		{

@@ -65,34 +65,32 @@ func newRaceTestState(t *testing.T) state.State {
 	return st
 }
 
-// TestStateCommitSerializedWithAcceptNoRace is the regression guard for RED
-// CRITICAL #2 (P-chain state race).
+// TestStateCommitSerializedWithAcceptNoRace pins the single-lock rule for P-chain
+// state.
 //
-// Before the fix the event-delivery plumbing drove VM.Disconnected on the
-// node's peer-lifecycle goroutine, where it called state.Commit() (→ state.write)
-// concurrently with the block acceptor's state.CommitBatch() (→ state.write) on
-// the consensus accept goroutine. Both mutate the shared currentValidator /
-// staker / metadata maps with no common lock → Go "concurrent map writes" FATAL
-// on ordinary peer churn.
+// Event delivery drives VM.Disconnected on the node's peer-lifecycle goroutine,
+// where it calls state.Commit() (→ state.write); the block acceptor calls
+// state.CommitBatch() (→ state.write) on the consensus accept goroutine. Both
+// mutate the shared currentValidator / staker / metadata maps, so without a
+// common lock ordinary peer churn is a Go "concurrent map writes" fatal.
 //
-// The fix installs ONE lock — the platform VM's stateLock — held by BOTH sides:
+// ONE lock — the platform VM's stateLock — is held by BOTH sides:
 //   - block DECISION: block/executor Block.Accept/Reject hold &vm.stateLock
 //     (supplied to executor.NewManager), around the whole acceptor visit, and
 //   - peer/lifecycle commits: VM.Disconnected and the Start/StopTracking uptime
 //     flushes hold vm.stateLock directly.
 //
-// This test drives the two REAL racing state operations — state.Commit()
+// This test drives the two racing state operations — state.Commit()
 // (VM.Disconnected's exact call) and state.SetUptime()+state.CommitBatch()
 // (the tracker-flush + acceptor's exact calls) — from two goroutines, each
-// holding the SAME lock the fix installs. Under `-race` it must complete with
-// no data race and no fatal. Remove the shared lock and `-race` immediately
-// reports the concurrent write inside state.write() (the regression).
+// holding the SAME lock. Under `-race` it must complete with no data race and no
+// fatal. Remove the shared lock and `-race` immediately reports the concurrent
+// write inside state.write().
 func TestStateCommitSerializedWithAcceptNoRace(t *testing.T) {
 	st := newRaceTestState(t)
 
-	// The single serializer the fix installs. In production this is
-	// &vm.stateLock, held by Block.Accept (via the executor manager) and by
-	// VM.Disconnected/Start/StopTracking.
+	// The single serializer. In the VM this is &vm.stateLock, held by Block.Accept
+	// (via the executor manager) and by VM.Disconnected/Start/StopTracking.
 	var stateLock sync.Mutex
 
 	// A genesis validator so SetUptime writes a real record (mirrors

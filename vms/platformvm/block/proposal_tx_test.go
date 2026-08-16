@@ -1,20 +1,19 @@
 // Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// proposal_tx_is_not_priced_test.go — a block's own transaction is not one it charges for.
+// A block's own transaction is not one it charges for.
 //
 // A proposal block carries two different kinds of transaction. The decision txs
 // were submitted to this chain and are paid for by whoever submitted them. The
 // proposal tx is emitted by the chain about itself — a staker's reward, a time
-// advance — and neither fee calculator will price one: the static visitor and
-// the complexity visitor both refuse it.
+// advance — and neither fee calculator will price one.
 //
-// So a reader that means "everything in this block" and a reader that means
-// "the transactions this block charges for" are asking different questions, and
-// the proposal tx is the entire difference between them. Answering the second
-// with the first asks what a chain-emitted transaction costs, which has no
-// answer — the refusal surfaces as a block that cannot be verified, rebuilt
-// identically and refused again on every round, forever.
+// So the set a block charges for and the set it contains are different sets,
+// and the proposal tx is the entire difference. Answering the first question
+// with the second asks what a chain-emitted transaction costs, which has no
+// answer: the block cannot verify, and it is rebuilt and refused again on every
+// round, forever. DecisionTxs is the only list any block hands out, and the
+// proposal tx is reachable only as (*ProposalBlock).Tx().
 
 package block
 
@@ -43,8 +42,8 @@ func rewardBlock(t *testing.T, decisionTxs []*txs.Tx) *ProposalBlock {
 }
 
 // TestDecisionTxsExcludesTheUnpriceableProposalTx is the failure this file
-// exists for. Everything the verifier hands to the fee path must be priceable;
-// the proposal tx never is, so it must not be in that set.
+// exists for. Everything a block hands out as a list reaches the fee path, so
+// everything in that list must be priceable; the proposal tx never is.
 func TestDecisionTxsExcludesTheUnpriceableProposalTx(t *testing.T) {
 	blk := rewardBlock(t, nil)
 
@@ -71,21 +70,22 @@ func TestDecisionTxsExcludesTheUnpriceableProposalTx(t *testing.T) {
 	}
 }
 
-// TestTxsStillCarriesTheWholeBlock is the other half. Txs() answers the Block
-// interface's question — everything the block contains — and metrics, warp
-// verification and rejection all depend on that. Narrowing it to fix the pricing
-// path would silently stop those three seeing the proposal tx at all.
-func TestTxsStillCarriesTheWholeBlock(t *testing.T) {
-	decision := decisionTx(t)
-	blk := rewardBlock(t, []*txs.Tx{decision})
+// TestProposalBlockWithoutItsTxIsRefused holds up the other half: Tx() is the
+// only route to the proposal tx, so every reader dereferences it directly. A
+// proposal block that does not carry one is refused where it enters — built or
+// parsed — rather than reaching those readers as a nil.
+func TestProposalBlockWithoutItsTxIsRefused(t *testing.T) {
+	_, err := NewProposalBlock(time.Unix(0, 0), ids.GenerateTestID(), 1, nil, []*txs.Tx{decisionTx(t)})
+	require.ErrorIs(t, err, errNoProposalTx)
 
-	all := blk.Txs()
-	require.Len(t, all, 2, "Txs must carry the decision txs AND the proposal tx")
-	require.Equal(t, decision.ID(), all[0].ID(), "decision txs come first")
-	require.Equal(t, blk.Tx().ID(), all[1].ID(), "the proposal tx is last")
-
-	require.Len(t, blk.DecisionTxs(), 1, "DecisionTxs carries only what the block charges for")
-	require.Equal(t, decision.ID(), blk.DecisionTxs()[0].ID())
+	// A tx that was never initialized carries no bytes, so the slot it writes is
+	// empty and indistinguishable on the wire from one that was never written.
+	// Bytes reach Parse from peers, not from the builder, so Parse answers for
+	// this shape itself.
+	empty, err := buildBlock(blkProposal, ids.GenerateTestID(), 1, 0, []*txs.Tx{decisionTx(t)}, &txs.Tx{})
+	require.NoError(t, err)
+	_, err = Parse(empty)
+	require.ErrorIs(t, err, errNoProposalTx)
 }
 
 // decisionTx returns a transaction of the kind a user submits. It must be one

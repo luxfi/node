@@ -55,18 +55,18 @@ func newFallbackTestVM(preferred, lastAccepted ids.ID) (*VM, *spyInnerVM) {
 	return vm, spy
 }
 
-// TestBuildBlock_UnheldPreferred_FallsBackToLastAccepted is the deterministic unit repro of
-// the PROPOSER-PREFERENCE MUTE-VOTER WEDGE (postmortem residual #1).
+// TestBuildBlock_UnheldPreferred_FallsBackToLastAccepted is the deterministic unit case for
+// a proposer whose preference it can no longer fetch.
 //
-// vm.preferred is only adopted after a successful getBlock (SetPreference validate-before-
-// assign, defect #1), but a block fetchable at preference time can later become unfetchable —
+// vm.preferred is only adopted after a successful getBlock (SetPreference validates before
+// it assigns), but a block fetchable at preference time can later become unfetchable —
 // an unaccepted sibling consensus dropped, or a never-persisted outer block referenced after
-// heavy sibling churn. The OLD BuildBlock returned after the single getBlock(preferred) miss
-// with "failed to fetch preferred block", so every build attempt failed in a tight loop and
-// the node's voter went mute (~170 err/s). Quasar cert-finality has no re-converge poll ⇒ a
-// fleet-wide liveness wedge under churn (mainnet 1082879→1085755 window).
+// heavy sibling churn. Returning after the single getBlock(preferred) miss with "failed to
+// fetch preferred block" makes every build attempt fail in a tight loop, and the node's voter
+// goes mute. Quasar cert-finality has no re-converge poll, so under churn that is a
+// fleet-wide liveness stall rather than a local one.
 //
-// The fix falls back to last-accepted (ALWAYS held: committed state) so the node keeps
+// Falling back to last-accepted (ALWAYS held: committed state) keeps the node
 // producing on a valid tip while the catch-up path pulls the gap. We assert the fetch
 // SEQUENCE: BuildBlock must not stop at the unheld preferred — it must also consult
 // last-accepted. (The spy cannot complete a real inner build, so an error still returns; the

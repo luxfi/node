@@ -16,14 +16,14 @@ import (
 	luxruntime "github.com/luxfi/runtime"
 )
 
-// TestLastAccepted_RefreshedOnAccept is the option-(b) regression guard: the ZAP client's
-// LastAccepted() must reflect the most-recently-ACCEPTED block, not a frozen Initialize snapshot.
+// TestLastAccepted_RefreshedOnAccept: the ZAP client's LastAccepted() must reflect the
+// most-recently-ACCEPTED block, not a frozen Initialize snapshot.
 //
-// THE BUG (red HIGH-1 root): zapBlock.Accept fired the MsgBlockAccept wire call but never refreshed
-// c.lastAcceptedID, which was written ONLY at Initialize — so LastAccepted() returned the boot id
-// for the process life even as the plugin (coreth on-disk) advanced. Every consumer of
-// VM.LastAccepted was misled: GetAcceptedFrontier served a stale tip to peers, and the bootstrap
-// caught-up/height signals (before the option-a ledger decomplect) re-descended forever.
+// zapBlock.Accept fires the MsgBlockAccept wire call; if it does not also refresh
+// c.lastAcceptedID, that field keeps whatever Initialize wrote and LastAccepted() returns the
+// boot id for the process life while the plugin's own store advances. Every consumer of
+// VM.LastAccepted is then misled: GetAcceptedFrontier serves a stale tip to peers, and any
+// caught-up or height signal read from it re-descends forever.
 //
 // This drives a real in-process ZAP server: Initialize seeds the cache, a successful Accept must
 // refresh it to the accepted id, and a FAILED Accept must leave it unchanged (a failed accept did

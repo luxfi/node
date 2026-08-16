@@ -54,7 +54,7 @@ func SameNet(ctx context.Context, chainRuntime *ChainContext, peerChainID ids.ID
 
 // SameChain verifies that the peerChainID is in the same network as the chain
 // represented by consensusRuntime, but not the same chain. This is a convenience
-// wrapper for coreth compatibility that accepts *runtime.Runtime directly.
+// wrapper for EVM compatibility that accepts *runtime.Runtime directly.
 // With the simplified NetworkID model (1=mainnet, 2=testnet), chains on the
 // same network are always in the same "chain".
 func SameChain(ctx context.Context, consensusRuntime *runtime.Runtime, peerChainID ids.ID) error {
