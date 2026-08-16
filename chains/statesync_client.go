@@ -25,6 +25,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/log"
+	"github.com/luxfi/vm/chain"
 )
 
 // errNoBeaconsToAsk separates "the beacons were asked and had nothing" from "the
@@ -249,17 +250,27 @@ func (b *blockHandler) deliverBallot(requestID uint32, nodeID ids.NodeID, held [
 // a node that cannot reach the beacons for this still has the descent, which is
 // the same answer it had before this pass existed.
 func (b *blockHandler) adoptSummary(ctx context.Context) {
-	syncable, ok := b.vm.(summary.VM)
+	syncable, ok := b.vm.(chain.StateSyncableVM)
 	if !ok {
+		// Said out loud. A VM that cannot sync state is ordinary, but so is a VM
+		// that can and whose summary type this assertion did not match — and those
+		// two look identical from a silent return, which is how a wired client can
+		// sit in a build doing nothing at all.
+		b.logger.Info("state-summary adoption skipped — this VM does not offer the sync surface")
 		return
 	}
 	enabled, err := b.stateSyncEnabled(ctx)
-	if err != nil || !enabled {
+	if err != nil {
+		b.logger.Info("state-summary adoption skipped — the VM could not say whether it syncs", log.Err(err))
 		return
 	}
-	outcome, err := summary.New(summary.Config{
+	if !enabled {
+		b.logger.Info("state-summary adoption skipped — the VM has state sync turned off")
+		return
+	}
+	outcome, err := summary.New(summary.Config[chain.StateSummary]{
 		Source: &summarySource{b: b},
-		VM:     syncable,
+		VM:     &syncVM{StateSyncableVM: syncable, b: b},
 		Log:    b.logger,
 	}).Run(ctx)
 	if err != nil {
@@ -269,6 +280,18 @@ func (b *blockHandler) adoptSummary(ctx context.Context) {
 	}
 	b.logger.Info("state-summary adoption finished", log.String("outcome", outcome.String()))
 }
+
+// syncVM answers the round's two summary questions from the VM and the third —
+// how far this node stands — from the node itself. The height is what the node
+// has EXECUTED, not what its wrapper committed, because adopting a summary
+// throws away everything below it and the wrapper's head is not a floor this
+// node can vouch for.
+type syncVM struct {
+	chain.StateSyncableVM
+	b *blockHandler
+}
+
+func (v *syncVM) Tip(ctx context.Context) (uint64, error) { return v.b.appliedHeight(ctx) }
 
 // stateSyncEnabled asks the VM whether it wants a summary at all. A VM that does
 // not answer is one that does not want one.
