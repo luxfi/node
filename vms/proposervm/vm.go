@@ -50,9 +50,8 @@ const (
 )
 
 var (
-	_ vmchain.ChainVM         = (*VM)(nil)
-	_ vmchain.BatchedChainVM  = (*VM)(nil)
-	_ vmchain.StateSyncableVM = (*VM)(nil)
+	_ vmchain.ChainVM        = (*VM)(nil)
+	_ vmchain.BatchedChainVM = (*VM)(nil)
 
 	dbPrefix = []byte("proposervm")
 )
@@ -66,7 +65,6 @@ type VM struct {
 	Config
 	blockBuilderVM vmchain.BuildBlockWithRuntimeChainVM
 	batchedVM      vmchain.BatchedChainVM
-	ssVM           vmchain.StateSyncableVM
 
 	state.State
 
@@ -206,13 +204,11 @@ func New(
 ) *VM {
 	blockBuilderVM, _ := vm.(vmchain.BuildBlockWithRuntimeChainVM)
 	batchedVM, _ := vm.(vmchain.BatchedChainVM)
-	ssVM, _ := vm.(vmchain.StateSyncableVM)
 	return &VM{
 		ChainVM:        vm,
 		Config:         config,
 		blockBuilderVM: blockBuilderVM,
 		batchedVM:      batchedVM,
-		ssVM:           ssVM,
 	}
 }
 
