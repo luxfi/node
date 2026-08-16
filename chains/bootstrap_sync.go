@@ -370,6 +370,12 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 	// measures nothing at all. Dropping it here is what keeps runInitialSync from reporting a
 	// count that some earlier round took.
 	b.shortfall.Store(nil)
+	// Every wait says what it is waiting for. The status this returns carries a
+	// state and no numbers, and the wait an operator reads is assembled from
+	// whatever was recorded here — so a round that returns without recording
+	// leaves the ambiguous form, which reads the same whether the whole beacon
+	// set answered or none of it did.
+	waiting := func(why string) { b.shortfall.Store(&why) }
 	weights, _, haveBeacons := b.beaconWeights()
 	if !haveBeacons {
 		if b.expectsStakedBeacons {
@@ -381,6 +387,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 			// a connected peer can name the frontier ONLY through the ⅔-by-stake quorum below,
 			// which is empty here. The sequencing case resolves (initValidatorSets populates the
 			// set) and the node converges; a genuine empty/misconfigured set fails safe.
+			waiting("the validator set is empty; no beacon can be asked yet")
 			return ids.Empty, chainbootstrap.FrontierConnecting
 		}
 		// No beacon set expected (single-node / dev / --skip-bootstrap / P-chain endpoint-only
@@ -391,6 +398,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// Beacons configured but no transport to ask them — treat as still connecting
 		// (bounded by the loop's connect deadline). In practice runBootstrapThenPoll
 		// short-circuits a transport-less handler before Run is ever called.
+		waiting("beacons are configured but there is no transport to ask them over")
 		return ids.Empty, chainbootstrap.FrontierConnecting
 	}
 
@@ -536,7 +544,7 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		// runInitialSync, which is where the wait an operator asks about is declared.
 		responders, responderWeight, _, _ := policy.tallyResponders(replies)
 		short := policy.shortfall(responders, responderWeight)
-		b.shortfall.Store(&short)
+		waiting(short)
 		b.logger.Debug("bootstrap frontier: CONNECTING (below the MinResponses floor)",
 			log.String("shortfall", short),
 			log.Int("beaconSetSize", len(weights)),
