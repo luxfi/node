@@ -126,7 +126,7 @@ type GetBalanceRequest struct {
 // Note: We explicitly duplicate LUX out of the maps to ensure backwards
 // compatibility.
 type GetBalanceResponse struct {
-	// Balance, in nLUX, of the address
+	// Balance, in µLUX, of the address
 	Balance             avajson.Uint64            `json:"balance"`
 	Unlocked            avajson.Uint64            `json:"unlocked"`
 	LockedStakeable     avajson.Uint64            `json:"lockedStakeable"`
@@ -1604,7 +1604,7 @@ type GetStakeReply struct {
 	Encoding formatting.Encoding `json:"encoding"`
 }
 
-// GetStake returns the amount of nLUX that [args.Addresses] have cumulatively
+// GetStake returns the amount of µLUX that [args.Addresses] have cumulatively
 // staked on the Primary Network.
 //
 // This method assumes that each stake output has only owner
@@ -1710,11 +1710,11 @@ type GetMinStakeArgs struct {
 type GetMinStakeReply struct {
 	//  The minimum amount of tokens one must bond to be a validator
 	MinValidatorStake avajson.Uint64 `json:"minValidatorStake"`
-	// Minimum stake, in nLUX, that can be delegated on the primary network
+	// Minimum stake, in µLUX, that can be delegated on the primary network
 	MinDelegatorStake avajson.Uint64 `json:"minDelegatorStake"`
 }
 
-// GetMinStake returns the minimum staking amount in nLUX.
+// GetMinStake returns the minimum staking amount in µLUX.
 func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
 	s.vm.log.Debug("API called",
 		"service", "platform",

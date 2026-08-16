@@ -483,7 +483,7 @@ func (c *Client) GetTxStatus(ctx context.Context, txID ids.ID, options ...rpc.Op
 	return res, err
 }
 
-// GetStake returns the amount of nLUX that addrs have cumulatively staked on
+// GetStake returns the amount of µLUX that addrs have cumulatively staked on
 // the Primary Network.
 //
 // Deprecated: Stake should be calculated using GetTx and GetCurrentValidators.
@@ -521,7 +521,7 @@ func (c *Client) GetStake(
 	return staked, outputs, err
 }
 
-// GetMinStake returns the minimum staking amount in nLUX for validators and
+// GetMinStake returns the minimum staking amount in µLUX for validators and
 // delegators respectively.
 func (c *Client) GetMinStake(ctx context.Context, chainID ids.ID, options ...rpc.Option) (uint64, uint64, error) {
 	res := &GetMinStakeReply{}
@@ -531,7 +531,7 @@ func (c *Client) GetMinStake(ctx context.Context, chainID ids.ID, options ...rpc
 	return uint64(res.MinValidatorStake), uint64(res.MinDelegatorStake), err
 }
 
-// GetTotalStake returns the total amount (in nLUX) staked on the network.
+// GetTotalStake returns the total amount (in µLUX) staked on the network.
 func (c *Client) GetTotalStake(ctx context.Context, netID ids.ID, options ...rpc.Option) (uint64, error) {
 	res := &GetTotalStakeReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getTotalStake", &GetTotalStakeArgs{

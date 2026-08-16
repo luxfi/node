@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-json-experiment/json"
+	"github.com/luxfi/node/utils/units"
 	"path"
 	"time"
 
@@ -951,8 +952,8 @@ func ForDevMode(cfg DevModeConfig, stakingCfg *StakingConfig) ([]byte, ids.ID, e
 
 	// Create allocation for the reward address
 	// Initial staked amount: 1B LUX (enough to be a validator)
-	const oneMillionLUX = 1_000_000_000_000_000     // 1M LUX in nLUX
-	const oneBillionLUX = 1_000_000_000_000_000_000 // 1B LUX in nLUX
+	const oneMillionLUX = 1_000_000 * units.Lux     // 1M LUX
+	const oneBillionLUX = 1_000_000_000 * units.Lux // 1B LUX
 
 	allocation := genesiscfg.Allocation{
 		EVMAddr:       cfg.RewardAddress, // Same as UTXO addr for simplicity

@@ -62,6 +62,7 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/platformvm"
+	"github.com/luxfi/node/vms/platformvm/stakingparams"
 	platformvmgenesis "github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/txs/auth"
@@ -1572,6 +1573,7 @@ func (n *Node) initVMs() error {
 				UptimePercentage:          n.Config.UptimeRequirement,
 				MinValidatorStake:         n.Config.MinValidatorStake,
 				MaxValidatorStake:         n.Config.MaxValidatorStake,
+				StakingParams:             stakingHistoryFor(n.Config.NetworkID),
 				MinDelegatorStake:         n.Config.MinDelegatorStake,
 				MinDelegationFee:          n.Config.MinDelegationFee,
 				MinStakeDuration:          n.Config.MinStakeDuration,
@@ -2230,3 +2232,14 @@ func (n *Node) ExitCode() int {
 }
 
 // Real implementations are now in network/tracker/ directory
+
+// stakingHistoryFor is the governed staking policy for a network, or nothing.
+// A network with no history runs on its genesis parameters, unchanged; a network
+// with one runs the entry in force at each moment, so a floor can move at a
+// chosen time on every node at once without a regenesis.
+func stakingHistoryFor(networkID uint32) stakingparams.History {
+	if networkID == constants.MainnetID {
+		return stakingparams.MainnetHistory
+	}
+	return nil
+}

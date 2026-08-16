@@ -89,11 +89,11 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		),
 		localStake: metric.NewGauge(metric.GaugeOpts{
 			Name: "local_staked",
-			Help: "Amount (in nLUX) of LUX staked on this node",
+			Help: "Amount (in µLUX) of LUX staked on this node",
 		}),
 		totalStake: metric.NewGauge(metric.GaugeOpts{
 			Name: "total_staked",
-			Help: "Amount (in nLUX) of LUX staked on the Primary Network",
+			Help: "Amount (in µLUX) of LUX staked on the Primary Network",
 		}),
 
 		gasConsumed: metric.NewCounter(metric.CounterOpts{
@@ -118,7 +118,7 @@ func New(registerer metric.Registerer) (Metrics, error) {
 		price: metric.NewGaugeVec(
 			metric.GaugeOpts{
 				Name: "price",
-				Help: "Price (in nLUX) of a resource",
+				Help: "Price (in µLUX) of a resource",
 			},
 			[]string{ResourceLabel},
 		),

@@ -6,15 +6,18 @@ package stakingparams
 import (
 	"time"
 
+	"github.com/luxfi/node/utils/units"
 	"github.com/luxfi/node/vms/platformvm/reward"
 )
 
-// Denominations, in the P-Chain's base unit (nLUX).
+// One unit for the whole node. A second definition here once said 1e9 and
+// described a chain that does not exist: every threshold in this file was
+// a thousand times what the live P-Chain enforces.
 const (
-	Lux     uint64 = 1_000_000_000
-	KiloLux        = 1_000 * Lux
-	MegaLux        = 1_000 * KiloLux
-	GigaLux        = 1_000 * MegaLux
+	Lux     = units.Lux
+	KiloLux = units.KiloLux
+	MegaLux = units.MegaLux
+	GigaLux = units.GigaLux
 )
 
 // MainnetGenesis is the policy Lux mainnet runs under today, transcribed from
@@ -86,4 +89,21 @@ var MainnetBounds = Bounds{
 var MainnetRate = Rate{
 	MaxStep:     reward.PercentDenominator / 10, // 10% of current
 	MinInterval: 14 * 24 * time.Hour,
+}
+
+// MainnetHistory is the policy in force on Lux mainnet, oldest first. The
+// first entry is what the chain was born with; the second lowers the validator
+// floor to 1,000 LUX from its activation, so anyone bonding at the old floor
+// before then is judged on the terms they agreed to. Every node reads the same
+// activation, which is what makes the floor change at one height everywhere.
+var MainnetHistory = History{
+	{Activation: 0, Params: MainnetGenesis},
+	{Activation: 1787443200, Params: Params{ // 2026-08-23T00:00:00Z
+		MinValidatorStake: 1_000 * Lux,
+		MaxValidatorStake: MainnetGenesis.MaxValidatorStake,
+		MinStakeDuration:  MainnetGenesis.MinStakeDuration,
+		MaxStakeDuration:  MainnetGenesis.MaxStakeDuration,
+		MinDelegationFee:  MainnetGenesis.MinDelegationFee,
+		UptimeRequirement: MainnetGenesis.UptimeRequirement,
+	}},
 }

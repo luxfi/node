@@ -1746,7 +1746,7 @@ func (b *builder) spend(
 	}
 	if excessLUX < requiredFee {
 		return nil, nil, nil, fmt.Errorf(
-			"%w: provided UTXOs needed %d more nLUX (%q)",
+			"%w: provided UTXOs needed %d more µLUX (%q)",
 			ErrInsufficientFunds,
 			requiredFee-excessLUX,
 			b.context.UTXOAssetID,

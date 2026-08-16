@@ -144,20 +144,20 @@ func main() {
 		log.Fatalf("P-chain balance check failed: %v", err)
 	}
 	pBalance := pBalanceMap[utxoAssetID]
-	log.Printf("Wallet P-chain balance: %d nLUX (%.2f LUX)", pBalance, float64(pBalance)/1e9)
+	log.Printf("Wallet P-chain balance: %d µLUX (%.2f LUX)", pBalance, float64(pBalance)/1e6)
 
 	if pBalance < 1_000_000_000 { // Need at least 1 LUX for tx fees
-		log.Printf("P-chain balance low (%d nLUX). Checking X-chain...", pBalance)
+		log.Printf("P-chain balance low (%d µLUX). Checking X-chain...", pBalance)
 		xBalanceMap, _ := fundWallet.X().Builder().GetFTBalance()
 		xBalance := xBalanceMap[utxoAssetID]
-		log.Printf("X-chain balance: %d nLUX (%.2f LUX)", xBalance, float64(xBalance)/1e9)
+		log.Printf("X-chain balance: %d µLUX (%.2f LUX)", xBalance, float64(xBalance)/1e6)
 
 		if xBalance > 0 {
 			exportAmount := xBalance
 			if exportAmount > 10_000_000_000 {
 				exportAmount = 10_000_000_000 // Cap at 10 LUX
 			}
-			log.Printf("Exporting %d nLUX from X→P...", exportAmount)
+			log.Printf("Exporting %d µLUX from X→P...", exportAmount)
 
 			xChainID := fundWallet.X().Builder().Context().BlockchainID
 			exportTx, err := fundWallet.X().IssueExportTx(
@@ -200,7 +200,7 @@ func main() {
 					})
 					pBalanceMap, _ = fundWallet.P().Builder().GetBalance()
 					pBalance = pBalanceMap[utxoAssetID]
-					log.Printf("P-Chain balance after import: %d nLUX (%.2f LUX)", pBalance, float64(pBalance)/1e9)
+					log.Printf("P-Chain balance after import: %d µLUX (%.2f LUX)", pBalance, float64(pBalance)/1e6)
 				}
 			}
 		}

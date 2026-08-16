@@ -351,7 +351,7 @@ func (i *Info) Lps(_ *http.Request, _ *struct{}, reply *apiinfo.LPsReply) error 
 	return nil
 }
 
-// GetTxFee returns the transaction fee in nLUX.
+// GetTxFee returns the transaction fee in µLUX.
 func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *apiinfo.GetTxFeeResponse) error {
 	i.log.Warn("deprecated API called",
 		log.String("service", "info"),
