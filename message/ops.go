@@ -331,6 +331,38 @@ func GetContainerBytes(msg fmt.Stringer) []byte {
 		return m.AppBytes
 	case *p2p.Response:
 		return m.AppBytes
+	// State sync. The frontier request carries no body — the requester is asking
+	// what the peer holds, not about anything in particular — so it flattens to
+	// nothing and the handler answers from the chain alone.
+	case *p2p.GetStateSummaryFrontier:
+		return nil
+	case *p2p.StateSummaryFrontier:
+		return m.Summary
+	case *p2p.GetAcceptedStateSummary:
+		// The heights asked about, fixed-width and in order. Fixed-width because
+		// the reader recovers the count by division and cannot disagree with the
+		// writer about where one ends.
+		if len(m.Heights) == 0 {
+			return nil
+		}
+		out := make([]byte, 0, len(m.Heights)*8)
+		var h [8]byte
+		for _, height := range m.Heights {
+			binary.BigEndian.PutUint64(h[:], height)
+			out = append(out, h[:]...)
+		}
+		return out
+	case *p2p.AcceptedStateSummary:
+		// The summaries the peer holds, named by id. Same shape as GetAccepted
+		// below: fixed 32-byte ids, concatenated.
+		if len(m.SummaryIds) == 0 {
+			return nil
+		}
+		out := make([]byte, 0, len(m.SummaryIds)*32)
+		for _, id := range m.SummaryIds {
+			out = append(out, id...)
+		}
+		return out
 	// Request messages with container IDs for P-Chain sync
 	case *p2p.GetAccepted:
 		containerIDs := m.GetContainerIds()

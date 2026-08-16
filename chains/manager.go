@@ -5100,6 +5100,35 @@ func (b *blockHandler) HandleInbound(ctx context.Context, msg handler.Message) e
 		// that is not syncing — is dropped here.
 		b.deliverBootstrapAccepted(msg.RequestID, msg.NodeID, decodeIDs(msg.Message, bootstrapAcceptedCandidates))
 		return nil
+	case handler.GetStateSummaryFrontier:
+		// Asked what summary this chain holds. No body: the question is about the
+		// chain, not about anything in it.
+		return b.GetStateSummaryFrontier(ctx, msg.NodeID, msg.RequestID, time.Now().Add(10*time.Second))
+	case handler.StateSummaryFrontier:
+		return b.StateSummaryFrontier(ctx, msg.NodeID, msg.RequestID, msg.Message)
+	case handler.GetAcceptedStateSummary:
+		// Fixed-width heights, so the count is a division and the reader cannot
+		// disagree with the writer about where one ends. A trailing partial is a
+		// malformed request and the whole of it is refused.
+		if len(msg.Message)%8 != 0 {
+			return nil
+		}
+		heights := make([]uint64, 0, len(msg.Message)/8)
+		for i := 0; i+8 <= len(msg.Message); i += 8 {
+			heights = append(heights, binary.BigEndian.Uint64(msg.Message[i:i+8]))
+		}
+		return b.GetAcceptedStateSummary(ctx, msg.NodeID, msg.RequestID, time.Now().Add(30*time.Second), heights)
+	case handler.AcceptedStateSummary:
+		if len(msg.Message)%32 != 0 {
+			return nil
+		}
+		ids32 := make([]ids.ID, 0, len(msg.Message)/32)
+		for i := 0; i+32 <= len(msg.Message); i += 32 {
+			var id ids.ID
+			copy(id[:], msg.Message[i:i+32])
+			ids32 = append(ids32, id)
+		}
+		return b.AcceptedStateSummary(ctx, msg.NodeID, msg.RequestID, ids32)
 	case handler.GetContext:
 		// GetContext requests verification context (parent chain) for a block
 		if len(msg.Message) >= 32 {
