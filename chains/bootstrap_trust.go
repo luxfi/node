@@ -90,9 +90,9 @@ var (
 	// distinction is the whole recovery property: no-quorum says the responders do not
 	// agree on anything we can name, a conclusion about the network, while incomplete says
 	// we have not looked far enough yet, a statement about our own budget. Reported as
-	// no-quorum, a wide gap looks like a network that will never agree and the descent
-	// restarts from the tip every round — which is how a 535-block gap wedged mainnet
-	// forever. Reported as incomplete, the saved cursor makes the next attempt resume
+	// no-quorum, a gap wider than one attempt's budget looks like a network that will
+	// never agree and the descent restarts from the tip every round, so it is never
+	// crossed. Reported as incomplete, the saved cursor makes the next attempt resume
 	// deeper. The caller retries either way; only one of them makes progress.
 	ErrNamingIncomplete = errors.New("bootstrap: ancestry walk incomplete within the attempt budget")
 )
@@ -553,9 +553,9 @@ func (p *BootstrapPolicy) AcceptsFrontier(ctx context.Context, replies []BeaconR
 //     finalized) makes the conclusion fail. The node declares caught-up only to blocks it ACCEPTED.
 //
 // heightOf resolves a tip's height from the node's ACCEPTED chain (ok=false when the tip is not
-// accepted — including a block merely PRESENT in the store but unaccepted, the luxd-2 freeze case),
-// injected so the trust DECISION stays free of any VM/block dependency — the same separation as
-// AncestrySource. It is NEVER a network fetch: an unaccepted/absent tip simply makes the node
+// accepted — including a block merely PRESENT in the store but unaccepted, which a store-presence
+// check reads as held), injected so the trust DECISION stays free of any VM/block dependency — the
+// same separation as AncestrySource. It is NEVER a network fetch: an unaccepted/absent tip simply makes the node
 // not-caught-up (the safe direction — it syncs). Because (c) requires the node to have ACCEPTED
 // every reported tip, the heights (b) compares are the blocks' canonical (content-addressed)
 // heights read from the finalized chain — store presence can never fake "caught up".
@@ -662,8 +662,8 @@ func (p *BootstrapPolicy) nameFrontier(ctx context.Context, stakeOnTip map[ids.I
 
 		// CHUNKED DESCENT, resumed. namingWindow is the per-REQUEST size (Ancestry serves
 		// FULL blocks, so one response must fit a network message) — never the total
-		// ancestry worth walking. A single un-chunked window silently capped this at 256
-		// and wedged mainnet at a 535-block gap.
+		// ancestry worth walking. A single un-chunked window silently caps the descent at
+		// one window, so any gap wider than that is never crossed.
 		prog := p.ensureProgress(tip)
 		if prog.Complete {
 			continue

@@ -22,8 +22,8 @@ import (
 //	github.com/luxfi/math/set.Set[...].Contains(...) set/set.go:33
 //	.../block/executor.(*Block).VerifyWithRuntime block.go:47
 //
-// That is a hard abort, not a panic — recover cannot see it. pars-mainnet
-// parsd-mv-2 died this way 52 times in 59h.
+// That is a hard abort, not a panic — recover cannot see it, so the validator
+// process dies outright and a restart lands back in the same race.
 func TestVerifiedHeightsConcurrentAccessIsSafe(t *testing.T) {
 	bs := &blockState{verifiedHeights: set.Of[uint64](0)}
 

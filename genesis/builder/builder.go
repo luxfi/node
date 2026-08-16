@@ -97,7 +97,8 @@ func (b Bootstrapper) IP() endpoints.Endpoint {
 
 // ParseBootstrapper converts a genesis config bootstrapper to a parsed Bootstrapper.
 // The IP field can be either an IP:port (e.g., "1.2.3.4:9631") or a hostname:port
-// (e.g., "luxd-0.luxd-headless.lux-mainnet.svc.cluster.local:9631").
+// (e.g., "node-0.validators.example.com:9631") — a hostname keeps a bootstrapper
+// addressable when its address is assigned at start time rather than pinned.
 func ParseBootstrapper(b genesiscfg.Bootstrapper) (Bootstrapper, error) {
 	nodeID, err := ids.NodeIDFromString(b.ID)
 	if err != nil {
@@ -339,7 +340,7 @@ func GetConfig(networkID uint32) *genesiscfg.Config {
 // emits an X-Chain entry in the primary-network CreateChainTx set. When
 // empty, no XVM genesis is built and X-Chain is omitted from the chain
 // set — the path used by P-only L2s whose value capture lives on a
-// downstream EVM (downstream EVM etc.).
+// downstream EVM.
 //
 // The LUX asset ID returned is always the network-wide constant
 // (constants.UTXO_ASSET_ID), independent of whether X-Chain is baked.
@@ -393,14 +394,13 @@ func FromConfig(config *genesiscfg.Config) ([]byte, ids.ID, error) {
 	// X-Chain native asset ID is derived from the actual XVM genesis bytes
 	// (the runtime ID of the first GenesisAsset.CreateAssetTx) so the value
 	// the wallet builder reads back via platform.getStakingAssetID matches
-	// the asset the X-Chain genuinely mints. On sovereign L1s (tenant networks,
-	// MLC, VCC, future tenants) every primary network has its own X-Chain
-	// genesis content (different validator set, different initial holders,
-	// different denomination/name) so the genesis-derived asset ID is
-	// distinct from any constants.UTXOAssetIDFor(networkID) value — those
-	// are network-id-keyed constants and identical across every L1 sharing
-	// the same primary-network ID, which would let two sovereign networks
-	// collide.
+	// the asset the X-Chain genuinely mints. On a sovereign L1 every primary
+	// network has its own X-Chain genesis content (different validator set,
+	// different initial holders, different denomination/name) so the
+	// genesis-derived asset ID is distinct from any
+	// constants.UTXOAssetIDFor(networkID) value — those are network-id-keyed
+	// constants and identical across every L1 sharing the same
+	// primary-network ID, which would let two sovereign networks collide.
 	//
 	// When X-Chain is opt-out (P-only mode, xvmGenesisBytes is nil) we keep
 	// the network-id-keyed constant as a placeholder; the asset ID is

@@ -22,7 +22,7 @@ import (
 // stubInnerVM embeds the ChainVM interface (nil) and overrides ONLY GetBlock to report
 // "not found", so getBlock (getPostForkBlock miss → getPreForkBlock → ChainVM.GetBlock)
 // cleanly errors for an unheld id without a panic. No other inner method is invoked on
-// the miss path under test — the #1 fix returns before any inner delegation.
+// the miss path under test — validate-before-assign returns before any inner delegation.
 type stubInnerVM struct{ vmchain.ChainVM }
 
 func (stubInnerVM) GetBlock(context.Context, ids.ID) (vmchain.Block, error) {
@@ -45,10 +45,10 @@ func newWedgeTestVM(priorPreferred ids.ID) *VM {
 }
 
 // TestSetPreference_UnheldBlock_DoesNotPoison is the deterministic unit repro of the
-// luxd-1 REJOIN WEDGE (defect #1).
+// REJOIN WEDGE.
 //
 // A validator that fell behind is steered by the consensus engine
-// (consensus/engine/chain/integration.go — defect #2) to a build tip ABOVE its own
+// (consensus/engine/chain/integration.go) to a build tip ABOVE its own
 // frontier: an id this proposervm does not hold. The OLD SetPreference assigned
 // vm.preferred = <unheld id> BEFORE validating, so on the (inevitable) getBlock miss it
 // returned a hard error but LEFT vm.preferred poisoned. BuildBlock then read the poisoned

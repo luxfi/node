@@ -48,6 +48,7 @@ import (
 	// "github.com/luxfi/consensus/core/tracker"
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/statesync"
 	consensusdag "github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/vm/chain"
 
@@ -107,10 +108,10 @@ const (
 	// vmStartupTimeout bounds each VM startup/lifecycle operation (Initialize,
 	// Linearize, SetState, CreateHandlers, router AddChain, state-sync). It must
 	// be generous enough to cover a cold coreth "Regenerate historical state"
-	// pass after an unclean shutdown (observed 67-134s on mainnet C-Chain),
-	// which the previous hardcoded 30s budget blew — the context was cancelled
-	// mid-init, so the VM was marked failed and its C-Chain route never
-	// registered (the recurring post-restart 404 that needed a second restart).
+	// pass after an unclean shutdown, which runs for minutes on a C-Chain
+	// with real history and which the previous hardcoded 30s budget blew —
+	// the context was cancelled mid-init, so the VM was marked failed and its
+	// C-Chain route never registered (a 404 until the next restart).
 	// Bounded so a genuinely hung VM still surfaces rather than hanging forever.
 	vmStartupTimeout = 10 * time.Minute
 
@@ -530,8 +531,8 @@ type manager struct {
 	// FULL primary-network set). A native non-platform chain reads it (blockHandler.primaryNetworkReady)
 	// to gate its OWN bootstrap frontier-trust: until it is true the staked beacon set is a PARTIAL
 	// (mid-replay) set, a non-representative stake denominator that would let a degenerate at-or-below
-	// responder subset false-complete the node at its stale height (the mainnet luxd-2 canary). It is
-	// the authoritative "primary-network validator set is fully loaded" signal — distinct from
+	// responder subset false-complete the node at its stale height. It is the authoritative
+	// "primary-network validator set is fully loaded" signal — distinct from
 	// manager.IsBootstrapped, which returns true the instant the P-chain merely EXISTS in m.chains
 	// (right after createChain launched its bootstrap goroutine — far too early).
 	pChainBootstrapped gatomic.Bool
@@ -1254,11 +1255,11 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		if m.SybilProtectionEnabled {
 			// LIVE-AWARE, not static. ValidateForValueNetwork applies the STATIC tier
 			// floor (mainnet K>=11) — a decentralisation TARGET for a mature set. A
-			// running 5-validator mainnet cannot satisfy it, and refusing to start
-			// does not add validators: it freezes the fleet on whatever code it last
-			// booted. Mainnet 96369 (K=5/alpha=4) was stranded on v1.36.2 by exactly
-			// this, missing every later consensus fix — strictly worse than running a
-			// small set on current code.
+			// live network smaller than its tier cannot satisfy it, and refusing to
+			// start does not add validators: it pins every node on whatever code it
+			// last booted, so a set running K=5/alpha=4 is stranded there and misses
+			// every later consensus fix — strictly worse than running a small set on
+			// current code.
 			//
 			// ValidateForLiveValueNetwork exists for precisely this and is NOT a
 			// bypass: it still rejects f=0 committees (ErrKTooLowForValue) and an
@@ -1275,8 +1276,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// SAFE BUT SMALL. The decentralisation target is REPORTED, never
 			// enforced — a set that satisfies the BFT overlap bound must run, but an
 			// operator should still see that it is one fault away from the tier the
-			// network is meant to have. Silent acceptance is how a 5-validator
-			// mainnet stops being a temporary state.
+			// network is meant to have. Silent acceptance is how a five-validator
+			// value network stops being a temporary state.
 			if err := consensusParams.MeetsDecentralizationTarget(m.NetworkID); err != nil {
 				chainLog.Warn("consensus params are Byzantine-SAFE but below the network decentralisation target — grow the validator set",
 					log.Stringer("chainID", chainParams.ID),
@@ -1687,8 +1688,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// Start the consensus engine with a LIFETIME context (not a timeout):
 		// engine.Start parents all four long-running loops (poll, vote, pipeline,
 		// re-poll) to this ctx, so a WithTimeout here kills them ~30s after the
-		// chain starts and the quorum cert never assembles — the finality wedge
-		// fixed in v1.30.55 (ba3561778e). Do not reintroduce a timeout here.
+		// chain starts and the quorum cert never assembles — the finality wedge.
+		// Do not reintroduce a timeout here.
 		if err := consensusEngine.Start(context.Background(), true); err != nil {
 			chainLog.Error("failed to start consensus engine",
 				log.Stringer("chainID", chainParams.ID),
@@ -2116,10 +2117,10 @@ func (m *manager) createDAG(
 	// (bootstrap_sync.go). DAG chains (X/Q) run a different engine (consensusdag) with no such
 	// node-layer fetch+execute loop, so the stale-go-live gate cannot simply be reused here; adding
 	// it requires building the DAG equivalent of the linear bootstrap loop. That is tracked as a
-	// SEPARATE task — RECOMMENDED to stay separate, NOT folded into this canary hotfix, because the
-	// production native chains that froze are all linear (mainnet runs P + linear C/D/B/T/Z; X/Q
-	// carry no at-risk producer state on the canary). This call is UNCHANGED by this fix — the DAG
-	// path neither regresses nor improves here; it retains its prior behavior pending that task.
+	// SEPARATE task — RECOMMENDED to stay separate, because the chains that can go live at a stale
+	// height with producer state at risk are the linear ones (P plus linear C/D/B/T/Z); X/Q carry
+	// no such state. This call is UNCHANGED by this fix — the DAG path neither regresses nor
+	// improves here; it retains its prior behavior pending that task.
 	if vmInitialized {
 		if stateVM, ok := vmImpl.(interface {
 			SetState(context.Context, uint32) error
@@ -2294,7 +2295,7 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 				log.Stringer("chainID", chainID))
 			// The P-chain completing initial sync means the staked primary-network validator set is
 			// now FULLY loaded (every staker tx replayed). Publish that so native non-platform chains
-			// can safely begin trusting their beacon set (blockHandler.primaryNetworkReady → the canary
+			// can safely begin trusting their beacon set (blockHandler.primaryNetworkReady → the
 			// partial-set gate). Set BEFORE sb.Bootstrapped so the signal is never lagging the readiness.
 			if chainID == constants.PlatformChainID {
 				m.pChainBootstrapped.Store(true)
@@ -2321,10 +2322,9 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 			// advance past the VM's applied state, and the only exit is a pod restart that can
 			// stall again the same way.
 			//
-			// Measured on lux-testnet: a node was declared stalled at height 13955 and its
-			// engine stopped — then its EVM went on to reach 14154, the healthy fleet's exact
-			// height. The chain had the blocks and was still refusing every incoming cert,
-			// because the verdict outlived the condition that produced it.
+			// A node declared stalled and stopped can go on to reach the network's height in
+			// its VM and still refuse every incoming cert: it has the blocks, and the verdict
+			// outlived the condition that produced it.
 			//
 			// So report it and KEEP WATCHING. The chain stays out of Bootstrapped (it is not
 			// synced, and masking that is the other failure), the health check shows exactly
@@ -3119,7 +3119,7 @@ type blockHandler struct {
 	servingSlots chan struct{}
 	pollerCancel context.CancelFunc // Cancels runFrontierPoller when the handler stops (RED LOW: no goroutine leak on chain re-creation)
 
-	diag         catchupDiag        // Per-outcome counters that gate the catch-up diagnostics (see catchupSample)
+	diag catchupDiag // Per-outcome counters that gate the catch-up diagnostics (see catchupSample)
 
 	// signedVotesRequired is true exactly when this chain's engine AUTHENTICATES
 	// every vote before tallying it — i.e. a VoteVerifier is wired, which the node
@@ -3226,15 +3226,16 @@ type blockHandler struct {
 	// initial sync (replaying genesis stakers + every AddValidatorTx). nil ⇒ no gate (the P-chain
 	// itself, single-node / skip-bootstrap, and unit tests that wire a static beacon set).
 	//
-	// THE CANARY ROOT-CAUSE GATE. A native non-platform chain's runBootstrapThenPoll starts right
+	// THE PARTIAL-SET GATE. A native non-platform chain's runBootstrapThenPoll starts right
 	// after the chain's VM.Initialize (dispatchChainCreator), NOT after the P-chain has finished
 	// BOOTSTRAPPING — so FrontierTip can run while m.Validators.GetMap(PrimaryNetworkID) is still a
 	// PARTIAL set. The MinResponseWeight stake-majority floor (total/2+1) is fail-secure ONLY when
 	// `total` is the TRUE full-set stake; under a partial denominator a degenerate at-or-below
 	// responder subset (the genuinely-ahead producers not yet loaded / not yet connected) clears the
-	// floor and the frontier decision false-completes the node at its stale local height — the
-	// mainnet luxd-2 freeze. Gating frontier-trust on a fully-loaded set makes the floor's
-	// denominator the true full validator set, so the existing fail-secure logic holds. Deadlock-free:
+	// floor and the frontier decision false-completes the node at its stale local height, leaving a
+	// validator serving and voting behind the network with nothing left converging it. Gating
+	// frontier-trust on a fully-loaded set makes the floor's denominator the true full validator
+	// set, so the existing fail-secure logic holds. Deadlock-free:
 	// the P-chain bootstraps INDEPENDENTLY from its own configured (full-from-config) CustomBeacons,
 	// so a native chain only waits a bounded extra moment for the P-chain to converge.
 	primaryNetworkReady func() bool
@@ -3253,8 +3254,8 @@ type blockHandler struct {
 	// recovery targets are themselves down validators). All default when zero (bootstrapPolicy):
 	//   - bootstrapMinResponses: minimum distinct authenticated configured beacons that must
 	//     respond before any frontier is named (INVARIANT 2's partition-capture floor). Zero ⇒ a
-	//     MAJORITY of the configured beacon set. For the 5-validator mainnet this is 3, so the 3
-	//     reachable producers recover the network while a 2-beacon partition is rejected.
+	//     MAJORITY of the configured beacon set. For a 5-validator set this is 3, so 3 reachable
+	//     producers recover the network while a 2-beacon partition is rejected.
 	//   - bootstrapAgreement: the fraction of the RESPONDER weight a named frontier must exceed.
 	//     Zero ⇒ ⅔. An operator may tighten to ¾ (Ratio{3,4}).
 	//   - bootstrapCheckpoint: an OPTIONAL operator-pinned (id,height) to anchor from when fewer
@@ -3466,9 +3467,9 @@ type catchupDiag struct {
 
 // catchupSample is the volume gate for the catch-up diagnostics: the first few of an
 // outcome, then every 500th. Same shape as quorum.go's vote-verifier sampler, for the
-// same reason — these sites sit on per-message paths, and the fleet runs a cert storm
-// (hundreds of signature verifications a second, one node re-gossiping the same certs
-// 763 times in 2000 lines), so an unconditional Info line here buries its own signal.
+// same reason — these sites sit on per-message paths under a cert storm (hundreds of
+// signature verifications a second, one node re-gossiping the same cert hundreds of
+// times), so an unconditional Info line here buries its own signal.
 // Sampling still names a systematic failure on its FIRST occurrence and keeps naming
 // it while it persists, which is what a single roll needs.
 func catchupSample(c *gatomic.Uint64) (uint64, bool) {
@@ -3502,9 +3503,9 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 	// here five callers can request context and four of them see the network tip. A
 	// responder serves the window ENDING at the id it is asked for, so a tip-anchored
 	// request returns blocks above a behind node every time — and replaces the anchor
-	// the descent had just earned. Measured: four interleaved walks whose oldest
-	// heights bounced (24171, 24366, 25288, 26201), none reaching the node's own next
-	// height.
+	// the descent had just earned. The walks then interleave, each one's oldest height
+	// bouncing to whatever window the last reply served, and none of them reaches the
+	// node's own next height.
 	//
 	// The anchor clears when the descent connects, so a caught-up node asks for
 	// exactly what its caller named. Liveness only: this chooses the question, never
@@ -3531,16 +3532,16 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 	b.contextRequestMu.Lock()
 	// Check if we already have a pending request for this block -- but only an
 	// UNEXPIRED one suppresses. "A request exists" and "that request is still
-	// live" are two different facts; keying suppression on the first alone is
-	// what wedged the fleet.
+	// live" are two different facts, and keying suppression on the first alone
+	// wedges the node.
 	//
 	// The sweep below expires stale slots, but it is reachable ONLY on a cache
 	// MISS -- this early return runs first. A node that is behind asks for
 	// exactly one block, the one it is missing, so it produces nothing BUT
 	// cache hits: the sweep never runs, the slot never expires, and the one
-	// block it needs becomes the one block it can never ask for again. Measured
-	// on testnet luxd-3: a single slot held 10.9 HOURS past a 30s TTL, 38k
-	// suppressions deep, while the node sat 1738 blocks behind a live chain.
+	// block it needs becomes the one block it can never ask for again. That
+	// slot then holds for hours past a TTL measured in seconds, suppressing
+	// every later ask, while the node stays behind a live chain.
 	if prior, exists := b.pendingContext[blockID]; exists {
 		if age := now.Sub(prior.timestamp); age <= pendingContextTTL {
 			b.contextRequestMu.Unlock()
@@ -3659,7 +3660,7 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 	// for a block I don't track — fetch it" by passing ids.EmptyNodeID (topology.go:
 	// requestCatchup(cert.Position.BlockID, ids.EmptyNodeID)); picking a real peer is
 	// the node layer's job. The prior code blindly Add(EmptyNodeID) + Send, so
-	// GetAncestors went to ZERO peers (the "sentTo=0" spam on the frozen fleet) and the
+	// GetAncestors went to ZERO peers (every send reporting sentTo=0) and the
 	// certified-but-untracked block was NEVER fetched — the node saw the cert, could not
 	// finalize, and never recovered. When nodeID is Empty, sample real connected peers
 	// that track this chain's network (the SAME selection pollFrontierOnce uses); a valid
@@ -3988,9 +3989,9 @@ func shouldDescend(certAccepted int, haveOldest bool, oldestHeight uint64, oldes
 // each reply names the window IT served, so adopting whichever reply landed last lets
 // a peer far above the gap re-anchor a walk that had already descended past it. The
 // highest reply wins that race most rounds, and the walk sits at the same distance
-// from our tip forever. Measured on mainnet: finalized=1159169 held while successive
-// replies anchored at 1160267, 1160176, 1160786, 1160410 and 1159415 — the one reply
-// within one window of the gap was overwritten before its request went out.
+// from our tip forever: our own finalized height holds while the anchor jumps around
+// above it, and the one reply within a window of the gap is overwritten before its
+// request goes out.
 //
 // Strictly decreasing, the walk reaches our tip in gap/window steps and stops.
 //
@@ -4013,10 +4014,9 @@ func (b *blockHandler) descend(next ids.ID, nextHeight uint64) bool {
 // finality above the block its VM holds — and then nothing moves. Finality cannot
 // advance, because the fail-closed guard refuses to run past applied state; and
 // catch-up, steering by the ledger, asks for the height ABOVE the gap, so the blocks
-// the VM is missing are never fetched. Measured on mainnet luxd-3: ledger 1160628,
-// EVM 1159050, every cert refused "expected accepted block to have parent
-// ...:1159050 but got ...:1161398", zero descents running because certs were being
-// accepted.
+// the VM is missing are never fetched. The ledger can lead the VM by thousands of
+// blocks: every cert is then refused for a parent the VM does not hold, and no descent
+// runs at all, because from the ledger's side certs are being accepted.
 //
 // A block can only be applied on top of the one before it, so the LOWER of the two is
 // what to ask a peer for.
@@ -4223,9 +4223,9 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		//
 		// They must NOT go through Put. Put is the live missing-parent path and
 		// self-fetches context for each block it cannot place, so routing a 256-entry
-		// response through it turned ONE answer into 256 new requests — measured on
-		// lux-testnet at 2,614 requests per three minutes against a node that applied
-		// nothing. Voting is also the wrong instrument: the network does not re-vote a
+		// response through it turns ONE answer into 256 new requests — hundreds of
+		// requests a minute against a node that applies nothing of what it is served.
+		// Voting is also the wrong instrument: the network does not re-vote a
 		// height it has already decided.
 		if !isV2 {
 			blockBytes = entry
@@ -4291,9 +4291,8 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	//
 	// Without this a node between "further behind than one served window" and "far
 	// enough behind to bootstrap" has no way home at all: runtime catch-up refuses to
-	// descend and the bootstrapper refuses the gap. lux-mainnet luxd-2 and luxd-3 sat
-	// in exactly that hole at 1,159,050, ~2,400 blocks behind a live fleet, holding
-	// every block they needed.
+	// descend and the bootstrapper refuses the gap, so a validator thousands of blocks
+	// behind a live network sits in that hole holding every block it needs.
 	// The test is whether the batch ADVANCED us, which is certAccepted — the only
 	// counter that means a block became ours. `processed` counts entries handled, and
 	// a batch of 250 blocks that finalizes none still reports processed=250, so gating
@@ -4301,15 +4300,14 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// narrowed it further to batches that carried certs at all: a responder serves an
 	// empty cert for any block outside its window, so the common batch — every entry
 	// above us, none of them certified — reported certRejected=0 and was read as
-	// nothing to descend from. Measured on lux-testnet: 2,614 requests, 5 descents.
+	// nothing to descend from: thousands of requests, a handful of descents.
 	fh, set := b.catchupTarget(ctx)
 
 	// A walk ends when our own finality reaches it — not on the first block it wins.
 	// Retiring it on ANY successful fold restarts the descent from the network tip
 	// after every single block, so a node N blocks behind pays the whole descent N
-	// times and advances one height per full walk. Measured on mainnet: luxd-1 sat at
-	// finalized=1159170, exactly one block above the peers it was stuck with, ~2,000
-	// short of the fleet, re-descending eight windows for each next height.
+	// times and advances one height per full walk — a node thousands of blocks behind
+	// re-descends every window between it and the tip to gain a single height.
 	if certAccepted > 0 && set {
 		b.retire(fh)
 	}
@@ -4491,9 +4489,9 @@ func (b *blockHandler) pollFrontierOnce(ctx context.Context) {
 	// tracks (network/peer/peer.go: constants.PrimaryNetworkID plus every tracked L1 net id) — it
 	// NEVER advertises an individual native chain id like the C-Chain's. Filtering on b.chainID
 	// therefore matched ZERO real peers, so the sample was always empty, no GetAcceptedFrontier was
-	// ever sent, and a behind-but-Ready validator NEVER discovered it was behind (it sat frozen at a
-	// stale height with no self-heal — the second half of the luxd-2 freeze). This is the IDENTICAL
-	// fix already applied to connectedBeacons (bootstrap_sync.go); the NormalOp poller had the same
+	// ever sent, and a behind-but-Ready validator NEVER discovered it was behind (it sits frozen at a
+	// stale height with no self-heal). This is the IDENTICAL fix already applied to
+	// connectedBeacons (bootstrap_sync.go); the NormalOp poller had the same
 	// latent chainID/networkID confusion. Matching on b.networkID reaches exactly the peers
 	// participating in this chain's validation network. Catch-up safety is unchanged: the reply
 	// drives requestContext, which pulls the gap WITH CERTS (cert-verified accept), so asking any
@@ -4933,22 +4931,62 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 	// Plain block gossip.
 	return b.Put(ctx, nodeID, 0, msg)
 }
+
+// GetStateSummaryFrontier answers with the summary this chain's VM holds at its
+// frontier, so a peer whose gap is too deep to re-execute can adopt state instead.
+//
+// Serving does not consult whether THIS node would sync: a node's own preference
+// says nothing about what its peers may ask for, and a chain that answers only
+// when it would also ask leaves a fleet unable to repair itself the moment its
+// healthy members have nothing to sync to.
+//
+// Silence is the answer when there is no summary. The requester closes its round
+// on its own deadline, and a reply we cannot make is not an error.
 func (b *blockHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time) error {
+	summary, err := statesync.NewServer[chain.StateSummary](b.vm).Frontier(ctx)
+	if err != nil {
+		return nil
+	}
+	msg, err := b.msgCreator.StateSummaryFrontier(b.chainID, requestID, summary)
+	if err != nil {
+		return nil
+	}
+	nodeSet := set.NewSet[ids.NodeID](1)
+	nodeSet.Add(nodeID)
+	b.net.Send(msg, nodeSet, b.networkID, 0)
 	return nil
 }
+
+// StateSummaryFrontier is a peer's answer to our own frontier request. Adoption
+// runs as its own pass before bootstrap and collects replies through its Source,
+// so nothing is routed here.
 func (b *blockHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
 	return nil
 }
+
+// GetAcceptedStateSummary answers which of the named heights this VM holds.
+//
+// An empty reply is an answer, and a different one from silence: it says "none of
+// those", which completes the requester's tally at once. Sending nothing instead
+// costs it a timeout on every round.
 func (b *blockHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, heights []uint64) error {
+	summaryIDs, err := statesync.NewServer[chain.StateSummary](b.vm).Accepted(ctx, heights)
+	if err != nil {
+		return nil
+	}
+	msg, err := b.msgCreator.AcceptedStateSummary(b.chainID, requestID, summaryIDs)
+	if err != nil {
+		return nil
+	}
+	nodeSet := set.NewSet[ids.NodeID](1)
+	nodeSet.Add(nodeID)
+	b.net.Send(msg, nodeSet, b.networkID, 0)
 	return nil
 }
+
+// AcceptedStateSummary is a peer's ratification vote. As with the frontier reply,
+// adoption collects it through its own Source.
 func (b *blockHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
-	return nil
-}
-func (b *blockHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error {
-	return nil
-}
-func (b *blockHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
 	return nil
 }
 
@@ -5188,12 +5226,6 @@ func (p *noopHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.No
 	return nil
 }
 func (p *noopHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
-	return nil
-}
-func (p *noopHandler) GetStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, height uint64) error {
-	return nil
-}
-func (p *noopHandler) StateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
 	return nil
 }
 func (p *noopHandler) Connected(ctx context.Context, nodeID ids.NodeID) error    { return nil }

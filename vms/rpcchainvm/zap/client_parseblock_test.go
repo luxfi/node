@@ -15,22 +15,24 @@ import (
 	"github.com/luxfi/log"
 )
 
-// TestParseBlock_MalformedBlockID_IsTypedAndQuarantined is the regression guard
-// for the mainnet luxd-3 wedge (C-Chain height 1082797 fork).
+// TestParseBlock_MalformedBlockID_IsTypedAndQuarantined is the guard on the
+// ParseBlock response boundary: an id the plugin never filled in must be
+// refused with a typed error, not surfaced as an opaque codec complaint.
 //
-// THE OBSERVED SYMPTOM: luxd-3 spammed
+// THE SYMPTOM IT PREVENTS: a validator that cannot vote, reporting only
 //
 //	warn ParseBlock failed, cannot vote correctly
 //	     error="invalid hash length: expected 32 bytes but got 0"
 //
-// ROOT of that surfacing: the C-Chain EVM (coreth) runs as an rpcchainvm plugin
-// across the ZAP boundary. When luxd-3 (sitting on a divergent, already-accepted
-// fork block at 1082797) is asked via PushQuery to ParseBlock a CANONICAL block
-// that does not connect to its forked chain, the plugin answers with a
-// BlockResponse whose ID/ParentID are EMPTY (0-length) and whose Err is left at
-// ErrorUnspecified. The old client passed that empty slice straight into
-// ids.ToID, which returned the opaque "invalid hash length: expected 32 bytes
-// but got 0" — masking the real "does-not-connect" condition.
+// THE MECHANISM: the C-Chain EVM (coreth) runs as an rpcchainvm plugin across
+// the ZAP boundary. A node sitting on a divergent, already-accepted fork block,
+// asked via PushQuery to ParseBlock a CANONICAL block that does not connect to
+// its chain, is answered with a BlockResponse whose ID/ParentID are EMPTY
+// (0-length) and whose Err is left at ErrorUnspecified. A client that passes
+// that empty slice straight into ids.ToID turns it into the opaque "invalid
+// hash length: expected 32 bytes but got 0" — a complaint about a field width,
+// which masks the real "does-not-connect" condition and points diagnosis at the
+// codec instead of at the divergence.
 //
 // The wire codec (github.com/luxfi/api/zap BlockResponse) genuinely admits a
 // 0-length ID/ParentID: both are length-prefixed []byte read via ReadBytes, and
@@ -58,7 +60,7 @@ func TestParseBlock_MalformedBlockID_IsTypedAndQuarantined(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			// The literal luxd-3 wedge: empty id, no error code.
+			// The wire shape a diverged plugin answers with: empty id, no error code.
 			name:    "empty id with no error code (the luxd-3 wedge shape)",
 			resp:    &zapwire.BlockResponse{ID: nil, ParentID: goodParent[:], Bytes: []byte{0xde, 0xad}, Err: zapwire.ErrorUnspecified},
 			wantErr: true,

@@ -51,9 +51,9 @@ type blockState struct {
 	// X sits on disk. That is the "preferred block IS last-accepted and is
 	// unfetchable" wedge in proposervm BuildBlock: the builder cannot fetch its
 	// own committed tip, goes mute, and only an operator restart clears it —
-	// because a restart drops the cache and the next read comes off disk.
-	// Observed on hanzo-mainnet mv-4 (2026-08-01) and lux-mainnet luxd-0
-	// (2026-08-06, ~200 errors per 200 log lines).
+	// because a restart drops the cache and the next read comes off disk. The
+	// tombstone lives as long as the process, so this presents as a solid stream
+	// of build failures rather than an intermittent one.
 	mu sync.Mutex
 	db database.Database
 }

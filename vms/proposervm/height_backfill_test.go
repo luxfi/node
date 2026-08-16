@@ -4,7 +4,8 @@
 // height_backfill_test.go — RECOVERY: a node whose proposervm finality index is
 // ALREADY behind the inner VM tip must BOOT and REPAIR itself instead of killing
 // the chain ("non-critical chain failed to initialize chainAlias=C" — a dead
-// C-Chain on a pod that still reports 1/1 Ready).
+// C-Chain inside a node whose health still reports fine, because the process and
+// every other chain on it are up).
 //
 // Two paths, both OUTER-ONLY (no inner re-execution, no EVM rollback, no resync):
 //   - the envelopes for the gap are still in the local block store -> rebuilt at
@@ -42,8 +43,8 @@ func TestOuterIndexRebuild_FromLocalStore_BootsAndHeals(t *testing.T) {
 	outers := acceptThroughProposervm(t, vm, ic, 8)
 
 	// DAMAGE: roll the finality pointer + height index back to 5 while the inner VM
-	// stays at 8 — byte-for-byte the on-disk state luxd-3 booted with (index 6,
-	// inner 98), except the envelopes survive in the block store.
+	// stays at 8 — the on-disk shape a node boots with when its index trails the
+	// inner tip, except the envelopes survive in the block store.
 	if err := vm.State.SetLastAccepted(outers[5].ID()); err != nil {
 		t.Fatalf("SetLastAccepted: %v", err)
 	}
@@ -100,7 +101,7 @@ func TestOuterBackfill_HealsFromSuppliedEnvelopes(t *testing.T) {
 	}
 
 	// DAMAGE: the inner VM ran on to 8 without the index (exactly what the pre-fork
-	// fallback did in production). No envelopes for 6..8 exist locally.
+	// fallback did). No envelopes for 6..8 exist locally.
 	ic.accept(8)
 
 	// BOOT — must not error.
@@ -174,10 +175,10 @@ func TestOuterBackfill_HealsFromSuppliedEnvelopes(t *testing.T) {
 }
 
 // TestBootWithBehindIndex_NeverKillsTheChain is the direct regression lock on the
-// production symptom: repairAcceptedChainByHeight must NEVER return an error for a
-// behind index, because chains/manager.go turns that error into
-// "non-critical chain failed to initialize chainAlias=C" — a dead C-Chain on a pod
-// that still reports 1/1 Ready.
+// symptom: repairAcceptedChainByHeight must NEVER return an error for a behind
+// index, because chains/manager.go turns that error into
+// "non-critical chain failed to initialize chainAlias=C" — a dead C-Chain inside a
+// node whose health still reports fine.
 func TestBootWithBehindIndex_NeverKillsTheChain(t *testing.T) {
 	ctx := context.Background()
 	for _, gap := range []uint64{1, 2, 6, 91} {

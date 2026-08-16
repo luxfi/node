@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	testnetURI := "http://127.0.0.1:19642" // luxd-1 (active validator, has quorum peers)
+	testnetURI := "http://127.0.0.1:19642" // point at an active validator with enough peers to reach quorum
 
 	// Load fee0 key
 	keyHex := strings.TrimSpace(string(mustRead("~/.lux/keys/fee0/ec/private.key")))
