@@ -57,9 +57,6 @@ type Staker struct {
 	// [priorities.go] and depends on if the stakers are in the pending or
 	// current validator set.
 	Priority txs.Priority
-
-	// ValidatorNFT contains NFT information if this validator is using NFT staking
-	ValidatorNFT *txs.ValidatorNFTInfo
 }
 
 // A *Staker is considered to be less than another *Staker when:

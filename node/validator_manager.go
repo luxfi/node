@@ -205,7 +205,6 @@ func (v *ValidatorManager) Disconnected(nodeID ids.NodeID) {
 }
 
 // Router interface methods - forward to underlying router
-func (v *ValidatorManager) Deprecated() {}
 
 func (v *ValidatorManager) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {
 	v.Router.AddChain(ctx, chainID, h)

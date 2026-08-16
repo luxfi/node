@@ -2958,10 +2958,6 @@ func (e *emptyValidatorManager) GetValidatorSet(ctx context.Context, height uint
 	return map[ids.NodeID]*validators.GetValidatorOutput{}, nil
 }
 
-func (e *emptyValidatorManager) GetChainHeight(ctx context.Context, chainID ids.ID) (uint64, error) {
-	return 0, nil
-}
-
 func (e *emptyValidatorManager) OnAcceptedBlockID(blkID ids.ID) {}
 
 func (e *emptyValidatorManager) String() string {
