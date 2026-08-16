@@ -4,6 +4,10 @@
 package chains
 
 import (
+	"bytes"
+	"encoding/binary"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/proto/p2p"
 	"testing"
 
 	"github.com/luxfi/consensus/engine/chain/summary"
@@ -133,4 +137,56 @@ func TestTheSyncSurfaceIsReachable(t *testing.T) {
 		t.Fatal("precondition: a bare ChainVM must not pass for a state-syncable one")
 	}
 	var _ summary.VM[chain.StateSummary] = (*syncVM)(nil)
+}
+
+// Every state-sync op survives the flatten with its payload.
+//
+// The router reduces a message to opaque bytes and each handler recovers what
+// it needs from them, so an op the flatten does not know reaches its handler
+// carrying nothing — and one the handler's switch does not name never reaches
+// it at all. Both are silent: the requester sees no answer and cannot tell a
+// peer that refused from a peer that was never asked.
+func TestEveryStateSyncOpSurvivesTheFlatten(t *testing.T) {
+	chainID := ids.GenerateTestID()
+	sum := []byte("a summary")
+	heights := []uint64{16384, 32768}
+	held := []ids.ID{ids.GenerateTestID(), ids.GenerateTestID()}
+
+	if got := message.GetContainerBytes(&p2p.StateSummaryFrontier{ChainId: chainID[:], Summary: sum}); !bytes.Equal(got, sum) {
+		t.Fatalf("frontier reply flattened to %q, want the summary", got)
+	}
+
+	got := message.GetContainerBytes(&p2p.GetAcceptedStateSummary{ChainId: chainID[:], Heights: heights})
+	if len(got) != len(heights)*8 {
+		t.Fatalf("heights flattened to %d bytes, want %d", len(got), len(heights)*8)
+	}
+	for i, want := range heights {
+		if h := binary.BigEndian.Uint64(got[i*8 : i*8+8]); h != want {
+			t.Fatalf("height %d = %d, want %d", i, h, want)
+		}
+	}
+
+	raw := make([][]byte, len(held))
+	for i, id := range held {
+		raw[i] = append([]byte(nil), id[:]...)
+	}
+	got = message.GetContainerBytes(&p2p.AcceptedStateSummary{ChainId: chainID[:], SummaryIds: raw})
+	if len(got) != len(held)*32 {
+		t.Fatalf("ballot flattened to %d bytes, want %d", len(got), len(held)*32)
+	}
+	for i, want := range held {
+		if !bytes.Equal(got[i*32:i*32+32], want[:]) {
+			t.Fatalf("summary id %d did not survive", i)
+		}
+	}
+
+	// And the router must have a name for each of them, or it never dispatches.
+	for _, op := range []message.Op{
+		message.GetStateSummaryFrontierOp, message.StateSummaryFrontierOp,
+		message.GetAcceptedStateSummaryOp, message.AcceptedStateSummaryOp,
+	} {
+		if _, ok := message.ToConsensusOp(op); !ok {
+			t.Fatalf("%s has no router op — every one of these is dropped before any handler sees it", op)
+		}
+	}
 }
