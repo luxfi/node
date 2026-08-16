@@ -135,7 +135,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// Validator fees:
 	fs.Uint64(ValidatorFeesCapacityKey, uint64(builder.LocalValidatorFeeConfig.Capacity), "Maximum number of validators")
 	fs.Uint64(ValidatorFeesTargetKey, uint64(builder.LocalValidatorFeeConfig.Target), "Target number of validators")
-	fs.Uint64(ValidatorFeesMinPriceKey, uint64(builder.LocalValidatorFeeConfig.MinPrice), "Minimum validator price in nLUX per second")
+	fs.Uint64(ValidatorFeesMinPriceKey, uint64(builder.LocalValidatorFeeConfig.MinPrice), "Minimum validator price in µLUX per second")
 	fs.Uint64(ValidatorFeesExcessConversionConstantKey, uint64(builder.LocalValidatorFeeConfig.ExcessConversionConstant), "Constant to convert validator excess price")
 	// Dynamic fees:
 	fs.Uint64(DynamicFeesBandwidthWeightKey, builder.LocalDynamicFeeConfig.Weights[gas.Bandwidth], "Complexity multiplier used to convert Bandwidth into Gas")
@@ -148,8 +148,8 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(DynamicFeesMinGasPriceKey, uint64(builder.LocalDynamicFeeConfig.MinPrice), "Minimum Gas price")
 	fs.Uint64(DynamicFeesExcessConversionConstantKey, uint64(builder.LocalDynamicFeeConfig.ExcessConversionConstant), "Constant to convert excess Gas to the Gas price")
 	// Static fees:
-	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in nLUX")
-	fs.Uint64(CreateAssetTxFeeKey, genesis.LocalParams.CreateAssetTxFee, "Transaction fee, in nLUX, for transactions that create new assets")
+	fs.Uint64(TxFeeKey, genesis.LocalParams.TxFee, "Transaction fee, in µLUX")
+	fs.Uint64(CreateAssetTxFeeKey, genesis.LocalParams.CreateAssetTxFee, "Transaction fee, in µLUX, for transactions that create new assets")
 	// Database
 	fs.String(DBTypeKey, "zapdb", "Default database type to use for all chains. Must be one of {zapdb, pebbledb, memdb}")
 	fs.Bool(DBReadOnlyKey, false, "If true, database writes are to memory and never persisted. May still initialize database directory/files on disk if they don't exist")
@@ -317,11 +317,11 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// Uptime Requirement
 	fs.Float64(UptimeRequirementKey, genesis.LocalParams.UptimeRequirement, "Fraction of time a validator must be online to receive rewards")
 	// Minimum Stake required to validate the Primary Network
-	fs.Uint64(MinValidatorStakeKey, genesis.LocalParams.MinValidatorStake, "Minimum stake, in nLUX, required to validate the primary network")
+	fs.Uint64(MinValidatorStakeKey, genesis.LocalParams.MinValidatorStake, "Minimum stake, in µLUX, required to validate the primary network")
 	// Maximum Stake that can be staked and delegated to a validator on the Primary Network
-	fs.Uint64(MaxValidatorStakeKey, genesis.LocalParams.MaxValidatorStake, "Maximum stake, in nLUX, that can be placed on a validator on the primary network")
+	fs.Uint64(MaxValidatorStakeKey, genesis.LocalParams.MaxValidatorStake, "Maximum stake, in µLUX, that can be placed on a validator on the primary network")
 	// Minimum Stake that can be delegated on the Primary Network
-	fs.Uint64(MinDelegatorStakeKey, genesis.LocalParams.MinDelegatorStake, "Minimum stake, in nLUX, that can be delegated on the primary network")
+	fs.Uint64(MinDelegatorStakeKey, genesis.LocalParams.MinDelegatorStake, "Minimum stake, in µLUX, that can be delegated on the primary network")
 	fs.Uint64(MinDelegatorFeeKey, uint64(genesis.LocalParams.MinDelegationFee), "Minimum delegation fee, in the range [0, 1000000], that can be charged for delegation on the primary network")
 	// Minimum Stake Duration
 	fs.Duration(MinStakeDurationKey, time.Duration(genesis.LocalParams.MinStakeDuration)*time.Second, "Minimum staking duration")

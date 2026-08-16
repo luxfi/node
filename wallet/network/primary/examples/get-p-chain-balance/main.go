@@ -48,5 +48,5 @@ func main() {
 
 	luxID := state.PCTX.UTXOAssetID
 	luxBalance := currentBalances[luxID]
-	log.Printf("current LUX balance of %s is %d nLUX\n", addrStr, luxBalance)
+	log.Printf("current LUX balance of %s is %d µLUX\n", addrStr, luxBalance)
 }

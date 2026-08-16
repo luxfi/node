@@ -179,9 +179,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("P balance: %v", err)
 	}
-	log.Printf("[%s] wallet P-chain LUX = %d nLUX", *network, pBal[utxoAssetID])
+	log.Printf("[%s] wallet P-chain LUX = %d µLUX", *network, pBal[utxoAssetID])
 	if pBal[utxoAssetID] < 1_500_000_000 { // 1.5 LUX min: createNetwork ~1 LUX + createChain ~0.5 LUX
-		log.Fatalf("insufficient P-chain balance, need >= 1.5 LUX, have %d nLUX", pBal[utxoAssetID])
+		log.Fatalf("insufficient P-chain balance, need >= 1.5 LUX, have %d µLUX", pBal[utxoAssetID])
 	}
 
 	owner := &secp256k1fx.OutputOwners{

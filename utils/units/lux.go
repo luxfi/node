@@ -15,10 +15,5 @@ const (
 	GigaLux   uint64 = 1000 * MegaLux       // 1,000,000,000 LUX (1 billion)
 	TeraLux   uint64 = 1000 * GigaLux       // 1,000,000,000,000 LUX (1 trillion)
 
-	// Schmeckle preserved for compatibility (≈49.463 milliLUX)
 	Schmeckle uint64 = 49*MilliLux + 463*MicroLux
-
-	// NanoLux deprecated - use MicroLux as base unit
-	// Kept for backward compatibility but represents same as MicroLux
-	NanoLux uint64 = MicroLux
 )

@@ -11,7 +11,7 @@ import (
 
 var ErrUnsupportedTx = errors.New("unsupported transaction type")
 
-// Calculator calculates the minimum required fee, in nLUX, that an unsigned
+// Calculator calculates the minimum required fee, in µLUX, that an unsigned
 // transaction must pay for valid inclusion into a block.
 type Calculator interface {
 	CalculateFee(tx txs.UnsignedTx) (uint64, error)

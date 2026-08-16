@@ -151,7 +151,7 @@ func (g *Genesis) Bytes() ([]byte, error) {
 // network-id-keyed constants.UTXOAssetIDFor(networkID). On sovereign
 // L1s those two values DIFFER — the wallet
 // builder context's UTXOAssetID must be the genesis-derived one or every
-// fee-paying tx fails with "insufficient funds, needs N more nLUX".
+// fee-paying tx fails with "insufficient funds, needs N more µLUX".
 func ParseGenesisBytes(genesisBytes []byte) (*Genesis, error) {
 	g, err := parseGenesis(genesisBytes)
 	if err != nil {

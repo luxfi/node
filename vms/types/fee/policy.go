@@ -37,15 +37,15 @@ import (
 	"github.com/luxfi/ids"
 )
 
-// MinTxFeeFloor is the minimum tx fee, in nLUX (also called µLUX — 1e-6
+// MinTxFeeFloor is the minimum tx fee, in µLUX (also called µLUX — 1e-6
 // LUX), that any user-facing chain SHOULD charge. Matches the P-Chain
-// base fee (utils/units: 1 mLUX = 1_000_000 nLUX). Used as the lower
+// base fee (utils/units: 1 mLUX = 1_000_000 µLUX). Used as the lower
 // bound when reviewing/upgrading per-VM policies; not enforced inside
 // Validate (a VM is free to charge MORE), but every VM choosing less
 // will be flagged by the migration checklist.
 //
 // Known intentional exception: the X-Chain (xvm) prices transactions through
-// its own UTXO fee subsystem (xvm/config.go TxFee, default 1000 nLUX), NOT the
+// its own UTXO fee subsystem (xvm/config.go TxFee, default 1000 µLUX), NOT the
 // FlatPolicy here, and is deliberately outside this floor — its high-throughput
 // UTXO economics are set independently of the account-model FlatPolicy floor.
 // This is by design, not a migration miss; do not "fix" it by raising xvm
@@ -78,7 +78,7 @@ var (
 // NoUserTxPolicy sentinel instead — this is the only legal way to opt
 // out of charging.
 type Policy interface {
-	// MinTxFee returns the minimum fee, in nLUX, that any user tx must
+	// MinTxFee returns the minimum fee, in µLUX, that any user tx must
 	// pay. MUST be > 0 for user-facing VMs.
 	MinTxFee() uint64
 
@@ -89,14 +89,14 @@ type Policy interface {
 	// ValidateFee returns nil if the paid amount and asset satisfy the
 	// policy. Returns ErrWrongFeeAsset, ErrInsufficientFee, or
 	// ErrChainAcceptsNoUserTxs as appropriate.
-	ValidateFee(paidNanoLux uint64, paidAsset ids.ID) error
+	ValidateFee(paidMicroLux uint64, paidAsset ids.ID) error
 }
 
 // FlatPolicy charges a fixed fee per user tx. The canonical
 // implementation for VMs without dynamic gas pricing — dexvm, bridgevm,
 // keyvm, zkvm, aivm use this (quantumvm is NoUserTxPolicy per LP-0130 §6).
 type FlatPolicy struct {
-	// Fee is the per-tx burn amount, in nLUX. MUST be > 0.
+	// Fee is the per-tx burn amount, in µLUX. MUST be > 0.
 	Fee uint64
 
 	// AssetID is the fee asset. For primary-network burn, use

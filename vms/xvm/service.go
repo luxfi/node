@@ -1954,7 +1954,7 @@ func (s *Service) buildImport(args *ImportArgs) (*txs.Tx, error) {
 type ExportArgs struct {
 	// User, password, from addrs, change addr
 	JSONSpendHeader
-	// Amount of nLUX to send
+	// Amount of µLUX to send
 	Amount avajson.Uint64 `json:"amount"`
 
 	// Chain the funds are going to. Optional. Used if To address does not include the chainID.
