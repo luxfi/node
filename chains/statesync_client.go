@@ -23,8 +23,8 @@ import (
 
 	"github.com/luxfi/consensus/engine/chain/summary"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/vm/chain"
 )
 
@@ -260,7 +260,14 @@ func (b *blockHandler) adoptSummary(ctx context.Context) {
 		return
 	}
 	enabled, err := b.stateSyncEnabled(ctx)
-	if err != nil {
+	switch {
+	case errors.Is(err, chain.ErrStateSyncableVMNotImplemented):
+		// The same fact as a failed assertion, learned one layer in: this chain's
+		// VM does not carry the surface. Reporting it as a VM that could not
+		// answer would send a reader looking for a fault where there is none.
+		b.logger.Info("state-summary adoption skipped — this VM does not offer the sync surface")
+		return
+	case err != nil:
 		b.logger.Info("state-summary adoption skipped — the VM could not say whether it syncs", log.Err(err))
 		return
 	}
