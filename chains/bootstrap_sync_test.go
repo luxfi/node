@@ -78,7 +78,7 @@ const (
 // (the wire codec is deterministic). It GETS a block that is either ACCEPTED or merely STORED (a
 // block GOSSIPED into the store ahead of acceptance — the state a node must not read as being
 // caught up, since the block is present without being finalized). `accepted`
-// is the FINALIZED chain; `acceptedByHeight` is the canonical height→id index the real coreth VM
+// is the FINALIZED chain; `acceptedByHeight` is the canonical height→id index the real EVM
 // maintains (GetBlockIDAtHeight); `stored` holds present-but-unaccepted blocks. SetPreference
 // marks a block accepted — the engine calls it right after Accept, so LastAccepted/the index
 // advance exactly as the node syncs.
@@ -86,7 +86,7 @@ type bsTestVM struct {
 	all              map[ids.ID]*bsTestBlock
 	byBytes          map[string]*bsTestBlock
 	accepted         map[ids.ID]bool   // FINALIZED chain
-	acceptedByHeight map[uint64]ids.ID // canonical height→id index (coreth GetBlockIDAtHeight)
+	acceptedByHeight map[uint64]ids.ID // canonical height→id index (the EVM's GetBlockIDAtHeight)
 	stored           map[ids.ID]bool   // present in the store but NOT (yet) accepted (gossiped-ahead)
 	lastAcc          ids.ID
 }
@@ -140,7 +140,7 @@ func (m *bsTestVM) GetBlock(_ context.Context, id ids.ID) (cblock.Block, error) 
 	return nil, errBSNotStored
 }
 
-// GetBlockIDAtHeight is the canonical ACCEPTED height→id index (coreth's authoritative oracle): it
+// GetBlockIDAtHeight is the canonical ACCEPTED height→id index (the EVM's authoritative oracle): it
 // returns the FINALIZED block at a height, never a stored-but-unaccepted one. ids.Empty when no
 // block is accepted at h — exactly how the real VM reports "nothing finalized there".
 func (m *bsTestVM) GetBlockIDAtHeight(_ context.Context, h uint64) (ids.ID, error) {
@@ -648,7 +648,7 @@ func TestSampleAncestorBeacons_PrefersAheadBeacons(t *testing.T) {
 // fetch, reports full batches landed, and re-asks forever — isBootstrapped stays false while
 // every counter reads success.
 //
-// The seam is produced the way production produces it: the node finalizes through F,
+// The split is produced the way a real node produces it: it finalizes through F,
 // then crash-restarts, and the VM reopens at an older commit M — the EVM persists on a
 // commit interval, so reopening below the finalized tip is its documented recovery
 // behavior, not an anomaly. The ledger says F; the VM says M; blocks M+1..F are decided
@@ -707,18 +707,17 @@ func TestRED_LedgerAheadOfApplied_ConvergesOffAppliedHead(t *testing.T) {
 
 // TestRED_ForgedFrontierFromNonBeaconRejected is the HEADLINE C1 proof at the node layer.
 //
-// THE ATTACK (red): an eclipse/malicious peer serves a forged-but-Verify-passing chain
-// from genesis and names it as the accepted frontier; the victim, sampling the frontier
-// from ANY connected peer and accepting the first reply, finalized the forged chain
-// cert-lessly (red's PoC: 40 forged blocks finalized) and bricked against the real chain.
+// THE ATTACK: an eclipsing peer serves a forged-but-Verify-passing chain from genesis and
+// names it as the accepted frontier. A victim that samples the frontier from ANY connected
+// peer and accepts the first reply finalizes that chain cert-lessly and is then unable to
+// rejoin the real one.
 //
-// THE FIX: the frontier is named ONLY by a ⅔-by-stake quorum of BEACONS. A non-beacon
+// THE RULE: the frontier is named ONLY by a ⅔-by-stake quorum of BEACONS. A non-beacon
 // peer is never even queried (PeerInfo is beacon-restricted) and its weight is zero in the
 // tally, so the forged tip can never be named. Here the honest beacons are OFFLINE and the
 // only reachable peer is the attacker: FrontierTip reports FrontierConnecting (no beacon
-// quorum reachable), and — folding in red's LOW — the loop FAILS SAFE
-// (ErrBeaconsUnreachable) rather than false-completing at the stale height. ZERO forged
-// blocks are finalized either way.
+// quorum reachable) and the loop FAILS SAFE (ErrBeaconsUnreachable) rather than
+// false-completing at the stale height. ZERO forged blocks are finalized either way.
 func TestRED_ForgedFrontierFromNonBeaconRejected(t *testing.T) {
 	const N = 40
 	honest, honestByID := buildBSChain(N, -1)
@@ -1733,13 +1732,13 @@ func TestRED_TipHolderCoRestartGoesReadyAtOwnTip(t *testing.T) {
 	require.Equal(t, chain[N].id, last, "the producer stays at its tip N — it does NOT sync backward to the ⅔-common N-16")
 }
 
-// TestRED_MajorityOutageSelfHealsWhenQuorumReturns is the RED MEDIUM #2 self-heal proof. A node boots
-// into a MAJORITY OUTAGE (its beacon quorum unreachable — a co-restart where < MinResponses are up).
+// TestRED_MajorityOutageSelfHealsWhenQuorumReturns proves the in-process self-heal. A node boots
+// with its beacon quorum unreachable — a co-restart where fewer than MinResponses are up.
 // It must NOT go live at its stale height (safety) and must NOT permanently give up (liveness): it
 // stays in Bootstrapping, RE-ATTEMPTS (bootstrapMaxAttempts ≤ 0 ⇒ until the quorum returns), and
-// CONVERGES the instant the quorum comes back — all IN-PROCESS, with no pod restart (the K8s probes
-// poll the always-green /v1/health/liveness and would never restart it). This is the bounded
-// re-bootstrap retry that closes the "permanent brick" RED flagged.
+// CONVERGES the instant the quorum comes back — all IN-PROCESS. Nothing outside the process can
+// tell this deliberate wait from a stall, so recovery that needs an external restart never comes:
+// the bounded re-bootstrap retry is what keeps the state from being permanent.
 func TestRED_MajorityOutageSelfHealsWhenQuorumReturns(t *testing.T) {
 	const N, K = 30, 16 // stale at N; the live frontier (once the quorum returns) is N+K
 	chain, byID := buildBSChain(N+K, -1)
@@ -1754,10 +1753,10 @@ func TestRED_MajorityOutageSelfHealsWhenQuorumReturns(t *testing.T) {
 	bh, chainID := newBSHandlerWeighted(t, vm, weights)
 	bh.bootstrapRetryInterval = 2 * time.Millisecond
 	bh.bootstrapConnectDeadline = 80 * time.Millisecond // short per-attempt connect wait (test bound)
-	// bootstrapMaxAttempts left 0 ⇒ UNLIMITED retry — the production self-heal.
+	// bootstrapMaxAttempts left 0 ⇒ UNLIMITED retry — the self-heal.
 
 	net := &bsBeaconNet{bh: bh, chainID: chainID, connected: bIDs, byID: byID, tip: chain[N+K], serveAncestors: true}
-	net.gate.Store(true) // start in the OUTAGE: the quorum is unreachable (a majority co-restart)
+	net.gate.Store(true) // start with the quorum unreachable (a majority co-restart)
 	bh.net = net
 	bh.msgCreator = bsMsgBuilder{}
 
@@ -1776,10 +1775,10 @@ func TestRED_MajorityOutageSelfHealsWhenQuorumReturns(t *testing.T) {
 	require.False(t, bh.bootstrapDone.Load(), "must NOT be bootstrapped while the quorum is unreachable")
 	require.False(t, bh.BootstrapFailed(), "a retryable connectivity outage is NOT a terminal fail-safe — it keeps trying")
 
-	// The wait must say WHY, in numbers, end to end. Here the outage is total — none of the 5
-	// configured beacons is reachable against a majority floor of 3 — and saying so is the whole
-	// point: "a quorum is missing" reads identically whether four beacons answered or none did,
-	// and a total outage and a one-short quorum call for different actions.
+	// The wait must say WHY, in numbers, end to end. Here none of the 5 configured beacons is
+	// reachable against a majority floor of 3, and saying so is the whole point: "a quorum is
+	// missing" reads identically whether four beacons answered or none did, yet no beacons at
+	// all and one beacon short call for different actions.
 	require.Equal(t, "waiting for the beacon quorum: 0 of 5 beacons responded, need 3", bh.BootstrapWait(),
 		"the wait must carry the responder count, the configured set size, and the floor")
 
@@ -1788,9 +1787,9 @@ func TestRED_MajorityOutageSelfHealsWhenQuorumReturns(t *testing.T) {
 
 	require.True(t, <-done, "node must self-heal and go live once the quorum returns") // happens-before for the reads below
 	require.True(t, bh.bootstrapDone.Load(), "chain marked bootstrapped after self-heal")
-	// calls==1 (exactly one go-live, TOTAL) proves the VM never went live during the outage — had it,
-	// the recovery go-live would make this 2. heightAtReady==N+K proves that single go-live was at the
-	// recovered frontier, never the stale N.
+	// calls==1 (exactly one go-live, TOTAL) proves the VM never went live while the quorum was
+	// gone — had it, the recovery go-live would make this 2. heightAtReady==N+K proves that single
+	// go-live was at the recovered frontier, never the stale N.
 	require.Equal(t, 1, *calls, "VM transitioned to normal operation exactly once — at the frontier, after recovery")
 	require.Equal(t, uint64(N+K), *heightAtReady, "self-healed node converges to the frontier N+K=%d, never the stale N=%d", N+K, N)
 	last, _ := vm.LastAccepted(ctx)
@@ -1887,11 +1886,11 @@ func TestRED_EclipseOwnHeightNotNamedRoutesToSync(t *testing.T) {
 	require.Equal(t, chain[ahead].id, lastB, "node synced UP to N+5 once the eclipse lifted (a safe HOLD, not a permanent stall)")
 }
 
-// TestWatchBootstrapProgress_ConnectingNotStalled is the RED MEDIUM #2 watchdog guard: a node in its
+// TestWatchBootstrapProgress_ConnectingNotStalled is the watchdog half: a node in its
 // connectivity-RETRY wait reports a non-empty reason, so the no-progress watchdog must NOT declare it
-// stalled — force-STOPPING a node that is correctly waiting for its quorum would be a permanent brick
-// (the K8s probes never restart it). The clock is reset while it waits; only a node with NO reason to
-// be waiting stalls (the converse is TestWatchBootstrapProgress_GenuineStallFails).
+// stalled — force-STOPPING a node that is correctly waiting for its quorum is permanent, since
+// nothing outside the process would undo it. The clock is reset while it waits; only a node with NO
+// reason to be waiting stalls (the converse is TestWatchBootstrapProgress_GenuineStallFails).
 //
 // The reason itself is returned, not just the verdict: the watchdog read it to decide, and that read
 // is the one the operator should see. Asking a second time is how the answer that justified the
@@ -2097,8 +2096,8 @@ func TestNodeBootstrap_StoredButUnacceptedFrontier_DrivesAcceptance(t *testing.T
 	bh.msgCreator = bsMsgBuilder{}
 	ctx := context.Background()
 
-	// Precondition — the exact wedged state: the node HOLDS the named frontier in its store yet has
-	// NOT accepted it (last-accepted is M). The store-vs-acceptance distinction the conflation missed.
+	// Precondition — the node HOLDS the named frontier in its store yet has NOT accepted it
+	// (last-accepted is M). Store and acceptance are different questions.
 	require.True(t, vm.stored[chain[Top].id], "precondition: the frontier must be present in the store (gossiped ahead)")
 	require.False(t, bh.Accepted(ctx, chain[Top].id), "precondition: the held-in-store frontier must NOT be accepted (last-accepted is M)")
 
@@ -2233,16 +2232,15 @@ func TestChainExpectsStakedBeacons_SybilDrivesNotSkipBootstrap(t *testing.T) {
 		"the platform chain anchors to its OWN CustomBeacons, never the staked-set frontier quorum")
 }
 
-// TestChainValidatesOnPrimaryNetwork_RealHashChainID is the regression the hardcoded-bool test
-// above could NOT catch: it exercises the ACTUAL discriminator buildChain feeds into
-// chainExpectsStakedBeacons. The durable rejoin fix (#66/#74) shipped INERT in production because
-// the discriminator keyed off the blockchain ID via ids.IsNativeChain — false for every deployed
-// C/X/Q (they carry HASH blockchain IDs; ids.IsNativeChain only matches the symbolic 111...C alias
-// form, which no deployed chain uses). So a real behind C-Chain still got empty beacons under
-// --skip-bootstrap and wedged. The fix keys off the validating Net (chainParams.ChainID) instead.
+// TestChainValidatesOnPrimaryNetwork_RealHashChainID is the case the hardcoded-bool test
+// above cannot see: it exercises the ACTUAL discriminator buildChain feeds into
+// chainExpectsStakedBeacons. Keying that discriminator off the blockchain ID via
+// ids.IsNativeChain makes the whole rule inert, because ids.IsNativeChain matches only the
+// symbolic 111...C alias form while a real C/X/Q carries a HASH blockchain ID — so a behind
+// C-Chain still gets empty beacons under --skip-bootstrap and cannot catch up. The
+// discriminator must key off the validating Net (chainParams.ChainID) instead.
 func TestChainValidatesOnPrimaryNetwork_RealHashChainID(t *testing.T) {
-	// Real deployed C-Chain blockchain IDs (devnet + mainnet) are HASHES, and ids.IsNativeChain
-	// is false for them — the exact trap that disabled the fix.
+	// A real C-Chain blockchain ID is a HASH, and ids.IsNativeChain is false for it — the trap.
 	for _, s := range []string{
 		"21HieZngQW8unBnSTbdQ9PcPAz6hhPLGrPzZhTvjC8KgjE95Bg", // devnet C-Chain
 		"2wRdZGeca1qkxzNCq88NWDF5nJ5A9o623vRJKd3FsjRYvuVvvt", // mainnet C-Chain

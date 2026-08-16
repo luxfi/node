@@ -70,10 +70,6 @@ func (*warpVerifier) ExportTx(*txs.ExportTx) error {
 	return nil
 }
 
-func (*warpVerifier) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return nil
-}
-
 func (*warpVerifier) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	return nil
 }

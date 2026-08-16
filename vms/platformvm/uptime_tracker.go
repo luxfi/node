@@ -22,9 +22,9 @@ var (
 // the platform VM drives directly (Connect, Disconnect, StartTracking,
 // StopTracking, IsConnected).
 //
-// It is a faithful port of avalanchego's snow/uptime.Manager, adapted to the
-// luxfi validators uptime.State interface (which keys by netID and returns
-// lastUpdated encoded as a second-granular duration since the Unix epoch).
+// It is written against the luxfi validators uptime.State interface, which keys
+// by netID and returns lastUpdated encoded as a second-granular duration since
+// the Unix epoch.
 //
 // Model, in one sentence: each connected peer's session accrues into a per
 // validator up-duration that is folded forward to "now" on read, and persisted
@@ -35,8 +35,8 @@ var (
 //     stable, continuously-connected validator set is fully observed the moment
 //     tracking begins.
 //   - StartTracking, called once at P-chain normal-operations start, baselines
-//     every validator (crediting the pre-tracking window as online, matching
-//     avalanchego) and switches into live-tracking mode.
+//     every validator, crediting the pre-tracking window as online, and
+//     switches into live-tracking mode.
 //   - CalculateUptime folds the currently-connected session forward to now, so a
 //     validator that stays connected accrues up-duration WITHOUT ever needing a
 //     Disconnect.
@@ -108,8 +108,8 @@ func (t *uptimeTracker) IsConnected(nodeID ids.NodeID) bool {
 // Disconnect records that [nodeID] disconnected, flushing its accrued session
 // into persistent state. It returns whether that flush actually wrote uptime
 // state (a SetUptime the caller must Commit). Flushing is a no-op — mutated
-// false — before StartTracking (the session is not yet being measured, matching
-// avalanchego) and for a peer with no uptime record (a non-validator), so the
+// false — before StartTracking (the session is not yet being measured) and for
+// a peer with no uptime record (a non-validator), so the
 // caller can skip an empty state.Commit.
 func (t *uptimeTracker) Disconnect(nodeID ids.NodeID) (mutated bool, err error) {
 	t.mu.Lock()
@@ -124,7 +124,7 @@ func (t *uptimeTracker) Disconnect(nodeID ids.NodeID) (mutated bool, err error) 
 // StartTracking baselines every validator in [nodeIDs] and switches into live
 // tracking mode. It is called once at P-chain normal-operations start. Each
 // validator's persisted up-duration is advanced to now assuming it was online
-// since its last update (the standard avalanchego assumption), so a validator
+// since its last update, so a validator
 // that has been in the set is not penalized for the un-measured pre-tracking
 // window.
 func (t *uptimeTracker) StartTracking(nodeIDs []ids.NodeID) error {
@@ -169,8 +169,8 @@ func (t *uptimeTracker) StartedTracking() bool {
 	return t.startedTracking
 }
 
-// calculateUptimeLocked mirrors avalanchego snow/uptime.Manager.CalculateUptime:
-// it returns [nodeID]'s up-duration folded forward to now, plus that now (the
+// calculateUptimeLocked returns [nodeID]'s up-duration folded forward to now,
+// plus that now (the
 // new lastUpdated). The caller must hold t.mu (read or write).
 func (t *uptimeTracker) calculateUptimeLocked(nodeID ids.NodeID) (time.Duration, time.Time, error) {
 	upDuration, lastUpdatedDur, err := t.state.GetUptime(nodeID, t.netID)

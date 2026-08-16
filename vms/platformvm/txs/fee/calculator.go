@@ -16,6 +16,3 @@ var ErrUnsupportedTx = errors.New("unsupported transaction type")
 type Calculator interface {
 	CalculateFee(tx txs.UnsignedTx) (uint64, error)
 }
-
-// Note: The following methods were for a legacy calculator struct that no longer exists.
-// Fee calculation is now handled by staticCalculator and dynamicCalculator in their respective files.

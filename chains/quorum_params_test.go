@@ -1,13 +1,12 @@
 // Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// quorum_params_test.go — CRITICAL-2 node-layer regression: the node must NEVER
-// wire a non-BFT consensus param set for a multi-validator (sybil-protected)
-// chain. The round-1 hole was manager.go selecting LocalParams() (K=3/α=2 → f=0,
-// CFT) for ALL multi-node nets — a single Byzantine validator forks K=3/α=2.
-// These tests pin selectConsensusParams to a BFT-safe set for every multi-node
-// network and prove the value-network backstop (ValidateForValueNetwork) accepts
-// the selected params.
+// quorum_params_test.go — the node must NEVER wire a non-BFT consensus param set
+// for a multi-validator (sybil-protected) chain. LocalParams() is K=3/α=2 → f=0,
+// merely crash-fault-tolerant: a single Byzantine validator forks it. These tests
+// pin selectConsensusParams to a BFT-safe set for every multi-node network and
+// prove the value-network backstop (ValidateForValueNetwork) accepts the selected
+// params.
 package chains
 
 import (
@@ -20,9 +19,9 @@ import (
 // TestSelectConsensusParams_MultiNodeIsBFT proves that for EVERY multi-validator
 // (sybilProtection==true) network the node selects a Byzantine-fault-tolerant
 // param set (f≥1, i.e. K≥4) that also clears the value-network validator — and
-// that it is NEVER LocalParams (K=3) or any K<4 set. This is the node half of
-// CRITICAL-2 (the consensus half is config.ValidateForValueNetwork, tested in
-// the consensus module).
+// that it is NEVER LocalParams (K=3) or any K<4 set. This is the node half of the
+// rule; the consensus half is config.ValidateForValueNetwork, tested in the
+// consensus module.
 func TestSelectConsensusParams_MultiNodeIsBFT(t *testing.T) {
 	local := consensusconfig.LocalParams()
 
@@ -43,12 +42,12 @@ func TestSelectConsensusParams_MultiNodeIsBFT(t *testing.T) {
 
 			// MUST be Byzantine-fault-tolerant: f≥1 ⟹ K≥4.
 			if p.ByzantineFaultTolerance() < 1 {
-				t.Fatalf("multi-node net %q got non-BFT params K=%d f=%d (CRITICAL-2: a single faulty validator forks)",
+				t.Fatalf("multi-node net %q got non-BFT params K=%d f=%d — a single faulty validator forks",
 					tc.name, p.K, p.ByzantineFaultTolerance())
 			}
-			// MUST NOT be the CFT LocalParams (K=3/α=2) that was the round-1 hole.
+			// MUST NOT be the crash-fault-tolerant LocalParams (K=3/α=2).
 			if p.K == local.K && p.AlphaPreference == local.AlphaPreference && p.K == 3 {
-				t.Fatalf("multi-node net %q selected LocalParams (K=3/α=2) — the CRITICAL-2 fork config", tc.name)
+				t.Fatalf("multi-node net %q selected LocalParams (K=3/α=2) — the fork config", tc.name)
 			}
 			// The selected params MUST themselves pass Valid() (the BFT α-floor:
 			// 2·AlphaPreference − K ≥ f+1).
@@ -64,9 +63,9 @@ func TestSelectConsensusParams_MultiNodeIsBFT(t *testing.T) {
 // local dev network (devnet 3 / localnet 1337) selects the MINIMAL real-BFT set
 // (LocalBFTParams: K=4/α=3, f=1) — satisfiable by a handful of localhost
 // validators — and NOT the large Default (K=20/α=14), whose α=14 quorum is
-// unreachable with 3-4 validators (the freeze-at-height-0 bug). It must still be
-// genuinely BFT (f≥1) and pass the value backstop (K=4 ≥ 4), so production
-// safety / CRITICAL-2 is untouched: a custom VALUE L1 (high networkID) still gets
+// unreachable with 3-4 validators, which freezes the chain at height 0. It must still be
+// genuinely BFT (f≥1) and pass the value backstop (K=4 ≥ 4), so a value network's
+// safety is untouched: a custom VALUE L1 (high networkID) still gets
 // the large Default set, never the local one.
 func TestSelectConsensusParams_LocalDevIsSatisfiableBFT(t *testing.T) {
 	for _, networkID := range []uint32{constants.DevnetID, constants.LocalID} {
@@ -77,7 +76,7 @@ func TestSelectConsensusParams_LocalDevIsSatisfiableBFT(t *testing.T) {
 			t.Fatalf("local dev net %d: want minimal-BFT K=4/α=3, got K=%d/α=%d (Default K=20 is unsatisfiable on localhost)",
 				networkID, p.K, p.AlphaPreference)
 		}
-		// Still genuinely BFT (f≥1) — does NOT regress CRITICAL-2.
+		// Still genuinely BFT (f≥1).
 		if p.ByzantineFaultTolerance() < 1 {
 			t.Fatalf("local dev net %d: K=%d is not BFT (f=%d)", networkID, p.K, p.ByzantineFaultTolerance())
 		}

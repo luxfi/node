@@ -128,9 +128,8 @@ func TestTxComplexity(t *testing.T) {
 	require.NoError(err)
 	require.Equal(want, batch)
 
-	// Unsupported: AdvanceTime / RewardValidator are refused.
+	// The chain's own tx carries no price, so asking for one is refused.
 	for _, utx := range []txs.UnsignedTx{
-		txs.NewAdvanceTimeTx(1),
 		txs.NewRewardValidatorTx(ids.GenerateTestID()),
 	} {
 		_, err := TxComplexity(utx)

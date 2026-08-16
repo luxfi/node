@@ -289,9 +289,9 @@ func TestDexVMLoadsFromPluginDir(t *testing.T) {
 	require.NoError(t, err, "dexvm must be registered after Reload from PluginDir")
 }
 
-// TestPluginShadowingRegression (#6 — THE core regression). Proves end to end
-// that the dexvm plugin is resolved from PluginDir and is NOT shadowed by any
-// in-process registration. Three required facts in one test:
+// TestPluginShadowingRegression proves end to end that the dexvm plugin is
+// resolved from PluginDir and is NOT shadowed by any in-process registration.
+// Three required facts in one test:
 //
 //  1. dexvm is absent from the in-process registry (it is in OptionalVMs, not
 //     CoreVMs; registerCoreVMs does not install it).
@@ -300,9 +300,9 @@ func TestDexVMLoadsFromPluginDir(t *testing.T) {
 //  3. The shadow counterfactual: if dexvm WERE registered in-process first,
 //     Reload skips it (the upstream registry skips any VMID already in the
 //     manager — vms/registry/registry.go:119) — i.e. an in-process dexvm WOULD
-//     shadow the plugin. Our design makes (3) unreachable in production via the
-//     disjoint registries + the boot-time anti-shadow guard; this asserts the
-//     shadow mechanism exists and that we are on the correct side of it.
+//     shadow the plugin. The disjoint registries plus the boot-time anti-shadow
+//     guard make (3) unreachable; this asserts the shadow mechanism exists and
+//     that we are on the correct side of it.
 func TestPluginShadowingRegression(t *testing.T) {
 	ctx := context.Background()
 	pluginDir := t.TempDir()

@@ -5,7 +5,6 @@ package warp
 
 import (
 	"bytes"
-	"errors"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
@@ -15,10 +14,7 @@ import (
 
 const pChainHeight uint64 = 1337
 
-var (
-	errTest  = errors.New("non-nil error")
-	testVdrs []*testValidator
-)
+var testVdrs []*testValidator
 
 type testValidator struct {
 	nodeID ids.NodeID

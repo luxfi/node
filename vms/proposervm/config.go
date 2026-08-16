@@ -22,7 +22,7 @@ type Config struct {
 	// schedule under — it MUST be the SAME ID the consensus cert side uses
 	// (manager.go resolves it once: PrimaryNetworkID for native chains,
 	// otherwise the L1's own chainID, falling back to primary only if that set is
-	// empty). CRITICAL-3: hardcoding PrimaryNetworkID here made the windower call
+	// empty). Hardcode PrimaryNetworkID here and the windower calls
 	// GetValidatorSet(height, PrimaryNetworkID) on a sovereign L1 (Zoo/Hanzo/Pars,
 	// whose validators live under their OWN networkID == EVM chainID), get an
 	// EMPTY set, and degrade to ErrAnyoneCanPropose — so single-proposer silently

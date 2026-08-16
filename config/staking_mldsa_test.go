@@ -69,13 +69,13 @@ func TestLoadStakingMLDSA_ContentForm(t *testing.T) {
 	require.NotEmpty(t, pub)
 }
 
-// TestLoadStakingMLDSA_EmptyContentFallsThroughToPath is the regression guard
-// for the strict-PQ activation outage: when a deploy passes the *-content flag
-// blank (e.g. an env/template that rendered to "") alongside a valid *-file
-// path, the loader MUST consult the path. The previous behavior short-circuited
-// on the empty content value and returned no key, so StakingMLDSAPub stayed
-// empty, IsStrictPQ() was false, and the node booted under an ECDSA NodeID with
-// no error — silently degrading a strict-PQ validator to classical-compat.
+// TestLoadStakingMLDSA_EmptyContentFallsThroughToPath pins the fall-through:
+// when a deploy passes the *-content flag blank (e.g. an env/template that
+// rendered to "") alongside a valid *-file path, the loader MUST consult the
+// path. Short-circuiting on the empty content value returns no key, so
+// StakingMLDSAPub stays empty, IsStrictPQ() is false, and the node boots under
+// an ECDSA NodeID with no error — a strict-PQ validator silently degraded to
+// classical-compat.
 func TestLoadStakingMLDSA_EmptyContentFallsThroughToPath(t *testing.T) {
 	dir := t.TempDir()
 	privPath, pubPath, _, _ := writeMLDSAFixture(t, dir)

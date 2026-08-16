@@ -11,11 +11,11 @@ import (
 )
 
 // TestKEMSchemeIDs_AllUseCanonicalNumbering confirms the node's KEM
-// package re-exports config.KeyExchangeID byte-for-byte. This anchors
-// the Bug 3 fix on the node side: before the fix, this package declared
-// ML-KEM-768=0x62 and ML-KEM-1024=0x63, in disagreement with config's
-// 0x01 / 0x02. Aliasing brings every wire byte to a single source of
-// truth.
+// package re-exports config.KeyExchangeID byte-for-byte. A second
+// declaration here — ML-KEM-768 as 0x62, ML-KEM-1024 as 0x63 — is a
+// second wire numbering, and two numberings for one wire byte is a
+// handshake that fails on the value alone. Aliasing keeps one source
+// of truth.
 func TestKEMSchemeIDs_AllUseCanonicalNumbering(t *testing.T) {
 	cases := []struct {
 		name    string

@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -154,16 +153,8 @@ func TestCEvm_DialsZAPdbServer(t *testing.T) {
 	}()
 	dbAddr := dbListener.Addr().String()
 
-	// Track if cevm dialed the db listener.
-	var dbDialed atomic.Bool
-	// Wrap the listener so we count accepts.
-	go func() {
-		// The actual db listener is consumed by dbServer.Serve, but we
-		// can detect dial via the underlying memdb get/put activity
-		// below. The listener accept itself is opaque; we trust the
-		// downstream Get/Put to verify connectivity.
-		_ = dbDialed
-	}()
+	// Connectivity is established by the Get/Put round-trip below, not by
+	// watching the listener: an accept proves a dial, not a working database.
 
 	// 6. Send InitializeRequest with non-empty DBServerAddr.
 	req := &zapwire.InitializeRequest{

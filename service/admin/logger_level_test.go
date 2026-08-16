@@ -38,9 +38,9 @@ func newLevelTestService(t *testing.T, loggerName string) *Service {
 	return &Service{Config: Config{Log: log.Noop(), LogFactory: factory}}
 }
 
-// TestSetLoggerLevel_MovesTheLevelAndGetReportsIt is the regression: set, then read
-// back through the API. Before the fix the set was discarded and the get returned an
-// empty map, so both halves silently lied.
+// TestSetLoggerLevel_MovesTheLevelAndGetReportsIt: set, then read back through the
+// API. A set that is discarded and a get that answers an empty map both look like
+// success, so the round trip is the only thing that catches either.
 func TestSetLoggerLevel_MovesTheLevelAndGetReportsIt(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()

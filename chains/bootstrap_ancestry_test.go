@@ -232,8 +232,8 @@ func TestOneSilentPeerDoesNotConsumeTheWholeAttempt(t *testing.T) {
 
 // The recoverability property, stated directly: a gap far wider than one attempt's
 // budget is crossed by repeated attempts, because each resumes where the last stopped.
-// With a per-attempt ceiling and no cursor this loops forever at the same depth — the
-// shape that wedged mainnet at a 535-block gap.
+// With a per-attempt ceiling and no cursor this loops forever at the same depth,
+// and the node never crosses the gap.
 func TestDescentResumesAcrossAttemptsUntilTheGapIsCrossed(t *testing.T) {
 	const w uint64 = 100
 	refs, byID := refChain(10)

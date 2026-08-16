@@ -417,7 +417,7 @@ func buildBlock(
 		return nil, fmt.Errorf("could not find next staker to reward: %w", err)
 	}
 	if shouldReward {
-		rewardValidatorTx, err := NewRewardValidatorTx(context.TODO(), stakerTxID)
+		rewardValidatorTx, err := newRewardValidatorTx(stakerTxID)
 		if err != nil {
 			return nil, fmt.Errorf("could not build tx to reward staker: %w", err)
 		}
@@ -664,10 +664,10 @@ func executeTx(
 	return true, txDiff.Apply(stateDiff)
 }
 
-// getNextStakerToReward returns the next staker txID to remove from the staking
-// set with a RewardValidatorTx rather than an AdvanceTimeTx. [chainTimestamp]
-// is the timestamp of the chain at the time this validator would be getting
-// removed and is used to calculate [shouldReward].
+// getNextStakerToReward returns the txID of the next staker whose exit is paid
+// by a RewardValidatorTx. [chainTimestamp] is the timestamp of the chain at the
+// time this validator would be getting removed and is used to calculate
+// [shouldReward].
 // Returns:
 // - [txID] of the next staker to reward
 // - [shouldReward] if the txID exists and is ready to be rewarded
@@ -689,9 +689,8 @@ func getNextStakerToReward(
 	for currentStakerIterator.Next() {
 		currentStaker := currentStakerIterator.Value()
 		priority := currentStaker.Priority
-		// If the staker is a permissionless staker (not a permissioned net
-		// validator), it's the next staker we will want to remove with a
-		// RewardValidatorTx rather than an AdvanceTimeTx.
+		// A permissionless staker (not a permissioned net validator) is the
+		// next one to leave, and it leaves through a RewardValidatorTx.
 		if priority != txs.ChainPermissionedValidatorCurrentPriority {
 			return currentStaker.TxID, chainTimestamp.Equal(currentStaker.EndTime), nil
 		}
@@ -699,12 +698,13 @@ func getNextStakerToReward(
 	return ids.Empty, false, nil
 }
 
-func NewRewardValidatorTx(ctx context.Context, txID ids.ID) (*txs.Tx, error) {
-	utx := txs.NewRewardValidatorTx(txID)
-	tx, err := txs.NewSigned(utx, nil)
+// newRewardValidatorTx builds the transaction that pays a staker out at the
+// end of its stake. It carries no spending envelope, so it verifies against a
+// nil context.
+func newRewardValidatorTx(txID ids.ID) (*txs.Tx, error) {
+	tx, err := txs.NewSigned(txs.NewRewardValidatorTx(txID), nil)
 	if err != nil {
 		return nil, err
 	}
-	// RewardValidatorTx doesn't need context for syntactic verification
 	return tx, tx.SyntacticVerify(nil)
 }

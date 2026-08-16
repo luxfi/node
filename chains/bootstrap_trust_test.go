@@ -554,7 +554,7 @@ func TestBootstrapTrust_ForkAtSharedGenesisFailsSafe(t *testing.T) {
 	require.Equal(t, H.ID, f.ID, "with the node below the fork, H IS the ⅔-common frontier to sync to")
 }
 
-// ----- H: SKEWED-WEIGHT PARTITION-CAPTURE (the re-red HIGH; MinResponseWeight floor) ---------
+// ----- H: SKEWED-WEIGHT PARTITION-CAPTURE (the MinResponseWeight floor) ---------------------
 
 // weightedBeacons builds a TrustedBeacons map from an explicit per-node weight list — for
 // modeling a SKEWED (non-uniform) validator stake distribution.
@@ -566,15 +566,15 @@ func weightedBeacons(beacons []ids.NodeID, w []uint64) map[ids.NodeID]StakeWeigh
 	return m
 }
 
-// TestBootstrapTrust_H_SkewedWeightPartitionRejected is the regression for the re-red
-// HIGH finding. Under SKEWED validator weights the MinResponses COUNT floor and the ⅔-of-responders
+// TestBootstrapTrust_H_SkewedWeightPartitionRejected pins the stake-majority floor.
+// Under SKEWED validator weights the MinResponses COUNT floor and the ⅔-of-responders
 // WEIGHT agreement diverge: an attacker who eclipses the HEAVY honest beacon but lets enough LIGHT
 // honest beacons through to satisfy the count can shrink the responder-WEIGHT denominator until his
 // < ⅓-of-total Byzantine stake clears ⅔-of-responders and NAMES A FORGED FRONTIER. The MinResponseWeight
 // stake-majority floor (> ½ of TOTAL configured beacon stake) closes this — a < ⅓-stake adversary can
 // never make the responders carry a ⅔ weight majority once they must also carry > ½ of the total.
 //
-// Red's PoC: 6 beacons w={3,3,13,1,1,1}, total 22, Byzantine {B0,B1}=6 (27% < ⅓). The attacker
+// The capture, concretely: 6 beacons w={3,3,13,1,1,1}, total 22, Byzantine {B0,B1}=6 (27% < ⅓). The attacker
 // partitions to {B0,B1 on forgedF} + {H2,H3 on realR} = 4 responders (= the majority count floor),
 // responderWeight=8, ⅔-floor=5, backing[forgedF]=6 > 5 → forgedF would be named. The heavy honest H1
 // (weight 13, on the real tip) is eclipsed. With MinResponseWeight=⌈22/2⌉=12, responderWeight=8 < 12
@@ -628,7 +628,7 @@ func TestBootstrapTrust_H_SkewedWeightPartitionRejected(t *testing.T) {
 }
 
 // TestBootstrapTrust_D2_NonConfiguredSwarmNamesNothing is the cleaner isolation of the
-// configured-beacon filter (INVARIANT 1) that the re-red asked for: a SWARM of non-configured peers
+// configured-beacon filter (INVARIANT 1): a SWARM of non-configured peers
 // (enough to clear any count floor on their own) all shouting a forged frontier names NOTHING,
 // because none is in TrustedBeacons. This proves the filter, not merely the MinResponders floor.
 func TestBootstrapTrust_D2_NonConfiguredSwarmNamesNothing(t *testing.T) {
@@ -667,10 +667,10 @@ func TestBootstrapTrust_D2_NonConfiguredSwarmNamesNothing(t *testing.T) {
 	require.Equal(t, real.ID, f.ID, "only configured beacons name the frontier; the 50-peer forged swarm is ignored")
 }
 
-// TestBootstrapPolicy_WiresStakeMajorityFloor is the regression guard the re-red flagged (LOW):
-// the production constructor bootstrapPolicy() MUST emit MinResponseWeight = ⌈total/2⌉. The H/D2
+// TestBootstrapPolicy_WiresStakeMajorityFloor pins the constructor:
+// bootstrapPolicy() MUST emit MinResponseWeight = ⌈total/2⌉. The H/D2
 // tests construct policies directly, so a mutation that stops the constructor from setting the
-// floor would not be caught — this asserts the WIRING on the real production path. Mutation-proof:
+// floor would not be caught — this asserts the WIRING on the real path. Mutation-proof:
 // neuter `if total > 0` in bootstrapPolicy() and this test fails (MinResponseWeight==0).
 func TestBootstrapPolicy_WiresStakeMajorityFloor(t *testing.T) {
 	refs, _ := refChain(5)
@@ -720,7 +720,7 @@ func refs5BSBlocks(refs []BlockRef) []*bsTestBlock {
 	return out
 }
 
-// ----- CaughtUp: the tip-holder go-live determination (RED CRITICAL fix) ----
+// ----- CaughtUp: the tip-holder go-live determination -----------------------
 //
 // CaughtUp is the DUAL of AcceptsFrontier — "nobody is ahead" vs "here is the block ahead to sync
 // to". It is the go-live path for a TIP-HOLDER on a mixed-height co-restart, where the responders
@@ -963,7 +963,7 @@ func TestBootstrapTrust_EclipseOwnHeightNotNamedRoutesToCaughtUp(t *testing.T) {
 
 // ----- HALTED FLEET: the own tip IS the frontier under a COMPLETE view -------
 //
-// The LIVENESS HOLE in the seam between the M1 own-height exclusion above and CaughtUp. When the
+// The LIVENESS HOLE between the own-height exclusion above and CaughtUp. When the
 // highest ⅔-backed block equals the node's OWN accepted tip AND a SUB-⅔ minority reports tips
 // above it, nameFrontier names nothing (own height excluded) and CaughtUp refuses (the minority
 // tips are un-held): the node neither completes nor syncs. On a LIVE network that is transient —

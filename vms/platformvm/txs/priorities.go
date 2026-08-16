@@ -44,14 +44,6 @@ var PendingToCurrentPriorities = []Priority{
 
 type Priority byte
 
-func (p Priority) IsCurrent() bool {
-	return p.IsCurrentValidator() || p.IsCurrentDelegator()
-}
-
-func (p Priority) IsPending() bool {
-	return p.IsPendingValidator() || p.IsPendingDelegator()
-}
-
 func (p Priority) IsValidator() bool {
 	return p.IsCurrentValidator() || p.IsPendingValidator()
 }
@@ -59,10 +51,6 @@ func (p Priority) IsValidator() bool {
 func (p Priority) IsPermissionedValidator() bool {
 	return p == ChainPermissionedValidatorCurrentPriority ||
 		p == ChainPermissionedValidatorPendingPriority
-}
-
-func (p Priority) IsDelegator() bool {
-	return p.IsCurrentDelegator() || p.IsPendingDelegator()
 }
 
 func (p Priority) IsCurrentValidator() bool {

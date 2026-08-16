@@ -130,7 +130,7 @@ func New(
 		return nil, fmt.Errorf("invalid staking certificate: %w", err)
 	}
 
-	// NodeID derivation routes through the single seam
+	// NodeID derivation routes through the one function,
 	// StakingConfig.DeriveNodeID — strict-PQ chains (StakingMLDSAPub
 	// non-empty) derive NodeID via SHAKE256-384("NODE_ID_V1" ||
 	// chainID || 0x42 || pubKey)[:20] under ids.NodeIDSchemeMLDSA65;
@@ -583,7 +583,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	// proposer can SIGN post-fork blocks (block.Build → key.Sign). It was
 	// declared but never assigned, so proposervm received a nil signer and
 	// panicked (nil pointer in key.Sign) the moment it built the first signed
-	// post-fork block — mirrors avalanchego setting StakingTLSSigner from the
+	// post-fork block — StakingTLSSigner is set from the
 	// cert's private key.
 	n.StakingTLSSigner = tlsKey
 
@@ -1430,7 +1430,7 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 			EnableAutomining:                        n.Config.EnableAutomining,
 			// F118: forward the chain-wide ChainSecurityProfile to the
 			// chain manager so it can stamp the profile pin into every
-			// C-Chain (coreth) plugin Initialize payload.
+			// C-Chain EVM plugin Initialize payload.
 			SecurityProfile: n.securityProfile,
 		},
 	)

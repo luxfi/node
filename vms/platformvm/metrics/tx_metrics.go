@@ -85,13 +85,6 @@ func (m *txMetrics) ExportTx(*txs.ExportTx) error {
 	return nil
 }
 
-func (m *txMetrics) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	m.numTxs.With(metric.Labels{
-		txLabel: "advance_time",
-	}).Inc()
-	return nil
-}
-
 func (m *txMetrics) RewardValidatorTx(*txs.RewardValidatorTx) error {
 	m.numTxs.With(metric.Labels{
 		txLabel: "reward_validator",

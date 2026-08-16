@@ -1,17 +1,17 @@
 // Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// quorum_setroot_test.go — node-layer tests for MEDIUM-1: the set-root and the
+// quorum_setroot_test.go — node-layer tests: the set-root and the
 // ⅔-by-stake tally MUST be read from the HEIGHT-INDEXED validators.State at the
 // cert-position height, so every node computes the IDENTICAL root, weights, and
 // total for a given value-chain height — INDEPENDENT of async current-map skew
 // during a validator-set change.
 //
-// The cross-node test (TestValidatorSetRoot_CrossNodeAgreesDespiteSkew) is the
-// one the red flagged as MISSING: it models two nodes whose CURRENT validator
+// The cross-node test (TestValidatorSetRoot_CrossNodeAgreesDespiteSkew) carries
+// the property end to end: it models two nodes whose CURRENT validator
 // views diverge (a set-change in flight) but who agree on the historical set at a
 // pinned height H — and proves they nonetheless compute the SAME set-root at H.
-// Reading the current map (the prior bug) would have made their roots differ →
+// Reading the current map instead makes their roots differ →
 // mismatched canonical signed messages → dropped votes → finality stall.
 package chains
 
@@ -63,7 +63,7 @@ type vdr struct {
 
 // stateWithHistory builds a validators.State whose GetValidatorSet returns the
 // set registered for the requested height (and an empty set for unknown heights),
-// scoped to netID. This is the height-indexed source MEDIUM-1 reads from.
+// scoped to netID. This is the height-indexed source the set-root reads from.
 func stateWithHistory(netID ids.ID, byHeight map[uint64][]vdr) *validatorstest.TestState {
 	s := validatorstest.NewTestState()
 	s.GetValidatorSetF = func(_ context.Context, height uint64, gotNet ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
@@ -84,8 +84,8 @@ func stateWithHistory(netID ids.ID, byHeight map[uint64][]vdr) *validatorstest.T
 	return s
 }
 
-// TestValidatorSetRoot_CrossNodeAgreesDespiteSkew is the MEDIUM-1 regression
-// guard. Two nodes are mid validator-set change: their CURRENT sets differ
+// TestValidatorSetRoot_CrossNodeAgreesDespiteSkew pins cross-node agreement.
+// Two nodes are mid validator-set change: their CURRENT sets differ
 // (height 11 vs height 12), but both still serve the SAME committed set at the
 // value-chain block height H=10 being voted on. The set-root at H MUST be
 // identical on both nodes — that identity is what makes their signatures over the
@@ -120,7 +120,7 @@ func TestValidatorSetRoot_CrossNodeAgreesDespiteSkew(t *testing.T) {
 		t.Fatal("set-root at the voted height must be non-Empty (the set is non-empty)")
 	}
 	if rootA != rootB {
-		t.Fatalf("MEDIUM-1: cross-node set-root at height %d MUST be identical despite "+
+		t.Fatalf("cross-node set-root at height %d MUST be identical despite "+
 			"current-set skew, got A=%s B=%s", H, rootA, rootB)
 	}
 
@@ -213,7 +213,7 @@ func TestValidatorSetRoot_FailSoftIsUniform(t *testing.T) {
 }
 
 // TestValidatorStakeSource_HeightPinned proves the ⅔-by-stake tally is read at
-// the SAME height as the set-root (MEDIUM-1's second skew): Weight/TotalStake are
+// the SAME height as the set-root: Weight/TotalStake are
 // a deterministic function of height, so a validator whose vote is in a
 // height-H cert contributes its height-H weight — not whatever the current map
 // happens to hold after a membership change. This is what stops a current-map

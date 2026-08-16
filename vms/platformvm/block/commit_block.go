@@ -18,7 +18,7 @@ type CommitBlock struct {
 	commonZapBlock
 }
 
-func (*CommitBlock) Txs() []*txs.Tx          { return nil }
+func (*CommitBlock) DecisionTxs() []*txs.Tx  { return nil }
 func (b *CommitBlock) Visit(v Visitor) error { return v.CommitBlock(b) }
 
 func NewCommitBlock(

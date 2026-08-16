@@ -20,7 +20,6 @@ var (
 	_ RTSigner = (*RTProofOfPossession)(nil)
 
 	ErrInvalidRTProofOfPossession = errors.New("invalid Corona proof of possession")
-	ErrRTKeyRequired              = errors.New("Corona public key required for Q-Chain validators")
 	ErrInvalidRTKeyLength         = errors.New("invalid Corona public key length")
 	ErrInvalidRTSigLength         = errors.New("invalid Corona signature length")
 )

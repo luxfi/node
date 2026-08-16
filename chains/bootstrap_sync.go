@@ -180,7 +180,7 @@ func (b *blockHandler) connectedBeacons(weights map[ids.NodeID]uint64) []ids.Nod
 		}
 	}
 	// THE FILTER IS AN OPTIMISATION, NOT A SAFETY PROPERTY, so it must never be the
-	// thing that decides a node cannot bootstrap. avalanchego has no equivalent: its
+	// thing that decides a node cannot bootstrap. There is no other such decision: the
 	// startup gate accumulates ConnectedWeight from the network's own Connected()
 	// callbacks and LATCHES (`shouldStart = shouldStart || weight >= threshold`), so
 	// once enough stake has connected the node starts and never un-starts. Ours
@@ -329,7 +329,7 @@ func (b *blockHandler) withSelfVote(replies []BeaconReply, weights map[ids.NodeI
 // ahead beacon replays state on a mass co-restart. Such a beacon counts as "fully
 // connected" yet is absent from the tally, so self's (heavy) weight backfills the
 // floor and the node goes live at a forged STALE height — the precise failure the
-// frontier-quorum gate exists to prevent (RED CRITICAL). Requiring every connected
+// frontier-quorum gate exists to prevent. Requiring every connected
 // beacon to have replied means a silent ahead-beacon blocks caught-up → the node
 // waits / fails safe, while a genuine fresh net (every connected beacon answers
 // genesis) still completes.
@@ -865,7 +865,7 @@ func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks 
 	// still at genesis) and returns the first NON-EMPTY batch. With a size-1 channel a
 	// fast empty reply won the race and starved a slower peer that actually held the
 	// ancestry, so a re-bootstrapping node with ≥2 peers at genesis could keep drawing
-	// empties and stall. This mirrors the proven avalanchego contract: an empty Ancestors
+	// empties and stall. The contract is the settled one: an empty Ancestors
 	// reply means "this peer can't serve — take another's," never "done" (getter serves an
 	// EXPLICIT empty batch when it lacks the block; see GetContext).
 	ch := make(chan [][]byte, bootstrapAncestorSample)
@@ -946,8 +946,8 @@ func (b *blockHandler) ParseBlock(ctx context.Context, raw []byte) (cblock.Block
 // from the IN-PROCESS consensus finalized ledger — the SINGLE advancing source of truth the
 // loop drives convergence off (THE one-source decomplect). It is NOT read from the VM cache.
 //
-// THE FREEZE-STALL (red HIGH-1): the descent DOES accept the run-up (the consensus finalized
-// ledger AND the coreth on-disk store both advance), but the ZAP VM client caches its
+// THE FREEZE-STALL: the descent DOES accept the run-up (the consensus finalized
+// ledger AND the EVM's on-disk store both advance), but the ZAP VM client caches its
 // LastAccepted at Initialize and a fire-and-forget Accept never refreshes it (client.go) —
 // so VM.LastAccepted is FROZEN for the process life. Reading lastH off that frozen cache made
 // every pass after the first re-descend from the stale height while AcceptBootstrapBlock
@@ -1108,7 +1108,7 @@ func (b *blockHandler) acceptedHeightCtx(ctx context.Context, id ids.ID) (uint64
 	}
 	// h <= lastH and id != lastID: id is at a height we have finalized PAST. It is accepted IFF it
 	// is the block our per-height ledger finalized at h. Ask the IN-PROCESS finalized ledger (the
-	// same source LastAccepted reads), which replaces the dead coreth height index — block.ChainVM.
+	// same source LastAccepted reads), which replaces the EVM's dead height index — block.ChainVM.
 	// GetBlockIDAtHeight is unhandled over ZAP, so the old VM-index call returned nothing on the real
 	// C-Chain and this whole branch was dead there. The in-process ledger answers authoritatively for
 	// every height finalized THIS session.
@@ -1132,7 +1132,7 @@ func (b *blockHandler) acceptedHeightCtx(ctx context.Context, id ids.ID) (uint64
 
 // finalizedBlockAtHeight returns the block the IN-PROCESS consensus ledger finalized at height h
 // (ok=false when the node has not finalized h this session — a height below the boot seed — or has
-// no engine). It is the authoritative fork-sibling oracle that replaces the dead coreth height
+// no engine). It is the authoritative fork-sibling oracle that replaces the EVM's dead height
 // index; degrading to ok=false simply routes acceptedHeightCtx to its height-bound anchor.
 func (b *blockHandler) finalizedBlockAtHeight(h uint64) (ids.ID, bool) {
 	if b.engine == nil {

@@ -101,7 +101,7 @@ type VM struct {
 	//
 	// WHY A LOCK RATHER THAN A RETRY. The head is a single shared resource with two
 	// classes of user; serializing them is the only thing that makes the anchor's
-	// guarantee hold at the point of use. avalanchego got this from the per-chain
+	// guarantee hold at the point of use. It came free from the per-chain
 	// consensus lock it held across VM calls; that lock went away when VM↔node moved to
 	// ZAP, and proposervm's invariants were written assuming it.
 	//
@@ -158,8 +158,8 @@ type VM struct {
 	// backfill is non-nil ONLY while this node booted with a finality index that
 	// the local block store could not fully rebuild (see height_backfill.go). While
 	// it is set the chain runs read-only-ish: it refuses to BUILD blocks, and
-	// BackfillOuterBlock is the seam that completes the index. nil = index whole,
-	// which is the state of every healthy node.
+	// BackfillOuterBlock is what completes the index. nil = index whole, which is
+	// the state of every healthy node.
 	backfill *outerBackfill
 
 	// quasarGate is the OPTIONAL post-quantum finality-cert gate. nil (the
@@ -323,10 +323,10 @@ func (vm *VM) Initialize(
 // newWindower builds the proposer-schedule windower bound to the validator-set
 // ID the consensus cert side resolves under: vm.Config.NetworkID, set once by
 // chains/manager.go (constants.PrimaryNetworkID for native chains, else the
-// L1's own chainID). CRITICAL-3: hardcoding PrimaryNetworkID here made a
-// sovereign L1's windower call GetValidatorSet under the wrong ID, get an empty
-// set, degrade to ErrAnyoneCanPropose, and equivocate exactly like the unfixed
-// C-Chain — while diverging from the cert's set. The zero value (ids.Empty) IS
+// L1's own chainID). Hardcode PrimaryNetworkID here and a sovereign L1's
+// windower calls GetValidatorSet under the wrong ID, gets an empty set, degrades
+// to ErrAnyoneCanPropose and equivocates, while diverging from the cert's set at
+// the same time. The zero value (ids.Empty) IS
 // constants.PrimaryNetworkID, so a native chain matches the original
 // proposer.New(..., PrimaryNetworkID, ...) byte-for-byte.
 func (vm *VM) newWindower() proposer.Windower {
@@ -667,11 +667,11 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 	// that [VM.SetPreference] must have already been called.
 	blk, err := vm.getPostForkBlock(ctx, vm.preferred)
 	// If the preferred block is pre-fork, the next block is the pre-fork →
-	// post-fork TRANSITION. CRITICAL-1: window WHEN this node builds it (mirroring
-	// the post-fork path) so non-leaders WAIT their slot and adopt the elected
-	// leader's gossiped transition block instead of every validator forwarding to
-	// the inner VM and building its own (the old behavior, which forked the chain
-	// at its start). On no-schedule / unresolvable, this falls back to the legacy
+	// post-fork TRANSITION. Window WHEN this node builds it (mirroring the
+	// post-fork path) so non-leaders WAIT their slot and adopt the elected leader's
+	// gossiped transition block. Every validator forwarding to the inner VM and
+	// building its own instead forks the chain at its start. On no-schedule /
+	// unresolvable, this falls back to the legacy
 	// immediate forward.
 	if err != nil {
 		return vm.timeToBuildPreForkTransitionLocked(ctx)
@@ -714,7 +714,7 @@ func (vm *VM) timeToBuild(ctx context.Context) (time.Time, bool, error) {
 
 // timeToBuildPreForkTransitionLocked computes the build window for the pre-fork →
 // post-fork TRANSITION block (the first post-fork block) when the preferred block
-// is still pre-fork. It is the timing half of CRITICAL-1 and mirrors
+// is still pre-fork. It is the timing half of that rule and mirrors
 // getPostDurangoSlotTime: when this node has a real proposer slot in the schedule
 // it returns that slot's start time (shouldWait=true), so a non-leader waits its
 // slot and adopts the elected leader's gossiped transition block — and a down
@@ -1354,7 +1354,7 @@ func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	// at a time; a jump means some accept moved the inner VM without moving the
 	// index (the pre-fork fallback the guards above now refuse) and the gap will be
 	// fatal at the next boot. Surfacing it HERE names the height where the hole
-	// opened instead of leaving a post-mortem for the next restart. Not fatal: the
+	// opened instead of leaving it to be reconstructed at the next restart. Not fatal: the
 	// accept itself is correct and the boot-time rebuild can close a hole; refusing
 	// finality on a warning would be the worse trade.
 	if vm.lastAcceptedHeight != 0 && height != vm.lastAcceptedHeight+1 {

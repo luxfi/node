@@ -29,16 +29,12 @@ var (
 	ErrFlowCheckFailed                 = errors.New("flow check failed")
 	ErrNotValidator                    = errors.New("isn't a current or pending validator")
 	ErrRemovePermissionlessValidator   = errors.New("attempting to remove permissionless validator")
-	ErrStakeOverflow                   = errors.New("validator stake exceeds limit")
 	ErrPeriodMismatch                  = errors.New("proposed staking period is not inside dependent staking period")
 	ErrOverDelegated                   = errors.New("validator would be over delegated")
 	ErrIsNotTransformChainTx           = errors.New("is not a transform net tx")
-	ErrTimestampNotBeforeStartTime     = errors.New("chain timestamp not before start time")
-	ErrAlreadyValidator                = errors.New("already a validator")
 	ErrDuplicateValidator              = errors.New("duplicate validator")
 	ErrDelegateToPermissionedValidator = errors.New("delegation to permissioned validator")
 	ErrWrongStakedAssetID              = errors.New("incorrect staked assetID")
-	ErrLegacyUpgradeNotActive          = errors.New("legacy upgrade feature not active")
 	ErrAddValidatorTxNotPermitted      = errors.New("AddValidatorTx is not permitted")
 	ErrAddDelegatorTxNotPermitted      = errors.New("AddDelegatorTx is not permitted")
 )
@@ -582,8 +578,8 @@ func verifyTransferChainOwnershipTx(
 	return nil
 }
 
-// start time is not validated. Retained as the explicit call site so the
-// staker-tx verifiers keep a single canonical timing-check seam.
+// verifyStakerStartTime accepts every pair: a staker's start time is not
+// validated against the chain time, so both arguments are ignored.
 func verifyStakerStartTime(_, _ time.Time) error {
 	return nil
 }

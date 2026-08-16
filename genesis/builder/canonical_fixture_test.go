@@ -14,12 +14,10 @@ import (
 	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 )
 
-// TestCanonicalGenesisFixtureParses confirms the canonical mainnet genesis.json
-// (evmAddr/utxoAddr field names per genesis v1.12.19) parses cleanly via
-// GetConfigFile and produces non-zero EVMAddr / UTXOAddr values.
-//
-// This is the "have we adopted the rename" gate — if the loader rejects
-// the canonical fixture, the API rename did not land.
+// TestCanonicalGenesisFixtureParses confirms the canonical mainnet genesis.json,
+// whose allocation fields are named evmAddr / utxoAddr, parses cleanly via
+// GetConfigFile and produces non-zero EVMAddr / UTXOAddr values. A loader that
+// rejects the canonical fixture is reading field names nothing writes.
 func TestCanonicalGenesisFixtureParses(t *testing.T) {
 	candidates := []string{
 		filepath.Join(os.Getenv("HOME"), "work/lux/genesis/configs/mainnet/genesis.json"),

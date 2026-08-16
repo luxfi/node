@@ -44,7 +44,10 @@ func main() {
 			log.Fatalf("failed to parse platformvm block: %s\n", err)
 		}
 
-		acceptedTxs := platformvmBlock.Txs()
+		acceptedTxs := platformvmBlock.DecisionTxs()
+		if proposal, ok := platformvmBlock.(*platformvmblock.ProposalBlock); ok {
+			acceptedTxs = append(acceptedTxs, proposal.Tx())
+		}
 		log.Printf("accepted block %s with %d transactions\n", platformvmBlock.ID(), len(acceptedTxs))
 
 		for _, tx := range acceptedTxs {

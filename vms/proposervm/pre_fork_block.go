@@ -233,7 +233,7 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 		return nil, err
 	}
 
-	// CRITICAL-1: single-proposer transition. The pre-fork → post-fork transition
+	// Single-proposer transition. The pre-fork → post-fork transition
 	// block (the first post-fork block, child of the last pre-fork block) MUST stay
 	// UNSIGNED — verifyPostForkChild rejects a signed transition
 	// (errChildOfPreForkBlockHasProposer), and an unsigned block carries no
@@ -253,10 +253,9 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	// The residual case — a Byzantine node publishing a competing UNSIGNED transition
 	// block (which verifyPostForkChild still admits, since an unsigned block cannot be
 	// bound to a proposer) — is rendered SAFE by the per-height finality guard (only
-	// one block finalizes at a height) and no longer crashes the fleet (consensus
-	// CRITICAL-2). Correct resolution of ExpectedProposer on a sovereign L1 depends on
-	// CRITICAL-3 (the windower reading the L1's own validator set, not an empty
-	// primary set).
+	// one block finalizes at a height) and does not crash the fleet. Resolving
+	// ExpectedProposer correctly on a sovereign L1 depends on the windower reading
+	// the L1's own validator set rather than an empty primary set.
 	childHeight := b.Height() + 1
 	slot := proposer.TimeToSlot(parentTimestamp, newTimestamp)
 	expectedProposerID, err := b.vm.Windower.ExpectedProposer(ctx, childHeight, pChainHeight, slot)
@@ -264,8 +263,8 @@ func (b *preForkBlock) buildChild(ctx context.Context) (Block, error) {
 	case errors.Is(err, proposer.ErrAnyoneCanPropose):
 		// No proposer schedule (empty/degenerate validator set — e.g. K==1, or a
 		// chain whose windower set is not yet populated). Fall through to the legacy
-		// unsigned build: single-proposer cannot hold without a schedule, and
-		// CRITICAL-2 makes the residual equivocation survivable.
+		// unsigned build: single-proposer cannot hold without a schedule, and the
+		// per-height finality guard makes the residual equivocation survivable.
 	case err != nil:
 		b.vm.logger.Error("unexpected build block failure",
 			log.String("reason", "failed to calculate expected transition proposer"),

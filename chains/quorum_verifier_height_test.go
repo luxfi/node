@@ -1,18 +1,18 @@
 // Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// quorum_verifier_height_test.go — node-layer regression for RESIDUAL-B and the
-// CRITICAL-1 wiring: the BLS vote verifier resolves the voter's public key from
+// quorum_verifier_height_test.go — node-layer proof of the height-pinned read:
+// the BLS vote verifier resolves the voter's public key from
 // the HEIGHT-INDEXED validators.State AT THE BLOCK'S P-CHAIN EPOCH HEIGHT — the
 // SAME height-pinned source as the set-root and the ⅔-by-stake tally — NOT from
 // the current validator map.
 //
-// The round-1 fix left the verifier reading the CURRENT map (m.Validators):
-// a validator present in set@H (it legitimately signed block H) but already gone
-// from the current map during async staking skew had its vote DROPPED, and if it
-// held >⅓ of the stake-at-H the block never finalized. These tests prove the
-// verifier now reads set@H, so such a vote verifies at H (and a vote keyed to the
-// wrong height does not).
+// A verifier reading the CURRENT map (m.Validators) instead DROPS the vote of a
+// validator present in set@H — one that legitimately signed block H — but already
+// gone from the current map during async staking skew; if that validator holds
+// >⅓ of the stake-at-H the block never finalizes. These tests prove the verifier
+// reads set@H, so such a vote verifies at H (and a vote keyed to the wrong height
+// does not).
 package chains
 
 import (
@@ -68,7 +68,7 @@ func stateWithBLSByHeight(netID ids.ID, byHeight map[uint64][]blsKey) *validator
 	return s
 }
 
-// TestBLSVoteVerifier_ResolvesPubkeyAtEpochHeight is the RESIDUAL-B core: a
+// TestBLSVoteVerifier_ResolvesPubkeyAtEpochHeight is the core property: a
 // validator that is in set@H but has LEFT the set at a later height still has its
 // vote verified at H (the verifier reads set@H, not the current map).
 func TestBLSVoteVerifier_ResolvesPubkeyAtEpochHeight(t *testing.T) {
@@ -94,7 +94,7 @@ func TestBLSVoteVerifier_ResolvesPubkeyAtEpochHeight(t *testing.T) {
 	sigBytes := bls.SignatureToBytes(sig)
 
 	if !v.VerifyVote(leaver.nodeID, msg, sigBytes, H) {
-		t.Fatal("RESIDUAL-B: a validator in set@H must verify at H even after leaving the current set " +
+		t.Fatal("a validator in set@H must verify at H even after leaving the current set " +
 			"(verifier read the current map instead of set@H)")
 	}
 
@@ -116,8 +116,8 @@ func TestBLSVoteVerifier_ResolvesPubkeyAtEpochHeight(t *testing.T) {
 // TestBLSVoteVerifier_FailClosed proves the verifier never panics and returns
 // false for every fail-soft case: nil state, unknown voter at the epoch, wrong
 // network, an unknown height (empty set), a wrong-length signature, and the
-// HIGH-1 malformed-infinity signature (0x40||zeros) that used to PANIC the purego
-// BLS path — here it must be a clean false, not a crash.
+// malformed-infinity signature (0x40||zeros), which the purego BLS path must
+// answer with a clean false rather than a panic.
 func TestBLSVoteVerifier_FailClosed(t *testing.T) {
 	netID := ids.GenerateTestID()
 	k := newBLSKey(t)
@@ -147,7 +147,7 @@ func TestBLSVoteVerifier_FailClosed(t *testing.T) {
 	if v.VerifyVote(k.nodeID, msg, good[:len(good)-1], 10) {
 		t.Fatal("wrong-length signature must yield false")
 	}
-	// HIGH-1 malformed infinity sig (0x40||zeros) → clean false, NOT a panic.
+	// malformed infinity sig (0x40||zeros) → clean false, NOT a panic.
 	mal := make([]byte, bls.SignatureLen)
 	mal[0] = 0x40
 	if v.VerifyVote(k.nodeID, msg, mal, 10) {

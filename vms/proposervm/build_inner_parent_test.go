@@ -61,8 +61,8 @@ type evmLikeInner struct {
 	reorgs       int
 
 	// beforeBuild, when set, runs at the top of BuildBlock — i.e. INSIDE the window
-	// between the anchor and the miner reading the head. It is the seam the race tests
-	// use to observe (or attempt) head movement at exactly the moment that matters.
+	// between the anchor and the miner reading the head. The race tests use it to
+	// observe (or attempt) head movement at exactly the moment that matters.
 	beforeBuild func()
 }
 

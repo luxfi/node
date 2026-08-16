@@ -118,7 +118,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.3.1
-	github.com/luxfi/api v1.1.3
+	github.com/luxfi/api v1.1.4
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.7.22
 	github.com/luxfi/codec v1.2.1
@@ -145,7 +145,7 @@ require (
 	github.com/luxfi/utils v1.3.1
 	github.com/luxfi/utxo v0.5.8
 	github.com/luxfi/validators v1.3.1
-	github.com/luxfi/vm v1.3.7
+	github.com/luxfi/vm v1.3.8
 	github.com/luxfi/warp v1.24.1
 	github.com/luxfi/zap v1.2.6
 	github.com/luxfi/zwing v0.6.1
@@ -182,6 +182,8 @@ require (
 	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
+	github.com/fjl/gencodec v0.1.1 // indirect
+	github.com/garslo/gogen v0.0.0-20170306192744-1d203ffc1f61 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
@@ -196,6 +198,7 @@ require (
 	github.com/luxfi/corona v0.10.4 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
+	github.com/luxfi/evm v1.104.31 // indirect
 	github.com/luxfi/keys v1.4.2 // indirect
 	github.com/luxfi/lattice/v7 v7.1.4 // indirect
 	github.com/luxfi/lens v0.2.1 // indirect

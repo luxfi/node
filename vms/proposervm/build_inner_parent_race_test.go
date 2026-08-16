@@ -7,19 +7,15 @@
 // inner block. That anchor is a PRECONDITION established at T and consumed by the miner at
 // T+Δ, where Δ is a full ZAP round-trip. These tests cover what keeps it true across Δ.
 //
-// It was not kept true. The consensus engine drives the proposervm from several goroutines
-// (chains/manager.go PullQuery, chains/nova_poll.go applyPollResponse, and the engine's own
-// gossip path all call Verify, while ForwardVMNotifications drives BuildBlock), the ZAP
-// server dispatches every request on its own goroutine, and a first-time inner Verify of a
-// block extending the head OPTIMISTICALLY takes the head. Nothing serialized the two, so a
-// gossiped block landing inside the window made the miner extend the sibling and the node
-// then rejected the block it had just built:
-//
-//	error built block failed verification — dropping
-//	      error="inner parentID didn't match expected parent" height=2766
-//
-// measured live on lux-testnet, lux-devnet and hanzo-mainnet on 2026-08-05, on the exact
-// build (v1.36.56) that already carried the anchor.
+// Nothing about the anchor keeps itself true. The consensus engine drives the proposervm
+// from several goroutines (chains/manager.go PullQuery, chains/nova_poll.go
+// applyPollResponse, and the engine's own gossip path all call Verify, while
+// ForwardVMNotifications drives BuildBlock), the ZAP server dispatches every request on its
+// own goroutine, and a first-time inner Verify of a block extending the head OPTIMISTICALLY
+// takes the head. Leave the two unserialized and a gossiped block landing inside the window
+// makes the miner extend the sibling, so the node rejects the block it has just built —
+// "inner parentID didn't match expected parent" — and does it again on the next trigger,
+// forever. The anchor must therefore be held across Δ, not merely set before it.
 package proposervm
 
 import (

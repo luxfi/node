@@ -1084,9 +1084,9 @@ func (p *peer) handle(msg message.InboundMessage) {
 // every not-yet-upgraded node as a stranger. On a five-node fleet upgraded one
 // node at a time — which is the only safe way to upgrade one, since the fleet
 // cannot lose quorum — the first node to get the new build would exclude the four
-// still carrying consensus and isolate itself. The check would become the outage
-// it exists to prevent. Once every node states its chains, nothing is silent and
-// the tolerance costs nothing.
+// still carrying consensus and isolate itself, which is the partition this check
+// exists to prevent. Once every node states its chains, nothing is silent and the
+// tolerance costs nothing.
 //
 // A disagreement is loud, because it is never routine: it means two nodes are
 // building on different histories and one of them is misconfigured.

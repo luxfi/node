@@ -44,8 +44,6 @@ func parseUnsigned(buf []byte) (UnsignedTx, error) {
 		return nil, err
 	}
 	switch k := kindOf(msg); k {
-	case kindAdvanceTime:
-		return &AdvanceTimeTx{msg: msg}, nil
 	case kindRewardValidator:
 		return &RewardValidatorTx{msg: msg}, nil
 	case kindBase:

@@ -1,20 +1,20 @@
 // Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// pchain_height_hardening_test.go — the receive-side hardening proofs for the b2
-// transport wrapper (Red round): the three node-layer fixes that close the
-// receive-side gaps the build-side stamping left open.
+// pchain_height_hardening_test.go — the receive-side proofs for the b2 transport
+// wrapper. Stamping the epoch on the build side leaves three receive-side
+// properties to establish here.
 //
-//	(HIGH-1, predicate b — RECENCY) ParseBlock rejects a wrapped block whose
+//	RECENCY: ParseBlock rejects a wrapped block whose
 //	stamped P-chain epoch exceeds this node's live P-chain height by more than the
 //	recency slack (an absurd-future epoch). Honest forward skew within the slack —
 //	including a legitimate P-chain advance during a staking change — still parses.
 //
-//	(MEDIUM-3 — MAP DoS) the heights map is bounded: it plateaus at the finalized
+//	MAP BOUND: the heights map is bounded: it plateaus at the finalized
 //	watermark under mass parse+accept, and a still-pending block's epoch is never
 //	evicted by the watermark prune. A sustained unverified-parse flood is capped.
 //
-//	(LOW-2 — FRAME DISCRIMINATOR) a raw inner block whose first bytes coincidentally
+//	FRAME DISCRIMINATOR: a raw inner block whose first bytes coincidentally
 //	equal the 4-byte frame magic is NOT mis-parsed as framed: the inner re-parse of
 //	the framed payload fails, so ParseBlock falls back to a raw whole-block parse.
 package chains
@@ -26,7 +26,7 @@ import (
 	"github.com/luxfi/ids"
 )
 
-// --- (HIGH-1 b) RECENCY: reject absurd-future epoch ---------------------------
+// --- RECENCY: reject absurd-future epoch -------------------------------------
 
 // TestParseBlock_RejectsFarFutureEpoch is the receive-side upper-bound proof. A
 // node whose live P-chain height is 100 parses a wrapped block stamped at epoch
@@ -95,7 +95,7 @@ func TestParseBlock_RecencyDisabledWithoutState(t *testing.T) {
 	}
 }
 
-// --- (LOW-2) FRAME DISCRIMINATOR: a magic-colliding raw block is NOT mis-framed -
+// --- FRAME DISCRIMINATOR: a magic-colliding raw block is NOT mis-framed -
 
 // TestParseBlock_MagicCollisionParsesRaw is the discriminator proof. A raw inner
 // block whose Bytes() coincidentally BEGIN with the 4-byte frame magic (the
@@ -172,7 +172,7 @@ func TestParseBlock_GenuineFrameStillParses(t *testing.T) {
 	}
 }
 
-// --- (MEDIUM-3) MAP BOUND: plateau at watermark, pending never evicted --------
+// --- MAP BOUND: plateau at watermark, pending never evicted --------
 
 // TestHeightsMap_PlateausAtWatermark is the DoS bound proof. We parse a long run
 // of distinct framed blocks (each adds a heights entry) and ACCEPT them in order;
@@ -213,7 +213,7 @@ func TestHeightsMap_PlateausAtWatermark(t *testing.T) {
 		wrapper.mu.Unlock()
 		if size > 4 { // generous constant: the pending working set, not O(n)
 			t.Fatalf("heights map grew to %d entries at height %d (watermark %d) — it must plateau at the "+
-				"finalized watermark, not accrete one permanent entry per parsed block (MEDIUM-3 DoS)", size, h, wm)
+				"finalized watermark, not accrete one permanent entry per parsed block", size, h, wm)
 		}
 	}
 }
@@ -302,7 +302,7 @@ func TestHeightsMap_FloodCappedPreservingNearTip(t *testing.T) {
 	wrapper.mu.Unlock()
 
 	if size > pChainHeightMapCap {
-		t.Fatalf("heights map = %d entries, must be capped at %d under flood (MEDIUM-3 backstop)", size, pChainHeightMapCap)
+		t.Fatalf("heights map = %d entries, must be capped at %d under flood", size, pChainHeightMapCap)
 	}
 	if !nearTipKept {
 		t.Fatal("the near-tip pending entry (height 1) must SURVIVE the cap — eviction is highest-height-first, " +

@@ -30,7 +30,13 @@ func Parse(b []byte) (Block, error) {
 		return blk, blk.setID(b)
 	case blkProposal:
 		blk := &ProposalBlock{}
-		return blk, blk.setID(b)
+		if err := blk.setID(b); err != nil {
+			return nil, err
+		}
+		if blk.Tx() == nil {
+			return nil, errNoProposalTx
+		}
+		return blk, nil
 	case blkStandard:
 		blk := &StandardBlock{}
 		return blk, blk.setID(b)

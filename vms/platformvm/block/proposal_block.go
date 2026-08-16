@@ -4,13 +4,23 @@
 package block
 
 import (
+	"errors"
 	"time"
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
 )
 
-var _ Block = (*ProposalBlock)(nil)
+var (
+	_ Block = (*ProposalBlock)(nil)
+
+	// errNoProposalTx rejects a proposal block whose proposal slot is empty or
+	// unreadable. The proposal tx is what makes the block a proposal, and the
+	// executor has no path that runs without one, so a block missing it is
+	// refused where it enters — built or parsed — rather than surfacing as a
+	// nil in a reader that has no answer for one.
+	errNoProposalTx = errors.New("proposal block without a proposal tx")
+)
 
 // ProposalBlock is the canonical P-Chain proposal block. It carries a
 // per-block timestamp, a tail of decision txs (stored as the u32 length list +
@@ -19,41 +29,19 @@ type ProposalBlock struct {
 	commonZapBlock
 }
 
-// Tx returns the single proposal tx.
+// Tx returns the proposal tx. Never nil: both entrances refuse a proposal
+// block without one. Singular by type, so it cannot join a list on its way to
+// a fee calculator or a mempool.
 func (b *ProposalBlock) Tx() *txs.Tx {
 	tx, _ := readProposalTx(b.msg.Root())
 	return tx
 }
 
-// DecisionTxs returns only the decision txs — the ones submitted to this chain
-// and paid for by whoever submitted them.
-//
-// The proposal Tx is deliberately absent. It is emitted by the chain itself, it
-// is charged no fee by either calculator, and it is executed by its own path
-// (ProposalTx). Handing it to anything that prices transactions asks what a
-// chain-emitted tx costs, which is a question with no answer: the complexity
-// visitor refuses it, and the refusal reads as a block that cannot be verified.
+// DecisionTxs returns the decision txs in wire order. The proposal tx is not
+// among them; it runs on its own path, unpriced, and is reached through Tx.
 func (b *ProposalBlock) DecisionTxs() []*txs.Tx {
 	decision, _ := readTxList(b.msg.Root(), offBlkTxLengths, offBlkTxBlob)
 	return decision
-}
-
-// Txs returns the decision txs followed by the proposal Tx (last), matching
-// the canonical block ordering.
-//
-// This is the whole block's contents, for readers that mean exactly that —
-// metrics, warp verification, rejection. A reader that means "the txs this
-// block charges for" wants DecisionTxs.
-func (b *ProposalBlock) Txs() []*txs.Tx {
-	decision := b.DecisionTxs()
-	proposal := b.Tx()
-	if proposal == nil {
-		return decision
-	}
-	out := make([]*txs.Tx, len(decision)+1)
-	copy(out, decision)
-	out[len(decision)] = proposal
-	return out
 }
 
 func (b *ProposalBlock) Visit(v Visitor) error { return v.ProposalBlock(b) }

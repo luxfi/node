@@ -32,7 +32,6 @@ func TestDynamicCalculator(t *testing.T) {
 	}
 
 	for _, utx := range []txs.UnsignedTx{
-		txs.NewAdvanceTimeTx(1),
 		txs.NewRewardValidatorTx(ids.GenerateTestID()),
 	} {
 		_, err := calculator.CalculateFee(utx)

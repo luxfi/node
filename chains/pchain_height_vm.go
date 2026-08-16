@@ -80,7 +80,7 @@ const pChainHeightHeaderLen = 4 + 8
 
 // pChainHeightRecencySlack is the receive-side UPPER bound on how far a gossiped
 // block's stamped P-chain epoch height H may exceed THIS node's live P-chain
-// height before the block is rejected as absurd-future (HIGH-1, predicate b). The
+// height before the block is rejected as absurd-future. The
 // proposer stamps H = its own GetCurrentHeight (the proposervm selectChildPChainHeight
 // rule, ≤ its current); a follower lagging the P-chain sees a smaller current, so
 // some forward skew is LEGITIMATE during a staking change or a gossip burst. 256
@@ -93,7 +93,7 @@ const pChainHeightHeaderLen = 4 + 8
 const pChainHeightRecencySlack = uint64(256)
 
 // pChainHeightMapCap is the hard backstop on the heights map size — the cap that
-// bounds the gossip-parse DoS (MEDIUM-3): ParseBlock runs before the engine's
+// bounds the gossip-parse DoS: ParseBlock runs before the engine's
 // dedup/Verify, so an attacker peer could stream distinct unverified blocks, each
 // adding a permanent entry. The map plateaus far below this in steady state (the
 // watermark prune evicts every finalized block's entry as finality advances); the
@@ -134,7 +134,7 @@ type pChainHeightVM struct {
 	// re-fetching via GetBlock — so a miss here cannot drop a LIVE block's epoch
 	// (the consensus PendingBlock holds it, not this map).
 	//
-	// BOUNDED (MEDIUM-3): the value-chain height tagged on each entry lets onAccepted
+	// BOUNDED: the value-chain height tagged on each entry lets onAccepted
 	// PRUNE every entry at or below the finalized-height watermark (a finalized block
 	// never needs a GetBlock epoch re-attach), so under steady finality the map
 	// plateaus at the watermark. finalizedHeight is that watermark, advanced as
@@ -175,7 +175,7 @@ func newPChainHeightVM(inner consensuschain.BlockBuilder, state validators.State
 var _ consensuschain.BlockBuilder = (*pChainHeightVM)(nil)
 
 // remember records the epoch a block (at value-chain height chainHeight) was
-// stamped with so GetBlock can re-attach it. BOUNDED (MEDIUM-3): the map is pruned
+// stamped with so GetBlock can re-attach it. BOUNDED: the map is pruned
 // against the finalized-height watermark by onAccepted, so it plateaus under steady
 // finality; remember additionally enforces the hard cap as a flood backstop. The
 // chainHeight is the prune key.
@@ -194,7 +194,7 @@ func (vm *pChainHeightVM) recall(id ids.ID) (uint64, bool) {
 }
 
 // onAccepted advances the finalized-height watermark to acceptedHeight and PRUNES
-// every remembered entry at or below it (MEDIUM-3). A finalized block's epoch is
+// every remembered entry at or below it. A finalized block's epoch is
 // already captured in the engine's records and will never be re-attached via
 // GetBlock, so dropping its entry is loss-free — and a still-PENDING block (height
 // strictly above the watermark) is NEVER evicted by this prune, so its GetBlock
@@ -288,7 +288,7 @@ func (vm *pChainHeightVM) BuildBlock(ctx context.Context) (block.Block, error) {
 // a raw inner block (a pre-wrapper peer, GetAncestors, genesis): parsed straight
 // through with H=0, the SAFE genesis-set fallback.
 //
-// FRAME DISCRIMINATOR (LOW-2). The 4-byte magic collides at 2^-32 with the raw
+// FRAME DISCRIMINATOR. The 4-byte magic collides at 2^-32 with the raw
 // hash prefix some VMs use as their Bytes() (dexvm/quantumvm/dchain serialize
 // parentID[0:32]||…). The magic match alone is NOT sufficient: a frame is real
 // only if the inner re-parse of the framed payload ALSO succeeds. So when the
@@ -298,7 +298,7 @@ func (vm *pChainHeightVM) BuildBlock(ctx context.Context) (block.Block, error) {
 // the bootstrap stall a magic collision used to cause (mis-framed → inner decode
 // fails closed → stall on that chain).
 //
-// RECENCY GATE (HIGH-1, predicate b). A real frame's stamped epoch H must be
+// RECENCY GATE. A real frame's stamped epoch H must be
 // recent relative to THIS node's live P-chain height: H ≤ localCurrentH + slack.
 // An absurd-future H (a Byzantine proposer claiming an epoch the network has not
 // reached) is rejected fail-closed (the block is dropped, never tracked). This is
@@ -330,7 +330,7 @@ func (vm *pChainHeightVM) ParseBlock(ctx context.Context, b []byte) (block.Block
 }
 
 // epochRecent reports whether a stamped P-chain epoch height is within the recency
-// slack of this node's live P-chain height (HIGH-1, predicate b). A node with no
+// slack of this node's live P-chain height. A node with no
 // resolvable current height (state nil / read error → 0) cannot bound recency, so
 // it admits the block (the verifier still fails closed on an unresolvable future
 // epoch at set-resolution time — recency here is a fast-fail/DoS sanity gate, not
@@ -391,7 +391,7 @@ func wrapPChainHeight(innerBytes []byte, height uint64) []byte {
 // frame magic at the header width and, if so, returns the candidate payload and
 // the encoded height. magicMatched==true means ONLY that the prefix looks like a
 // frame — NOT that b is definitely framed. ParseBlock makes the real decision by
-// re-parsing the candidate payload (LOW-2): a raw block whose first bytes collide
+// re-parsing the candidate payload: a raw block whose first bytes collide
 // with the magic (2^-32) yields magicMatched==true here but its payload fails the
 // inner re-parse, so ParseBlock falls back to a raw whole-b parse. Keeping this a
 // pure split (no VM dependency) localizes the collision handling to ParseBlock.
@@ -467,7 +467,7 @@ func (b *pChainHeightBlock) Verify(ctx context.Context) error { return b.inner.V
 func (b *pChainHeightBlock) Reject(ctx context.Context) error { return b.inner.Reject(ctx) }
 
 // Accept finalizes the inner block, then advances the VM's finalized-height
-// watermark and prunes the heights map at/below it (MEDIUM-3). The inner Accept
+// watermark and prunes the heights map at/below it. The inner Accept
 // runs FIRST: finalization must not depend on the bookkeeping prune, and the prune
 // is a pure memory-management side effect that can never fail. The block carries
 // its own height, so the VM learns the exact finalized height with no extra read.

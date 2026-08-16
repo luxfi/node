@@ -74,7 +74,6 @@ import (
 	version "github.com/luxfi/version"
 	"github.com/luxfi/vm/fx"
 
-	// "github.com/luxfi/node/vms/metervm" // Temporarily disabled - needs consensus package updates
 	"github.com/luxfi/utxo/bls12381fx"
 	"github.com/luxfi/utxo/ed25519fx"
 	"github.com/luxfi/utxo/mldsafx"
@@ -86,16 +85,7 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/utxo/secp256r1fx"
 	"github.com/luxfi/utxo/slhdsafx"
-	// "github.com/luxfi/node/vms/tracedvm" // Temporarily disabled - needs consensus package updates
 
-	// "github.com/luxfi/node/proto/p2p" // Available if needed for protobuf parsing
-	// smcon "github.com/luxfi/vm/chain"
-	// aveng "github.com/luxfi/consensus/engine/dag"
-	// avbootstrap "github.com/luxfi/consensus/engine/dag/bootstrap"
-	// avagetter "github.com/luxfi/consensus/engine/dag/getter"
-	// smeng "github.com/luxfi/vm/chain"
-	// smbootstrap "github.com/luxfi/vm/chain/bootstrap"
-	// consensusgetter "github.com/luxfi/vm/chain/getter"
 	timetracker "github.com/luxfi/node/network/tracker"
 )
 
@@ -107,7 +97,7 @@ const (
 
 	// vmStartupTimeout bounds each VM startup/lifecycle operation (Initialize,
 	// Linearize, SetState, CreateHandlers, router AddChain, state-sync). It must
-	// be generous enough to cover a cold coreth "Regenerate historical state"
+	// be generous enough to cover a cold EVM "Regenerate historical state"
 	// pass after an unclean shutdown, which runs for minutes on a C-Chain
 	// with real history and which the previous hardcoded 30s budget blew —
 	// the context was cancelled mid-init, so the VM was marked failed and its
@@ -339,9 +329,9 @@ func getValidatorState(state validators.State) validators.State {
 // never published its validators.State into the manager — getValidatorState would
 // then supply the no-op State, whose GetValidatorSet is empty at every height, so
 // the ⅔-by-stake tally is 0 and VerifyWeighted fails closed FOREVER (a silent
-// permanent finality stall). This predicate is the fail-closed guard (CRITICAL-1
-// (c)): a K>1 chain whose state is not live must REFUSE TO START loudly rather
-// than run with the no-op State. It is a pure function so the guard is unit-
+// permanent finality stall). This predicate is the fail-closed guard: a K>1
+// chain whose state is not live must REFUSE TO START loudly rather than run
+// with the no-op State. It is a pure function so the guard is unit-
 // testable without building a whole chain (quorum_guard_node_test.go).
 func quorumValidatorStateLive(state validators.State) bool {
 	return state != nil
@@ -470,7 +460,7 @@ type ManagerConfig struct {
 	// from the genesis pin during node bootstrap (F102). The chain
 	// manager forwards a ProfileID + ProfileHash pin to every VM
 	// Initialize call via the VM config bytes so the rpcchainvm plugin
-	// (coreth C-Chain) inherits the chain-wide posture without
+	// (the C-Chain EVM) inherits the chain-wide posture without
 	// re-resolving genesis. Closes red-team finding F118.
 	//
 	// Nil under classical-compat or pre-locked-profile chains; the
@@ -1021,7 +1011,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	chainLog := speaksFor(m.Log, chainParams.ID)
 
 	// Create metrics gatherer for this chain
-	// The coreth EVM expects metric.MultiGatherer, not a legacy registry type
+	// The EVM expects metric.MultiGatherer, not a legacy registry type
 	chainLog.Info("Creating metrics gatherer", log.String("primaryAlias", primaryAlias))
 	chainMetricsGatherer := metrics.NewMultiGatherer()
 
@@ -1043,11 +1033,11 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		log.Bool("isNil", chainMetricsGatherer == nil),
 	)
 
-	// Note: Using local consensus package which has different fields
-	// PublicKey needs to be []byte, not *bls.PublicKey
+	// The chain context carries the node's BLS public key as raw bytes, not as
+	// a *bls.PublicKey. Nothing downstream of here reads it yet, so it stays nil
+	// rather than being serialized on every chain build.
 	var pubKeyBytes []byte
 	if m.StakingBLSKey != nil && m.StakingBLSKey.PublicKey() != nil {
-		// BLS PublicKey serialization not yet wired
 		pubKeyBytes = nil
 	}
 
@@ -1055,7 +1045,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 	warpSigner := createWarpSigner(m.StakingBLSKey, m.NetworkID, chainParams.ID)
 
 	// Create per-chain shared memory for cross-chain atomic operations.
-	// This is required by coreth's atomic VM for import/export transactions.
+	// This is required by the EVM's atomic VM for import/export transactions.
 	var chainSharedMemory atomic.SharedMemory
 	if m.AtomicMemory != nil {
 		chainSharedMemory = m.AtomicMemory.NewSharedMemory(chainParams.ID)
@@ -1208,7 +1198,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		// Initialize the VM if it supports the Initialize interface
-		// Inject automining config for dev mode (applies to C-Chain/coreth only),
+		// Inject automining config for dev mode (applies to the C-Chain EVM only),
 		// then stamp the chain-wide SecurityProfile pin into the C-Chain
 		// JSON config (F118) so the rpcchainvm plugin can resolve the
 		// profile on its side of the boundary.
@@ -1223,7 +1213,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// height → reportCertEquivocation → Logger.Crit → crash (also the DEX-tx
 		// non-determinism wedge). proposervm's WaitForEvent only returns PendingTxs
 		// inside THIS node's proposer window, collapsing the race at its source.
-		// This restores the wrapper avalanchego (chains/manager.go) uses; Lux had
+		// This restores the wrapper this manager is meant to use; Lux had
 		// commented it out and hand-rolled a bridge that dropped the invariant.
 		//
 		// Gate (all three required):
@@ -1242,10 +1232,9 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		//                      makes an equivocation crash require Byzantine
 		//                      double-voting, so the residual exposure is low.
 		//   - not DAG-native : a VM that implements Linearize (X-Chain) drives the
-		//                      engine through a push-notification linearize bridge
-		//                      that does not compose with proposervm's pull/window
-		//                      model without avalanchego's initializeOnLinearizeVM
-		//                      machinery (out of scope). It keeps the existing path.
+		//                      engine through a push-notification linearize bridge,
+		//                      and a push bridge does not compose with proposervm's
+		//                      pull/window model. It keeps the existing path.
 		// The networkID switch is the DEFAULT; explicitly-set --consensus-* flags
 		// are the OVERRIDE. Before this, selection consulted no operator input at
 		// all and a five-validator L1 silently ran DefaultParams (K=20, alpha=14,
@@ -1299,7 +1288,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		// Resolve the validator-set ID for this chain ONCE, here — BEFORE the
 		// proposervm wrap and the consensus-engine wiring both consume it. This is
 		// the SINGLE source of truth (DRY) so the proposervm windower and the cert
-		// side cannot disagree (CRITICAL-3: a divergent windower/cert set breaks
+		// side cannot disagree (a divergent windower/cert set breaks
 		// determinism on non-native chains, and a hardcoded primary set on a
 		// sovereign L1 silently defeats single-proposer):
 		//   - native/primary chains (P/C/X/Q/A/B/T/Z/G/I/K) register validators under
@@ -1341,7 +1330,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			}
 			engineVM = proposervm.New(vmTyped, proposervm.Config{
 				Upgrades:               m.Upgrades,
-				NetworkID:              networkID, // CRITICAL-3: windower uses the SAME set ID as the cert side
+				NetworkID:              networkID, // the windower uses the SAME set ID as the cert side
 				MinBlkDelay:            minBlkDelay,
 				NumHistoricalBlocks:    proposervm.DefaultNumHistoricalBlocks,
 				StakingLeafSigner:      m.StakingTLSSigner,
@@ -1387,7 +1376,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 		chainLog.Info("VM initialized successfully", log.Stringer("chainID", chainParams.ID))
 
-		// CRITICAL-1(a): publish the P-Chain's HEIGHT-INDEXED validators.State so
+		// Publish the P-Chain's HEIGHT-INDEXED validators.State so
 		// every K>1 chain built AFTER it (C-Chain, L1s, …) resolves the weighted
 		// validator set / per-voter pubkeys / stake at the block's P-chain epoch
 		// height. The platformvm VM instance IS a validators.State (it embeds the
@@ -1404,7 +1393,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		if chainParams.ID == constants.PlatformChainID {
 			if vdrState, ok := vmImpl.(validators.State); ok {
 				m.validatorState = vdrState
-				chainLog.Info("published P-Chain height-indexed validator state to chain manager (MEDIUM-1/CRITICAL-1)",
+				chainLog.Info("published P-Chain height-indexed validator state to chain manager",
 					log.Stringer("chainID", chainParams.ID))
 			} else {
 				// The P-Chain MUST be a validators.State; if it is not, every K>1
@@ -1491,8 +1480,8 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		}
 
 		// networkID + isNative were resolved ONCE above (before the proposervm wrap)
-		// so the windower and the cert side share the IDENTICAL validator-set ID
-		// (CRITICAL-3). Do not re-resolve here.
+		// so the windower and the cert side share the IDENTICAL validator-set ID.
+		// Do not re-resolve here.
 		chainLog.Info("[CONSENSUS DEBUG] Creating consensus engine for chain",
 			log.Stringer("chainID", chainParams.ID),
 			log.Stringer("chainParams.ChainID", chainParams.ChainID),
@@ -1506,10 +1495,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		//   - Single-node (--dev, sybil protection disabled): K=1, self-voting.
 		//   - Multi-node (sybil-protected): a BYZANTINE-fault-tolerant set selected
 		//     by network (Mainnet K=21 / Testnet K=11 / Default K=20 / local-BFT K=4).
-		// CRITICAL-2: never LocalParams() (K=3/α=2, f=0, which a single Byzantine
+		// Never LocalParams() (K=3/α=2, f=0, which a single Byzantine
 		// validator forks); the value-net validation fails closed otherwise.
 
-		// HIGH-4: wire the α-of-K vote/cert topology for multi-validator (K>1)
+		// Wire the α-of-K vote/cert topology for multi-validator (K>1)
 		// chains so finality is LIVE (votes broadcast to all, certs gossiped,
 		// followers finalize on the cert). Without a verifier a K>1 engine refuses
 		// to Start; without the gossiper Mode() reports degraded and value-DEX is
@@ -1551,7 +1540,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			netCfg.Certs = certs
 		}
 		if consensusParams.K > 1 {
-			// CRITICAL-1 FAIL-CLOSED GUARD (c): a K>1 quorum chain finalizes ONLY
+			// FAIL-CLOSED GUARD: a K>1 quorum chain finalizes ONLY
 			// on a ⅔-by-stake supermajority read from the HEIGHT-INDEXED validator
 			// state. If that state was never published (m.validatorState == nil →
 			// getValidatorState returns the no-op, whose GetValidatorSet is empty at
@@ -1571,7 +1560,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 					chainParams.ID)
 			}
 			// Height-indexed validator state is the SINGLE source of epoch truth for
-			// ALL FOUR epoch-pinned reads (MEDIUM-1 / CRITICAL-1 / RESIDUAL-B):
+			// ALL FOUR epoch-pinned reads:
 			// membership, per-voter PUBKEY (the verifier), the ⅔-by-stake tally, and
 			// the set-root commitment. They are all read at the block's P-CHAIN epoch
 			// height so every node computes the IDENTICAL set/pubkeys/weights/root for
@@ -1581,23 +1570,23 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 			// that had left the current map but were members at the epoch — stalling
 			// finality at every staking change.)
 			vdrState := getValidatorState(m.validatorState)
-			// Vote verifier resolves the voter's pubkey from set@epoch (RESIDUAL-B),
+			// Vote verifier resolves the voter's pubkey from set@epoch,
 			// the SAME height-pinned source as the stake + set-root — NOT m.Validators
 			// (the current map).
 			voteVerifier := newBLSVoteVerifier(vdrState, networkID)
 			voteVerifier.log = chainLog
 			netCfg.VoteVerifier = voteVerifier
 			netCfg.VoteSigner = newBLSVoteSigner(m.StakingBLSKey)
-			// Stake-weighted finality (HIGH-3): require a ⅔-of-stake supermajority,
+			// Stake-weighted finality: require a ⅔-of-stake supermajority,
 			// not just the α-of-K count, so a low-stake coalition cannot finalize.
 			netCfg.StakeSource = newValidatorStakeSource(vdrState, networkID)
-			// Epoch binding (MEDIUM-1): pin every vote/cert to the weighted validator
+			// Epoch binding: pin every vote/cert to the weighted validator
 			// set IN FORCE AT the block's P-chain epoch height so the ⅔-by-stake
 			// predicate is enforced at that epoch — a cert gathered under one set
 			// cannot be re-verified against another (its signatures were over this
 			// height-pinned root).
 			netCfg.ValidatorSetRoot = newValidatorSetRootSource(vdrState, networkID)
-			// HIGH-1 durable non-equivocation guard: open the per-chain vote-once store so
+			// Durable non-equivocation guard: open the per-chain vote-once store so
 			// this signing validator's (height,epoch)→canonical bindings survive a
 			// crash/restart. Without it, a crash between casting a vote and finalizing the
 			// height would forget the binding and let the restarted node sign a conflicting
@@ -1962,7 +1951,7 @@ func (m *manager) createDAG(
 		chainConfig = ChainConfig{}
 	}
 
-	// Inject automining config for dev mode (applies to C-Chain/coreth only)
+	// Inject automining config for dev mode (applies to the C-Chain EVM only)
 	chainConfig.Config = m.injectAutominingConfig(chainParams.VMID, chainConfig.Config)
 
 	// Get chain alias for database directory naming
@@ -2110,7 +2099,7 @@ func (m *manager) createDAG(
 
 	// Transition the DAG VM to normal operation if initialization succeeded.
 	//
-	// DELIBERATE SCOPE (RED MEDIUM): this go-live is UNCONDITIONAL — unlike the LINEAR-chain path
+	// DELIBERATE SCOPE: this go-live is UNCONDITIONAL — unlike the LINEAR-chain path
 	// (buildChain → runInitialSync), it does NOT gate on a node-layer initial sync reaching the
 	// network frontier. The gated lifecycle is implemented only for native LINEAR chains
 	// (C/D/B/T/Z), which use consensuschain.Runtime + the blockHandler bootstrap wiring
@@ -2254,14 +2243,14 @@ func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net
 		failure = f.BootstrapFailure
 	}
 
-	// WAIT reason (RED MEDIUM #2 self-heal). A handler that is in its bounded connectivity-RETRY
-	// wait (a transient quorum-unreachable fail-safe it is re-attempting) reports why; anything else
-	// reports empty. The no-progress watchdog treats a non-empty reason as a deliberate quorum WAIT,
-	// not a stall: it must NOT force-STOP a node that is correctly failing safe DOWN and waiting for
-	// its quorum to return (the network cannot progress without the quorum, and the K8s probes — all
-	// polling the always-green /v1/health/liveness — would never restart it, so a stop here is a
-	// permanent brick). The node stays in Bootstrapping (serving nothing as head) and converges when
-	// the quorum returns. nil for degenerate handlers (legacy behavior).
+	// WAIT reason. A handler that is in its bounded connectivity-RETRY wait (a transient
+	// quorum-unreachable fail-safe it is re-attempting) reports why; anything else reports
+	// empty. The no-progress watchdog treats a non-empty reason as a deliberate quorum WAIT,
+	// not a stall: it must NOT force-STOP a node that is correctly failing safe DOWN and waiting
+	// for its quorum to return. The network cannot progress without the quorum, and nothing
+	// outside the process can tell a deliberate wait from a stall, so a stop here is permanent.
+	// The node stays in Bootstrapping (serving nothing as head) and converges when the quorum
+	// returns. nil for degenerate handlers.
 	type bootstrapWaiter interface{ BootstrapWait() string }
 	var waiting func() string
 	if w, ok := h.(bootstrapWaiter); ok {
@@ -2479,12 +2468,12 @@ const (
 // bootstrapFailed the next tick — instead of waiting out stallTimeout for a chain that has already
 // stopped trying. nil disables it (degenerate handlers with no fail-safe signal — legacy behavior).
 //
-// waiting (RED MEDIUM #2 self-heal) is the deliberate-WAIT reason, empty when the driver is not
-// waiting: when it is in its bounded connectivity-RETRY (a transient quorum-unreachable fail-safe it
-// is re-attempting), the no-progress window is NOT a stall — the node is correctly failing safe DOWN
-// and waiting for its quorum to return, so the clock is reset rather than force-STOPPING it (which
-// the K8s probes would never undo → a permanent brick). A genuine stall (not waiting, no height
-// progress) still fails. nil disables it (legacy behavior).
+// waiting is the deliberate-WAIT reason, empty when the driver is not waiting: when it is in its
+// bounded connectivity-RETRY (a transient quorum-unreachable fail-safe it is re-attempting), the
+// no-progress window is NOT a stall — the node is correctly failing safe DOWN and waiting for its
+// quorum to return, so the clock is reset rather than force-STOPPING it, which nothing outside the
+// process would undo. A genuine stall (not waiting, no height progress) still fails. nil disables
+// it.
 func watchBootstrapProgress(
 	ready func() bool,
 	failed func() bool,
@@ -2792,7 +2781,7 @@ func (m *manager) getChainConfig(id ids.ID) (ChainConfig, error) {
 }
 
 // injectSecurityProfileConfig stamps the chain-wide ChainSecurityProfile
-// pin into the C-Chain JSON config bytes so the coreth plugin VM can
+// pin into the C-Chain JSON config bytes so the EVM plugin can
 // resolve the profile on its side of the rpcchainvm boundary. Closes
 // red-team finding F118.
 //
@@ -2842,7 +2831,7 @@ func (m *manager) injectSecurityProfileConfig(vmID ids.ID, configBytes []byte) [
 }
 
 // injectAutominingConfig modifies the config bytes to include enable-automining flag
-// when dev mode automining is enabled. This is used for C-Chain (coreth) to enable
+// when dev mode automining is enabled. This is used for the C-Chain EVM to enable
 // anvil-like block production behavior.
 // Only applies to VMs that use JSON config format (EVMID). VMs using binary codec
 // config (ThresholdVM, ZKVM, etc.) are not modified.
@@ -2894,8 +2883,9 @@ func (m *manager) getOrMakeVMGatherer(vmID ids.ID) (metrics.MultiGatherer, error
 	}
 
 	vmName := constants.VMName(vmID)
-	// metric.AppendNamespace doesn't exist in current metric package
-	vmNamespace := vmName // Simplified - just use vmName directly
+	// The VM's own name is its metric namespace: one gatherer per VM, and the
+	// chain label inside it separates the chains that share a VM.
+	vmNamespace := vmName
 	vmGatherer = metrics.NewLabelGatherer(ChainLabel)
 	err := m.Metrics.Register(
 		vmNamespace,
@@ -2915,13 +2905,12 @@ func (m *manager) getOrMakeVMGatherer(vmID ids.ID) (metrics.MultiGatherer, error
 // from its peers.
 //
 // It is driven by SYBIL PROTECTION — the true "this is a real staked network" signal — and NOT by
-// --skip-bootstrap. Production validators set --skip-bootstrap to skip the initial bootstrap WAIT,
-// but that flag must NEVER disable peer-sync on a staked network. Keying this decision off
-// --skip-bootstrap (the prior `!m.SkipBootstrap && ...`) is exactly what wedged a behind native
-// chain (C/X/Q...): with skip-bootstrap set, the chain got expectsStakedBeacons=false + empty
-// beacons, so FrontierTip reported FrontierNoBeacons ("nothing to sync to"), the node named its
-// STALE local last-accepted the network frontier, went live there, and never caught up across
-// restarts until a manual chaindata wipe (tasks #66/#74). A genuine single-node / dev network runs
+// --skip-bootstrap. A validator sets --skip-bootstrap to skip the initial bootstrap WAIT, but that
+// flag must NEVER disable peer-sync on a staked network. Key this decision off --skip-bootstrap and
+// a behind native chain (C/X/Q...) gets expectsStakedBeacons=false plus an empty beacon set, so
+// FrontierTip reports FrontierNoBeacons ("nothing to sync to"), the node names its STALE local
+// last-accepted the network frontier, goes live there, and can never catch up across restarts —
+// only a chaindata wipe clears it. A genuine single-node / dev network runs
 // sybil-protection OFF, so it still takes the empty-beacon immediate-start path. The platform chain
 // anchors to its own CustomBeacons (not the staked set), so it is excluded here as before; a
 // single-VALIDATOR staked net (self-only set) is handled downstream by FrontierTip's
@@ -3081,14 +3070,13 @@ type blockHandler struct {
 	pendingContext map[ids.ID]contextRequest // Map from blockID to pending context request
 
 	// descentAnchor is the one block this handler walks toward while it is behind.
-	// Upstream keeps a single outstanding-request registry (blkReqs, a bimap in
-	// snow/engine/snowman/engine.go) so every fetch is deduped and exactly one driver
-	// walks the gap. Five callers here can request context and four anchor at the
-	// network tip, which asks the wrong question when we are behind: a responder
-	// serves the window ENDING at the id it is asked for, so a tip anchor returns
-	// blocks above us every time. The descent computes the right next anchor and kept
-	// it in a local, so the walk was discarded as soon as another caller re-anchored
-	// and it restarted forever.
+	// A single outstanding-request registry is what dedupes every fetch and keeps
+	// exactly one driver walking the gap. Five callers here can request context and
+	// four anchor at the network tip, which asks the wrong question when we are
+	// behind: a responder serves the window ENDING at the id it is asked for, so a
+	// tip anchor returns blocks above us every time. Keep the descent's next anchor
+	// in a local and the walk is discarded the moment another caller re-anchors, so
+	// it restarts forever.
 	//
 	// Liveness only. This decides which block we ASK a peer for and grants nothing:
 	// finality still requires a verified quorum cert and still advances in contiguous
@@ -3117,7 +3105,7 @@ type blockHandler struct {
 	servingMu    sync.Mutex
 	servingPeers set.Set[ids.NodeID]
 	servingSlots chan struct{}
-	pollerCancel context.CancelFunc // Cancels runFrontierPoller when the handler stops (RED LOW: no goroutine leak on chain re-creation)
+	pollerCancel context.CancelFunc // Cancels runFrontierPoller when the handler stops, so re-creating a chain leaks no goroutine
 
 	diag catchupDiag // Per-outcome counters that gate the catch-up diagnostics (see catchupSample)
 
@@ -3433,10 +3421,10 @@ func isMissingContextError(err error) bool {
 // maxPendingContext hard-bounds the in-flight catch-up request map. A Byzantine
 // peer can stream AcceptedFrontier replies naming distinct random tips, each
 // landing in requestContext; without a bound pendingContext grows without limit
-// and OOMs the node (RED HIGH). pendingContextTTL reaps a request once its
+// and OOMs the node. pendingContextTTL reaps a request once its
 // deadline has well passed, so a peer that takes the request then withholds
 // Context no longer pins the slot — the block becomes re-requestable from an
-// honest peer (RED MEDIUM re-strand). The GetAncestors deadline below is 10s; a
+// honest peer. The GetAncestors deadline below is 10s; a
 // 30s TTL is comfortably past it.
 const (
 	maxPendingContext = 4096
@@ -3569,7 +3557,7 @@ func (b *blockHandler) requestContext(ctx context.Context, nodeID ids.NodeID, bl
 		}
 	}
 
-	// BOUND the map (RED HIGH + MEDIUM). Reap requests past their TTL first: a
+	// BOUND the map. Reap requests past their TTL first: a
 	// withheld Context no longer pins the slot, so the block is re-requestable.
 	// Carried out of the critical section — the log lines are emitted after the unlock,
 	// never under it.
@@ -4871,7 +4859,7 @@ func (b *blockHandler) Response(ctx context.Context, nodeID ids.NodeID, requestI
 	return nil
 }
 func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
-	// HIGH-4 receive demux: a quorum envelope (signed vote / finality cert) is
+	// Receive demux: a quorum envelope (signed vote / finality cert) is
 	// routed to the engine's α-of-K topology; anything else is a plain block
 	// gossip handled by Put (backward-compatible — decode fails soft).
 	//
@@ -5001,10 +4989,10 @@ func (b *blockHandler) Connected(ctx context.Context, nodeID ids.NodeID) error {
 // ConnectedWithVersion forwards a peer connection WITH its real application
 // version to this chain's VM. chainRouter invokes this (detecting the
 // versionedConnector capability) so the version survives to the inner VM:
-// proposervm promotes Connected to the C-Chain (coreth), whose state-sync peer
+// proposervm promotes Connected to the C-Chain EVM, whose state-sync peer
 // tracker compares peer versions — a nil version there dereferences nil and
 // panics a state-syncing node (a fresh join OR a validator rejoining after
-// falling behind). This mirrors avalanchego, which delivers msg.NodeVersion to
+// falling behind). The version must reach
 // engine.Connected.
 func (b *blockHandler) ConnectedWithVersion(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {
 	return b.connect(ctx, nodeID, nodeVersion)
@@ -5334,7 +5322,7 @@ type networkGossiper struct {
 var _ consensuschain.Gossiper = (*networkGossiper)(nil)
 
 // Compile-time check that networkGossiper implements QuorumGossiper — the
-// vote/cert distribution topology that makes α-of-K finality LIVE (HIGH-4).
+// vote/cert distribution topology that makes α-of-K finality LIVE.
 // Without this the consensus engine runs degraded (Mode() != ModeQuorumFinality)
 // and value-DEX is refused.
 var _ consensuschain.QuorumGossiper = (*networkGossiper)(nil)

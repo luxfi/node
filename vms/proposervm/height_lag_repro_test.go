@@ -123,9 +123,9 @@ func testVM(t *testing.T, ic *innerChain) *VM {
 	return testVMOnBase(t, ic, memdb.New())
 }
 
-// testVMOnBase is testVM over a caller-supplied base database — the seam the
-// crash-boot tests (vm_crashboot_test.go) use to boot a SECOND, cold VM over
-// bytes copied out of a running one.
+// testVMOnBase is testVM over a caller-supplied base database, which is how the
+// crash-boot tests (vm_crashboot_test.go) boot a SECOND, cold VM over bytes
+// copied out of a running one.
 func testVMOnBase(t *testing.T, ic *innerChain, base database.Database) *VM {
 	t.Helper()
 	db := versiondb.New(base)

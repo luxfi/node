@@ -128,7 +128,7 @@ func FetchState(
 	baseTxFee := uint64(1000000)         // 0.001 LUX
 	createAssetTxFee := uint64(10000000) // 0.01 LUX
 
-	// X-Chain is opt-in: post-coreth networks (e.g. test+dev primary that
+	// X-Chain is opt-in: EVM-only networks (e.g. test+dev primary that
 	// bake only P + EVM genesis chains) run in P-only mode where the X
 	// alias is not registered. We fail-soft to an empty XCTX in that case
 	// — XCTX.BlockchainID == ids.Empty becomes a stable sentinel, and the

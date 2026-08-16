@@ -111,8 +111,8 @@ type VM struct {
 	// on the node's peer-lifecycle goroutine, so nothing else serializes these
 	// writers against one another. Without this lock a disconnect's state.Commit
 	// races an accept's state.CommitBatch inside state.write() → Go "concurrent map
-	// writes" fatal. This is the avalanchego ctx.Lock invariant (accept serialized
-	// with engine.Connected/Disconnected), scoped to the state the platform VM owns.
+	// writes" fatal. Accept must be serialized with engine.Connected/Disconnected,
+	// and this lock is that guarantee, scoped to the state the platform VM owns.
 	// It is DISTINCT from vm.lock (which guards API/service reads): a separate lock
 	// keeps the accept path off the API lock and avoids any ordering coupling.
 	stateLock sync.Mutex
@@ -594,8 +594,7 @@ func (vm *VM) onReady() error {
 	// Begin tracking validator uptime for the primary network. The tracker was
 	// created and registered at Initialize (so bootstrap-time peer connections
 	// were already captured); StartTracking baselines every current validator's
-	// uptime record and switches the tracker into live-tracking mode. Mirrors
-	// avalanchego's onNormalOperationsStarted.
+	// uptime record and switches the tracker into live-tracking mode.
 	//
 	// StartTracking (state.SetUptime) and the trailing state.Commit both write
 	// shared state, so hold stateLock across them to serialize with any block
@@ -692,7 +691,7 @@ func (vm *VM) ParseBlock(_ context.Context, b []byte) (chain.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	return wrapBlock(vm.manager.NewBlock(statelessBlk)), nil
+	return vm.manager.NewBlock(statelessBlk), nil
 }
 
 func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {

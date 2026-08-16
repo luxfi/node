@@ -53,12 +53,6 @@ func spendBase() *lux.BaseTx {
 	}
 }
 
-func TestRoundTrip_AdvanceTime(t *testing.T) {
-	require := require.New(t)
-	got := roundTrip(t, NewAdvanceTimeTx(1_766_708_400)).(*AdvanceTimeTx)
-	require.EqualValues(1_766_708_400, got.Time())
-}
-
 func TestRoundTrip_BaseTx_MultisigStakeable(t *testing.T) {
 	require := require.New(t)
 	base := spendBase()

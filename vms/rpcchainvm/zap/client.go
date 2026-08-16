@@ -55,7 +55,7 @@ type Client struct {
 	// REFRESHED on every successful block Accept (setLastAccepted) so LastAccepted() honors the
 	// block.ChainVM contract — return the ACTUAL last-accepted, not a frozen Initialize snapshot.
 	// Before this refresh the cache froze for the process life: a fire-and-forget Accept advanced
-	// the plugin (coreth on-disk) but never the cache, so GetAcceptedFrontier served a stale tip and
+	// the plugin's on-disk store but never the cache, so GetAcceptedFrontier served a stale tip and
 	// any consumer reading VM.LastAccepted was misled. Guarded by lastAcceptedMu because Accept (the
 	// consensus accept goroutine) and LastAccepted (the network/bootstrap goroutines) race.
 	lastAcceptedMu sync.RWMutex
@@ -132,10 +132,10 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 	}
 
 	// CROSS-CHAIN ATOMIC CAPABILITY. Serve this chain's shared-memory handle and
-	// resolve the one chain alias the DEX settlement seam needs, because neither
-	// the handle nor BCLookup can be copied into the Runtime the plugin rebuilds
-	// on the far side. Without these the plugin's SharedMemory is nil and
-	// DChainID is empty, which is exactly why every 0x9999 settlement reverted.
+	// resolve the one chain alias DEX settlement needs, because neither the handle
+	// nor BCLookup can be copied into the Runtime the plugin rebuilds on the far
+	// side. Without these the plugin's SharedMemory is nil and DChainID is empty,
+	// so every settlement reverts.
 	var (
 		atomicServerAddr string
 		dChainID         ids.ID
@@ -145,9 +145,9 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 			return fmt.Errorf("zap: start atomic server: %w", err)
 		}
 		// BCLookup is the node's chain manager. Resolve "D" here, once, rather
-		// than proxy a lookup service: the seam needs exactly this one alias and
-		// its value is fixed for the life of the network. A network with no
-		// dexvm leaves it empty and the seam stays honestly closed.
+		// than proxy a lookup service: exactly this one alias is needed and its
+		// value is fixed for the life of the network. A network with no dexvm
+		// leaves it empty and the path stays honestly closed.
 		if bc := init.Runtime.GetBCLookup(); bc != nil {
 			if id, lerr := bc.Lookup("D"); lerr == nil {
 				dChainID = id
@@ -275,7 +275,7 @@ func (c *Client) startAtomicServer(sm atomicmem.SharedMemory) (string, error) {
 		return "", err
 	}
 	if addr == "" {
-		c.logger.Warn("zap: no shared memory for this chain — cross-chain atomic seam stays closed")
+		c.logger.Warn("zap: no shared memory for this chain — the cross-chain atomic path stays closed")
 		return "", nil
 	}
 
@@ -883,6 +883,8 @@ func errorFromZAP(err zapwire.Error) error {
 		return errors.New("not found")
 	case zapwire.ErrorStateSyncNotImplemented:
 		return errors.New("state sync not implemented")
+	case zapwire.ErrorInternal:
+		return errors.New("vm failed")
 	default:
 		return fmt.Errorf("unknown error: %d", err)
 	}

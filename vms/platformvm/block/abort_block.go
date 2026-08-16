@@ -18,7 +18,7 @@ type AbortBlock struct {
 	commonZapBlock
 }
 
-func (*AbortBlock) Txs() []*txs.Tx          { return nil }
+func (*AbortBlock) DecisionTxs() []*txs.Tx  { return nil }
 func (b *AbortBlock) Visit(v Visitor) error { return v.AbortBlock(b) }
 
 func NewAbortBlock(

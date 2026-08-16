@@ -111,9 +111,9 @@ type Internal struct {
 	// behaviour — so a node that carries no history behaves identically to one
 	// built before this field existed.
 	//
-	// This is the seam. Every primary-network staking rule is read through
-	// StakingPolicyAt, so replacing the source of this history (config today,
-	// P-Chain state once the proposal tx lands) changes nothing else.
+	// Every primary-network staking rule is read through StakingPolicyAt, so
+	// replacing the source of this history — config today, P-Chain state once
+	// the proposal tx lands — changes nothing else.
 	StakingParams stakingparams.History
 }
 

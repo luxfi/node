@@ -22,8 +22,8 @@ import (
 // TestRegressionC01_ToxicWasteZeroed verifies that after contribute() returns,
 // all secret scalars (tau, alpha, beta) and their big.Int intermediates are
 // zeroed out.
-// Finding C-01: Toxic waste was not zeroed after contribution, leaving
-// secret scalars recoverable from process memory.
+// Leave them in memory and the secret scalars stay recoverable from the
+// process for as long as it lives.
 func TestRegressionC01_ToxicWasteZeroed(t *testing.T) {
 	// Verify zeroBI function exists and actually zeros big.Int limbs.
 	x := new(big.Int).SetUint64(0xDEADBEEFCAFEBABE)
@@ -65,8 +65,8 @@ func TestRegressionC01_ToxicWasteZeroed(t *testing.T) {
 
 // TestRegressionC02_CeremonyChainLinking verifies that tampering with any
 // intermediate contribution's StateHash or PrevHash is detected by verifyCeremony.
-// Finding C-02: Hash chain was not validated, allowing contribution reordering
-// or state tampering without detection.
+// Without that check a contribution can be reordered or a state tampered with
+// and nothing says so.
 func TestRegressionC02_CeremonyChainLinking(t *testing.T) {
 	// Build a valid ceremony with 3 contributions
 	state, err := initCeremony("test-c02", 1<<4, 3)
@@ -139,7 +139,7 @@ func TestRegressionC02_CeremonyChainLinking(t *testing.T) {
 
 // TestRegressionM01_CeremonyAlphaBetaConsistency verifies that verifyCeremony
 // detects inconsistency between alphaG1 and the tau ratio.
-// Finding M-01: No cross-consistency check between alpha/beta arrays and tau.
+// Without the cross-check, the alpha/beta arrays and tau can disagree unnoticed.
 func TestRegressionM01_CeremonyAlphaBetaConsistency(t *testing.T) {
 	state, err := initCeremony("test-m01", 1<<4, 1)
 	if err != nil {
@@ -186,8 +186,8 @@ func TestRegressionM01_CeremonyAlphaBetaConsistency(t *testing.T) {
 
 // TestRegressionM02_SameRatioArgOrder verifies that sameRatio checks the
 // correct ratio direction (n1/d1 == n2/d2, not swapped args).
-// Finding M-02: Arguments to sameRatio were swapped, causing the check
-// to only pass for tau=1 (the identity case).
+// Swap sameRatio's arguments and the check passes only for tau=1, the identity
+// case, so every real ceremony verifies for the wrong reason.
 func TestRegressionM02_SameRatioArgOrder(t *testing.T) {
 	// A real ceremony with random tau != 1 must verify.
 	// If sameRatio args were swapped, it would only pass for tau=1.
@@ -246,7 +246,7 @@ func TestRegressionM02_SameRatioArgOrder(t *testing.T) {
 
 // TestRegressionI03_DefaultPowerIs20 verifies the ceremony CLI default power
 // flag is 20.
-// Finding I-03: Default power of 10 was too small for production circuits.
+// A default of 10 is too small for the circuits this ceremony is run for.
 func TestRegressionI03_DefaultPowerIs20(t *testing.T) {
 	// The cmdInit function in main.go uses:
 	//   power := fs.Int("power", 20, ...)
@@ -265,12 +265,10 @@ func TestRegressionI03_DefaultPowerIs20(t *testing.T) {
 // LOW Regressions
 // =============================================================================
 
-// TestRegressionL01_CeremonyHasTests is a meta-regression verifying that the
-// ceremony package has substantive tests (not just a placeholder).
-// Finding L-01: Ceremony had no tests, so regressions went undetected.
+// TestRegressionL01_CeremonyHasTests drives the whole ceremony lifecycle —
+// init, contribute, verify — so the package has one test that exercises the
+// path end to end rather than only its pieces.
 func TestRegressionL01_CeremonyHasTests(t *testing.T) {
-	// If this test compiles and runs, the ceremony package has tests.
-	// Also verify the existing full-cycle test works (init, contribute, verify).
 	state, err := initCeremony("meta-test", 1<<4, 1)
 	if err != nil {
 		t.Fatalf("initCeremony: %v", err)
@@ -283,13 +281,13 @@ func TestRegressionL01_CeremonyHasTests(t *testing.T) {
 	state.Contributions = append(state.Contributions, contrib)
 
 	if err := verifyCeremony(state); err != nil {
-		t.Fatalf("ceremony lifecycle must work -- L-01 regression: %v", err)
+		t.Fatalf("ceremony lifecycle must work: %v", err)
 	}
 }
 
 // TestRegressionL03_StateFileHasIntegrity verifies that writeState produces
 // a file with an integrity hash and readState validates it.
-// Finding L-03: State files had no integrity field, allowing silent corruption.
+// A state file with no integrity field corrupts silently.
 func TestRegressionL03_StateFileHasIntegrity(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "integrity-test.json")

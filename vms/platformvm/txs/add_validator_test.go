@@ -150,13 +150,13 @@ func TestAddValidatorTxSyntacticVerify_ArbitraryPrimaryNetworkIDs(t *testing.T) 
 func formatPrimaryNetworkID(id uint32) string {
 	switch id {
 	case 1:
-		return "lux-mainnet-1"
+		return "mainnet-1"
 	case 2:
-		return "lux-testnet-2"
+		return "testnet-2"
 	case 3:
-		return "lux-local-3"
+		return "local-3"
 	case 1337:
-		return "lux-dev-1337"
+		return "dev-1337"
 	default:
 		return fmt.Sprintf("primary-networkID-%d", id)
 	}

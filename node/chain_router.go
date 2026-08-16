@@ -13,7 +13,6 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/timer"
@@ -30,14 +29,6 @@ type chainRouter struct {
 	healthConfig   HealthConfig
 	lastMsgTime    time.Time
 	connectedPeers set.Set[ids.NodeID]
-	requests       map[uint32]*requestInfo
-}
-
-type requestInfo struct {
-	nodeID    ids.NodeID
-	chainID   ids.ID
-	op        message.Op
-	startTime time.Time
 }
 
 // NewRouter creates a new chain router
@@ -47,7 +38,6 @@ func NewRouter(logger log.Logger, timeoutManager timer.AdaptiveTimeoutManager) R
 		chains:         make(map[ids.ID]handler.Handler),
 		timeoutManager: timeoutManager,
 		connectedPeers: set.NewSet[ids.NodeID](10),
-		requests:       make(map[uint32]*requestInfo),
 		lastMsgTime:    time.Now(),
 	}
 }
@@ -86,26 +76,6 @@ func (r *chainRouter) Initialize(
 	)
 
 	return nil
-}
-
-func (r *chainRouter) RegisterRequest(
-	ctx context.Context,
-	nodeID ids.NodeID,
-	chainID ids.ID,
-	requestID uint32,
-	op message.Op,
-	failedMsg message.InboundMessage,
-	engineType p2p.EngineType,
-) {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-
-	r.requests[requestID] = &requestInfo{
-		nodeID:    nodeID,
-		chainID:   chainID,
-		op:        op,
-		startTime: time.Now(),
-	}
 }
 
 func (r *chainRouter) HandleInbound(ctx context.Context, msg message.InboundMessage) {
@@ -178,7 +148,6 @@ func (r *chainRouter) Shutdown(ctx context.Context) {
 	r.log.Info("shutting down router")
 
 	r.chains = make(map[ids.ID]handler.Handler)
-	r.requests = make(map[uint32]*requestInfo)
 }
 
 func (r *chainRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.Handler) {
@@ -199,7 +168,7 @@ func (r *chainRouter) AddChain(ctx context.Context, chainID ids.ID, h handler.Ha
 // handler.Handler.Connected signature carries only the nodeID (the version was
 // dropped at that boundary); a handler that implements this receives the real
 // version instead. blockHandler implements it. The version must survive to the
-// inner VM: the C-Chain (coreth) state-sync peer tracker compares peer versions
+// inner VM: the C-Chain EVM's state-sync peer tracker compares peer versions
 // and dereferences a nil version, panicking a state-syncing node.
 type versionedConnector interface {
 	ConnectedWithVersion(ctx context.Context, nodeID ids.NodeID, nodeVersion *luxversion.Application) error
@@ -242,7 +211,7 @@ func (r *chainRouter) Connected(nodeID ids.NodeID, nodeVersion *version.Applicat
 	// router while we hold it.
 	//
 	// Deliver the REAL peer version through the versionedConnector capability so
-	// it reaches the inner VM (proposervm → coreth state-sync). Only handlers
+	// it reaches the inner VM (proposervm → EVM state-sync). Only handlers
 	// that cannot carry a version fall back to the plain nodeID-only Connected.
 	appVersion := toAppVersion(nodeVersion)
 	for _, h := range handlers {
@@ -320,7 +289,6 @@ func (r *chainRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 	}
 
 	details["chains"] = len(r.chains)
-	details["pendingRequests"] = len(r.requests)
 	details["healthy"] = healthy
 
 	return details, nil

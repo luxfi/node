@@ -10,7 +10,6 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/timer"
 )
@@ -31,16 +30,6 @@ type Router interface {
 		peerNotConnectedF uint64,
 		connectedPeers ...ids.NodeID,
 	) error
-
-	RegisterRequest(
-		ctx context.Context,
-		nodeID ids.NodeID,
-		chainID ids.ID,
-		requestID uint32,
-		op message.Op,
-		failedMsg message.InboundMessage,
-		engineType p2p.EngineType,
-	)
 
 	HandleInbound(ctx context.Context, msg message.InboundMessage)
 	Shutdown(ctx context.Context)

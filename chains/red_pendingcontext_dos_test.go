@@ -1,17 +1,16 @@
 // Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// red_pendingcontext_dos_test.go — regression guard for the catch-up DoS RED found
-// on the cert-carrying catch-up branch.
+// red_pendingcontext_dos_test.go — the catch-up path must stay bounded against a
+// Byzantine peer.
 //
 // The frontier-sync wiring connects the AcceptedFrontier handler to
 // requestContext(), which records each requested blockID in b.pendingContext.
-// Originally NOTHING evicted from that map, so a Byzantine peer streaming
-// AcceptedFrontier frames each naming a distinct random tip grew it without bound
-// → OOM (and a peer that took a request then withheld Context re-stranded the
-// victim forever). requestContext now reaps entries past pendingContextTTL and
-// hard-caps the map at maxPendingContext. These tests pin both properties; before
-// the fix the first asserted N=50_000 entries with ZERO eviction.
+// With nothing evicting from that map, a peer streaming AcceptedFrontier frames
+// each naming a distinct random tip grows it without bound → OOM, and a peer that
+// takes a request then withholds Context strands the asker forever.
+// requestContext reaps entries past pendingContextTTL and hard-caps the map at
+// maxPendingContext. These tests pin both properties.
 package chains
 
 import (
@@ -59,8 +58,7 @@ func newRedTestHandler(net network.Network) *blockHandler {
 }
 
 // TestPendingContext_BoundedUnderFlood: a peer streaming distinct fake tips into
-// requestContext can NEVER grow pendingContext past maxPendingContext. Inverts the
-// original RED PoC, which asserted unbounded growth to 50_000 → OOM.
+// requestContext can NEVER grow pendingContext past maxPendingContext.
 func TestPendingContext_BoundedUnderFlood(t *testing.T) {
 	stubNet := &redStubNet{}
 	bh := newRedTestHandler(stubNet)
@@ -72,7 +70,7 @@ func TestPendingContext_BoundedUnderFlood(t *testing.T) {
 	}
 
 	if got := len(bh.pendingContext); got > maxPendingContext {
-		t.Fatalf("pendingContext unbounded: %d entries exceeds cap %d (the RED HIGH DoS)", got, maxPendingContext)
+		t.Fatalf("pendingContext unbounded: %d entries exceeds cap %d", got, maxPendingContext)
 	}
 	t.Logf("bounded: %d entries after a %d-distinct-tip flood (cap %d, sends=%d)",
 		len(bh.pendingContext), N, maxPendingContext, stubNet.sends)
@@ -80,7 +78,7 @@ func TestPendingContext_BoundedUnderFlood(t *testing.T) {
 
 // TestPendingContext_StaleEntriesReaped: a request whose Context is withheld past
 // its TTL is reaped on the next requestContext, so the block is re-requestable from
-// an honest peer (fixes the RED MEDIUM re-strand).
+// an honest peer rather than stranding the asker.
 func TestPendingContext_StaleEntriesReaped(t *testing.T) {
 	bh := newRedTestHandler(&redStubNet{})
 	from := ids.GenerateTestNodeID()
@@ -112,8 +110,8 @@ func TestPendingContext_StaleEntriesReaped(t *testing.T) {
 // would sweep it. It is also self-sustaining -- the wedge keeps the node asking
 // for the same block, and asking for the same block is what keeps it wedged.
 //
-// Fails against the pre-fix code: sends stays 1, because the expired slot
-// suppresses forever.
+// Without the same-block reap, sends stays 1: the expired slot suppresses
+// forever.
 func TestPendingContext_StaleEntryForTheSameBlockIsReRequested(t *testing.T) {
 	stubNet := &redStubNet{}
 	bh := newRedTestHandler(stubNet)

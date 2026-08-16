@@ -3,7 +3,7 @@
 //
 // F118 regression coverage. Asserts the chain manager stamps the
 // chain-wide ChainSecurityProfile pin into the C-Chain JSON config
-// bytes so the rpcchainvm plugin (coreth) can resolve the profile on
+// bytes so the rpcchainvm EVM plugin can resolve the profile on
 // its side of the boundary.
 
 package chains
@@ -115,7 +115,7 @@ func TestInjectSecurityProfileConfig_MergesExistingConfig(t *testing.T) {
 }
 
 // TestInjectSecurityProfileConfig_RoundTripsAcrossPluginBoundary
-// asserts the wire form coreth expects (security-profile pin with
+// asserts the wire form the EVM expects (security-profile pin with
 // profileID + profileHashHex) matches the form the chain manager
 // emits, so the rpcchainvm plugin can decode the pin via standard
 // JSON unmarshalling. Closes the wire-compat axis of F118.
@@ -132,18 +132,18 @@ func TestInjectSecurityProfileConfig_RoundTripsAcrossPluginBoundary(t *testing.T
 	out := m.injectSecurityProfileConfig(constants.EVMID, nil)
 
 	// Mirror of plugin/evm/config.Config — locally redefined so this
-	// test does not import the coreth plugin tree.
+	// test does not import the EVM plugin tree.
 	type localPin struct {
 		ProfileID      uint8  `json:"profileID"`
 		ProfileHashHex string `json:"profileHashHex"`
 	}
-	type localCorethConfig struct {
+	type pluginConfig struct {
 		SecurityProfile *localPin `json:"lux-security-profile,omitempty"`
 	}
 
-	var cfg localCorethConfig
+	var cfg pluginConfig
 	require.NoError(json.Unmarshal(out, &cfg))
-	require.NotNil(cfg.SecurityProfile, "coreth-side config struct must decode the pin")
+	require.NotNil(cfg.SecurityProfile, "the plugin-side config struct must decode the pin")
 	require.Equal(uint8(consensusconfig.ProfileStrictPQ), cfg.SecurityProfile.ProfileID)
 	require.Equal(hex.EncodeToString(profile.ProfileHash[:]), cfg.SecurityProfile.ProfileHashHex)
 

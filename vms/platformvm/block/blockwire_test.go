@@ -54,7 +54,7 @@ func TestAbortBlockRoundTrip(t *testing.T) {
 	require.Equal(parentID, parsed.Parent())
 	require.Equal(uint64(42), parsed.Height())
 	require.Equal(ts.Unix(), parsed.(*AbortBlock).Timestamp().Unix())
-	require.Nil(parsed.Txs())
+	require.Nil(parsed.DecisionTxs())
 
 	// Idempotent Visit dispatch.
 	require.NoError(parsed.Visit(dispatchVisitor{}))
@@ -76,7 +76,7 @@ func TestCommitBlockRoundTrip(t *testing.T) {
 	require.Equal(parentID, parsed.Parent())
 	require.Equal(uint64(7), parsed.Height())
 	require.Equal(ts.Unix(), parsed.(*CommitBlock).Timestamp().Unix())
-	require.Nil(parsed.Txs())
+	require.Nil(parsed.DecisionTxs())
 }
 
 func TestStandardBlockRoundTrip(t *testing.T) {
@@ -96,7 +96,7 @@ func TestStandardBlockRoundTrip(t *testing.T) {
 	require.Equal(parentID, parsed.Parent())
 	require.Equal(uint64(100), parsed.Height())
 	require.Equal(ts.Unix(), parsed.(*StandardBlock).Timestamp().Unix())
-	requireSameTxs(t, decision, parsed.Txs())
+	requireSameTxs(t, decision, parsed.DecisionTxs())
 }
 
 func TestStandardBlockEmptyTxsRoundTrip(t *testing.T) {
@@ -109,7 +109,7 @@ func TestStandardBlockEmptyTxsRoundTrip(t *testing.T) {
 
 	parsed, err := Parse(blk.Bytes())
 	require.NoError(err)
-	require.Empty(parsed.Txs())
+	require.Empty(parsed.DecisionTxs())
 }
 
 func TestProposalBlockRoundTrip(t *testing.T) {
@@ -132,13 +132,12 @@ func TestProposalBlockRoundTrip(t *testing.T) {
 	require.Equal(uint64(250), pb.Height())
 	require.Equal(ts.Unix(), pb.Timestamp().Unix())
 
-	// Tx() returns the single proposal tx.
+	// Tx() is the only route to the proposal tx.
 	require.Equal(proposalTx.ID(), pb.Tx().ID())
 	require.Equal(proposalTx.Bytes(), pb.Tx().Bytes())
 
-	// Txs() returns decision txs followed by the proposal tx (last).
-	want := append(append([]*txs.Tx{}, decision...), proposalTx)
-	requireSameTxs(t, want, pb.Txs())
+	// DecisionTxs() carries the decision txs and nothing else.
+	requireSameTxs(t, decision, pb.DecisionTxs())
 }
 
 // dispatchVisitor is a no-op Visitor used to exercise Visit dispatch.

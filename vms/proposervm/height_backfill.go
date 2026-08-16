@@ -102,8 +102,8 @@ type outerBackfill struct {
 }
 
 // NeedsOuterBackfill reports the still-missing outer height range [from, to] and
-// whether a backfill is pending. It is the seam an operator tool or a node-layer
-// fetch driver reads; when pending is false the index is whole.
+// whether a backfill is pending. An operator tool or a node-layer fetch driver
+// reads it; when pending is false the index is whole.
 func (vm *VM) NeedsOuterBackfill() (from uint64, to uint64, pending bool) {
 	vm.backfillMu.RLock()
 	defer vm.backfillMu.RUnlock()

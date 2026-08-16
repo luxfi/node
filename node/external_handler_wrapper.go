@@ -6,10 +6,8 @@ package node
 import (
 	"context"
 
-	"github.com/luxfi/consensus/utils/set"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/version"
 )
 
@@ -46,31 +44,4 @@ func (e *externalHandlerWrapper) HealthCheck(ctx context.Context) (interface{}, 
 func (e *externalHandlerWrapper) Dispatch() error {
 	// This is called to start processing messages
 	return nil
-}
-
-func (e *externalHandlerWrapper) RegisterRequest(
-	ctx context.Context,
-	nodeID ids.NodeID,
-	chainID ids.ID,
-	requestID uint32,
-	op message.Op,
-	timeoutMsg message.InboundMessage,
-	engineType p2p.EngineType,
-) {
-	e.router.RegisterRequest(ctx, nodeID, chainID, requestID, op, timeoutMsg, engineType)
-}
-
-func (e *externalHandlerWrapper) RegisterRequests(
-	ctx context.Context,
-	nodeIDs set.Set[ids.NodeID],
-	chainID ids.ID,
-	requestID uint32,
-	op message.Op,
-	timeoutMsg message.InboundMessage,
-	engineType p2p.EngineType,
-) {
-	// Register for each node
-	for nodeID := range nodeIDs {
-		e.router.RegisterRequest(ctx, nodeID, chainID, requestID, op, timeoutMsg, engineType)
-	}
 }

@@ -12,23 +12,22 @@ import (
 	"github.com/luxfi/ids"
 )
 
-// TestToConsensusOp_TableAlignedWithRouter is the systemic guard for the
-// finality-wedge bug CLASS, not just the one Gossip instance. The chain router
-// (node/chain_router.go) forwards an inbound message only if ToConsensusOp maps
-// it, then dispatches on handler.Op(value). The node op table and the consensus
-// router op enum are therefore two halves of ONE routing contract: if they
-// diverge, every message for the divergent op is silently dropped. That is what
-// wedged α-of-K finality — router.Gossip existed but no node op mapped to it, so
-// every broadcast vote vanished before reaching blockHandler.Gossip ->
-// engine.HandleIncomingVote (blocks rode PutOp and verified; votes rode the
-// unmapped GossipOp and disappeared; the cert never reached alpha).
+// TestToConsensusOp_TableAlignedWithRouter guards the whole class, not the one
+// Gossip instance. The chain router (node/chain_router.go) forwards an inbound
+// message only if ToConsensusOp maps it, then dispatches on handler.Op(value).
+// The node op table and the consensus router op enum are therefore two halves of
+// ONE routing contract: if they diverge, every message for the divergent op is
+// silently dropped. An unmapped router.Gossip is enough to stop α-of-K finality
+// dead — blocks ride PutOp and verify, broadcast votes ride the unmapped GossipOp
+// and vanish before blockHandler.Gossip -> engine.HandleIncomingVote, so the cert
+// never reaches alpha.
 //
 // The test proves ToConsensusOp is a BIJECTION onto the router op space
 // [0, router.NumOps), so divergence is un-shippable:
 //   - exhaustive/surjective: every router op has exactly one node-op preimage,
-//     so a router op added without a node mapping (the original bug) -> RED.
+//     so a router op added without a node mapping fails here.
 //   - injective/well-typed: no two node ops collide onto one router op and
-//     nothing maps outside the op space -> RED.
+//     nothing maps outside the op space.
 //
 // router.NumOps is the single source of truth for the op count, so a future op
 // added to one table but not the other fails HERE, not at runtime.
@@ -98,8 +97,8 @@ func TestToConsensusOp_TableAlignedWithRouter(t *testing.T) {
 // extraction for a quorum vote envelope (the exact steps node/chain_router.go
 // performs before dispatch) and asserts the vote SURVIVES routing: the op maps
 // to router.Gossip AND the envelope bytes are recovered intact as the container.
-// This is the seam the finality wedge lived in — a vote that the router dropped
-// here never reached the engine. The bytes that come out here are what
+// A vote the router drops here never reaches the engine, and nothing downstream
+// can tell that from a vote nobody cast. The bytes that come out here are what
 // blockHandler.Gossip demuxes into engine.HandleIncomingVote.
 func TestInboundGossip_DeliveredNotDropped(t *testing.T) {
 	require := require.New(t)
