@@ -133,3 +133,20 @@ func TestExecutedToTrustsTheInnerWhenItHasCaughtUp(t *testing.T) {
 		t.Fatal("the executing VM was at the head and go-live was still refused")
 	}
 }
+
+// The head every caller gets must be the one the node RAN, not the one its
+// wrapper committed. The recovery loop lowers its position onto this number and
+// reports whether a batch moved the node; read off the wrapper, it believes it
+// stands past blocks it never executed, skips exactly the band it needs, and
+// reports batch after batch landing while the chain it serves stays put.
+func TestAppliedHeadIsTheInnerHead(t *testing.T) {
+	const N = 10
+	chain, _ := buildBSChain(N, -1)
+	bh := &blockHandler{logger: log.NewNoOpLogger()}
+	bh.vm = &wrappedVM{bsTestVM: newBSVMAt(chain, N), outer: chain[N], inner: chain[3]}
+
+	_, applied, err := bh.vmLastAccepted(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, chain[3].Height(), applied,
+		"the applied head must be the inner one; the wrapper is at %d", chain[N].Height())
+}
