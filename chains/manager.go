@@ -1237,22 +1237,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainIn
 		consensusParams := m.ConsensusOverrides.ApplyTo(
 			selectConsensusParams(m.SybilProtectionEnabled, m.NetworkID))
 		if m.SybilProtectionEnabled {
-			// LIVE-AWARE, not static. ValidateForValueNetwork applies the STATIC tier
-			// floor (mainnet K>=11) — a decentralisation TARGET for a mature set. A
-			// live network smaller than its tier cannot satisfy it, and refusing to
-			// start does not add validators: it pins every node on whatever code it
-			// last booted, so a set running K=5/alpha=4 is stranded there and misses
-			// every later consensus fix — strictly worse than running a small set on
-			// current code.
-			//
-			// ValidateForLiveValueNetwork exists for precisely this and is NOT a
-			// bypass: it still rejects f=0 committees (ErrKTooLowForValue) and an
-			// operator under-sampling the live set (ErrKBelowLiveFloor, effective
-			// floor = min(tier, liveN)). The BFT overlap bound in Valid() applies
-			// either way — K=5/alpha=4 satisfies it (2*4-5 = 3 >= f+1 = 2).
-			// Native/primary chains register their validators under
-			// constants.PrimaryNetworkID (ids.Empty), not their own chain ID — the
-			// same resolution the proposervm windower does a few lines below.
+			// The live check keeps what makes a committee safe — the overlap bound
+			// and single-fault tolerance — and does not count heads. K is a number of
+			// stake-weighted draws; the validator set decides how they fall, not
+			// whether the chain may start. The tier floor is a decentralisation
+			// target and is reported below, never enforced: refusing to boot does
+			// not add validators, it pins every node on whatever it last ran.
+			// Native chains register their validators under the primary network id,
+			// the same resolution the proposervm windower does a few lines down.
 			liveN := m.Validators.Count(constants.PrimaryNetworkID)
 			if err := consensusParams.ValidateForLiveValueNetwork(m.NetworkID, liveN); err != nil {
 				return nil, fmt.Errorf("refusing to start multi-node chain %s with non-BFT consensus params (liveValidators=%d): %w", chainParams.ID, liveN, err)
