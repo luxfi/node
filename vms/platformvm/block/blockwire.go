@@ -163,7 +163,12 @@ func buildBlock(k blockKind, parentID ids.ID, height, ts uint64, decisionTxs []*
 		ob.SetBytes(offBlkTxBlob, blob)
 	}
 	if k == blkProposal {
-		if proposalTx == nil {
+		// The slot must carry bytes, not merely a non-nil pointer. An initialized
+		// Tx holding none writes an empty slot, which every reader of that slot
+		// reads back as nil — so the question asked here is the one the reader
+		// will ask, and it is asked where the block is made rather than at the
+		// dereference.
+		if proposalTx == nil || len(proposalTx.Bytes()) == 0 {
 			return nil, errNoProposalTx
 		}
 		ob.SetBytes(offBlkProposalTx, proposalTx.Bytes())

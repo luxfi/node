@@ -80,12 +80,25 @@ func TestProposalBlockWithoutItsTxIsRefused(t *testing.T) {
 
 	// A tx that was never initialized carries no bytes, so the slot it writes is
 	// empty and indistinguishable on the wire from one that was never written.
-	// Bytes reach Parse from peers, not from the builder, so Parse answers for
-	// this shape itself.
-	empty, err := buildBlock(blkProposal, ids.GenerateTestID(), 1, 0, []*txs.Tx{decisionTx(t)}, &txs.Tx{})
+	// Both entrances have to weigh the slot rather than the pointer: the builder
+	// can produce this shape as readily as a peer can send it, and a locally
+	// built block never passes through Parse.
+	_, err = NewProposalBlock(time.Unix(0, 0), ids.GenerateTestID(), 1, &txs.Tx{}, nil)
+	require.ErrorIs(t, err, errNoProposalTx)
+
+	empty, err := buildBlock(blkProposal, ids.GenerateTestID(), 1, 0, []*txs.Tx{decisionTx(t)}, emptySlotTx())
 	require.NoError(t, err)
 	_, err = Parse(empty)
 	require.ErrorIs(t, err, errNoProposalTx)
+}
+
+// emptySlotTx is a tx the builder's own refusal cannot see: it reports bytes, so
+// it passes the build check, and those bytes do not decode, so the slot Parse
+// reads is empty. That is the shape only Parse can answer for.
+func emptySlotTx() *txs.Tx {
+	tx := &txs.Tx{}
+	tx.SetBytes([]byte{0})
+	return tx
 }
 
 // decisionTx returns a transaction of the kind a user submits. It must be one
@@ -100,3 +113,4 @@ func decisionTx(t *testing.T) *txs.Tx {
 	require.NoError(t, err, "this stand-in is not priceable, so it cannot represent a decision tx")
 	return tx
 }
+
