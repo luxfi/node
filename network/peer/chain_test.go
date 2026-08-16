@@ -324,7 +324,7 @@ func TestGenesisDigest_IsOverRawBytes(t *testing.T) {
 	require.NotEqual(escaped, decoded, "the two forms must be different bytes")
 
 	require.NotEqual(GenesisDigest([]byte(escaped)), GenesisDigest([]byte(escaped+"\n")),
-		"the trailing newline is part of the record and is load-bearing")
+		"the trailing newline is part of the record and matters")
 	require.NotEqual(GenesisDigest([]byte(escaped)), GenesisDigest([]byte(decoded)),
 		"a JSON round trip turns one into the other and must not survive as the same chain")
 

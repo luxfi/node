@@ -33,7 +33,7 @@ func TestStakerDispatchSafety(t *testing.T) {
 	if _, ok := del.(DelegatorTx); !ok {
 		t.Fatal("*AddDelegatorTx must satisfy DelegatorTx")
 	}
-	// The load-bearing safety property: a delegator must NOT look like a
+	// The safety property: a delegator must NOT look like a
 	// validator, because every dispatch checks ValidatorTx first.
 	if _, ok := del.(ValidatorTx); ok {
 		t.Fatal("*AddDelegatorTx must NOT satisfy ValidatorTx — delegators would mis-route to the validator branch")

@@ -500,7 +500,7 @@ func NewNetwork(
 	//
 	// The gate is built under the SAME predicate that builds the PQ
 	// handshake (profileRequiresPQHandshake), not merely "SecurityProfile
-	// != nil". This is load-bearing: the gate's pinned scheme byte
+	// != nil". This matters: the gate's pinned scheme byte
 	// (SigSchemeMLDSA65) only becomes presentable by a peer once the
 	// application-layer PQ handshake establishes the ML-DSA identity. A
 	// profile that does NOT run the PQ handshake (permissive /

@@ -42,7 +42,7 @@ import (
 // internal form of an inbound Chits (router op handler.Vote).
 //
 // It has NO Signature field and NO Accept field, BY CONSTRUCTION. Both omissions
-// are load-bearing:
+// carry weight:
 //
 //   - No Signature. A Chits cannot carry one, so a struct with the field would
 //     be a lie that the tally path acts on — which is exactly how an unsigned

@@ -860,7 +860,7 @@ func TestNodeBootstrap_StaleNodeWaitsForBeaconConnect(t *testing.T) {
 	require.NoError(t, runBS(t, bh), "stale node must converge once beacons connect")
 
 	last, _ := vm.LastAccepted(ctx)
-	require.Equal(t, chain[N].id, last, "CANARY: stale node must converge to the beacon frontier N=%d (NOT false-complete at the stale M=%d)", N, M)
+	require.Equal(t, chain[N].id, last, "a stale node must converge to the beacon frontier N=%d, not false-complete at its own M=%d", N, M)
 	require.True(t, bh.Accepted(ctx, chain[N].id), "node must hold the beacon tip after sync")
 	require.Greater(t, net.peerInfoCalls, net.connectAfterCalls, "the loop must have WAITED through the connecting passes before naming the frontier")
 }
@@ -1031,7 +1031,7 @@ func TestRED_PeersTrackNetNotChain_StaleNodeConverges(t *testing.T) {
 	w, _, ok := bh.beaconWeights()
 	require.True(t, ok, "staked beacon set must be present")
 	require.ElementsMatch(t, []ids.NodeID{p1, p2, p3}, bh.connectedBeacons(w),
-		"producers tracking the NET must be recognized as connected beacons (the canary fix)")
+		"producers tracking the net must be recognised as connected beacons")
 
 	// FrontierTip names the frontier from the connected ⅔-stake producers.
 	bh.bsActive.Store(true)
@@ -1045,7 +1045,7 @@ func TestRED_PeersTrackNetNotChain_StaleNodeConverges(t *testing.T) {
 	require.NoError(t, runBS(t, bh), "stake-weighted stale node must converge")
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[N].id, last,
-		"CANARY SUCCESS: stale node converges to the producer frontier N=%d, not stuck at M=%d", N, M)
+		"a stale node must converge to the producer frontier N=%d, not stay at M=%d", N, M)
 	require.True(t, bh.Accepted(ctx, chain[N].id), "node must hold the producer tip after sync")
 }
 
@@ -1158,7 +1158,7 @@ func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
 	tip, status := bh.FrontierTip(ctx)
 	bh.bsActive.Store(false)
 	require.Equal(t, chainbootstrap.FrontierNamed, status,
-		"CANARY: a ±1-block tip split must name the ⅔-COMMON height, not return NoQuorum")
+		"a ±1-block tip split must name the ⅔-common height, not return NoQuorum")
 	require.Equal(t, chain[N].id, tip, "must name N (the height all 3 producers share), NOT the minority TOP")
 	require.NotEqual(t, chain[top].id, tip, "the lone producer's bleeding-edge TOP must NOT be named while sub-⅔")
 
@@ -1168,7 +1168,7 @@ func TestRED_TipSplitConvergesToCommonHeight(t *testing.T) {
 	require.NoError(t, runBS(t, bh), "tip-split stale node must converge to the true finalized frontier")
 	last, _ := vm.LastAccepted(ctx)
 	require.Equal(t, chain[top].id, last,
-		"CANARY SUCCESS: ratchet through the ⅔-common N to the true finalized tip TOP=%d (NOT stuck at M=%d)", top, M)
+		"the ⅔-common height must ratchet through to the finalized tip TOP=%d, not stop at M=%d", top, M)
 	require.True(t, bh.Accepted(ctx, chain[N].id), "node must hold the ⅔-common N it passed through")
 	require.True(t, bh.Accepted(ctx, chain[top].id), "node must hold the true finalized tip TOP after ratcheting to it")
 }
@@ -2005,7 +2005,7 @@ func TestRED_PartialStakedSet_BehindNodeMustNotGoLiveStale(t *testing.T) {
 	bh.bsActive.Store(false)
 	require.Equal(t, chainbootstrap.FrontierNamed, status,
 		"REPRO: without the P-ready gate a PARTIAL staked set false-names the stale own tip (go-live-at-stale)")
-	require.Equal(t, chain[M].id, tip, "REPRO: the named 'frontier' is the node's OWN stale tip — the luxd-2 freeze")
+	require.Equal(t, chain[M].id, tip, "the named frontier is the node's OWN stale tip, so it converges on itself and never rejoins")
 
 	// (2) WITH THE GATE: staked set not yet fully loaded (P-chain still syncing) → WAIT, never caught-up.
 	var pReady atomic.Bool // false until the P-chain finishes its own initial sync

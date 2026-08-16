@@ -103,8 +103,8 @@ func TestOverridesDoNotDisturbMainnetDefaults(t *testing.T) {
 
 // The overridden params must survive the SAME gate the manager applies right
 // after selecting them (manager.go: ValidateForValueNetwork). If they do not,
-// every validator crash-loops at boot simultaneously — there is no canary that
-// catches it, because a quorum parameter is only rolled fleet-wide.
+// every validator crash-loops at boot simultaneously, and nothing catches it first
+// because a quorum parameter is only ever rolled fleet-wide.
 //
 // For K=5: f = (K-1)/3 = 1, so f>=1 holds, and the BFT quorum floor
 // ceil((K+f+1)/2) = 4 is exactly the alpha 36963 runs. This asserts it rather

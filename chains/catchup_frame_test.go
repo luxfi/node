@@ -2,7 +2,7 @@
 // See the file LICENSE for licensing terms.
 
 // catchup_frame_test.go — the CERT-CARRYING catch-up wire format. These prove the
-// load-bearing property: a v2 (block,cert) entry round-trips, an entry with no cert
+// The property under test: a v2 (block,cert) entry round-trips, an entry with no cert
 // routes to the vote path, and a cross-version exchange fails CLEANLY (a legacy
 // decoder cannot misparse a v2 frame, and the v2 decoder treats a legacy raw block
 // as legacy — never a partial/garbage parse). The cert-accept SEMANTICS are proven

@@ -107,7 +107,7 @@ func TestRPC_securityProfile_StrictPQ(t *testing.T) {
 // lux_canonical is false and every forbid_ecdsa* / forbid_bls* /
 // forbid_classical_kem / require_typed_tx_auth is false.
 //
-// This is the load-bearing audit gate: a wallet that pins
+// This is the required audit gate: a wallet that pins
 // post_quantum_end_to_end=true MUST refuse to sign against a chain
 // whose RPC reports this shape.
 func TestRPC_securityProfile_Unsafe(t *testing.T) {

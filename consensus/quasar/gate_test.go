@@ -44,7 +44,7 @@ func checkpointAt(height uint64) Checkpoint {
 
 // TestDormantIsNoop — the default (Activation.Height == 0) is a pure no-op even
 // at a checkpoint height with a poisoned store. This is the core safety
-// property: pre-activation, classical Snow finality is unchanged.
+// The property under test: pre-activation, classical finality is unchanged.
 func TestDormantIsNoop(t *testing.T) {
 	store := NewMemCertStore()
 	g := NewGate(Config{CheckpointInterval: 10}, store, StaticValidatorSetProvider{Set: testValidators()})

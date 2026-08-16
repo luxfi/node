@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-// pchain_height_finality_test.go — the b2 load-bearing proof the prior round
+// pchain_height_finality_test.go — the b2 proof the prior round
 // lacked: that the node delivers the REAL P-chain epoch height to the chain
 // engine, so a K>1 quorum chain finalizes against the LIVE validator set — not
 // the frozen genesis set.
@@ -25,7 +25,7 @@
 //	(3) K>1 FINALIZES AFTER a staking change — validators that JOINED post-genesis
 //	    cast the deciding votes+stake. This is the case that STALLS on the set@0
 //	    path (the joiners are absent from the genesis set), so finalizing proves
-//	    the real height is load-bearing.
+//	    the real height matters.
 //
 // CGO-free: the node BLS sources use the pure-Go BLS path under CGO_ENABLED=0, so
 // this runs the ACTUAL production quorum sources (blsVoteVerifier / blsVoteSigner
@@ -377,7 +377,7 @@ func TestPChainHeightVM_DeliversRealHeight(t *testing.T) {
 			"(0 would mean the genesis-set freeze the b2 fix removes)", got, epoch)
 	}
 	// Sanity: the inner block itself exposes no PChainHeight, so without the wrapper
-	// the engine would read 0. This pins WHY the wrapper is load-bearing.
+	// the engine would read 0. This pins WHY the wrapper matters.
 	if got := consensuschain.PChainHeightOfForTest(inner); got != 0 {
 		t.Fatalf("bare inner block must expose no P-chain height (pChainHeightOf=0), got %d", got)
 	}
@@ -441,7 +441,7 @@ func TestPChainHeightVM_FinalizesAtGenesis(t *testing.T) {
 
 // --- (3) K>1 finalizes AFTER a staking change (THE b2 proof) ------------------
 
-// TestPChainHeightVM_FinalizesAfterStakingChange is the load-bearing b2 proof:
+// TestPChainHeightVM_FinalizesAfterStakingChange is the required b2 proof:
 // validators that JOINED after genesis cast the deciding votes + stake, and the
 // block finalizes — which is IMPOSSIBLE on the broken set@0 path, where the
 // joiners are absent from the genesis set so their votes are dropped and their
@@ -551,7 +551,7 @@ func TestPChainHeightVM_FinalizesAfterStakingChange(t *testing.T) {
 	}
 
 	// The gossiped cert must verify stake-weighted AT THE EPOCH, and must FAIL at
-	// genesis (where the joiners are absent) — proving the height is load-bearing.
+	// genesis (where the joiners are absent) — proving the height matters.
 	if f.certs.count() == 0 {
 		t.Fatal("a verified quorum cert must be assembled + gossiped at finality")
 	}
