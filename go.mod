@@ -198,7 +198,7 @@ require (
 	github.com/luxfi/corona v0.10.4 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
-	github.com/luxfi/evm v1.104.33 // indirect
+	github.com/luxfi/evm v1.104.34 // indirect
 	github.com/luxfi/keys v1.4.2 // indirect
 	github.com/luxfi/lattice/v7 v7.1.4 // indirect
 	github.com/luxfi/lens v0.2.1 // indirect
