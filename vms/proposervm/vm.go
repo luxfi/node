@@ -814,6 +814,26 @@ func (vm *VM) InnerLastAccepted(ctx context.Context) (ids.ID, error) {
 	return vm.ChainVM.LastAccepted(ctx)
 }
 
+// InnerLastAcceptedHeight reports how far the inner VM has actually run.
+//
+// The height and not the id, because the height is what every caller of this
+// wants and the id cannot be turned into one from outside: the inner id names an
+// inner block, and asking the wrapper to resolve it fails — the wrapper's store
+// is keyed by outer ids. A caller that resolved the id through the wrapper got
+// nothing back and read the miss as height zero, which reports a node at genesis
+// however far it has run.
+func (vm *VM) InnerLastAcceptedHeight(ctx context.Context) (uint64, error) {
+	id, err := vm.ChainVM.LastAccepted(ctx)
+	if err != nil {
+		return 0, err
+	}
+	blk, err := vm.ChainVM.GetBlock(ctx, id)
+	if err != nil {
+		return 0, err
+	}
+	return blk.Height(), nil
+}
+
 // CreateHandlers returns HTTP handlers for both the proposervm API and the inner ChainVM
 func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
 	// Create the proposervm-specific handler

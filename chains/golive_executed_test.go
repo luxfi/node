@@ -99,6 +99,13 @@ func (v *wrappedVM) InnerLastAccepted(context.Context) (ids.ID, error) {
 	return v.inner.id, nil
 }
 
+// The inner HEIGHT, resolved on the inner side. The id alone cannot be turned
+// into one from outside — the wrapper's store is keyed by outer ids, so asking it
+// to resolve an inner id misses and the miss reads as height zero.
+func (v *wrappedVM) InnerLastAcceptedHeight(context.Context) (uint64, error) {
+	return v.inner.Height(), nil
+}
+
 // TestExecutedToAsksTheVMThatExecutes is the production divergence exactly: the
 // wrapper's head is at the frontier and the executing VM is far below it. Asking
 // the wrapper returns the frontier and lets the node go live having run nothing;
@@ -145,8 +152,14 @@ func TestAppliedHeadIsTheInnerHead(t *testing.T) {
 	bh := &blockHandler{logger: log.NewNoOpLogger()}
 	bh.vm = &wrappedVM{bsTestVM: newBSVMAt(chain, N), outer: chain[N], inner: chain[3]}
 
-	_, applied, err := bh.vmLastAccepted(context.Background())
+	applied, err := bh.appliedHeight(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, chain[3].Height(), applied,
-		"the applied head must be the inner one; the wrapper is at %d", chain[N].Height())
+		"the applied height must be the inner one; the wrapper is at %d", chain[N].Height())
+
+	// And the head keeps naming the chain, which is a different question: a caller
+	// identifying the tip still wants the wrapper's id.
+	head, _, err := bh.vmLastAccepted(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, chain[N].id, head, "the head must still name the chain's tip")
 }
