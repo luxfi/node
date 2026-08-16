@@ -57,8 +57,8 @@ func TestNamingBudget_RequestStrictlyInsideAttempt(t *testing.T) {
 	}
 	if bootstrapNamingTimeout != b.Attempt {
 		t.Fatalf("the legacy naming timeout (%v) disagrees with the resolved policy Attempt budget "+
-			"(%v); BootstrapPolicy.namingTimeout() still returns the legacy value when NamingTimeout "+
-			"is unset, so the two paths would disagree about one bound",
+			"(%v); namingBudget falls back to the legacy value when NamingTimeout is unset, "+
+			"so the two paths would disagree about one bound",
 			bootstrapNamingTimeout, b.Attempt)
 	}
 }

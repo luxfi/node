@@ -39,5 +39,4 @@ type Router interface {
 	Benched(chainID ids.ID, nodeID ids.NodeID)
 	Unbenched(chainID ids.ID, nodeID ids.NodeID)
 	HealthCheck(ctx context.Context) (interface{}, error)
-	Deprecated() // Required for router.Router compatibility
 }

@@ -294,7 +294,6 @@ func (r *chainRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 	return details, nil
 }
 
-func (r *chainRouter) Deprecated() {}
 
 // Trace wraps a router with tracing capabilities
 func Trace(router Router, name string, tracer trace.Tracer) Router {

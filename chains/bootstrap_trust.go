@@ -377,13 +377,6 @@ func (p *BootstrapPolicy) maxAnchors() int {
 	return maxNamingAnchors
 }
 
-func (p *BootstrapPolicy) namingTimeout() time.Duration {
-	if p.NamingTimeout > 0 {
-		return p.NamingTimeout
-	}
-	return bootstrapNamingTimeout
-}
-
 // tallyResponders applies INVARIANT 1 (only CONFIGURED beacons count, deduplicated by NodeID — a
 // reply from a peer not in TrustedBeacons, a repeat, or an empty tip is dropped) and returns the
 // distinct responder count + total responder stake plus the per-tip stake / voter maps the naming
