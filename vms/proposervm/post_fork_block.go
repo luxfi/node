@@ -46,10 +46,22 @@ func (b *postForkBlock) Accept(ctx context.Context) error {
 	if err := b.vm.verifyQuasarFinality(b); err != nil {
 		return err
 	}
-	if err := b.acceptOuterBlk(); err != nil {
+	// The inner block first. The outer accept ends in a db.Commit, so writing it
+	// before the inner has landed leaves the wrapper permanently ahead of the
+	// chain it wraps whenever the inner refuses: the node then names a head it
+	// has not executed, serves state from behind it, and keeps voting at a tip it
+	// never reached. Nothing at runtime puts that right — it waits for a boot.
+	//
+	// Doing the inner first makes the same failure cost nothing. The outer was
+	// never written, the error reaches consensus, which stops advancing finality
+	// at the last block the VM actually applied, and the height is simply tried
+	// again. The residual order is the safe one: an inner that lands while the
+	// outer commit fails leaves the outer BEHIND, which the boot-time height
+	// backfill already repairs and which never names a head the node has not run.
+	if err := b.acceptInnerBlk(ctx); err != nil {
 		return err
 	}
-	if err := b.acceptInnerBlk(ctx); err != nil {
+	if err := b.acceptOuterBlk(); err != nil {
 		return err
 	}
 	if b.slot != nil {

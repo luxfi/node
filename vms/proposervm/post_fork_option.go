@@ -42,10 +42,13 @@ func (b *postForkOption) Timestamp() time.Time {
 }
 
 func (b *postForkOption) Accept(ctx context.Context) error {
-	if err := b.acceptOuterBlk(); err != nil {
+	// Inner before outer, for the reason spelled out in postForkBlock.Accept: the
+	// outer accept is durable, so committing it first turns an inner refusal into
+	// a wrapper that permanently outruns its own chain.
+	if err := b.acceptInnerBlk(ctx); err != nil {
 		return err
 	}
-	return b.acceptInnerBlk(ctx)
+	return b.acceptOuterBlk()
 }
 
 func (b *postForkOption) acceptOuterBlk() error {

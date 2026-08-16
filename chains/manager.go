@@ -4082,7 +4082,7 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// what this loop DID; only the head delta says whether the node MOVED. certAccepted
 	// once counted ledger-gate skips as successes — 253 per batch on a node applying
 	// nothing — and every diagnosis made from that number started from a lie.
-	_, appliedBefore, _ := b.vmLastAccepted(ctx)
+	appliedBefore, _ := b.appliedHeight(ctx)
 	// Where this batch starts, kept so a batch that lands NOTHING can still walk the
 	// request window down toward our tip. See the descent after the loop.
 	var oldestHeight uint64
@@ -4218,7 +4218,7 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// other counters describe what this loop did with what it was served; only the
 	// delta says whether the NODE moved. A batch reporting hundreds accepted with
 	// advanced=0 is a node discarding its own recovery, whatever the other columns say.
-	_, appliedAfter, _ := b.vmLastAccepted(ctx)
+	appliedAfter, _ := b.appliedHeight(ctx)
 	var advanced uint64
 	if appliedAfter > appliedBefore {
 		advanced = appliedAfter - appliedBefore

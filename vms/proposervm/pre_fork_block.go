@@ -59,10 +59,12 @@ func (b *preForkBlock) Timestamp() time.Time {
 }
 
 func (b *preForkBlock) Accept(ctx context.Context) error {
-	if err := b.acceptOuterBlk(); err != nil {
+	// Inner before outer, as in postForkBlock.Accept. Pre-fork the outer accept is
+	// a no-op, so the order costs nothing here and the two paths read alike.
+	if err := b.acceptInnerBlk(ctx); err != nil {
 		return err
 	}
-	return b.acceptInnerBlk(ctx)
+	return b.acceptOuterBlk()
 }
 
 // acceptOuterBlk is a NO-OP for a genuine pre-fork block — a pre-fork block has no

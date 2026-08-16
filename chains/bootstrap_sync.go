@@ -972,22 +972,33 @@ func (b *blockHandler) executedTo(ctx context.Context, h uint64) bool {
 	if b.vm == nil {
 		return false
 	}
-	id, applied, err := b.vmLastAccepted(ctx)
-	if err != nil || id == ids.Empty {
+	applied, err := b.appliedHeight(ctx)
+	if err != nil {
 		return false // cannot prove execution ⇒ do not go live
 	}
 	return applied >= h
 }
 
 // innerLastAccepted is the head of the VM that actually executes blocks.
-func (b *blockHandler) innerLastAccepted(ctx context.Context) (ids.ID, error) {
-	type innerAccepted interface {
-		InnerLastAccepted(context.Context) (ids.ID, error)
+// appliedHeight is how far this node has actually RUN the chain — a different
+// question from LastAccepted, which names the chain's head.
+//
+// On a wrapped chain the wrapper is committed before its inner block is accepted,
+// so it leads during every accept and keeps leading if the inner never lands. A
+// caller that asks the wrapper how far the node has run is told yes for blocks
+// the inner VM never got: it lowers its position onto a height it does not hold,
+// skips exactly the band it must fetch, and asks forever while reporting full
+// batches landed. A VM that cannot speak for an inner self is its own inner self,
+// and answers with its head.
+func (b *blockHandler) appliedHeight(ctx context.Context) (uint64, error) {
+	type innerHeight interface {
+		InnerLastAcceptedHeight(context.Context) (uint64, error)
 	}
-	if inner, ok := b.vm.(innerAccepted); ok {
-		return inner.InnerLastAccepted(ctx)
+	if inner, ok := b.vm.(innerHeight); ok {
+		return inner.InnerLastAcceptedHeight(ctx)
 	}
-	return b.vm.LastAccepted(ctx)
+	_, h, err := b.vmLastAccepted(ctx)
+	return h, err
 }
 
 func (b *blockHandler) LastAccepted(ctx context.Context) (ids.ID, uint64, error) {
@@ -1017,8 +1028,10 @@ func (b *blockHandler) finalizedTip(ctx context.Context) (ids.ID, uint64, error)
 			// that refresh is the contract this rule stands on. A VM naming NO block
 			// still reports nothing — absence is not a reading of zero — so only a VM
 			// that names a block lowers the position.
-			if id, applied, err := b.vmLastAccepted(ctx); err == nil && id != ids.Empty && applied < h {
-				return id, applied, nil
+			if id, _, ierr := b.vmLastAccepted(ctx); ierr == nil && id != ids.Empty {
+				if applied, aerr := b.appliedHeight(ctx); aerr == nil && applied < h {
+					return id, applied, nil
+				}
 			}
 			return tip, h, nil
 		}
@@ -1033,14 +1046,7 @@ func (b *blockHandler) vmLastAccepted(ctx context.Context) (ids.ID, uint64, erro
 	if b.vm == nil {
 		return ids.Empty, 0, nil
 	}
-	// The INNER head, on a chain that has one. Callers ask this to learn what the
-	// node has EXECUTED — to lower the loop's position onto it, and to report
-	// whether a batch moved the node. The outer wrapper is committed before its
-	// inner block is accepted, so it leads during every accept and keeps leading
-	// if the inner never lands; a caller reading it then believes the node stands
-	// past blocks it has not run, skips the band it must fetch, and asks forever
-	// while reporting full batches landed.
-	id, err := b.innerLastAccepted(ctx)
+	id, err := b.vm.LastAccepted(ctx)
 	if err != nil {
 		return ids.Empty, 0, err
 	}
