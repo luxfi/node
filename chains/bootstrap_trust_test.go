@@ -8,7 +8,7 @@
 // Most cases test the POLICY decision (AcceptsFrontier) directly — deterministic, no network
 // timing — since that IS the acceptance gate the owner specified. The mass-recovery success (A)
 // and the global-tally height-floor guard also run the FULL fetch+execute loop over the real
-// transport to prove the node converges (or fails safe) end to end. Each is load-bearing: revert
+// transport to prove the node converges (or fails safe) end to end. Each matters: revert
 // the response-floor policy to the prior ⅔-of-current-total-stake gate and A deadlocks; drop the
 // configured-beacon filter and D/E capture; drop the MinFrontierHeight floor and the shared-
 // genesis fork false-completes.
@@ -497,7 +497,7 @@ func TestBootstrapTrust_CheckpointMustBeSigned(t *testing.T) {
 
 // ----- safety guard for the global ancestor-tolerant tally ------------------
 
-// TestBootstrapTrust_ForkAtSharedGenesisFailsSafe is the load-bearing guard for the
+// TestBootstrapTrust_ForkAtSharedGenesisFailsSafe guards the
 // MinFrontierHeight floor — the safety property the global cross-anchor tally (which makes case F
 // work) would otherwise break. Two branches fork at a DEEP shared ancestor H (height 5), and the
 // node is stale ABOVE the fork (height 23). The tally credits H with the union of BOTH halves'
@@ -566,7 +566,7 @@ func weightedBeacons(beacons []ids.NodeID, w []uint64) map[ids.NodeID]StakeWeigh
 	return m
 }
 
-// TestBootstrapTrust_H_SkewedWeightPartitionRejected is the load-bearing regression for the re-red
+// TestBootstrapTrust_H_SkewedWeightPartitionRejected is the regression for the re-red
 // HIGH finding. Under SKEWED validator weights the MinResponses COUNT floor and the ⅔-of-responders
 // WEIGHT agreement diverge: an attacker who eclipses the HEAVY honest beacon but lets enough LIGHT
 // honest beacons through to satisfy the count can shrink the responder-WEIGHT denominator until his
@@ -606,7 +606,7 @@ func TestBootstrapTrust_H_SkewedWeightPartitionRejected(t *testing.T) {
 	vuln := &BootstrapPolicy{TrustedBeacons: tb, MinResponses: 4, Source: &stubAncestry{byID: byID}}
 	if f, err := vuln.AcceptsFrontier(context.Background(), replies); err == nil && f != nil {
 		require.Equal(t, forgedF.ID, f.ID,
-			"VULN PRECONDITION: without MinResponseWeight the eclipsed skewed partition names the forged tip (proves the floor is load-bearing)")
+			"VULN PRECONDITION: without MinResponseWeight the eclipsed skewed partition names the forged tip (proves the floor is required)")
 	}
 
 	// WITH the stake-majority floor (the fix, exactly as bootstrapPolicy() now wires it): rejected.
@@ -627,7 +627,7 @@ func TestBootstrapTrust_H_SkewedWeightPartitionRejected(t *testing.T) {
 	require.Equal(t, realR.ID, f.ID, "the real tip is named once a stake-majority is reachable; forged never")
 }
 
-// TestBootstrapTrust_D2_NonConfiguredSwarmNamesNothing is the cleaner load-bearing isolation of the
+// TestBootstrapTrust_D2_NonConfiguredSwarmNamesNothing is the cleaner isolation of the
 // configured-beacon filter (INVARIANT 1) that the re-red asked for: a SWARM of non-configured peers
 // (enough to clear any count floor on their own) all shouting a forged frontier names NOTHING,
 // because none is in TrustedBeacons. This proves the filter, not merely the MinResponders floor.
@@ -1044,7 +1044,7 @@ func TestBootstrapTrust_HaltedFleet_OwnTipNamedUnderFullCoverage(t *testing.T) {
 }
 
 // TestBootstrapTrust_HaltedFleet_OwnTipNotNamedWhenBeaconMissing pins that COVERAGE is
-// load-bearing: the same fleet with one beacon SILENT is not a complete view, so the own-height
+// the same fleet with one beacon SILENT is not a complete view, so the own-height
 // exclusion stands and the node fails safe. 5090 still clears the ⅔ floor here (300 > 200), so
 // `Covered` is the only thing keeping it un-named — exactly the M1 eclipse discriminator.
 func TestBootstrapTrust_HaltedFleet_OwnTipNotNamedWhenBeaconMissing(t *testing.T) {

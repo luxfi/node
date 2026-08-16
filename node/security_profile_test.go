@@ -70,7 +70,7 @@ func TestApplySecurityProfile_NilPin(t *testing.T) {
 
 // TestApplySecurityProfile_HashMismatchRejected proves the node
 // refuses to boot when the genesis-pinned hash diverges from the live
-// canonical profile. This is the load-bearing F102 anti-regression:
+// canonical profile. This is the required F102 anti-regression:
 // a forked binary cannot silently boot under a different profile by
 // pinning the same ProfileID.
 func TestApplySecurityProfile_HashMismatchRejected(t *testing.T) {

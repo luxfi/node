@@ -291,7 +291,7 @@ func TestDexVMLoadsFromPluginDir(t *testing.T) {
 
 // TestPluginShadowingRegression (#6 — THE core regression). Proves end to end
 // that the dexvm plugin is resolved from PluginDir and is NOT shadowed by any
-// in-process registration. Three load-bearing facts in one test:
+// in-process registration. Three required facts in one test:
 //
 //  1. dexvm is absent from the in-process registry (it is in OptionalVMs, not
 //     CoreVMs; registerCoreVMs does not install it).

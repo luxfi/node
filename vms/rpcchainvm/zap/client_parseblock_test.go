@@ -61,7 +61,7 @@ func TestParseBlock_MalformedBlockID_IsTypedAndQuarantined(t *testing.T) {
 	}{
 		{
 			// The wire shape a diverged plugin answers with: empty id, no error code.
-			name:    "empty id with no error code (the luxd-3 wedge shape)",
+			name:    "empty id with no error code — reads as success and wedges the caller",
 			resp:    &zapwire.BlockResponse{ID: nil, ParentID: goodParent[:], Bytes: []byte{0xde, 0xad}, Err: zapwire.ErrorUnspecified},
 			wantErr: true,
 		},

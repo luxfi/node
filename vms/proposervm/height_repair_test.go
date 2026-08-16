@@ -8,7 +8,7 @@ import "testing"
 // TestClassifyHeightRepair locks the init-time reconciliation policy between the
 // proposervm finality index and the inner VM's accepted tip.
 //
-// The load-bearing case is heightBehind: proposervm BELOW the inner (e.g. the
+// The required case is heightBehind: proposervm BELOW the inner (e.g. the
 // devnet-C "index 7 < inner 8" from a snapshot restored inconsistently across
 // the proposervm and EVM databases). It MUST classify as heightBehind — which
 // the caller turns into a LOUD, actionable fatal — and must NEVER be treated as

@@ -62,7 +62,7 @@ func TestChainAliasesRegistryParity(t *testing.T) {
 
 // TestVMAliasesRegistryParity asserts that VMAliases holds the same
 // (VMID -> alias set) the legacy literal map encoded. Alias order is
-// not load-bearing (the alias manager treats each entry as a name
+// not required (the alias manager treats each entry as a name
 // mapping), so this test compares sorted alias sets.
 func TestVMAliasesRegistryParity(t *testing.T) {
 	legacy := map[ids.ID][]string{
