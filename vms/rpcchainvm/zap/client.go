@@ -873,6 +873,10 @@ func (b *zapBlock) Reject(ctx context.Context) error {
 	return err
 }
 
+// errorFromZAP turns the wire's verdict on a reply into an error. Absence and
+// not-implemented resolve to the names the rest of the tree already uses for
+// them: both are conditions a caller acts on rather than merely reports, and
+// errors.Is is how it reads them.
 func errorFromZAP(err zapwire.Error) error {
 	switch err {
 	case zapwire.ErrorUnspecified:
@@ -880,9 +884,9 @@ func errorFromZAP(err zapwire.Error) error {
 	case zapwire.ErrorClosed:
 		return errors.New("vm closed")
 	case zapwire.ErrorNotFound:
-		return errors.New("not found")
+		return database.ErrNotFound
 	case zapwire.ErrorStateSyncNotImplemented:
-		return errors.New("state sync not implemented")
+		return chain.ErrStateSyncableVMNotImplemented
 	case zapwire.ErrorInternal:
 		return errors.New("vm failed")
 	default:
