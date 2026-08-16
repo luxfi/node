@@ -972,20 +972,11 @@ func (b *blockHandler) executedTo(ctx context.Context, h uint64) bool {
 	if b.vm == nil {
 		return false
 	}
-	// On a wrapped chain the VM's last-accepted is the OUTER block, and the outer is
-	// committed before the inner is accepted — so it leads during every accept, and
-	// keeps leading if the inner one never lands. Asking it whether we executed to h
-	// gets the wrapper's answer, not the chain's. A VM that can speak for its inner
-	// self is asked that instead; one that cannot is its own inner self already.
-	id, err := b.innerLastAccepted(ctx)
+	id, applied, err := b.vmLastAccepted(ctx)
 	if err != nil || id == ids.Empty {
-		return false
-	}
-	blk, err := b.vm.GetBlock(ctx, id)
-	if err != nil {
 		return false // cannot prove execution ⇒ do not go live
 	}
-	return blk.Height() >= h
+	return applied >= h
 }
 
 // innerLastAccepted is the head of the VM that actually executes blocks.
@@ -1042,7 +1033,14 @@ func (b *blockHandler) vmLastAccepted(ctx context.Context) (ids.ID, uint64, erro
 	if b.vm == nil {
 		return ids.Empty, 0, nil
 	}
-	id, err := b.vm.LastAccepted(ctx)
+	// The INNER head, on a chain that has one. Callers ask this to learn what the
+	// node has EXECUTED — to lower the loop's position onto it, and to report
+	// whether a batch moved the node. The outer wrapper is committed before its
+	// inner block is accepted, so it leads during every accept and keeps leading
+	// if the inner never lands; a caller reading it then believes the node stands
+	// past blocks it has not run, skips the band it must fetch, and asks forever
+	// while reporting full batches landed.
+	id, err := b.innerLastAccepted(ctx)
 	if err != nil {
 		return ids.Empty, 0, err
 	}
@@ -1385,6 +1383,14 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 	// never restarted). bootstrapMaxAttempts ≤ 0 ⇒ retry until the quorum returns or shutdown; a
 	// test pins it to 1 to assert the single-attempt terminal fail-safe. A STRUCTURAL failure (deep
 	// gap → state-sync) is NOT retried — a retry cannot fix it; it is surfaced for the operator.
+	// ADOPTION FIRST. A node whose gap is deeper than the descent can close has no
+	// way home through the descent, however many times it retries — asking for a
+	// summary is the other door, and it has to be tried before the walk, because
+	// adopting one moves the floor the walk starts from. A chain whose VM cannot
+	// sync state, or whose network has nothing to offer, falls straight through to
+	// the descent it would have run anyway.
+	b.adoptSummary(ctx)
+
 	var lastErr error
 	for attempt := 1; ; attempt++ {
 		b.bsActive.Store(true)

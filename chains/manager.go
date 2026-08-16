@@ -48,6 +48,7 @@ import (
 	// "github.com/luxfi/consensus/core/tracker"
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/consensus/engine/chain/summary"
 	"github.com/luxfi/consensus/engine/chain/statesync"
 	consensusdag "github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/vm/chain"
@@ -200,9 +201,6 @@ type Manager interface {
 	// Given an alias, return the ID of the chain associated with that alias
 	Lookup(string) (ids.ID, error)
 
-	// Given an alias, return the ID of the VM associated with that alias
-	LookupVM(string) (ids.ID, error)
-
 	// Returns true iff the chain with the given ID exists and is finished bootstrapping
 	IsBootstrapped(ids.ID) bool
 
@@ -216,9 +214,6 @@ type Manager interface {
 	// RetryPendingChains re-queues chains that were waiting for the specified VM.
 	// This is called when a VM is hot-loaded via admin.loadVMs.
 	RetryPendingChains(vmID ids.ID) int
-
-	// GetPendingChains returns the chain parameters waiting for a VM to be loaded.
-	GetPendingChains(vmID ids.ID) []ChainParameters
 
 	Shutdown()
 }
@@ -2668,11 +2663,6 @@ func (m *manager) Shutdown() {
 	// Router doesn't have Shutdown method in consensus package
 }
 
-// LookupVM returns the ID of the VM associated with an alias
-func (m *manager) LookupVM(alias string) (ids.ID, error) {
-	return m.VMManager.Lookup(context.Background(), alias)
-}
-
 // RetryPendingChains re-queues chains that were waiting for the specified VM.
 // This is called when a VM is hot-loaded via admin.loadVMs.
 // Returns the number of chains that were re-queued.
@@ -2698,22 +2688,6 @@ func (m *manager) RetryPendingChains(vmID ids.ID) int {
 	}
 
 	return len(pendingChains)
-}
-
-// GetPendingChains returns the chain parameters waiting for a VM to be loaded.
-func (m *manager) GetPendingChains(vmID ids.ID) []ChainParameters {
-	m.pendingVMChainsLock.RLock()
-	defer m.pendingVMChainsLock.RUnlock()
-
-	pendingChains, ok := m.pendingVMChains[vmID]
-	if !ok {
-		return nil
-	}
-
-	// Return a copy to avoid race conditions
-	result := make([]ChainParameters, len(pendingChains))
-	copy(result, pendingChains)
-	return result
 }
 
 // Notify registrants [those who want to know about the creation of chains]
@@ -3157,6 +3131,9 @@ type blockHandler struct {
 	bsFrontierCh    chan bsFrontierReply           // weighted frontier replies for the current FrontierTip
 	bsAccepted      map[uint32]bsAcceptedRound     // requestID -> the open second-question round
 	bsAncestorCh    map[uint32]chan [][]byte       // requestID -> ancestors reply for the current Ancestors
+	summaryOfferCh  map[uint32]chan summary.Offer  // requestID -> discovery replies
+	summaryBallotCh map[uint32]chan summary.Ballot // requestID -> ratification replies
+	summaryPeers    map[uint32]set.Set[ids.NodeID] // requestID -> who was asked
 	bsAncestorPeers map[uint32]set.Set[ids.NodeID] // requestID -> the beacons that request was sent to
 	bsRotor         gatomic.Uint32                 // round-robins the Ancestors peer sample (M1: no monopoly)
 	// bsAheadBeacons is the set of beacons whose accepted tip, reported in the most recent
@@ -4941,10 +4918,9 @@ func (b *blockHandler) GetStateSummaryFrontier(ctx context.Context, nodeID ids.N
 	return nil
 }
 
-// StateSummaryFrontier is a peer's answer to our own frontier request. Adoption
-// runs as its own pass before bootstrap and collects replies through its Source,
-// so nothing is routed here.
-func (b *blockHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summary []byte) error {
+// StateSummaryFrontier is a peer's answer to our own discovery request.
+func (b *blockHandler) StateSummaryFrontier(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryBytes []byte) error {
+	b.deliverOffer(requestID, nodeID, summaryBytes)
 	return nil
 }
 
@@ -4968,9 +4944,10 @@ func (b *blockHandler) GetAcceptedStateSummary(ctx context.Context, nodeID ids.N
 	return nil
 }
 
-// AcceptedStateSummary is a peer's ratification vote. As with the frontier reply,
-// adoption collects it through its own Source.
+// AcceptedStateSummary is a peer's ratification vote: which of the heights we
+// named it actually holds.
 func (b *blockHandler) AcceptedStateSummary(ctx context.Context, nodeID ids.NodeID, requestID uint32, summaryIDs []ids.ID) error {
+	b.deliverBallot(requestID, nodeID, summaryIDs)
 	return nil
 }
 
