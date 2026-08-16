@@ -103,7 +103,13 @@ func connect(t *testing.T, handler zapwire.Handler) *Client {
 	}
 	t.Cleanup(func() { _ = conn.Close() })
 
-	return NewClient(conn, log.NewNoOpLogger())
+	c := NewClient(conn, log.NewNoOpLogger())
+	// A plugin advertises the surface at the handshake and the client refuses to
+	// send these messages without it, so a peer that serves them here must say
+	// so — otherwise every test below asserts against the refusal rather than
+	// against the peer.
+	c.syncCapable.Store(true)
+	return c
 }
 
 // TestClientOffersTheStateSyncSurface makes the same assertion the wrapper VM
@@ -337,5 +343,26 @@ func TestStateSyncEnabledAnswersOrSaysWhyNot(t *testing.T) {
 				t.Fatalf("StateSyncEnabled = %v, want %v", got, tc.want)
 			}
 		})
+	}
+}
+
+// A plugin built before these messages existed answers its unknown-message arm
+// with nothing, and an empty frame reaches a decoder as a truncated one. The
+// capability separates a plugin that does not carry the surface from a boundary
+// that is broken, and only the second is worth reporting as a fault.
+func TestAnUnadvertisedSurfaceIsNotADecodeError(t *testing.T) {
+	// A peer that never answers, standing in for one that does not know the
+	// message: reaching it at all is the failure this test forbids.
+	c := connect(t, zapwire.HandlerFunc(func(context.Context, zapwire.MessageType, []byte) (zapwire.MessageType, []byte, error) {
+		t.Error("a state-sync message was sent to a plugin that never advertised the surface")
+		return 0, nil, nil
+	}))
+	c.syncCapable.Store(false)
+
+	if _, err := c.StateSyncEnabled(context.Background()); !errors.Is(err, chain.ErrStateSyncableVMNotImplemented) {
+		t.Fatalf("StateSyncEnabled = %v, want ErrStateSyncableVMNotImplemented", err)
+	}
+	if _, err := c.GetLastStateSummary(context.Background()); !errors.Is(err, chain.ErrStateSyncableVMNotImplemented) {
+		t.Fatalf("GetLastStateSummary = %v, want ErrStateSyncableVMNotImplemented", err)
 	}
 }

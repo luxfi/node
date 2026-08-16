@@ -38,6 +38,9 @@ var errUnknownSyncMode = errors.New("zap: plugin returned unknown state sync mod
 // StateSyncEnabled reports whether the plugin syncs state. A plugin that cannot
 // answer has not answered false — the error travels and the caller decides.
 func (c *Client) StateSyncEnabled(ctx context.Context) (bool, error) {
+	if !c.syncCapable.Load() {
+		return false, chain.ErrStateSyncableVMNotImplemented
+	}
 	resp := &zapwire.StateSyncEnabledResponse{}
 	if err := c.ask(ctx, zapwire.MsgStateSyncEnabled, nil, resp); err != nil {
 		return false, err
@@ -82,6 +85,9 @@ func (c *Client) GetStateSummary(ctx context.Context, height uint64) (chain.Stat
 // caller handed a zero id at height zero would read it as a real one and offer
 // it to the network.
 func (c *Client) askSummary(ctx context.Context, op zapwire.MessageType, req encoder) (chain.StateSummary, error) {
+	if !c.syncCapable.Load() {
+		return nil, chain.ErrStateSyncableVMNotImplemented
+	}
 	resp := &zapwire.SummaryResponse{}
 	if err := c.ask(ctx, op, req, resp); err != nil {
 		return nil, err

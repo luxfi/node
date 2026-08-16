@@ -88,6 +88,12 @@ type Client struct {
 	// share a lock. A plugin that does not advertise it → false → the export
 	// methods are graceful no-ops and the chain manager stays Nova-only.
 	quasarCapable atomic.Bool
+
+	// syncCapable records whether the plugin advertised CapStateSync at the
+	// handshake. Written once at Initialize, read before any state-sync message
+	// is sent. Clear ⇒ the surface is absent and the node bootstraps that chain
+	// block by block, which is what it did before the surface existed.
+	syncCapable atomic.Bool
 }
 
 // NewClient creates a new ZAP-based VM client
@@ -209,11 +215,19 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 	// VM that advertises CapQuasarExport participates in the two-tier consensus
 	// export frontier across this boundary; everything else stays Nova-only.
 	c.quasarCapable.Store(resp.Capabilities&zapwire.CapQuasarExport != 0)
+	// And whether it answers the state-sync messages at all. A plugin built
+	// before they existed hits its own unknown-message arm and replies with
+	// nothing, which reaches a decoder as a truncated frame rather than as an
+	// answer — so the capability is what separates "this plugin does not do
+	// that" from "the boundary is broken", and only one of those is worth
+	// reporting as a fault.
+	c.syncCapable.Store(resp.Capabilities&zapwire.CapStateSync != 0)
 
 	c.logger.Info("VM initialized via ZAP",
 		"height", resp.Height,
 		"lastAcceptedID", seedID,
 		"quasarExport", c.quasarCapable.Load(),
+		"stateSync", c.syncCapable.Load(),
 	)
 
 	return nil
