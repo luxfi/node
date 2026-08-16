@@ -33,7 +33,7 @@ require (
 	github.com/luxfi/keychain v1.1.1
 	github.com/luxfi/log v1.4.3
 	github.com/luxfi/math v1.5.1
-	github.com/luxfi/metric v1.8.1
+	github.com/luxfi/metric v1.10.1
 	github.com/luxfi/mock v0.1.1
 	github.com/mr-tron/base58 v1.3.0
 	github.com/onsi/ginkgo/v2 v2.28.1
@@ -52,7 +52,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/thepudds/fzgen v0.4.3
 	go.opentelemetry.io/otel v1.44.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.43.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.44.0 // indirect
 	go.opentelemetry.io/otel/trace v1.44.0 // indirect
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.6.0
