@@ -29,9 +29,9 @@ type ProposalBlock struct {
 	commonZapBlock
 }
 
-// Tx returns the proposal tx. Never nil: both entrances refuse a proposal
-// block without one. Singular by type, so it cannot join a list on its way to
-// a fee calculator or a mempool.
+// Tx returns the proposal tx. Never nil: a block is only made with a proposal
+// slot that carries bytes, and only parsed if that slot reads back. Singular by
+// type, so it cannot join a list on its way to a fee calculator or a mempool.
 func (b *ProposalBlock) Tx() *txs.Tx {
 	tx, _ := readProposalTx(b.msg.Root())
 	return tx
