@@ -88,7 +88,13 @@ func (m *manager) authorizeChainActivation(chainID ids.ID) (authorized bool, rea
 	}
 	reader := m.entitlements()
 	if reader == nil {
-		m.Log.Error("restricted chain activation refused: the M-Chain is not reachable in-process, so no entitlement can be read",
+		// IsBootstrapped above already required the M-Chain to be registered here,
+		// so reaching this means the M-Chain is present and its VM does not
+		// implement the accessor: no node can ever be entitled, and every
+		// restricted chain opts out on every start until one does. Said plainly,
+		// because "not reachable in-process" reads as a transient wiring fault and
+		// sends an operator looking for a race that is not there.
+		m.Log.Error("restricted chain activation refused: the M-Chain VM implements no entitlement accessor, so no entitlement can be read",
 			log.Stringer("chainID", chainID),
 			log.Stringer("mChainID", m.MChainID),
 		)
@@ -125,6 +131,10 @@ func (m *manager) authorizeChainActivation(chainID ids.ID) (authorized bool, rea
 
 // entitlements returns the in-process entitlement reader for the M-Chain, or nil
 // if the M-Chain VM is not present or does not expose the accessor.
+//
+// Callers reach this only after IsBootstrapped, which already requires the
+// M-Chain to be in this map, so in practice a nil here means the VM does not
+// implement the accessor rather than that the chain is missing.
 func (m *manager) entitlements() entitlement {
 	m.chainsLock.Lock()
 	info, ok := m.chains[m.MChainID]

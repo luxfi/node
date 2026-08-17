@@ -411,3 +411,29 @@ func TestRetryDrainsParked(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, parked.ID, got.ID)
 }
+
+// vmWithoutEntitlement is a VM that does not implement the entitlement accessor —
+// the shape every production VM currently has, since nothing in the tree
+// implements Entitlement(node). The tests above all install a VM that DOES, which
+// is why the gap below never showed up in them.
+type vmWithoutEntitlement struct{}
+
+// TestMChainWithoutAccessorRefusesFinally pins what a restricted chain does when
+// the M-Chain is right there and simply cannot answer the question.
+//
+// It must be FINAL (ready=true), not a deferral. The drain that releases parked
+// chains runs once, on the M-Chain's bootstrap edge; a chain deferred at that
+// point has nothing left to release it, so deferring here would park the DEX and
+// the bridge silently for the life of the process instead of stating an outcome.
+func TestMChainWithoutAccessorRefusesFinally(t *testing.T) {
+	c := newCommittee(t)
+	m, _, dChainID := dexManager(t, c)
+
+	// Swap in an M-Chain VM that does not implement the accessor.
+	m.chains[m.MChainID] = &chainInfo{Name: "M-Chain", VM: vmWithoutEntitlement{}}
+
+	authorized, ready := m.authorizeChainActivation(dChainID)
+	require.False(t, authorized, "no accessor means no attestation can be read, so no authorization")
+	require.True(t, ready, "must be a final refusal: nothing re-drains a chain parked after the "+
+		"M-Chain's bootstrap edge, so deferring here parks the chain forever and silently")
+}
