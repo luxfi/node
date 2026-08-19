@@ -358,3 +358,39 @@ func resolvePackageDir(t *testing.T, pkg string) (string, bool) {
 	}
 	return dir, true
 }
+
+// TestBridgeIsNotEntitlementGated pins which optional VMs carry the M-Chain
+// entitlement, because the answer is a security argument in both directions and
+// a one-word edit can reverse it silently.
+//
+// D (dexvm) is gated: it is a service a node opts into (dex-validator), so
+// requiring an attestation on top of that opt-in narrows who may offer it.
+//
+// B (bridgevm) is not, and that is the stricter reading rather than the looser
+// one. B is a primary-network chain, so the validator set that must validate it
+// is the same set that secures P, X and C. Gating it on a token only some of
+// those validators hold would run the bridge on a SUBSET of the consensus
+// underwriting it — fewer nodes custodying cross-network value than nodes
+// securing the chain — which is the concentration the entitlement exists to
+// prevent, inverted.
+func TestBridgeIsNotEntitlementGated(t *testing.T) {
+	dex, ok := OptionalVMs[constants.DexVMID]
+	require.True(t, ok, "dexvm must be declared optional")
+	require.True(t, dex.Restricted,
+		"the DEX is entitlement-gated: it is opted into, not required of every validator")
+
+	bridge, ok := OptionalVMs[constants.BridgeVMID]
+	require.True(t, ok, "bridgevm must be declared optional")
+	require.False(t, bridge.Restricted,
+		"the bridge must run on the whole primary-network validator set: gating it to "+
+			"attested nodes puts cross-network value on fewer nodes than the consensus securing it")
+
+	// And nothing else acquires a gate by accident.
+	for id, spec := range OptionalVMs {
+		if id == constants.DexVMID {
+			continue
+		}
+		require.Falsef(t, spec.Restricted,
+			"%s (%s) is entitlement-gated; only the DEX should be", id, spec.Name)
+	}
+}
