@@ -120,7 +120,7 @@ require (
 	github.com/luxfi/accel v1.3.1
 	github.com/luxfi/api v1.1.6
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.7.23
+	github.com/luxfi/chains v1.7.24
 	github.com/luxfi/codec v1.2.1
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.2
