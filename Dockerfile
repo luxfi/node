@@ -476,6 +476,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
         ry9Sg8rZdT26iEKvJDmC2wkESs4SDKgZEhk5BgLSwg1EpcNug \
         sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz \
         qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS \
+        n6sSsSfbpQBrU9sY4R29U6z8VrmnTo2CntW6da4rRS7qmnGdv \
         vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 ; do \
         test -s /luxd/build/plugins/$p \
             || { echo "FATAL: required chain-VM plugin $p missing/empty — its build failed above (see the matching WARN line); the runtime-stage hard COPY would otherwise fail cryptically. Surface & fix the real Go build error, or remove the plugin from BOTH the build list and the runtime COPY."; exit 1; } ; \
@@ -707,6 +708,13 @@ COPY --from=builder \
     /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz \
     /luxd/build/plugins/qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS \
     /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 \
+    /luxd/build/plugins/
+# plugin group 4 — F-Chain. Same bytes as mpcvm in group 3, under F's id,
+# because one binary serves both surfaces and the registry resolves by filename.
+# It needs its own COPY: the builder stage writes it, but only files named here
+# reach the final image, which is why building it was not enough to ship it.
+COPY --from=builder \
+    /luxd/build/plugins/n6sSsSfbpQBrU9sY4R29U6z8VrmnTo2CntW6da4rRS7qmnGdv \
     /luxd/build/plugins/
 WORKDIR /luxd/build
 
