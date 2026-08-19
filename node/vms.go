@@ -92,10 +92,22 @@ var CoreVMs = map[ids.ID]CoreVM{
 // rules. It is the single source for both (a) which VMs MUST NOT be linked
 // in-process, and (b) which chains are restricted to entitled nodes.
 //
-// D (dexvm) and B (bridgevm) are restricted: a node may track/validate them only
-// if the M-Chain holds an ownership attestation naming it. That attestation is
-// what makes the credential unforgeable by the node's own operator — it lives in
-// consensus state, not in local config.
+// D (dexvm) is restricted: a node may track/validate it only if the M-Chain holds
+// an ownership attestation naming it. That attestation is what makes the
+// credential unforgeable by the node's own operator — it lives in consensus
+// state, not in local config. The DEX also carries an operator opt-in
+// (dex-validator), so an entitlement composes with a service a node chooses to
+// offer.
+//
+// B (bridgevm) is NOT restricted, and the reason is the security argument rather
+// than a relaxation of it. B is a primary-network chain, and a primary-network
+// validator validates every primary-network chain; the set that secures the
+// bridge is already the set that secures P, X and C. Admitting only the subset of
+// that set holding a particular token would run the bridge — the surface that
+// custodies value crossing between networks — on FEWER nodes than the consensus
+// underwriting it, which is the concentration the entitlement exists to prevent,
+// pointed the wrong way. A chain every validator must validate cannot be gated on
+// a credential only some validators hold.
 //
 // C (evm) and the remaining app VMs are plugin-loaded but open.
 //
@@ -104,7 +116,7 @@ var CoreVMs = map[ids.ID]CoreVM{
 // fhevm (F-Chain) is exactly that case today — see its entry below.
 var OptionalVMs = map[ids.ID]PluginSpec{
 	constants.DexVMID:      {Name: "dexvm", Restricted: true},
-	constants.BridgeVMID:   {Name: "bridgevm", Restricted: true},
+	constants.BridgeVMID:   {Name: "bridgevm"},
 	constants.EVMID:        {Name: "evm"},
 	constants.AIVMID:       {Name: "aivm"},
 	constants.GraphVMID:    {Name: "graphvm"},
