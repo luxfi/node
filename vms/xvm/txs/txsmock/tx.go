@@ -14,8 +14,8 @@ import (
 
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
 	txs "github.com/luxfi/node/vms/xvm/txs"
+	utxo "github.com/luxfi/utxo"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -72,10 +72,10 @@ func (mr *UnsignedTxMockRecorder) InputIDs() *gomock.Call {
 }
 
 // InputUTXOs mocks base method.
-func (m *UnsignedTx) InputUTXOs() []*lux.UTXOID {
+func (m *UnsignedTx) InputUTXOs() []*utxo.UTXOID {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InputUTXOs")
-	ret0, _ := ret[0].([]*lux.UTXOID)
+	ret0, _ := ret[0].([]*utxo.UTXOID)
 	return ret0
 }
 

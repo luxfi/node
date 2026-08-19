@@ -3,7 +3,7 @@
 
 package txs
 
-//go:generate mockgen -package=$GOPACKAGE -destination=mock_scheduled_staker.go . ScheduledStaker
+//go:generate go run go.uber.org/mock/mockgen -package=$GOPACKAGE -destination=mock_scheduled_staker.go . ScheduledStaker
 
 import (
 	"time"
