@@ -167,6 +167,7 @@ jobs:
           img="${{ steps.meta.outputs.probe }}"
 
           docker run --rm --entrypoint sh "$img" -c './luxd --version' | head -3
+          docker run --rm --entrypoint sh "$img" -c './repair-cchain --help >/dev/null'
 
           plugins=$(docker run --rm --entrypoint sh "$img" -c 'ls -1 plugins | wc -l')
           echo "baked plugins: ${plugins}"
