@@ -18,14 +18,10 @@ source "$NODE_PATH"/scripts/constants.sh
 fuzzTime=${1:-1}
 fuzzDir=${2:-.}
 
-# Add buffer to avoid context deadline exceeded errors at timeout boundary.
-# Go's fuzzer can report failures when interrupted during heavy setup (e.g. merkledb creation).
-# Use 5s buffer for short runs (≤15s), 3s for longer runs.
-if [ "$fuzzTime" -le 15 ]; then
-    actualFuzzTime=$((fuzzTime > 5 ? fuzzTime - 5 : 1))
-else
-    actualFuzzTime=$((fuzzTime - 3))
-fi
+# Leave a fixed shutdown margin. Go's fuzzer may cross its requested fuzztime
+# while workers finish an input; without this margin a healthy target can end
+# with only "context deadline exceeded".
+actualFuzzTime=$((fuzzTime > 5 ? fuzzTime - 5 : 1))
 
 files=$(grep -r --include='**_test.go' --files-with-matches 'func Fuzz' "$fuzzDir")
 failed=false
@@ -42,9 +38,22 @@ do
     do
         echo "Fuzzing $func in $file"
         parentDir=$(dirname "$file")
-        # If any of the fuzz tests fail, return exit code 1
-        if ! go test -tags test "$parentDir" -run="$func" -fuzz="$func" -fuzztime="${actualFuzzTime}"s; then
-            failed=true
+        # A worker can finish just after Go cancels the fuzz interval. Go then
+        # returns only "context deadline exceeded" even though no input failed.
+        # Retry that infrastructure-only result once; assertion failures,
+        # panics, and reproducible fuzz inputs still fail immediately.
+        if output=$(go test -tags test "$parentDir" -run="$func" -fuzz="$func" -fuzztime="${actualFuzzTime}"s 2>&1); then
+            printf '%s\n' "$output"
+        else
+            printf '%s\n' "$output"
+            if printf '%s\n' "$output" | grep -q '^ *context deadline exceeded$'; then
+                echo "Retrying $func once after fuzz-worker shutdown exceeded its deadline"
+                if ! go test -tags test "$parentDir" -run="$func" -fuzz="$func" -fuzztime="${actualFuzzTime}"s; then
+                    failed=true
+                fi
+            else
+                failed=true
+            fi
         fi
     done
 done
