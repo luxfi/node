@@ -515,7 +515,7 @@ func newBSHandlerAndEngine(t *testing.T, vm *bsTestVM, numBeacons int) (*blockHa
 		networkID:      networkID,
 		beacons:        newBeaconManager(networkID, beaconIDs, 100),
 		pendingContext: make(map[ids.ID]contextRequest),
-		bsAncestorCh:   make(map[uint32]chan [][]byte),
+		bsAncestorCh:   make(map[uint32]chan []bootstrapFetchedBlock),
 	}
 	return bh, chainID, beaconIDs
 }
@@ -540,7 +540,7 @@ func newBSHandlerWeighted(t *testing.T, vm *bsTestVM, weights map[ids.NodeID]uin
 		beacons:              mgr,
 		expectsStakedBeacons: true,
 		pendingContext:       make(map[ids.ID]contextRequest),
-		bsAncestorCh:         make(map[uint32]chan [][]byte),
+		bsAncestorCh:         make(map[uint32]chan []bootstrapFetchedBlock),
 	}
 	return bh, chainID
 }
@@ -1294,13 +1294,14 @@ func TestNodeBootstrap_InvalidBlockHaltsTransport(t *testing.T) {
 // entries.
 func TestDecodeContextBlocks_RoundTrip(t *testing.T) {
 	want := [][]byte{[]byte("oldest"), []byte("mid"), []byte("newest")}
+	wantCert := [][]byte{[]byte("oldest-cert"), nil, []byte("newest-cert")}
 	var data []byte
 	for i, bz := range want {
 		var entry []byte
 		if i == 1 {
 			entry = bz // legacy raw entry (no magic) — decode must treat the entry AS the block
 		} else {
-			entry = encodeCatchupEntry(bz, nil) // v2 frame, empty cert
+			entry = encodeCatchupEntry(bz, wantCert[i])
 		}
 		var lp [4]byte
 		binary.BigEndian.PutUint32(lp[:], uint32(len(entry)))
@@ -1309,7 +1310,43 @@ func TestDecodeContextBlocks_RoundTrip(t *testing.T) {
 	}
 
 	got := decodeContextBlocks(data)
-	require.Equal(t, want, got, "decodeContextBlocks must recover the framed blocks oldest-first")
+	require.Len(t, got, len(want))
+	for i := range want {
+		require.Equal(t, want[i], got[i].Bytes, "decodeContextBlocks must recover block %d oldest-first", i)
+		require.Equal(t, wantCert[i], got[i].Certificate, "decodeContextBlocks must preserve certificate %d", i)
+	}
+}
+
+func TestAcceptBootstrapBlock_QuorumChainRejectsBareBytes(t *testing.T) {
+	bh := &blockHandler{signedVotesRequired: true}
+	err := bh.AcceptBootstrapBlock(context.Background(), []byte("valid-looking-block"))
+	require.ErrorIs(t, err, errBootstrapCertificateRequired,
+		"multi-validator bootstrap must never fall back from a missing certificate to frontier trust")
+}
+
+func TestSelectHighestCertifiedFrontier_ThreeStaleTwoAhead(t *testing.T) {
+	stale := ids.GenerateTestID()
+	ahead := ids.GenerateTestID()
+	highest := ids.GenerateTestID()
+	forged := ids.GenerateTestID()
+	replies := []BeaconReply{
+		{NodeID: ids.GenerateTestNodeID(), Tip: stale},
+		{NodeID: ids.GenerateTestNodeID(), Tip: stale},
+		{NodeID: ids.GenerateTestNodeID(), Tip: stale},
+		{NodeID: ids.GenerateTestNodeID(), Tip: ahead},
+		{NodeID: ids.GenerateTestNodeID(), Tip: highest},
+		{NodeID: ids.GenerateTestNodeID(), Tip: forged},
+	}
+	heights := map[ids.ID]uint64{stale: 3_296, ahead: 25_493, highest: 25_572, forged: 99_999}
+	verified := map[ids.ID]bool{ahead: true, highest: true} // forged has a taller claim but no valid cert
+
+	gotID, gotHeight, ok := selectHighestCertifiedFrontier(replies, 3_296, func(id ids.ID) (uint64, bool) {
+		return heights[id], verified[id]
+	})
+	require.True(t, ok)
+	require.Equal(t, highest, gotID,
+		"three stale responders must not outvote a cryptographically certified ahead tip")
+	require.Equal(t, uint64(25_572), gotHeight)
 }
 
 // TestDeliverBootstrap_GatedByActive: the reply hooks deliver ONLY while the bootstrap
@@ -1317,7 +1354,7 @@ func TestDecodeContextBlocks_RoundTrip(t *testing.T) {
 // path runs unchanged. The frontier reply now carries the responding beacon's nodeID.
 func TestDeliverBootstrap_GatedByActive(t *testing.T) {
 	bh := &blockHandler{
-		bsAncestorCh:    make(map[uint32]chan [][]byte),
+		bsAncestorCh:    make(map[uint32]chan []bootstrapFetchedBlock),
 		bsAncestorPeers: make(map[uint32]set.Set[ids.NodeID]),
 	}
 	asked := ids.GenerateTestNodeID()
@@ -1338,14 +1375,14 @@ func TestDeliverBootstrap_GatedByActive(t *testing.T) {
 	require.Equal(t, tip, got.tip)
 
 	// Active: a registered Ancestors channel receives the decoded blocks.
-	ach := make(chan [][]byte, 1)
+	ach := make(chan []bootstrapFetchedBlock, 1)
 	bh.bsAncestorCh[7] = ach
 	bh.bsAncestorPeers[7] = set.Of(asked)
 	entry := encodeCatchupEntry([]byte("blk"), nil)
 	var lp [4]byte
 	binary.BigEndian.PutUint32(lp[:], uint32(len(entry)))
 	require.True(t, bh.deliverBootstrapAncestors(asked, 7, append(lp[:], entry...)))
-	require.Equal(t, [][]byte{[]byte("blk")}, <-ach)
+	require.Equal(t, []bootstrapFetchedBlock{{Bytes: []byte("blk"), Certificate: []byte{}}}, <-ach)
 
 	// A peer we never asked cannot feed this fetch, however well-formed its reply.
 	require.False(t, bh.deliverBootstrapAncestors(ids.GenerateTestNodeID(), 7, append(lp[:], entry...)))
@@ -1367,7 +1404,7 @@ func TestDeliverBootstrap_GatedByActive(t *testing.T) {
 // A reply is the bootstrap lane's only if the bootstrap lane ASKED for it.
 func TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath(t *testing.T) {
 	bh := &blockHandler{
-		bsAncestorCh:    make(map[uint32]chan [][]byte),
+		bsAncestorCh:    make(map[uint32]chan []bootstrapFetchedBlock),
 		bsAncestorPeers: make(map[uint32]set.Set[ids.NodeID]),
 	}
 	bh.bsActive.Store(true)
@@ -1386,7 +1423,7 @@ func TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath(t *testing.T) {
 	// A registered-but-unread waiter must not swallow it either. The send is
 	// non-blocking, so claiming the reply here drops the payload AND denies it to
 	// the live path — the blocks are lost twice.
-	full := make(chan [][]byte) // unbuffered, nobody receiving
+	full := make(chan []bootstrapFetchedBlock) // unbuffered, nobody receiving
 	bh.bsAncestorCh[42] = full
 	bh.bsAncestorPeers[42] = set.Of(peer)
 	require.False(t, bh.deliverBootstrapAncestors(peer, 42, data),
@@ -1394,11 +1431,11 @@ func TestDeliverBootstrap_UnclaimedReplyFallsThroughToLivePath(t *testing.T) {
 
 	// Control: a waiter that CAN take it still consumes it, so this fix does not
 	// hand the live path replies that initial sync is legitimately driving.
-	ready := make(chan [][]byte, 1)
+	ready := make(chan []bootstrapFetchedBlock, 1)
 	bh.bsAncestorCh[43] = ready
 	bh.bsAncestorPeers[43] = set.Of(peer)
 	require.True(t, bh.deliverBootstrapAncestors(peer, 43, data))
-	require.Equal(t, [][]byte{[]byte("blk")}, <-ready)
+	require.Equal(t, []bootstrapFetchedBlock{{Bytes: []byte("blk"), Certificate: []byte{}}}, <-ready)
 }
 
 // ----- H2: progress-based bootstrap watchdog --------------------------------

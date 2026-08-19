@@ -54,13 +54,13 @@ func TestRED_UnsolicitedAncestorsFeedTheBootstrapDescent(t *testing.T) {
 	bh := &blockHandler{
 		logger:       log.NewNoOpLogger(),
 		vm:           newBSVMAt(chain, 0),
-		bsAncestorCh: make(map[uint32]chan [][]byte),
+		bsAncestorCh: make(map[uint32]chan []bootstrapFetchedBlock),
 	}
 	bh.bsActive.Store(true)
 
 	// What Ancestors() registers before sending GetAncestors to its beacon sample.
 	const requestID = 7
-	waiter := make(chan [][]byte, bootstrapAncestorSample)
+	waiter := make(chan []bootstrapFetchedBlock, bootstrapAncestorSample)
 	bh.bsAncestorCh[requestID] = waiter
 
 	// Nobody asked this node for anything. It is not a beacon, not in the sample, and
@@ -79,7 +79,7 @@ func TestRED_UnsolicitedAncestorsFeedTheBootstrapDescent(t *testing.T) {
 	select {
 	case batch := <-waiter:
 		t.Logf("the bootstrap descent is holding %d entr(ies) from a peer it never asked: %q",
-			len(batch), batch[0])
+			len(batch), batch[0].Bytes)
 		t.Fatalf("an Ancestors reply from an unsampled peer reached the bootstrap descent — " +
 			"the lane correlates on requestID alone, so any connected peer can answer a fetch " +
 			"and abandon the pass (60 in a row is the terminal ErrStalled)")
