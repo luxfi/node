@@ -133,13 +133,14 @@ var OptionalVMs = map[ids.ID]PluginSpec{
 	constants.OracleVMID:   {Name: "oraclevm"},
 	constants.RelayVMID:    {Name: "relayvm"},
 	constants.MPCVMID:      {Name: "mpcvm"},
-	// F-Chain. Reserved ID, no shipping VM: luxfi/chains has no fhevm/
-	// directory, so `make` produces no fhevm binary and this scan always comes
-	// up empty. The FHE runtime library lives at luxfi/chains/mpcvm/fhe as a
-	// package inside mpcvm, not as a standalone chain. F-Chain is a spec
-	// (LP-8200, LP-167). Kept declared so the intent stays visible and the ID
-	// stays reserved — remove it only when F-Chain is cancelled, not merely
-	// because it is unbuilt.
+	// F-Chain runs the mpcvm binary under a second name. There is no fhevm/
+	// directory in luxfi/chains and there is not meant to be one: mpcvm backs
+	// both surfaces — M-Chain's MPC signing and F-Chain's FHE compute (mpcvm
+	// service.go, "the one VM backs all three surfaces"; LP-8200, "F-Chain runs
+	// on the shared mpcvm substrate"). Since the registry resolves a plugin by
+	// FILENAME and not by the id the binary declares, the node Dockerfile
+	// installs that one binary under BOTH ids; installing it under M's alone is
+	// what previously left F reporting "VM plugin not loaded" everywhere.
 	constants.FHEVMID: {Name: "fhevm"},
 }
 
