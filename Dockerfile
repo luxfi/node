@@ -356,7 +356,16 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
     CGO_ENABLED=${EVM_CGO} GOFLAGS=-mod=mod \
     go build -ldflags="-s -w" -tags "${EVM_TAGS}" -o /luxd/build/plugins/${EVM_VM_ID} ./plugin && \
+    # Ship the fail-closed offline C-Chain repair tool from the exact same EVM
+    # source as the plugin. It is inert during normal node startup; operators can
+    # run it from an init container while luxd is stopped to reconcile a legacy
+    # pre-certification accepted tip without introducing a second image or an
+    # unpinned recovery binary.
+    GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) \
+    CGO_ENABLED=0 GOFLAGS=-mod=mod \
+    go build -ldflags="-s -w" -o /luxd/build/repair-cchain ./cmd/repair-cchain && \
     chmod +x /luxd/build/plugins/${EVM_VM_ID} && \
+    chmod +x /luxd/build/repair-cchain && \
     # SEAM PIN ASSERTION — the C-Chain half. See the D-Chain twin at the dex build.
     #
     # The node serves each chain's shared memory to its plugin, so SharedMemory here is
@@ -692,6 +701,7 @@ WORKDIR /luxd/build
 
 # Copy the executables into the container
 COPY --from=builder /build/build/ .
+COPY --from=builder /luxd/build/repair-cchain ./repair-cchain
 
 # Create plugins directory and lpm state directory
 RUN mkdir -p /luxd/build/plugins /root/.lpm /root/.lux/plugins
