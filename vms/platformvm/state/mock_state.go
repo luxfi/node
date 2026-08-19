@@ -15,17 +15,17 @@ import (
 	sync "sync"
 	time "time"
 
-	validators "github.com/luxfi/validators"
+	iterator "github.com/luxfi/container/iterator"
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
-	"github.com/luxfi/log"
+	log "github.com/luxfi/log"
 	gas "github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/utxo"
 	block "github.com/luxfi/node/vms/platformvm/block"
+	fx "github.com/luxfi/node/vms/platformvm/fx"
 	status "github.com/luxfi/node/vms/platformvm/status"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
-	iterator "github.com/luxfi/container/iterator"
-	fx "github.com/luxfi/node/vms/platformvm/fx"
+	utxo "github.com/luxfi/utxo"
+	validators "github.com/luxfi/validators"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -102,15 +102,15 @@ func (mr *MockStateMockRecorder) AddNetTransformation(transformNetTx any) *gomoc
 }
 
 // AddRewardUTXO mocks base method.
-func (m *MockState) AddRewardUTXO(txID ids.ID, utxo *lux.UTXO) {
+func (m *MockState) AddRewardUTXO(txID ids.ID, arg1 *utxo.UTXO) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddRewardUTXO", txID, utxo)
+	m.ctrl.Call(m, "AddRewardUTXO", txID, arg1)
 }
 
 // AddRewardUTXO indicates an expected call of AddRewardUTXO.
-func (mr *MockStateMockRecorder) AddRewardUTXO(txID, utxo any) *gomock.Call {
+func (mr *MockStateMockRecorder) AddRewardUTXO(txID, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRewardUTXO", reflect.TypeOf((*MockState)(nil).AddRewardUTXO), txID, utxo)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRewardUTXO", reflect.TypeOf((*MockState)(nil).AddRewardUTXO), txID, arg1)
 }
 
 // AddStatelessBlock mocks base method.
@@ -138,15 +138,15 @@ func (mr *MockStateMockRecorder) AddTx(tx, arg1 any) *gomock.Call {
 }
 
 // AddUTXO mocks base method.
-func (m *MockState) AddUTXO(utxo *lux.UTXO) {
+func (m *MockState) AddUTXO(arg0 *utxo.UTXO) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddUTXO", utxo)
+	m.ctrl.Call(m, "AddUTXO", arg0)
 }
 
 // AddUTXO indicates an expected call of AddUTXO.
-func (mr *MockStateMockRecorder) AddUTXO(utxo any) *gomock.Call {
+func (mr *MockStateMockRecorder) AddUTXO(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUTXO", reflect.TypeOf((*MockState)(nil).AddUTXO), utxo)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUTXO", reflect.TypeOf((*MockState)(nil).AddUTXO), arg0)
 }
 
 // ApplyValidatorPublicKeyDiffs mocks base method.
@@ -650,10 +650,10 @@ func (mr *MockStateMockRecorder) GetPendingValidator(netID, nodeID any) *gomock.
 }
 
 // GetRewardUTXOs mocks base method.
-func (m *MockState) GetRewardUTXOs(txID ids.ID) ([]*lux.UTXO, error) {
+func (m *MockState) GetRewardUTXOs(txID ids.ID) ([]*utxo.UTXO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRewardUTXOs", txID)
-	ret0, _ := ret[0].([]*lux.UTXO)
+	ret0, _ := ret[0].([]*utxo.UTXO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -725,10 +725,10 @@ func (mr *MockStateMockRecorder) GetTx(txID any) *gomock.Call {
 }
 
 // GetUTXO mocks base method.
-func (m *MockState) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
+func (m *MockState) GetUTXO(utxoID ids.ID) (*utxo.UTXO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUTXO", utxoID)
-	ret0, _ := ret[0].(*lux.UTXO)
+	ret0, _ := ret[0].(*utxo.UTXO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

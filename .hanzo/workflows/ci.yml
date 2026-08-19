@@ -62,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
-      - run: scripts/mock.gen.sh
+      - run: go generate ./...
       - run: scripts/check-clean-branch.sh
       - run: go mod tidy
       - run: scripts/check-clean-branch.sh

@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	ids "github.com/luxfi/ids"
-	vms "github.com/luxfi/node/vms"
+	manager "github.com/luxfi/vm/manager"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -43,24 +43,39 @@ func (m *Manager) EXPECT() *ManagerMockRecorder {
 }
 
 // Alias mocks base method.
-func (m *Manager) Alias(ctx context.Context, id ids.ID, alias string) error {
+func (m *Manager) Alias(ctx context.Context, vmID ids.ID, alias string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Alias", ctx, id, alias)
+	ret := m.ctrl.Call(m, "Alias", ctx, vmID, alias)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Alias indicates an expected call of Alias.
-func (mr *ManagerMockRecorder) Alias(ctx, id, alias any) *gomock.Call {
+func (mr *ManagerMockRecorder) Alias(ctx, vmID, alias any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Alias", reflect.TypeOf((*Manager)(nil).Alias), ctx, id, alias)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Alias", reflect.TypeOf((*Manager)(nil).Alias), ctx, vmID, alias)
+}
+
+// Aliases mocks base method.
+func (m *Manager) Aliases(ctx context.Context, vmID ids.ID) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Aliases", ctx, vmID)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Aliases indicates an expected call of Aliases.
+func (mr *ManagerMockRecorder) Aliases(ctx, vmID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Aliases", reflect.TypeOf((*Manager)(nil).Aliases), ctx, vmID)
 }
 
 // GetFactory mocks base method.
-func (m *Manager) GetFactory(ctx context.Context, vmID ids.ID) (vms.Factory, error) {
+func (m *Manager) GetFactory(ctx context.Context, vmID ids.ID) (manager.Factory, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFactory", ctx, vmID)
-	ret0, _ := ret[0].(vms.Factory)
+	ret0, _ := ret[0].(manager.Factory)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,21 +101,6 @@ func (mr *ManagerMockRecorder) ListFactories(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFactories", reflect.TypeOf((*Manager)(nil).ListFactories), ctx)
 }
 
-// Aliases mocks base method.
-func (m *Manager) Aliases(ctx context.Context, id ids.ID) ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Aliases", ctx, id)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Aliases indicates an expected call of Aliases.
-func (mr *ManagerMockRecorder) Aliases(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Aliases", reflect.TypeOf((*Manager)(nil).Aliases), ctx, id)
-}
-
 // Lookup mocks base method.
 func (m *Manager) Lookup(ctx context.Context, alias string) (ids.ID, error) {
 	m.ctrl.T.Helper()
@@ -117,36 +117,22 @@ func (mr *ManagerMockRecorder) Lookup(ctx, alias any) *gomock.Call {
 }
 
 // PrimaryAlias mocks base method.
-func (m *Manager) PrimaryAlias(ctx context.Context, id ids.ID) (string, error) {
+func (m *Manager) PrimaryAlias(ctx context.Context, vmID ids.ID) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrimaryAlias", ctx, id)
+	ret := m.ctrl.Call(m, "PrimaryAlias", ctx, vmID)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PrimaryAlias indicates an expected call of PrimaryAlias.
-func (mr *ManagerMockRecorder) PrimaryAlias(ctx, id any) *gomock.Call {
+func (mr *ManagerMockRecorder) PrimaryAlias(ctx, vmID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrimaryAlias", reflect.TypeOf((*Manager)(nil).PrimaryAlias), ctx, id)
-}
-
-// PrimaryAliasOrDefault mocks base method.
-func (m *Manager) PrimaryAliasOrDefault(id ids.ID) string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrimaryAliasOrDefault", id)
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// PrimaryAliasOrDefault indicates an expected call of PrimaryAliasOrDefault.
-func (mr *ManagerMockRecorder) PrimaryAliasOrDefault(id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrimaryAliasOrDefault", reflect.TypeOf((*Manager)(nil).PrimaryAliasOrDefault), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrimaryAlias", reflect.TypeOf((*Manager)(nil).PrimaryAlias), ctx, vmID)
 }
 
 // RegisterFactory mocks base method.
-func (m *Manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory vms.Factory) error {
+func (m *Manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory manager.Factory) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterFactory", ctx, vmID, factory)
 	ret0, _ := ret[0].(error)
@@ -157,18 +143,6 @@ func (m *Manager) RegisterFactory(ctx context.Context, vmID ids.ID, factory vms.
 func (mr *ManagerMockRecorder) RegisterFactory(ctx, vmID, factory any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterFactory", reflect.TypeOf((*Manager)(nil).RegisterFactory), ctx, vmID, factory)
-}
-
-// RemoveAliases mocks base method.
-func (m *Manager) RemoveAliases(id ids.ID) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveAliases", id)
-}
-
-// RemoveAliases indicates an expected call of RemoveAliases.
-func (mr *ManagerMockRecorder) RemoveAliases(id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAliases", reflect.TypeOf((*Manager)(nil).RemoveAliases), id)
 }
 
 // Versions mocks base method.

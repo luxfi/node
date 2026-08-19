@@ -13,13 +13,13 @@ import (
 	reflect "reflect"
 	time "time"
 
+	iterator "github.com/luxfi/container/iterator"
 	ids "github.com/luxfi/ids"
 	gas "github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/utxo"
+	fx "github.com/luxfi/node/vms/platformvm/fx"
 	status "github.com/luxfi/node/vms/platformvm/status"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
-	iterator "github.com/luxfi/container/iterator"
-	fx "github.com/luxfi/node/vms/platformvm/fx"
+	utxo "github.com/luxfi/utxo"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -84,15 +84,15 @@ func (mr *MockDiffMockRecorder) AddNetTransformation(transformNetTx any) *gomock
 }
 
 // AddRewardUTXO mocks base method.
-func (m *MockDiff) AddRewardUTXO(txID ids.ID, utxo *lux.UTXO) {
+func (m *MockDiff) AddRewardUTXO(txID ids.ID, arg1 *utxo.UTXO) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddRewardUTXO", txID, utxo)
+	m.ctrl.Call(m, "AddRewardUTXO", txID, arg1)
 }
 
 // AddRewardUTXO indicates an expected call of AddRewardUTXO.
-func (mr *MockDiffMockRecorder) AddRewardUTXO(txID, utxo any) *gomock.Call {
+func (mr *MockDiffMockRecorder) AddRewardUTXO(txID, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRewardUTXO", reflect.TypeOf((*MockDiff)(nil).AddRewardUTXO), txID, utxo)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRewardUTXO", reflect.TypeOf((*MockDiff)(nil).AddRewardUTXO), txID, arg1)
 }
 
 // AddTx mocks base method.
@@ -108,15 +108,15 @@ func (mr *MockDiffMockRecorder) AddTx(tx, arg1 any) *gomock.Call {
 }
 
 // AddUTXO mocks base method.
-func (m *MockDiff) AddUTXO(utxo *lux.UTXO) {
+func (m *MockDiff) AddUTXO(arg0 *utxo.UTXO) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddUTXO", utxo)
+	m.ctrl.Call(m, "AddUTXO", arg0)
 }
 
 // AddUTXO indicates an expected call of AddUTXO.
-func (mr *MockDiffMockRecorder) AddUTXO(utxo any) *gomock.Call {
+func (mr *MockDiffMockRecorder) AddUTXO(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUTXO", reflect.TypeOf((*MockDiff)(nil).AddUTXO), utxo)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUTXO", reflect.TypeOf((*MockDiff)(nil).AddUTXO), arg0)
 }
 
 // Apply mocks base method.
@@ -503,10 +503,10 @@ func (mr *MockDiffMockRecorder) GetTx(txID any) *gomock.Call {
 }
 
 // GetUTXO mocks base method.
-func (m *MockDiff) GetUTXO(utxoID ids.ID) (*lux.UTXO, error) {
+func (m *MockDiff) GetUTXO(utxoID ids.ID) (*utxo.UTXO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUTXO", utxoID)
-	ret0, _ := ret[0].(*lux.UTXO)
+	ret0, _ := ret[0].(*utxo.UTXO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

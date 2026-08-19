@@ -12,9 +12,9 @@ package block
 import (
 	reflect "reflect"
 
-	"github.com/luxfi/runtime"
 	ids "github.com/luxfi/ids"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
+	runtime "github.com/luxfi/runtime"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -54,6 +54,20 @@ func (m *MockBlock) Bytes() []byte {
 func (mr *MockBlockMockRecorder) Bytes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockBlock)(nil).Bytes))
+}
+
+// DecisionTxs mocks base method.
+func (m *MockBlock) DecisionTxs() []*txs.Tx {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecisionTxs")
+	ret0, _ := ret[0].([]*txs.Tx)
+	return ret0
+}
+
+// DecisionTxs indicates an expected call of DecisionTxs.
+func (mr *MockBlockMockRecorder) DecisionTxs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecisionTxs", reflect.TypeOf((*MockBlock)(nil).DecisionTxs))
 }
 
 // Height mocks base method.
@@ -110,20 +124,6 @@ func (mr *MockBlockMockRecorder) Parent() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parent", reflect.TypeOf((*MockBlock)(nil).Parent))
 }
 
-// DecisionTxs mocks base method.
-func (m *MockBlock) DecisionTxs() []*txs.Tx {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DecisionTxs")
-	ret0, _ := ret[0].([]*txs.Tx)
-	return ret0
-}
-
-// DecisionTxs indicates an expected call of DecisionTxs.
-func (mr *MockBlockMockRecorder) DecisionTxs() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecisionTxs", reflect.TypeOf((*MockBlock)(nil).DecisionTxs))
-}
-
 // Visit mocks base method.
 func (m *MockBlock) Visit(visitor Visitor) error {
 	m.ctrl.T.Helper()
@@ -136,18 +136,4 @@ func (m *MockBlock) Visit(visitor Visitor) error {
 func (mr *MockBlockMockRecorder) Visit(visitor any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Visit", reflect.TypeOf((*MockBlock)(nil).Visit), visitor)
-}
-
-// initialize mocks base method.
-func (m *MockBlock) initialize(bytes []byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "initialize", bytes)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// initialize indicates an expected call of initialize.
-func (mr *MockBlockMockRecorder) initialize(bytes any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "initialize", reflect.TypeOf((*MockBlock)(nil).initialize), bytes)
 }

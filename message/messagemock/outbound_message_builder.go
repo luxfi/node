@@ -15,7 +15,7 @@ import (
 	time "time"
 
 	ids "github.com/luxfi/ids"
-	"github.com/luxfi/net/endpoints"
+	endpoints "github.com/luxfi/net/endpoints"
 	message "github.com/luxfi/node/message"
 	p2p "github.com/luxfi/node/proto/p2p"
 	gomock "go.uber.org/mock/gomock"
@@ -105,64 +105,19 @@ func (mr *OutboundMsgBuilderMockRecorder) Ancestors(chainID, requestID, containe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ancestors", reflect.TypeOf((*OutboundMsgBuilder)(nil).Ancestors), chainID, requestID, containers)
 }
 
-// Error mocks base method.
-func (m *OutboundMsgBuilder) Error(chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) (message.OutboundMessage, error) {
+// BFTMessage mocks base method.
+func (m *OutboundMsgBuilder) BFTMessage(msg *p2p.BFT) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Error", chainID, requestID, errorCode, errorMessage)
+	ret := m.ctrl.Call(m, "BFTMessage", msg)
 	ret0, _ := ret[0].(message.OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Error indicates an expected call of Error.
-func (mr *OutboundMsgBuilderMockRecorder) Error(chainID, requestID, errorCode, errorMessage any) *gomock.Call {
+// BFTMessage indicates an expected call of BFTMessage.
+func (mr *OutboundMsgBuilderMockRecorder) BFTMessage(msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*OutboundMsgBuilder)(nil).Error), chainID, requestID, errorCode, errorMessage)
-}
-
-// Gossip mocks base method.
-func (m *OutboundMsgBuilder) Gossip(chainID ids.ID, msg []byte) (message.OutboundMessage, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Gossip", chainID, msg)
-	ret0, _ := ret[0].(message.OutboundMessage)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Gossip indicates an expected call of Gossip.
-func (mr *OutboundMsgBuilderMockRecorder) Gossip(chainID, msg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Gossip", reflect.TypeOf((*OutboundMsgBuilder)(nil).Gossip), chainID, msg)
-}
-
-// Request mocks base method.
-func (m *OutboundMsgBuilder) Request(chainID ids.ID, requestID uint32, deadline time.Duration, msg []byte) (message.OutboundMessage, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Request", chainID, requestID, deadline, msg)
-	ret0, _ := ret[0].(message.OutboundMessage)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Request indicates an expected call of Request.
-func (mr *OutboundMsgBuilderMockRecorder) Request(chainID, requestID, deadline, msg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Request", reflect.TypeOf((*OutboundMsgBuilder)(nil).Request), chainID, requestID, deadline, msg)
-}
-
-// Response mocks base method.
-func (m *OutboundMsgBuilder) Response(chainID ids.ID, requestID uint32, msg []byte) (message.OutboundMessage, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Response", chainID, requestID, msg)
-	ret0, _ := ret[0].(message.OutboundMessage)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Response indicates an expected call of Response.
-func (mr *OutboundMsgBuilderMockRecorder) Response(chainID, requestID, msg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Response", reflect.TypeOf((*OutboundMsgBuilder)(nil).Response), chainID, requestID, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BFTMessage", reflect.TypeOf((*OutboundMsgBuilder)(nil).BFTMessage), msg)
 }
 
 // Chits mocks base method.
@@ -178,6 +133,21 @@ func (m *OutboundMsgBuilder) Chits(chainID ids.ID, requestID uint32, preferredID
 func (mr *OutboundMsgBuilderMockRecorder) Chits(chainID, requestID, preferredID, preferredIDAtHeight, acceptedID, acceptedHeight any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Chits", reflect.TypeOf((*OutboundMsgBuilder)(nil).Chits), chainID, requestID, preferredID, preferredIDAtHeight, acceptedID, acceptedHeight)
+}
+
+// Error mocks base method.
+func (m *OutboundMsgBuilder) Error(chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) (message.OutboundMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Error", chainID, requestID, errorCode, errorMessage)
+	ret0, _ := ret[0].(message.OutboundMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Error indicates an expected call of Error.
+func (mr *OutboundMsgBuilderMockRecorder) Error(chainID, requestID, errorCode, errorMessage any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*OutboundMsgBuilder)(nil).Error), chainID, requestID, errorCode, errorMessage)
 }
 
 // Get mocks base method.
@@ -285,19 +255,34 @@ func (mr *OutboundMsgBuilderMockRecorder) GetStateSummaryFrontier(chainID, reque
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStateSummaryFrontier", reflect.TypeOf((*OutboundMsgBuilder)(nil).GetStateSummaryFrontier), chainID, requestID, deadline)
 }
 
-// Handshake mocks base method.
-func (m *OutboundMsgBuilder) Handshake(networkID uint32, myTime uint64, ip netip.AddrPort, client string, major, minor, patch uint32, ipSigningTime uint64, ipNodeIDSig, ipBLSSig []byte, trackedNets []ids.ID, supportedLPs, objectedLPs []uint32, knownPeersFilter, knownPeersSalt []byte, requestAllNetIPs bool, ipMLDSASig []byte) (message.OutboundMessage, error) {
+// Gossip mocks base method.
+func (m *OutboundMsgBuilder) Gossip(chainID ids.ID, msg []byte) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Handshake", networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedNets, supportedLPs, objectedLPs, knownPeersFilter, knownPeersSalt, requestAllNetIPs, ipMLDSASig)
+	ret := m.ctrl.Call(m, "Gossip", chainID, msg)
+	ret0, _ := ret[0].(message.OutboundMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Gossip indicates an expected call of Gossip.
+func (mr *OutboundMsgBuilderMockRecorder) Gossip(chainID, msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Gossip", reflect.TypeOf((*OutboundMsgBuilder)(nil).Gossip), chainID, msg)
+}
+
+// Handshake mocks base method.
+func (m *OutboundMsgBuilder) Handshake(networkID uint32, myTime uint64, ip netip.AddrPort, client string, major, minor, patch uint32, ipSigningTime uint64, ipNodeIDSig, ipBLSSig []byte, trackedNets []ids.ID, supportedLPs, objectedLPs []uint32, knownPeersFilter, knownPeersSalt []byte, requestAllNetIPs bool, ipMLDSASig []byte, chains []*p2p.ChainIdentity) (message.OutboundMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Handshake", networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedNets, supportedLPs, objectedLPs, knownPeersFilter, knownPeersSalt, requestAllNetIPs, ipMLDSASig, chains)
 	ret0, _ := ret[0].(message.OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Handshake indicates an expected call of Handshake.
-func (mr *OutboundMsgBuilderMockRecorder) Handshake(networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedNets, supportedLPs, objectedLPs, knownPeersFilter, knownPeersSalt, requestAllNetIPs, ipMLDSASig any) *gomock.Call {
+func (mr *OutboundMsgBuilderMockRecorder) Handshake(networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedNets, supportedLPs, objectedLPs, knownPeersFilter, knownPeersSalt, requestAllNetIPs, ipMLDSASig, chains any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handshake", reflect.TypeOf((*OutboundMsgBuilder)(nil).Handshake), networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedNets, supportedLPs, objectedLPs, knownPeersFilter, knownPeersSalt, requestAllNetIPs, ipMLDSASig)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handshake", reflect.TypeOf((*OutboundMsgBuilder)(nil).Handshake), networkID, myTime, ip, client, major, minor, patch, ipSigningTime, ipNodeIDSig, ipBLSSig, trackedNets, supportedLPs, objectedLPs, knownPeersFilter, knownPeersSalt, requestAllNetIPs, ipMLDSASig, chains)
 }
 
 // PeerList mocks base method.
@@ -390,19 +375,34 @@ func (mr *OutboundMsgBuilderMockRecorder) Put(chainID, requestID, container any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*OutboundMsgBuilder)(nil).Put), chainID, requestID, container)
 }
 
-// BFTMessage mocks base method.
-func (m *OutboundMsgBuilder) BFTMessage(msg *p2p.BFT) (message.OutboundMessage, error) {
+// Request mocks base method.
+func (m *OutboundMsgBuilder) Request(chainID ids.ID, requestID uint32, deadline time.Duration, msg []byte) (message.OutboundMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BFTMessage", msg)
+	ret := m.ctrl.Call(m, "Request", chainID, requestID, deadline, msg)
 	ret0, _ := ret[0].(message.OutboundMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// BFTMessage indicates an expected call of BFTMessage.
-func (mr *OutboundMsgBuilderMockRecorder) BFTMessage(msg any) *gomock.Call {
+// Request indicates an expected call of Request.
+func (mr *OutboundMsgBuilderMockRecorder) Request(chainID, requestID, deadline, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BFTMessage", reflect.TypeOf((*OutboundMsgBuilder)(nil).BFTMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Request", reflect.TypeOf((*OutboundMsgBuilder)(nil).Request), chainID, requestID, deadline, msg)
+}
+
+// Response mocks base method.
+func (m *OutboundMsgBuilder) Response(chainID ids.ID, requestID uint32, msg []byte) (message.OutboundMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Response", chainID, requestID, msg)
+	ret0, _ := ret[0].(message.OutboundMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Response indicates an expected call of Response.
+func (mr *OutboundMsgBuilderMockRecorder) Response(chainID, requestID, msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Response", reflect.TypeOf((*OutboundMsgBuilder)(nil).Response), chainID, requestID, msg)
 }
 
 // StateSummaryFrontier mocks base method.
