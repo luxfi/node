@@ -147,27 +147,11 @@ func newPollFixture(t *testing.T, signedVotes bool) (*consensuschain.Runtime, *b
 	return rt, bh, blk
 }
 
-// TestPollResponseReachesTheEngineOnAQuorumChain is the regression guard for the
-// halt this file used to CAUSE.
-//
-// Its predecessor asserted the opposite — that a poll response must never reach
-// the engine on a quorum chain — and that was right for as long as the engine's
-// only entry read the voter out of the payload: a Chits carries no signature, so
-// handing one over meant handing over a vote the engine would drop.
-//
-// But dropping it is how alpha becomes unreachable BY CONSTRUCTION. Testnet stopped
-// at 16820 and devnet at 7323 in exactly that state, each node logging the refusal
-// once per peer per poll while every other counter read healthy.
-//
-// The engine now takes origin as a PARAMETER (ReceiveAuthenticatedVote), which is
-// the property that makes counting it sound: msg.NodeID comes from the
-// authenticated transport, not from bytes the sender chose. So the response must
-// now reach the engine.
-//
-// fails-before: restore the `if b.signedVotesRequired { return }` boundary in
-// receivePollResponse and the counter never moves — the chain polls K-of-K forever
-// and never accepts.
-func TestPollResponseReachesTheEngineOnAQuorumChain(t *testing.T) {
+// TestPollResponseNeverReachesTheEngineOnAQuorumChain pins the protocol boundary:
+// authenticated transport identifies the peer, but Chits still carries no signature
+// over a consensus position or execution result. It therefore cannot count toward a
+// multi-validator quorum; signed BroadcastVote messages are the finality path.
+func TestPollResponseNeverReachesTheEngineOnAQuorumChain(t *testing.T) {
 	rt, bh, blk := newPollFixture(t, true /* signedVotesRequired */)
 	ctx := context.Background()
 	peer := ids.GenerateTestNodeID()
@@ -181,11 +165,15 @@ func TestPollResponseReachesTheEngineOnAQuorumChain(t *testing.T) {
 		ReceivedAt:  time.Now(),
 	})
 
-	if got := waitVotesReceived(t, rt, before+1); got != before+1 {
-		t.Fatalf("THE HALT: an authenticated poll response did NOT reach the engine "+
-			"(votes_received %d -> %d). A Chits carries no signature, so if the node refuses to "+
-			"deliver it the alpha tally can never move no matter how many honest peers agree — "+
-			"which is what testnet 16820 and devnet 7323 were doing.", before, got)
+	time.Sleep(100 * time.Millisecond)
+	if got := votesReceived(t, rt); got != before {
+		t.Fatalf("unsigned Chits was promoted into a quorum vote: votes_received %d -> %d", before, got)
+	}
+	bh.pendingPollMu.Lock()
+	parked := len(bh.pendingPollResponses)
+	bh.pendingPollMu.Unlock()
+	if parked != 0 {
+		t.Fatalf("quorum-chain Chits was buffered for later vote promotion: %d entries", parked)
 	}
 }
 

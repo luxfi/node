@@ -36,7 +36,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    runs-on: [lux-build-linux-amd64]
+    timeout-minutes: 60
+    env:
+      GOPRIVATE: github.com/luxfi/*
+      GONOSUMDB: github.com/luxfi/*
+      GOWORK: off
+      GOEXPERIMENT: runtimesecret
+      CGO_ENABLED: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Test the exact release source
+        run: ./scripts/build_test.sh
+
   build:
+    needs: verify
     runs-on: [lux-build-linux-amd64]
     # cevm (CGO), luxd, and twelve VM plugins. The long pole is cevm.
     timeout-minutes: 150

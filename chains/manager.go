@@ -48,8 +48,8 @@ import (
 	// "github.com/luxfi/consensus/core/tracker"
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/consensus/engine/chain/summary"
 	"github.com/luxfi/consensus/engine/chain/statesync"
+	"github.com/luxfi/consensus/engine/chain/summary"
 	consensusdag "github.com/luxfi/consensus/engine/dag"
 	"github.com/luxfi/vm/chain"
 
@@ -3118,16 +3118,17 @@ type blockHandler struct {
 	// every round, so it is never older than the round that measured it, and nil when the last
 	// round did not reach the floor check at all.
 	shortfall       gatomic.Pointer[string]
-	bsActive        gatomic.Bool                   // true while the bootstrap loop is driving
-	bsMu            sync.Mutex                     // guards bsFrontierCh + bsAccepted + bsAncestorCh + bsAheadBeacons
-	bsFrontierCh    chan bsFrontierReply           // weighted frontier replies for the current FrontierTip
-	bsAccepted      map[uint32]bsAcceptedRound     // requestID -> the open second-question round
-	bsAncestorCh    map[uint32]chan [][]byte       // requestID -> ancestors reply for the current Ancestors
-	summaryOfferCh  map[uint32]chan summary.Offer  // requestID -> discovery replies
-	summaryBallotCh map[uint32]chan summary.Ballot // requestID -> ratification replies
-	summaryPeers    map[uint32]set.Set[ids.NodeID] // requestID -> who was asked
-	bsAncestorPeers map[uint32]set.Set[ids.NodeID] // requestID -> the beacons that request was sent to
-	bsRotor         gatomic.Uint32                 // round-robins the Ancestors peer sample (M1: no monopoly)
+	bsActive        gatomic.Bool                            // true while the bootstrap loop is driving
+	bsMu            sync.Mutex                              // guards bsFrontierCh + bsAccepted + bsAncestorCh + bsAheadBeacons
+	bsFrontierCh    chan bsFrontierReply                    // weighted frontier replies for the current FrontierTip
+	bsAccepted      map[uint32]bsAcceptedRound              // requestID -> the open second-question round
+	bsAncestorCh    map[uint32]chan []bootstrapFetchedBlock // requestID -> cert-carrying reply for the current Ancestors
+	bsCertificates  map[ids.ID][]byte                       // blockID -> cert retained across Ancestors -> AcceptBootstrapBlock
+	summaryOfferCh  map[uint32]chan summary.Offer           // requestID -> discovery replies
+	summaryBallotCh map[uint32]chan summary.Ballot          // requestID -> ratification replies
+	summaryPeers    map[uint32]set.Set[ids.NodeID]          // requestID -> who was asked
+	bsAncestorPeers map[uint32]set.Set[ids.NodeID]          // requestID -> the beacons that request was sent to
+	bsRotor         gatomic.Uint32                          // round-robins the Ancestors peer sample (M1: no monopoly)
 	// bsAheadBeacons is the set of beacons whose accepted tip, reported in the most recent
 	// FrontierTip round, is a block this node does NOT hold — i.e. beacons genuinely AHEAD that
 	// therefore HAVE the ancestry the descent needs. sampleAncestorBeacons prefers them so a
@@ -3294,7 +3295,8 @@ func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, lo
 		maxContextBlocks:     256, // Default max context blocks to request/serve
 		pendingPollResponses: make(map[ids.ID][]NovaPollResponse),
 		connectedNodes:       set.NewSet[ids.NodeID](16),
-		bsAncestorCh:         make(map[uint32]chan [][]byte),
+		bsAncestorCh:         make(map[uint32]chan []bootstrapFetchedBlock),
+		bsCertificates:       make(map[ids.ID][]byte),
 		bsAncestorPeers:      make(map[uint32]set.Set[ids.NodeID]),
 		servingPeers:         set.NewSet[ids.NodeID](16),
 		servingSlots:         make(chan struct{}, maxConcurrentServes),

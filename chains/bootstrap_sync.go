@@ -4,10 +4,11 @@
 // bootstrap_sync.go — the node-side wiring for INITIAL SYNC. The blockHandler is both
 // the fetch transport (chainbootstrap.BlockSource) and the execute sink
 // (chainbootstrap.Chain) the engine/chain/bootstrap loop drives, so an EMPTY or BEHIND
-// node converges from its local last-accepted to the network frontier by fetch+execute
-// (re-execute each fetched block; no vote, no cert). When the loop reaches the
-// frontier the driver ENDS the engine's bootstrap phase (FinishBootstrap — only the
-// α-of-K cert-gate finalizes thereafter) and flips bootstrapDone, the REAL ready
+// node converges from its local last-accepted to the network frontier by fetch+execute.
+// On a quorum chain, every fetched block must carry the same signed certificate used
+// by live catch-up; only the sole-validator topology uses the legacy cert-less path.
+// When the loop reaches the frontier the driver ends the engine's bootstrap phase and
+// flips bootstrapDone, the REAL ready
 // signal monitorBootstrap gates the chain on. Decomplected from the live cert/vote
 // path: when bsActive is false every method below is inert and the handler behaves
 // exactly as it did before initial sync existed.
@@ -39,6 +40,21 @@ var (
 	_ AncestrySource             = (*blockHandler)(nil)
 	_ AcceptanceSource           = (*blockHandler)(nil)
 )
+
+// Keep the certificate attached to its block between the wire decoder and the
+// node's bootstrap adapter. The consensus bootstrap interface is intentionally
+// kept source-compatible; Ancestors caches the proof by content-addressed block ID
+// before returning bare block bytes to that interface.
+type bootstrapFetchedBlock struct {
+	Bytes       []byte
+	Certificate []byte
+}
+
+type catchupCertificateVerifier interface {
+	VerifyCatchupCertificate(context.Context, []byte, []byte) error
+}
+
+var errBootstrapCertificateRequired = errors.New("chains: signed quorum certificate required for multi-validator bootstrap block")
 
 const (
 	// bootstrapFrontierWindow bounds how long FrontierTip collects weighted beacon
@@ -466,6 +482,32 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		policy.Covered = b.fullyConnectedBeacons(weights, connected) && repliedCovers(replies, connected)
 	}
 
+	// A signed quorum certificate outranks the unsigned responder tally. This is
+	// the restart split that used to strand a 5-node network: three stale nodes
+	// named their old common tip while two nodes held thousands of newer finalized
+	// blocks, so majority-by-responder discovery concluded that nobody was ahead.
+	// The newer tips already carried portable certs; bootstrap simply never looked.
+	//
+	// Probe every distinct ahead claim and choose the highest one whose certificate
+	// independently verifies against our validator set. An arbitrary peer can now
+	// advertise any ID it likes, but it cannot make that ID a frontier without the
+	// same signed proof required by live finality. Invalid/unserved claims are ignored
+	// and fall through to the bounded bootstrap policy below.
+	if b.signedVotesRequired {
+		localHeight := uint64(0)
+		if haveLast {
+			localHeight = lastH
+		}
+		if certifiedID, certifiedHeight, ok := b.highestCertifiedFrontier(ctx, replies, localHeight); ok {
+			b.logger.Info("bootstrap frontier: selected cryptographically certified tip over unsigned responder tally",
+				log.Stringer("tip", certifiedID),
+				log.Uint64("height", certifiedHeight),
+				log.Uint64("localHeight", localHeight))
+			b.namingProgress = nil
+			return certifiedID, chainbootstrap.FrontierNamed
+		}
+	}
+
 	frontier, err := policy.AcceptsFrontier(ctx, replies)
 	switch {
 	case err == nil:
@@ -607,6 +649,69 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 			log.Int("replies", len(replies)))
 		return ids.Empty, chainbootstrap.FrontierNoQuorum
 	}
+}
+
+// highestCertifiedFrontier returns the highest strict-ahead responder tip backed
+// by a locally verified quorum certificate. It is read-only: certificate checking
+// neither tracks nor finalizes the block, so ordered execution remains the
+// bootstrapper's responsibility.
+func (b *blockHandler) highestCertifiedFrontier(ctx context.Context, replies []BeaconReply, localHeight uint64) (ids.ID, uint64, bool) {
+	if b.engine == nil || b.vm == nil {
+		return ids.Empty, 0, false
+	}
+	verifier, ok := any(b.engine).(catchupCertificateVerifier)
+	if !ok {
+		return ids.Empty, 0, false
+	}
+	return selectHighestCertifiedFrontier(replies, localHeight, func(tip ids.ID) (uint64, bool) {
+		if b.Accepted(ctx, tip) {
+			return 0, false
+		}
+		fetched, err := b.fetchBootstrapAncestors(ctx, tip, 1)
+		if err != nil || len(fetched) == 0 {
+			return 0, false
+		}
+		candidate := fetched[len(fetched)-1]
+		blk, err := b.vm.ParseBlock(ctx, candidate.Bytes)
+		if err != nil || blk.ID() != tip {
+			return 0, false
+		}
+		if err := verifier.VerifyCatchupCertificate(ctx, candidate.Bytes, candidate.Certificate); err != nil {
+			b.logger.Debug("bootstrap frontier: responder tip has no valid quorum certificate",
+				log.Stringer("tip", tip),
+				log.Uint64("height", blk.Height()),
+				log.Err(err))
+			return 0, false
+		}
+		return blk.Height(), true
+	})
+}
+
+// selectHighestCertifiedFrontier is the deterministic policy core: responder
+// multiplicity is irrelevant once a tip supplies its own quorum proof. probe must
+// return true only after cryptographic verification.
+func selectHighestCertifiedFrontier(replies []BeaconReply, localHeight uint64, probe func(ids.ID) (uint64, bool)) (ids.ID, uint64, bool) {
+	seen := make(map[ids.ID]struct{}, len(replies))
+	var bestID ids.ID
+	var bestHeight uint64
+	for _, reply := range replies {
+		if reply.Tip == ids.Empty {
+			continue
+		}
+		if _, duplicate := seen[reply.Tip]; duplicate {
+			continue
+		}
+		seen[reply.Tip] = struct{}{}
+		height, verified := probe(reply.Tip)
+		if !verified || height <= localHeight {
+			continue
+		}
+		if bestID == ids.Empty || height > bestHeight || (height == bestHeight && reply.Tip.Compare(bestID) < 0) {
+			bestID = reply.Tip
+			bestHeight = height
+		}
+	}
+	return bestID, bestHeight, bestID != ids.Empty
 }
 
 // logFrontierInputs records, at Debug level, the raw inputs to one FrontierTip decision — the
@@ -855,6 +960,37 @@ func (b *blockHandler) Acceptance(ctx context.Context, candidates []ids.ID, from
 // loop re-samples. The fetched ancestry is made safe by the loop's content-addressed
 // descent (off-path blocks ignored), not by trusting the serving peer.
 func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks int) ([][]byte, error) {
+	fetched, err := b.fetchBootstrapAncestors(ctx, blockID, maxBlocks)
+	if err != nil || len(fetched) == 0 {
+		return nil, err
+	}
+	raw := make([][]byte, 0, len(fetched))
+	certs := make(map[ids.ID][]byte, len(fetched))
+	for _, entry := range fetched {
+		raw = append(raw, entry.Bytes)
+		if len(entry.Certificate) == 0 || b.vm == nil {
+			continue
+		}
+		blk, parseErr := b.vm.ParseBlock(ctx, entry.Bytes)
+		if parseErr != nil {
+			continue
+		}
+		certs[blk.ID()] = append([]byte(nil), entry.Certificate...)
+	}
+	if len(certs) > 0 {
+		b.bsMu.Lock()
+		if b.bsCertificates == nil {
+			b.bsCertificates = make(map[ids.ID][]byte)
+		}
+		for id, cert := range certs {
+			b.bsCertificates[id] = cert
+		}
+		b.bsMu.Unlock()
+	}
+	return raw, nil
+}
+
+func (b *blockHandler) fetchBootstrapAncestors(ctx context.Context, blockID ids.ID, maxBlocks int) ([]bootstrapFetchedBlock, error) {
 	if b.net == nil || b.msgCreator == nil {
 		return nil, nil
 	}
@@ -876,7 +1012,7 @@ func (b *blockHandler) Ancestors(ctx context.Context, blockID ids.ID, maxBlocks 
 	// empties and stall. The contract is the settled one: an empty Ancestors
 	// reply means "this peer can't serve — take another's," never "done" (getter serves an
 	// EXPLICIT empty batch when it lacks the block; see GetContext).
-	ch := make(chan [][]byte, bootstrapAncestorSample)
+	ch := make(chan []bootstrapFetchedBlock, bootstrapAncestorSample)
 	b.bsMu.Lock()
 	b.bsAncestorCh[requestID] = ch
 	// Remember WHO was asked. A request id is ours, not a secret: any connected peer
@@ -1153,10 +1289,30 @@ func (b *blockHandler) finalizedBlockAtHeight(h uint64) (ids.ID, bool) {
 	return b.engine.FinalizedBlockAtHeight(h)
 }
 
-// AcceptBootstrapBlock implements chainbootstrap.Chain: re-execute + finalize a fetched
-// block on frontier-trust via the engine's bootstrap accept authority.
+// AcceptBootstrapBlock implements chainbootstrap.Chain. A quorum chain accepts a
+// fetched block only through the same signed-certificate predicate as live catch-up;
+// a peer/beacon majority is discovery input, not finality authority. The legacy
+// frontier-trust path remains available only when no signed votes are required (the
+// sole-validator/dev topology, where no external quorum certificate can exist).
 func (b *blockHandler) AcceptBootstrapBlock(ctx context.Context, raw []byte) error {
-	return b.engine.AcceptBootstrapBlock(ctx, raw)
+	if !b.signedVotesRequired {
+		return b.engine.AcceptBootstrapBlock(ctx, raw)
+	}
+	if b.engine == nil || b.vm == nil {
+		return errBootstrapCertificateRequired
+	}
+	blk, err := b.vm.ParseBlock(ctx, raw)
+	if err != nil {
+		return err
+	}
+	b.bsMu.Lock()
+	cert := b.bsCertificates[blk.ID()]
+	delete(b.bsCertificates, blk.ID())
+	b.bsMu.Unlock()
+	if len(cert) == 0 {
+		return errBootstrapCertificateRequired
+	}
+	return b.engine.AcceptCatchupBlock(ctx, raw, cert)
 }
 
 // BootstrapComplete reports whether initial sync has reached the frontier. This is the
@@ -1373,6 +1529,16 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 		return true
 	}
 
+	// Ancestors bridges a cert-carrying wire format through a source-compatible
+	// bootstrap interface by caching proofs under the block ID. Executed blocks
+	// consume their entries immediately; frontier probes and abandoned retries can
+	// leave entries behind. Keep the cache scoped to this initial-sync run.
+	defer func() {
+		b.bsMu.Lock()
+		clear(b.bsCertificates)
+		b.bsMu.Unlock()
+	}()
+
 	bs := chainbootstrap.New(chainbootstrap.Config{
 		Source: b,
 		Chain:  b,
@@ -1413,9 +1579,10 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 
 		if err == nil {
 			// Reached the frontier (or no beacon set / already at / above the tip — caught up): go
-			// live. CLOSE the no-cert bootstrap-accept gate FIRST — FinishBootstrap ends
-			// InBootstrapPhase, so AcceptBootstrapBlock can no longer finalize a block without an
-			// α-of-K cert — THEN transition the VM to normal operation. Ordering them this way
+			// live. Close the bootstrap phase FIRST, then transition the VM to normal operation.
+			// Quorum-chain bootstrap acceptance is already certificate-gated by this adapter;
+			// ending the phase also closes the legacy cert-less engine entry point. Ordering
+			// them this way
 			// (matching the degenerate path above) leaves NO window where the live VM is
 			// building/serving while the cert-less accept path is still open. FinishBootstrap is
 			// idempotent and void; if the VM transition then fails we fail safe (record the reason,
@@ -1530,13 +1697,13 @@ func (b *blockHandler) transitionVMReady(ctx context.Context) error {
 	return b.vmReady(sctx)
 }
 
-// decodeContextBlocks extracts the raw block bytes (oldest-first) from a framed
+// decodeContextBlocks extracts blocks and their finality certificates (oldest-first) from a framed
 // Ancestors payload — the inverse of GetContext's framing, shared by the bootstrap
 // fetch path. Each outer [entryLen:4][entry] entry is either a v2 cert-carrying frame
-// (we take just the block) or a legacy raw block (the entry IS the block). Strict: a
+// or a legacy raw block (the entry IS the block and Certificate is empty). Strict: a
 // malformed length stops the walk (returns what parsed cleanly so far).
-func decodeContextBlocks(data []byte) [][]byte {
-	var out [][]byte
+func decodeContextBlocks(data []byte) []bootstrapFetchedBlock {
+	var out []bootstrapFetchedBlock
 	remaining := data
 	for len(remaining) >= 4 {
 		entryLen := int(binary.BigEndian.Uint32(remaining[:4]))
@@ -1546,10 +1713,10 @@ func decodeContextBlocks(data []byte) [][]byte {
 		}
 		entry := remaining[:entryLen]
 		remaining = remaining[entryLen:]
-		if blockBytes, _, isV2 := decodeCatchupEntry(entry); isV2 {
-			out = append(out, blockBytes)
+		if blockBytes, certBytes, isV2 := decodeCatchupEntry(entry); isV2 {
+			out = append(out, bootstrapFetchedBlock{Bytes: blockBytes, Certificate: certBytes})
 		} else {
-			out = append(out, entry)
+			out = append(out, bootstrapFetchedBlock{Bytes: entry})
 		}
 	}
 	return out
