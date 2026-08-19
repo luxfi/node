@@ -92,12 +92,20 @@ var CoreVMs = map[ids.ID]CoreVM{
 // rules. It is the single source for both (a) which VMs MUST NOT be linked
 // in-process, and (b) which chains are restricted to entitled nodes.
 //
-// D (dexvm) is restricted: a node may track/validate it only if the M-Chain holds
-// an ownership attestation naming it. That attestation is what makes the
-// credential unforgeable by the node's own operator — it lives in consensus
-// state, not in local config. The DEX also carries an operator opt-in
-// (dex-validator), so an entitlement composes with a service a node chooses to
-// offer.
+// D (dexvm) carries the operator opt-in ALONE for now: dex-validator, which
+// defaults false, so no node runs the DEX unless its operator asks for it.
+//
+// The NFT entitlement is not merely unsatisfied, it is unsatisfiable: the gate
+// reads the M-Chain by asserting an interface on the in-process VM, and this
+// very registry requires M to load only as a plugin, so nothing can implement
+// Entitlement(node) where the assertion would see it. Nothing in the tree does.
+// A check that refuses unconditionally is not a policy, it is a refusal wearing
+// a policy's name, and it kept the DEX off every node on every network.
+//
+// Restore Restricted here the moment the M-Chain can answer the question — the
+// claim/attestation encoding and its verifier already exist and are KAT-tested
+// in luxfi/chains/ownership; what is missing is somewhere to read an attestation
+// from and a group key sourced from consensus rather than from the operator.
 //
 // B (bridgevm) is NOT restricted, and the reason is the security argument rather
 // than a relaxation of it. B is a primary-network chain, and a primary-network
@@ -115,7 +123,7 @@ var CoreVMs = map[ids.ID]CoreVM{
 // exists: the registry scan simply finds nothing and the chain cannot start.
 // fhevm (F-Chain) is exactly that case today — see its entry below.
 var OptionalVMs = map[ids.ID]PluginSpec{
-	constants.DexVMID:      {Name: "dexvm", Restricted: true},
+	constants.DexVMID:      {Name: "dexvm"},
 	constants.BridgeVMID:   {Name: "bridgevm"},
 	constants.EVMID:        {Name: "evm"},
 	constants.AIVMID:       {Name: "aivm"},
