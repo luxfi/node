@@ -421,6 +421,15 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
 
+# F-Chain ships as the SAME mpcvm binary under a second filename. mpcvm backs
+# both surfaces -- M-Chain's MPC signing and F-Chain's FHE compute (mpcvm
+# service.go: "the one VM backs all three surfaces"; LP-8200: "F-Chain runs on
+# the shared mpcvm substrate"). The node resolves a plugin by FILENAME, never by
+# the id the binary declares, so installing it under M's id alone is what made
+# F-Chain report "VM plugin not loaded" and opt out on every node of every
+# network. It is copied rather than built twice so the two names stay
+# byte-identical: one implementation, two ids, not two builds that can drift.
+#
 # Each VM is an independent Go module under /tmp/chains/<vm>/.
 # Build each plugin binary and place it at /luxd/build/plugins/<cb58-vm-id>.
 #
@@ -452,6 +461,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
         -o /luxd/build/plugins/sP6dLqrrBR9w3soP18fbJ3YzZecZdD7DDdfH2cFhhLq7Hy9bz ./cmd/plugin ) || echo "WARN: relayvm plugin build skipped" ; \
     ( cd /tmp/chains/mpcvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS ./cmd/plugin ) || echo "WARN: mpcvm plugin build skipped" ; \
+    ( cp /luxd/build/plugins/qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS \
+         /luxd/build/plugins/n6sSsSfbpQBrU9sY4R29U6z8VrmnTo2CntW6da4rRS7qmnGdv ) || echo "WARN: fhevm install skipped" ; \
     ( cd /tmp/chains/zkvm && CGO_ENABLED=0 GOFLAGS=-mod=mod go build -ldflags="-s -w" \
         -o /luxd/build/plugins/vv3qPfyTVXZ5ArRZA9Jh4hbYDTBe43f7sgQg4CHfNg1rnnvX9 ./cmd/plugin ) || echo "WARN: zkvm plugin build skipped" ; \
     ( chmod +x /luxd/build/plugins/* 2>/dev/null || true ) && \
