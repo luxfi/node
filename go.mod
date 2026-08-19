@@ -120,7 +120,7 @@ require (
 	github.com/luxfi/accel v1.3.1
 	github.com/luxfi/api v1.1.6
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.7.22
+	github.com/luxfi/chains v1.7.23
 	github.com/luxfi/codec v1.2.1
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.2
@@ -182,8 +182,6 @@ require (
 	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
-	github.com/fjl/gencodec v0.1.1 // indirect
-	github.com/garslo/gogen v0.0.0-20170306192744-1d203ffc1f61 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
@@ -198,7 +196,6 @@ require (
 	github.com/luxfi/corona v0.10.4 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
-	github.com/luxfi/evm v1.104.36 // indirect
 	github.com/luxfi/keys v1.4.2 // indirect
 	github.com/luxfi/lattice/v7 v7.1.4 // indirect
 	github.com/luxfi/lens v0.2.1 // indirect
@@ -208,7 +205,6 @@ require (
 	github.com/luxfi/mlwe v0.3.0 // indirect
 	github.com/luxfi/pq v1.1.0 // indirect
 	github.com/luxfi/precompile v0.19.8 // indirect
-	github.com/luxfi/protocol v0.0.2 // indirect
 	github.com/luxfi/pulsar v1.9.2 // indirect
 	github.com/luxfi/staking v1.6.1 // indirect
 	github.com/luxfi/trace v1.2.1 // indirect
