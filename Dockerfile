@@ -407,7 +407,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # implementations entirely and still declared the retired `thresholdvm` VMID.
 # That last part stayed harmless only because the node resolves a plugin by its
 # FILENAME (vms/registry/registry.go), never by the ID the binary declares.
-ARG CHAINS_REF=v1.7.23
+ARG CHAINS_REF=v1.7.24
 RUN --mount=type=cache,target=/root/.cache/go-build \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
