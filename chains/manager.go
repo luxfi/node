@@ -3928,8 +3928,15 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 // with a zero-length parent, the response carries nothing, and we arrive back here to
 // ask the same impossible question of the next peer. Nothing ends that on its own:
 // with no finalized ledger every window reads as "above" a tip of zero.
-func shouldDescend(certAccepted int, haveOldest bool, oldestHeight uint64, oldestParent ids.ID, finalized uint64, finalizedSet bool) bool {
-	if certAccepted > 0 || !haveOldest {
+func shouldDescend(advanced uint64, haveOldest bool, oldestHeight uint64, oldestParent ids.ID, finalized uint64, finalizedSet bool) bool {
+	// advanced, not certAccepted. A batch can accept hundreds of certs for blocks
+	// ABOVE the gap -- tracked, deferred, applying nothing -- and gating on that
+	// reads the walk as progress and leaves the anchor where it is. Observed on
+	// mainnet as `advanced=0 certAccepted=208` in the same log line, on four of five
+	// validators, one block id re-requested 396 times while the applied head never
+	// moved. The delta in the applied head is the only column that says whether this
+	// node got closer to its own tip.
+	if advanced > 0 || !haveOldest {
 		return false
 	}
 	if oldestHeight == 0 || oldestParent == ids.Empty {
@@ -4267,7 +4274,7 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		b.retire(fh)
 	}
 
-	if shouldDescend(certAccepted, haveOldest, oldestHeight, oldestParent, fh, set) {
+	if shouldDescend(advanced, haveOldest, oldestHeight, oldestParent, fh, set) {
 		if b.descend(oldestParent, oldestHeight-1) {
 			b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
 				log.Stringer("from", nodeID),

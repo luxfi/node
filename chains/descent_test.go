@@ -164,3 +164,49 @@ func TestConcurrentRepliesLeaveTheLowest(t *testing.T) {
 			b.descentHeight, lowest)
 	}
 }
+
+// TestAcceptedCertsAreNotProgress is the mainnet wedge, as one question about
+// values.
+//
+// A responder serves the window ending at the id it was asked for, so a node far
+// below that window receives entries that are all above its own head. It TRACKS
+// them and their certs — certAccepted climbs into the hundreds — and applies none
+// of them, because none extends the head it actually has. Gating the walk on
+// certAccepted reads that as progress and leaves the anchor where it is, so the
+// next request asks the same peer for the same block and receives the same
+// window. Observed on four of five mainnet validators as
+// `advanced=0 certAccepted=208` in one log line, with a single block id
+// re-requested 396 times while the applied head never moved.
+//
+// The applied-head delta is the only column that answers "did this node get
+// closer to its own tip", which is the question the walk turns on.
+func TestAcceptedCertsAreNotProgress(t *testing.T) {
+	const (
+		oldestHeight = 1091802 // the bottom of the window a peer served
+		finalized    = 1091720 // where this node actually is: 82 blocks below it
+	)
+	parent := ids.GenerateTestID()
+
+	// The exact production state: nothing applied, many certs accepted.
+	if !shouldDescend(0, true, oldestHeight, parent, finalized, true) {
+		t.Fatal("a batch that applied nothing must descend, however many certs it accepted — " +
+			"otherwise the walk re-asks for the same window forever")
+	}
+
+	// And the converse still holds: real progress must NOT restart the walk.
+	if shouldDescend(1, true, oldestHeight, parent, finalized, true) {
+		t.Fatal("a batch that advanced the applied head is progress; the walk must not descend")
+	}
+}
+
+// TestDescentStopsWhenTheWindowReachesUs guards the other end: once a served
+// window starts at the height we need next, there is nothing below it to walk to
+// and descending further would ask for blocks we already have.
+func TestDescentStopsWhenTheWindowReachesUs(t *testing.T) {
+	const finalized = 1091720
+	parent := ids.GenerateTestID()
+
+	if shouldDescend(0, true, finalized+1, parent, finalized, true) {
+		t.Fatal("the window already begins at our next height; there is nothing below it to reach")
+	}
+}
