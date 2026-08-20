@@ -4079,6 +4079,11 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 	// height — the engine's one non-failure refusal. It was counted among the failures,
 	// so a node doing exactly the right thing read as a node being refused.
 	deferred := 0
+	// missingAncestor counts entries whose block and cert were both sound but whose
+	// parent envelope this node does not hold. It is deliberately NOT certRejected:
+	// the two were one number, so a node fetching exactly what it needed looked
+	// identical to a node being served forgeries.
+	missingAncestor := 0
 	// The applied head, read before and after the batch. Every other counter here says
 	// what this loop DID; only the head delta says whether the node MOVED. certAccepted
 	// once counted ledger-gate skips as successes — 253 per batch on a node applying
@@ -4122,11 +4127,11 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		// entry still sits above our tip and every entry is refused. The parent of that
 		// oldest entry is the next window down, and asking for it is the only thing that
 		// moves the window toward us.
+		raw := blockBytes
+		if !isV2 {
+			raw = entry
+		}
 		if !haveOldest {
-			raw := blockBytes
-			if !isV2 {
-				raw = entry
-			}
 			if parsed, perr := b.vm.ParseBlock(ctx, raw); perr == nil {
 				oldestHeight, oldestParent, haveOldest = parsed.Height(), parsed.Parent(), true
 			} else if n, loud := catchupSample(&b.diag.blockUnparsed); loud {
@@ -4150,6 +4155,20 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 					deferred++
 					processed++
 					continue
+				}
+				if errors.Is(err, consensuschain.ErrCatchupMissingAncestor) {
+					// The block and its cert are fine; this node does not hold the
+					// OUTER envelope the block names as its parent, because its own
+					// wrapper of that height differs from the network's. Trying
+					// another peer cannot help — every peer serves the same envelope
+					// — so ask THIS one for the parent. GetContext walks outer parents
+					// down from any id the responder holds, so the reply is the
+					// envelope chain running down to this node's own head.
+					if parsed, perr := b.vm.ParseBlock(ctx, raw); perr == nil {
+						b.requestContext(ctx, nodeID, parsed.Parent())
+						missingAncestor++
+						continue
+					}
 				}
 				certRejected++
 				note("cert-accept: " + err.Error())
@@ -4233,6 +4252,7 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		log.Int("certAccepted", certAccepted),
 		log.Int("certRejected", certRejected),
 		log.Int("deferred", deferred),
+		log.Int("missingAncestor", missingAncestor),
 		log.Int("voted", voted),
 		log.Int("voteFailed", voteFailed),
 		log.Int("badFrame", badFrame),
