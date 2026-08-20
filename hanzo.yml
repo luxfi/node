@@ -21,9 +21,10 @@
 # repo's pools are `lux-build-linux-amd64` and `lux-build-linux-arm64`. These
 # MUST match the live arcd scale-set names exactly.
 #
-# Tagging: a release is a `v*` git-tag push. The webhook decoder maps the tag
-# ref to `branch=<tagname>`, so `tag-pattern: "{{git.branch}}"` yields the
-# image tag `vX.Y.Z` (immutable, semver-only — no :latest, no floating tags).
+# Tagging: a release is a `v*` git-tag push, and the image tag is `vX.Y.Z` —
+# immutable, semver-only, no :latest and no floating tags. Under a
+# platform-scheduled build the token for that is `{{git.tag}}`, which resolves
+# on the push that makes the tag and on no other.
 # BUILD IS NOT DECLARED HERE. The image is built by .hanzo/workflows/release.yml
 # on the native forge runners (git.hanzo.ai -> git-runner, pool
 # `lux-build-linux-amd64`), which is the same fabric that builds luxfi/kms and
