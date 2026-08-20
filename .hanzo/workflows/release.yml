@@ -169,10 +169,20 @@ jobs:
           docker run --rm --entrypoint sh "$img" -c './luxd --version' | head -3
           docker run --rm --entrypoint sh "$img" -c './repair-cchain --help >/dev/null'
 
-          plugins=$(docker run --rm --entrypoint sh "$img" -c 'ls -1 plugins | wc -l')
-          echo "baked plugins: ${plugins}"
-          if [ "${plugins}" -lt 12 ]; then
-            echo "::error::expected 12 baked VM plugins, found ${plugins}"
+          # Every plugin id the Dockerfile NAMES must exist in the image. A count is
+          # not enough and a floor is worse: v1.36.140 named 13 ids and shipped 12,
+          # and a floor of 12 -- or a count compared against the final-stage COPY list,
+          # which was itself self-consistent at 12 -- calls that green. The id was built
+          # and then never crossed into the image. Only comparing the SET catches it.
+          want=$(grep -ohE '/luxd/build/plugins/[A-Za-z0-9]{40,}' Dockerfile | sed 's|.*/||' | sort -u)
+          have=$(docker run --rm --entrypoint sh "$img" -c 'ls -1 plugins' | sort -u)
+          missing=''
+          for id in $want; do
+            echo "$have" | grep -qx "$id" || missing="$missing $id"
+          done
+          echo "VM plugins: named $(echo "$want" | wc -l), shipped $(echo "$have" | wc -l)"
+          if [ -n "$missing" ]; then
+            echo "::error::Dockerfile names VM plugins the image does not carry:$missing"
             exit 1
           fi
 
