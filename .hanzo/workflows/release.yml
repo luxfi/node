@@ -40,8 +40,6 @@ jobs:
     runs-on: [lux-build-linux-amd64]
     timeout-minutes: 60
     env:
-      GOPRIVATE: github.com/luxfi/*
-      GONOSUMDB: github.com/luxfi/*
       GOWORK: off
       GOEXPERIMENT: runtimesecret
       CGO_ENABLED: '0'
