@@ -36,12 +36,6 @@ export CGO_ENABLED="${CGO_ENABLED:-1}"
 # Disable version control fallbacks
 export GOPROXY="${GOPROXY:-https://proxy.golang.org}"
 
-# Only genuinely-private modules bypass the proxy. Everything else in luxfi is
-# public: GOPRIVATE would disable checksum verification for it, which is how
-# moved tags got captured into module caches unverified.
-export GOPRIVATE="${GOPRIVATE:-github.com/lux-private/*}"
-export GONOSUMDB="${GONOSUMDB:-github.com/lux-private/*}"
-
 # Configure pkg-config path for C++ libraries (luxcpp)
 # Searches for installed libraries in common locations
 LUXCPP_ROOT="${LUXCPP_ROOT:-}"
