@@ -118,7 +118,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.3.1
-	github.com/luxfi/api v1.1.6
+	github.com/luxfi/api v1.1.9
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.7.29
 	github.com/luxfi/codec v1.2.1
@@ -145,7 +145,7 @@ require (
 	github.com/luxfi/utils v1.3.1
 	github.com/luxfi/utxo v0.5.8
 	github.com/luxfi/validators v1.3.1
-	github.com/luxfi/vm v1.3.12
+	github.com/luxfi/vm v1.3.14
 	github.com/luxfi/warp v1.24.1
 	github.com/luxfi/zap v1.2.6
 	github.com/luxfi/zwing v0.6.1
