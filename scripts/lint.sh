@@ -90,7 +90,7 @@ function test_require_no_error_inline_func {
 
 # Ref: https://go.dev/doc/effective_go#blank_implements
 function test_interface_compliance_nil {
-  if grep -R -o -P '_ .+? = &.+?\{\}' .; then
+  if grep -R -o -P --exclude-dir=.git '_ .+? = &.+?\{\}' .; then
     echo ""
     echo "Interface compliance checks need to be of the form:"
     echo "  var _ json.Marshaler = (*RawMessage)(nil)"
