@@ -3928,7 +3928,30 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 // with a zero-length parent, the response carries nothing, and we arrive back here to
 // ask the same impossible question of the next peer. Nothing ends that on its own:
 // with no finalized ledger every window reads as "above" a tip of zero.
-func shouldDescend(advanced uint64, haveOldest bool, oldestHeight uint64, oldestParent ids.ID, finalized uint64, finalizedSet bool) bool {
+// batch is what one catch-up reply did to this node. It exists so the choice of
+// WHICH column decides a descent is made inside a tested function instead of at
+// the call site, where it was a bare argument and no test could reach it: the
+// call could be handed certAccepted instead of advanced and every test in the
+// package still passed.
+type batch struct {
+	// advanced is the delta in the APPLIED head. It is the only column that says
+	// this node got closer to its own tip.
+	advanced uint64
+	// certAccepted counts certs folded for blocks that may sit ABOVE the gap and
+	// apply nothing. It is deliberately not consulted by shouldDescend, and it is
+	// carried here so that omission is visible rather than implicit.
+	certAccepted uint64
+
+	haveOldest   bool
+	oldestHeight uint64
+	oldestParent ids.ID
+	finalized    uint64
+	finalizedSet bool
+}
+
+func shouldDescend(b batch) bool {
+	advanced, haveOldest, oldestHeight, oldestParent, finalized, finalizedSet :=
+		b.advanced, b.haveOldest, b.oldestHeight, b.oldestParent, b.finalized, b.finalizedSet
 	// advanced, not certAccepted. A batch can accept hundreds of certs for blocks
 	// ABOVE the gap -- tracked, deferred, applying nothing -- and gating on that
 	// reads the walk as progress and leaves the anchor where it is. Observed on
@@ -4294,7 +4317,15 @@ func (b *blockHandler) handleContext(ctx context.Context, nodeID ids.NodeID, req
 		b.retire(fh)
 	}
 
-	if shouldDescend(advanced, haveOldest, oldestHeight, oldestParent, fh, set) {
+	if shouldDescend(batch{
+		advanced:     advanced,
+		certAccepted: uint64(certAccepted),
+		haveOldest:   haveOldest,
+		oldestHeight: oldestHeight,
+		oldestParent: oldestParent,
+		finalized:    fh,
+		finalizedSet: set,
+	}) {
 		if b.descend(oldestParent, oldestHeight-1) {
 			b.logger.Info("catch-up batch was entirely above our tip — descending to its parent",
 				log.Stringer("from", nodeID),
