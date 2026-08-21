@@ -60,19 +60,56 @@ type router struct {
 	headerRoutes map[string]http.Handler
 	// legacy url-based routing
 	routes map[string]map[string]http.Handler // Maps routes to a handler
+	// mounts maps a full endpoint url (base+endpoint) to its handler. A base is
+	// a namespace shared by sibling endpoints; an endpoint is a mount, and it
+	// owns the paths beneath it. Only non-empty endpoints appear here.
+	mounts map[string]http.Handler
 
 	// rootInfoProvider provides node information for GET /
 	rootInfoProvider RootInfoProvider
 }
 
 func newRouter() *router {
-	return &router{
+	r := &router{
 		router:         mux.NewRouter(),
 		reservedRoutes: make(set.Set[string]),
 		aliases:        make(map[string][]string),
 		headerRoutes:   make(map[string]http.Handler),
 		routes:         make(map[string]map[string]http.Handler),
+		mounts:         make(map[string]http.Handler),
 	}
+	r.router.NotFoundHandler = http.HandlerFunc(r.serveBelowMount)
+	return r
+}
+
+// serveBelowMount answers a request that matched no exact route by handing it
+// to the endpoint it lives under, with the mount stripped off.
+//
+// A VM names the paths it serves relative to its own mount — zkvm's
+// /getStatus, aivm's /providers — because it cannot know the chain id the node
+// will mount it at. Mounted as a leaf, the handler was only ever reached at the
+// mount path itself, read that absolute path as its own, matched none of its
+// routes and answered 404. Z-Chain and A-Chain ran, finalized blocks and
+// reported metrics while serving nothing.
+//
+// Exact routes are matched first by construction, so an endpoint can never
+// shadow a sibling.
+func (r *router) serveBelowMount(writer http.ResponseWriter, request *http.Request) {
+	path := request.URL.Path
+	for i := len(path) - 1; i > 0; i-- {
+		if path[i] != '/' {
+			continue
+		}
+		mount := path[:i]
+		r.routeLock.Lock()
+		handler, ok := r.mounts[mount]
+		r.routeLock.Unlock()
+		if ok {
+			http.StripPrefix(mount, handler).ServeHTTP(writer, request)
+			return
+		}
+	}
+	http.NotFound(writer, request)
 }
 
 func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -267,6 +304,9 @@ func (r *router) forceAddRouter(base, endpoint string, handler http.Handler) err
 
 	endpoints[endpoint] = handler
 	r.routes[base] = endpoints
+	if endpoint != "" {
+		r.mounts[url] = handler
+	}
 
 	// Name routes based on their URL for easy retrieval in the future
 	route := r.router.Handle(url, handler)
