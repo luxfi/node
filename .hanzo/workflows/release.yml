@@ -27,13 +27,13 @@ on:
 #
 # Building on branch pushes as well meant two runs raced to push layers for the same
 # image, and the registry answers the loser "unknown blob" — a job that exits 1 with
-# no image, indistinguishable from a build failure. Serialising them needs the runner
-# to honour this group, which is not something to depend on; publishing from one
-# trigger removes the race instead of coordinating it. Branch pushes are covered by
-# ci.yml, which tests without publishing.
+# no image, indistinguishable from a build failure. Publishing from one tag-only
+# trigger removes that race. If a corrective tag supersedes a build still in flight,
+# cancel it so only the newest immutable release consumes the publisher. Branch
+# pushes are covered by ci.yml, which tests without publishing.
 concurrency:
   group: release-${{ github.repository }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   verify:
