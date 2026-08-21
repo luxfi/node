@@ -26,7 +26,9 @@ import (
 	"github.com/luxfi/version"
 	"github.com/luxfi/vm/chain"
 	atomicmem "github.com/luxfi/vm/chains/atomic"
+	"github.com/luxfi/validators"
 	"github.com/luxfi/vm/chains/atomic/atomiczap"
+	"github.com/luxfi/vm/validatorzap"
 )
 
 var (
@@ -78,6 +80,9 @@ type Client struct {
 	// plugin-hosted VM saw a nil SharedMemory. Lifetime bound to this Client.
 	atomicMu   sync.Mutex
 	atomicStop func()
+
+	validatorMu   sync.Mutex
+	validatorStop func()
 
 	// quasarCapable records whether the plugin advertised CapQuasarExport in the
 	// Initialize handshake — i.e. its concrete VM tracks a Quasar (⅔-by-stake)
@@ -143,12 +148,21 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 	// side. Without these the plugin's SharedMemory is nil and DChainID is empty,
 	// so every settlement reverts.
 	var (
-		atomicServerAddr string
-		dChainID         ids.ID
+		atomicServerAddr    string
+		validatorServerAddr string
+		dChainID            ids.ID
 	)
 	if init.Runtime != nil {
 		if atomicServerAddr, err = c.startAtomicServer(init.Runtime.SharedMemory); err != nil {
 			return fmt.Errorf("zap: start atomic server: %w", err)
+		}
+		// VALIDATOR STATE, same seam and same reason: an interface over live
+		// node-owned state that the plugin cannot receive by value. Without it a
+		// plugin VM sees a nil handle and can form no committee — which is why
+		// M-Chain, whose whole job is a threshold ceremony among validators,
+		// could never run one.
+		if validatorServerAddr, err = c.startValidatorServer(init.Runtime.ValidatorState); err != nil {
+			return fmt.Errorf("zap: start validator server: %w", err)
 		}
 		// BCLookup is the node's chain manager. Resolve "D" here, once, rather
 		// than proxy a lookup service: exactly this one alias is needed and its
@@ -175,8 +189,9 @@ func (c *Client) Initialize(ctx context.Context, init block.Init) error {
 		ConfigBytes:  init.Config,
 		DBServerAddr: dbServerAddr,
 
-		AtomicServerAddr: atomicServerAddr,
-		DChainID:         dChainIDBytes(dChainID),
+		AtomicServerAddr:    atomicServerAddr,
+		DChainID:            dChainIDBytes(dChainID),
+		ValidatorServerAddr: validatorServerAddr,
 	}
 
 	buf := zapwire.GetBuffer()
@@ -250,6 +265,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	}
 	c.stopDBServer()
 	c.stopAtomicServer()
+	c.stopValidatorServer()
 	return c.conn.Close()
 }
 
@@ -299,6 +315,43 @@ func (c *Client) startAtomicServer(sm atomicmem.SharedMemory) (string, error) {
 
 	c.logger.Info("zap atomic shared-memory server listening", "addr", addr)
 	return addr, nil
+}
+
+// startValidatorServer binds a fresh listener and serves the node's validator
+// state over ZAP, returning the bound addr to hand the plugin via
+// InitializeRequest.ValidatorServerAddr. Same shape and lifetime as
+// startAtomicServer.
+//
+// Returns "" when vs is nil — the node wired no validator state for this chain,
+// so the plugin must leave its handle nil and let a committee lookup fail
+// loudly. Never fabricate a server over a nil handle: an empty validator set is
+// a quorum of nobody, and a ceremony that ran against one would be a ceremony
+// among no one.
+func (c *Client) startValidatorServer(vs validators.State) (string, error) {
+	addr, stop, err := validatorzap.Serve(vs)
+	if err != nil {
+		return "", err
+	}
+	if addr == "" {
+		c.logger.Warn("zap: no validator state for this chain — a plugin VM here can form no committee")
+		return "", nil
+	}
+
+	c.validatorMu.Lock()
+	c.validatorStop = stop
+	c.validatorMu.Unlock()
+
+	c.logger.Info("zap validator-state server listening", "addr", addr)
+	return addr, nil
+}
+
+func (c *Client) stopValidatorServer() {
+	c.validatorMu.Lock()
+	defer c.validatorMu.Unlock()
+	if c.validatorStop != nil {
+		c.validatorStop()
+		c.validatorStop = nil
+	}
 }
 
 func (c *Client) stopAtomicServer() {
