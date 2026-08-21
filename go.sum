@@ -325,6 +325,8 @@ github.com/luxfi/chains v1.7.30 h1:Il73nxGSHRZ4e/wT3GdP+nj2pWw2xAG1llGgx604lJk=
 github.com/luxfi/chains v1.7.30/go.mod h1:Axp/EO4uoyhYFteT1jTmEgr5ZQ9KoRuoQ/f/Yt78eZ4=
 github.com/luxfi/chains v1.7.31 h1:bVV1ll39hK8x3KSeLFZc4mwhJb8N88hymqGpRhe7pXg=
 github.com/luxfi/chains v1.7.31/go.mod h1:xQbpclfVeTtjjlbr0Nn4YsqxFgcuBeSsetgDPPGZu9A=
+github.com/luxfi/chains v1.7.33 h1:F6NwxLZDQLNSVjW6wriaIH7/SdIAKZvUBcPxIYDtvzw=
+github.com/luxfi/chains v1.7.33/go.mod h1:xQbpclfVeTtjjlbr0Nn4YsqxFgcuBeSsetgDPPGZu9A=
 github.com/luxfi/codec v1.2.1 h1:NA/O3dWm9QejQPdjLEIVx42ddVqAXsy6Y6igL/V1+aU=
 github.com/luxfi/codec v1.2.1/go.mod h1:xjWOTEbw9gxY/N8nZwQPvRCfPnK/ugJHBWsb3BZ0HHs=
 github.com/luxfi/compress v0.1.1 h1:cQjRYQFRrw8HinjW1T8FmKgqdRwrFYDCdecc1t0i+uQ=
@@ -341,6 +343,8 @@ github.com/luxfi/consensus v1.36.61 h1:es32Ul+okxijymq6ksvWV4QPiA7YOGF1EdpG58NZT
 github.com/luxfi/consensus v1.36.61/go.mod h1:BxuxU2P5FUtOexN3e4AFlY4k8ESJi5hs2WtRE7pEL/A=
 github.com/luxfi/consensus v1.36.63 h1:lgDVIQKmx8v184VVA/8qNMT5wXMqlJEZG3zX32mnyis=
 github.com/luxfi/consensus v1.36.63/go.mod h1:BxuxU2P5FUtOexN3e4AFlY4k8ESJi5hs2WtRE7pEL/A=
+github.com/luxfi/consensus v1.36.69 h1:1V/vSXJm9uVvM0EQoGi1tehS0uOw0gfpUPBIB4HuzzA=
+github.com/luxfi/consensus v1.36.69/go.mod h1:BxuxU2P5FUtOexN3e4AFlY4k8ESJi5hs2WtRE7pEL/A=
 github.com/luxfi/constants v1.6.2 h1:pXHdKIFbfE9qX4xOjq2LxYvagNhhNvspUVEbPcIEKfA=
 github.com/luxfi/constants v1.6.2/go.mod h1:r0oH8C/+r/XFYBq1AJxt6zWRKKRKgDzrEMop/CCs9rI=
 github.com/luxfi/container v0.2.2 h1:/IunVpvNuwsqwAYjJSibDskmH/39y4pRKQxrrMLF5Qk=
