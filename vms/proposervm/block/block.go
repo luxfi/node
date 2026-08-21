@@ -4,6 +4,7 @@
 package block
 
 import (
+	stdbytes "bytes"
 	"errors"
 	"fmt"
 	"time"
@@ -22,6 +23,7 @@ var (
 	errInvalidCertificate      = errors.New("invalid certificate")
 	errUnknownProposerScheme   = errors.New("proposervm block: unknown proposer identity scheme")
 	errMLDSAProposerSigInvalid = errors.New("proposervm block: ML-DSA proposer signature invalid")
+	errNonCanonicalWire        = errors.New("proposervm block: non-canonical wire encoding")
 )
 
 // Proposer-identity scheme tags stored as the FIRST byte of the offCert slot,
@@ -134,12 +136,20 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 	b.id = hash.ComputeHash256Array(bytes[:n])
 
 	if len(bytes) > n {
-		sigMsg, err := zap.Parse(bytes[n:])
+		sigBytes := bytes[n:]
+		sigMsg, err := zap.Parse(sigBytes)
 		if err != nil {
 			return err
 		}
 		if s := sigMsg.Root().Bytes(offSig); len(s) > 0 {
 			b.Signature = append([]byte(nil), s...)
+		}
+		// The signature suffix is outside the block ID, so accepting multiple
+		// encodings of it would let a peer persist and re-serve arbitrary bytes
+		// under somebody else's valid block ID. Rebuild the only canonical form
+		// and require byte-for-byte equality; this also rejects trailing data.
+		if !stdbytes.Equal(sigBytes, buildSigBuffer(b.Signature)) {
+			return errNonCanonicalWire
 		}
 	}
 
@@ -149,6 +159,9 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 	// Proposer-identity slot: [scheme:1B | identity]. Empty ⇒ unsigned block.
 	idSlot := root.Bytes(offCert)
 	if len(idSlot) == 0 {
+		if len(bytes) != n {
+			return errNonCanonicalWire
+		}
 		return nil
 	}
 	b.scheme = idSlot[0]

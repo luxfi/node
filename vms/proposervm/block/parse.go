@@ -64,8 +64,11 @@ func ParseWithoutVerification(bytes []byte) (Block, error) {
 		block := &statelessBlock{}
 		return block, block.initialize(bytes)
 	case blkOption:
+		if n != len(bytes) {
+			return nil, errNonCanonicalWire
+		}
 		block := &option{}
-		return block, block.initialize(bytes[:n])
+		return block, block.initialize(bytes)
 	default:
 		return nil, fmt.Errorf("%w: %d", errUnknownBlockType, k)
 	}
