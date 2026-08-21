@@ -24,12 +24,6 @@ runs:
   steps:
     - name: Set the project Go version in the environment
       uses: ./.github/actions/set-go-version-in-env
-    - name: Resolve Lux modules directly from their immutable tags
-      shell: bash
-      run: |
-        echo "GOPRIVATE=github.com/luxfi/*,github.com/lux-private/*" >> $GITHUB_ENV
-        echo "GONOPROXY=github.com/luxfi/*,github.com/lux-private/*" >> $GITHUB_ENV
-        echo "GONOSUMDB=github.com/luxfi/*,github.com/lux-private/*" >> $GITHUB_ENV
     - name: Configure git for private repo access
       if: inputs.github-token != ''
       shell: bash

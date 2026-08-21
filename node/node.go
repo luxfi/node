@@ -16,6 +16,7 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -62,8 +63,8 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/platformvm"
-	"github.com/luxfi/node/vms/platformvm/stakingparams"
 	platformvmgenesis "github.com/luxfi/node/vms/platformvm/genesis"
+	"github.com/luxfi/node/vms/platformvm/stakingparams"
 	"github.com/luxfi/node/vms/rpcchainvm/runtime"
 	"github.com/luxfi/node/vms/txs/auth"
 	"github.com/luxfi/node/vms/xvm"
@@ -163,7 +164,7 @@ func New(
 		log.Stringer("nodeID", n.ID),
 		log.Stringer("stakingKeyType", tlsCert.PublicKeyAlgorithm),
 		log.Reflect("nodePOP", pop),
-		log.Reflect("providedFlags", n.Config.ProvidedFlags),
+		log.Strings("providedFlags", providedFlagNames(n.Config.ProvidedFlags)),
 		log.Reflect("config", n.Config),
 	)
 
@@ -2242,4 +2243,27 @@ func stakingHistoryFor(networkID uint32) stakingparams.History {
 		return stakingparams.MainnetHistory
 	}
 	return nil
+}
+
+// providedFlagNames lists WHICH flags a deployment set, and never what it set
+// them to. The line this feeds exists to answer "how was this node configured",
+// and the names answer that; the values are where the keys are.
+//
+// Several flags carry key material directly — the staking TLS key, the BLS
+// signer, the ML-DSA and ML-KEM keys all have *-file-content forms, documented
+// and recommended for exactly the deployments that cannot mount a file. Those
+// values were written to the log at info, which in a container is the cluster's
+// log store, so a reader of logs held the node's network identity and its
+// signing key.
+//
+// Names rather than a list of secret-bearing flags to skip: a list has to be
+// remembered, and the next key-carrying flag is added by someone who has never
+// read it. There is nothing here to keep in step.
+func providedFlagNames(flags map[string]interface{}) []string {
+	names := make([]string, 0, len(flags))
+	for name := range flags {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }

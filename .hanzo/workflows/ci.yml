@@ -29,8 +29,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GOPRIVATE: github.com/luxfi/*
-  GONOSUMDB: github.com/luxfi/*
   GOWORK: off
   GOEXPERIMENT: runtimesecret
   CGO_ENABLED: '0'
