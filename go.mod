@@ -182,6 +182,8 @@ require (
 	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
+	github.com/fjl/gencodec v0.1.1 // indirect
+	github.com/garslo/gogen v0.0.0-20170306192744-1d203ffc1f61 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
@@ -196,6 +198,7 @@ require (
 	github.com/luxfi/corona v0.10.4 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
+	github.com/luxfi/evm v1.104.46 // indirect
 	github.com/luxfi/keys v1.4.2 // indirect
 	github.com/luxfi/lattice/v7 v7.1.4 // indirect
 	github.com/luxfi/lens v0.2.1 // indirect
