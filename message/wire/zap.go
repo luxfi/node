@@ -4,6 +4,7 @@
 package wire
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -171,6 +172,15 @@ func (r *Reader) ReadUint64() (uint64, error) {
 	return v, nil
 }
 
+// affordable reports how many elements the bytes still in hand could hold, or
+// refuses a count that names more than the frame can pay for.
+func (r *Reader) affordable(count uint32, perElement int) error {
+	if int64(count) > int64(len(r.data)-r.offset)/int64(perElement) {
+		return ErrInvalidMessage
+	}
+	return nil
+}
+
 func (r *Reader) ReadBytes() ([]byte, error) {
 	length, err := r.ReadUint32()
 	if err != nil {
@@ -195,6 +205,9 @@ func (r *Reader) ReadBytesSlice() ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := r.affordable(count, 4); err != nil {
+		return nil, err
+	}
 	result := make([][]byte, count)
 	for i := uint32(0); i < count; i++ {
 		result[i], err = r.ReadBytes()
@@ -210,6 +223,9 @@ func (r *Reader) ReadUint32Slice() ([]uint32, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := r.affordable(count, 4); err != nil {
+		return nil, err
+	}
 	result := make([]uint32, count)
 	for i := uint32(0); i < count; i++ {
 		result[i], err = r.ReadUint32()
@@ -223,6 +239,9 @@ func (r *Reader) ReadUint32Slice() ([]uint32, error) {
 func (r *Reader) ReadUint64Slice() ([]uint64, error) {
 	count, err := r.ReadUint32()
 	if err != nil {
+		return nil, err
+	}
+	if err := r.affordable(count, 8); err != nil {
 		return nil, err
 	}
 	result := make([]uint64, count)
@@ -388,7 +407,13 @@ func Unmarshal(data []byte) (*Message, error) {
 		return nil, ErrUnknownTag
 	}
 
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	if r.offset != len(data) {
+		return nil, ErrInvalidMessage
+	}
+	return m, nil
 }
 
 // Marshal helpers
@@ -603,16 +628,22 @@ func unmarshalPing(r *Reader) (*Ping, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := r.affordable(count, 8); err != nil {
+		return nil, err
+	}
 	m.ChainIds = make([]*ChainPingEntry, count)
 	for i := uint32(0); i < count; i++ {
 		p := &ChainPingEntry{}
-		p.ChainId, err = r.ReadBytes()
+		first, err := r.ReadBytes()
 		if err != nil {
 			return nil, err
 		}
 		p.ChainId, err = r.ReadBytes()
 		if err != nil {
 			return nil, err
+		}
+		if !bytes.Equal(first, p.ChainId) {
+			return nil, ErrInvalidMessage
 		}
 		m.ChainIds[i] = p
 	}
@@ -630,16 +661,22 @@ func unmarshalPong(r *Reader) (*Pong, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := r.affordable(count, 8); err != nil {
+		return nil, err
+	}
 	m.ChainIds = make([]*ChainPingEntry, count)
 	for i := uint32(0); i < count; i++ {
 		p := &ChainPingEntry{}
-		p.ChainId, err = r.ReadBytes()
+		first, err := r.ReadBytes()
 		if err != nil {
 			return nil, err
 		}
 		p.ChainId, err = r.ReadBytes()
 		if err != nil {
 			return nil, err
+		}
+		if !bytes.Equal(first, p.ChainId) {
+			return nil, ErrInvalidMessage
 		}
 		m.ChainIds[i] = p
 	}
@@ -681,6 +718,9 @@ func unmarshalHandshake(r *Reader) (*Handshake, error) {
 	if err != nil {
 		return nil, err
 	}
+	if hasClient > 1 {
+		return nil, ErrInvalidMessage
+	}
 	if hasClient == 1 {
 		m.Client = &Client{}
 		m.Client.Name, err = r.ReadString()
@@ -712,6 +752,9 @@ func unmarshalHandshake(r *Reader) (*Handshake, error) {
 	if err != nil {
 		return nil, err
 	}
+	if hasKnownPeers > 1 {
+		return nil, ErrInvalidMessage
+	}
 	if hasKnownPeers == 1 {
 		m.KnownPeers = &BloomFilter{}
 		m.KnownPeers.Filter, err = r.ReadBytes()
@@ -724,7 +767,10 @@ func unmarshalHandshake(r *Reader) (*Handshake, error) {
 		}
 	}
 	m.IpBlsSig, err = r.ReadBytes()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalGetPeerList(r *Reader) (*GetPeerList, error) {
@@ -732,6 +778,9 @@ func unmarshalGetPeerList(r *Reader) (*GetPeerList, error) {
 	hasKnownPeers, err := r.ReadUint8()
 	if err != nil {
 		return nil, err
+	}
+	if hasKnownPeers > 1 {
+		return nil, ErrInvalidMessage
 	}
 	if hasKnownPeers == 1 {
 		m.KnownPeers = &BloomFilter{}
@@ -751,6 +800,9 @@ func unmarshalPeerList(r *Reader) (*PeerList, error) {
 	m := &PeerList{}
 	count, err := r.ReadUint32()
 	if err != nil {
+		return nil, err
+	}
+	if err := r.affordable(count, 28); err != nil {
 		return nil, err
 	}
 	m.ClaimedIpPorts = make([]*ClaimedIpPort, count)
@@ -797,7 +849,10 @@ func unmarshalGetStateSummaryFrontier(r *Reader) (*GetStateSummaryFrontier, erro
 		return nil, err
 	}
 	m.Deadline, err = r.ReadUint64()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalStateSummaryFrontier(r *Reader) (*StateSummaryFrontier, error) {
@@ -812,7 +867,10 @@ func unmarshalStateSummaryFrontier(r *Reader) (*StateSummaryFrontier, error) {
 		return nil, err
 	}
 	m.Summary, err = r.ReadBytes()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalGetAcceptedStateSummary(r *Reader) (*GetAcceptedStateSummary, error) {
@@ -831,7 +889,10 @@ func unmarshalGetAcceptedStateSummary(r *Reader) (*GetAcceptedStateSummary, erro
 		return nil, err
 	}
 	m.Heights, err = r.ReadUint64Slice()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalAcceptedStateSummary(r *Reader) (*AcceptedStateSummary, error) {
@@ -846,7 +907,10 @@ func unmarshalAcceptedStateSummary(r *Reader) (*AcceptedStateSummary, error) {
 		return nil, err
 	}
 	m.SummaryIds, err = r.ReadBytesSlice()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalGetAcceptedFrontier(r *Reader) (*GetAcceptedFrontier, error) {
@@ -866,7 +930,10 @@ func unmarshalGetAcceptedFrontier(r *Reader) (*GetAcceptedFrontier, error) {
 	}
 	et, err := r.ReadUint32()
 	m.EngineType = EngineType(et)
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalAcceptedFrontier(r *Reader) (*AcceptedFrontier, error) {
@@ -881,7 +948,10 @@ func unmarshalAcceptedFrontier(r *Reader) (*AcceptedFrontier, error) {
 		return nil, err
 	}
 	m.ContainerId, err = r.ReadBytes()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalGetAccepted(r *Reader) (*GetAccepted, error) {
@@ -905,7 +975,10 @@ func unmarshalGetAccepted(r *Reader) (*GetAccepted, error) {
 	}
 	et, err := r.ReadUint32()
 	m.EngineType = EngineType(et)
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalAccepted(r *Reader) (*Accepted, error) {
@@ -920,7 +993,10 @@ func unmarshalAccepted(r *Reader) (*Accepted, error) {
 		return nil, err
 	}
 	m.ContainerIds, err = r.ReadBytesSlice()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalGetAncestors(r *Reader) (*GetAncestors, error) {
@@ -944,7 +1020,10 @@ func unmarshalGetAncestors(r *Reader) (*GetAncestors, error) {
 	}
 	et, err := r.ReadUint32()
 	m.EngineType = EngineType(et)
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalAncestors(r *Reader) (*Ancestors, error) {
@@ -959,7 +1038,10 @@ func unmarshalAncestors(r *Reader) (*Ancestors, error) {
 		return nil, err
 	}
 	m.Containers, err = r.ReadBytesSlice()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalGet(r *Reader) (*Get, error) {
@@ -983,7 +1065,10 @@ func unmarshalGet(r *Reader) (*Get, error) {
 	}
 	et, err := r.ReadUint32()
 	m.EngineType = EngineType(et)
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalPut(r *Reader) (*Put, error) {
@@ -1003,7 +1088,10 @@ func unmarshalPut(r *Reader) (*Put, error) {
 	}
 	et, err := r.ReadUint32()
 	m.EngineType = EngineType(et)
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalPushQuery(r *Reader) (*PushQuery, error) {
@@ -1031,7 +1119,10 @@ func unmarshalPushQuery(r *Reader) (*PushQuery, error) {
 		return nil, err
 	}
 	m.RequestedHeight, err = r.ReadUint64()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalPullQuery(r *Reader) (*PullQuery, error) {
@@ -1059,7 +1150,10 @@ func unmarshalPullQuery(r *Reader) (*PullQuery, error) {
 		return nil, err
 	}
 	m.RequestedHeight, err = r.ReadUint64()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalChits(r *Reader) (*Chits, error) {
@@ -1082,7 +1176,10 @@ func unmarshalChits(r *Reader) (*Chits, error) {
 		return nil, err
 	}
 	m.AcceptedId, err = r.ReadBytes()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalRequest(r *Reader) (*Request, error) {
@@ -1101,7 +1198,10 @@ func unmarshalRequest(r *Reader) (*Request, error) {
 		return nil, err
 	}
 	m.Request, err = r.ReadBytes()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalResponse(r *Reader) (*Response, error) {
@@ -1116,7 +1216,10 @@ func unmarshalResponse(r *Reader) (*Response, error) {
 		return nil, err
 	}
 	m.Response, err = r.ReadBytes()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalGossip(r *Reader) (*Gossip, error) {
@@ -1127,7 +1230,10 @@ func unmarshalGossip(r *Reader) (*Gossip, error) {
 		return nil, err
 	}
 	m.Gossip, err = r.ReadBytes()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func unmarshalBFT(r *Reader) (*BFT, error) {
@@ -1138,5 +1244,8 @@ func unmarshalBFT(r *Reader) (*BFT, error) {
 		return nil, err
 	}
 	m.Message, err = r.ReadBytes()
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
