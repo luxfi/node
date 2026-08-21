@@ -174,6 +174,24 @@ jobs:
           # and then never crossed into the image. Only comparing the SET catches it.
           want=$(grep -ohE '/luxd/build/plugins/[A-Za-z0-9]{40,}' Dockerfile | sed 's|.*/||' | sort -u)
           have=$(docker run --rm --entrypoint sh "$img" -c 'ls -1 plugins' | sort -u)
+
+          # BOTH SIDES MUST BE NON-EMPTY. An empty `want` makes the loop below run
+          # zero times and the gate pass having compared nothing -- the same shape as
+          # the count it replaced, which was self-consistent at 12 while the image
+          # shipped 12 of 13. A grep that stops matching because the Dockerfile
+          # changed shape must fail the release, not bless it.
+          want_n=$(echo "$want" | grep -c . || true)
+          have_n=$(echo "$have" | grep -c . || true)
+          if [ "$want_n" -lt 10 ]; then
+            echo "::error::extracted only $want_n plugin ids from the Dockerfile; the release " \
+                 "gate would pass having checked nothing"
+            exit 1
+          fi
+          if [ "$have_n" -lt 1 ]; then
+            echo "::error::the image lists no plugins at all"
+            exit 1
+          fi
+
           missing=''
           for id in $want; do
             echo "$have" | grep -qx "$id" || missing="$missing $id"
