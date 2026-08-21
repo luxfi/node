@@ -11,20 +11,16 @@
 //   - the envelopes for the gap are still in the local block store -> rebuilt at
 //     boot with no network and no operator;
 //   - they are not -> the chain STARTS anyway, loud, build-gated, and heals from
-//     supplied envelopes through BackfillOuterBlock.
+//     the normal quorum-certificate-gated Accept path.
 //
 // The shared harness lives in height_lag_repro_test.go.
 package proposervm
 
 import (
 	"context"
-	"errors"
 	"testing"
-	"time"
 
 	"github.com/luxfi/ids"
-
-	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
 
 // ---------------------------------------------------------------------------
@@ -84,12 +80,11 @@ func TestOuterIndexRebuild_FromLocalStore_BootsAndHeals(t *testing.T) {
 	}
 }
 
-// TestOuterBackfill_HealsFromSuppliedEnvelopes: the envelopes for the gap are NOT
-// in the local store (the pre-fork-fallback case — they were never persisted).
-// The node must still START — the old code killed the C-Chain here — come up
-// explicitly backfill-pending, refuse to build, and then heal from supplied
-// envelopes with no EVM re-execution.
-func TestOuterBackfill_HealsFromSuppliedEnvelopes(t *testing.T) {
+// TestOuterBackfill_HealsOnlyThroughAcceptedEnvelopes covers the damaged node's
+// live recovery. Parsing untrusted peer bytes cannot advance the finality index;
+// only the normal postForkBlock.Accept transition (called by consensus after it
+// verifies the weighted quorum certificate) can do so.
+func TestOuterBackfill_HealsOnlyThroughAcceptedEnvelopes(t *testing.T) {
 	ctx := context.Background()
 	ic := newInnerChain(t, 8)
 	vm := testVM(t, ic)
@@ -118,31 +113,30 @@ func TestOuterBackfill_HealsFromSuppliedEnvelopes(t *testing.T) {
 		t.Fatal("BuildBlock must refuse while the finality index is incomplete")
 	}
 
-	// NEGATIVE 1 — an envelope wrapping a DIFFERENT inner block than the one we
-	// accepted at this height is rejected (a peer cannot steer the pointer).
-	bogus, err := statelessblock.BuildUnsigned(
-		lastGood, time.Unix(6, 0), 0, statelessblock.Epoch{}, []byte("not-our-inner-block"))
-	if err != nil {
-		t.Fatalf("BuildUnsigned: %v", err)
+	// Merely parsing the next valid signed envelope is not authority to move the
+	// pointer. This is the regression against the removed parse-time repair path.
+	first := outerFor(t, ic, 6, lastGood)
+	if _, err := vm.ParseBlock(ctx, first.Bytes()); err != nil {
+		t.Fatalf("ParseBlock(h=6): %v", err)
 	}
-	if err := vm.BackfillOuterBlock(ctx, bogus.Bytes()); !errors.Is(err, ErrOuterBackfillRejected) {
-		t.Fatalf("an envelope that does not wrap our accepted inner block must be rejected, got %v", err)
-	}
-
-	// NEGATIVE 2 — out of order (height 7 before 6) is rejected: it does not chain
-	// off the current finality pointer.
-	outOfOrder := outerFor(t, ic, 7, lastGood)
-	if err := vm.BackfillOuterBlock(ctx, outOfOrder.Bytes()); !errors.Is(err, ErrOuterBackfillRejected) {
-		t.Fatalf("an out-of-order envelope must be rejected, got %v", err)
+	if got := indexHeight(t, vm); got != 5 {
+		t.Fatalf("parse-only traffic advanced finality index to %d; want 5", got)
 	}
 
-	// HEAL — feed 6, 7, 8 oldest-first, as a healthy peer or the repair tool would.
+	// HEAL — consensus supplies 6, 7, 8 oldest-first and calls Accept only after
+	// each wrapper's weighted certificate passes. The inner blocks are already
+	// canonical, so the real EVM treats those inner Accept calls as idempotent.
 	parent := lastGood
 	want := map[uint64]ids.ID{}
 	for h := uint64(6); h <= 8; h++ {
 		sb := outerFor(t, ic, h, parent)
-		if err := vm.BackfillOuterBlock(ctx, sb.Bytes()); err != nil {
-			t.Fatalf("BackfillOuterBlock(h=%d): %v", h, err)
+		blk := &postForkBlock{
+			SignedBlock:              sb,
+			postForkCommonComponents: postForkCommonComponents{vm: vm, innerBlk: ic.byHeight[h]},
+		}
+		vm.Tree.Add(ic.byHeight[h])
+		if err := blk.Accept(ctx); err != nil {
+			t.Fatalf("certified Accept(h=%d): %v", h, err)
 		}
 		want[h] = sb.ID()
 		parent = sb.ID()
@@ -159,10 +153,6 @@ func TestOuterBackfill_HealsFromSuppliedEnvelopes(t *testing.T) {
 		if err != nil || got != want[h] {
 			t.Fatalf("height index at %d must be %s, got %s (err %v)", h, want[h], got, err)
 		}
-	}
-	// Idempotent: nothing pending, so a replayed call says so rather than corrupting.
-	if err := vm.BackfillOuterBlock(ctx, outOfOrder.Bytes()); !errors.Is(err, ErrOuterBackfillNotPending) {
-		t.Fatalf("want ErrOuterBackfillNotPending after completion, got %v", err)
 	}
 	// The chain is a full participant again.
 	if _, _, pending := vm.NeedsOuterBackfill(); pending {
@@ -206,11 +196,9 @@ func mustForkHeight(t *testing.T, vm *VM) uint64 {
 	return h
 }
 
-// TestOuterBackfill_SelfHealsFromOrdinaryParseTraffic proves the loop closes with
-// no new transport and no operator: every envelope a peer serves passes through
-// VM.ParseBlock, and a backfill-pending node absorbs exactly the ones it needs.
-// This is what lets an ALREADY-DAMAGED node come back by itself.
-func TestOuterBackfill_SelfHealsFromOrdinaryParseTraffic(t *testing.T) {
+// TestOuterBackfill_ParseTrafficCannotAdvanceFinality proves network input that
+// has only parsed (not passed a quorum certificate) has no write-side effect.
+func TestOuterBackfill_ParseTrafficCannotAdvanceFinality(t *testing.T) {
 	ctx := context.Background()
 	ic := newInnerChain(t, 8)
 	vm := testVM(t, ic)
@@ -229,7 +217,7 @@ func TestOuterBackfill_SelfHealsFromOrdinaryParseTraffic(t *testing.T) {
 		t.Fatal("precondition: backfill must be pending")
 	}
 
-	// Peer traffic, oldest-first, delivered through the ORDINARY parse path.
+	// Peer traffic, oldest-first, delivered through the ordinary parse path.
 	parent := lastGood
 	for h := uint64(6); h <= 8; h++ {
 		sb := outerFor(t, ic, h, parent)
@@ -239,16 +227,13 @@ func TestOuterBackfill_SelfHealsFromOrdinaryParseTraffic(t *testing.T) {
 		parent = sb.ID()
 	}
 
-	if _, _, pending := vm.NeedsOuterBackfill(); pending {
-		t.Fatal("the node must have healed itself from ordinary parse traffic")
+	if _, _, pending := vm.NeedsOuterBackfill(); !pending {
+		t.Fatal("parse-only traffic must not clear the cert-gated recovery marker")
 	}
-	if got := indexHeight(t, vm); got != 8 {
-		t.Fatalf("index must reach the inner tip 8, got %d", got)
+	if got := indexHeight(t, vm); got != 5 {
+		t.Fatalf("parse-only traffic advanced finality index to %d; want 5", got)
 	}
-	// The build gate lifted with the heal (the gate itself is asserted in
-	// TestOuterBackfill_HealsFromSuppliedEnvelopes; driving the real builder here
-	// would need a validator set this harness deliberately does not stand up).
-	if _, _, pending := vm.NeedsOuterBackfill(); pending {
-		t.Fatal("build gate must have lifted")
+	if !vm.outerBackfillPending() {
+		t.Fatal("build gate must remain until certified Accept closes the gap")
 	}
 }

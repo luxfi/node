@@ -12,9 +12,7 @@
 //	proposervm finality index (height N) is BEHIND the inner VM tip (height M)"
 //	non-critical chain failed to initialize … chainAlias=C
 //
-// THE MECHANISM. Every post-fork accept commits the envelope, its height index
-// entry and the last-accepted pointer in ONE versiondb batch BEFORE the inner
-// block is accepted, so the index can only run AHEAD. But the proposervm has one
+// THE LEGACY MECHANISM. The proposervm had one
 // accept path that moves the inner VM and writes NOTHING: preForkBlock.Accept,
 // whose acceptOuterBlk() is a no-op. Post-fork it was reachable because getBlock()
 // silently falls back to constructing a preForkBlock whenever the id is not an

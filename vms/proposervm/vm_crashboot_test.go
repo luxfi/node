@@ -23,10 +23,9 @@
 // The matrix pins the persistence boundaries: nothing accepted yet, exactly
 // one accept (the fork-height record), a longer run, and a copy taken while
 // the source keeps accepting (the copy must be an immutable snapshot).
-// TestCrashBoot_OuterCommittedInnerNot pins the ONE window the accept path
-// leaves open: acceptPostForkBlock commits the outer batch BEFORE the inner
-// VM accepts, so a crash between the two strands the index one ahead — boot
-// must roll the pointer back onto the inner survivor and keep building.
+// The final test also pins recovery of a LEGACY/restored state whose outer index
+// is one height ahead of the inner VM. Current code cannot create that state
+// because postForkBlock.Accept is inner-first, but old data must remain bootable.
 //
 // The shared harness lives in height_lag_repro_test.go.
 package proposervm
@@ -256,14 +255,10 @@ func TestCrashBoot_ColdVMOverDirtyCopy_AgreesAndBuilds(t *testing.T) {
 	}
 }
 
-// TestCrashBoot_OuterCommittedInnerNot_RollsBackAndBuilds pins the one crash
-// window the accept path leaves open. acceptPostForkBlock commits the envelope,
-// height index and finality pointer in ONE batch BEFORE the inner VM accepts
-// (that ordering is why the index can never legitimately fall behind). A crash
-// inside the window therefore persists an index one AHEAD of the inner
-// survivor. Boot must take repairAcceptedChainByHeight's roll-back arm — move
-// the pointer back onto the height the inner VM survived at — and the node
-// must then build its replacement proposal there.
+// TestCrashBoot_OuterCommittedInnerNot_RollsBackAndBuilds pins compatibility
+// with legacy/restored bytes whose outer pointer is one height ahead of the
+// inner VM. Current inner-first acceptance cannot create this state, but boot
+// must still roll the pointer back and keep building.
 func TestCrashBoot_OuterCommittedInnerNot_RollsBackAndBuilds(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
@@ -274,7 +269,7 @@ func TestCrashBoot_OuterCommittedInnerNot_RollsBackAndBuilds(t *testing.T) {
 	outers := acceptThroughProposervm(t, src, ic, 4)
 	require.Equal(uint64(4), ic.tip, "precondition: lock-step through 4")
 
-	// Height 5's outer accept COMMITS…
+	// Construct the legacy/restored mismatch: persist height 5's outer envelope…
 	sb := outerFor(t, ic, 5, outers[4].ID())
 	blk := &postForkBlock{
 		SignedBlock:              sb,
@@ -282,7 +277,7 @@ func TestCrashBoot_OuterCommittedInnerNot_RollsBackAndBuilds(t *testing.T) {
 	}
 	src.Tree.Add(ic.byHeight[5])
 	require.NoError(blk.Accept(ctx))
-	// …and the process dies BEFORE the inner VM accepts 5 (no ic.accept(5)).
+	// …while the copied inner snapshot remains at 4 (no ic.accept(5)).
 
 	cp := crashCopy(t, base)
 	icAtCopy := ic.snapshot(4)

@@ -279,7 +279,7 @@ func TestTheOuterTipIsNotTheBlockThisNodeHasRun(t *testing.T) {
 	require.NoError(err)
 	require.Equal(behind.Height(), innerHeight)
 	require.Less(innerHeight, ahead.Height(),
-		"the outer height leads the inner by design — reporting it as executed is the bug this pair exists to prevent")
+		"a restored outer/inner mismatch must not be reported as executed")
 
 	// An inner VM that cannot answer must produce an error, never a zero height:
 	// a caller reading zero concludes the node is at genesis however far it ran.
