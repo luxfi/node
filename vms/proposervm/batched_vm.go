@@ -5,10 +5,11 @@ package proposervm
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
+	chain "github.com/luxfi/vm/chain"
 
 	statelessblock "github.com/luxfi/node/vms/proposervm/block"
 )
@@ -28,6 +29,9 @@ func (vm *VM) GetAncestors(
 ) ([][]byte, error) {
 	if vm.batchedVM == nil {
 		return nil, chain.ErrRemoteVMNotImplemented
+	}
+	if maxBlocksNum <= 0 || maxBlocksSize <= 0 || maxBlocksRetrievalTime <= 0 {
+		return nil, nil
 	}
 
 	res := make([][]byte, 0, maxBlocksNum)
@@ -131,6 +135,13 @@ func (vm *VM) BatchedParseBlock(ctx context.Context, blks [][]byte) ([]chain.Blo
 	innerBlks, err := vm.batchedVM.BatchedParseBlock(ctx, innerBlockBytes)
 	if err != nil {
 		return nil, err
+	}
+	if len(innerBlks) != len(innerBlockBytes) {
+		return nil, fmt.Errorf(
+			"inner VM returned %d parsed blocks for %d inputs",
+			len(innerBlks),
+			len(innerBlockBytes),
+		)
 	}
 	for ; innerBlocksIndex < len(statelessBlockDescs); innerBlocksIndex++ {
 		statelessBlockDesc := statelessBlockDescs[innerBlocksIndex]

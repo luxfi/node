@@ -88,7 +88,7 @@ func (q *BoundedMessageQueue) Enqueue(msg message.OutboundMessage) error {
 	}
 
 	msgSize := q.estimateMessageSize(msg)
-	if msgSize > MaxMessageSize {
+	if msgSize > MaxMessageSize || msgSize > q.maxSize {
 		q.dropped.Add(1)
 		return ErrMessageTooBig
 	}
@@ -104,6 +104,9 @@ func (q *BoundedMessageQueue) Enqueue(msg message.OutboundMessage) error {
 
 		// Apply backpressure - wait for space
 		q.notFull.Wait()
+	}
+	if q.closed.Load() {
+		return ErrQueueClosed
 	}
 
 	// Add message to queue
@@ -142,6 +145,9 @@ func (q *BoundedMessageQueue) TryEnqueue(msg message.OutboundMessage) bool {
 
 	q.mu.Lock()
 	defer q.mu.Unlock()
+	if q.closed.Load() {
+		return false
+	}
 
 	// Check if we have space
 	if q.size >= q.maxMessages || q.currentSize.Load()+msgSize > q.maxSize {
@@ -287,6 +293,8 @@ func (q *BoundedMessageQueue) Close() {
 
 // Metrics returns queue statistics
 func (q *BoundedMessageQueue) Metrics() QueueMetrics {
+	q.mu.Lock()
+	defer q.mu.Unlock()
 	return QueueMetrics{
 		Size:      q.size,
 		ByteSize:  q.currentSize.Load(),

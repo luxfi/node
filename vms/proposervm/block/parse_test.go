@@ -106,12 +106,11 @@ func TestParse(t *testing.T) {
 	unsignedBlock, err := BuildUnsigned(parentID, timestamp, pChainHeight, Epoch{}, innerBlockBytes)
 	require.NoError(t, err)
 
-	// A block that carries no certificate but does carry a signature suffix:
-	// verify must reject it with errUnexpectedSignature.
-	signedWithoutCertBlockIntf, err := BuildUnsigned(parentID, timestamp, pChainHeight, Epoch{}, innerBlockBytes)
-	require.NoError(t, err)
-	signedWithoutCertBlock := signedWithoutCertBlockIntf.(*statelessBlock)
-	require.NoError(t, signedWithoutCertBlock.initialize(concat(signedWithoutCertBlock.Bytes(), buildSigBuffer([]byte{5}))))
+	// A block that carries no proposer identity must have no signature suffix.
+	// Reject it at the wire boundary so an unsigned block ID has one encoding.
+	unsignedWithSignature := concat(unsignedBlock.Bytes(), buildSigBuffer([]byte{5}))
+	_, err = ParseWithoutVerification(unsignedWithSignature)
+	require.ErrorIs(t, err, errNonCanonicalWire)
 
 	optionBlock, err := BuildOption(parentID, innerBlockBytes)
 	require.NoError(t, err)
@@ -139,12 +138,6 @@ func TestParse(t *testing.T) {
 			block:       unsignedBlock,
 			chainID:     chainID,
 			expectedErr: nil,
-		},
-		{
-			name:        "invalid signature",
-			block:       signedWithoutCertBlockIntf,
-			chainID:     chainID,
-			expectedErr: errUnexpectedSignature,
 		},
 		{
 			name:        "option block",

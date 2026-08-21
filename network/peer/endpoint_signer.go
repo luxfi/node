@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"sync"
 	"time"
 
 	"github.com/luxfi/crypto/bls"
@@ -131,6 +132,7 @@ type EndpointSigner struct {
 	blsSigner bls.Signer
 
 	// For backward compatibility with IP-only peers
+	legacyLock     sync.Mutex
 	legacyIPSigner *IPSigner
 }
 
@@ -169,8 +171,22 @@ func (s *EndpointSigner) GetSignedEndpoint() (*SignedEndpoint, error) {
 // GetSignedIP returns a legacy signed IP for backward compatibility.
 // Returns nil if the endpoint is hostname-based.
 func (s *EndpointSigner) GetSignedIP() (*SignedIP, error) {
-	if s.legacyIPSigner == nil {
+	s.legacyLock.Lock()
+	defer s.legacyLock.Unlock()
+
+	endpoint := s.endpoint.Get()
+	if !endpoint.IsIP() {
+		s.legacyIPSigner = nil
 		return nil, nil
+	}
+	if s.legacyIPSigner == nil {
+		s.legacyIPSigner = NewIPSigner(
+			utils.NewAtomic(endpoint.AddrPort),
+			s.tlsSigner,
+			s.blsSigner,
+		)
+	} else {
+		s.legacyIPSigner.ip.Set(endpoint.AddrPort)
 	}
 	return s.legacyIPSigner.GetSignedIP()
 }

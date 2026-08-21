@@ -269,6 +269,8 @@ func Start(
 		onClosed:           make(chan struct{}),
 		getPeerListChan:    make(chan struct{}, 1),
 		trackedChains:      make(set.Set[ids.ID]),
+		supportedLPs:       make(set.Set[uint32]),
+		objectedLPs:        make(set.Set[uint32]),
 	}
 
 	if isIngress {
@@ -1306,6 +1308,14 @@ func (p *peer) handleHandshake(msg *p2p.Handshake) {
 
 	p.compareChains(msg.GetChains())
 
+	// A handshake is untrusted input; keep this handler safe even for peers
+	// constructed by tests or alternate transports that did not use Start.
+	if p.supportedLPs == nil {
+		p.supportedLPs = make(set.Set[uint32])
+	}
+	if p.objectedLPs == nil {
+		p.objectedLPs = make(set.Set[uint32])
+	}
 	for _, lp := range msg.SupportedLps {
 		if constants.CurrentLPs.Contains(lp) {
 			p.supportedLPs.Add(lp)
