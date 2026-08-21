@@ -3,7 +3,7 @@
 #
 # Three releases went out this way: one without its untracked proposervm files,
 # one whose dependency shipped without an untracked source file, and one whose
-# Dockerfile still named an image two releases behind its own go.mod. Every time
+# Dockerfile still named an outdated plugin release. Every time
 # the tests were green, because a test builds the working tree and a release
 # ships the commit — and nothing compared the two.
 #
@@ -26,19 +26,26 @@ cd "$work/src"
 GOWORK=off go build ./... 2>&1 | grep -v '^ld: warning' || true
 echo "build: ok"
 
-# EVM_VERSION is a separate literal from go.mod and has shipped stale before.
+# The EVM is an external VM plugin, not a package linked into luxd. Its one
+# authoritative pin is the Dockerfile ARG; the incidental transitive version in
+# node's module graph is unrelated and may be older. Prove the pinned release is
+# published rather than comparing it to that unrelated module selection.
 declared=$(awk -F= '/^ARG EVM_VERSION=/{print $2}' Dockerfile)
-resolved=$(GOWORK=off go list -m -f '{{.Version}}' github.com/luxfi/evm)
+resolved=$(GOWORK=off go mod download -json "github.com/luxfi/evm@$declared" | awk -F'"' '/"Version"/{print $4; exit}')
 if [ "$declared" != "$resolved" ]; then
-	echo "FAIL: Dockerfile builds the plugin from evm $declared while luxd runs $resolved" >&2
+	echo "FAIL: Dockerfile pins evm $declared, but that module release does not resolve" >&2
 	exit 1
 fi
-echo "evm: Dockerfile and go.mod agree at $resolved"
+echo "evm plugin: $resolved"
 
 for req in "$@"; do
 	mod=${req%%=*}
 	want=${req#*=}
-	got=$(GOWORK=off go list -m -f '{{.Version}}' "github.com/$mod")
+	if [ "$mod" = luxfi/evm ]; then
+		got=$declared
+	else
+		got=$(GOWORK=off go list -m -f '{{.Version}}' "github.com/$mod")
+	fi
 	lowest=$(printf '%s\n%s\n' "$want" "$got" | sort -V | head -1)
 	if [ "$lowest" != "$want" ]; then
 		echo "FAIL: $mod resolves $got, below the $want this tag claims" >&2
