@@ -416,8 +416,15 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # implementations entirely and still declared the retired `thresholdvm` VMID.
 # That last part stayed harmless only because the node resolves a plugin by its
 # FILENAME (vms/registry/registry.go), never by the ID the binary declares.
-ARG CHAINS_REF=v1.7.24
+# READ from go.mod rather than restate it. The comment above already said go.mod
+# was the authority and that naming the ref here is what let them drift — and it
+# drifted anyway, to eleven tags at the worst and to five security commits at the
+# time this was replaced. A rule written in a comment beside the value it governs
+# is not a rule; deriving the value is.
 RUN --mount=type=cache,target=/root/.cache/go-build \
+    CHAINS_REF="$(awk '$1=="github.com/luxfi/chains"{print $2; exit}' /build/go.mod)" && \
+    if [ -z "${CHAINS_REF}" ]; then echo "go.mod names no luxfi/chains version" >&2; exit 1; fi && \
+    echo "building chain VM plugins from go.mod pin ${CHAINS_REF}" && \
     git clone --depth 1 --branch ${CHAINS_REF} https://github.com/luxfi/chains.git /tmp/chains && \
     find /tmp/chains -name go.sum -exec sed -i -E '/^github.com\/(luxfi|hanzoai)\//d' {} +
 
