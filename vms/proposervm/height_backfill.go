@@ -4,10 +4,10 @@
 // height_backfill.go — RECOVERY for a proposervm finality index that sits BELOW
 // the inner VM's accepted tip.
 //
-// THE INVARIANT. Every post-fork accept commits the outer envelope, its height
-// index entry and the last-accepted pointer in ONE versiondb batch BEFORE the
-// inner block is accepted (vm.acceptPostForkBlock → postForkBlock.Accept), so the
-// proposervm index can only ever be AHEAD of the inner VM, never behind.
+// THE INVARIANT. A post-fork accept first commits the inner execution block and
+// then commits the outer envelope, height index, and last-accepted pointer in one
+// versiondb batch (postForkBlock.Accept). A failure can therefore leave the outer
+// index behind, but it must never leave the outer index ahead of execution.
 //
 // HOW IT BREAKS ANYWAY. The proposervm has one accept path that advances the inner
 // VM while leaving the outer index untouched: preForkBlock.Accept, whose
@@ -39,11 +39,12 @@
 //     into "starts, repairs itself, and keeps its finality pointer".
 //
 //  2. If step 1 cannot reach the inner tip, the node still STARTS, in an explicit
-//     backfill-pending state: loud, fail-safe (it will not BUILD a block while its
-//     finality index is incomplete) and repairable through BackfillOuterBlock,
-//     which accepts the missing envelopes from any source and applies the SAME
-//     binding checks. The alternative — the previous behaviour — was a dead
-//     C-Chain and a destructive resync.
+//     backfill-pending state: loud and fail-safe (it will not BUILD a block while
+//     its finality index is incomplete). The normal quorum-certificate-gated
+//     Accept path then replays the missing wrappers oldest-first. The inner VM
+//     recognizes only its exact historical canonical blocks as idempotent, and
+//     each successful outer accept advances this marker. There is no separate
+//     unsigned repair admission path.
 //
 // WHAT IS NEVER DONE, and why: the finality pointer is never dropped
 // (DeleteLastAccepted). proposervm.LastAccepted would then fall back to an
@@ -55,7 +56,6 @@
 package proposervm
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
@@ -68,28 +68,12 @@ import (
 	"github.com/luxfi/node/vms/proposervm/state"
 )
 
-var (
-	// ErrOuterBackfillNotPending is returned by BackfillOuterBlock when the index
-	// is already whole — the repair is idempotent, not an error to call twice.
-	ErrOuterBackfillNotPending = errors.New("proposervm: no outer-index backfill is pending")
-
-	// ErrOuterBackfillRejected is returned when a candidate envelope does not bind
-	// to this node's own accepted chain. Fail-closed: an envelope is only indexed
-	// when it provably wraps the inner block WE accepted at that height and chains
-	// off the envelope WE already hold at height-1, so a peer (or a stale file)
-	// cannot steer the finality pointer.
-	ErrOuterBackfillRejected = errors.New("proposervm: outer backfill candidate rejected")
-
-	// errPreForkAfterFork is the prevention guard: post-fork, a block at or above
-	// the recorded fork height is NEVER a pre-fork block. Constructing or accepting
-	// one is what silently strands the finality index below the inner tip.
-	errPreForkAfterFork = errors.New("proposervm: refusing a pre-fork block at or above the fork height")
-)
+var errPreForkAfterFork = errors.New("proposervm: refusing a pre-fork block at or above the fork height")
 
 // outerBackfill is the state of an incomplete outer index. Zero value = whole.
 //
 // It is guarded by its own leaf mutex (vm.backfillMu) rather than vm.lock: the
-// accept path, the build path and the operator repair path all read it, and it is
+// accept path and build path both read it, and it is
 // never held across a callout, so it cannot participate in a deadlock.
 type outerBackfill struct {
 	// next is the FIRST height whose outer envelope is missing. It advances as
@@ -102,8 +86,7 @@ type outerBackfill struct {
 }
 
 // NeedsOuterBackfill reports the still-missing outer height range [from, to] and
-// whether a backfill is pending. An operator tool or a node-layer fetch driver
-// reads it; when pending is false the index is whole.
+// whether a backfill is pending. When pending is false the index is whole.
 func (vm *VM) NeedsOuterBackfill() (from uint64, to uint64, pending bool) {
 	vm.backfillMu.RLock()
 	defer vm.backfillMu.RUnlock()
@@ -222,81 +205,32 @@ func (vm *VM) enterOuterBackfill(from, tip uint64, innerTipID ids.ID) {
 		log.Uint64("innerTipHeight", tip),
 		log.Stringer("innerTipID", innerTipID),
 		log.String("effect", "this chain will NOT build blocks until the missing outer envelopes are supplied"),
-		log.String("recovery", "feed the outer proposervm envelopes for the missing heights via "+
-			"BackfillOuterBlock (cmd/repair-proposervm backfill) — each is bound to the inner block "+
-			"this node already accepted, so no EVM re-execution and no resync are required"),
+		log.String("recovery", "the normal quorum-certificate catch-up path will accept the missing "+
+			"outer envelopes; the EVM permits a no-op only for the exact canonical inner block it "+
+			"already accepted at that height"),
 	)
 }
 
-// BackfillOuterBlock supplies ONE missing outer envelope, oldest-first, and is the
-// operator/driver half of the recovery. It is fail-closed and idempotent:
-//
-//   - not pending                       -> ErrOuterBackfillNotPending
-//   - envelope below the next height     -> nil (already indexed; tolerate replay)
-//   - signature/format invalid           -> error (parsed WITH verification)
-//   - not the next height, wrong parent,
-//     or wrapping a different inner block-> ErrOuterBackfillRejected
-//
-// On the final height it clears the pending state and refreshes the in-memory
-// last-accepted metadata, after which the chain behaves exactly like one that
-// booted whole.
-func (vm *VM) BackfillOuterBlock(ctx context.Context, outerBytes []byte) error {
+// noteOuterAccepted advances recovery state after the ONE authoritative wrapper
+// transition: postForkBlock.Accept. That call is reached by catch-up only after a
+// weighted quorum certificate has been verified. Parsing or merely holding an
+// envelope can never move this marker.
+func (vm *VM) noteOuterAccepted(height uint64) {
 	vm.backfillMu.Lock()
 	defer vm.backfillMu.Unlock()
 
 	if vm.backfill == nil {
-		return ErrOuterBackfillNotPending
+		return
 	}
-	height := vm.backfill.next
-
-	// Parse WITH proposer-signature verification: the envelope must be a real
-	// block of THIS chain, not merely well-formed bytes.
-	blk, err := statelessblock.Parse(outerBytes, vm.rt.ChainID)
-	if err != nil {
-		return fmt.Errorf("%w: envelope did not parse/verify: %w", ErrOuterBackfillRejected, err)
+	if height != vm.backfill.next {
+		return
 	}
-
-	// BIND 1 — the envelope must chain off the one we already hold.
-	parentID, err := vm.State.GetLastAccepted()
-	if err != nil {
-		return fmt.Errorf("%w: cannot read the current finality pointer: %w", ErrOuterBackfillRejected, err)
-	}
-	if blk.ParentID() != parentID {
-		return fmt.Errorf("%w: envelope parent %s != current finality pointer %s (feed oldest-first)",
-			ErrOuterBackfillRejected, blk.ParentID(), parentID)
-	}
-
-	// BIND 2 — the envelope must wrap the inner block WE accepted at this height.
-	// This is what makes accepting bytes from an untrusted source safe.
-	innerID, innerBytes, err := vm.innerBlockAtHeight(ctx, height)
-	if err != nil {
-		return fmt.Errorf("%w: inner block at height %d unreadable: %w", ErrOuterBackfillRejected, height, err)
-	}
-	if !bytes.Equal(blk.Block(), innerBytes) {
-		return fmt.Errorf("%w: envelope at height %d does not wrap our accepted inner block %s",
-			ErrOuterBackfillRejected, height, innerID)
-	}
-
-	if err := vm.indexOuterAtHeight(height, blk); err != nil {
-		return err
-	}
-
-	vm.logger.Info("proposervm outer backfill: height repaired",
-		log.Uint64("height", height),
-		log.Stringer("outerID", blk.ID()),
-		log.Uint64("remaining", vm.backfill.tip-height),
-	)
-
 	if height >= vm.backfill.tip {
 		tip := vm.backfill.tip
 		vm.backfill = nil
-		if err := vm.setLastAcceptedMetadata(ctx); err != nil {
-			return fmt.Errorf("outer backfill completed at height %d but last-accepted metadata failed: %w", tip, err)
-		}
 		vm.logger.Info("proposervm FINALITY INDEX FULLY REPAIRED — backfill complete",
 			log.Uint64("height", tip))
-		return nil
+		return
 	}
 	vm.backfill.next = height + 1
-	return nil
 }

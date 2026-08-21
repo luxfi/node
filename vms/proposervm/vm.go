@@ -157,9 +157,8 @@ type VM struct {
 	backfillMu sync.RWMutex
 	// backfill is non-nil ONLY while this node booted with a finality index that
 	// the local block store could not fully rebuild (see height_backfill.go). While
-	// it is set the chain runs read-only-ish: it refuses to BUILD blocks, and
-	// BackfillOuterBlock is what completes the index. nil = index whole, which is
-	// the state of every healthy node.
+	// it is set the chain refuses to BUILD blocks. The normal certificate-gated
+	// Accept path advances and clears it; nil = index whole.
 	backfill *outerBackfill
 
 	// quasarGate is the OPTIONAL post-quantum finality-cert gate. nil (the
@@ -374,11 +373,10 @@ func (vm *VM) SetState(ctx context.Context, newState uint32) error {
 
 func (vm *VM) BuildBlock(ctx context.Context) (vmchain.Block, error) {
 	// FAIL-SAFE while the finality index has a hole. A node that booted with an
-	// incomplete outer index (height_backfill.go) does not know the canonical
+	// incomplete outer index (height_backfill.go) does not know the certified
 	// envelope at its own tip, so anything it proposed would extend a parent the
-	// network does not recognise. It stays a follower until BackfillOuterBlock
-	// closes the gap. Serving RPC and following the chain are unaffected — this is
-	// exactly the difference between the old dead C-Chain and a live one.
+	// network does not recognise. It stays a follower until normal certified
+	// accepts close the gap. Serving RPC and following the chain are unaffected.
 	if from, to, pending := vm.NeedsOuterBackfill(); pending {
 		return nil, fmt.Errorf(
 			"proposervm: refusing to build — finality index incomplete, outer envelopes for heights %d..%d are missing",
@@ -455,17 +453,6 @@ func (vm *VM) BuildBlock(ctx context.Context) (vmchain.Block, error) {
 }
 
 func (vm *VM) ParseBlock(ctx context.Context, b []byte) (vmchain.Block, error) {
-	// SELF-HEAL SEAM. Every outer envelope this node receives — gossip, GetAncestors,
-	// catch-up — arrives here. If this node booted with a hole in its finality index
-	// (height_backfill.go), offer the bytes to the backfill: it takes ONLY the exact
-	// next missing height, only if the envelope verifies AND wraps the inner block we
-	// already accepted there, so a wrong or hostile block cannot land. That makes a
-	// damaged node repair itself from ordinary peer traffic with no new transport and
-	// no operator step. Errors are expected and ignored (almost every block is not the
-	// one we need); when nothing is pending this is one RLock and out.
-	if vm.outerBackfillPending() {
-		_ = vm.BackfillOuterBlock(ctx, b)
-	}
 	if blk, err := vm.parsePostForkBlock(ctx, b, true); err == nil {
 		return blk, nil
 	}
@@ -800,11 +787,10 @@ func (vm *VM) LastAccepted(ctx context.Context) (ids.ID, error) {
 // InnerLastAccepted reports the block the INNER VM has accepted, which is not the
 // same question as LastAccepted.
 //
-// LastAccepted answers with the OUTER block, and the outer block is committed
-// before the inner one is accepted (see postForkBlock.Accept). So the outer height
-// leads the inner by design during an accept, and if the inner accept then fails or
-// lags, it keeps leading — durably. A reader asking "has this node executed to h"
-// and receiving the outer height is told yes for blocks the inner VM never got.
+// LastAccepted answers with the OUTER block. Healthy accepts move inner then
+// outer, but restored snapshots, state sync, or legacy data can still leave the
+// two layers at different heights. A reader asking "has this node executed to h"
+// must therefore ask the inner VM directly, never infer it from the wrapper.
 //
 // Callers deciding what this node has RUN — whether it may go live, how far
 // catch-up must fetch — want this one. Callers identifying the chain's head still
@@ -1063,13 +1049,9 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		return nil
 
 	case heightBehind:
-		// INVARIANT VIOLATION: the proposervm's finality index sits BELOW the inner
-		// VM's accepted tip. Every post-fork accept commits the envelope, its height
-		// entry and the last-accepted pointer in ONE versiondb batch BEFORE the inner
-		// block is accepted, so this can only mean some accept advanced the inner VM
-		// WITHOUT going through acceptPostForkBlock (the pre-fork fallback — now
-		// prevented, see height_backfill.go) or that the on-disk proposervm state was
-		// truncated relative to the inner EVM.
+		// The proposervm finality index sits BELOW the inner VM's accepted tip. This
+		// is the safe crash direction for the current inner-first accept order, and is
+		// also the shape left by the legacy pre-fork fallback or a truncated restore.
 		//
 		// This used to be a hard init failure, which killed the chain on the node
 		// ("non-critical chain failed to initialize chainAlias=C") and made every
@@ -1079,7 +1061,8 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		//  1. re-derive the index from the outer envelopes already in this node's
 		//     block store, each bound to the inner block WE accepted at that height;
 		//  2. if that cannot reach the tip, START ANYWAY in an explicit, loud,
-		//     build-gated backfill-pending state that BackfillOuterBlock completes.
+		//     build-gated backfill-pending state that the normal certified Accept
+		//     path completes.
 		//
 		// The finality pointer is only ever moved FORWARD onto a proven envelope and
 		// is NEVER dropped: a DeleteLastAccepted here would make LastAccepted() fall
@@ -1398,7 +1381,11 @@ func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	if err := vm.updateHeightIndex(height, blkID); err != nil {
 		return err
 	}
-	return vm.db.Commit()
+	if err := vm.db.Commit(); err != nil {
+		return err
+	}
+	vm.noteOuterAccepted(height)
+	return nil
 }
 
 func (vm *VM) verifyAndRecordInnerBlk(ctx context.Context, blockRuntime *runtime.Runtime, postFork PostForkBlock) error {
