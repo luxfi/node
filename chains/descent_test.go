@@ -188,13 +188,13 @@ func TestAcceptedCertsAreNotProgress(t *testing.T) {
 	parent := ids.GenerateTestID()
 
 	// The exact production state: nothing applied, many certs accepted.
-	if !shouldDescend(0, true, oldestHeight, parent, finalized, true) {
+	if !shouldDescend(batch{advanced: 0, haveOldest: true, oldestHeight: oldestHeight, oldestParent: parent, finalized: finalized, finalizedSet: true}) {
 		t.Fatal("a batch that applied nothing must descend, however many certs it accepted — " +
 			"otherwise the walk re-asks for the same window forever")
 	}
 
 	// And the converse still holds: real progress must NOT restart the walk.
-	if shouldDescend(1, true, oldestHeight, parent, finalized, true) {
+	if shouldDescend(batch{advanced: 1, haveOldest: true, oldestHeight: oldestHeight, oldestParent: parent, finalized: finalized, finalizedSet: true}) {
 		t.Fatal("a batch that advanced the applied head is progress; the walk must not descend")
 	}
 }
@@ -206,7 +206,56 @@ func TestDescentStopsWhenTheWindowReachesUs(t *testing.T) {
 	const finalized = 1091720
 	parent := ids.GenerateTestID()
 
-	if shouldDescend(0, true, finalized+1, parent, finalized, true) {
+	if shouldDescend(batch{advanced: 0, haveOldest: true, oldestHeight: finalized + 1, oldestParent: parent, finalized: finalized, finalizedSet: true}) {
 		t.Fatal("the window already begins at our next height; there is nothing below it to reach")
+	}
+}
+
+// TestCertsAcceptedAreNotProgress is the mainnet wedge, pinned at the boundary
+// where the decision is actually made.
+//
+// The observed line was `advanced=0 certAccepted=208` on four of five validators,
+// with one block id re-requested 396 times while the applied head never moved. A
+// batch can fold hundreds of certs for blocks ABOVE the gap — tracked, deferred,
+// applying nothing — so reading that count as progress leaves the walk anchored
+// and the node never descends to the height it is actually missing.
+//
+// This lives here rather than beside the pure function because the defect was
+// never in the arithmetic: it was in WHICH column the caller passed. With the
+// columns inside one struct, swapping them is a change this test can see.
+func TestCertsAcceptedAreNotProgress(t *testing.T) {
+	parent := ids.GenerateTestID()
+	const finalized = uint64(1_092_301)
+
+	wedged := batch{
+		advanced:     0,   // the applied head did not move
+		certAccepted: 208, // ...while 208 certs folded for blocks above the gap
+		haveOldest:   true,
+		oldestHeight: finalized + 500,
+		oldestParent: parent,
+		finalized:    finalized,
+		finalizedSet: true,
+	}
+	if !shouldDescend(wedged) {
+		t.Fatal("a batch that folded 208 certs and applied NOTHING must descend — " +
+			"reading certAccepted as progress is what left four of five mainnet " +
+			"validators re-requesting one block id 396 times while their applied " +
+			"head never moved")
+	}
+
+	// The mirror: real progress must NOT descend, or a converging node walks
+	// backwards away from the tip it is reaching.
+	moving := wedged
+	moving.advanced = 1
+	moving.certAccepted = 0
+	if shouldDescend(moving) {
+		t.Fatal("a batch that advanced the applied head must not descend")
+	}
+
+	// And progress wins even when certs also landed — the columns are not summed.
+	both := wedged
+	both.advanced = 1
+	if shouldDescend(both) {
+		t.Fatal("advanced>0 must stop the descent regardless of certAccepted")
 	}
 }
