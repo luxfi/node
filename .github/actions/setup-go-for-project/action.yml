@@ -1,17 +1,5 @@
-# This action targets the project default version of setup-go. For
-# workers with old NodeJS incompabible with newer versions of
-# setup-go, try setup-go-for-project-v3.
-#
-# Since github actions do not support dynamically configuring the
-# versions in a uses statement (e.g. `actions/setup-go@${{ var }}`) it
-# is necessary to define an action per version rather than one action
-# that can be parameterized.
-#
-# Must be run after actions/checkout to ensure go.mod is available to
-# source the project's go version from.
-
-name: 'Install Go toolchain with project defaults'
-description: 'Install a go toolchain with project defaults'
+name: 'Set up project Go toolchain'
+description: 'Use the exact Go toolchain provisioned on the Forge runner'
 
 inputs:
   github-token:
@@ -22,15 +10,26 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Set the project Go version in the environment
-      uses: ./.github/actions/set-go-version-in-env
     - name: Configure git for private repo access
       if: inputs.github-token != ''
       shell: bash
       run: |
         git config --global url."https://x-access-token:${{ inputs.github-token }}@github.com/".insteadOf "https://github.com/"
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '${{ env.GO_VERSION }}'
-        check-latest: true
+    - name: Activate project Go toolchain
+      shell: bash
+      run: |
+        set -euo pipefail
+        version=$(awk '$1 == "go" { print $2; exit }' go.mod)
+        case "${RUNNER_ARCH:-X64}" in
+          X64) arch=x64 ;;
+          ARM64) arch=arm64 ;;
+          *) echo "unsupported runner architecture: ${RUNNER_ARCH:-unset}" >&2; exit 1 ;;
+        esac
+        root="/opt/hostedtoolcache/go/$version/$arch"
+        test -x "$root/bin/go" || {
+          echo "Go $version for $arch is not provisioned at $root" >&2
+          exit 1
+        }
+        echo "$root/bin" >> "$GITHUB_PATH"
+        echo "GOROOT=$root" >> "$GITHUB_ENV"
+        "$root/bin/go" version
