@@ -1,5 +1,5 @@
 name: 'Set up project Go toolchain'
-description: 'Use the exact Go toolchain provisioned on the Forge runner'
+description: 'Activate the exact Go toolchain declared by the project'
 
 inputs:
   github-token:
@@ -26,10 +26,22 @@ runs:
           *) echo "unsupported runner architecture: ${RUNNER_ARCH:-unset}" >&2; exit 1 ;;
         esac
         root="/opt/hostedtoolcache/go/$version/$arch"
-        test -x "$root/bin/go" || {
-          echo "Go $version for $arch is not provisioned at $root" >&2
-          exit 1
-        }
+        if [ ! -x "$root/bin/go" ]; then
+          name="go$version.linux-$arch.tar.gz"
+          expected=$(curl -fsSL 'https://go.dev/dl/?mode=json&include=all' |
+            python3 -c 'import json,sys; name=sys.argv[1]; print(next(a["sha256"] for r in json.load(sys.stdin) for a in r["files"] if a["filename"] == name))' "$name")
+          work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/go-toolchain.XXXXXX")
+          archive="$work/$name"
+          curl -fsSL "https://go.dev/dl/$name" -o "$archive"
+          actual=$(sha256sum "$archive" | awk '{ print $1 }')
+          [ "$actual" = "$expected" ] || {
+            echo "checksum mismatch for $name" >&2
+            exit 1
+          }
+          root="$work/go"
+          mkdir -p "$root"
+          tar -C "$root" --strip-components=1 -xzf "$archive"
+        fi
         echo "$root/bin" >> "$GITHUB_PATH"
         echo "GOROOT=$root" >> "$GITHUB_ENV"
         "$root/bin/go" version
