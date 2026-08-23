@@ -307,3 +307,9 @@ build-release-upx: build-release
 	else \
 		echo "$(YELLOW)UPX not installed. Install with: brew install upx$(NC)"; \
 	fi
+
+
+NODE_DOCS ?= $(HOME)/work/lux/docs/apps/docs/content/docs/nodes/reference
+.PHONY: docs
+docs: ## Generate the node package reference (godoc) into docs.lux.network
+	cd tools/docgen && GOWORK=off go run . $(NODE_DOCS) $(CURDIR)
