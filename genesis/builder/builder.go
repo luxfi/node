@@ -146,6 +146,13 @@ func parseProofOfPossession(pop *genesiscfg.ProofOfPossession) (*signer.ProofOfP
 // GetBootstrappers returns parsed bootstrappers for the network
 func GetBootstrappers(networkID uint32) ([]Bootstrapper, error) {
 	cfgBootstrappers := genesiscfg.GetBootstrappers(networkID)
+	if len(cfgBootstrappers) == 0 {
+		// The disk paths genesiscfg checks (~/work/lux/genesis, /etc/lux) are
+		// empty inside a node container, so fall back to the bootstrappers
+		// embedded in the genesis module — a node then finds peers with zero
+		// on-disk config.
+		cfgBootstrappers = genesisconfigs.GetBootstrappers(networkID)
+	}
 	result := make([]Bootstrapper, 0, len(cfgBootstrappers))
 	for _, b := range cfgBootstrappers {
 		parsed, err := ParseBootstrapper(b)
