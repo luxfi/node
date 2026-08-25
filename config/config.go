@@ -1466,6 +1466,31 @@ func getChainConfigsFromDir(v *viper.Viper) (map[string]chains.ChainConfig, erro
 	return readChainConfigPath(chainConfigPath)
 }
 
+// mergeCChainConfig folds node-level settings into the C-Chain's own config,
+// keeping whatever the chain config file already said about anything else.
+func mergeCChainConfig(configs map[string]chains.ChainConfig, settings map[string]interface{}) error {
+	if len(settings) == 0 {
+		return nil
+	}
+	cChain := configs["C"]
+	merged := map[string]interface{}{}
+	if len(cChain.Config) > 0 {
+		if err := json.Unmarshal(cChain.Config, &merged); err != nil {
+			return fmt.Errorf("couldn't parse the existing C-Chain config: %w", err)
+		}
+	}
+	for key, value := range settings {
+		merged[key] = value
+	}
+	body, err := json.Marshal(merged)
+	if err != nil {
+		return fmt.Errorf("couldn't write the C-Chain config: %w", err)
+	}
+	cChain.Config = body
+	configs["C"] = cChain
+	return nil
+}
+
 // getChainConfigs reads & puts chainConfigs to node config
 func getChainConfigs(v *viper.Viper) (map[string]chains.ChainConfig, error) {
 	if v.IsSet(ChainConfigContentKey) {
@@ -2004,23 +2029,21 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, fmt.Errorf("couldn't read chain configs: %w", err)
 	}
 
-	// Bridge --import-chain-data into the C-Chain config so the EVM plugin sees it.
-	// Merges with any existing C-chain config rather than replacing.
+	// Node-level C-Chain settings reach the EVM plugin through the C-Chain's own
+	// config, which is the one way the plugin reads anything.
+	cChainSettings := map[string]interface{}{}
 	if importPath := v.GetString(ImportChainDataKey); importPath != "" {
-		cChain := nodeConfig.ChainConfigs["C"]
-		merged := map[string]interface{}{}
-		if len(cChain.Config) > 0 {
-			if err := json.Unmarshal(cChain.Config, &merged); err != nil {
-				return node.Config{}, fmt.Errorf("couldn't parse existing C-chain config for import bridge: %w", err)
-			}
-		}
-		merged["import-chain-data"] = importPath
-		mergedBytes, err := json.Marshal(merged)
-		if err != nil {
-			return node.Config{}, fmt.Errorf("couldn't marshal C-chain config with import path: %w", err)
-		}
-		cChain.Config = mergedBytes
-		nodeConfig.ChainConfigs["C"] = cChain
+		cChainSettings["import-chain-data"] = importPath
+	}
+	ancient, err := getAncientConfig(v, getExpandedArg(v, ChainDataDirKey))
+	if err != nil {
+		return node.Config{}, err
+	}
+	for key, value := range ancient.chainConfig() {
+		cChainSettings[key] = value
+	}
+	if err := mergeCChainConfig(nodeConfig.ChainConfigs, cChainSettings); err != nil {
+		return node.Config{}, err
 	}
 
 	// Profiler
