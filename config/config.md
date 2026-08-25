@@ -173,6 +173,44 @@ aliases for Blockchains.
 
 Chain specific data directory. Defaults to `$HOME/.node/chainData`.
 
+## C-Chain Ancient Store
+
+Blocks the C-Chain will never rewrite can live in an append-only store on their
+own path instead of in the chain database. The store is written by one node and
+readable by any number of others at the same time, so a machine running several
+nodes holds one copy of history rather than one copy per node.
+
+#### `--cchain-ancient` (boolean)
+
+Keep C-Chain history in an append-only ancient store instead of the chain
+database. Off by default, in which case every block the node has accepted stays
+in its own database.
+
+#### `--cchain-ancient-dir` (string)
+
+Path to the ancient store. Defaults to `ancient` under `--chain-data-dir`. Point
+several nodes at one path to share it: one of them writes and the rest read.
+
+#### `--cchain-ancient-readonly` (boolean)
+
+Never write to the ancient store, because another node owns it. Requires
+`--cchain-ancient-shared`, since a store with no writer never advances past the
+block it was left holding.
+
+#### `--cchain-ancient-shared` (boolean)
+
+Read an ancient store another node writes. Requires
+`--cchain-ancient-readonly`: only the node that owns a store appends to it, and
+two writers would interleave two chains into the same files. A node in this mode
+serves history from the shared store and drops its own copies of those blocks.
+
+#### `--cchain-freeze-threshold` (uint)
+
+Number of recent blocks the C-Chain keeps in its chain database before they move
+to the ancient store. Defaults to `90000`. Lower it to shrink what each node
+stores on its own disk; it has to stay at least `1`, since building a block
+needs its parent in the chain database.
+
 ## Config File
 
 #### `--config-file` (string)
