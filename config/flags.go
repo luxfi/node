@@ -390,6 +390,9 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(ChainDataDirKey, defaultChainDataDir, "Chain specific data directory")
 	fs.String(ImportChainDataKey, "", "Path to import blockchain data from another chain into C-Chain")
 
+	// C-Chain ancient store
+	addAncientFlags(fs)
+
 	// Profiles
 	fs.String(ProfileDirKey, defaultProfileDir, "Path to the profile directory")
 	fs.Bool(ProfileContinuousEnabledKey, false, "Whether the app should continuously produce performance profiles")
