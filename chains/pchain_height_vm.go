@@ -294,9 +294,10 @@ func (vm *pChainHeightVM) BuildBlock(ctx context.Context) (block.Block, error) {
 // only if the inner re-parse of the framed payload ALSO succeeds. So when the
 // prefix matches, attempt to parse b[header:] as an inner block; if that FAILS,
 // fall back to parsing the WHOLE b as a raw inner block (the colliding raw block,
-// whose bytes minus the 12-byte prefix are not a valid inner block). This removes
-// the bootstrap stall a magic collision used to cause (mis-framed → inner decode
-// fails closed → stall on that chain).
+// whose bytes minus the 12-byte prefix are not a valid inner block). A raw block
+// whose leading bytes happen to match the magic is therefore still read as the
+// raw block it is, rather than mis-framed into an inner decode that fails
+// closed.
 //
 // RECENCY GATE. A real frame's stamped epoch H must be
 // recent relative to THIS node's live P-chain height: H ≤ localCurrentH + slack.
@@ -376,11 +377,9 @@ func (vm *pChainHeightVM) LastAccepted(ctx context.Context) (ids.ID, error) {
 // answers is how a rule ends up enforced at one door and not the other, so
 // there is one door.
 //
-// Which is now the whole of the reason. This once said the index was dead over
-// ZAP; that stopped being true when the zap server grew a
-// MsgGetBlockIDAtHeight handler (vm/rpc/vm_server_zap.go) and the C-Chain
-// implemented the method (evm plugin/evm/vm.go). The transport works. Not
-// forwarding is a choice about where finality is decided, not a workaround.
+// That is the whole of the reason, and it does not depend on what any transport
+// happens to support: the index being reachable would not make it the right
+// thing to ask.
 
 // SetPreference delegates to the inner VM.
 func (vm *pChainHeightVM) SetPreference(ctx context.Context, id ids.ID) error {

@@ -4424,9 +4424,9 @@ func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, 
 }
 
 // logFrontierDecision names WHICH branch of the frontier decision ran, because that
-// branch IS whether we fetch. Every one of them used to be silent, so a node that
-// concluded "not behind" and a node that received no reply at all produced byte-
-// identical output — the same unanswerable question the Chits sites had.
+// branch IS whether we fetch. A silent branch makes "concluded not behind" and
+// "received no reply at all" produce byte-identical output, which is an
+// unanswerable question at exactly the moment someone is asking it.
 //
 // Sampled per branch: each outcome carries its own counter, so a common decision
 // cannot bury a rare one and the first occurrence of every branch is visible.
@@ -5389,9 +5389,9 @@ var _ consensuschain.QuorumGossiper = (*networkGossiper)(nil)
 // collects α distinct signed votes can assemble + gossip the cert, so finality
 // no longer hinges on one node's inbound Chits.
 func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockID ids.ID, voteBytes []byte) int {
-	// Every return of 0 here is a vote that never left this node, and all three
-	// paths used to be silent — which is indistinguishable from "no vote was due"
-	// when a chain stops finalizing.
+	// Every return of 0 here is a vote that never left this node. Said silently
+	// that is indistinguishable from "no vote was due", which is the question
+	// being asked when a chain stops finalizing.
 	if g.net == nil || g.msgCreator == nil {
 		if g.log != nil {
 			g.log.Warn("quorum: vote NOT broadcast — nil transport",
