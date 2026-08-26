@@ -188,12 +188,11 @@ func getConsensusConfig(v *viper.Viper) consensusconfig.Parameters {
 		// structurally unreachable by configuration and keep DefaultParams' 14/20
 		// no matter what the operator passes.
 		//
-		// That stranded Hanzo L1 36963: measured effective params were
-		// K=5 AlphaPreference=4 AlphaConfidence=4 Beta=2 BetaVirtuous=14, so an
-		// uncontested block every one of the five validators had verified needed
-		// FOURTEEN consecutive successful polls to accept, any single miss
-		// resetting the run. The chain produced blocks while it could string 14
-		// clean polls together and then froze permanently.
+		// The effect is worst on a small network: K=5 with AlphaPreference=4 and
+		// Beta=2, but BetaVirtuous left at 14, means an uncontested block every
+		// validator has already verified still needs FOURTEEN consecutive
+		// successful polls to accept, and any single miss resets the run. Such a
+		// chain produces blocks only while it can string 14 clean polls together.
 		//
 		// Mirrors ConsensusQuorumSizeKey below, which already sets both of its
 		// pair (AlphaPreference and AlphaConfidence) from one flag.
