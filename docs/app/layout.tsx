@@ -1,19 +1,11 @@
 import "./global.css"
 import { RootProvider } from "fumadocs-ui/provider/next"
-import { Inter } from "next/font/google"
+import { ZenSans } from '@hanzo/font'
 import type { ReactNode } from "react"
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-  display: "swap",
-})
+const inter = ZenSans
 
-const interMono = Inter({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-  display: "swap",
-})
+const interMono = ZenSans
 
 export const metadata = {
   title: {
