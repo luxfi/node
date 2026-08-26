@@ -82,7 +82,7 @@ kubectl -n lux exec "$POD" -- curl -s http://localhost:9650/v1/bc/P \
 # For each txID in the result, fetch the canonical signed bytes and
 # pack into testdata/ as the length-prefixed stream the harness reads.
 go run ../../../../../scripts/capture-mempool/main.go \
-  --rpc http://luxd-0.lux.svc:9650 \
+  --rpc http://<node-host>:9650 \
   --out testdata/mainnet-mempool-1000.bytes \
   --max 1000
 ```
