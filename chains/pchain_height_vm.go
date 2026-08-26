@@ -365,11 +365,22 @@ func (vm *pChainHeightVM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return vm.inner.LastAccepted(ctx)
 }
 
-// NOTE: this wrapper deliberately does NOT forward GetBlockIDAtHeight. The bootstrap acceptance
-// oracle's fork-sibling check reads the IN-PROCESS consensus finalized ledger
-// (blockHandler.finalizedBlockAtHeight → engine.FinalizedBlockAtHeight), NOT a VM height index —
-// because the VM index is dead over ZAP (the zap server has no MsgGetBlockIDAtHeight handler, so
-// the real C-Chain returns nothing). A forwarder here would only re-expose that dead path.
+// This wrapper deliberately does NOT forward GetBlockIDAtHeight. The bootstrap
+// acceptance oracle's fork-sibling check reads the in-process consensus
+// finalized ledger (blockHandler.finalizedBlockAtHeight →
+// engine.FinalizedBlockAtHeight), and that is the only place it should read.
+//
+// The ledger is what finality means here. A VM's height index answers a
+// different question — what that VM has accepted — and the two can disagree
+// while a decision is in flight. Deciding finality from whichever of them
+// answers is how a rule ends up enforced at one door and not the other, so
+// there is one door.
+//
+// Which is now the whole of the reason. This once said the index was dead over
+// ZAP; that stopped being true when the zap server grew a
+// MsgGetBlockIDAtHeight handler (vm/rpc/vm_server_zap.go) and the C-Chain
+// implemented the method (evm plugin/evm/vm.go). The transport works. Not
+// forwarding is a choice about where finality is decided, not a workaround.
 
 // SetPreference delegates to the inner VM.
 func (vm *pChainHeightVM) SetPreference(ctx context.Context, id ids.ID) error {
