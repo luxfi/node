@@ -33,11 +33,11 @@ import (
 	"time"
 
 	consensusconfig "github.com/luxfi/consensus/config"
-	"github.com/luxfi/log"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	validators "github.com/luxfi/validators"
 )
 
@@ -45,10 +45,10 @@ import (
 // on the command line. A nil field means "not set", so the network default from
 // selectConsensusParams stands.
 //
-// It exists because parameter selection used to be a pure function of
-// (sybilProtection, networkID) and consulted NO operator input, which stranded
-// Hanzo L1 36963: a five-validator value network falls to the default branch and
-// gets DefaultParams — K=20, α=14, BetaVirtuous=14 — so an uncontested block
+// It exists because parameter selection cannot be a pure function of
+// (sybilProtection, networkID) alone: a small value network falls to the default
+// branch and gets DefaultParams — K=20, α=14, BetaVirtuous=14 — so an
+// uncontested block
 // needed FOURTEEN consecutive clean polls and the chain froze at height 3248
 // while --consensus-sample-size=5 --consensus-quorum-size=4
 // --consensus-commit-threshold=2 sat in the node config reaching nothing. That is
@@ -532,7 +532,8 @@ func hashValidatorSet(set map[ids.NodeID]*validators.GetValidatorOutput) ids.ID 
 // kind 1 = signed vote (payload = engine encodeSignedVote: nodeID+sig)
 // kind 2 = finality cert (payload = engine cert MarshalBinary)
 // (round-scoped view-change prevotes are engine-INTERNAL since consensus v1.36 —
-//  the node no longer frames or routes a prevote kind)
+//
+//	the node no longer frames or routes a prevote kind)
 var quorumGossipMagic = [4]byte{'L', 'X', 'Q', 0x01}
 
 const (

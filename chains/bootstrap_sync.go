@@ -67,11 +67,11 @@ const (
 	// requests inside one attempt: a child request that can consume the whole parent budget
 	// starves every later chunk.
 	//
-	// It was 12s against a 3s per-attempt budget — four times its own parent. The ctx.Done()
-	// case in the fetch loop meant no request literally outlived the attempt, so nothing hung;
-	// the damage was that the attempt died inside the FIRST chunk and the descent could never
-	// reach a second one. A chunked walk that never completes a walk reports FrontierNoQuorum —
-	// precisely the wedge the chunking was written to fix.
+	// A per-request bound above its parent budget is worse than no chunking: the attempt
+	// spends itself inside the FIRST chunk and never reaches a second, and a chunked walk
+	// that never completes a walk reports FrontierNoQuorum. Nothing hangs — the ctx.Done()
+	// case in the fetch loop keeps a request inside its attempt — but the descent gets
+	// nowhere.
 	//
 	// Kept in step with the GetAncestors WIRE deadline below: asking a peer for more time than
 	// we will wait just wastes its work.
@@ -482,11 +482,10 @@ func (b *blockHandler) FrontierTip(ctx context.Context) (ids.ID, chainbootstrap.
 		policy.Covered = b.fullyConnectedBeacons(weights, connected) && repliedCovers(replies, connected)
 	}
 
-	// A signed quorum certificate outranks the unsigned responder tally. This is
-	// the restart split that used to strand a 5-node network: three stale nodes
-	// named their old common tip while two nodes held thousands of newer finalized
-	// blocks, so majority-by-responder discovery concluded that nobody was ahead.
-	// The newer tips already carried portable certs; bootstrap simply never looked.
+	// A signed quorum certificate outranks the unsigned responder tally, because a
+	// tally counts peers and a certificate carries proof. A majority naming an
+	// older tip does not make it the tip: a minority holding newer finalized
+	// blocks can prove it, and those blocks carry portable certs that say so.
 	//
 	// Probe every distinct ahead claim and choose the highest one whose certificate
 	// independently verifies against our validator set. An arbitrary peer can now
@@ -1166,12 +1165,11 @@ func (b *blockHandler) finalizedTip(ctx context.Context) (ids.ID, uint64, error)
 			// then believes it stands past blocks it has not executed, skips exactly the
 			// band it must fetch, and re-asks forever while reporting full batches landed.
 			//
-			// Reading the VM here used to be forbidden because its ZAP client froze
-			// LastAccepted at Initialize; the client refreshes it on every successful
-			// Accept now (vms/rpcchainvm/zap/client.go), so the applied head is live —
-			// that refresh is the contract this rule stands on. A VM naming NO block
-			// still reports nothing — absence is not a reading of zero — so only a VM
-			// that names a block lowers the position.
+			// Reading the VM here rests on one contract: the ZAP client refreshes
+			// LastAccepted on every successful Accept (vms/rpcchainvm/zap/client.go),
+			// so the applied head it reports is live rather than a value fixed at
+			// Initialize. A VM naming NO block reports nothing — absence is not a
+			// reading of zero — so only a VM that names a block lowers the position.
 			if id, _, ierr := b.vmLastAccepted(ctx); ierr == nil && id != ids.Empty {
 				if applied, aerr := b.appliedHeight(ctx); aerr == nil && applied < h {
 					return id, applied, nil
@@ -1258,10 +1256,8 @@ func (b *blockHandler) acceptedHeightCtx(ctx context.Context, id ids.ID) (uint64
 	// is the block our per-height ledger finalized at h. Ask the IN-PROCESS finalized ledger — the
 	// same source LastAccepted reads — rather than the VM's height index, because finality is
 	// decided in one place: the ledger is what finality means here, while a VM's index answers what
-	// that VM has accepted, and the two can disagree while a decision is in flight. (This once said
-	// the index was unhandled over ZAP; it is handled now, and the C-Chain implements it. The reason
-	// expired; the decision did not.) The ledger answers authoritatively for every height finalized
-	// THIS session.
+	// that VM has accepted, and the two can disagree while a decision is in flight. The ledger
+	// answers authoritatively for every height finalized THIS session.
 	if canonical, ok := b.finalizedBlockAtHeight(h); ok {
 		if canonical != id {
 			return 0, false // a stored sibling/fork at a finalized height — NOT on the accepted chain
