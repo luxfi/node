@@ -115,7 +115,9 @@ REMAINING WORK to reach a live PQ-finality network (all owner-gated):
    gossip is down. REQUIRED before any forward-dated activation.
 6. A proposervm Accept-path integration test (nil/dormant/activated).
 
-Mainnet activation order (owner): deploy producer -> verify cert-gossip coverage
-at checkpoints -> set Activation.Height to a forward-dated height with margin ->
-roll via `kubectl patch sts luxd` OnDelete, 1 pod at a time. NEVER wipe /data/db,
-NEVER pkill, NEVER blind-restart.
+Activation order: deploy the producer, verify cert-gossip coverage at
+checkpoints, set Activation.Height to a forward-dated height with margin, then
+roll one node at a time. A node is replaced, never killed in place, and its
+database is never wiped to make it restart — a validator that loses its database
+rejoins by re-bootstrapping, which is a different and much longer operation than
+a restart.
