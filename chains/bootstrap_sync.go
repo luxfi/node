@@ -1255,11 +1255,13 @@ func (b *blockHandler) acceptedHeightCtx(ctx context.Context, id ids.ID) (uint64
 		return 0, false
 	}
 	// h <= lastH and id != lastID: id is at a height we have finalized PAST. It is accepted IFF it
-	// is the block our per-height ledger finalized at h. Ask the IN-PROCESS finalized ledger (the
-	// same source LastAccepted reads), which replaces the EVM's dead height index — block.ChainVM.
-	// GetBlockIDAtHeight is unhandled over ZAP, so the old VM-index call returned nothing on the real
-	// C-Chain and this whole branch was dead there. The in-process ledger answers authoritatively for
-	// every height finalized THIS session.
+	// is the block our per-height ledger finalized at h. Ask the IN-PROCESS finalized ledger — the
+	// same source LastAccepted reads — rather than the VM's height index, because finality is
+	// decided in one place: the ledger is what finality means here, while a VM's index answers what
+	// that VM has accepted, and the two can disagree while a decision is in flight. (This once said
+	// the index was unhandled over ZAP; it is handled now, and the C-Chain implements it. The reason
+	// expired; the decision did not.) The ledger answers authoritatively for every height finalized
+	// THIS session.
 	if canonical, ok := b.finalizedBlockAtHeight(h); ok {
 		if canonical != id {
 			return 0, false // a stored sibling/fork at a finalized height — NOT on the accepted chain
