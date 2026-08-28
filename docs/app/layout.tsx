@@ -1,11 +1,11 @@
 import "./global.css"
 import { RootProvider } from "fumadocs-ui/provider/next"
-import { ZenSans } from '@hanzo/font'
+import { Zen } from '@hanzo/font'
 import type { ReactNode } from "react"
 
-const inter = ZenSans
+const sans = Zen
 
-const interMono = ZenSans
+const sans = Zen
 
 export const metadata = {
   title: {
@@ -19,7 +19,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${interMono.variable}`}
+      className={`${sans.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-svh bg-background font-sans antialiased">
