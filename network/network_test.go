@@ -322,10 +322,15 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []peer.InboundHandler) 
 				net.ManuallyTrack(otherConfig.MyNodeID, endpoints.NewIPEndpoint(otherConfig.MyIPPort.Get()))
 			}
 		}
-		// Wait until this node is connected to all other nodes
+		// Wait until this node is connected to all other nodes.
+		//
+		// Building this mesh is a real TLS + ML-KEM handshake per pair. Eventually
+		// returns the moment the condition holds, so this bound is only a
+		// deadline for giving up -- 5s was one, and it expired under -race with
+		// the rest of the suite competing for the box.
 		require.Eventually(func() bool {
 			return len(net.PeerInfo(nil)) == len(networks)-1
-		}, 5*time.Second, 10*time.Millisecond)
+		}, 30*time.Second, 10*time.Millisecond)
 	}
 
 	// Wait for all connections (full mesh topology)
@@ -1062,12 +1067,12 @@ func TestSamplePeersSmallValidatorSets(t *testing.T) {
 			// Wait for full mesh connectivity
 			net := networks[0]
 			expectedConnections := tc.numNodes - 1 // all other nodes
-			for i := 0; i < 100; i++ {
-				if net.connectedPeers.Len() >= expectedConnections {
-					break
-				}
-				time.Sleep(50 * time.Millisecond)
-			}
+			// Waiting silently and then asserting on samplePeers reports a short
+			// sample rather than the missing connection that caused it.
+			require.Eventually(func() bool {
+				return net.connectedPeers.Len() >= expectedConnections
+			}, 30*time.Second, 50*time.Millisecond,
+				"node 0 never connected to the other %d", expectedConnections)
 
 			// Verify we have validators in the manager
 			numValidators := net.config.Validators.NumValidators(constants.PrimaryNetworkID)
