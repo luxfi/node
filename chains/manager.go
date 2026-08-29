@@ -463,6 +463,22 @@ type ManagerConfig struct {
 	SecurityProfile *consensusconfig.ChainSecurityProfile
 }
 
+// chainPrefixes are the path segments every chain's HTTP routes are served
+// under, canonical first.
+//
+// "chain" is what these are: C-Chain, X-Chain, M-Chain. "bc" was short for
+// "blockchain", which is a word that does not survive contact with what we
+// actually run — a chain here may be a DAG or another graph, and none of them
+// is required to be a chain of blocks. It also saved three characters at the
+// cost of a reader knowing what it meant.
+//
+// "bc" stays because it is a live public route. Removing it would break every
+// deployed client and every integrator's bookmark, and a public path is not
+// ours to retract on a rename. It is an alias at the router — the same handler
+// reachable two ways — not a compatibility layer: nothing branches on it and
+// nothing translates.
+var chainPrefixes = []string{"chain", "bc"}
+
 type manager struct {
 	// Note: The string representation of a chain's ID is also considered to be an alias of the chain
 	// That is, [chainID].String() is an alias for the chain, too
@@ -873,25 +889,35 @@ func (m *manager) createChain(chainParams ChainParameters) {
 					chainAlias = "C"
 				}
 
-				// The base is just "bc/<chainID>" and endpoint is "/rpc" or "/"
-				chainBase := fmt.Sprintf("bc/%s", chainAlias)
-				chainIDBase := fmt.Sprintf("bc/%s", chainParams.ID.String())
-
-				// AddRoute will build the full path as /v1/<base><endpoint>
-				m.Server.AddRoute(handler, chainBase, endpoint)
-				if chainAlias != chainParams.ID.String() {
-					m.Server.AddRoute(handler, chainIDBase, endpoint)
+				// AddRoute builds the full path as /v1/<base><endpoint>, so a
+				// base of "chain/C" and an endpoint of "/rpc" is
+				// /v1/chain/C/rpc.
+				//
+				// Every route is registered under both prefixes. `chain` is
+				// the name; `bc` is what it used to be called and answers so
+				// that deployed clients and anyone's bookmarks keep working.
+				// That is two paths to one handler rather than a compatibility
+				// layer — there is no second code path, nothing translates,
+				// and deleting the old prefix later is deleting a slice entry.
+				route := func(base string) {
+					for _, prefix := range chainPrefixes {
+						m.Server.AddRoute(handler, prefix+"/"+base, endpoint)
+					}
 				}
 
-				// Also register with chain name alias for user-friendly routing (e.g., /v1/bc/zoo/rpc)
+				route(chainAlias)
+				if chainAlias != chainParams.ID.String() {
+					route(chainParams.ID.String())
+				}
+
+				// Also register with chain name alias for user-friendly routing (e.g., /v1/chain/zoo/rpc)
 				if chainParams.Name != "" {
 					nameLower := strings.ToLower(chainParams.Name)
-					nameBase := fmt.Sprintf("bc/%s", nameLower)
-					m.Server.AddRoute(handler, nameBase, endpoint)
+					route(nameLower)
 					m.Log.Info("Registered HTTP handler with chain name",
 						log.String("chainName", nameLower),
 						log.Stringer("chainID", chainParams.ID),
-						log.String("base", nameBase),
+						log.String("base", nameLower),
 						log.String("endpoint", endpoint),
 					)
 
@@ -901,7 +927,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 						"P": "P-Chain", "Q": "Q-Chain", "T": "T-Chain",
 					} {
 						if strings.EqualFold(chainParams.Name, name) {
-							m.Server.AddRoute(handler, "bc/"+alias, endpoint)
+							route(alias)
 							m.Log.Info("Registered HTTP handler with chain alias",
 								log.String("alias", alias),
 								log.Stringer("chainID", chainParams.ID),
@@ -914,7 +940,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				m.Log.Info("Registered HTTP handler",
 					log.String("chainAlias", chainAlias),
 					log.Stringer("chainID", chainParams.ID),
-					log.String("base", chainBase),
+					log.String("prefixes", strings.Join(chainPrefixes, ",")),
 					log.String("endpoint", endpoint),
 				)
 			}
