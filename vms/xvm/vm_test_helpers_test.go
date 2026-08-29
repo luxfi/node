@@ -68,7 +68,7 @@ type testEnv struct {
 }
 
 // newGenesisBytesTest creates test genesis bytes
-func newGenesisBytesTest(t *testing.T) []byte {
+func newGenesisBytesTest(t testing.TB) []byte {
 	require := require.New(t)
 
 	// Format address properly as Bech32
@@ -103,7 +103,7 @@ func newGenesisBytesTest(t *testing.T) []byte {
 }
 
 // getCreateTxFromGenesisTest extracts a create asset tx from genesis
-func getCreateTxFromGenesisTest(t *testing.T, genesisBytes []byte, assetAlias string) *txs.Tx {
+func getCreateTxFromGenesisTest(t testing.TB, genesisBytes []byte, assetAlias string) *txs.Tx {
 	require := require.New(t)
 
 	genesis, err := ParseGenesisBytes(genesisBytes)
@@ -224,7 +224,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	sharedMemory := atomic.NewMemory(memdb.New())
 
 	vmImpl := &VM{}
-	genesisBytes := newGenesisBytesTest(t.(*testing.T))
+	genesisBytes := newGenesisBytesTest(t)
 	// Create shared memory wrapper that matches VM's interface
 	atomicMem := sharedMemory.NewSharedMemory(rt.ChainID)
 	vmImpl.SharedMemory = &testSharedMemory{mem: atomicMem}
@@ -285,7 +285,7 @@ func setup(t testing.TB, config *envConfig) *testEnv {
 	))
 
 	// Get the genesis transaction
-	genesisTx := getCreateTxFromGenesisTest(t.(*testing.T), genesisBytes, "LUX")
+	genesisTx := getCreateTxFromGenesisTest(t, genesisBytes, "LUX")
 
 	// Create transaction builder with SharedMemory
 	atomicMemForBuilder := sharedMemory.NewSharedMemory(rt.ChainID)
@@ -364,7 +364,7 @@ func issueAndAccept(require *require.Assertions, vm *VM, tx *txs.Tx) {
 func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser, assetName string) *txs.Tx {
 	require := require.New(tb)
 
-	createTx := getCreateTxFromGenesisTest(tb.(*testing.T), genesisBytes, assetName)
+	createTx := getCreateTxFromGenesisTest(tb, genesisBytes, assetName)
 	// Genesis creates 1000 LUX for keys[0]
 	// This tx spends the entire UTXO and creates a change output back to keys[0]
 	// Must account for transaction fee (testTxFee = 1000 nanoLux)
