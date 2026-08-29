@@ -46,6 +46,8 @@ func TestThePrimaryNetworksNamesAreNotAvailable(t *testing.T) {
 		// The VMs by name. `mpc` is what M-Chain does and `mpcvm` implements
 		// it; a reader would take either for the register that signs.
 		"mpc", "mpcvm", "MPC", "mpc-chain",
+		// V-Chain (LP-1350) is unbuilt and its name is already held.
+		"v", "V", "v-chain", "vchain", "vvm",
 		"bridge", "bridgevm", "Bridge", "bridge-chain",
 		"oracle", "oraclevm", "relay", "relayvm", "dex", "dexvm",
 		"zk", "zkvm", "quantum", "quantumvm", "evm", "avm", "platform",
