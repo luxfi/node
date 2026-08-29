@@ -123,7 +123,7 @@ require (
 	github.com/luxfi/chains v1.7.33
 	github.com/luxfi/codec v1.2.1
 	github.com/luxfi/compress v0.1.1
-	github.com/luxfi/constants v1.6.2
+	github.com/luxfi/constants v1.6.4
 	github.com/luxfi/container v0.2.2
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.16.19
