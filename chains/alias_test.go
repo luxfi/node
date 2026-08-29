@@ -43,6 +43,12 @@ func TestThePrimaryNetworksNamesAreNotAvailable(t *testing.T) {
 	for _, seg := range []string{
 		"m", "M", "b", "B", "c", "x", "p", "q", "z", "a", "g", "k", "f",
 		"m-chain", "M-Chain", "mchain", "mvm", "bvm", "cvm",
+		// The VMs by name. `mpc` is what M-Chain does and `mpcvm` implements
+		// it; a reader would take either for the register that signs.
+		"mpc", "mpcvm", "MPC", "mpc-chain",
+		"bridge", "bridgevm", "Bridge", "bridge-chain",
+		"oracle", "oraclevm", "relay", "relayvm", "dex", "dexvm",
+		"zk", "zkvm", "quantum", "quantumvm", "evm", "avm", "platform",
 	} {
 		if !reserved(seg) {
 			t.Fatalf("%q is available to any chain that asks for it", seg)
@@ -56,6 +62,8 @@ func TestReservationDoesNotTakeOrdinaryNames(t *testing.T) {
 	for _, seg := range []string{
 		"zoo", "hanzo", "pars", "osage", "ethereum", "base", "bitcoin",
 		"", "chain", "vm", "mm", "m-net", "my-chain",
+		// Near misses that are somebody else's to take.
+		"mpcx", "bridged", "oracles", "relayer", "dexes", "zoovm",
 	} {
 		if reserved(seg) {
 			t.Fatalf("%q was reserved, which takes a name nobody needed to take", seg)

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/go-json-experiment/json"
@@ -113,6 +114,41 @@ func (r *router) serveBelowMount(writer http.ResponseWriter, request *http.Reque
 	http.NotFound(writer, request)
 }
 
+// servePath dispatches on the URL, matching case-insensitively where it can.
+//
+// A path is a name a person types, and a person does not expect /v1/chain/M
+// and /v1/chain/m to be different places. So a path that matches nothing is
+// tried again in lower case.
+//
+// It cannot simply be lowercased on the way in. A chain id is base58 —
+// `2erizn2pu4gbafsFzbyfqwzhkR2RT1qFdwr7kKKwn5T3BH3wW8` — where case carries
+// information, and flattening it would make every id-addressed route
+// unreachable. Matching as sent first means an id hits on the first attempt
+// and never reaches the retry; only paths that already failed are folded.
+func (r *router) servePath(writer http.ResponseWriter, request *http.Request) {
+	var match mux.RouteMatch
+	if r.router.Match(request, &match) {
+		r.router.ServeHTTP(writer, request)
+		return
+	}
+
+	lower := strings.ToLower(request.URL.Path)
+	if lower == request.URL.Path {
+		// Already folded and still no match: this path is not served, and
+		// answering as the mux does keeps the 404 in one place.
+		r.router.ServeHTTP(writer, request)
+		return
+	}
+
+	folded := request.Clone(request.Context())
+	folded.URL.Path = lower
+	if r.router.Match(folded, &match) {
+		r.router.ServeHTTP(writer, folded)
+		return
+	}
+	r.router.ServeHTTP(writer, request)
+}
+
 func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
@@ -133,7 +169,7 @@ func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if !ok {
 		// If there is no routing header, fall-back to the legacy path-based
 		// routing
-		r.router.ServeHTTP(writer, request)
+		r.servePath(writer, request)
 		return
 	}
 
