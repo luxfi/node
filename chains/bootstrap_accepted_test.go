@@ -14,6 +14,7 @@ package chains
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -187,18 +188,46 @@ func (f acceptanceFunc) Acceptance(ctx context.Context, candidates []ids.ID, fro
 // ----- the responder --------------------------------------------------------
 
 // captureNet records what a handler sends, so a test can read the answer a peer would receive.
+//
+// Acceptance() answers on its own goroutine, so the capture is read while it is still being
+// written. The fields are behind a mutex and reached through the accessors below; touching them
+// directly is what the race detector caught.
 type captureNet struct {
 	network.Network
+	mu   sync.Mutex
 	sent []*bsOutMsg
 	to   []set.Set[ids.NodeID]
 }
 
 func (n *captureNet) Send(msg message.OutboundMessage, nodeIDs set.Set[ids.NodeID], _ ids.ID, _ uint32) set.Set[ids.NodeID] {
 	if m, ok := msg.(*bsOutMsg); ok {
+		n.mu.Lock()
 		n.sent = append(n.sent, m)
 		n.to = append(n.to, nodeIDs)
+		n.mu.Unlock()
 	}
 	return nodeIDs
+}
+
+// count is how many messages have been captured so far.
+func (n *captureNet) count() int {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return len(n.sent)
+}
+
+// msg is the i'th captured message.
+func (n *captureNet) msg(i int) *bsOutMsg {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return n.sent[i]
+}
+
+// dest is who the i'th captured message went to.
+func (n *captureNet) dest(i int) set.Set[ids.NodeID] {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return n.to[i]
 }
 
 // TestAccepted_ResponderAnswersOnlyForBlocksItAccepted: holding a block is not having accepted it.
@@ -218,12 +247,12 @@ func TestAccepted_ResponderAnswersOnlyForBlocksItAccepted(t *testing.T) {
 	asked := []ids.ID{chain[M].id, chain[M-3].id, chain[M+1].id, chain[N].id}
 	require.NoError(t, bh.GetAccepted(context.Background(), peer, 9, timeSoon(), asked))
 
-	require.Len(t, net.sent, 1, "the question is answered")
-	require.Equal(t, "accepted", net.sent[0].op)
-	require.Equal(t, uint32(9), net.sent[0].requestID, "answered under the id it was asked with")
-	require.Equal(t, []ids.ID{chain[M].id, chain[M-3].id}, net.sent[0].containerIDs,
+	require.Equal(t, 1, net.count(), "the question is answered")
+	require.Equal(t, "accepted", net.msg(0).op)
+	require.Equal(t, uint32(9), net.msg(0).requestID, "answered under the id it was asked with")
+	require.Equal(t, []ids.ID{chain[M].id, chain[M-3].id}, net.msg(0).containerIDs,
 		"only blocks on the accepted chain: the stored-but-unaccepted M+1 and the unheld N are not vouched for")
-	require.True(t, net.to[0].Contains(peer), "answered to the asker alone")
+	require.True(t, net.dest(0).Contains(peer), "answered to the asker alone")
 }
 
 // TestAccepted_ResponderRefusesAnOversizedQuestion: the id list is chosen by the sender, so it is
@@ -241,11 +270,11 @@ func TestAccepted_ResponderRefusesAnOversizedQuestion(t *testing.T) {
 		oversized[i] = chain[0].id
 	}
 	require.NoError(t, bh.GetAccepted(context.Background(), ids.GenerateTestNodeID(), 1, timeSoon(), oversized))
-	require.Empty(t, net.sent, "a question naming more ids than a naming round can ask is refused whole")
+	require.Zero(t, net.count(), "a question naming more ids than a naming round can ask is refused whole")
 
 	atLimit := oversized[:bootstrapAcceptedCandidates]
 	require.NoError(t, bh.GetAccepted(context.Background(), ids.GenerateTestNodeID(), 2, timeSoon(), atLimit))
-	require.Len(t, net.sent, 1, "the bound itself is answerable")
+	require.Equal(t, 1, net.count(), "the bound itself is answerable")
 }
 
 // TestAccepted_WireCarriesTheIDList proves the router's decode agrees with the wire form the
@@ -283,8 +312,8 @@ func TestAccepted_RouterDispatchesBothHalves(t *testing.T) {
 	require.NoError(t, bh.HandleInbound(context.Background(), handler.Message{
 		NodeID: peer, RequestID: 5, Op: handler.GetAccepted, Message: wire,
 	}))
-	require.Len(t, net.sent, 1, "a node answers the question whether or not it is itself syncing")
-	require.Equal(t, []ids.ID{chain[M].id}, net.sent[0].containerIDs)
+	require.Equal(t, 1, net.count(), "a node answers the question whether or not it is itself syncing")
+	require.Equal(t, []ids.ID{chain[M].id}, net.msg(0).containerIDs)
 
 	// The answer, likewise.
 	bh.bsActive.Store(true)
@@ -314,7 +343,7 @@ func TestAccepted_NotBehindAsksNothing(t *testing.T) {
 
 	answers := bh.Acceptance(context.Background(), []ids.ID{chain[N].id, chain[N-1].id}, beacons)
 	require.Empty(t, answers)
-	require.Empty(t, net.sent, "a node that is not behind sends no second question")
+	require.Zero(t, net.count(), "a node that is not behind sends no second question")
 }
 
 // TestAccepted_AsksOnlyForBlocksItLacks: candidates already on this node's chain are dropped before
@@ -333,9 +362,9 @@ func TestAccepted_AsksOnlyForBlocksItLacks(t *testing.T) {
 	defer bh.bsActive.Store(false)
 
 	go bh.Acceptance(context.Background(), []ids.ID{chain[M].id, chain[M-1].id, chain[N].id}, beacons)
-	require.Eventually(t, func() bool { return len(net.sent) == 1 }, time.Second, time.Millisecond)
-	require.Equal(t, "getaccepted", net.sent[0].op)
-	require.Equal(t, []ids.ID{chain[N].id}, net.sent[0].containerIDs,
+	require.Eventually(t, func() bool { return net.count() == 1 }, time.Second, time.Millisecond)
+	require.Equal(t, "getaccepted", net.msg(0).op)
+	require.Equal(t, []ids.ID{chain[N].id}, net.msg(0).containerIDs,
 		"the two blocks already accepted are not asked about")
 }
 
