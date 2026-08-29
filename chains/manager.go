@@ -477,6 +477,59 @@ type ManagerConfig struct {
 // ours to retract on a rename. It is an alias at the router — the same handler
 // reachable two ways — not a compatibility layer: nothing branches on it and
 // nothing translates.
+// lettersFor returns the single-letter routes a chain name earns, in both
+// cases. "M-Chain" gives {"M", "m"}; a name that is not <letter>-Chain gives
+// nothing.
+//
+// Derived rather than listed because a list goes stale silently: the map this
+// replaced named six letters while eleven chains were running, and nothing
+// about a missing entry looked like a missing entry.
+// isPrimary reports whether this chain belongs to the primary network, which
+// is what entitles it to a reserved name.
+func (m *manager) isPrimary(p ChainParameters) bool {
+	// ChainParameters.ChainID is the net that VALIDATES this chain, despite
+	// the name. The primary network's own id is what entitles a chain to a
+	// reserved name.
+	return p.ChainID == constants.PrimaryNetworkID
+}
+
+func lettersFor(name string) map[string]struct{} {
+	out := map[string]struct{}{}
+	if len(name) < 2 || name[1] != '-' {
+		return out
+	}
+	if !strings.EqualFold(name[2:], "chain") {
+		return out
+	}
+	c := name[:1]
+	if c[0] < 'A' || (c[0] > 'Z' && c[0] < 'a') || c[0] > 'z' {
+		return out
+	}
+	out[strings.ToUpper(c)] = struct{}{}
+	out[strings.ToLower(c)] = struct{}{}
+	return out
+}
+
+// reserved reports whether a path segment belongs to the primary network and
+// may not be claimed by any other chain.
+//
+// Without this a chain may name itself "m" and register at /v1/chain/m while
+// M-Chain sits at /v1/chain/M. HTTP paths are case-sensitive, so those are two
+// routes, and a reader looking at either would not be able to tell which is
+// the register that signs. The names of the primary network's chains are not
+// available to anyone else, in any case, under any of the forms a route can
+// take: the letter, the full name, and the VM suffix people reach for.
+func reserved(segment string) bool {
+	seg := strings.ToLower(segment)
+	for c := byte('a'); c <= 'z'; c++ {
+		l := string(c)
+		if seg == l || seg == l+"-chain" || seg == l+"chain" || seg == l+"vm" {
+			return true
+		}
+	}
+	return false
+}
+
 var chainPrefixes = []string{"chain", "bc"}
 
 type manager struct {
@@ -911,7 +964,18 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				}
 
 				// Also register with chain name alias for user-friendly routing (e.g., /v1/chain/zoo/rpc)
-				if chainParams.Name != "" {
+				// A chain outside the primary network may not register under
+				// a name the primary network's chains answer to. The letters
+				// and their derivations are the register's own identity, and
+				// a second chain reachable at a name that looks like M-Chain's
+				// is a chain a reader cannot tell apart from the one that
+				// signs.
+				if chainParams.Name != "" && reserved(strings.ToLower(chainParams.Name)) && !m.isPrimary(chainParams) {
+					m.Log.Warn("refusing a reserved chain name",
+						log.String("name", chainParams.Name),
+						log.Stringer("chainID", chainParams.ID),
+					)
+				} else if chainParams.Name != "" {
 					nameLower := strings.ToLower(chainParams.Name)
 					route(nameLower)
 					m.Log.Info("Registered HTTP handler with chain name",
@@ -921,12 +985,21 @@ func (m *manager) createChain(chainParams ChainParameters) {
 						log.String("endpoint", endpoint),
 					)
 
-					// Register standard chain aliases (uppercase single-letter)
-					for alias, name := range map[string]string{
-						"C": "C-Chain", "X": "X-Chain", "D": "D-Chain",
-						"P": "P-Chain", "Q": "Q-Chain", "T": "T-Chain",
-					} {
-						if strings.EqualFold(chainParams.Name, name) {
+					// Register the chain's letter, in both cases.
+					//
+					// The letter is derived from the name rather than looked
+					// up: a hand-written map listed six letters while the
+					// network ran eleven chains, so M, B, A, Z, G, K and F had
+					// no letter route at all and the list had no way of
+					// noticing. `M-Chain` yields `M`, and that is the whole
+					// rule.
+					//
+					// Both cases because HTTP paths are case-sensitive and a
+					// reader does not expect them to be. `/v1/chain/m/rpc`
+					// answering while `/v1/chain/M/rpc` does not is a
+					// distinction nobody asked for.
+					for alias := range lettersFor(chainParams.Name) {
+						if alias != "" {
 							route(alias)
 							m.Log.Info("Registered HTTP handler with chain alias",
 								log.String("alias", alias),
