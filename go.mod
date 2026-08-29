@@ -36,7 +36,7 @@ require (
 	github.com/luxfi/metric v1.10.1
 	github.com/luxfi/mock v0.1.1
 	github.com/mr-tron/base58 v1.3.0
-	github.com/onsi/ginkgo/v2 v2.28.1
+	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/pires/go-proxyproto v0.11.0
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
@@ -227,7 +227,7 @@ require (
 
 require (
 	github.com/luxfi/concurrent v0.1.1
-	github.com/luxfi/proto v1.4.3
+	github.com/luxfi/proto v1.4.10
 	github.com/luxfi/upgrade v1.0.3 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
@@ -247,7 +247,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/flatbuffers v25.12.19+incompatible // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260302011040-a15ffb7f9dcc // indirect
+	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/address v1.1.1
 	github.com/luxfi/cache v1.3.1 // indirect
