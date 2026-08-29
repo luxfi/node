@@ -5,35 +5,45 @@ package platformvm
 
 import (
 	"context"
+	stdjson "encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/luxfi/address"
-	validators "github.com/luxfi/validators"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	apitypes "github.com/luxfi/api/types"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/rpc"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	validators "github.com/luxfi/validators"
 
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )
 
 type Client struct {
 	Requester rpc.EndpointRequester
+	// ops is where the P-Chain serves its typed ops. Converted methods live
+	// here and JSON-RPC methods do not; it collapses into the chain base once
+	// there are no JSON-RPC methods left to share it with.
+	ops       string
 	networkID uint32
 }
 
 func NewClient(uri string) *Client {
-	return &Client{Requester: rpc.NewEndpointRequester(
-		uri + "/v1/bc/P",
-	)}
+	return &Client{
+		Requester: rpc.NewEndpointRequester(uri + "/v1/bc/P"),
+		ops:       uri + "/v1/bc/P/ops",
+	}
 }
 
 // NewClientWithNetworkID returns a new platformvm.Client with the network ID set
@@ -41,6 +51,7 @@ func NewClient(uri string) *Client {
 func NewClientWithNetworkID(uri string, networkID uint32) *Client {
 	return &Client{
 		Requester: rpc.NewEndpointRequester(uri + "/v1/bc/P"),
+		ops:       uri + "/v1/bc/P/ops",
 		networkID: networkID,
 	}
 }
@@ -65,10 +76,45 @@ func (c *Client) formatAddresses(addrs []ids.ShortID) ([]string, error) {
 }
 
 // GetHeight returns the current block height.
+//
+// getHeight is a typed op: an address that answers a GET, not a method name
+// inside a JSON-RPC envelope. Still hand-written here, which is the thing
+// describing the op removes the need for — the op's types are what a
+// generated client is generated from.
 func (c *Client) GetHeight(ctx context.Context, options ...rpc.Option) (uint64, error) {
 	res := &apitypes.GetHeightResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getHeight", struct{}{}, res, options...)
-	return uint64(res.Height), err
+	if err := c.read(ctx, "/height", res, options...); err != nil {
+		return 0, err
+	}
+	return uint64(res.Height), nil
+}
+
+// read fetches one typed op and decodes its reply.
+func (c *Client) read(ctx context.Context, path string, reply any, options ...rpc.Option) error {
+	at, err := url.Parse(c.ops + path)
+	if err != nil {
+		return err
+	}
+	opts := rpc.NewOptions(options)
+	at.RawQuery = opts.QueryParams().Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, at.String(), nil)
+	if err != nil {
+		return err
+	}
+	req.Header = opts.Headers()
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		said, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return fmt.Errorf("%s: %s: %s", at, resp.Status, said)
+	}
+	return stdjson.NewDecoder(resp.Body).Decode(reply)
 }
 
 // GetProposedHeight returns the current height of this node's proposer VM.

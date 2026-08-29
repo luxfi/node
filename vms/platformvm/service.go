@@ -83,9 +83,12 @@ type stakerAttributes struct {
 	proofOfPossession      *signer.ProofOfPossession
 }
 
-// GetHeight returns the height of the last accepted block
-func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *apitypes.GetHeightResponse) error {
-
+// height returns the height of the last accepted block.
+//
+// This is a typed op (see ops.go), not a JSON-RPC method: it is not an exported
+// method on Service, so gorilla/rpc never sees it, and nothing about it is
+// spelled in a reflection table or a name-mapping codec.
+func (s *Service) height(ctx context.Context, _ *struct{}) (*apitypes.GetHeightResponse, error) {
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getHeight",
@@ -94,10 +97,11 @@ func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *apitypes.Get
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	ctx := r.Context()
-	height, err := s.vm.GetCurrentHeight(ctx)
-	response.Height = apitypes.Uint64(height)
-	return err
+	at, err := s.vm.GetCurrentHeight(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &apitypes.GetHeightResponse{Height: apitypes.Uint64(at)}, nil
 }
 
 // GetProposedHeight returns the current ProposerVM height

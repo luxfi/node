@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/utils"
 )
@@ -30,7 +29,7 @@ func TestLazyHandlerWrapper(t *testing.T) {
 	}
 
 	// Create the lazy handler wrapper
-	wrapper := &lazyHandlerWrapper{vm: vm}
+	wrapper := &lazyHandlerWrapper{vm: vm, build: jsonrpc}
 
 	// Test 1: Request before bootstrapping should return 503
 	req := httptest.NewRequest(http.MethodPost, "/", nil)
@@ -47,7 +46,7 @@ func TestLazyHandlerWrapper(t *testing.T) {
 	// but the RPC server will return 415 because no Content-Type header
 	req2 := httptest.NewRequest(http.MethodPost, "/", nil)
 	rec2 := httptest.NewRecorder()
-	wrapper2 := &lazyHandlerWrapper{vm: vm} // New wrapper to reset once
+	wrapper2 := &lazyHandlerWrapper{vm: vm, build: jsonrpc} // New wrapper to reset once
 	wrapper2.ServeHTTP(rec2, req2)
 
 	// The RPC server responds with 415 (Unsupported Media Type) for requests
@@ -92,16 +91,13 @@ func TestServiceNilVMCheck(t *testing.T) {
 		stakerAttributesCache: lru.NewCache[ids.ID, *stakerAttributes](100),
 	}
 
-	// Try to call GetHeight with nil VM
-	req := httptest.NewRequest(http.MethodPost, "/", nil)
-	var response apitypes.GetHeightResponse
 	// This should panic because vm is nil, so we need to recover
 	defer func() {
 		if r := recover(); r != nil {
 			require.NotNil(r, "Expected panic from nil VM")
 		}
 	}()
-	err := service.GetHeight(req, nil, &response)
+	_, err := service.height(context.Background(), nil)
 	// If we get here, the service handled nil VM gracefully
 	if err != nil {
 		require.Error(err)

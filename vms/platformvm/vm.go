@@ -137,6 +137,24 @@ type VM struct {
 	// toEngine is the channel to send messages to the consensus engine
 	// This is used to notify the engine when there are pending transactions
 	toEngine chan<- vmcore.Message
+
+	// The API service, built on the first request that finds the VM running.
+	// Every surface that serves the P-Chain API reads this one value, so the
+	// JSON-RPC methods and the typed ops cannot drift from one another.
+	serviceOnce sync.Once
+	svc         *Service
+}
+
+// service is the API service, built once.
+func (vm *VM) service() *Service {
+	vm.serviceOnce.Do(func() {
+		vm.svc = &Service{
+			vm:                    vm,
+			addrManager:           lux.NewAddressManager(vm.rt),
+			stakerAttributesCache: lru.NewCache[ids.ID, *stakerAttributes](stakerAttributesCacheSize),
+		}
+	})
+	return vm.svc
 }
 
 // GetChainID returns the chain ID for a given network ID
@@ -759,9 +777,11 @@ func (*VM) Version(context.Context) (string, error) {
 	return version.Current.String(), nil
 }
 
-// lazyHandlerWrapper delays Service creation until the VM is fully initialized
+// lazyHandlerWrapper delays Service creation until the VM is fully initialized.
+// build turns that service into the surface this wrapper answers on.
 type lazyHandlerWrapper struct {
 	vm      *VM
+	build   func(*Service) (http.Handler, error)
 	handler http.Handler
 	once    sync.Once
 	err     error
@@ -776,30 +796,7 @@ func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	l.once.Do(func() {
-		// Create the actual RPC server now that VM is ready
-		server := rpc.NewServer()
-		server.RegisterCodec(json.NewCodec(), "application/json")
-		server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
-
-		// Add metrics interceptors if available
-		if l.vm.metrics != nil {
-			server.RegisterInterceptFunc(l.vm.metrics.InterceptRequest)
-			server.RegisterAfterFunc(l.vm.metrics.AfterRequest)
-		}
-
-		// Create the service with fully initialized VM
-		service := &Service{
-			vm:                    l.vm,
-			addrManager:           lux.NewAddressManager(l.vm.rt),
-			stakerAttributesCache: lru.NewCache[ids.ID, *stakerAttributes](stakerAttributesCacheSize),
-		}
-
-		if err := server.RegisterService(service, "platform"); err != nil {
-			l.err = fmt.Errorf("failed to register platform service: %w", err)
-			return
-		}
-
-		l.handler = server
+		l.handler, l.err = l.build(l.vm.service())
 	})
 
 	// Handle the request or return error
@@ -815,14 +812,41 @@ func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	l.handler.ServeHTTP(w, r)
 }
 
+// jsonrpc is the P-Chain's method surface: gorilla/rpc reflects over
+// Service's exported methods and dispatches on the name in the request body.
+func jsonrpc(s *Service) (http.Handler, error) {
+	srv := rpc.NewServer()
+	srv.RegisterCodec(json.NewCodec(), "application/json")
+	srv.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
+
+	if s.vm.metrics != nil {
+		srv.RegisterInterceptFunc(s.vm.metrics.InterceptRequest)
+		srv.RegisterAfterFunc(s.vm.metrics.AfterRequest)
+	}
+
+	if err := srv.RegisterService(s, "platform"); err != nil {
+		return nil, fmt.Errorf("failed to register platform service: %w", err)
+	}
+	return srv, nil
+}
+
 // CreateHandlers returns a map where:
 // * keys are API endpoint extensions
 // * values are API handlers
 // This now uses lazy initialization to avoid race conditions during VM startup
+//
+// Two surfaces, one listener. The methods still on gorilla answer at the chain
+// base, and the typed ops answer under /ops, because the router gives an
+// endpoint its OWN paths only when the endpoint is named: the base is an exact
+// mux route (see server/http/router.go), so the handler registered at "" is
+// reached at the base and nowhere below it. /ops is therefore where a converted
+// method lives until there are no unconverted ones left, at which point the ops
+// app takes the base and this map has one entry again.
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
-	// Return a lazy wrapper that will create the actual handler when ready
+	// Return lazy wrappers that will create the actual handlers when ready
 	return map[string]http.Handler{
-		"": &lazyHandlerWrapper{vm: vm},
+		"":     &lazyHandlerWrapper{vm: vm, build: jsonrpc},
+		"/ops": &lazyHandlerWrapper{vm: vm, build: mount},
 	}, nil
 }
 

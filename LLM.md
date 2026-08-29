@@ -220,6 +220,39 @@ These are node flags, but the C-Chain reads its settings from its own config, so
 they are merged into it — that is the one way anything reaches the plugin. The
 store itself and what a shared reader is held to are documented in luxfi/geth.
 
+## API surface: typed ops replace JSON-RPC methods, one at a time
+
+The node API is moving off hand-written gorilla/rpc methods onto
+`github.com/zap-proto/zip` typed ops. A method is a name in a reflection table
+whose reply shape nothing reads, so the SDK and the CLI keep hand-written copies
+of it and drift silently; an op is described by its Go types, and the OpenAPI
+document, the docs page, the MCP tool and the CLI are all projections of the one
+registration. `platform.getHeight` is the first converted method
+(`vms/platformvm/ops.go`).
+
+**Conversion is a replacement, not an addition.** The op's handler is
+unexported (`Service.height`), so gorilla cannot see it and the op is the only
+address the method has.
+
+**The two servers share the listener but not the base path.** A VM's
+`CreateHandlers` map is mounted by `server/http/router.go`, which registers the
+handler at endpoint `""` as an EXACT mux route: it answers at the chain base and
+at nothing below it. Only a NAMED endpoint becomes a prefix mount that serves
+its own sub-paths. So converted ops live under `/v1/bc/P/ops` while unconverted
+methods keep answering at `/v1/bc/P`, and the ops app takes the base only when
+the last method leaves it.
+
+`server/http/zip.go` is what puts a zip app on the router. zip apps own a
+listener — `zip.Serve` is also what installs the OpenAPI document, the docs
+page, the MCP door and the op-call plane — so `Mount` serves the app on a
+transport whose wire is the listener the node already has, and copies each
+net/http request onto it. fasthttp ships only the net/http-to-fasthttp
+direction, so that copy is written out here.
+
+**Nothing authorizes an op.** `zip.App.Authorize` runs one rule on every op's
+decoded input, REST and MCP alike, and no rule is installed. That matches the
+rest of the node today, where no route carries authorization either.
+
 ## Upgrade compatibility
 
 **P-Chain codec: v1.36.2 → v1.36.x is a flag day.** The P-Chain database moved
