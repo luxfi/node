@@ -41,7 +41,8 @@ jobs:
     timeout-minutes: 60
     env:
       GOWORK: off
-      GOEXPERIMENT: runtimesecret
+      # GOEXPERIMENT is not set here: scripts/constants.sh picks it, so the
+      # release is verified with the experiments it is built with.
       CGO_ENABLED: '0'
     steps:
       - uses: actions/checkout@v4

@@ -22,36 +22,9 @@ NODE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory a
 git_commit="${LUXD_COMMIT:-$(git --git-dir="${NODE_PATH}/.git" rev-parse HEAD 2>/dev/null || echo unknown)}"
 commit_hash="${git_commit::8}"
 
-# Extract version from git tag - try git first, then fallback to version file
-# Examples: v1.22.19 -> 1.22.19, v1.22.19-0-g7dc749f -> 1.22.19
-git_raw_version="${LUXD_VERSION:-$(git --git-dir="${NODE_PATH}/.git" describe --tags --always 2>/dev/null || echo "")}"
-
-# Strip leading 'v' if present
-git_raw_version="${git_raw_version#v}"
-
-# Extract just the semver part (Major.Minor.Patch) - strips anything after patch number
-# Handles: 1.22.19, 1.22.19-0-g7dc749f, 1.22.19-beta, etc.
-if [[ "$git_raw_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-    version_major="${BASH_REMATCH[1]}"
-    version_minor="${BASH_REMATCH[2]}"
-    version_patch="${BASH_REMATCH[3]}"
-elif [[ -f "${NODE_PATH}/version.txt" ]]; then
-    # Fallback to version.txt file for CI builds without tags
-    version_content=$(cat "${NODE_PATH}/version.txt")
-    if [[ "$version_content" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-        version_major="${BASH_REMATCH[1]}"
-        version_minor="${BASH_REMATCH[2]}"
-        version_patch="${BASH_REMATCH[3]}"
-    else
-        echo "ERROR: VERSION file content '$version_content' is not semantic version format (X.Y.Z)"
-        exit 1
-    fi
-else
-    # Default version for development/CI builds without git tags
-    echo "WARNING: No git tag found and no VERSION file - using default 0.0.0-dev"
-    version_major="0"
-    version_minor="0"
-    version_patch="0"
-fi
-
-git_version="${version_major}.${version_minor}.${version_patch}"
+# The version is version/version.txt and nothing else. The Go build embeds that
+# same file (version/constants.go), so a plain `go build`, a `go run`, a test
+# binary and a released luxd all report one number. This used to be read from
+# `git describe` here and hardcoded a second time in version/constants.go, and
+# the two had drifted 142 patch versions apart.
+node_version="$(tr -d '[:space:]' < "${NODE_PATH}/version/version.txt")"

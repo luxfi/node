@@ -30,7 +30,8 @@ concurrency:
 
 env:
   GOWORK: off
-  GOEXPERIMENT: runtimesecret
+  # GOEXPERIMENT is not set here: scripts/constants.sh picks it, so CI compiles
+  # what a developer and the release image compile.
   CGO_ENABLED: '0'
 
 jobs:

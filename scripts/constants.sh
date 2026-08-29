@@ -33,6 +33,27 @@ export CGO_CFLAGS="-O2 -D__BLST_PORTABLE__"
 # Only set CGO_ENABLED if not already set (allows CGO_ENABLED=0 for cross-compilation)
 export CGO_ENABLED="${CGO_ENABLED:-1}"
 
+# The Go experiments every build and test of this repo runs with.
+#
+# This is the only place the repo picks them, so `make`, scripts/build.sh and CI
+# cannot disagree about what they are compiling.
+#
+# jsonv2 is what the released image is built with. runtimesecret is NOT usable
+# here: luxfi/crypto's cgo BLS path calls blst_keygen from inside
+# runtime/secret.Do, and a cgo transition out of a secret context faults in
+# runtime.asmcgocall. luxd then takes a SIGSEGV in config.getStakingSigner
+# before it writes its first log line, with no Go traceback to say why. It needs
+# only cgo, which is this repo's default, so it is not specific to any kernel.
+export GOEXPERIMENT="${GOEXPERIMENT:-jsonv2}"
+
+# An explicit override must not bring that crash back silently.
+if [[ "${GOEXPERIMENT}" == *runtimesecret* && "${CGO_ENABLED}" != "0" ]]; then
+    echo "ERROR: GOEXPERIMENT=runtimesecret with CGO_ENABLED=${CGO_ENABLED} builds a luxd that" >&2
+    echo "       SIGSEGVs on startup (cgo BLS keygen inside runtime/secret.Do)." >&2
+    echo "       Build with CGO_ENABLED=0 to take the pure-Go BLS path, or drop runtimesecret." >&2
+    exit 1
+fi
+
 # Disable version control fallbacks
 export GOPROXY="${GOPROXY:-https://proxy.golang.org}"
 
