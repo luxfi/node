@@ -4,9 +4,11 @@
 package version
 
 import (
-	"github.com/go-json-experiment/json"
-	"strconv"
+	"slices"
+	"strings"
 	"time"
+
+	"github.com/go-json-experiment/json"
 
 	_ "embed"
 )
@@ -19,18 +21,15 @@ const (
 	RPCChainVMProtocol uint = 42
 )
 
-// These variables are set at build time via ldflags from git tag:
+// version.txt is the one place this repo states its own version.
 //
-//	go build -ldflags "-X github.com/luxfi/node/version.VersionMajor=1 \
-//	                   -X github.com/luxfi/node/version.VersionMinor=22 \
-//	                   -X github.com/luxfi/node/version.VersionPatch=19"
+// It is embedded rather than injected via ldflags so that every way of
+// producing a luxd reports the same number: `go run`, a plain `go build`, a
+// test binary and scripts/build.sh all read this file. scripts/git_commit.sh
+// reads the same file for the build banner and image tags.
 //
-// Build with scripts/build.sh to automatically inject version from git tags.
-var (
-	VersionMajor = ""
-	VersionMinor = ""
-	VersionPatch = ""
-)
+//go:embed version.txt
+var versionBytes []byte
 
 // These are globals that describe network upgrades and node versions
 var (
@@ -72,47 +71,10 @@ var (
 	RPCChainVMProtocolCompatibility map[uint][]*Semantic
 )
 
-// Default version for tests/development when not set via ldflags
-// These should match the latest git tag
-const (
-	defaultMajor = 1
-	defaultMinor = 36
-	defaultPatch = 35
-)
-
 func init() {
-	// Version is set via ldflags at build time from git tag
-	// If not set, use defaults (for tests and go run)
-	var major, minor, patch int
-
-	if VersionMajor != "" {
-		var err error
-		major, err = strconv.Atoi(VersionMajor)
-		if err != nil {
-			panic("invalid VersionMajor: " + VersionMajor)
-		}
-	} else {
-		major = defaultMajor
-	}
-
-	if VersionMinor != "" {
-		var err error
-		minor, err = strconv.Atoi(VersionMinor)
-		if err != nil {
-			panic("invalid VersionMinor: " + VersionMinor)
-		}
-	} else {
-		minor = defaultMinor
-	}
-
-	if VersionPatch != "" {
-		var err error
-		patch, err = strconv.Atoi(VersionPatch)
-		if err != nil {
-			panic("invalid VersionPatch: " + VersionPatch)
-		}
-	} else {
-		patch = defaultPatch
+	major, minor, patch, err := parseVersions(strings.TrimSpace(string(versionBytes)))
+	if err != nil {
+		panic("invalid version/version.txt: " + err.Error())
 	}
 
 	Current = &Semantic{
@@ -144,6 +106,24 @@ func init() {
 			versions[i] = version
 		}
 		RPCChainVMProtocolCompatibility[rpcChainVMProtocol] = versions
+	}
+
+	// This build speaks RPCChainVMProtocol by construction, so it says so itself
+	// rather than waiting for someone to remember to append it to
+	// compatibility.json on release day. The file is the record of past
+	// releases; this is the present one.
+	//
+	// Nobody remembered for 142 releases: the list stopped at v1.36.35, and the
+	// test meant to catch that could not, because Current was hardcoded to
+	// v1.36.35 too.
+	if !slices.ContainsFunc(
+		RPCChainVMProtocolCompatibility[RPCChainVMProtocol],
+		func(v *Semantic) bool { return v.Compare(Current) == 0 },
+	) {
+		RPCChainVMProtocolCompatibility[RPCChainVMProtocol] = append(
+			RPCChainVMProtocolCompatibility[RPCChainVMProtocol],
+			Current,
+		)
 	}
 }
 

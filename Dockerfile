@@ -120,6 +120,9 @@ ARG BUILDPLATFORM
 # with GOEXPERIMENT=jsonv2. Verified -12% time / -23% allocs on the
 # edge POST roundtrip vs encoding/json v1. Applies to luxd + every
 # in-stage VM plugin build below.
+#
+# scripts/constants.sh is where this value is chosen; the luxd build sources it.
+# This pins the same value for the plugin stages below, which do not.
 ARG GO_EXPERIMENT=jsonv2
 ENV GOEXPERIMENT=${GO_EXPERIMENT}
 

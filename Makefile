@@ -6,15 +6,15 @@
 CGO_ENABLED ?= 1
 FIPS_STRICT ?= 0
 
-# Go 1.26 experimental features:
-#   runtimesecret - zeroes stack/register state after secret.Do() for forward secrecy.
-# It SIGSEGVs at startup under the WSL2 kernel (confirmed on go1.26.3 and go1.26.4), so enable
-# it only off-WSL; forward secrecy stays on for real Linux/macOS/production builds.
-WSL := $(shell grep -qiE 'microsoft|WSL' /proc/sys/kernel/osrelease 2>/dev/null && echo 1)
-ifeq ($(WSL),1)
-GOEXPERIMENT ?= none
-else
-GOEXPERIMENT ?= runtimesecret
+# Go experiments come from scripts/constants.sh, which every build script also
+# sources, so make and the scripts cannot compile different things.
+#
+# The WSL test that used to live here was a misdiagnosis: the startup SIGSEGV it
+# worked around is a cgo call inside runtime/secret.Do and reproduces on any
+# kernel. constants.sh carries the explanation and refuses the combination.
+GOEXPERIMENT := $(shell bash -c '. ./scripts/constants.sh >/dev/null 2>&1 && echo "$$GOEXPERIMENT"')
+ifeq ($(GOEXPERIMENT),)
+$(error scripts/constants.sh did not yield a GOEXPERIMENT — it failed or refused the requested combination; run `bash ./scripts/constants.sh` to see why)
 endif
 export GOEXPERIMENT
 
@@ -288,10 +288,7 @@ build-release:
 	@mkdir -p build
 	@GOWORK=off $(ENV) go build \
 		-ldflags="$(RELEASE_LDFLAGS) \
-			-X github.com/luxfi/node/version.GitCommit=$$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown') \
-			-X github.com/luxfi/node/version.VersionMajor=$$(grep 'version_major=' scripts/constants.sh | cut -d= -f2 || echo '1') \
-			-X github.com/luxfi/node/version.VersionMinor=$$(grep 'version_minor=' scripts/constants.sh | cut -d= -f2 || echo '0') \
-			-X github.com/luxfi/node/version.VersionPatch=$$(grep 'version_patch=' scripts/constants.sh | cut -d= -f2 || echo '0')" \
+			-X github.com/luxfi/node/version.GitCommit=$$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" \
 		-gcflags="$(RELEASE_GCFLAGS)" \
 		-trimpath \
 		-o build/luxd \

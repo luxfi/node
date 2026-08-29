@@ -14,7 +14,6 @@ print_usage() {
         Profiles:
           minimal  - ZAP transport, all VMs, stripped (~30MB)
           core     - ZAP, P/X/C only, stripped (~25MB) [plugin-ready]
-          full     - gRPC+ZAP, all features, stripped (~36MB)
           dev      - ZAP, all VMs, debug symbols (~40MB)
           tiny     - all VMs + UPX compressed (~20MB)
 
@@ -22,7 +21,6 @@ print_usage() {
 
   Examples:
     ./scripts/build.sh              # minimal stripped build
-    ./scripts/build.sh -p full      # full build with all VMs and gRPC
     ./scripts/build.sh -p dev       # development build with debug symbols
     ./scripts/build.sh -p tiny      # smallest binary (UPX compressed)
     ./scripts/build.sh -r           # minimal with race detector
@@ -65,9 +63,6 @@ source "${REPO_ROOT}"/scripts/git_commit.sh
 base_tags="metrics"
 tags="${base_tags}"
 ldflags="-X github.com/luxfi/node/version.GitCommit=$git_commit \
-         -X github.com/luxfi/node/version.VersionMajor=$version_major \
-         -X github.com/luxfi/node/version.VersionMinor=$version_minor \
-         -X github.com/luxfi/node/version.VersionPatch=$version_patch \
          $static_ld_flags"
 strip_flags=""
 upx_compress=false
@@ -81,11 +76,6 @@ case "${profile}" in
   core)
     echo "Profile: core (ZAP, P/X/C chains only, stripped)"
     # No optional VMs - future plugin-ready build
-    strip_flags="-s -w"
-    ;;
-  full)
-    echo "Profile: full (gRPC+ZAP, all VMs, all features, stripped)"
-    tags="${base_tags},grpc,nattraversal"
     strip_flags="-s -w"
     ;;
   dev)
@@ -116,10 +106,7 @@ if [ -n "$tags" ]; then
   tags_arg="-tags=$tags"
 fi
 
-# Enable Go 1.26 experimental features if not already set
-export GOEXPERIMENT="${GOEXPERIMENT:-runtimesecret}"
-
-echo "Building Lux Node v${version_major}.${version_minor}.${version_patch} with [$(go version)] GOEXPERIMENT=${GOEXPERIMENT}..."
+echo "Building Lux Node v${node_version} with [$(go version)] GOEXPERIMENT=${GOEXPERIMENT}..."
 go build -trimpath ${race} ${tags_arg} "$@" -o "${node_path}" \
    -ldflags "$ldflags" \
    "${REPO_ROOT}"/main
