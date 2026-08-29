@@ -4,7 +4,6 @@
 package platformvm
 
 import (
-	"github.com/go-json-experiment/json"
 	"github.com/luxfi/address"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/api"
@@ -93,19 +92,10 @@ func apiOwnerToClientOwner(rewardOwner *api.Owner) (*ClientOwner, error) {
 	}, err
 }
 
-func getClientPermissionlessValidators(validatorsSliceIntf []interface{}) ([]ClientPermissionlessValidator, error) {
-	clientValidators := make([]ClientPermissionlessValidator, len(validatorsSliceIntf))
-	for i, validatorMapIntf := range validatorsSliceIntf {
-		validatorMapJSON, err := json.Marshal(validatorMapIntf)
-		if err != nil {
-			return nil, err
-		}
-
-		var apiValidator api.PermissionlessValidator
-		err = json.Unmarshal(validatorMapJSON, &apiValidator)
-		if err != nil {
-			return nil, err
-		}
+func getClientPermissionlessValidators(current []CurrentValidator) ([]ClientPermissionlessValidator, error) {
+	clientValidators := make([]ClientPermissionlessValidator, len(current))
+	for i, entry := range current {
+		apiValidator := entry.staker()
 
 		clientValidator, err := getClientPrimaryOrNetValidator(apiValidator)
 		if err != nil {

@@ -131,11 +131,11 @@ type GetBalanceResponse struct {
 	Unlocked            avajson.Uint64            `json:"unlocked"`
 	LockedStakeable     avajson.Uint64            `json:"lockedStakeable"`
 	LockedNotStakeable  avajson.Uint64            `json:"lockedNotStakeable"`
-	Balances            map[ids.ID]avajson.Uint64 `json:"balances"`
-	Unlockeds           map[ids.ID]avajson.Uint64 `json:"unlockeds"`
-	LockedStakeables    map[ids.ID]avajson.Uint64 `json:"lockedStakeables"`
-	LockedNotStakeables map[ids.ID]avajson.Uint64 `json:"lockedNotStakeables"`
-	UTXOIDs             []*lux.UTXOID             `json:"utxoIDs"`
+	Balances            Amounts       `json:"balances"`
+	Unlockeds           Amounts       `json:"unlockeds"`
+	LockedStakeables    Amounts       `json:"lockedStakeables"`
+	LockedNotStakeables Amounts       `json:"lockedNotStakeables"`
+	UTXOIDs             []*lux.UTXOID `json:"utxoIDs"`
 }
 
 // GetBalance gets the balance of an address
@@ -241,23 +241,15 @@ utxoFor:
 		}
 	}
 
-	response.Balances = newJSONBalanceMap(balances)
-	response.Unlockeds = newJSONBalanceMap(unlockeds)
-	response.LockedStakeables = newJSONBalanceMap(lockedStakeables)
-	response.LockedNotStakeables = newJSONBalanceMap(lockedNotStakeables)
-	response.Balance = response.Balances[s.vm.utxoAssetID]
-	response.Unlocked = response.Unlockeds[s.vm.utxoAssetID]
-	response.LockedStakeable = response.LockedStakeables[s.vm.utxoAssetID]
-	response.LockedNotStakeable = response.LockedNotStakeables[s.vm.utxoAssetID]
+	response.Balances = newAmounts(balances)
+	response.Unlockeds = newAmounts(unlockeds)
+	response.LockedStakeables = newAmounts(lockedStakeables)
+	response.LockedNotStakeables = newAmounts(lockedNotStakeables)
+	response.Balance = avajson.Uint64(balances[s.vm.utxoAssetID])
+	response.Unlocked = avajson.Uint64(unlockeds[s.vm.utxoAssetID])
+	response.LockedStakeable = avajson.Uint64(lockedStakeables[s.vm.utxoAssetID])
+	response.LockedNotStakeable = avajson.Uint64(lockedNotStakeables[s.vm.utxoAssetID])
 	return nil
-}
-
-func newJSONBalanceMap(balanceMap map[ids.ID]uint64) map[ids.ID]avajson.Uint64 {
-	jsonBalanceMap := make(map[ids.ID]avajson.Uint64, len(balanceMap))
-	for assetID, amount := range balanceMap {
-		jsonBalanceMap[assetID] = avajson.Uint64(amount)
-	}
-	return jsonBalanceMap
 }
 
 // Index is an address and an associated UTXO.
@@ -719,7 +711,7 @@ type GetCurrentValidatorsArgs struct {
 // GetCurrentValidatorsReply are the results from calling GetCurrentValidators.
 // Each validator contains a list of delegators to itself.
 type GetCurrentValidatorsReply struct {
-	Validators []any `json:"validators"`
+	Validators []CurrentValidator `json:"validators"`
 }
 
 func (s *Service) loadStakerTxAttributes(txID ids.ID) (*stakerAttributes, error) {
@@ -812,8 +804,8 @@ func (s *Service) getL1Validators(
 	ctx context.Context,
 	netID ids.ID,
 	nodeIDs set.Set[ids.NodeID],
-) ([]any, error) {
-	validators := []any{}
+) ([]CurrentValidator, error) {
+	current := []CurrentValidator{}
 	baseStakers, l1Validators, _, err := s.vm.state.GetCurrentValidators(ctx, netID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current validators: %w", err)
@@ -827,7 +819,7 @@ func (s *Service) getL1Validators(
 		}
 
 		apiStaker := toPlatformStaker(staker)
-		validators = append(validators, apiStaker)
+		current = append(current, CurrentValidator{Permissioned: &apiStaker})
 	}
 
 	for _, l1Validator := range l1Validators {
@@ -840,13 +832,13 @@ func (s *Service) getL1Validators(
 			return nil, fmt.Errorf("converting L1 validator to API format: %w", err)
 		}
 
-		validators = append(validators, apiL1Vdr)
+		current = append(current, CurrentValidator{L1: &apiL1Vdr})
 	}
 
-	return validators, nil
+	return current, nil
 }
 
-func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.NodeID]) ([]any, error) {
+func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.NodeID]) ([]CurrentValidator, error) {
 	numNodeIDs := nodeIDs.Len()
 
 	targetStakers := make([]*state.Staker, 0, numNodeIDs)
@@ -854,7 +846,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 	// Validator's node ID as string --> Delegators to them
 	vdrToDelegators := map[ids.NodeID][]platformapitypes.PrimaryDelegator{}
 
-	validators := []any{}
+	current := []CurrentValidator{}
 
 	if numNodeIDs == 0 { // Include all nodes
 		currentStakerIterator, err := s.vm.state.GetCurrentStakerIterator()
@@ -964,7 +956,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 				DelegationFee:          delegationFee,
 				Signer:                 attr.proofOfPossession,
 			}
-			validators = append(validators, vdr)
+			current = append(current, CurrentValidator{Permissionless: &vdr})
 
 		case txs.PrimaryNetworkDelegatorCurrentPriority, txs.ChainPermissionlessDelegatorCurrentPriority:
 			var rewardOwner *platformapitypes.Owner
@@ -992,7 +984,8 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 			vdrToDelegators[delegator.NodeID] = append(vdrToDelegators[delegator.NodeID], delegator)
 
 		case txs.ChainPermissionedValidatorCurrentPriority:
-			validators = append(validators, apiStaker)
+			staker := apiStaker
+			current = append(current, CurrentValidator{Permissioned: &staker})
 
 		default:
 			return nil, fmt.Errorf("unexpected staker priority %d", currentStaker.Priority)
@@ -1000,9 +993,9 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 	}
 
 	// handle delegators' information
-	for i, vdrIntf := range validators {
-		vdr, ok := vdrIntf.(platformapitypes.PermissionlessValidator)
-		if !ok {
+	for _, entry := range current {
+		vdr := entry.Permissionless
+		if vdr == nil {
 			continue
 		}
 		delegators, ok := vdrToDelegators[vdr.NodeID]
@@ -1024,10 +1017,9 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 			// queried a specific validator, load all of its delegators
 			vdr.Delegators = &delegators
 		}
-		validators[i] = vdr
 	}
 
-	return validators, nil
+	return current, nil
 }
 
 type GetL1ValidatorArgs struct {
@@ -1595,8 +1587,8 @@ type GetStakeArgs struct {
 
 // GetStakeReply is the response from calling GetStake.
 type GetStakeReply struct {
-	Staked  avajson.Uint64            `json:"staked"`
-	Stakeds map[ids.ID]avajson.Uint64 `json:"stakeds"`
+	Staked  avajson.Uint64 `json:"staked"`
+	Stakeds Amounts        `json:"stakeds"`
 	// String representation of staked outputs
 	// Each is of type lux.TransferableOutput
 	Outputs []string `json:"stakedOutputs"`
@@ -1675,8 +1667,8 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 		stakedOuts = append(stakedOuts, getStakeHelper(tx, addrs, totalAmountStaked)...)
 	}
 
-	response.Stakeds = newJSONBalanceMap(totalAmountStaked)
-	response.Staked = response.Stakeds[s.vm.utxoAssetID]
+	response.Stakeds = newAmounts(totalAmountStaked)
+	response.Staked = avajson.Uint64(totalAmountStaked[s.vm.utxoAssetID])
 	response.Outputs = make([]string, len(stakedOuts))
 	for i, output := range stakedOuts {
 		// Surface each staked output as native UTXO wire bytes — the one
@@ -1854,6 +1846,13 @@ type GetValidatorsAtArgs struct {
 	ChainID ids.ID                  `json:"netID"`
 }
 
+// The two validator-set replies build their own object rather than letting the
+// codec walk a struct, and they do it under jsonv1.DefaultOptionsV1 because the
+// response envelope around them is written by gorilla's json2 codec, which is
+// v1. Two v1/v2 differences are visible in exactly these bytes: a nil []byte is
+// null under v1 and "" under v2, and map entries are ordered under v1 and are
+// not under v2. Both show in what mainnet answers today — see testdata/ — so
+// the semantics are part of the wire, not a preference.
 type jsonGetValidatorOutput struct {
 	PublicKey *string        `json:"publicKey"`
 	Weight    avajson.Uint64 `json:"weight"`
@@ -1863,7 +1862,7 @@ func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
 	m := make(map[ids.NodeID]*jsonGetValidatorOutput, len(v.Validators))
 	for _, vdr := range v.Validators {
 		vdrJSON := &jsonGetValidatorOutput{
-			Weight: avajson.Uint64(vdr.Weight),
+			Weight: vdr.Weight,
 		}
 
 		if vdr.PublicKey != nil {
@@ -1876,7 +1875,7 @@ func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
 
 		m[vdr.NodeID] = vdrJSON
 	}
-	return json.Marshal(m)
+	return json.Marshal(m, jsonv1.DefaultOptionsV1())
 }
 
 func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
@@ -1890,11 +1889,11 @@ func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	v.Validators = make(map[ids.NodeID]*validators.GetValidatorOutput, len(m))
+	v.Validators = make(ValidatorSet, 0, len(m))
 	for nodeID, vdrJSON := range m {
-		vdr := &validators.GetValidatorOutput{
+		vdr := Validator{
 			NodeID: nodeID,
-			Weight: uint64(vdrJSON.Weight),
+			Weight: vdrJSON.Weight,
 		}
 
 		if vdrJSON.PublicKey != nil {
@@ -1905,18 +1904,27 @@ func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
 			vdr.PublicKey = pkBytes
 		}
 
-		v.Validators[nodeID] = vdr
+		v.Validators = append(v.Validators, vdr)
 	}
+	slices.SortFunc(v.Validators, func(x, y Validator) int { return x.NodeID.Compare(y.NodeID) })
 	return nil
 }
 
-// GetValidatorsAtReply is the response from GetValidatorsAt
+// GetValidatorsAtReply is the response from GetValidatorsAt.
+//
+// The wire carries a node id, a public key and a weight per validator, and that
+// is what this holds. The read behind it answers with more — a corona key, a
+// light weight, the tx that added the validator — and none of it has ever been
+// on the wire, so a reply that held it would state a contract the answer does
+// not keep.
 type GetValidatorsAtReply struct {
-	Validators map[ids.NodeID]*validators.GetValidatorOutput
+	Validators ValidatorSet
 }
 
 // GetValidatorsAt returns the weights of the validator set of a provided net
-// at the specified height.
+// at the specified height. Height is a u64 whose reserved value MaxUint64 asks
+// for the height the next proposal will be built at; the JSON edge spells that
+// value "proposed".
 func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
@@ -1930,7 +1938,6 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 	defer s.vm.lock.Unlock()
 
 	ctx := r.Context()
-	var err error
 	height := uint64(args.Height)
 	if args.Height.IsProposed() {
 		// Get the proposed height from the last accepted block
@@ -1942,10 +1949,11 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 		height = lastAcceptedBlock.Height()
 	}
 
-	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.ChainID)
+	set, err := s.vm.GetValidatorSet(ctx, height, args.ChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get validator set: %w", err)
 	}
+	reply.Validators = newValidatorSet(set)
 	return nil
 }
 
@@ -1954,14 +1962,57 @@ type GetAllValidatorsAtArgs struct {
 	Height platformapitypes.Height `json:"height"`
 }
 
-// GetAllValidatorsAtReply is the response from GetAllValidatorsAt
+// GetAllValidatorsAtReply is the response from GetAllValidatorsAt.
+//
+// One entry per chain, each carrying its own set. The wire is an object keyed
+// by chain id whose values are objects keyed by node id, and MarshalJSON writes
+// exactly that.
 type GetAllValidatorsAtReply struct {
-	// Map of ChainID -> ValidatorSet
-	ValidatorSets map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput `json:"validatorSets"`
+	ValidatorSets []ChainValidatorSet `json:"validatorSets"`
 }
 
-// GetAllValidatorsAt returns the validator sets of all nets (including primary network)
-// at the specified height.
+func (v GetAllValidatorsAtReply) MarshalJSON() ([]byte, error) {
+	if v.ValidatorSets == nil {
+		return []byte(`{"validatorSets":` + avajson.Null + `}`), nil
+	}
+	m := make(map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput, len(v.ValidatorSets))
+	for _, set := range v.ValidatorSets {
+		inner := make(map[ids.NodeID]*validators.GetValidatorOutput, len(set.Validators))
+		for _, vdr := range set.Validators {
+			inner[vdr.NodeID] = vdr
+		}
+		m[set.ChainID] = inner
+	}
+	return json.Marshal(struct {
+		ValidatorSets map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput `json:"validatorSets"`
+	}{m}, jsonv1.DefaultOptionsV1())
+}
+
+func (v *GetAllValidatorsAtReply) UnmarshalJSON(b []byte) error {
+	var wire struct {
+		ValidatorSets map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput `json:"validatorSets"`
+	}
+	if err := json.Unmarshal(b, &wire); err != nil {
+		return err
+	}
+	if wire.ValidatorSets == nil {
+		v.ValidatorSets = nil
+		return nil
+	}
+	v.ValidatorSets = make([]ChainValidatorSet, 0, len(wire.ValidatorSets))
+	for chainID, set := range wire.ValidatorSets {
+		v.ValidatorSets = append(v.ValidatorSets, newChainValidatorSet(chainID, set))
+	}
+	slices.SortFunc(v.ValidatorSets, func(x, y ChainValidatorSet) int {
+		return x.ChainID.Compare(y.ChainID)
+	})
+	return nil
+}
+
+// GetAllValidatorsAt returns the validator sets of all nets (including primary
+// network) at the specified height. Height is a u64 whose reserved value
+// MaxUint64 asks for the height the next proposal will be built at; the JSON
+// edge spells that value "proposed".
 func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtArgs, reply *GetAllValidatorsAtReply) error {
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
@@ -1991,15 +2042,14 @@ func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtAr
 		return fmt.Errorf("failed to get net IDs: %w", err)
 	}
 
-	// Initialize the result map
-	reply.ValidatorSets = make(map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput)
+	reply.ValidatorSets = make([]ChainValidatorSet, 0, len(netIDs)+1)
 
 	// Add primary network first
 	primaryValidators, err := s.vm.GetValidatorSet(ctx, height, constants.PrimaryNetworkID)
 	if err != nil {
 		return fmt.Errorf("failed to get primary network validator set: %w", err)
 	}
-	reply.ValidatorSets[constants.PrimaryNetworkID] = primaryValidators
+	reply.ValidatorSets = append(reply.ValidatorSets, newChainValidatorSet(constants.PrimaryNetworkID, primaryValidators))
 
 	// Add all nets
 	for _, netID := range netIDs {
@@ -2007,8 +2057,11 @@ func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtAr
 		if err != nil {
 			return fmt.Errorf("failed to get validator set for net %s: %w", netID, err)
 		}
-		reply.ValidatorSets[netID] = netValidators
+		reply.ValidatorSets = append(reply.ValidatorSets, newChainValidatorSet(netID, netValidators))
 	}
+	slices.SortFunc(reply.ValidatorSets, func(x, y ChainValidatorSet) int {
+		return x.ChainID.Compare(y.ChainID)
+	})
 
 	return nil
 }
@@ -2088,13 +2141,13 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHei
 }
 
 // GetFeeConfig returns the dynamic fee config of the chain.
-func (s *Service) GetFeeConfig(_ *http.Request, _ *struct{}, reply *gas.Config) error {
+func (s *Service) GetFeeConfig(_ *http.Request, _ *struct{}, reply *GetFeeConfigReply) error {
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getFeeConfig"),
 	)
 
-	*reply = s.vm.DynamicFeeConfig
+	*reply = newFeeConfig(s.vm.DynamicFeeConfig)
 	return nil
 }
 
