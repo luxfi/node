@@ -16,6 +16,7 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	log "github.com/luxfi/log"
 	"github.com/luxfi/metric"
@@ -30,7 +31,11 @@ const (
 	// AddRoute/AddAliases and the root/health helpers in router.go all derive
 	// their paths from it. The legacy /ext prefix is gone;
 	// one way, no backward compatibility (activation Dec 25 2025).
-	baseURL              = "/v1"
+	baseURL = "/v1"
+
+	// What ChainAliasPrefix used to be. Served alongside it so a node may roll
+	// before its callers do; delete once nothing asks for it.
+	legacyChainPrefix    = "bc"
 	maxConcurrentStreams = 64
 )
 
@@ -194,7 +199,26 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 		handler = TraceHandler(handler, url, s.tracer)
 	}
 
-	return s.router.AddRouter(url, endpoint, handler)
+	if err := s.router.AddRouter(url, endpoint, handler); err != nil {
+		return err
+	}
+
+	// A chain also answers on the prefix it used to have.
+	//
+	// The segment was "bc" and is "chain" (constants.ChainAliasPrefix). The old
+	// spelling stays reachable because the clients are not upgraded in the same
+	// instant as the nodes: renaming this without serving both would mean every
+	// wallet, indexer and interface in the estate got a 404 the moment a node
+	// rolled. It is one derived line rather than a second route table, and it
+	// goes when the callers have moved.
+	if base == legacyChainPrefix || strings.HasPrefix(base, legacyChainPrefix+"/") {
+		return nil // already the old spelling; nothing to alias
+	}
+	if rest, found := strings.CutPrefix(base, constants.ChainAliasPrefix+"/"); found {
+		legacy := fmt.Sprintf("%s/%s/%s", baseURL, legacyChainPrefix, rest)
+		return s.router.AddRouter(legacy, endpoint, handler)
+	}
+	return nil
 }
 
 // StateGetter interface for getting chain state
