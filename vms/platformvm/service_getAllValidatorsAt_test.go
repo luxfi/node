@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/constants"
+	validators "github.com/luxfi/validators"
+
 	"github.com/luxfi/node/vms/platformvm/genesis/genesistest"
 
 	pchainapi "github.com/luxfi/node/vms/platformvm/api"
@@ -39,24 +41,32 @@ func TestGetAllValidatorsAt(t *testing.T) {
 	require.NoError(service.GetAllValidatorsAt(&http.Request{}, &args, &response))
 
 	// Should have at least the primary network
-	require.Contains(response.ValidatorSets, constants.PrimaryNetworkID)
-	require.Len(response.ValidatorSets[constants.PrimaryNetworkID], len(genesis.Validators))
-
-	// Verify ValidatorSets is not nil and is a proper map
 	require.NotNil(response.ValidatorSets)
-	require.IsType(response.ValidatorSets, map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput{})
+	require.Len(primarySet(t, response), len(genesis.Validators))
 
 	// Test with proposed height
 	args.Height = pchainapi.Height(pchainapi.ProposedHeight)
 	require.NoError(service.GetAllValidatorsAt(context.WithValue(context.Background(), struct{}{}, "test"), &args, &response))
-	require.Contains(response.ValidatorSets, constants.PrimaryNetworkID)
+	require.NotNil(primarySet(t, response))
 
 	// Verify each validator set has proper structure
-	for netID, validatorSet := range response.ValidatorSets {
-		require.NotNil(validatorSet, "validator set for net %s should not be nil", netID)
-		for nodeID, validator := range validatorSet {
-			require.Equal(nodeID, validator.NodeID, "nodeID mismatch in validator set")
+	for _, set := range response.ValidatorSets {
+		require.NotNil(set.Validators, "validator set for net %s should not be nil", set.ChainID)
+		for _, validator := range set.Validators {
 			require.NotZero(validator.Weight, "validator weight should not be zero")
 		}
 	}
+}
+
+// primarySet is the primary network's entry, which the reply carries as one
+// element of a list rather than as a map lookup.
+func primarySet(t *testing.T, reply GetAllValidatorsAtReply) []*validators.GetValidatorOutput {
+	t.Helper()
+	for _, set := range reply.ValidatorSets {
+		if set.ChainID == constants.PrimaryNetworkID {
+			return set.Validators
+		}
+	}
+	require.FailNow(t, "the primary network is missing from the reply")
+	return nil
 }

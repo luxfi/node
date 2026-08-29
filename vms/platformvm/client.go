@@ -506,8 +506,8 @@ func (c *Client) GetStake(
 	}
 
 	staked := make(map[ids.ID]uint64, len(res.Stakeds))
-	for assetID, amount := range res.Stakeds {
-		staked[assetID] = uint64(amount)
+	for _, amount := range res.Stakeds {
+		staked[amount.AssetID] = uint64(amount.Value)
 	}
 
 	outputs := make([][]byte, len(res.Outputs))
@@ -587,7 +587,18 @@ func (c *Client) GetValidatorsAt(
 		ChainID:  chainID,
 		Height: height,
 	}, res, options...)
-	return res.Validators, err
+	if err != nil {
+		return nil, err
+	}
+	set := make(map[ids.NodeID]*validators.GetValidatorOutput, len(res.Validators))
+	for _, vdr := range res.Validators {
+		set[vdr.NodeID] = &validators.GetValidatorOutput{
+			NodeID:    vdr.NodeID,
+			PublicKey: vdr.PublicKey,
+			Weight:    uint64(vdr.Weight),
+		}
+	}
+	return set, nil
 }
 
 // GetBlock returns blockID.
