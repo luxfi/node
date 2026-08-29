@@ -521,13 +521,34 @@ func lettersFor(name string) map[string]struct{} {
 // take: the letter, the full name, and the VM suffix people reach for.
 func reserved(segment string) bool {
 	seg := strings.ToLower(segment)
+
+	// Every letter, in every form a route can take. A chain is reached by its
+	// letter, and people reach for the other three when they know the chain by
+	// its full name or its VM.
 	for c := byte('a'); c <= 'z'; c++ {
 		l := string(c)
 		if seg == l || seg == l+"-chain" || seg == l+"chain" || seg == l+"vm" {
 			return true
 		}
 	}
+
+	// And the VMs by name. `mpc` is what M-Chain does and `mpcvm` is what
+	// implements it, so both are names a reader would take for the register
+	// that signs — which is exactly why neither may belong to anything else.
+	for _, vm := range vmNames {
+		if seg == vm || seg == vm+"vm" || seg == vm+"-chain" {
+			return true
+		}
+	}
 	return false
+}
+
+// vmNames are the primary network's VMs, by the name each is known by. The
+// suffixed forms are derived in reserved() rather than listed, so adding one
+// here reserves every way of writing it.
+var vmNames = []string{
+	"mpc", "bridge", "oracle", "relay", "dex", "graph",
+	"identity", "key", "quantum", "zk", "ai", "platform", "avm", "evm",
 }
 
 var chainPrefixes = []string{"chain", "bc"}
