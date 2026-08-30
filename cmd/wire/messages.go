@@ -7,6 +7,7 @@ import (
 	health "github.com/luxfi/api/health"
 	info "github.com/luxfi/api/info"
 	types "github.com/luxfi/api/types"
+	node "github.com/luxfi/node/config/node"
 	indexer "github.com/luxfi/node/indexer"
 	info2 "github.com/luxfi/node/service/info"
 	security "github.com/luxfi/node/service/security"
@@ -66,6 +67,7 @@ var messages = []any{
 	&types.GetUTXOsArgs{},
 	&types.GetUTXOsReply{},
 	&types.JSONTxID{},
+	&node.Config{},
 	&indexer.FormattedContainer{},
 	&indexer.GetContainerByIDArgs{},
 	&indexer.GetContainerByIndexArgs{},

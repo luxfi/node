@@ -5,7 +5,7 @@ package info
 
 import (
 	"errors"
-	"net/http/httptest"
+	"slices"
 	"testing"
 
 	"github.com/go-json-experiment/json"
@@ -64,9 +64,8 @@ func TestGetNodeVersionConsensusRoundtrip(t *testing.T) {
 		log: log.NewNoOpLogger(),
 	}
 
-	req := httptest.NewRequest("POST", "/v1/info", nil)
-	reply := apiinfo.GetNodeVersionReply{}
-	require.NoError(info.GetNodeVersion(req, nil, &reply))
+	reply, err := info.nodeVersion(t.Context(), nil)
+	require.NoError(err)
 	require.NotNil(reply.Consensus)
 	require.Equal(*consensus, *reply.Consensus)
 
@@ -82,8 +81,8 @@ func TestGetNodeVersionConsensusRoundtrip(t *testing.T) {
 		Parameters: Parameters{Version: app},
 		log:        log.NewNoOpLogger(),
 	}
-	bareReply := apiinfo.GetNodeVersionReply{}
-	require.NoError(bare.GetNodeVersion(req, nil, &bareReply))
+	bareReply, err := bare.nodeVersion(t.Context(), nil)
+	require.NoError(err)
 	require.Nil(bareReply.Consensus)
 
 	encoded, err := json.Marshal(bareReply)
@@ -109,30 +108,30 @@ func TestGetVMsSuccess(t *testing.T) {
 	alias1 := "vm1-alias-1"
 	alias2 := "vm2-alias-1"
 	// Primary alias should be the only returned alias.
-	expectedVMRegistry := map[ids.ID][]string{
-		id1: []string{alias1},
-		id2: []string{alias2},
+	expected := apiinfo.VMAliases{
+		{VM: id1, Aliases: []string{alias1}},
+		{VM: id2, Aliases: []string{alias2}},
 	}
+	slices.SortFunc(expected, func(x, y apiinfo.VMAlias) int { return x.VM.Compare(y.VM) })
 
-	req := httptest.NewRequest("POST", "/v1/info", nil)
-	resources.mockVMManager.EXPECT().ListFactories(req.Context()).Times(1).Return(vmIDs, nil)
-	resources.mockVMManager.EXPECT().PrimaryAlias(req.Context(), id1).Times(1).Return(alias1, nil)
-	resources.mockVMManager.EXPECT().PrimaryAlias(req.Context(), id2).Times(1).Return(alias2, nil)
+	ctx := t.Context()
+	resources.mockVMManager.EXPECT().ListFactories(ctx).Times(1).Return(vmIDs, nil)
+	resources.mockVMManager.EXPECT().PrimaryAlias(ctx, id1).Times(1).Return(alias1, nil)
+	resources.mockVMManager.EXPECT().PrimaryAlias(ctx, id2).Times(1).Return(alias2, nil)
 
-	reply := apiinfo.GetVMsReply{}
-	require.NoError(resources.info.GetVMs(req, nil, &reply))
-	require.Equal(expectedVMRegistry, reply.VMs)
+	reply, err := resources.info.vms(ctx, nil)
+	require.NoError(err)
+	require.Equal(expected, reply.VMs)
 }
 
 // Tests GetVMs if we fail to list our vms.
 func TestGetVMsVMsListFactoriesFails(t *testing.T) {
 	resources := initGetVMsTest(t)
 
-	req := httptest.NewRequest("POST", "/v1/info", nil)
-	resources.mockVMManager.EXPECT().ListFactories(req.Context()).Times(1).Return(nil, errTest)
+	ctx := t.Context()
+	resources.mockVMManager.EXPECT().ListFactories(ctx).Times(1).Return(nil, errTest)
 
-	reply := apiinfo.GetVMsReply{}
-	err := resources.info.GetVMs(req, nil, &reply)
+	_, err := resources.info.vms(ctx, nil)
 	require.ErrorIs(t, err, errTest)
 }
 
@@ -146,16 +145,17 @@ func TestGetVMsGetAliasesFails(t *testing.T) {
 	vmIDs := []ids.ID{id1, id2}
 	alias1 := "vm1-alias-1"
 
-	req := httptest.NewRequest("POST", "/v1/info", nil)
-	resources.mockVMManager.EXPECT().ListFactories(req.Context()).Times(1).Return(vmIDs, nil)
-	resources.mockVMManager.EXPECT().PrimaryAlias(req.Context(), id1).Times(1).Return(alias1, nil)
-	resources.mockVMManager.EXPECT().PrimaryAlias(req.Context(), id2).Times(1).Return("", errTest)
+	ctx := t.Context()
+	resources.mockVMManager.EXPECT().ListFactories(ctx).Times(1).Return(vmIDs, nil)
+	resources.mockVMManager.EXPECT().PrimaryAlias(ctx, id1).Times(1).Return(alias1, nil)
+	resources.mockVMManager.EXPECT().PrimaryAlias(ctx, id2).Times(1).Return("", errTest)
 
-	reply := apiinfo.GetVMsReply{}
-	err := resources.info.GetVMs(req, nil, &reply)
+	reply, err := resources.info.vms(ctx, nil)
 	require.NoError(err)
-	require.Equal(map[ids.ID][]string{
-		id1: []string{alias1},
-		id2: nil,
-	}, reply.VMs)
+	expected := apiinfo.VMAliases{
+		{VM: id1, Aliases: []string{alias1}},
+		{VM: id2},
+	}
+	slices.SortFunc(expected, func(x, y apiinfo.VMAlias) int { return x.VM.Compare(y.VM) })
+	require.Equal(expected, reply.VMs)
 }

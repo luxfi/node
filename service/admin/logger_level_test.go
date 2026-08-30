@@ -47,22 +47,25 @@ func TestSetLoggerLevel_MovesTheLevelAndGetReportsIt(t *testing.T) {
 
 	svc := newLevelTestService(t, "C")
 
-	_, err := svc.SetLoggerLevel(ctx, &apiadmin.SetLoggerLevelArgs{
+	_, err := svc.setLogLevel(ctx, &apiadmin.SetLoggerLevelArgs{
 		LoggerName:   "C",
 		LogLevel:     "debug",
 		DisplayLevel: "error",
 	})
 	require.NoError(err)
 
-	reply, err := svc.GetLoggerLevel(ctx, &apiadmin.GetLoggerLevelArgs{LoggerName: "C"})
+	reply, err := svc.logLevel(ctx, &apiadmin.GetLoggerLevelArgs{LoggerName: "C"})
 	require.NoError(err)
 	require.Equal(
-		map[string]apiadmin.LogAndDisplayLevels{"C": {
-			LogLevel:     log.DebugLevel.String(),
-			DisplayLevel: log.ErrorLevel.String(),
+		apiadmin.LoggerLevels{{
+			Logger: "C",
+			Levels: apiadmin.LogAndDisplayLevels{
+				LogLevel:     log.DebugLevel.String(),
+				DisplayLevel: log.ErrorLevel.String(),
+			},
 		}},
 		reply.LoggerLevels,
-		"setLoggerLevel must move the live logger's level and getLoggerLevel must report it",
+		"setting a level must move the live logger's level and reading it back must report it",
 	)
 
 	// The factory is the single source of truth — assert against it directly too, so a
@@ -80,21 +83,23 @@ func TestSetLoggerLevel_OneLevelAtATime(t *testing.T) {
 
 	svc := newLevelTestService(t, "node")
 
-	_, err := svc.SetLoggerLevel(ctx, &apiadmin.SetLoggerLevelArgs{
+	_, err := svc.setLogLevel(ctx, &apiadmin.SetLoggerLevelArgs{
 		LoggerName: "node", LogLevel: "trace", DisplayLevel: "warn",
 	})
 	require.NoError(err)
 
 	// Only displayLevel this time — logLevel must survive.
-	_, err = svc.SetLoggerLevel(ctx, &apiadmin.SetLoggerLevelArgs{
+	_, err = svc.setLogLevel(ctx, &apiadmin.SetLoggerLevelArgs{
 		LoggerName: "node", DisplayLevel: "fatal",
 	})
 	require.NoError(err)
 
-	reply, err := svc.GetLoggerLevel(ctx, &apiadmin.GetLoggerLevelArgs{LoggerName: "node"})
+	reply, err := svc.logLevel(ctx, &apiadmin.GetLoggerLevelArgs{LoggerName: "node"})
 	require.NoError(err)
-	require.Equal(log.TraceLevel.String(), reply.LoggerLevels["node"].LogLevel)
-	require.Equal(log.FatalLevel.String(), reply.LoggerLevels["node"].DisplayLevel)
+	require.Len(reply.LoggerLevels, 1)
+	require.Equal("node", reply.LoggerLevels[0].Logger)
+	require.Equal(log.TraceLevel.String(), reply.LoggerLevels[0].Levels.LogLevel)
+	require.Equal(log.FatalLevel.String(), reply.LoggerLevels[0].Levels.DisplayLevel)
 }
 
 // TestLoggerLevel_RejectsUnservableAndInvalidArgs — every refusal is explicit. log.Factory
@@ -106,19 +111,19 @@ func TestLoggerLevel_RejectsUnservableAndInvalidArgs(t *testing.T) {
 
 	svc := newLevelTestService(t, "C")
 
-	_, err := svc.SetLoggerLevel(ctx, &apiadmin.SetLoggerLevelArgs{LogLevel: "debug"})
+	_, err := svc.setLogLevel(ctx, &apiadmin.SetLoggerLevelArgs{LogLevel: "debug"})
 	require.ErrorIs(err, errNoLoggerName)
 
-	_, err = svc.GetLoggerLevel(ctx, &apiadmin.GetLoggerLevelArgs{})
+	_, err = svc.logLevel(ctx, &apiadmin.GetLoggerLevelArgs{})
 	require.ErrorIs(err, errNoLoggerName)
 
-	_, err = svc.SetLoggerLevel(ctx, &apiadmin.SetLoggerLevelArgs{LoggerName: "C"})
+	_, err = svc.setLogLevel(ctx, &apiadmin.SetLoggerLevelArgs{LoggerName: "C"})
 	require.ErrorIs(err, errNoLogLevel)
 
 	// An unparseable level must be refused BEFORE anything is mutated.
 	before, err := svc.LogFactory.GetLogLevel("C")
 	require.NoError(err)
-	_, err = svc.SetLoggerLevel(ctx, &apiadmin.SetLoggerLevelArgs{LoggerName: "C", LogLevel: "loud"})
+	_, err = svc.setLogLevel(ctx, &apiadmin.SetLoggerLevelArgs{LoggerName: "C", LogLevel: "loud"})
 	require.Error(err)
 	after, err := svc.LogFactory.GetLogLevel("C")
 	require.NoError(err)

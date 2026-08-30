@@ -32,6 +32,16 @@ import (
 	"github.com/zap-proto/zip"
 )
 
+// Ops is the endpoint an app of typed operations is mounted at, beneath the base
+// its service already answers on: /v1/info/ops, /v1/chain/P/ops.
+//
+// It is an endpoint rather than the base itself because [router.forceAddRouter]
+// records a prefix mount ONLY for a non-empty endpoint — a handler at the base
+// owns that exact path and nothing beneath it, so an app mounted there would
+// serve neither its operations nor its document. One name for it, here, so every
+// service on the node is reachable the same way.
+const Ops = "/ops"
+
 // mount is the address scheme of the transport below. An address under it names
 // a mount waiting for its handler, not a socket.
 const mount = "mount"

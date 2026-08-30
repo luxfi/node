@@ -4,51 +4,17 @@
 package health
 
 import (
-	"net/http"
-
-	apihealth "github.com/luxfi/api/health"
 	"github.com/luxfi/log"
 )
 
-// Service implements the health API with gorilla/rpc-compatible signatures.
+// Service answers whether this node is up, ready and well. Its operations are
+// registered by [Service.Ops].
 type Service struct {
-	log    log.Logger
-	health Reporter
+	log      log.Logger
+	reporter Reporter
 }
 
+// NewService builds the health API over a reporter — the running check workers.
 func NewService(log log.Logger, reporter Reporter) *Service {
-	return &Service{log: log, health: reporter}
-}
-
-// Readiness returns if the node has finished initialization
-func (s *Service) Readiness(_ *http.Request, args *apihealth.APIArgs, reply *apihealth.APIReply) error {
-	s.log.Debug("API called",
-		log.UserString("service", "health"),
-		log.UserString("method", "readiness"),
-		log.Reflect("tags", args.Tags),
-	)
-	reply.Checks, reply.Healthy = s.health.Readiness(args.Tags...)
-	return nil
-}
-
-// Health returns a summation of the health of the node
-func (s *Service) Health(_ *http.Request, args *apihealth.APIArgs, reply *apihealth.APIReply) error {
-	s.log.Debug("API called",
-		log.UserString("service", "health"),
-		log.UserString("method", "health"),
-		log.Reflect("tags", args.Tags),
-	)
-	reply.Checks, reply.Healthy = s.health.Health(args.Tags...)
-	return nil
-}
-
-// Liveness returns if the node is in need of a restart
-func (s *Service) Liveness(_ *http.Request, args *apihealth.APIArgs, reply *apihealth.APIReply) error {
-	s.log.Debug("API called",
-		log.UserString("service", "health"),
-		log.UserString("method", "liveness"),
-		log.Reflect("tags", args.Tags),
-	)
-	reply.Checks, reply.Healthy = s.health.Liveness(args.Tags...)
-	return nil
+	return &Service{log: log, reporter: reporter}
 }

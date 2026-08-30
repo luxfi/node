@@ -31,36 +31,30 @@ func TestServiceResponses(t *testing.T) {
 	require.NoError(h.RegisterLivenessCheck("check", check))
 
 	{
-		reply := &apihealth.APIReply{}
-		err := svc.Readiness(nil, &apihealth.APIArgs{}, reply)
+		reply, err := svc.readiness(t.Context(), &apihealth.APIArgs{})
 		require.NoError(err)
 
-		require.Len(reply.Checks, 1)
-		require.Contains(reply.Checks, "check")
-		require.Equal(notYetRunResult, reply.Checks["check"])
+		require.Equal(apihealth.Checks{{Name: "check", Result: notYetRunResult}}, reply.Checks)
 		require.False(reply.Healthy)
+		require.Equal(503, reply.StatusCode())
 	}
 
 	{
-		reply := &apihealth.APIReply{}
-		err := svc.Health(nil, &apihealth.APIArgs{}, reply)
+		reply, err := svc.health(t.Context(), &apihealth.APIArgs{})
 		require.NoError(err)
 
-		require.Len(reply.Checks, 1)
-		require.Contains(reply.Checks, "check")
-		require.Equal(notYetRunResult, reply.Checks["check"])
+		require.Equal(apihealth.Checks{{Name: "check", Result: notYetRunResult}}, reply.Checks)
 		require.False(reply.Healthy)
+		require.Equal(503, reply.StatusCode())
 	}
 
 	{
-		reply := &apihealth.APIReply{}
-		err := svc.Liveness(nil, &apihealth.APIArgs{}, reply)
+		reply, err := svc.liveness(t.Context(), &apihealth.APIArgs{})
 		require.NoError(err)
 
-		require.Len(reply.Checks, 1)
-		require.Contains(reply.Checks, "check")
-		require.Equal(notYetRunResult, reply.Checks["check"])
+		require.Equal(apihealth.Checks{{Name: "check", Result: notYetRunResult}}, reply.Checks)
 		require.False(reply.Healthy)
+		require.Equal(503, reply.StatusCode())
 	}
 
 	h.Start(context.Background(), checkFreq)
@@ -71,39 +65,42 @@ func TestServiceResponses(t *testing.T) {
 	awaitLiveness(t, h, true)
 
 	{
-		reply := &apihealth.APIReply{}
-		err := svc.Readiness(nil, &apihealth.APIArgs{}, reply)
+		reply, err := svc.readiness(t.Context(), &apihealth.APIArgs{})
 		require.NoError(err)
 
-		result := reply.Checks["check"]
-		require.Empty(result.Details)
-		require.Nil(result.Error)
-		require.Zero(result.ContiguousFailures)
+		check, ok := reply.Checks.Find("check")
+		require.True(ok)
+		require.JSONEq(`""`, string(check.Result.Details))
+		require.Nil(check.Result.Error)
+		require.Zero(check.Result.ContiguousFailures)
 		require.True(reply.Healthy)
+		require.Equal(200, reply.StatusCode())
 	}
 
 	{
-		reply := &apihealth.APIReply{}
-		err := svc.Health(nil, &apihealth.APIArgs{}, reply)
+		reply, err := svc.health(t.Context(), &apihealth.APIArgs{})
 		require.NoError(err)
 
-		result := reply.Checks["check"]
-		require.Empty(result.Details)
-		require.Nil(result.Error)
-		require.Zero(result.ContiguousFailures)
+		check, ok := reply.Checks.Find("check")
+		require.True(ok)
+		require.JSONEq(`""`, string(check.Result.Details))
+		require.Nil(check.Result.Error)
+		require.Zero(check.Result.ContiguousFailures)
 		require.True(reply.Healthy)
+		require.Equal(200, reply.StatusCode())
 	}
 
 	{
-		reply := &apihealth.APIReply{}
-		err := svc.Liveness(nil, &apihealth.APIArgs{}, reply)
+		reply, err := svc.liveness(t.Context(), &apihealth.APIArgs{})
 		require.NoError(err)
 
-		result := reply.Checks["check"]
-		require.Empty(result.Details)
-		require.Nil(result.Error)
-		require.Zero(result.ContiguousFailures)
+		check, ok := reply.Checks.Find("check")
+		require.True(ok)
+		require.JSONEq(`""`, string(check.Result.Details))
+		require.Nil(check.Result.Error)
+		require.Zero(check.Result.ContiguousFailures)
 		require.True(reply.Healthy)
+		require.Equal(200, reply.StatusCode())
 	}
 }
 
@@ -118,7 +115,7 @@ func TestServiceTagResponse(t *testing.T) {
 	type testMethods struct {
 		name     string
 		register func(Health, string, Checker, ...string) error
-		check    func(*Service, *apihealth.APIArgs, *apihealth.APIReply) error
+		check    func(*Service, *apihealth.APIArgs) (*apihealth.APIReply, error)
 		await    func(*testing.T, Reporter, bool)
 	}
 
@@ -128,8 +125,8 @@ func TestServiceTagResponse(t *testing.T) {
 			register: func(h Health, s1 string, c Checker, s2 ...string) error {
 				return h.RegisterReadinessCheck(s1, c, s2...)
 			},
-			check: func(s *Service, args *apihealth.APIArgs, reply *apihealth.APIReply) error {
-				return s.Readiness(nil, args, reply)
+			check: func(s *Service, args *apihealth.APIArgs) (*apihealth.APIReply, error) {
+				return s.readiness(context.Background(), args)
 			},
 			await: awaitReadiness,
 		},
@@ -138,8 +135,8 @@ func TestServiceTagResponse(t *testing.T) {
 			register: func(h Health, s1 string, c Checker, s2 ...string) error {
 				return h.RegisterHealthCheck(s1, c, s2...)
 			},
-			check: func(s *Service, args *apihealth.APIArgs, reply *apihealth.APIReply) error {
-				return s.Health(nil, args, reply)
+			check: func(s *Service, args *apihealth.APIArgs) (*apihealth.APIReply, error) {
+				return s.health(context.Background(), args)
 			},
 			await: awaitHealthy,
 		},
@@ -148,8 +145,8 @@ func TestServiceTagResponse(t *testing.T) {
 			register: func(h Health, s1 string, c Checker, s2 ...string) error {
 				return h.RegisterLivenessCheck(s1, c, s2...)
 			},
-			check: func(s *Service, args *apihealth.APIArgs, reply *apihealth.APIReply) error {
-				return s.Liveness(nil, args, reply)
+			check: func(s *Service, args *apihealth.APIArgs) (*apihealth.APIReply, error) {
+				return s.liveness(context.Background(), args)
 			},
 			await: awaitLiveness,
 		},
@@ -170,24 +167,16 @@ func TestServiceTagResponse(t *testing.T) {
 
 			// default checks
 			{
-				reply := &apihealth.APIReply{}
-				err := test.check(svc, &apihealth.APIArgs{}, reply)
+				reply, err := test.check(svc, &apihealth.APIArgs{})
 				require.NoError(err)
-				require.Len(reply.Checks, 4)
-				require.Contains(reply.Checks, "check1")
-				require.Contains(reply.Checks, "check2")
-				require.Contains(reply.Checks, "check3")
-				require.Contains(reply.Checks, "check4")
-				require.Equal(notYetRunResult, reply.Checks["check1"])
+				require.Equal([]string{"check1", "check2", "check3", "check4"}, names(reply.Checks))
+				require.Equal(notYetRunResult, found(require, reply.Checks, "check1"))
 				require.False(reply.Healthy)
 
-				reply = &apihealth.APIReply{}
-				err = test.check(svc, &apihealth.APIArgs{Tags: []string{netID1.String()}}, reply)
+				reply, err = test.check(svc, &apihealth.APIArgs{Tags: []string{netID1.String()}})
 				require.NoError(err)
-				require.Len(reply.Checks, 2)
-				require.Contains(reply.Checks, "check2")
-				require.Contains(reply.Checks, "check4")
-				require.Equal(notYetRunResult, reply.Checks["check2"])
+				require.Equal([]string{"check2", "check4"}, names(reply.Checks))
+				require.Equal(notYetRunResult, found(require, reply.Checks, "check2"))
 				require.False(reply.Healthy)
 			}
 
@@ -196,12 +185,9 @@ func TestServiceTagResponse(t *testing.T) {
 			test.await(t, h, true)
 
 			{
-				reply := &apihealth.APIReply{}
-				err := test.check(svc, &apihealth.APIArgs{Tags: []string{netID1.String()}}, reply)
+				reply, err := test.check(svc, &apihealth.APIArgs{Tags: []string{netID1.String()}})
 				require.NoError(err)
-				require.Len(reply.Checks, 2)
-				require.Contains(reply.Checks, "check2")
-				require.Contains(reply.Checks, "check4")
+				require.Equal([]string{"check2", "check4"}, names(reply.Checks))
 				require.True(reply.Healthy)
 			}
 
@@ -212,16 +198,28 @@ func TestServiceTagResponse(t *testing.T) {
 				// now we'll add a new check which is unhealthy by default (notYetRunResult)
 				require.NoError(test.register(h, "check5", check, netID1.String()))
 
-				reply := &apihealth.APIReply{}
-				err := test.check(svc, &apihealth.APIArgs{Tags: []string{netID1.String()}}, reply)
+				reply, err := test.check(svc, &apihealth.APIArgs{Tags: []string{netID1.String()}})
 				require.NoError(err)
-				require.Len(reply.Checks, 3)
-				require.Contains(reply.Checks, "check2")
-				require.Contains(reply.Checks, "check4")
-				require.Contains(reply.Checks, "check5")
-				require.Equal(notYetRunResult, reply.Checks["check5"])
+				require.Equal([]string{"check2", "check4", "check5"}, names(reply.Checks))
+				require.Equal(notYetRunResult, found(require, reply.Checks, "check5"))
 				require.False(reply.Healthy)
 			}
 		})
 	}
+}
+
+// names are the checks a reply carries, in the order it carries them — which is
+// the point of the list: a map answered the same question two ways.
+func names(checks apihealth.Checks) []string {
+	out := make([]string, len(checks))
+	for i, c := range checks {
+		out[i] = c.Name
+	}
+	return out
+}
+
+func found(require *require.Assertions, checks apihealth.Checks, name string) apihealth.Result {
+	check, ok := checks.Find(name)
+	require.True(ok, "reply carries no check named %q", name)
+	return check.Result
 }
