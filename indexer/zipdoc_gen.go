@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	zip.Describe("GET /accepted", zip.Doc{
+	zip.Describe("github.com/luxfi/node/indexer GET /accepted", zip.Doc{
 		Description: "Returns whether this node has accepted and indexed a container.",
 		Fields: map[string]string{
 			"IsAcceptedArgs.id":             "ID is the container to ask about.",
@@ -17,7 +17,7 @@ func init() {
 		},
 		Example: json.RawMessage(`{"id":"11111111111111111111111111111111LpoYY"}`),
 	})
-	zip.Describe("GET /container", zip.Doc{
+	zip.Describe("github.com/luxfi/node/indexer GET /container", zip.Doc{
 		Description: "Returns the container with the given id.",
 		Fields: map[string]string{
 			"FormattedContainer.bytes":      "Bytes is the container, written in Encoding.",
@@ -33,7 +33,7 @@ func init() {
 		},
 		Example: json.RawMessage(`{"id":"11111111111111111111111111111111LpoYY","encoding":"hex"}`),
 	})
-	zip.Describe("GET /container/:index", zip.Doc{
+	zip.Describe("github.com/luxfi/node/indexer GET /container/:index", zip.Doc{
 		Description: "Returns the container accepted at the given position.",
 		Fields: map[string]string{
 			"FormattedContainer.bytes":         "Bytes is the container, written in Encoding.",
@@ -49,7 +49,7 @@ func init() {
 		},
 		Example: json.RawMessage(`{"index":"0","encoding":"hex"}`),
 	})
-	zip.Describe("GET /container/latest", zip.Doc{
+	zip.Describe("github.com/luxfi/node/indexer GET /container/latest", zip.Doc{
 		Description: "Returns the container this node accepted most recently.",
 		Fields: map[string]string{
 			"FormattedContainer.bytes":     "Bytes is the container, written in Encoding.",
@@ -64,7 +64,7 @@ func init() {
 		},
 		Example: json.RawMessage(`{"encoding":"hex"}`),
 	})
-	zip.Describe("GET /containers", zip.Doc{
+	zip.Describe("github.com/luxfi/node/indexer GET /containers", zip.Doc{
 		Description: "Returns the containers accepted at startIndex and after it.\n\nIt returns what it finds: asking past the last accepted one yields the\ncontainers before it and no error. numToFetch of zero yields none.",
 		Fields: map[string]string{
 			"FormattedContainer.bytes":             "Bytes is the container, written in Encoding.",
@@ -82,7 +82,7 @@ func init() {
 		},
 		Example: json.RawMessage(`{"startIndex":"0","numToFetch":"2","encoding":"hex"}`),
 	})
-	zip.Describe("GET /index", zip.Doc{
+	zip.Describe("github.com/luxfi/node/indexer GET /index", zip.Doc{
 		Description: "Returns a container's position in the accepted order.",
 		Fields: map[string]string{
 			"GetIndexArgs.id":        "ID is the container to locate.",

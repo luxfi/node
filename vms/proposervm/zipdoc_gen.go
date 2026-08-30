@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	zip.Describe("GET /proposed/height", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/proposervm GET /proposed/height", zip.Doc{
 		Description: "Returns the P-Chain height this node would propose for the\nnext block built on its preferred one.",
 		Fields: map[string]string{
 			"GetProposedHeightReply.proposedHeight": "ProposedHeight is the P-Chain height that would be proposed for the next\nblock built on the current preferred block.",

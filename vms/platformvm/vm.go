@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/constants"
@@ -20,7 +19,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/node/utils/json"
+	server "github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -40,6 +39,7 @@ import (
 	"github.com/luxfi/validators/uptime"
 	vmcore "github.com/luxfi/vm"
 	extwarp "github.com/luxfi/warp"
+	"github.com/zap-proto/zip"
 
 	chainengine "github.com/luxfi/consensus/engine/chain"
 	blockbuilder "github.com/luxfi/node/vms/platformvm/block/builder"
@@ -759,50 +759,35 @@ func (*VM) Version(context.Context) (string, error) {
 	return version.Current.String(), nil
 }
 
-// lazyHandlerWrapper delays Service creation until the VM is fully initialized
-type lazyHandlerWrapper struct {
+// lazily builds the API surface on the first request that finds the VM
+// running, because a zip app is built from a Service and a Service reads state
+// the VM does not have until it has bootstrapped.
+type lazily struct {
 	vm      *VM
+	app     *zip.App
 	handler http.Handler
 	once    sync.Once
 	err     error
 }
 
-// ServeHTTP creates the handler on first request when VM is ready
-func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Check if VM is bootstrapped BEFORE once.Do to avoid caching the "not bootstrapped" error
+// ServeHTTP builds the handler on first request, when the VM is ready.
+func (l *lazily) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Checked BEFORE once.Do, so a "still bootstrapping" answer is not cached
+	// for the life of the process.
 	if !l.vm.bootstrapped.Get() {
 		http.Error(w, "Platform service not ready, VM still bootstrapping", http.StatusServiceUnavailable)
 		return
 	}
 
 	l.once.Do(func() {
-		// Create the actual RPC server now that VM is ready
-		server := rpc.NewServer()
-		server.RegisterCodec(json.NewCodec(), "application/json")
-		server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
-
-		// Add metrics interceptors if available
-		if l.vm.metrics != nil {
-			server.RegisterInterceptFunc(l.vm.metrics.InterceptRequest)
-			server.RegisterAfterFunc(l.vm.metrics.AfterRequest)
-		}
-
-		// Create the service with fully initialized VM
-		service := &Service{
+		l.app = (&Service{
 			vm:                    l.vm,
 			addrManager:           lux.NewAddressManager(l.vm.rt),
 			stakerAttributesCache: lru.NewCache[ids.ID, *stakerAttributes](stakerAttributesCacheSize),
-		}
-
-		if err := server.RegisterService(service, "platform"); err != nil {
-			l.err = fmt.Errorf("failed to register platform service: %w", err)
-			return
-		}
-
-		l.handler = server
+		}).ops(l.vm.log)
+		l.handler, l.err = server.Mount(l.app)
 	})
 
-	// Handle the request or return error
 	if l.err != nil {
 		http.Error(w, fmt.Sprintf("Platform service initialization error: %v", l.err), http.StatusServiceUnavailable)
 		return
@@ -815,14 +800,17 @@ func (l *lazyHandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	l.handler.ServeHTTP(w, r)
 }
 
-// CreateHandlers returns a map where:
-// * keys are API endpoint extensions
-// * values are API handlers
-// This now uses lazy initialization to avoid race conditions during VM startup
+// CreateHandlers maps an endpoint under this chain's base to what answers there.
+//
+// One entry, and it is not the base. The router records a prefix mount only for
+// a NAMED endpoint (server/http/router.go), so an app registered at "" is an
+// exact route and owns nothing beneath it — which for a zip app would mean
+// serving no op, no document, no docs page and no MCP door. /ops is what makes
+// those reachable, and the base is now unserved: the JSON-RPC surface that
+// answered there is gone, along with the reflection that found it.
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
-	// Return a lazy wrapper that will create the actual handler when ready
 	return map[string]http.Handler{
-		"": &lazyHandlerWrapper{vm: vm},
+		server.Ops: &lazily{vm: vm},
 	}, nil
 }
 

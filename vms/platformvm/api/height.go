@@ -6,6 +6,7 @@ package api
 import (
 	"errors"
 	"math"
+	"strconv"
 
 	"github.com/luxfi/node/utils/json"
 )
@@ -23,7 +24,9 @@ import (
 type Height json.Uint64
 
 const (
-	ProposedHeightJSON = `"proposed"`
+	// Proposed is the word the reserved value is written as.
+	Proposed           = "proposed"
+	ProposedHeightJSON = `"` + Proposed + `"`
 	// ProposedHeight is the reserved height: MaxUint64 means "the height the
 	// next proposal will be built at" rather than a height. Supplying it as a
 	// number is refused, so the sentinel can never collide with a real height.
@@ -60,6 +63,36 @@ func (h *Height) UnmarshalJSON(b []byte) error {
 		*h = 0
 		return errInvalidHeight
 	}
+	return nil
+}
+
+// MarshalText and UnmarshalText are the same three spellings, said where there
+// is no JSON to read them from. A URL carries text, so a read served as a GET
+// asks for a height with ?height=proposed or ?height=42 — and a height read as
+// the number its kind is takes the second and silently drops the first, which
+// is the whole reserved value.
+//
+// Absence has no text spelling: a URL omits the parameter, and the field keeps
+// the zero it had. That is what null means on the JSON side.
+func (h Height) MarshalText() ([]byte, error) {
+	if h == ProposedHeight {
+		return []byte(Proposed), nil
+	}
+	return []byte(strconv.FormatUint(uint64(h), 10)), nil
+}
+
+func (h *Height) UnmarshalText(text []byte) error {
+	if string(text) == Proposed {
+		*h = ProposedHeight
+		return nil
+	}
+	at, err := strconv.ParseUint(string(text), 10, 64)
+	// MaxUint64 is reserved, so supplying it as a number is refused here too:
+	// the sentinel can never collide with a height someone asked for.
+	if err != nil || at == ProposedHeight {
+		return errInvalidHeight
+	}
+	*h = Height(at)
 	return nil
 }
 

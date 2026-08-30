@@ -100,9 +100,9 @@ func TestStateCommitSerializedWithAcceptNoRace(t *testing.T) {
 
 	const iterations = 300
 	var (
-		wg              sync.WaitGroup
-		acceptErr       error
-		disconnectErr   error
+		wg            sync.WaitGroup
+		acceptErr     error
+		disconnectErr error
 	)
 	wg.Add(2)
 

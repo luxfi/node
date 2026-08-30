@@ -29,7 +29,7 @@ require (
 	github.com/luxfi/consensus v1.36.80
 	github.com/luxfi/crypto v1.20.5
 	github.com/luxfi/database v1.21.5
-	github.com/luxfi/ids v1.3.2
+	github.com/luxfi/ids v1.3.4
 	github.com/luxfi/keychain v1.1.1
 	github.com/luxfi/log v1.4.3
 	github.com/luxfi/math v1.5.1
@@ -152,7 +152,7 @@ require (
 	github.com/valyala/fasthttp v1.73.0
 	github.com/zap-proto/go v1.3.0
 	github.com/zap-proto/http v0.3.5
-	github.com/zap-proto/zip v1.36.34
+	github.com/zap-proto/zip v1.36.38
 	go.uber.org/zap v1.27.1
 )
 
@@ -257,7 +257,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/address v1.1.1
 	github.com/luxfi/cache v1.3.1 // indirect
-	github.com/luxfi/formatting v1.1.1
+	github.com/luxfi/formatting v1.1.3
 	github.com/luxfi/go-bip32 v1.1.0
 	github.com/luxfi/math/big v0.1.0 // indirect
 	github.com/luxfi/sampler v1.1.0 // indirect

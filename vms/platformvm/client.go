@@ -4,45 +4,125 @@
 package platformvm
 
 import (
+	"bytes"
+	"cmp"
 	"context"
+	stdjson "encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 
+	"github.com/zap-proto/zip"
+
+	server "github.com/luxfi/node/server/http"
+
 	"github.com/luxfi/address"
-	validators "github.com/luxfi/validators"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	apitypes "github.com/luxfi/api/types"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/components/gas"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 	"github.com/luxfi/rpc"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	validators "github.com/luxfi/validators"
 
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )
 
 type Client struct {
-	Requester rpc.EndpointRequester
+	// ops is where this chain serves its typed surface. The chain base itself
+	// no longer answers: the JSON-RPC method it dispatched on is gone.
+	ops       string
 	networkID uint32
 }
 
 func NewClient(uri string) *Client {
-	return &Client{Requester: rpc.NewEndpointRequester(
-		uri + "/v1/bc/P",
-	)}
+	return &Client{ops: uri + "/v1/bc/P" + server.Ops}
 }
 
 // NewClientWithNetworkID returns a new platformvm.Client with the network ID set
 // for proper bech32 address formatting
 func NewClientWithNetworkID(uri string, networkID uint32) *Client {
 	return &Client{
-		Requester: rpc.NewEndpointRequester(uri + "/v1/bc/P"),
+		ops:       uri + "/v1/bc/P" + server.Ops,
 		networkID: networkID,
 	}
+}
+
+// The P-Chain answers typed ops under the chain's base, so a call is a URL and
+// a reply is that op's Out. There is no method name in a body any more: the
+// address IS the operation.
+//
+// This file is the hand-written half a generated client replaces — the ops
+// describe themselves well enough to generate one, and when that lands this
+// goes. Until then it at least does not spell the wire twice: [zip.Query] turns
+// the op's own In into the query string, so how a list or an id is written is
+// derived here exactly as it is read there.
+
+// ask reads one op. in is the op's own In; its fields become the query.
+func (c *Client) ask(ctx context.Context, path string, in any, out any, options ...rpc.Option) error {
+	query, err := zip.Query(in)
+	if err != nil {
+		return err
+	}
+	at, err := url.Parse(c.ops + path)
+	if err != nil {
+		return err
+	}
+	opts := rpc.NewOptions(options)
+	extra := opts.QueryParams()
+	for name, values := range extra {
+		for _, value := range values {
+			query = cmp.Or(query+"&", "") + url.QueryEscape(name) + "=" + url.QueryEscape(value)
+		}
+	}
+	at.RawQuery = query
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, at.String(), nil)
+	if err != nil {
+		return err
+	}
+	req.Header = opts.Headers()
+	return c.do(req, out)
+}
+
+// send issues one write. The body is the op's own In, as JSON.
+func (c *Client) send(ctx context.Context, path string, in any, out any, options ...rpc.Option) error {
+	body, err := stdjson.Marshal(in)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.ops+path, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header = rpc.NewOptions(options).Headers()
+	req.Header.Set("Content-Type", "application/json")
+	return c.do(req, out)
+}
+
+// do runs one request and decodes its reply. A refusal carries the op's own
+// message, which is what a caller needs to tell "no such tx" from "not allowed".
+func (c *Client) do(req *http.Request, out any) error {
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		said, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return fmt.Errorf("%s %s: %s: %s", req.Method, req.URL, resp.Status, said)
+	}
+	return stdjson.NewDecoder(resp.Body).Decode(out)
 }
 
 // SetNetworkID sets the network ID for address formatting
@@ -67,14 +147,14 @@ func (c *Client) formatAddresses(addrs []ids.ShortID) ([]string, error) {
 // GetHeight returns the current block height.
 func (c *Client) GetHeight(ctx context.Context, options ...rpc.Option) (uint64, error) {
 	res := &apitypes.GetHeightResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getHeight", struct{}{}, res, options...)
+	err := c.ask(ctx, "/height", struct{}{}, res, options...)
 	return uint64(res.Height), err
 }
 
 // GetProposedHeight returns the current height of this node's proposer VM.
 func (c *Client) GetProposedHeight(ctx context.Context, options ...rpc.Option) (uint64, error) {
 	res := &apitypes.GetHeightResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getProposedHeight", struct{}{}, res, options...)
+	err := c.ask(ctx, "/height/proposed", struct{}{}, res, options...)
 	return uint64(res.Height), err
 }
 
@@ -83,7 +163,7 @@ func (c *Client) GetProposedHeight(ctx context.Context, options ...rpc.Option) (
 // Deprecated: GetUTXOs should be used instead.
 func (c *Client) GetBalance(ctx context.Context, addrs []ids.ShortID, options ...rpc.Option) (*GetBalanceResponse, error) {
 	res := &GetBalanceResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getBalance", &GetBalanceRequest{
+	err := c.ask(ctx, "/balance", &GetBalanceRequest{
 		Addresses: ids.ShortIDsToStrings(addrs),
 	}, res, options...)
 	return res, err
@@ -133,7 +213,7 @@ func (c *Client) GetAtomicUTXOs(
 	}
 
 	res := &apitypes.GetUTXOsReply{}
-	err = c.Requester.SendRequest(ctx, "platform.getUTXOs", &apitypes.GetUTXOsArgs{
+	err = c.ask(ctx, "/utxos", &apitypes.GetUTXOsArgs{
 		Addresses:   formattedAddrs,
 		SourceChain: sourceChain,
 		Limit:       apitypes.Uint32(limit),
@@ -179,7 +259,7 @@ type GetNetClientResponse struct {
 // GetNet returns information about the specified chain.
 func (c *Client) GetNet(ctx context.Context, chainID ids.ID, options ...rpc.Option) (GetNetClientResponse, error) {
 	res := &GetNetResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getNet", &GetNetArgs{
+	err := c.ask(ctx, "/net", &GetNetArgs{
 		ChainID: chainID,
 	}, res, options...)
 	if err != nil {
@@ -226,7 +306,7 @@ type ClientChain = ClientNet
 // but logs every call as deprecated server-side.
 func (c *Client) GetChains(ctx context.Context, ids []ids.ID, options ...rpc.Option) ([]ClientChain, error) {
 	res := &GetChainsResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getChains", &GetChainsArgs{
+	err := c.ask(ctx, "/chains", &GetChainsArgs{
 		IDs: ids,
 	}, res, options...)
 	if err != nil {
@@ -254,7 +334,7 @@ func (c *Client) GetChains(ctx context.Context, ids []ids.ID, options ...rpc.Opt
 // for callers still on the old name.
 func (c *Client) GetNets(ctx context.Context, ids []ids.ID, options ...rpc.Option) ([]ClientNet, error) {
 	res := &GetNetsResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getNets", &GetNetsArgs{
+	err := c.ask(ctx, "/nets", &GetNetsArgs{
 		IDs: ids,
 	}, res, options...)
 	if err != nil {
@@ -280,7 +360,7 @@ func (c *Client) GetNets(ctx context.Context, ids []ids.ID, options ...rpc.Optio
 // chain corresponding to chainID.
 func (c *Client) GetStakingAssetID(ctx context.Context, chainID ids.ID, options ...rpc.Option) (ids.ID, error) {
 	res := &GetStakingAssetIDResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getStakingAssetID", &GetStakingAssetIDArgs{
+	err := c.ask(ctx, "/stake/asset", &GetStakingAssetIDArgs{
 		ChainID: chainID,
 	}, res, options...)
 	return res.AssetID, err
@@ -294,8 +374,8 @@ func (c *Client) GetCurrentValidators(
 	options ...rpc.Option,
 ) ([]ClientPermissionlessValidator, error) {
 	res := &GetCurrentValidatorsReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getCurrentValidators", &GetCurrentValidatorsArgs{
-		ChainID:   netID,
+	err := c.ask(ctx, "/validators", &GetCurrentValidatorsArgs{
+		ChainID: netID,
 		NodeIDs: nodeIDs,
 	}, res, options...)
 	if err != nil {
@@ -306,7 +386,7 @@ func (c *Client) GetCurrentValidators(
 
 // L1Validator is the response from calling GetL1Validator on the API client.
 type L1Validator struct {
-	ChainID                 ids.ID
+	ChainID               ids.ID
 	NodeID                ids.NodeID
 	PublicKey             *bls.PublicKey
 	RemainingBalanceOwner *secp256k1fx.OutputOwners
@@ -327,7 +407,7 @@ func (c *Client) GetL1Validator(
 	options ...rpc.Option,
 ) (L1Validator, uint64, error) {
 	res := &GetL1ValidatorReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getL1Validator",
+	err := c.ask(ctx, "/validator",
 		&GetL1ValidatorArgs{
 			ValidationID: validationID,
 		},
@@ -363,7 +443,7 @@ func (c *Client) GetL1Validator(
 	}
 
 	return L1Validator{
-		ChainID:     res.ChainID,
+		ChainID:   res.ChainID,
 		NodeID:    res.NodeID,
 		PublicKey: pk,
 		RemainingBalanceOwner: &secp256k1fx.OutputOwners{
@@ -387,27 +467,16 @@ func (c *Client) GetL1Validator(
 // along with the chain height.
 func (c *Client) GetCurrentSupply(ctx context.Context, chainID ids.ID, options ...rpc.Option) (uint64, uint64, error) {
 	res := &GetCurrentSupplyReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getCurrentSupply", &GetCurrentSupplyArgs{
+	err := c.ask(ctx, "/supply", &GetCurrentSupplyArgs{
 		ChainID: chainID,
 	}, res, options...)
 	return uint64(res.Supply), uint64(res.Height), err
 }
 
-// SampleValidators returns the nodeIDs of a sample of sampleSize validators
-// from the current validator set for chainID.
-func (c *Client) SampleValidators(ctx context.Context, chainID ids.ID, sampleSize uint16, options ...rpc.Option) ([]ids.NodeID, error) {
-	res := &SampleValidatorsReply{}
-	err := c.Requester.SendRequest(ctx, "platform.sampleValidators", &SampleValidatorsArgs{
-		ChainID: chainID,
-		Size:  json.Uint16(sampleSize),
-	}, res, options...)
-	return res.Validators, err
-}
-
 // GetBlockchainStatus returns the current status of blockchainID.
 func (c *Client) GetBlockchainStatus(ctx context.Context, blockchainID string, options ...rpc.Option) (status.BlockchainStatus, error) {
 	res := &GetBlockchainStatusReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getBlockchainStatus", &GetBlockchainStatusArgs{
+	err := c.ask(ctx, "/blockchain/status", &GetBlockchainStatusArgs{
 		BlockchainID: blockchainID,
 	}, res, options...)
 	return res.Status, err
@@ -416,7 +485,7 @@ func (c *Client) GetBlockchainStatus(ctx context.Context, blockchainID string, o
 // ValidatedBy returns the chainID that validates blockchainID.
 func (c *Client) ValidatedBy(ctx context.Context, blockchainID ids.ID, options ...rpc.Option) (ids.ID, error) {
 	res := &ValidatedByResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.validatedBy", &ValidatedByArgs{
+	err := c.ask(ctx, "/blockchain/net", &ValidatedByArgs{
 		BlockchainID: blockchainID,
 	}, res, options...)
 	return res.ChainID, err
@@ -425,7 +494,7 @@ func (c *Client) ValidatedBy(ctx context.Context, blockchainID ids.ID, options .
 // Validates returns the list of blockchains that are validated by chainID.
 func (c *Client) Validates(ctx context.Context, chainID ids.ID, options ...rpc.Option) ([]ids.ID, error) {
 	res := &ValidatesResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.validates", &ValidatesArgs{
+	err := c.ask(ctx, "/net/blockchains", &ValidatesArgs{
 		ChainID: chainID,
 	}, res, options...)
 	return res.BlockchainIDs, err
@@ -436,7 +505,7 @@ func (c *Client) Validates(ctx context.Context, chainID ids.ID, options ...rpc.O
 // Deprecated: Blockchains should be fetched from a dedicated indexer.
 func (c *Client) GetBlockchains(ctx context.Context, options ...rpc.Option) ([]APIBlockchain, error) {
 	res := &GetBlockchainsResponse{}
-	err := c.Requester.SendRequest(ctx, "platform.getBlockchains", struct{}{}, res, options...)
+	err := c.ask(ctx, "/blockchains", struct{}{}, res, options...)
 	return res.Blockchains, err
 }
 
@@ -448,7 +517,7 @@ func (c *Client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Opt
 	}
 
 	res := &apitypes.JSONTxID{}
-	err = c.Requester.SendRequest(ctx, "platform.issueTx", &apitypes.FormattedTx{
+	err = c.send(ctx, server.Relay, &apitypes.FormattedTx{
 		Tx:       txStr,
 		Encoding: formatting.Hex,
 	}, res, options...)
@@ -458,7 +527,7 @@ func (c *Client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Opt
 // GetTx returns the byte representation of txID.
 func (c *Client) GetTx(ctx context.Context, txID ids.ID, options ...rpc.Option) ([]byte, error) {
 	res := &apitypes.FormattedTx{}
-	err := c.Requester.SendRequest(ctx, "platform.getTx", &apitypes.GetTxArgs{
+	err := c.ask(ctx, "/tx", &apitypes.GetTxArgs{
 		TxID:     txID,
 		Encoding: formatting.Hex,
 	}, res, options...)
@@ -471,15 +540,9 @@ func (c *Client) GetTx(ctx context.Context, txID ids.ID, options ...rpc.Option) 
 // GetTxStatus returns the status of txID.
 func (c *Client) GetTxStatus(ctx context.Context, txID ids.ID, options ...rpc.Option) (*GetTxStatusResponse, error) {
 	res := &GetTxStatusResponse{}
-	err := c.Requester.SendRequest(
-		ctx,
-		"platform.getTxStatus",
-		&GetTxStatusArgs{
-			TxID: txID,
-		},
-		res,
-		options...,
-	)
+	err := c.ask(ctx, "/tx/status", &GetTxStatusArgs{
+		TxID: txID,
+	}, res, options...)
 	return res, err
 }
 
@@ -494,7 +557,7 @@ func (c *Client) GetStake(
 	options ...rpc.Option,
 ) (map[ids.ID]uint64, [][]byte, error) {
 	res := &GetStakeReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getStake", &GetStakeArgs{
+	err := c.ask(ctx, "/stake", &GetStakeArgs{
 		JSONAddresses: apitypes.JSONAddresses{
 			Addresses: ids.ShortIDsToStrings(addrs),
 		},
@@ -525,7 +588,7 @@ func (c *Client) GetStake(
 // delegators respectively.
 func (c *Client) GetMinStake(ctx context.Context, chainID ids.ID, options ...rpc.Option) (uint64, uint64, error) {
 	res := &GetMinStakeReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getMinStake", &GetMinStakeArgs{
+	err := c.ask(ctx, "/stake/min", &GetMinStakeArgs{
 		ChainID: chainID,
 	}, res, options...)
 	return uint64(res.MinValidatorStake), uint64(res.MinDelegatorStake), err
@@ -534,7 +597,7 @@ func (c *Client) GetMinStake(ctx context.Context, chainID ids.ID, options ...rpc
 // GetTotalStake returns the total amount (in µLUX) staked on the network.
 func (c *Client) GetTotalStake(ctx context.Context, netID ids.ID, options ...rpc.Option) (uint64, error) {
 	res := &GetTotalStakeReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getTotalStake", &GetTotalStakeArgs{
+	err := c.ask(ctx, "/stake/total", &GetTotalStakeArgs{
 		ChainID: netID,
 	}, res, options...)
 	var amount json.Uint64
@@ -551,7 +614,7 @@ func (c *Client) GetTotalStake(ctx context.Context, netID ids.ID, options ...rpc
 // Deprecated: GetRewardUTXOs should be fetched from a dedicated indexer.
 func (c *Client) GetRewardUTXOs(ctx context.Context, args *apitypes.GetTxArgs, options ...rpc.Option) ([][]byte, error) {
 	res := &GetRewardUTXOsReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getRewardUTXOs", args, res, options...)
+	err := c.ask(ctx, "/tx/rewards", args, res, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -569,7 +632,7 @@ func (c *Client) GetRewardUTXOs(ctx context.Context, args *apitypes.GetTxArgs, o
 // GetTimestamp returns the current chain timestamp.
 func (c *Client) GetTimestamp(ctx context.Context, options ...rpc.Option) (time.Time, error) {
 	res := &GetTimestampReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getTimestamp", struct{}{}, res, options...)
+	err := c.ask(ctx, "/timestamp", struct{}{}, res, options...)
 	return res.Timestamp.Time(), err
 }
 
@@ -583,9 +646,9 @@ func (c *Client) GetValidatorsAt(
 	options ...rpc.Option,
 ) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
 	res := &GetValidatorsAtReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getValidatorsAt", &GetValidatorsAtArgs{
-		ChainID:  chainID,
-		Height: height,
+	err := c.ask(ctx, "/validators/at", &GetValidatorsAtArgs{
+		ChainID: chainID,
+		Height:  height,
 	}, res, options...)
 	if err != nil {
 		return nil, err
@@ -604,7 +667,7 @@ func (c *Client) GetValidatorsAt(
 // GetBlock returns blockID.
 func (c *Client) GetBlock(ctx context.Context, blockID ids.ID, options ...rpc.Option) ([]byte, error) {
 	res := &apitypes.FormattedBlock{}
-	if err := c.Requester.SendRequest(ctx, "platform.getBlock", &apitypes.GetBlockArgs{
+	if err := c.ask(ctx, "/block", &apitypes.GetBlockArgs{
 		BlockID:  blockID,
 		Encoding: formatting.Hex,
 	}, res, options...); err != nil {
@@ -616,7 +679,7 @@ func (c *Client) GetBlock(ctx context.Context, blockID ids.ID, options ...rpc.Op
 // GetBlockByHeight returns the block at the given height.
 func (c *Client) GetBlockByHeight(ctx context.Context, height uint64, options ...rpc.Option) ([]byte, error) {
 	res := &apitypes.FormattedBlock{}
-	err := c.Requester.SendRequest(ctx, "platform.getBlockByHeight", &apitypes.GetBlockByHeightArgs{
+	err := c.ask(ctx, "/block/"+strconv.FormatUint(height, 10), &apitypes.GetBlockByHeightArgs{
 		Height:   apitypes.Uint64(height),
 		Encoding: formatting.HexNC,
 	}, res, options...)
@@ -629,7 +692,7 @@ func (c *Client) GetBlockByHeight(ctx context.Context, height uint64, options ..
 // GetFeeConfig returns the dynamic fee config.
 func (c *Client) GetFeeConfig(ctx context.Context, options ...rpc.Option) (*gas.Config, error) {
 	res := &gas.Config{}
-	err := c.Requester.SendRequest(ctx, "platform.getFeeConfig", struct{}{}, res, options...)
+	err := c.ask(ctx, "/fee/config", struct{}{}, res, options...)
 	return res, err
 }
 
@@ -641,14 +704,14 @@ func (c *Client) GetFeeState(ctx context.Context, options ...rpc.Option) (
 	error,
 ) {
 	res := &GetFeeStateReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getFeeState", struct{}{}, res, options...)
+	err := c.ask(ctx, "/fee", struct{}{}, res, options...)
 	return res.State, res.Price, res.Time.Time(), err
 }
 
 // GetValidatorFeeConfig returns the validator fee config.
 func (c *Client) GetValidatorFeeConfig(ctx context.Context, options ...rpc.Option) (*fee.Config, error) {
 	res := &fee.Config{}
-	err := c.Requester.SendRequest(ctx, "platform.getValidatorFeeConfig", struct{}{}, res, options...)
+	err := c.ask(ctx, "/fee/validator/config", struct{}{}, res, options...)
 	return res, err
 }
 
@@ -660,7 +723,7 @@ func (c *Client) GetValidatorFeeState(ctx context.Context, options ...rpc.Option
 	error,
 ) {
 	res := &GetValidatorFeeStateReply{}
-	err := c.Requester.SendRequest(ctx, "platform.getValidatorFeeState", struct{}{}, res, options...)
+	err := c.ask(ctx, "/fee/validator", struct{}{}, res, options...)
 	return res.Excess, res.Price, res.Time.Time(), err
 }
 
