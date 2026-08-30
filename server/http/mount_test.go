@@ -45,7 +45,7 @@ func newZChain(t *testing.T) *zkvm.VM {
 //
 // Z-Chain is the case that proved it was not: zkvm returns an http.ServeMux
 // per endpoint whose patterns are /getStatus, /getBlock, … Mounted as a leaf
-// at /v1/bc/<chainID>/rpc, the mux only ever saw the mount path, matched
+// at /v1/chain/<chainID>/rpc, the mux only ever saw the mount path, matched
 // nothing, and answered 404 — the chain ran, produced metrics and finalized
 // blocks, and served no HTTP at all.
 func TestChainHandlerServesItsOwnPaths(t *testing.T) {
@@ -55,7 +55,7 @@ func TestChainHandlerServesItsOwnPaths(t *testing.T) {
 
 	r := newRouter()
 	chainID := ids.GenerateTestID().String()
-	base := baseURL + "/bc/" + chainID
+	base := Chain("", chainID)
 	for endpoint, h := range handlers {
 		require.NoError(t, r.AddRouter(base, endpoint, h))
 	}
@@ -73,7 +73,7 @@ func TestChainHandlerServesItsOwnPaths(t *testing.T) {
 // that ignores the path) working exactly as before.
 func TestMountedEndpointStillServesItself(t *testing.T) {
 	r := newRouter()
-	base := baseURL + "/bc/" + ids.GenerateTestID().String()
+	base := Chain("", ids.GenerateTestID().String())
 	var got string
 	rpc := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		got = req.URL.Path

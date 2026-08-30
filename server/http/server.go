@@ -27,17 +27,25 @@ import (
 
 const (
 	// baseURL is the canonical — and only — prefix for every luxd HTTP route
-	// (/v1/bc/C/rpc, /v1/info, /v1/health, ...). Single source of truth:
+	// (/v1/chain/C/rpc, /v1/info, /v1/health, ...). Single source of truth:
 	// AddRoute/AddAliases and the root/health helpers in router.go all derive
 	// their paths from it. The legacy /ext prefix is gone;
 	// one way, no backward compatibility (activation Dec 25 2025).
 	baseURL = "/v1"
 
-	// What ChainAliasPrefix used to be. Served alongside it so a node may roll
-	// before its callers do; delete once nothing asks for it.
-	legacyChainPrefix    = "bc"
 	maxConcurrentStreams = 64
 )
+
+// Chain is where a chain answers, and the one place that address is built.
+//
+// uri is a node's base URL, or empty for a path on this node: Chain("", "P")+Ops
+// is /v1/chain/P/ops. The segment is [constants.ChainAliasPrefix], named once,
+// so every caller moves with it. That is the point of routing them all through
+// here: when the segment last changed, the clients that spelled it by hand went
+// on pointing at the name the router had already left behind.
+func Chain(uri, alias string) string {
+	return uri + baseURL + "/" + constants.ChainAliasPrefix + "/" + alias
+}
 
 var (
 	_ PathAdder = readPathAdder{}
@@ -199,26 +207,7 @@ func (s *server) addRoute(handler http.Handler, base, endpoint string) error {
 		handler = TraceHandler(handler, url, s.tracer)
 	}
 
-	if err := s.router.AddRouter(url, endpoint, handler); err != nil {
-		return err
-	}
-
-	// A chain also answers on the prefix it used to have.
-	//
-	// The segment was "bc" and is "chain" (constants.ChainAliasPrefix). The old
-	// spelling stays reachable because the clients are not upgraded in the same
-	// instant as the nodes: renaming this without serving both would mean every
-	// wallet, indexer and interface in the estate got a 404 the moment a node
-	// rolled. It is one derived line rather than a second route table, and it
-	// goes when the callers have moved.
-	if base == legacyChainPrefix || strings.HasPrefix(base, legacyChainPrefix+"/") {
-		return nil // already the old spelling; nothing to alias
-	}
-	if rest, found := strings.CutPrefix(base, constants.ChainAliasPrefix+"/"); found {
-		legacy := fmt.Sprintf("%s/%s/%s", baseURL, legacyChainPrefix, rest)
-		return s.router.AddRouter(legacy, endpoint, handler)
-	}
-	return nil
+	return s.router.AddRouter(url, endpoint, handler)
 }
 
 // StateGetter interface for getting chain state

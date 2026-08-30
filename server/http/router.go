@@ -14,7 +14,6 @@ import (
 	"github.com/gorilla/mux"
 
 	apitypes "github.com/luxfi/api/types"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/math/set"
 )
 
@@ -221,9 +220,9 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 				P string `json:"p"`
 				X string `json:"x"`
 			}{
-				C: baseURL + "/" + constants.ChainAliasPrefix + "/C/rpc",
-				P: baseURL + "/" + constants.ChainAliasPrefix + "/P",
-				X: baseURL + "/" + constants.ChainAliasPrefix + "/X",
+				C: Chain("", "C") + "/rpc",
+				P: Chain("", "P"),
+				X: Chain("", "X"),
 			},
 			Endpoints: struct {
 				RPC       string `json:"rpc"`
@@ -231,8 +230,8 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 				Info      string `json:"info"`
 				Health    string `json:"health"`
 			}{
-				RPC:       baseURL + "/" + constants.ChainAliasPrefix + "/C/rpc",
-				Websocket: baseURL + "/" + constants.ChainAliasPrefix + "/C/ws",
+				RPC:       Chain("", "C") + "/rpc",
+				Websocket: Chain("", "C") + "/ws",
 				Info:      baseURL + "/info",
 				Health:    baseURL + "/health",
 			},
@@ -247,10 +246,10 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 // handleRootPOST proxies JSON-RPC requests to the C-chain
 func (r *router) handleRootPOST(w http.ResponseWriter, req *http.Request) {
 	// Look up the C-chain RPC handler
-	handler, err := r.GetHandler(baseURL+"/"+constants.ChainAliasPrefix+"/C", "/rpc")
+	handler, err := r.GetHandler(Chain("", "C"), "/rpc")
 	if err != nil {
 		// Try alternate path formats
-		handler, err = r.GetHandler(baseURL+"/"+constants.ChainAliasPrefix+"/C/rpc", "")
+		handler, err = r.GetHandler(Chain("", "C")+"/rpc", "")
 		if err != nil {
 			// Return proper JSON-RPC error
 			w.Header().Set("Content-Type", "application/json")

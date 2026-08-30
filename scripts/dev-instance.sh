@@ -83,9 +83,9 @@ done
 # Show status
 echo ""
 echo "=== Instance Ready ==="
-echo "  C-Chain RPC:  http://127.0.0.1:$HTTP_PORT/v1/bc/C/rpc"
-echo "  X-Chain RPC:  http://127.0.0.1:$HTTP_PORT/v1/bc/X"
-echo "  P-Chain RPC:  http://127.0.0.1:$HTTP_PORT/v1/bc/P"
+echo "  C-Chain RPC:  http://127.0.0.1:$HTTP_PORT/v1/chain/C/rpc"
+echo "  X-Chain RPC:  http://127.0.0.1:$HTTP_PORT/v1/chain/X"
+echo "  P-Chain RPC:  http://127.0.0.1:$HTTP_PORT/v1/chain/P"
 echo "  Info API:     http://127.0.0.1:$HTTP_PORT/v1/info"
 echo ""
 echo "  Logs:         tail -f $LOG_FILE"

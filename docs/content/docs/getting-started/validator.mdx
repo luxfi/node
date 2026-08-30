@@ -58,7 +58,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "id": 1,
     "method": "platform.getHeight"
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 
 # Check bootstrap status for all chains
 curl -X POST --data '{
@@ -211,7 +211,7 @@ curl -X POST --data '{
     "method": "platform.getPendingValidators",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 
 # Get current validators
 curl -X POST --data '{
@@ -219,7 +219,7 @@ curl -X POST --data '{
     "method": "platform.getCurrentValidators",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ## Step 5: Monitor Your Validator
@@ -236,7 +236,7 @@ curl -X POST --data '{
         "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ### Monitor Performance Metrics
@@ -286,7 +286,7 @@ UPTIME=$(curl -s -X POST --data '{
     "method":"platform.getValidator",
     "params":{"nodeID":"NodeID-xxx"},
     "id":1
-}' "$NODE_URL/v1/bc/P" | jq -r '.result.uptime')
+}' "$NODE_URL/v1/chain/P" | jq -r '.result.uptime')
 
 if [ "$UPTIME" -lt "80" ]; then
   curl -X POST "$WEBHOOK_URL" -d "{\"text\":\"WARNING: Uptime is $UPTIME%\"}"
@@ -317,7 +317,7 @@ curl -X POST --data '{
         "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ## Chain Validation

@@ -474,7 +474,7 @@ curl -X POST --data '{
         "txID":"ZGYTSU8w3zUP6VFseGC798vA2Vnxnfj6fz1QPfA9N93bhjJvo",
         "encoding": "json"
     }
-}' -H 'content-type:application/json;' https://api.lux.network/v1/bc/X
+}' -H 'content-type:application/json;' https://api.lux.network/v1/chain/X
 ```
 
 **Response**:

@@ -5,11 +5,10 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
+	node "github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/vms/example/xsvm/block"
 	"github.com/luxfi/node/vms/example/xsvm/genesis"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
@@ -20,14 +19,8 @@ import (
 const DefaultPollingInterval = 50 * time.Millisecond
 
 func NewClient(uri, chain string) *Client {
-	path := fmt.Sprintf(
-		"%s/v1/%s/%s",
-		uri,
-		constants.ChainAliasPrefix,
-		chain,
-	)
 	return &Client{
-		Req: rpc.NewEndpointRequester(path),
+		Req: rpc.NewEndpointRequester(node.Chain(uri, chain)),
 	}
 }
 

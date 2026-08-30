@@ -10,7 +10,7 @@ The Platform Chain (P-Chain) is responsible for staking, validators, and chain m
 ## Endpoint
 
 ```
-http://localhost:9630/v1/bc/P
+http://localhost:9630/v1/chain/P
 ```
 
 ## Format
@@ -23,7 +23,7 @@ curl -X POST --data '{
     "method": "platform.<method>",
     "params": {...},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ## Methods
@@ -41,7 +41,7 @@ curl -X POST --data '{
     "method": "platform.getHeight",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 **Example Response:**
@@ -73,7 +73,7 @@ curl -X POST --data '{
         "addresses": ["P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc"]
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 **Example Response:**
@@ -114,7 +114,7 @@ curl -X POST --data '{
         "limit": 100
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -134,7 +134,7 @@ curl -X POST --data '{
     "method": "platform.getCurrentValidators",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 **Example Response:**
@@ -190,7 +190,7 @@ curl -X POST --data '{
     "method": "platform.getPendingValidators",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -212,7 +212,7 @@ curl -X POST --data '{
         "height": 365000
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -233,7 +233,7 @@ curl -X POST --data '{
         "height": 365000
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -255,7 +255,7 @@ curl -X POST --data '{
         "addresses": ["P-lux1q8tgunsf7sxpl2qp9fz0xjs36kstm7vdjvpzcc"]
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -274,7 +274,7 @@ curl -X POST --data '{
     "method": "platform.getMinStake",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 **Example Response:**
@@ -305,7 +305,7 @@ curl -X POST --data '{
     "method": "platform.getTotalStake",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -327,7 +327,7 @@ curl -X POST --data '{
         "txID": "2nmH8LithVbdjaXsxVQCQfXtzN9hBbmebrsaEYnLM9T32Uy3Y5"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -345,7 +345,7 @@ curl -X POST --data '{
     "method": "platform.getTimestamp",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -363,7 +363,7 @@ curl -X POST --data '{
     "method": "platform.getBlockchains",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 **Example Response:**
@@ -409,7 +409,7 @@ curl -X POST --data '{
         "blockID": "vXSY7FK7NR65Y8BrJDKQH4a6vBdJuqAMvVzWj3Zxcap5J4ZE3"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -431,7 +431,7 @@ curl -X POST --data '{
         "txID": "2nmH8LithVbdjaXsxVQCQfXtzN9hBbmebrsaEYnLM9T32Uy3Y5"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -452,7 +452,7 @@ curl -X POST --data '{
         "txID": "2nmH8LithVbdjaXsxVQCQfXtzN9hBbmebrsaEYnLM9T32Uy3Y5"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 **Example Response:**
@@ -488,7 +488,7 @@ curl -X POST --data '{
     "method": "platform.getCurrentSupply",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -507,7 +507,7 @@ curl -X POST --data '{
     "method": "platform.getChains",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -544,7 +544,7 @@ curl -X POST --data '{
         "password": "mypassword"
     },
     "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ---
@@ -694,7 +694,7 @@ curl -s -X POST --data "{
         \"nodeIDs\": [\"$NODE_ID\"]
     },
     \"id\": 1
-}" -H 'content-type:application/json;' http://localhost:9630/v1/bc/P | jq '.result.validators[0]'
+}" -H 'content-type:application/json;' http://localhost:9630/v1/chain/P | jq '.result.validators[0]'
 ```
 
 ### Monitor Staking Rewards
@@ -711,7 +711,7 @@ STAKE=$(curl -s -X POST --data "{
         \"addresses\": [\"$ADDRESS\"]
     },
     \"id\": 1
-}" -H 'content-type:application/json;' http://localhost:9630/v1/bc/P)
+}" -H 'content-type:application/json;' http://localhost:9630/v1/chain/P)
 
 echo "Current stake: $(echo $STAKE | jq -r '.result.staked')"
 echo "Stakeable: $(echo $STAKE | jq -r '.result.stakeable')"

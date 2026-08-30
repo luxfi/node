@@ -225,7 +225,7 @@ curl -X POST --data '{
     "method":"platform.getCurrentValidators",
     "params":{"nodeIDs":["<your-node-id>"]},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 
 # Verify staking transaction
 curl -X POST --data '{
@@ -233,7 +233,7 @@ curl -X POST --data '{
     "method":"platform.getTx",
     "params":{"txID":"<staking-tx-id>"},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 #### Issue: Low uptime percentage
@@ -275,7 +275,7 @@ curl -X POST --data '{
     "jsonrpc":"2.0",
     "method":"platform.getHeight",
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 
 # Reduce consensus participation
 ./build/node --consensus-gossip-concurrent=2
@@ -369,7 +369,7 @@ curl -X POST --data '{
     "method":"platform.getBalance",
     "params":{"addresses":["P-lux1..."]},
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 
 # Import funds from X-Chain
 curl -X POST --data '{
@@ -381,7 +381,7 @@ curl -X POST --data '{
         "sourceChain":"X"
     },
     "id":1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+}' -H 'content-type:application/json;' http://localhost:9630/v1/chain/P
 ```
 
 ## Log Analysis

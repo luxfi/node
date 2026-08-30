@@ -38,7 +38,7 @@ func namedHandler(name string, seen *string) http.Handler {
 // for it.
 func TestDeepestMountOwnsThePath(t *testing.T) {
 	r := newRouter()
-	base := baseURL + "/bc/" + ids.GenerateTestID().String()
+	base := Chain("", ids.GenerateTestID().String())
 	var seen string
 	require.NoError(t, r.AddRouter(base, "/rpc", namedHandler("rpc", &seen)))
 	require.NoError(t, r.AddRouter(base, "/rpc/admin", namedHandler("admin", &seen)))
@@ -76,12 +76,12 @@ func TestExactRouteBeatsAMount(t *testing.T) {
 // miss, or the node answers for chains it does not run.
 func TestAnUnmountedPathIs404(t *testing.T) {
 	r := newRouter()
-	base := baseURL + "/bc/" + ids.GenerateTestID().String()
+	base := Chain("", ids.GenerateTestID().String())
 	var seen string
 	require.NoError(t, r.AddRouter(base, "/rpc", namedHandler("rpc", &seen)))
 
 	for _, path := range []string{
-		baseURL + "/bc/" + ids.GenerateTestID().String() + "/rpc/getStatus", // a chain we do not run
+		Chain("", ids.GenerateTestID().String()) + "/rpc/getStatus", // a chain we do not run
 		baseURL + "/nothing/at/all",
 		"/not/even/ours",
 	} {

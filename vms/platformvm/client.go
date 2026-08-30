@@ -45,14 +45,14 @@ type Client struct {
 }
 
 func NewClient(uri string) *Client {
-	return &Client{ops: uri + "/v1/bc/P" + server.Ops}
+	return &Client{ops: server.Chain(uri, "P") + server.Ops}
 }
 
 // NewClientWithNetworkID returns a new platformvm.Client with the network ID set
 // for proper bech32 address formatting
 func NewClientWithNetworkID(uri string, networkID uint32) *Client {
 	return &Client{
-		ops:       uri + "/v1/bc/P" + server.Ops,
+		ops:       server.Chain(uri, "P") + server.Ops,
 		networkID: networkID,
 	}
 }

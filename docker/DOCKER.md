@@ -183,7 +183,7 @@ curl -X POST -H "Content-Type: application/json" \
 # Get block number
 curl -X POST -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}' \
-  http://localhost:9630/v1/bc/C/rpc
+  http://localhost:9630/v1/chain/C/rpc
 ```
 
 ## CI/CD

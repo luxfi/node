@@ -232,7 +232,7 @@ type ChainParameters struct {
 	FxIDs []ids.ID
 	// Invariant: Only used when [ID] is the P-chain ID.
 	CustomBeacons validators.Manager
-	// Name of the chain (used for HTTP routing alias, e.g., /v1/bc/zoo/rpc)
+	// Name of the chain (used for HTTP routing alias, e.g., /v1/chain/zoo/rpc)
 	Name string
 }
 
@@ -463,20 +463,6 @@ type ManagerConfig struct {
 	SecurityProfile *consensusconfig.ChainSecurityProfile
 }
 
-// chainPrefixes are the path segments every chain's HTTP routes are served
-// under, canonical first.
-//
-// "chain" is what these are: C-Chain, X-Chain, M-Chain. "bc" was short for
-// "blockchain", which is a word that does not survive contact with what we
-// actually run — a chain here may be a DAG or another graph, and none of them
-// is required to be a chain of blocks. It also saved three characters at the
-// cost of a reader knowing what it meant.
-//
-// "bc" stays because it is a live public route. Removing it would break every
-// deployed client and every integrator's bookmark, and a public path is not
-// ours to retract on a rename. It is an alias at the router — the same handler
-// reachable two ways — not a compatibility layer: nothing branches on it and
-// nothing translates.
 // lettersFor returns the single-letter routes a chain name earns, in both
 // cases. "M-Chain" gives {"M", "m"}; a name that is not <letter>-Chain gives
 // nothing.
@@ -550,8 +536,6 @@ var vmNames = []string{
 	"mpc", "bridge", "oracle", "relay", "dex", "graph",
 	"identity", "key", "quantum", "zk", "ai", "platform", "avm", "evm",
 }
-
-var chainPrefixes = []string{"chain", "bc"}
 
 type manager struct {
 	// Note: The string representation of a chain's ID is also considered to be an alias of the chain
@@ -967,15 +951,19 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				// base of "chain/C" and an endpoint of "/rpc" is
 				// /v1/chain/C/rpc.
 				//
-				// Every route is registered under both prefixes. `chain` is
-				// the name; `bc` is what it used to be called and answers so
-				// that deployed clients and anyone's bookmarks keep working.
-				// That is two paths to one handler rather than a compatibility
-				// layer — there is no second code path, nothing translates,
-				// and deleting the old prefix later is deleting a slice entry.
+				// One segment, [constants.ChainAliasPrefix]. "chain" is what
+				// these are: C-Chain, X-Chain, M-Chain. "bc" was short for
+				// "blockchain", a word that does not survive contact with what
+				// we run — a chain here may be a DAG or another graph, and
+				// none of them is required to be a chain of blocks. Clients
+				// reach the same address through [server.Chain].
 				route := func(base string) {
-					for _, prefix := range chainPrefixes {
-						m.Server.AddRoute(handler, prefix+"/"+base, endpoint)
+					if err := m.Server.AddRoute(handler, constants.ChainAliasPrefix+"/"+base, endpoint); err != nil {
+						m.Log.Error("failed to add chain route",
+							log.String("base", base),
+							log.String("endpoint", endpoint),
+							log.Err(err),
+						)
 					}
 				}
 
@@ -1034,7 +1022,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				m.Log.Info("Registered HTTP handler",
 					log.String("chainAlias", chainAlias),
 					log.Stringer("chainID", chainParams.ID),
-					log.String("prefixes", strings.Join(chainPrefixes, ",")),
+					log.String("prefix", constants.ChainAliasPrefix),
 					log.String("endpoint", endpoint),
 				)
 			}
@@ -1076,9 +1064,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 	m.Log.Info("║ VM ID:", log.Stringer("vmID", chainParams.VMID))
 	m.Log.Info("║ Network ID:", log.Stringer("chainID", chainParams.ChainID))
 	m.Log.Info("║ Endpoints available at:")
-	m.Log.Info("║   → /v1/bc/" + chainParams.ID.String())
+	m.Log.Info("║   → " + server.Chain("", chainParams.ID.String()))
 	if chainAlias != chainParams.ID.String() {
-		m.Log.Info("║   → /v1/bc/" + chainAlias)
+		m.Log.Info("║   → " + server.Chain("", chainAlias))
 	}
 	m.Log.Info("╚══════════════════════════════════════════════════════════════════╝")
 
@@ -2255,17 +2243,32 @@ func (m *manager) createDAG(
 	} else if len(handlers) > 0 {
 		chainIDStr := chainParams.ID.String()
 		for endpoint, handler := range handlers {
-			m.Server.AddRoute(handler, "bc/"+chainIDStr, endpoint)
+			// A DAG chain hangs from the same segment as every other chain, and
+			// says so when a registration does not take. Its routes were once
+			// written out here under a segment of their own, which is how a chain
+			// came to be running, serving, and absent from the address the rest of
+			// the node publishes.
+			route := func(base string) {
+				if err := m.Server.AddRoute(handler, constants.ChainAliasPrefix+"/"+base, endpoint); err != nil {
+					m.Log.Error("failed to add DAG chain route",
+						log.String("base", base),
+						log.String("endpoint", endpoint),
+						log.Err(err),
+					)
+				}
+			}
+
+			route(chainIDStr)
 			// Register name alias (e.g., "x-chain")
 			if chainParams.Name != "" {
-				m.Server.AddRoute(handler, "bc/"+strings.ToLower(chainParams.Name), endpoint)
+				route(strings.ToLower(chainParams.Name))
 			}
 			// Register standard single-letter alias
 			for alias, name := range map[string]string{
 				"X": "X-Chain", "Q": "Q-Chain",
 			} {
 				if strings.EqualFold(chainParams.Name, name) {
-					m.Server.AddRoute(handler, "bc/"+alias, endpoint)
+					route(alias)
 					m.Log.Info("Registered DAG chain HTTP handler",
 						log.String("alias", alias),
 						log.Stringer("chainID", chainParams.ID),
