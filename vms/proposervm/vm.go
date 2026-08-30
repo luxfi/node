@@ -13,6 +13,7 @@ import (
 
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
+	"github.com/zap-proto/zip"
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
@@ -74,10 +75,13 @@ type VM struct {
 	tree.Tree
 	mockable.Clock
 
-	lock           sync.Mutex
-	rt             *runtime.Runtime
-	db             *versiondb.Database
-	logger         log.Logger
+	lock   sync.Mutex
+	rt     *runtime.Runtime
+	db     *versiondb.Database
+	logger log.Logger
+	// ops is the proposer wrapper's operations, held so shutdown can stop the
+	// listener they run on.
+	ops            *zip.App
 	validatorState validators.State
 	netIDsCache    cache.Cacher[ids.ID, ids.ID] // chainID -> netID cache for GetNetworkID lookups
 
@@ -344,6 +348,11 @@ func (vm *VM) newWindower() proposer.Windower {
 func (vm *VM) Shutdown(ctx context.Context) error {
 	if err := vm.db.Commit(); err != nil {
 		return err
+	}
+	if vm.ops != nil {
+		if err := vm.ops.Shutdown(); err != nil {
+			vm.logger.Warn("stopping the proposer's operations", log.Err(err))
+		}
 	}
 	// ChainVM doesn't have Shutdown in new consensus
 	// return vm.ChainVM.Shutdown(ctx)
@@ -820,27 +829,23 @@ func (vm *VM) InnerLastAcceptedHeight(ctx context.Context) (uint64, error) {
 	return blk.Height(), nil
 }
 
-// CreateHandlers returns HTTP handlers for both the proposervm API and the inner ChainVM
+// CreateHandlers returns this VM's handlers: the proposer wrapper's own
+// operations, and whatever the inner VM serves.
 func (vm *VM) CreateHandlers(ctx context.Context) (map[string]http.Handler, error) {
-	// Create the proposervm-specific handler
-	proposerHandler, err := NewHTTPHandler(vm)
+	app, proposer, err := NewHTTPHandler(vm)
 	if err != nil {
 		return nil, err
 	}
+	vm.ops = app
 
-	// Get the inner ChainVM handlers
 	handlers, err := vms.DelegateHandlers(ctx, vm.ChainVM)
 	if err != nil {
 		return nil, err
 	}
-
-	// Initialize handlers map if it's nil
 	if handlers == nil {
 		handlers = make(map[string]http.Handler)
 	}
-
-	// Add the proposervm handler to the map
-	handlers["/proposervm"] = proposerHandler
+	handlers["/proposervm/ops"] = proposer
 	return handlers, nil
 }
 
