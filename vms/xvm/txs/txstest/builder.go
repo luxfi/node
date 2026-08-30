@@ -6,12 +6,11 @@ package txstest
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/luxfi/ids"
 	wkeychain "github.com/luxfi/keychain"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/vm/chains/atomic"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/state"
@@ -19,7 +18,10 @@ import (
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
 	"github.com/luxfi/node/wallet/network/primary/common"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	"github.com/luxfi/vm/chains/atomic"
 )
 
 type Builder struct {
@@ -262,4 +264,46 @@ func (b *Builder) builders(kc *secp256k1fx.Keychain) (builder.Builder, signer.Si
 		signer    = signer.New(kcAdapter, wa)
 	)
 	return builder, signer
+}
+
+// TransferNFT moves the NFT of [assetID] in [groupID] to [to], drawing the
+// operation from whichever of [utxos] the keychain can spend.
+func (b *Builder) TransferNFT(
+	utxos []*lux.UTXO,
+	kc *secp256k1fx.Keychain,
+	assetID ids.ID,
+	groupID uint32,
+	to ids.ShortID,
+	changeAddr ids.ShortID,
+) (*txs.Tx, error) {
+	now := uint64(time.Now().Unix())
+	for _, utxo := range utxos {
+		if utxo.AssetID() != assetID {
+			continue
+		}
+		out, ok := utxo.Out.(*nftfx.TransferOutput)
+		if !ok || out.GroupID != groupID {
+			continue
+		}
+		indices, _, ok := kc.Match(&out.OutputOwners, now)
+		if !ok {
+			continue
+		}
+		return b.Operation([]*txs.Operation{{
+			Asset:   utxo.Asset,
+			UTXOIDs: []*lux.UTXOID{&utxo.UTXOID},
+			Op: &nftfx.TransferOperation{
+				Input: secp256k1fx.Input{SigIndices: indices},
+				Output: nftfx.TransferOutput{
+					GroupID: out.GroupID,
+					Payload: out.Payload,
+					OutputOwners: secp256k1fx.OutputOwners{
+						Threshold: 1,
+						Addrs:     []ids.ShortID{to},
+					},
+				},
+			},
+		}}, kc, changeAddr)
+	}
+	return nil, fmt.Errorf("no spendable NFT of asset %s in group %d", assetID, groupID)
 }

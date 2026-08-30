@@ -33,11 +33,11 @@ import (
 	"time"
 
 	consensusconfig "github.com/luxfi/consensus/config"
-	"github.com/luxfi/log"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
 	validators "github.com/luxfi/validators"
 )
 
@@ -45,10 +45,10 @@ import (
 // on the command line. A nil field means "not set", so the network default from
 // selectConsensusParams stands.
 //
-// It exists because parameter selection used to be a pure function of
-// (sybilProtection, networkID) and consulted NO operator input, which stranded
-// Hanzo L1 36963: a five-validator value network falls to the default branch and
-// gets DefaultParams — K=20, α=14, BetaVirtuous=14 — so an uncontested block
+// It exists because parameter selection cannot be a pure function of
+// (sybilProtection, networkID) alone: a small value network falls to the default
+// branch and gets DefaultParams — K=20, α=14, BetaVirtuous=14 — so an
+// uncontested block
 // needed FOURTEEN consecutive clean polls and the chain froze at height 3248
 // while --consensus-sample-size=5 --consensus-quorum-size=4
 // --consensus-commit-threshold=2 sat in the node config reaching nothing. That is
@@ -90,9 +90,10 @@ func (o *ConsensusOverrides) ApplyTo(p consensusconfig.Parameters) consensusconf
 	}
 	if o.Beta != nil {
 		// Beta alone is not enough. A block with no conflict takes the VIRTUOUS
-		// path, so acceptance is gated by BetaVirtuous — leaving it at the
-		// default while Beta drops is precisely how 36963 froze. BetaRogue is
-		// raised to match when it would otherwise sit below Beta, never lowered.
+		// path, so acceptance is gated by BetaVirtuous: lowering Beta while
+		// BetaVirtuous keeps its default leaves uncontested blocks needing the
+		// default's run of clean polls. BetaRogue is raised to match when it
+		// would otherwise sit below Beta, never lowered.
 		b := *o.Beta
 		p.Beta = uint32(b)
 		p.BetaVirtuous = b
@@ -248,14 +249,12 @@ func (v *blsVoteVerifier) sample(c *atomic.Uint64, reason string, nodeID ids.Nod
 // blsPublicKeyFromValidatorBytes parses a validator's registered BLS public key
 // in EITHER supported G1 encoding.
 //
-// This is not defensive coding — it is the Hanzo L1 36963 halt. Every validator
-// in that chain's set carries a 96-byte UNCOMPRESSED G1 key, while the verifier
-// called only PublicKeyFromCompressedBytes (48-byte compressed, bls.PublicKeyLen).
-// So key decompression failed for every voter, VerifyVote returned false before
-// ever reaching bls.Verify, no vote could be counted toward the quorum, alpha was
-// unreachable BY CONSTRUCTION and the chain sat at one height forever with every
-// other counter healthy: blocks built, gossiped, chits answered 4-of-4, thousands
-// of signed votes broadcast and received.
+// This is not defensive coding. A validator set may carry 96-byte UNCOMPRESSED
+// G1 keys, and a verifier that calls only PublicKeyFromCompressedBytes (48-byte
+// compressed, bls.PublicKeyLen) fails to decompress every one of them. VerifyVote
+// then returns false before reaching bls.Verify, so no vote counts toward the
+// quorum and alpha is unreachable by construction — while every other counter
+// reads healthy, because blocks still build, gossip, and answer chits.
 //
 // The stored keys live in chain state and cannot be re-encoded without a genesis
 // change, so the verifier has to read what is actually there. Safety is unchanged:
@@ -532,7 +531,8 @@ func hashValidatorSet(set map[ids.NodeID]*validators.GetValidatorOutput) ids.ID 
 // kind 1 = signed vote (payload = engine encodeSignedVote: nodeID+sig)
 // kind 2 = finality cert (payload = engine cert MarshalBinary)
 // (round-scoped view-change prevotes are engine-INTERNAL since consensus v1.36 —
-//  the node no longer frames or routes a prevote kind)
+//
+//	the node no longer frames or routes a prevote kind)
 var quorumGossipMagic = [4]byte{'L', 'X', 'Q', 0x01}
 
 const (

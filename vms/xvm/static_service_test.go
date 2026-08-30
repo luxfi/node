@@ -35,45 +35,47 @@ func TestBuildGenesis(t *testing.T) {
 	}
 	args := BuildGenesisArgs{
 		Encoding: formatting.Hex,
-		GenesisData: map[string]AssetDefinition{
-			"asset1": {
+		GenesisData: Assets{
+			{
+				Alias:        "asset1",
 				Name:         "myFixedCapAsset",
 				Symbol:       "MFCA",
 				Denomination: 8,
-				InitialState: map[string][]interface{}{
-					"fixedCap": {
-						Holder{
+				InitialState: InitialState{
+					FixedCap: []Holder{
+						{
 							Amount:  100000,
 							Address: addrMap["A9bTQjfYGBFK3JPRJqF2eh3JYL7cHocvy"],
 						},
-						Holder{
+						{
 							Amount:  100000,
 							Address: addrMap["6mxBGnjGDCKgkVe7yfrmvMA7xE7qCv3vv"],
 						},
-						Holder{
+						{
 							Amount:  json.Uint64(startBalance),
 							Address: addrMap["6ncQ19Q2U4MamkCYzshhD8XFjfwAWFzTa"],
 						},
-						Holder{
+						{
 							Amount:  json.Uint64(startBalance),
 							Address: addrMap["Jz9ayEDt7dx9hDx45aXALujWmL9ZUuqe7"],
 						},
 					},
 				},
 			},
-			"asset2": {
+			{
+				Alias:  "asset2",
 				Name:   "myVarCapAsset",
 				Symbol: "MVCA",
-				InitialState: map[string][]interface{}{
-					"variableCap": {
-						Owners{
+				InitialState: InitialState{
+					VariableCap: []Owners{
+						{
 							Threshold: 1,
 							Minters: []string{
 								addrMap["A9bTQjfYGBFK3JPRJqF2eh3JYL7cHocvy"],
 								addrMap["6mxBGnjGDCKgkVe7yfrmvMA7xE7qCv3vv"],
 							},
 						},
-						Owners{
+						{
 							Threshold: 2,
 							Minters: []string{
 								addrMap["6ncQ19Q2U4MamkCYzshhD8XFjfwAWFzTa"],
@@ -83,11 +85,12 @@ func TestBuildGenesis(t *testing.T) {
 					},
 				},
 			},
-			"asset3": {
-				Name: "myOtherVarCapAsset",
-				InitialState: map[string][]interface{}{
-					"variableCap": {
-						Owners{
+			{
+				Alias: "asset3",
+				Name:  "myOtherVarCapAsset",
+				InitialState: InitialState{
+					VariableCap: []Owners{
+						{
 							Threshold: 1,
 							Minters: []string{
 								addrMap["A9bTQjfYGBFK3JPRJqF2eh3JYL7cHocvy"],

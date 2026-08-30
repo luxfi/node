@@ -506,8 +506,8 @@ func (c *Client) GetStake(
 	}
 
 	staked := make(map[ids.ID]uint64, len(res.Stakeds))
-	for assetID, amount := range res.Stakeds {
-		staked[assetID] = uint64(amount)
+	for _, amount := range res.Stakeds {
+		staked[amount.AssetID] = uint64(amount.Value)
 	}
 
 	outputs := make([][]byte, len(res.Outputs))
@@ -570,7 +570,7 @@ func (c *Client) GetRewardUTXOs(ctx context.Context, args *apitypes.GetTxArgs, o
 func (c *Client) GetTimestamp(ctx context.Context, options ...rpc.Option) (time.Time, error) {
 	res := &GetTimestampReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getTimestamp", struct{}{}, res, options...)
-	return res.Timestamp, err
+	return res.Timestamp.Time(), err
 }
 
 // GetValidatorsAt returns the weights of the validator set of a provided chain
@@ -587,7 +587,18 @@ func (c *Client) GetValidatorsAt(
 		ChainID:  chainID,
 		Height: height,
 	}, res, options...)
-	return res.Validators, err
+	if err != nil {
+		return nil, err
+	}
+	set := make(map[ids.NodeID]*validators.GetValidatorOutput, len(res.Validators))
+	for _, vdr := range res.Validators {
+		set[vdr.NodeID] = &validators.GetValidatorOutput{
+			NodeID:    vdr.NodeID,
+			PublicKey: vdr.PublicKey,
+			Weight:    uint64(vdr.Weight),
+		}
+	}
+	return set, nil
 }
 
 // GetBlock returns blockID.
@@ -631,7 +642,7 @@ func (c *Client) GetFeeState(ctx context.Context, options ...rpc.Option) (
 ) {
 	res := &GetFeeStateReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getFeeState", struct{}{}, res, options...)
-	return res.State, res.Price, res.Time, err
+	return res.State, res.Price, res.Time.Time(), err
 }
 
 // GetValidatorFeeConfig returns the validator fee config.
@@ -650,7 +661,7 @@ func (c *Client) GetValidatorFeeState(ctx context.Context, options ...rpc.Option
 ) {
 	res := &GetValidatorFeeStateReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getValidatorFeeState", struct{}{}, res, options...)
-	return res.Excess, res.Price, res.Time, err
+	return res.Excess, res.Price, res.Time.Time(), err
 }
 
 func AwaitTxAccepted(

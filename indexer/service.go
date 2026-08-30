@@ -21,7 +21,7 @@ type service struct {
 type FormattedContainer struct {
 	ID        ids.ID              `json:"id"`
 	Bytes     string              `json:"bytes"`
-	Timestamp time.Time           `json:"timestamp"`
+	Timestamp json.Time           `json:"timestamp"`
 	Encoding  formatting.Encoding `json:"encoding"`
 	Index     json.Uint64         `json:"index"`
 }
@@ -37,7 +37,7 @@ func newFormattedContainer(c Container, index uint64, enc formatting.Encoding) (
 		return fc, err
 	}
 	fc.Bytes = bytesStr
-	fc.Timestamp = time.Unix(0, c.Timestamp)
+	fc.Timestamp = json.NewTime(time.Unix(0, c.Timestamp))
 	return fc, nil
 }
 

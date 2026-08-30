@@ -52,7 +52,7 @@ func (c *Client) GetContainerRange(ctx context.Context, startIndex uint64, numTo
 		}
 		response[i] = Container{
 			ID:        resp.ID,
-			Timestamp: resp.Timestamp.Unix(),
+			Timestamp: resp.Timestamp.Time().Unix(),
 			Bytes:     containerBytes,
 		}
 	}
@@ -76,7 +76,7 @@ func (c *Client) GetContainerByIndex(ctx context.Context, index uint64, options 
 	}
 	return Container{
 		ID:        fc.ID,
-		Timestamp: fc.Timestamp.Unix(),
+		Timestamp: fc.Timestamp.Time().Unix(),
 		Bytes:     containerBytes,
 	}, nil
 }
@@ -97,7 +97,7 @@ func (c *Client) GetLastAccepted(ctx context.Context, options ...rpc.Option) (Co
 	}
 	return Container{
 		ID:        fc.ID,
-		Timestamp: fc.Timestamp.Unix(),
+		Timestamp: fc.Timestamp.Time().Unix(),
 		Bytes:     containerBytes,
 	}, uint64(fc.Index), nil
 }
@@ -137,7 +137,7 @@ func (c *Client) GetContainerByID(ctx context.Context, id ids.ID, options ...rpc
 	}
 	return Container{
 		ID:        fc.ID,
-		Timestamp: fc.Timestamp.Unix(),
+		Timestamp: fc.Timestamp.Time().Unix(),
 		Bytes:     containerBytes,
 	}, uint64(fc.Index), nil
 }

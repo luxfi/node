@@ -10,11 +10,24 @@ import (
 	"github.com/luxfi/node/utils/json"
 )
 
+// Height is a block height, or the request to use whatever height the next
+// proposal will be built at.
+//
+// On the JSON edge that is three spellings of one field — a quoted number, the
+// word "proposed", and null for "leave it as it is". In memory and on the plane
+// it is one u64 with ProposedHeight as its sentinel, which is what it has always
+// been: the second spelling is the reserved value and the third is the absence
+// of the field. So this crosses as a u64 and needs nothing added to it. What a
+// reader of the schema needs is to be TOLD which value is the sentinel, and that
+// is said in the doc comment of every method that takes one.
 type Height json.Uint64
 
 const (
 	ProposedHeightJSON = `"proposed"`
-	ProposedHeight     = math.MaxUint64
+	// ProposedHeight is the reserved height: MaxUint64 means "the height the
+	// next proposal will be built at" rather than a height. Supplying it as a
+	// number is refused, so the sentinel can never collide with a real height.
+	ProposedHeight = math.MaxUint64
 )
 
 var errInvalidHeight = errors.New("invalid height")

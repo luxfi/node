@@ -11,9 +11,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 )
 
-// One unit for the whole node. A second definition here once said 1e9 and
-// described a chain that does not exist: every threshold in this file was
-// a thousand times what the live P-Chain enforces.
+// One unit for the whole node. Every threshold in this file is denominated in
+// it, so a second definition of the unit would silently rescale all of them.
 const (
 	Lux     = units.Lux
 	KiloLux = units.KiloLux

@@ -439,33 +439,12 @@ set_log_level "info"
      --http-host=127.0.0.1
    ```
 
-2. **Authentication**
-   ```bash
-   # Require password
-   ./build/node \
-     --api-admin-enabled=true \
-     --api-auth-required=true \
-     --api-auth-password="secure-password"
-   ```
-
-3. **Firewall Rules**
+2. **Firewall Rules**
    ```bash
    # Block external access
    iptables -A INPUT -p tcp --dport 9630 -s 127.0.0.1 -j ACCEPT
    iptables -A INPUT -p tcp --dport 9630 -j DROP
    ```
-
-### Audit Logging
-
-Enable audit logging for admin operations:
-
-```json
-{
-  "api-admin-enabled": true,
-  "api-audit-enabled": true,
-  "api-audit-file": "/var/log/luxd/audit.log"
-}
-```
 
 ## Automation Scripts
 

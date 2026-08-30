@@ -7,12 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/go-json-experiment/json"
 	"github.com/gorilla/mux"
 
 	apitypes "github.com/luxfi/api/types"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/math/set"
 )
 
@@ -112,6 +114,41 @@ func (r *router) serveBelowMount(writer http.ResponseWriter, request *http.Reque
 	http.NotFound(writer, request)
 }
 
+// servePath dispatches on the URL, matching case-insensitively where it can.
+//
+// A path is a name a person types, and a person does not expect /v1/chain/M
+// and /v1/chain/m to be different places. So a path that matches nothing is
+// tried again in lower case.
+//
+// It cannot simply be lowercased on the way in. A chain id is base58 —
+// `2erizn2pu4gbafsFzbyfqwzhkR2RT1qFdwr7kKKwn5T3BH3wW8` — where case carries
+// information, and flattening it would make every id-addressed route
+// unreachable. Matching as sent first means an id hits on the first attempt
+// and never reaches the retry; only paths that already failed are folded.
+func (r *router) servePath(writer http.ResponseWriter, request *http.Request) {
+	var match mux.RouteMatch
+	if r.router.Match(request, &match) {
+		r.router.ServeHTTP(writer, request)
+		return
+	}
+
+	lower := strings.ToLower(request.URL.Path)
+	if lower == request.URL.Path {
+		// Already folded and still no match: this path is not served, and
+		// answering as the mux does keeps the 404 in one place.
+		r.router.ServeHTTP(writer, request)
+		return
+	}
+
+	folded := request.Clone(request.Context())
+	folded.URL.Path = lower
+	if r.router.Match(folded, &match) {
+		r.router.ServeHTTP(writer, folded)
+		return
+	}
+	r.router.ServeHTTP(writer, request)
+}
+
 func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
@@ -132,7 +169,7 @@ func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if !ok {
 		// If there is no routing header, fall-back to the legacy path-based
 		// routing
-		r.router.ServeHTTP(writer, request)
+		r.servePath(writer, request)
 		return
 	}
 
@@ -184,9 +221,9 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 				P string `json:"p"`
 				X string `json:"x"`
 			}{
-				C: baseURL + "/bc/C/rpc",
-				P: baseURL + "/bc/P",
-				X: baseURL + "/bc/X",
+				C: baseURL + "/" + constants.ChainAliasPrefix + "/C/rpc",
+				P: baseURL + "/" + constants.ChainAliasPrefix + "/P",
+				X: baseURL + "/" + constants.ChainAliasPrefix + "/X",
 			},
 			Endpoints: struct {
 				RPC       string `json:"rpc"`
@@ -194,8 +231,8 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 				Info      string `json:"info"`
 				Health    string `json:"health"`
 			}{
-				RPC:       baseURL + "/bc/C/rpc",
-				Websocket: baseURL + "/bc/C/ws",
+				RPC:       baseURL + "/" + constants.ChainAliasPrefix + "/C/rpc",
+				Websocket: baseURL + "/" + constants.ChainAliasPrefix + "/C/ws",
 				Info:      baseURL + "/info",
 				Health:    baseURL + "/health",
 			},
@@ -210,10 +247,10 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 // handleRootPOST proxies JSON-RPC requests to the C-chain
 func (r *router) handleRootPOST(w http.ResponseWriter, req *http.Request) {
 	// Look up the C-chain RPC handler
-	handler, err := r.GetHandler(baseURL+"/bc/C", "/rpc")
+	handler, err := r.GetHandler(baseURL+"/"+constants.ChainAliasPrefix+"/C", "/rpc")
 	if err != nil {
 		// Try alternate path formats
-		handler, err = r.GetHandler(baseURL+"/bc/C/rpc", "")
+		handler, err = r.GetHandler(baseURL+"/"+constants.ChainAliasPrefix+"/C/rpc", "")
 		if err != nil {
 			// Return proper JSON-RPC error
 			w.Header().Set("Content-Type", "application/json")

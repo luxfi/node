@@ -1,0 +1,1 @@
+{"weights":[1,1,1,1],"maxCapacity":1000000,"maxPerSecond":100000,"targetPerSecond":50000,"minPrice":1,"excessConversionConstant":5000}
