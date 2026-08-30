@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	choices "github.com/luxfi/consensus/core/choices"
 	formatting "github.com/luxfi/formatting"
 	ids "github.com/luxfi/ids"
 	json "github.com/luxfi/node/utils/json"
@@ -693,44 +692,6 @@ func (x *GetBalanceReply) UnmarshalZAP(data []byte) error {
 		}
 		x.UTXOIDs = rows
 	}
-	return nil
-}
-
-// ---- GetTxStatusReply --------------------------------------------------
-
-const (
-	getTxStatusReplyStatusAt = 0
-	getTxStatusReplySize     = 8
-)
-
-var _ interface {
-	MarshalZAP() ([]byte, error)
-	UnmarshalZAP([]byte) error
-} = (*GetTxStatusReply)(nil)
-
-// MarshalZAP writes GetTxStatusReply from constant offsets.
-func (x *GetTxStatusReply) MarshalZAP() ([]byte, error) {
-	if x == nil {
-		return nil, nil
-	}
-	b := zap.NewBuilder(getTxStatusReplySize + 256)
-	ob := b.StartObject(getTxStatusReplySize)
-	ob.SetUint8(getTxStatusReplyStatusAt, uint8(x.Status))
-	ob.FinishAsRoot()
-	return b.Finish(), nil
-}
-
-// UnmarshalZAP reads GetTxStatusReply out of the buffer that arrived.
-func (x *GetTxStatusReply) UnmarshalZAP(data []byte) error {
-	if x == nil || len(data) == 0 {
-		return nil
-	}
-	m, err := zap.Parse(data)
-	if err != nil {
-		return fmt.Errorf("GetTxStatusReply: %w", err)
-	}
-	o := m.Root()
-	x.Status = choices.Status(o.Uint8(getTxStatusReplyStatusAt))
 	return nil
 }
 

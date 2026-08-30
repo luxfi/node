@@ -8,7 +8,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/gorilla/rpc/v2"
+	"github.com/zap-proto/zip"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
@@ -17,7 +17,6 @@ import (
 	"github.com/luxfi/node/chains"
 	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/server/http"
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
@@ -110,6 +109,10 @@ type indexer struct {
 
 	// If false, don't create index for a chain when RegisterChain is called
 	indexingEnabled bool
+
+	// The operations served for each index, held so shutdown can stop the
+	// listeners they run on.
+	ops []*zip.App
 
 	// Chain ID --> index of blocks of that chain (if applicable)
 	blockIndices map[ids.ID]*index
@@ -293,16 +296,15 @@ func (i *indexer) registerChainHelper(
 		return nil, err
 	}
 
-	// Create an API endpoint for this index
-	apiServer := rpc.NewServer()
-	codec := json.NewCodec()
-	apiServer.RegisterCodec(codec, "application/json")
-	apiServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-	if err := apiServer.RegisterService(&service{index: index}, "index"); err != nil {
+	// Serve this index's operations beneath its own endpoint, so
+	// /v1/index/<chain>/<what>/ops is where they answer.
+	app, handler, err := (&service{index: index}).mount(i.log, name+"-"+endpoint)
+	if err != nil {
 		_ = index.Close()
 		return nil, err
 	}
-	if err := i.pathAdder.AddRoute(apiServer, "index/"+name, "/"+endpoint); err != nil {
+	i.ops = append(i.ops, app)
+	if err := i.pathAdder.AddRoute(handler, "index/"+name, "/"+endpoint+"/ops"); err != nil {
 		_ = index.Close()
 		return nil, err
 	}
@@ -344,6 +346,9 @@ func (i *indexer) close() error {
 			blockIndex.Close(),
 			i.blockAcceptorGroup.DeregisterAcceptor(chainID, fmt.Sprintf("%s%s", indexNamePrefix, chainID)),
 		)
+	}
+	for _, app := range i.ops {
+		errs.Add(app.Shutdown())
 	}
 	errs.Add(i.db.Close())
 

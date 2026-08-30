@@ -20,7 +20,6 @@ package proposervm
 import (
 	"context"
 	"errors"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -257,14 +256,15 @@ func TestTheProposedHeightNeverWalksBackFromThePreferredBlock(t *testing.T) {
 	require.NoError(vm.State.PutBlock(sb))
 	vm.preferred = sb.ID()
 
-	handler, err := NewHTTPHandler(vm)
+	app, handler, err := NewHTTPHandler(vm)
 	require.NoError(err)
 	require.NotNil(handler)
+	t.Cleanup(func() { _ = app.Shutdown() })
 
 	svc := &Service{vm: vm}
 	ask := func() uint64 {
-		reply := &GetProposedHeightReply{}
-		require.NoError(svc.GetProposedHeight(httptest.NewRequest("POST", "/", nil), &GetProposedHeightArgs{}, reply))
+		reply, err := svc.getProposedHeight(context.Background(), &GetProposedHeightArgs{})
+		require.NoError(err)
 		return reply.ProposedHeight
 	}
 
@@ -291,14 +291,15 @@ func TestTheProposedHeightNeverWalksBackFromThePreferredBlock(t *testing.T) {
 	vm.validatorState = &validatorstest.State{
 		GetCurrentHeightF: func(context.Context) (uint64, error) { return 0, boom },
 	}
-	reply := &GetProposedHeightReply{}
-	require.ErrorIs(svc.GetProposedHeight(httptest.NewRequest("POST", "/", nil), &GetProposedHeightArgs{}, reply), boom)
+	_, err = svc.getProposedHeight(context.Background(), &GetProposedHeightArgs{})
+	require.ErrorIs(err, boom)
 
 	// And an unheld preference is an error rather than an answer about a block
 	// this node does not have.
 	atHeight(envPChainHeight)
 	vm.preferred = ids.GenerateTestID()
-	require.Error(svc.GetProposedHeight(httptest.NewRequest("POST", "/", nil), &GetProposedHeightArgs{}, reply))
+	_, err = svc.getProposedHeight(context.Background(), &GetProposedHeightArgs{})
+	require.Error(err)
 }
 
 // TestWaitForEventDoesNotFireBeforeThisNodesSlot pins the gate between the

@@ -211,7 +211,8 @@ func TestIndexer(t *testing.T) {
 	require.True(previouslyIndexed)
 	require.Equal(1, server.timesCalled)
 	require.Equal("index/chain1", server.bases[0])
-	require.Equal("/block", server.endpoints[0])
+	// The operations sit beneath what they are about: /v1/index/chain1/block/ops.
+	require.Equal("/block/ops", server.endpoints[0])
 	require.Len(idxr.blockIndices, 1)
 	require.Empty(idxr.txIndices)
 	require.Empty(idxr.vtxIndices)
@@ -301,7 +302,7 @@ func TestIndexer(t *testing.T) {
 	require.NoError(err)
 	require.Equal(blkID, container.ID)
 	require.Equal(1, server.timesCalled) // block index for chain
-	require.Contains(server.endpoints, "/block")
+	require.Contains(server.endpoints, "/block/ops")
 
 	// Register a second chain (block-based, not DAG)
 	// Note: DAG/vertex/tx indices are not supported in the new consensus package
@@ -319,7 +320,7 @@ func TestIndexer(t *testing.T) {
 	// Only block indices are created now (vtx/tx indices not supported)
 	require.Equal(2, server.timesCalled) // block index for chain1, block index for chain2
 	require.Contains(server.bases, "index/chain2")
-	require.Contains(server.endpoints, "/block")
+	require.Contains(server.endpoints, "/block/ops")
 	require.Len(idxr.blockIndices, 2)
 	// No vertex or tx indices in new consensus package
 	require.Empty(idxr.txIndices)
