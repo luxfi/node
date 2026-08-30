@@ -4,67 +4,72 @@
 package proposervm
 
 import (
+	"context"
 	"net/http"
 
-	"github.com/gorilla/rpc/v2"
+	"github.com/luxfi/log"
+	"github.com/zap-proto/zip"
 
-	"github.com/luxfi/node/utils/json"
+	server "github.com/luxfi/node/server/http"
 )
 
-// Service wraps proposervm for RPC/JSON-RPC access
+//go:generate go run github.com/zap-proto/zip/cmd/zipdoc
+
+// Service answers for the proposer wrapper around a chain's own VM.
 type Service struct {
 	vm *VM
 }
 
-// GetProposedHeightArgs are the arguments for GetProposedHeight
+// GetProposedHeightArgs are the arguments for getProposedHeight
 type GetProposedHeightArgs struct{}
 
-// GetProposedHeightReply is the response from GetProposedHeight
+// GetProposedHeightReply is the answer from getProposedHeight
 type GetProposedHeightReply struct {
-	// ProposedHeight is the P-Chain height that would be proposed
-	// for the next block built on the current preferred block
+	// ProposedHeight is the P-Chain height that would be proposed for the next
+	// block built on the current preferred block.
 	ProposedHeight uint64 `json:"proposedHeight"`
 }
 
-// GetProposedHeight returns the P-Chain height that would be proposed
-// for the next block built on the current preferred block.
+// getProposedHeight returns the P-Chain height this node would propose for the
+// next block built on its preferred one.
 //
-// Example JSON-RPC call:
-//
-//	curl -X POST --data '{
-//	    "jsonrpc":"2.0",
-//	    "id"     :1,
-//	    "method" :"proposervm.getProposedHeight",
-//	    "params" :{}
-//	}' -H 'content-type:application/json;' http://127.0.0.1:9650/v1/bc/C/rpc
-func (s *Service) GetProposedHeight(r *http.Request, _ *GetProposedHeightArgs, reply *GetProposedHeightReply) error {
-	ctx := r.Context()
-
+// Response: {"proposedHeight":42}
+func (s *Service) getProposedHeight(ctx context.Context, _ *GetProposedHeightArgs) (*GetProposedHeightReply, error) {
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
 	// Get the current preferred block
 	preferredBlock, err := s.vm.getBlock(ctx, s.vm.preferred)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Get the P-Chain height that would be proposed for a child of this block
 	proposedHeight, err := preferredBlock.selectChildPChainHeight(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	reply.ProposedHeight = proposedHeight
-	return nil
+	return &GetProposedHeightReply{ProposedHeight: proposedHeight}, nil
 }
 
-// NewHTTPHandler returns an HTTP handler to serve proposervm API endpoints
-func NewHTTPHandler(vm *VM) (http.Handler, error) {
-	server := rpc.NewServer()
-	server.RegisterCodec(json.NewCodec(), "application/json")
-	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
+// ops is what the proposer wrapper answers. It reads the height it would
+// propose next and changes nothing, so it is a GET and anyone may ask.
+func (s *Service) ops(logger log.Logger) *zip.App {
+	app := zip.New(zip.Config{
+		AppName:               "proposervm",
+		Logger:                logger,
+		DisableStartupMessage: true,
+	})
 
-	service := &Service{vm: vm}
-	return server, server.RegisterService(service, "proposervm")
+	zip.Get(app, "/proposed/height", s.getProposedHeight)
+
+	return app
+}
+
+// NewHTTPHandler serves the proposer wrapper's operations.
+func NewHTTPHandler(vm *VM) (*zip.App, http.Handler, error) {
+	app := (&Service{vm: vm}).ops(vm.logger)
+	handler, err := server.Mount(app)
+	return app, handler, err
 }

@@ -152,7 +152,7 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/valyala/fasthttp v1.73.0
 	github.com/zap-proto/http v0.3.5
-	github.com/zap-proto/zip v1.36.31
+	github.com/zap-proto/zip v1.36.34
 	go.uber.org/zap v1.27.1
 )
 

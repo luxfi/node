@@ -184,17 +184,29 @@ func dedup(s []string) []string {
 // op is one registered method, by the types it takes and returns.
 type op struct{ in, out string } // each "<importpath>.<Name>"
 
-// handlers reads every gorilla/rpc-shaped method in the tree and writes the
-// message list. The shape gorilla registers is exactly
-//
-//	func (r *T) M(*http.Request, *In, *Out) error
-//
-// so that is the whole predicate, and reading it from the source is what keeps
-// the list from being something somebody has to remember to add to.
+// handlers reads every handler method in the tree and writes the message list.
+// Reading it from the source is what keeps the list from being something
+// somebody has to remember to add to; see [carried] for what counts as one.
 func handlers(root string) error {
 	seen := map[string]bool{}
 	var found []string
 	fset := token.NewFileSet()
+
+	// Every file, parsed once. Two readings follow, and the second needs the
+	// first's answer about a package it may not have reached yet.
+	type source struct {
+		dir     string
+		pkg     string
+		file    *ast.File
+		imports map[string]string
+	}
+	var sources []source
+	// registered names the handlers a package hands to zip, per directory. A
+	// typed op is a method like any other until something registers it, so the
+	// REGISTRATION is what says it is one — reading the signature alone would
+	// claim every (ctx, *In) (*Out, error) method in the tree.
+	registered := map[string]map[string]bool{}
+
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
@@ -213,23 +225,37 @@ func handlers(root string) error {
 		if perr != nil {
 			return nil
 		}
-		rel, _ := filepath.Rel(root, filepath.Dir(path))
+		dir := filepath.Dir(path)
+		rel, _ := filepath.Rel(root, dir)
 		pkg := mod
 		if rel != "." {
 			pkg = mod + "/" + filepath.ToSlash(rel)
 		}
-		imports := importsOf(f)
-		for _, decl := range f.Decls {
+		sources = append(sources, source{dir: dir, pkg: pkg, file: f, imports: importsOf(f)})
+		for name := range handed(f) {
+			if registered[dir] == nil {
+				registered[dir] = map[string]bool{}
+			}
+			registered[dir][name] = true
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, src := range sources {
+		for _, decl := range src.file.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
-			if !ok || fn.Recv == nil || !fn.Name.IsExported() {
+			if !ok || fn.Recv == nil {
 				continue
 			}
-			params, ok := gorilla(fn)
+			params, ok := carried(fn, registered[src.dir])
 			if !ok {
 				continue
 			}
 			for _, p := range params {
-				name := spell(p, imports, pkg)
+				name := spell(p, src.imports, src.pkg)
 				if name == "" || seen[name] {
 					continue
 				}
@@ -237,46 +263,103 @@ func handlers(root string) error {
 				found = append(found, name)
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		return err
 	}
 	sort.Strings(found)
 	return write(filepath.Join(root, "cmd", "wire", "messages.go"), found)
 }
 
-// gorilla reports the (*http.Request, *In, *Out) error shape and returns the two
-// payload types.
-func gorilla(fn *ast.FuncDecl) ([]ast.Expr, bool) {
-	if fn.Type.Results == nil || len(fn.Type.Results.List) != 1 {
+// carried reports the two payload types a handler carries — its input and its
+// answer — in either spelling a handler has in this tree:
+//
+//	func (r *T) M(*http.Request, *In, *Out) error      the gorilla/rpc shape
+//	func (r *T) m(context.Context, *In) (*Out, error)  the typed op
+//
+// One predicate, because it is one question: what does this handler put on the
+// wire? Whether the name is exported is not part of the answer — gorilla finds
+// its methods by reflection and so needs them exported, while a typed op is
+// named by its own registration and does not. Keying the scan on exportedness
+// would have quietly emptied the message list as each service was converted,
+// and an op whose types state no wire cannot cross the plane at all.
+func carried(fn *ast.FuncDecl, ops map[string]bool) ([]ast.Expr, bool) {
+	if fn.Type.Results == nil {
 		return nil, false
 	}
-	if id, ok := fn.Type.Results.List[0].Type.(*ast.Ident); !ok || id.Name != "error" {
+	params := flatten(fn.Type.Params)
+	results := flatten(fn.Type.Results)
+	if len(results) == 0 {
 		return nil, false
 	}
-	var params []ast.Expr
-	for _, f := range fn.Type.Params.List {
+	if id, ok := results[len(results)-1].(*ast.Ident); !ok || id.Name != "error" {
+		return nil, false
+	}
+	switch {
+	case len(results) == 1 && len(params) == 3 && named(params[0], "http", "Request"):
+		return params[1:], true
+	case len(results) == 2 && len(params) == 2 && named(params[0], "context", "Context") && ops[fn.Name.Name]:
+		return []ast.Expr{params[1], results[0]}, true
+	}
+	return nil, false
+}
+
+// handed names the handlers this file hands to zip: the third argument of a
+// zip.Get/Post/Put/Patch/Delete call, which is a method value like s.getBlock.
+func handed(f *ast.File) map[string]bool {
+	out := map[string]bool{}
+	ast.Inspect(f, func(n ast.Node) bool {
+		call, ok := n.(*ast.CallExpr)
+		if !ok || len(call.Args) < 3 {
+			return true
+		}
+		verb, ok := call.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return true
+		}
+		if x, ok := verb.X.(*ast.Ident); !ok || x.Name != "zip" {
+			return true
+		}
+		switch verb.Sel.Name {
+		case "Get", "Post", "Put", "Patch", "Delete":
+		default:
+			return true
+		}
+		switch h := call.Args[2].(type) {
+		case *ast.SelectorExpr:
+			out[h.Sel.Name] = true
+		case *ast.Ident:
+			out[h.Name] = true
+		}
+		return true
+	})
+	return out
+}
+
+// flatten lists one parameter or result per value, since Go lets several share
+// one type.
+func flatten(list *ast.FieldList) []ast.Expr {
+	if list == nil {
+		return nil
+	}
+	var out []ast.Expr
+	for _, f := range list.List {
 		n := max(len(f.Names), 1)
 		for range n {
-			params = append(params, f.Type)
+			out = append(out, f.Type)
 		}
 	}
-	if len(params) != 3 {
-		return nil, false
+	return out
+}
+
+// named reports whether e is pkg.Name, through a pointer or not.
+func named(e ast.Expr, pkg, name string) bool {
+	if star, ok := e.(*ast.StarExpr); ok {
+		e = star.X
 	}
-	star, ok := params[0].(*ast.StarExpr)
-	if !ok {
-		return nil, false
+	sel, ok := e.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != name {
+		return false
 	}
-	sel, ok := star.X.(*ast.SelectorExpr)
-	if !ok {
-		return nil, false
-	}
-	if x, ok := sel.X.(*ast.Ident); !ok || x.Name != "http" || sel.Sel.Name != "Request" {
-		return nil, false
-	}
-	return params[1:], true
+	x, ok := sel.X.(*ast.Ident)
+	return ok && x.Name == pkg
 }
 
 func importsOf(f *ast.File) map[string]string {

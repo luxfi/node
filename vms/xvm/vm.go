@@ -11,24 +11,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 	metrics "github.com/luxfi/metric"
+	"github.com/zap-proto/zip"
 
 	"github.com/luxfi/address"
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensuschain "github.com/luxfi/consensus/engine/chain"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/container/linked"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/pubsub"
+	server "github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms/components/index"
 	"github.com/luxfi/node/vms/txs/auth"
@@ -146,7 +145,9 @@ type VM struct {
 	fxIndex *txs.FxIndex
 	fxs     []*extensions.ParsedFx
 
-	walletService WalletService
+	// ops is the chain's operations, served at /ops. Held so shutdown can stop
+	// the listener it runs on.
+	ops *zip.App
 
 	addressTxsIndexer index.AddressTxsIndexer
 
@@ -344,9 +345,6 @@ func (vm *VM) initialize(
 		return err
 	}
 
-	vm.walletService.vm = vm
-	vm.walletService.pendingTxs = linked.NewHashmap[ids.ID, *txs.Tx]()
-
 	// Initialize transaction indexer based on config
 	// Note: The indexer uses baseDB directly to avoid versiondb batching issues.
 	// Indexer writes need to be immediately visible and not subject to versiondb rollback.
@@ -423,6 +421,12 @@ func (vm *VM) Shutdown(context.Context) error {
 	vm.onShutdownCtxCancel()
 	vm.awaitShutdown.Wait()
 
+	if vm.ops != nil {
+		if err := vm.ops.Shutdown(); err != nil {
+			vm.log.Warn("stopping the chain's operations", log.Err(err))
+		}
+	}
+
 	return errors.Join(
 		vm.state.Close(),
 		vm.baseDB.Close(),
@@ -439,35 +443,17 @@ func (vm *VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, er
 }
 
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
-	codec := json.NewCodec()
-
-	rpcServer := rpc.NewServer()
-	rpcServer.RegisterCodec(codec, "application/json")
-	rpcServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-	if vm.metrics != nil {
-		rpcServer.RegisterInterceptFunc(vm.metrics.InterceptRequest)
-		rpcServer.RegisterAfterFunc(vm.metrics.AfterRequest)
-	}
-	// name this service "xvm"
-	if err := rpcServer.RegisterService(&Service{vm: vm}, "xvm"); err != nil {
+	app := (&Service{vm: vm}).ops(vm.log)
+	handler, err := server.Mount(app)
+	if err != nil {
 		return nil, err
 	}
-
-	walletServer := rpc.NewServer()
-	walletServer.RegisterCodec(codec, "application/json")
-	walletServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-	if vm.metrics != nil {
-		walletServer.RegisterInterceptFunc(vm.metrics.InterceptRequest)
-		walletServer.RegisterAfterFunc(vm.metrics.AfterRequest)
-	}
-	// name this service "wallet"
-	err := walletServer.RegisterService(&vm.walletService, "wallet")
+	vm.ops = app
 
 	return map[string]http.Handler{
-		"":        rpcServer,
-		"/wallet": walletServer,
+		"/ops":    handler,
 		"/events": vm.pubsub,
-	}, err
+	}, nil
 }
 
 /*
@@ -836,7 +822,6 @@ func (vm *VM) onAccept(tx *txs.Tx) {
 	}
 
 	vm.pubsub.Publish(NewPubSubFilterer(tx))
-	vm.walletService.decided(txID)
 }
 
 // WaitForEvent blocks until the VM has work for the consensus engine (a

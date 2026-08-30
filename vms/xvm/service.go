@@ -4,15 +4,13 @@
 package xvm
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
-	"net/http"
 
 	"github.com/go-json-experiment/json"
 	apitypes "github.com/luxfi/api/types"
-	"github.com/luxfi/consensus/core/choices"
-	"github.com/luxfi/database"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -26,7 +24,7 @@ import (
 )
 
 const (
-	// Max number of addresses that can be passed in as argument to GetUTXOs
+	// Max number of addresses that can be passed in as argument to getUTXOs
 	maxGetUTXOsAddrs = 1024
 
 	// Max number of items allowed in a page
@@ -50,7 +48,7 @@ type FormattedAssetID struct {
 type Service struct{ vm *VM }
 
 // ready returns an error if the VM is not fully initialized.
-// Protects against nil pointer dereference panics when HTTP handlers
+// Protects against nil pointer dereference panics when handlers
 // are invoked before the VM is ready (e.g. during bootstrap).
 func (s *Service) ready() error {
 	if s == nil || s.vm == nil {
@@ -59,33 +57,34 @@ func (s *Service) ready() error {
 	return nil
 }
 
-// GetBlock returns the requested block.
-func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, reply *apitypes.GetBlockResponse) error {
+// getBlock returns the block with the given id.
+//
+// Example: {"blockID":"11111111111111111111111111111111LpoYY","encoding":"hex"}
+func (s *Service) getBlock(_ context.Context, in *apitypes.GetBlockArgs) (*apitypes.GetBlockResponse, error) {
 	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getBlock"),
-		log.Stringer("blkID", args.BlockID),
-		log.Stringer("encoding", args.Encoding),
+		log.Stringer("blkID", in.BlockID),
+		log.Stringer("encoding", in.Encoding),
 	)
 
 	s.vm.Lock.Lock()
 	defer s.vm.Lock.Unlock()
 
 	if s.vm.chainManager == nil {
-		return errNotLinearized
+		return nil, errNotLinearized
 	}
-	block, err := s.vm.chainManager.GetStatelessBlock(args.BlockID)
+	block, err := s.vm.chainManager.GetStatelessBlock(in.BlockID)
 	if err != nil {
-		return fmt.Errorf("couldn't get block with id %s: %w", args.BlockID, err)
+		return nil, fmt.Errorf("couldn't get block with id %s: %w", in.BlockID, err)
 	}
-	reply.Encoding = args.Encoding
+	reply := &apitypes.GetBlockResponse{Encoding: in.Encoding}
 
 	var result any
-	if args.Encoding == formatting.JSON {
-		// InitRuntime is no longer needed with new consensus
+	if in.Encoding == formatting.JSON {
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:      tx,
@@ -93,43 +92,45 @@ func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, reply *
 				fxs:     s.vm.fxs,
 			})
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 		result = block
 	} else {
-		result, err = formatting.Encode(args.Encoding, block.Bytes())
+		result, err = formatting.Encode(in.Encoding, block.Bytes())
 		if err != nil {
-			return fmt.Errorf("couldn't encode block %s as string: %w", args.BlockID, err)
+			return nil, fmt.Errorf("couldn't encode block %s as string: %w", in.BlockID, err)
 		}
 	}
 
 	reply.Block, err = json.Marshal(result)
-	return err
+	return reply, err
 }
 
-// GetBlockByHeight returns the block at the given height.
-func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHeightArgs, reply *apitypes.GetBlockResponse) error {
+// getBlockByHeight returns the block accepted at the given height.
+//
+// Example: {"height":"1","encoding":"hex"}
+func (s *Service) getBlockByHeight(_ context.Context, in *apitypes.GetBlockByHeightArgs) (*apitypes.GetBlockResponse, error) {
 	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getBlockByHeight"),
-		log.Uint64("height", uint64(args.Height)),
+		log.Uint64("height", uint64(in.Height)),
 	)
 
 	s.vm.Lock.Lock()
 	defer s.vm.Lock.Unlock()
 
 	if s.vm.chainManager == nil {
-		return errNotLinearized
+		return nil, errNotLinearized
 	}
-	reply.Encoding = args.Encoding
+	reply := &apitypes.GetBlockResponse{Encoding: in.Encoding}
 
-	blockID, err := s.vm.state.GetBlockIDAtHeight(uint64(args.Height))
+	blockID, err := s.vm.state.GetBlockIDAtHeight(uint64(in.Height))
 	if err != nil {
-		return fmt.Errorf("couldn't get block at height %d: %w", args.Height, err)
+		return nil, fmt.Errorf("couldn't get block at height %d: %w", in.Height, err)
 	}
 	block, err := s.vm.chainManager.GetStatelessBlock(blockID)
 	if err != nil {
@@ -137,12 +138,11 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHei
 			log.Stringer("blkID", blockID),
 			log.String("error", err.Error()),
 		)
-		return fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
+		return nil, fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
 	}
 
 	var result any
-	if args.Encoding == formatting.JSON {
-		// InitRuntime is no longer needed with new consensus
+	if in.Encoding == formatting.JSON {
 		for _, tx := range block.Txs() {
 			err := tx.Unsigned.Visit(&txInit{
 				tx:      tx,
@@ -150,25 +150,27 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHei
 				fxs:     s.vm.fxs,
 			})
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 		result = block
 	} else {
-		result, err = formatting.Encode(args.Encoding, block.Bytes())
+		result, err = formatting.Encode(in.Encoding, block.Bytes())
 		if err != nil {
-			return fmt.Errorf("couldn't encode block %s as string: %w", blockID, err)
+			return nil, fmt.Errorf("couldn't encode block %s as string: %w", blockID, err)
 		}
 	}
 
 	reply.Block, err = json.Marshal(result)
-	return err
+	return reply, err
 }
 
-// GetHeight returns the height of the last accepted block.
-func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *apitypes.GetHeightResponse) error {
+// getHeight returns the height of the last accepted block.
+//
+// Response: {"height":"1"}
+func (s *Service) getHeight(context.Context, *struct{}) (*apitypes.GetHeightResponse, error) {
 	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
@@ -179,7 +181,7 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *apitypes.GetHei
 	defer s.vm.Lock.Unlock()
 
 	if s.vm.chainManager == nil {
-		return errNotLinearized
+		return nil, errNotLinearized
 	}
 
 	blockID := s.vm.state.GetLastAccepted()
@@ -189,27 +191,31 @@ func (s *Service) GetHeight(_ *http.Request, _ *struct{}, reply *apitypes.GetHei
 			log.Stringer("blkID", blockID),
 			log.String("error", err.Error()),
 		)
-		return fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
+		return nil, fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
 	}
 
-	reply.Height = apitypes.Uint64(block.Height())
-	return nil
+	return &apitypes.GetHeightResponse{Height: apitypes.Uint64(block.Height())}, nil
 }
 
-// IssueTx attempts to issue a transaction into consensus
-func (s *Service) IssueTx(_ *http.Request, args *apitypes.FormattedTx, reply *apitypes.JSONTxID) error {
+// issueTx sends a signed transaction to consensus and returns its id.
+//
+// The bytes carry their own authority: the node holds no key that could have
+// signed them, so it checks no signature and consensus is what decides.
+//
+// Example: {"tx":"0x00000000000...","encoding":"hex"}
+func (s *Service) issueTx(_ context.Context, in *apitypes.FormattedTx) (*apitypes.JSONTxID, error) {
 	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "issueTx"),
-		log.String("tx", args.Tx),
+		log.String("tx", in.Tx),
 	)
 
-	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
+	txBytes, err := formatting.Decode(in.Encoding, in.Tx)
 	if err != nil {
-		return fmt.Errorf("problem decoding transaction: %w", err)
+		return nil, fmt.Errorf("problem decoding transaction: %w", err)
 	}
 
 	tx, err := s.vm.parser.ParseTx(txBytes)
@@ -217,16 +223,14 @@ func (s *Service) IssueTx(_ *http.Request, args *apitypes.FormattedTx, reply *ap
 		s.vm.log.Debug("failed to parse tx",
 			log.String("error", err.Error()),
 		)
-		return err
+		return nil, err
 	}
 
-	reply.TxID, err = s.vm.issueTxFromRPC(tx)
-	return err
-}
-
-// GetTxStatusReply defines the GetTxStatus replies returned from the API
-type GetTxStatusReply struct {
-	Status choices.Status `json:"status"`
+	txID, err := s.vm.issueTxFromRPC(tx)
+	if err != nil {
+		return nil, err
+	}
+	return &apitypes.JSONTxID{TxID: txID}, nil
 }
 
 type GetAddressTxsArgs struct {
@@ -245,57 +249,53 @@ type GetAddressTxsReply struct {
 	Cursor avajson.Uint64 `json:"cursor"`
 }
 
-// GetAddressTxs returns list of transactions for a given address
-func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply *GetAddressTxsReply) error {
+// getAddressTxs returns the transactions of an address, one page at a time.
+//
+// The reply carries the cursor to pass back for the next page.
+func (s *Service) getAddressTxs(_ context.Context, in *GetAddressTxsArgs) (*GetAddressTxsReply, error) {
 	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
-	cursor := uint64(args.Cursor)
-	pageSize := uint64(args.PageSize)
-	s.vm.log.Warn("deprecated API called",
+	cursor := uint64(in.Cursor)
+	pageSize := uint64(in.PageSize)
+	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getAddressTxs"),
-		log.String("address", args.Address),
-		log.String("assetID", args.AssetID),
+		log.String("address", in.Address),
+		log.String("assetID", in.AssetID),
 		log.Uint64("cursor", cursor),
 		log.Uint64("pageSize", pageSize),
 	)
 	if pageSize > maxPageSize {
-		return fmt.Errorf("pageSize > maximum allowed (%d)", maxPageSize)
+		return nil, fmt.Errorf("pageSize > maximum allowed (%d)", maxPageSize)
 	} else if pageSize == 0 {
 		pageSize = maxPageSize
 	}
 
 	// Parse to address
-	address, err := lux.ParseServiceAddress(s.vm, args.Address)
+	address, err := lux.ParseServiceAddress(s.vm, in.Address)
 	if err != nil {
-		return fmt.Errorf("couldn't parse argument 'address' to address: %w", err)
+		return nil, fmt.Errorf("couldn't parse argument 'address' to address: %w", err)
 	}
 
 	// Lookup assetID
-	assetID, err := s.vm.lookupAssetID(args.AssetID)
+	assetID, err := s.vm.lookupAssetID(in.AssetID)
 	if err != nil {
-		return fmt.Errorf("specified `assetID` is invalid: %w", err)
+		return nil, fmt.Errorf("specified `assetID` is invalid: %w", err)
 	}
-
-	s.vm.log.Debug("fetching transactions",
-		log.String("address", args.Address),
-		log.String("assetID", args.AssetID),
-		log.Uint64("cursor", cursor),
-		log.Uint64("pageSize", pageSize),
-	)
 
 	s.vm.Lock.Lock()
 	defer s.vm.Lock.Unlock()
 
 	// Read transactions from the indexer
+	reply := &GetAddressTxsReply{}
 	reply.TxIDs, err = s.vm.addressTxsIndexer.Read(address[:], assetID, cursor, pageSize)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	s.vm.log.Debug("fetched transactions",
-		log.String("address", args.Address),
-		log.String("assetID", args.AssetID),
+		log.String("address", in.Address),
+		log.String("assetID", in.AssetID),
 		log.Int("numTxs", len(reply.TxIDs)),
 	)
 
@@ -303,68 +303,37 @@ func (s *Service) GetAddressTxs(_ *http.Request, args *GetAddressTxsArgs, reply 
 	// e.g. if they provided cursor 5, and read 6 tx IDs, they should start
 	// next time from index (cursor) 11.
 	reply.Cursor = avajson.Uint64(cursor + uint64(len(reply.TxIDs)))
-	return nil
+	return reply, nil
 }
 
-// GetTxStatus returns the status of the specified transaction
+// getTx returns the transaction with the given id.
 //
-// Deprecated: GetTxStatus only returns Accepted or Unknown, GetTx should be
-// used instead to determine if the tx was accepted.
-func (s *Service) GetTxStatus(_ *http.Request, args *apitypes.JSONTxID, reply *GetTxStatusReply) error {
+// Example: {"txID":"11111111111111111111111111111111LpoYY","encoding":"hex"}
+func (s *Service) getTx(_ context.Context, in *apitypes.GetTxArgs) (*apitypes.GetTxReply, error) {
 	if err := s.ready(); err != nil {
-		return err
-	}
-	s.vm.log.Debug("deprecated API called",
-		log.String("service", "xvm"),
-		log.String("method", "getTxStatus"),
-		log.Stringer("txID", args.TxID),
-	)
-
-	if args.TxID == ids.Empty {
-		return errNilTxID
-	}
-
-	s.vm.Lock.Lock()
-	defer s.vm.Lock.Unlock()
-
-	_, err := s.vm.state.GetTx(args.TxID)
-	switch err {
-	case nil:
-		reply.Status = choices.Accepted
-	case database.ErrNotFound:
-		reply.Status = choices.Unknown
-	default:
-		return err
-	}
-	return nil
-}
-
-// GetTx returns the specified transaction
-func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, reply *apitypes.GetTxReply) error {
-	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getTx"),
-		log.Stringer("txID", args.TxID),
+		log.Stringer("txID", in.TxID),
 	)
 
-	if args.TxID == ids.Empty {
-		return errNilTxID
+	if in.TxID == ids.Empty {
+		return nil, errNilTxID
 	}
 
 	s.vm.Lock.Lock()
 	defer s.vm.Lock.Unlock()
 
-	tx, err := s.vm.state.GetTx(args.TxID)
+	tx, err := s.vm.state.GetTx(in.TxID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	reply.Encoding = args.Encoding
+	reply := &apitypes.GetTxReply{Encoding: in.Encoding}
 
 	var result any
-	if args.Encoding == formatting.JSON {
+	if in.Encoding == formatting.JSON {
 		err = tx.Unsigned.Visit(&txInit{
 			tx:      tx,
 			fxIndex: s.vm.fxIndex,
@@ -372,60 +341,63 @@ func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, reply *apityp
 		})
 		result = tx
 	} else {
-		result, err = formatting.Encode(args.Encoding, tx.Bytes())
+		result, err = formatting.Encode(in.Encoding, tx.Bytes())
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	reply.Tx, err = json.Marshal(result)
-	return err
+	return reply, err
 }
 
-// GetUTXOs gets all utxos for passed in addresses
-func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, reply *apitypes.GetUTXOsReply) error {
+// getUTXOs returns the UTXOs referencing at least one of the given addresses.
+//
+// The reply's endIndex is where the next page starts: pass it back as
+// startIndex to continue.
+func (s *Service) getUTXOs(_ context.Context, in *apitypes.GetUTXOsArgs) (*apitypes.GetUTXOsReply, error) {
 	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getUTXOs"),
-		log.Strings("addresses", args.Addresses),
+		log.Strings("addresses", in.Addresses),
 	)
 
-	if len(args.Addresses) == 0 {
-		return errNoAddresses
+	if len(in.Addresses) == 0 {
+		return nil, errNoAddresses
 	}
-	if len(args.Addresses) > maxGetUTXOsAddrs {
-		return fmt.Errorf("number of addresses given, %d, exceeds maximum, %d", len(args.Addresses), maxGetUTXOsAddrs)
+	if len(in.Addresses) > maxGetUTXOsAddrs {
+		return nil, fmt.Errorf("number of addresses given, %d, exceeds maximum, %d", len(in.Addresses), maxGetUTXOsAddrs)
 	}
 
 	var sourceChain ids.ID
-	if args.SourceChain == "" {
+	if in.SourceChain == "" {
 		sourceChain = s.vm.consensusRuntime.ChainID
 	} else {
-		chainID, err := s.vm.bcLookup.Lookup(args.SourceChain)
+		chainID, err := s.vm.bcLookup.Lookup(in.SourceChain)
 		if err != nil {
-			return fmt.Errorf("problem parsing source chainID %q: %w", args.SourceChain, err)
+			return nil, fmt.Errorf("problem parsing source chainID %q: %w", in.SourceChain, err)
 		}
 		sourceChain = chainID
 	}
 
-	addrSet, err := lux.ParseServiceAddresses(s.vm, args.Addresses)
+	addrSet, err := lux.ParseServiceAddresses(s.vm, in.Addresses)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	startAddr := ids.ShortEmpty
 	startUTXO := ids.Empty
-	if args.StartIndex.Address != "" || args.StartIndex.UTXO != "" {
-		startAddr, err = lux.ParseServiceAddress(s.vm, args.StartIndex.Address)
+	if in.StartIndex.Address != "" || in.StartIndex.UTXO != "" {
+		startAddr, err = lux.ParseServiceAddress(s.vm, in.StartIndex.Address)
 		if err != nil {
-			return fmt.Errorf("couldn't parse start index address %q: %w", args.StartIndex.Address, err)
+			return nil, fmt.Errorf("couldn't parse start index address %q: %w", in.StartIndex.Address, err)
 		}
-		startUTXO, err = ids.FromString(args.StartIndex.UTXO)
+		startUTXO, err = ids.FromString(in.StartIndex.UTXO)
 		if err != nil {
-			return fmt.Errorf("couldn't parse start index utxo: %w", err)
+			return nil, fmt.Errorf("couldn't parse start index utxo: %w", err)
 		}
 	}
 
@@ -434,7 +406,7 @@ func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, reply *
 		endAddr   ids.ShortID
 		endUTXOID ids.ID
 	)
-	limit := int(args.Limit)
+	limit := int(in.Limit)
 	if limit <= 0 || int(maxPageSize) < limit {
 		limit = int(maxPageSize)
 	}
@@ -463,39 +435,39 @@ func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, reply *
 		)
 	}
 	if err != nil {
-		return fmt.Errorf("problem retrieving UTXOs: %w", err)
+		return nil, fmt.Errorf("problem retrieving UTXOs: %w", err)
 	}
 
+	reply := &apitypes.GetUTXOsReply{Encoding: in.Encoding}
 	reply.UTXOs = make([]string, len(utxos))
 	for i, utxo := range utxos {
 		b, err := utxo.WireBytes()
 		if err != nil {
-			return fmt.Errorf("problem marshalling UTXO: %w", err)
+			return nil, fmt.Errorf("problem marshalling UTXO: %w", err)
 		}
-		reply.UTXOs[i], err = formatting.Encode(args.Encoding, b)
+		reply.UTXOs[i], err = formatting.Encode(in.Encoding, b)
 		if err != nil {
-			return fmt.Errorf("couldn't encode UTXO %s as string: %w", utxo.InputID(), err)
+			return nil, fmt.Errorf("couldn't encode UTXO %s as string: %w", utxo.InputID(), err)
 		}
 	}
 
 	endAddress, err := s.vm.FormatLocalAddress(endAddr)
 	if err != nil {
-		return fmt.Errorf("problem formatting address: %w", err)
+		return nil, fmt.Errorf("problem formatting address: %w", err)
 	}
 
 	reply.EndIndex.Address = endAddress
 	reply.EndIndex.UTXO = endUTXOID.String()
 	reply.NumFetched = apitypes.Uint64(len(utxos))
-	reply.Encoding = args.Encoding
-	return nil
+	return reply, nil
 }
 
-// GetAssetDescriptionArgs are arguments for passing into GetAssetDescription requests
+// GetAssetDescriptionArgs names the asset to describe
 type GetAssetDescriptionArgs struct {
 	AssetID string `json:"assetID"`
 }
 
-// GetAssetDescriptionReply defines the GetAssetDescription replies returned from the API
+// GetAssetDescriptionReply is an asset's name, symbol and denomination
 type GetAssetDescriptionReply struct {
 	FormattedAssetID
 	Name         string        `json:"name"`
@@ -503,20 +475,22 @@ type GetAssetDescriptionReply struct {
 	Denomination avajson.Uint8 `json:"denomination"`
 }
 
-// GetAssetDescription creates an empty account with the name passed in
-func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescriptionArgs, reply *GetAssetDescriptionReply) error {
+// getAsset returns an asset's name, symbol and denomination.
+//
+// Example: {"assetID":"LUX"}
+func (s *Service) getAsset(_ context.Context, in *GetAssetDescriptionArgs) (*GetAssetDescriptionReply, error) {
 	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
 	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getAssetDescription"),
-		log.String("assetID", args.AssetID),
+		log.String("assetID", in.AssetID),
 	)
 
-	assetID, err := s.vm.lookupAssetID(args.AssetID)
+	assetID, err := s.vm.lookupAssetID(in.AssetID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	s.vm.Lock.Lock()
@@ -524,58 +498,61 @@ func (s *Service) GetAssetDescription(_ *http.Request, args *GetAssetDescription
 
 	tx, err := s.vm.state.GetTx(assetID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	createAssetTx, ok := tx.Unsigned.(*txs.CreateAssetTx)
 	if !ok {
-		return errTxNotCreateAsset
+		return nil, errTxNotCreateAsset
 	}
 
+	reply := &GetAssetDescriptionReply{
+		Name:         createAssetTx.Name,
+		Symbol:       createAssetTx.Symbol,
+		Denomination: avajson.Uint8(createAssetTx.Denomination),
+	}
 	reply.FormattedAssetID.AssetID = assetID
-	reply.Name = createAssetTx.Name
-	reply.Symbol = createAssetTx.Symbol
-	reply.Denomination = avajson.Uint8(createAssetTx.Denomination)
-
-	return nil
+	return reply, nil
 }
 
-// GetBalanceArgs are arguments for passing into GetBalance requests
+// GetBalanceArgs names the address and asset to weigh
 type GetBalanceArgs struct {
 	Address        string `json:"address"`
 	AssetID        string `json:"assetID"`
 	IncludePartial bool   `json:"includePartial"`
 }
 
-// GetBalanceReply defines the GetBalance replies returned from the API
+// GetBalanceReply is an address's balance of one asset, and the UTXOs holding it
 type GetBalanceReply struct {
 	Balance avajson.Uint64 `json:"balance"`
 	UTXOIDs []lux.UTXOID   `json:"utxoIDs"`
 }
 
-// GetBalance returns the balance of an asset held by an address.
-// If ![args.IncludePartial], returns only the balance held solely
-// (1 out of 1 multisig) by the address and with a locktime in the past.
-// Otherwise, returned balance includes assets held only partially by the
-// address, and includes balances with locktime in the future.
-func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBalanceReply) error {
+// getBalance returns the balance of one asset held by an address.
+//
+// Without includePartial it counts only what the address holds outright — a
+// 1-of-1 output whose locktime has passed. With it, partially held and
+// still-locked outputs count too.
+//
+// Example: {"address":"X-lux1...","assetID":"LUX"}
+func (s *Service) getBalance(_ context.Context, in *GetBalanceArgs) (*GetBalanceReply, error) {
 	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
-	s.vm.log.Debug("deprecated API called",
+	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getBalance"),
-		log.String("address", args.Address),
-		log.String("assetID", args.AssetID),
+		log.String("address", in.Address),
+		log.String("assetID", in.AssetID),
 	)
 
-	addr, err := lux.ParseServiceAddress(s.vm, args.Address)
+	addr, err := lux.ParseServiceAddress(s.vm, in.Address)
 	if err != nil {
-		return fmt.Errorf("problem parsing address '%s': %w", args.Address, err)
+		return nil, fmt.Errorf("problem parsing address '%s': %w", in.Address, err)
 	}
 
-	assetID, err := s.vm.lookupAssetID(args.AssetID)
+	assetID, err := s.vm.lookupAssetID(in.AssetID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	addrSet := set.Of(addr)
@@ -585,11 +562,11 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBa
 
 	utxos, err := lux.GetAllUTXOs(s.vm.state, addrSet)
 	if err != nil {
-		return fmt.Errorf("problem retrieving UTXOs: %w", err)
+		return nil, fmt.Errorf("problem retrieving UTXOs: %w", err)
 	}
 
 	now := s.vm.clock.Unix()
-	reply.UTXOIDs = make([]lux.UTXOID, 0, len(utxos))
+	reply := &GetBalanceReply{UTXOIDs: make([]lux.UTXOID, 0, len(utxos))}
 	for _, utxo := range utxos {
 		if utxo.AssetID() != assetID {
 			continue
@@ -600,18 +577,18 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceArgs, reply *GetBa
 			continue
 		}
 		owners := transferable.OutputOwners
-		if !args.IncludePartial && (len(owners.Addrs) != 1 || owners.Locktime > now) {
+		if !in.IncludePartial && (len(owners.Addrs) != 1 || owners.Locktime > now) {
 			continue
 		}
 		amt, err := safemath.Add64(transferable.Amount(), uint64(reply.Balance))
 		if err != nil {
-			return err
+			return nil, err
 		}
 		reply.Balance = avajson.Uint64(amt)
 		reply.UTXOIDs = append(reply.UTXOIDs, utxo.UTXOID)
 	}
 
-	return nil
+	return reply, nil
 }
 
 type Balance struct {
@@ -624,32 +601,31 @@ type GetAllBalancesArgs struct {
 	IncludePartial bool `json:"includePartial"`
 }
 
-// GetAllBalancesReply is the response from a call to GetAllBalances
+// GetAllBalancesReply is every asset an address holds a non-zero balance of
 type GetAllBalancesReply struct {
 	Balances []Balance `json:"balances"`
 }
 
-// GetAllBalances returns a map where:
+// getBalances returns every asset an address holds a non-zero balance of.
 //
-// Key: ID of an asset such that [args.Address] has a non-zero balance of the asset
-// Value: The balance of the asset held by the address
+// Without includePartial it counts only what the address holds outright — a
+// 1-of-1 output whose locktime has passed. With it, partially held and
+// still-locked outputs count too.
 //
-// If ![args.IncludePartial], returns only unlocked balance/UTXOs with a 1-out-of-1 multisig.
-// Otherwise, returned balance/UTXOs includes assets held only partially by the
-// address, and includes balances with locktime in the future.
-func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, reply *GetAllBalancesReply) error {
+// Example: {"address":"X-lux1..."}
+func (s *Service) getBalances(_ context.Context, in *GetAllBalancesArgs) (*GetAllBalancesReply, error) {
 	if err := s.ready(); err != nil {
-		return err
+		return nil, err
 	}
-	s.vm.log.Debug("deprecated API called",
+	s.vm.log.Debug("API called",
 		log.String("service", "xvm"),
 		log.String("method", "getAllBalances"),
-		log.String("address", args.Address),
+		log.String("address", in.Address),
 	)
 
-	address, err := lux.ParseServiceAddress(s.vm, args.Address)
+	address, err := lux.ParseServiceAddress(s.vm, in.Address)
 	if err != nil {
-		return fmt.Errorf("problem parsing address '%s': %w", args.Address, err)
+		return nil, fmt.Errorf("problem parsing address '%s': %w", in.Address, err)
 	}
 	addrSet := set.Of(address)
 
@@ -658,7 +634,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 
 	utxos, err := lux.GetAllUTXOs(s.vm.state, addrSet)
 	if err != nil {
-		return fmt.Errorf("couldn't get address's UTXOs: %w", err)
+		return nil, fmt.Errorf("couldn't get address's UTXOs: %w", err)
 	}
 
 	now := s.vm.clock.Unix()
@@ -671,7 +647,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 			continue
 		}
 		owners := transferable.OutputOwners
-		if !args.IncludePartial && (len(owners.Addrs) != 1 || owners.Locktime > now) {
+		if !in.IncludePartial && (len(owners.Addrs) != 1 || owners.Locktime > now) {
 			continue
 		}
 		assetID := utxo.AssetID()
@@ -685,7 +661,7 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 		}
 	}
 
-	reply.Balances = make([]Balance, assetIDs.Len())
+	reply := &GetAllBalancesReply{Balances: make([]Balance, assetIDs.Len())}
 	i := 0
 	for assetID := range assetIDs {
 		alias := s.vm.PrimaryAliasOrDefault(assetID)
@@ -696,5 +672,5 @@ func (s *Service) GetAllBalances(_ *http.Request, args *GetAllBalancesArgs, repl
 		i++
 	}
 
-	return nil
+	return reply, nil
 }

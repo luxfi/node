@@ -4,6 +4,7 @@
 package indexer
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,19 +12,61 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/log"
+	"github.com/zap-proto/zip"
+
+	server "github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/utils/json"
 )
+
+//go:generate go run github.com/zap-proto/zip/cmd/zipdoc
 
 type service struct {
 	index *index
 }
 
+// ops is what one chain's index answers. Every operation is a GET: an index
+// reads what consensus already accepted and changes nothing, so there is
+// nothing to authorize and anyone may ask.
+//
+// A container is addressed three ways because a caller holds one of three
+// things — its id, its position, or nothing but the wish for the newest — and
+// each is a different question with the same answer shape.
+func (s *service) ops(logger log.Logger, name string) *zip.App {
+	app := zip.New(zip.Config{
+		AppName:               "index-" + name,
+		Logger:                logger,
+		DisableStartupMessage: true,
+	})
+
+	zip.Get(app, "/container", s.getContainer)
+	zip.Get(app, "/container/:index", s.getContainerByIndex)
+	zip.Get(app, "/container/latest", s.getContainerLatest)
+	zip.Get(app, "/containers", s.getContainers)
+	zip.Get(app, "/index", s.getIndex)
+	zip.Get(app, "/accepted", s.getAccepted)
+
+	return app
+}
+
+// mount serves this index's operations under its own endpoint.
+func (s *service) mount(logger log.Logger, name string) (*zip.App, http.Handler, error) {
+	app := s.ops(logger, name)
+	handler, err := server.Mount(app)
+	return app, handler, err
+}
+
 type FormattedContainer struct {
-	ID        ids.ID              `json:"id"`
-	Bytes     string              `json:"bytes"`
-	Timestamp json.Time           `json:"timestamp"`
-	Encoding  formatting.Encoding `json:"encoding"`
-	Index     json.Uint64         `json:"index"`
+	// ID is the container's own id.
+	ID ids.ID `json:"id"`
+	// Bytes is the container, written in Encoding.
+	Bytes string `json:"bytes"`
+	// Timestamp is when this node accepted the container.
+	Timestamp json.Time `json:"timestamp"`
+	// Encoding is how Bytes is written.
+	Encoding formatting.Encoding `json:"encoding"`
+	// Index is the container's position in the accepted order, from zero.
+	Index json.Uint64 `json:"index"`
 }
 
 func newFormattedContainer(c Container, index uint64, enc formatting.Encoding) (FormattedContainer, error) {
@@ -42,124 +85,150 @@ func newFormattedContainer(c Container, index uint64, enc formatting.Encoding) (
 }
 
 type GetLastAcceptedArgs struct {
+	// Encoding is how to write the container's bytes.
 	Encoding formatting.Encoding `json:"encoding"`
 }
 
-func (s *service) GetLastAccepted(_ *http.Request, args *GetLastAcceptedArgs, reply *FormattedContainer) error {
+// getContainerLatest returns the container this node accepted most recently.
+//
+// Example: {"encoding":"hex"}
+func (s *service) getContainerLatest(_ context.Context, in *GetLastAcceptedArgs) (*FormattedContainer, error) {
 	container, err := s.index.GetLastAccepted()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	index, err := s.index.GetIndex(container.ID)
 	if err != nil {
-		return fmt.Errorf("couldn't get index: %w", err)
+		return nil, fmt.Errorf("couldn't get index: %w", err)
 	}
-	*reply, err = newFormattedContainer(container, index, args.Encoding)
-	return err
+	reply, err := newFormattedContainer(container, index, in.Encoding)
+	return &reply, err
 }
 
 type GetContainerByIndexArgs struct {
-	Index    json.Uint64         `json:"index"`
+	// Index is the position to read, from zero.
+	Index json.Uint64 `json:"index"`
+	// Encoding is how to write the container's bytes.
 	Encoding formatting.Encoding `json:"encoding"`
 }
 
-func (s *service) GetContainerByIndex(_ *http.Request, args *GetContainerByIndexArgs, reply *FormattedContainer) error {
-	container, err := s.index.GetContainerByIndex(uint64(args.Index))
+// getContainerByIndex returns the container accepted at the given position.
+//
+// Example: {"index":"0","encoding":"hex"}
+func (s *service) getContainerByIndex(_ context.Context, in *GetContainerByIndexArgs) (*FormattedContainer, error) {
+	container, err := s.index.GetContainerByIndex(uint64(in.Index))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	index, err := s.index.GetIndex(container.ID)
 	if err != nil {
-		return fmt.Errorf("couldn't get index: %w", err)
+		return nil, fmt.Errorf("couldn't get index: %w", err)
 	}
-	*reply, err = newFormattedContainer(container, index, args.Encoding)
-	return err
+	reply, err := newFormattedContainer(container, index, in.Encoding)
+	return &reply, err
 }
 
 type GetContainerRangeArgs struct {
-	StartIndex json.Uint64         `json:"startIndex"`
-	NumToFetch json.Uint64         `json:"numToFetch"`
-	Encoding   formatting.Encoding `json:"encoding"`
+	// StartIndex is the first position to read, from zero.
+	StartIndex json.Uint64 `json:"startIndex"`
+	// NumToFetch is how many to read from there.
+	NumToFetch json.Uint64 `json:"numToFetch"`
+	// Encoding is how to write each container's bytes.
+	Encoding formatting.Encoding `json:"encoding"`
 }
 
 type GetContainerRangeResponse struct {
+	// Containers are those read, in accepted order.
 	Containers []FormattedContainer `json:"containers"`
 }
 
-// GetContainerRange returns the transactions at index [startIndex], [startIndex+1], ... , [startIndex+n-1]
-// If [n] == 0, returns an empty response (i.e. null).
-// If [startIndex] > the last accepted index, returns an error (unless the above apply.)
-// If [n] > [MaxFetchedByRange], returns an error.
-// If we run out of transactions, returns the ones fetched before running out.
-func (s *service) GetContainerRange(_ *http.Request, args *GetContainerRangeArgs, reply *GetContainerRangeResponse) error {
-	containers, err := s.index.GetContainerRange(uint64(args.StartIndex), uint64(args.NumToFetch))
+// getContainers returns the containers accepted at startIndex and after it.
+//
+// It returns what it finds: asking past the last accepted one yields the
+// containers before it and no error. numToFetch of zero yields none.
+//
+// Example: {"startIndex":"0","numToFetch":"2","encoding":"hex"}
+func (s *service) getContainers(_ context.Context, in *GetContainerRangeArgs) (*GetContainerRangeResponse, error) {
+	containers, err := s.index.GetContainerRange(uint64(in.StartIndex), uint64(in.NumToFetch))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	reply.Containers = make([]FormattedContainer, len(containers))
+	reply := &GetContainerRangeResponse{Containers: make([]FormattedContainer, len(containers))}
 	for i, container := range containers {
 		index, err := s.index.GetIndex(container.ID)
 		if err != nil {
-			return fmt.Errorf("couldn't get index: %w", err)
+			return nil, fmt.Errorf("couldn't get index: %w", err)
 		}
-		reply.Containers[i], err = newFormattedContainer(container, index, args.Encoding)
+		reply.Containers[i], err = newFormattedContainer(container, index, in.Encoding)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return reply, nil
 }
 
 type GetIndexArgs struct {
+	// ID is the container to locate.
 	ID ids.ID `json:"id"`
 }
 
 type GetIndexResponse struct {
+	// Index is the container's position in the accepted order, from zero.
 	Index json.Uint64 `json:"index"`
 }
 
-func (s *service) GetIndex(_ *http.Request, args *GetIndexArgs, reply *GetIndexResponse) error {
-	index, err := s.index.GetIndex(args.ID)
-	reply.Index = json.Uint64(index)
-	return err
+// getIndex returns a container's position in the accepted order.
+//
+// Example: {"id":"11111111111111111111111111111111LpoYY"}
+func (s *service) getIndex(_ context.Context, in *GetIndexArgs) (*GetIndexResponse, error) {
+	index, err := s.index.GetIndex(in.ID)
+	return &GetIndexResponse{Index: json.Uint64(index)}, err
 }
 
 type IsAcceptedArgs struct {
+	// ID is the container to ask about.
 	ID ids.ID `json:"id"`
 }
 
 type IsAcceptedResponse struct {
+	// IsAccepted is whether this node has accepted and indexed the container.
 	IsAccepted bool `json:"isAccepted"`
 }
 
-func (s *service) IsAccepted(_ *http.Request, args *IsAcceptedArgs, reply *IsAcceptedResponse) error {
-	_, err := s.index.GetIndex(args.ID)
+// getAccepted returns whether this node has accepted and indexed a container.
+//
+// Example: {"id":"11111111111111111111111111111111LpoYY"}
+func (s *service) getAccepted(_ context.Context, in *IsAcceptedArgs) (*IsAcceptedResponse, error) {
+	_, err := s.index.GetIndex(in.ID)
 	if err == nil {
-		reply.IsAccepted = true
-		return nil
+		return &IsAcceptedResponse{IsAccepted: true}, nil
 	}
 	if err == database.ErrNotFound {
-		reply.IsAccepted = false
-		return nil
+		return &IsAcceptedResponse{IsAccepted: false}, nil
 	}
-	return err
+	return nil, err
 }
 
 type GetContainerByIDArgs struct {
-	ID       ids.ID              `json:"id"`
+	// ID is the container to read.
+	ID ids.ID `json:"id"`
+	// Encoding is how to write the container's bytes.
 	Encoding formatting.Encoding `json:"encoding"`
 }
 
-func (s *service) GetContainerByID(_ *http.Request, args *GetContainerByIDArgs, reply *FormattedContainer) error {
-	container, err := s.index.GetContainerByID(args.ID)
+// getContainer returns the container with the given id.
+//
+// Example: {"id":"11111111111111111111111111111111LpoYY","encoding":"hex"}
+func (s *service) getContainer(_ context.Context, in *GetContainerByIDArgs) (*FormattedContainer, error) {
+	container, err := s.index.GetContainerByID(in.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	index, err := s.index.GetIndex(container.ID)
 	if err != nil {
-		return fmt.Errorf("couldn't get index: %w", err)
+		return nil, fmt.Errorf("couldn't get index: %w", err)
 	}
-	*reply, err = newFormattedContainer(container, index, args.Encoding)
-	return err
+	reply, err := newFormattedContainer(container, index, in.Encoding)
+	return &reply, err
 }
