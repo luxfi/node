@@ -179,7 +179,6 @@ const (
 	DexValidatorKey                                    = "dex-validator"
 	AdminAPIEnabledKey                                 = "api-admin-enabled"
 	InfoAPIEnabledKey                                  = "api-info-enabled"
-	KeystoreAPIEnabledKey                              = "api-keystore-enabled"
 	MetricsAPIEnabledKey                               = "api-metrics-enabled"
 	HealthAPIEnabledKey                                = "api-health-enabled"
 	MeterVMsEnabledKey                                 = "meter-vms-enabled"

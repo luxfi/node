@@ -8,8 +8,8 @@ package spec
 
 import (
 	"github.com/go-json-experiment/json"
-	jsonv1 "github.com/go-json-experiment/json/v1"
 	"github.com/go-json-experiment/json/jsontext"
+	jsonv1 "github.com/go-json-experiment/json/v1"
 	"time"
 )
 
@@ -157,7 +157,7 @@ func categoryDescriptions() map[Category]string {
 		CategoryConsensus: "Consensus parameters (sample size, quorum, thresholds)",
 		CategoryStaking:   "Staking configuration (keys, sybil protection)",
 		CategoryHTTP:      "HTTP server configuration (host, port, TLS)",
-		CategoryAPI:       "API enablement (admin, info, keystore, metrics)",
+		CategoryAPI:       "API enablement (admin, info, metrics)",
 		CategoryHealth:    "Health check configuration (frequency, thresholds)",
 		CategoryLogging:   "Logging configuration (level, format, rotation)",
 		CategoryThrottler: "Rate limiting and resource throttling",

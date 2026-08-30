@@ -184,11 +184,8 @@ export LUXD_STAKING_PORT=9631
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--api-admin-enabled` | `false` | Enable admin API |
-| `--api-auth-required` | `false` | Require API authentication |
-| `--api-auth-password` | `""` | API authentication password |
 | `--api-health-enabled` | `true` | Enable health API |
 | `--api-info-enabled` | `true` | Enable info API |
-| `--api-keystore-enabled` | `false` | Enable keystore API |
 | `--api-metrics-enabled` | `true` | Enable metrics API |
 
 ### API Limits
@@ -438,7 +435,6 @@ Enables:
   "http-host": "0.0.0.0",
   "staking-enabled": true,
   "api-admin-enabled": false,
-  "api-keystore-enabled": false,
   "db-type": "pebbledb",
   "merkledb-cache-size": 4096,
   "log-level": "info"
@@ -470,7 +466,6 @@ Enables:
   "http-host": "127.0.0.1",
   "log-level": "debug",
   "api-admin-enabled": true,
-  "api-keystore-enabled": true,
   "consensus-parameters": {
     "poll-interval": "10ms"
   }

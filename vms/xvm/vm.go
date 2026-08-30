@@ -38,11 +38,9 @@ import (
 	"github.com/luxfi/node/vms/xvm/network"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
-	"github.com/luxfi/node/vms/xvm/utxo"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
 	lux "github.com/luxfi/utxo"
-	"github.com/luxfi/utxo/secp256k1fx"
 	validators "github.com/luxfi/validators"
 	consensusversion "github.com/luxfi/version"
 	vmcore "github.com/luxfi/vm"
@@ -97,7 +95,6 @@ type VM struct {
 
 	lux.AddressManager
 	ids.Aliaser
-	utxo.Spender
 
 	// Consensus context
 	consensusRuntime *runtime.Runtime
@@ -147,7 +144,7 @@ type VM struct {
 	db     *versiondb.Database
 
 	fxIndex *txs.FxIndex
-	fxs           []*extensions.ParsedFx
+	fxs     []*extensions.ParsedFx
 
 	walletService WalletService
 
@@ -331,8 +328,6 @@ func (vm *VM) initialize(
 		return err
 	}
 
-	vm.Spender = utxo.NewSpender(&vm.clock)
-
 	state, err := state.New(
 		vm.db,
 		vm.parser,
@@ -370,15 +365,15 @@ func (vm *VM) initialize(
 	}
 
 	vm.txBackend = &txexecutor.Backend{
-		Ctx:           ctx,
-		Runtime:       vm.consensusRuntime,
-		Config:        &vm.Config,
-		Fxs:           vm.fxs,
-		FxIndex:       vm.fxIndex,
-		FeeAssetID:    vm.feeAssetID,
-		Bootstrapped:  false,
-		SharedMemory:  vm.SharedMemory,
-		Log:           vm.log,
+		Ctx:          ctx,
+		Runtime:      vm.consensusRuntime,
+		Config:       &vm.Config,
+		Fxs:          vm.fxs,
+		FxIndex:      vm.fxIndex,
+		FeeAssetID:   vm.feeAssetID,
+		Bootstrapped: false,
+		SharedMemory: vm.SharedMemory,
+		Log:          vm.log,
 	}
 
 	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())
@@ -740,29 +735,6 @@ func (vm *VM) initState(tx *txs.Tx) {
 	for _, utxo := range tx.UTXOs() {
 		vm.state.AddUTXO(utxo)
 	}
-}
-
-// LoadUser retrieves user keys from external storage
-func (vm *VM) LoadUser(
-	username string,
-	password string,
-	addresses set.Set[ids.ShortID],
-) ([]*lux.UTXO, *secp256k1fx.Keychain, error) {
-	// For now, return empty keychain and UTXOs
-	// This needs to be properly implemented with external key management
-	kc := secp256k1fx.NewKeychain()
-	utxos := []*lux.UTXO{}
-
-	// If addresses provided, get their UTXOs
-	if addresses.Len() > 0 {
-		allUTXOs, err := lux.GetAllUTXOs(vm.state, addresses)
-		if err != nil {
-			return nil, nil, fmt.Errorf("problem retrieving UTXOs: %w", err)
-		}
-		utxos = allUTXOs
-	}
-
-	return utxos, kc, nil
 }
 
 // GetUTXOs returns every UTXO this chain's state holds that is owned by at

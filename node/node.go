@@ -51,11 +51,10 @@ import (
 	"github.com/luxfi/node/network/peer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/node/server/http"
+	server "github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/service/admin"
 	"github.com/luxfi/node/service/health"
 	"github.com/luxfi/node/service/info"
-	"github.com/luxfi/node/service/keystore"
 	"github.com/luxfi/node/service/metrics"
 	luxsecurity "github.com/luxfi/node/service/security"
 	"github.com/luxfi/node/staking"
@@ -307,9 +306,6 @@ func New(
 	if err := n.initSecurityAPI(); err != nil { // Start the securityProfile API
 		return nil, fmt.Errorf("couldn't initialize security API: %w", err)
 	}
-	if err := n.initKeystoreAPI(); err != nil { // Start the Keystore API
-		return nil, fmt.Errorf("couldn't initialize keystore API: %w", err)
-	}
 	if err := n.initChainAliases(n.Config.GenesisBytes); err != nil {
 		return nil, fmt.Errorf("couldn't initialize chain aliases: %w", err)
 	}
@@ -377,9 +373,6 @@ type Node struct {
 
 	// Monitors node health and runs health checks
 	health health.Health
-
-	// Manages user keystores
-	keystore keystore.Keystore
 
 	// Build and parse messages, for both network layer and chain manager
 	msgCreator message.Creator
@@ -1883,28 +1876,6 @@ func (n *Node) initSecurityAPI() error {
 	return n.APIServer.AddRoute(
 		handler,
 		"security",
-		"",
-	)
-}
-
-// initKeystoreAPI initializes the Keystore API service
-func (n *Node) initKeystoreAPI() error {
-	if !n.Config.KeystoreAPIEnabled {
-		n.Log.Info("skipping keystore API initialization because it has been disabled")
-		return nil
-	}
-	n.Log.Info("initializing keystore API")
-
-	keystoreDB := prefixdb.New([]byte("keystore"), n.DB)
-	n.keystore = keystore.New(n.Log, keystoreDB)
-
-	handler, err := n.keystore.CreateHandler()
-	if err != nil {
-		return err
-	}
-	return n.APIServer.AddRoute(
-		handler,
-		"keystore",
 		"",
 	)
 }
