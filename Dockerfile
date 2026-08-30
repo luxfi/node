@@ -511,7 +511,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # accelerator in pkg/lx is a separate concern gated by its own cuda/metal tags and
 # is NOT linked here. v1.5.10 is the first tag whose cmd/dchain builds CGO=0
 # (drops the phantom dchain+cgo gate); v1.5.11 wires CLOB order ingestion over the
-# node HTTP router (VM.CreateHandlers -> /v1/bc/D/dex/<method>, pkg/dchain/ingest.go)
+# node HTTP router (VM.CreateHandlers -> /v1/chain/D/dex/<method>, pkg/dchain/ingest.go)
 # so an order POSTed to the node flows submitTx -> mempool -> consensus -> Verify
 # (match) -> Accept; v1.5.12 persists the head block so the VM survives a restart
 # once advanced past genesis (GetBlock(lastAccepted) no longer ErrNotFound);
@@ -523,7 +523,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # DB (every plugin VM via vm/rpc) — that stranded the native D-Chain order book
 # (rebuildBookFromDB folded empty -> 0 fills despite committed asks). v1.5.15 adds
 # the committed-state READ surface (clob_get_trades/orders/markets/book over
-# /v1/bc/D/dex/<method>, pkg/dchain/read.go): read-only JSON of the durable trade
+# /v1/chain/D/dex/<method>, pkg/dchain/read.go): read-only JSON of the durable trade
 # log / resting book / markets, served beside the writes with ZERO consensus
 # impact. Needed to VERIFY a fill replicated identically across validators (query
 # every node, diff the trade rows + head root) and to feed markets-display (native
@@ -578,9 +578,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # (grep the vendored module strings out of /data/plugins/mDVT5...) shows luxfi/dex
 # v1.5.15, not v1.14.x — the image predates this ARG. That matters twice:
 #
-#   - v1.5.15 HAS the HTTP surface, under the OLD method names: /v1/bc/D/dex/clob_*
+#   - v1.5.15 HAS the HTTP surface, under the OLD method names: /v1/chain/D/dex/clob_*
 #     answers 200 today (clob_get_markets returns height 0, markets []). A probe of
-#     /v1/bc/D/dex/dex_* returning 404 means "old names", NOT "no surface". The
+#     /v1/chain/D/dex/dex_* returning 404 means "old names", NOT "no surface". The
 #     rename landed in dex 28970d8 (clob_* -> dex_*).
 #   - v1.5.15 has NO atomic.go and NO drive.go, so that D-Chain cannot import a C->D
 #     intent or export a D->C fill AT ALL. Every fleet on it has a structurally

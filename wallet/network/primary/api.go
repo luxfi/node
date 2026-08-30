@@ -5,7 +5,6 @@ package primary
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	server "github.com/luxfi/node/server/http"
 	_ "github.com/luxfi/node/vms/components/lux" // registers utxo.ParseUTXO ZAP dispatcher
 	"github.com/luxfi/node/vms/platformvm"
 	"github.com/luxfi/node/wallet/chain/p"
@@ -70,7 +70,7 @@ type XClient struct {
 func NewXClient(uri, chainAlias string) *XClient {
 	return &XClient{
 		requester: rpc.NewEndpointRequester(
-			fmt.Sprintf("%s/v1/bc/%s", uri, chainAlias),
+			server.Chain(uri, chainAlias),
 		),
 	}
 }
@@ -219,11 +219,7 @@ func FetchEthState(
 	uri string,
 	addrs set.Set[ethcommon.Address],
 ) (*EthState, error) {
-	path := fmt.Sprintf(
-		"%s/v1/%s/C/rpc",
-		uri,
-		constants.ChainAliasPrefix,
-	)
+	path := server.Chain(uri, "C") + "/rpc"
 	client, err := ethclient.Dial(path)
 	if err != nil {
 		return nil, err

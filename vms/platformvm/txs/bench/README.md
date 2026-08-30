@@ -74,7 +74,7 @@ ground-truth numbers, drop captured bytes into `testdata/`:
 
 ```bash
 POD=$(kubectl -n lux get pods -l app=luxd -o jsonpath='{.items[0].metadata.name}')
-kubectl -n lux exec "$POD" -- curl -s http://localhost:9650/v1/bc/P \
+kubectl -n lux exec "$POD" -- curl -s http://localhost:9650/v1/chain/P \
   -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"platform.getMempool"}' \
   > /tmp/mempool.json

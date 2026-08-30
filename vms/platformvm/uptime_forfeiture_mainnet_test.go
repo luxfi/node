@@ -13,7 +13,7 @@ import (
 )
 
 // Measured mainnet (96369) state, read from
-// platform.getCurrentValidators on https://api.lux.network/v1/bc/P.
+// platform.getCurrentValidators on https://api.lux.network/v1/chain/P.
 // All five validators share startTime; endTime differs only by 90-minute
 // staggers, so the first to mature bounds the whole set.
 const (

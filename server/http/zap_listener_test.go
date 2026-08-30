@@ -61,7 +61,7 @@ func TestStartZapRPCListener_RoundTrip(t *testing.T) {
 	const body = `{"jsonrpc":"2.0","result":"0x2a","id":1}`
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/bc/C/rpc", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(Chain("", "C")+"/rpc", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = io.WriteString(w, body)
 	})
@@ -89,7 +89,7 @@ func TestStartZapRPCListener_RoundTrip(t *testing.T) {
 	defer fasthttp.ReleaseRequest(req)
 	defer fasthttp.ReleaseResponse(resp)
 
-	req.SetRequestURI("http://" + addr + "/v1/bc/C/rpc")
+	req.SetRequestURI("http://" + addr + Chain("", "C") + "/rpc")
 	req.Header.SetMethod(http.MethodPost)
 	req.Header.SetContentType("application/json")
 
