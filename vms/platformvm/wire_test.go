@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -60,6 +61,9 @@ func TestWireGolden(t *testing.T) {
 		{"getBalance.json", func() any { return &GetBalanceResponse{} }},
 		{"getStake.json", func() any { return &GetStakeReply{} }},
 		{"getFeeConfig.json", func() any { return &GetFeeConfigReply{} }},
+		{"getTimestamp.json", func() any { return &GetTimestampReply{} }},
+		{"getFeeState.json", func() any { return &GetFeeStateReply{} }},
+		{"getValidatorFeeState.json", func() any { return &GetValidatorFeeStateReply{} }},
 	}
 	for _, test := range tests {
 		t.Run(test.file, func(t *testing.T) {
@@ -259,6 +263,37 @@ func TestWireUnchanged(t *testing.T) {
 		with, err := json.Marshal(CurrentValidator{Permissionless: &vdr})
 		require.NoError(err)
 		require.Contains(string(with), `"delegators"`)
+	})
+
+	t.Run("timestamps", func(t *testing.T) {
+		// time.Time lays out with no slots, so a reply holding one crosses
+		// carrying nothing and says nothing about it. avajson.Time is the same
+		// instant as numbers — and has to render as the same bytes, in whatever
+		// zone the instant was read in.
+		for _, when := range []time.Time{
+			time.Unix(1765573611, 0).UTC(),
+			time.Unix(1765573611, 123456789).UTC(),
+			time.Unix(1765573611, 0).In(time.FixedZone("east", 7200)),
+			time.Unix(1765573611, 0).In(time.FixedZone("west", -18000)),
+			{},
+		} {
+			require := require.New(t)
+			was, err := json.Marshal(struct {
+				T time.Time `json:"timestamp"`
+			}{when})
+			require.NoError(err)
+			is, err := json.Marshal(struct {
+				T avajson.Time `json:"timestamp"`
+			}{avajson.NewTime(when)})
+			require.NoError(err)
+			require.Equal(string(was), string(is), "instant %s", when)
+
+			var back struct {
+				T avajson.Time `json:"timestamp"`
+			}
+			require.NoError(json.Unmarshal(is, &back))
+			require.True(back.T.Time().Equal(when), "instant %s did not survive", when)
+		}
 	})
 
 	t.Run("getFeeConfig", func(t *testing.T) {

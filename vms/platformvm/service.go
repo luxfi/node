@@ -11,7 +11,6 @@ import (
 	"math"
 	"net/http"
 	"slices"
-	"time"
 
 	"github.com/go-json-experiment/json"
 	jsonv1 "github.com/go-json-experiment/json/v1"
@@ -1823,7 +1822,7 @@ func (s *Service) GetRewardUTXOs(_ *http.Request, args *apitypes.GetTxArgs, repl
 // GetTimestampReply is the response from GetTimestamp
 type GetTimestampReply struct {
 	// Current timestamp
-	Timestamp time.Time `json:"timestamp"`
+	Timestamp avajson.Time `json:"timestamp"`
 }
 
 // GetTimestamp returns the current timestamp on chain.
@@ -1836,7 +1835,7 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	reply.Timestamp = s.vm.state.GetTimestamp()
+	reply.Timestamp = avajson.NewTime(s.vm.state.GetTimestamp())
 	return nil
 }
 
@@ -2153,8 +2152,8 @@ func (s *Service) GetFeeConfig(_ *http.Request, _ *struct{}, reply *GetFeeConfig
 
 type GetFeeStateReply struct {
 	gas.State
-	Price gas.Price `json:"price"`
-	Time  time.Time `json:"timestamp"`
+	Price gas.Price    `json:"price"`
+	Time  avajson.Time `json:"timestamp"`
 }
 
 // GetFeeState returns the current fee state of the chain.
@@ -2173,7 +2172,7 @@ func (s *Service) GetFeeState(_ *http.Request, _ *struct{}, reply *GetFeeStateRe
 		reply.State.Excess,
 		s.vm.DynamicFeeConfig.ExcessConversionConstant,
 	)
-	reply.Time = s.vm.state.GetTimestamp()
+	reply.Time = avajson.NewTime(s.vm.state.GetTimestamp())
 	return nil
 }
 
@@ -2189,9 +2188,9 @@ func (s *Service) GetValidatorFeeConfig(_ *http.Request, _ *struct{}, reply *fee
 }
 
 type GetValidatorFeeStateReply struct {
-	Excess gas.Gas   `json:"excess"`
-	Price  gas.Price `json:"price"`
-	Time   time.Time `json:"timestamp"`
+	Excess gas.Gas      `json:"excess"`
+	Price  gas.Price    `json:"price"`
+	Time   avajson.Time `json:"timestamp"`
 }
 
 // GetValidatorFeeState returns the current validator fee state of the chain.
@@ -2210,7 +2209,7 @@ func (s *Service) GetValidatorFeeState(_ *http.Request, _ *struct{}, reply *GetV
 		reply.Excess,
 		s.vm.ValidatorFeeConfig.ExcessConversionConstant,
 	)
-	reply.Time = s.vm.state.GetTimestamp()
+	reply.Time = avajson.NewTime(s.vm.state.GetTimestamp())
 	return nil
 }
 

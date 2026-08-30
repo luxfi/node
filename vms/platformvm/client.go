@@ -570,7 +570,7 @@ func (c *Client) GetRewardUTXOs(ctx context.Context, args *apitypes.GetTxArgs, o
 func (c *Client) GetTimestamp(ctx context.Context, options ...rpc.Option) (time.Time, error) {
 	res := &GetTimestampReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getTimestamp", struct{}{}, res, options...)
-	return res.Timestamp, err
+	return res.Timestamp.Time(), err
 }
 
 // GetValidatorsAt returns the weights of the validator set of a provided chain
@@ -642,7 +642,7 @@ func (c *Client) GetFeeState(ctx context.Context, options ...rpc.Option) (
 ) {
 	res := &GetFeeStateReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getFeeState", struct{}{}, res, options...)
-	return res.State, res.Price, res.Time, err
+	return res.State, res.Price, res.Time.Time(), err
 }
 
 // GetValidatorFeeConfig returns the validator fee config.
@@ -661,7 +661,7 @@ func (c *Client) GetValidatorFeeState(ctx context.Context, options ...rpc.Option
 ) {
 	res := &GetValidatorFeeStateReply{}
 	err := c.Requester.SendRequest(ctx, "platform.getValidatorFeeState", struct{}{}, res, options...)
-	return res.Excess, res.Price, res.Time, err
+	return res.Excess, res.Price, res.Time.Time(), err
 }
 
 func AwaitTxAccepted(
