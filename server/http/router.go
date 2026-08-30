@@ -158,9 +158,13 @@ func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	// /healthz — platform-standard health probe (K8s liveness/readiness)
+	// /healthz — the platform-standard liveness address, and an alias for
+	// /v1/health/ops/liveness rather than an answer of its own. A probe that
+	// computes its own verdict is a probe that can disagree with the node.
 	if request.URL.Path == "/healthz" {
-		r.handleHealthz(writer, request)
+		alias := request.Clone(request.Context())
+		alias.URL.Path = baseURL + "/health" + Ops + "/liveness"
+		r.servePath(writer, alias)
 		return
 	}
 
@@ -273,16 +277,6 @@ func (r *router) SetRootInfoProvider(provider RootInfoProvider) {
 // handleHealthz returns a minimal health response for K8s probes.
 // This delegates to the full /v1/health handler when available,
 // falling back to a static 200 response during early startup.
-func (r *router) handleHealthz(w http.ResponseWriter, req *http.Request) {
-	if handler, err := r.GetHandler(baseURL+"/health", "/health"); err == nil {
-		handler.ServeHTTP(w, req)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"ok"}`))
-}
-
 func (r *router) GetHandler(base, endpoint string) (http.Handler, error) {
 	r.routeLock.Lock()
 	defer r.routeLock.Unlock()
