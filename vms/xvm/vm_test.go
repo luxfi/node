@@ -4,25 +4,26 @@
 package xvm
 
 import (
-	"github.com/luxfi/node/upgrade"
 	"context"
 	"math"
 	"testing"
 
+	"github.com/luxfi/node/upgrade"
+
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/vm"
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/runtime"
+	"github.com/luxfi/vm"
 	"github.com/luxfi/vm/chains/atomic"
-	
-	lux "github.com/luxfi/utxo"
+
 	"github.com/luxfi/node/vms/components/verify"
 	xvmtxs "github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -42,11 +43,11 @@ func TestInvalidFx(t *testing.T) {
 	err := vmImpl.Initialize(
 		context.Background(),
 		vm.Init{
-			Runtime: rt,
-			DB:      memdb.New(),
-			Genesis: genesisBytes,
-			Upgrade: nil,
-			Config:  nil,
+			Runtime:  rt,
+			DB:       memdb.New(),
+			Genesis:  genesisBytes,
+			Upgrade:  nil,
+			Config:   nil,
 			ToEngine: toEngine,
 			Fx: []interface{}{
 				nil,
@@ -79,14 +80,14 @@ func TestFxInitializationFailure(t *testing.T) {
 	err := vmImpl.Initialize(
 		context.Background(),
 		vm.Init{
-			Runtime: rt,
-			DB:      memdb.New(),
-			Genesis: genesisBytes,
-			Upgrade: nil,
-			Config:  nil,
+			Runtime:  rt,
+			DB:       memdb.New(),
+			Genesis:  genesisBytes,
+			Upgrade:  nil,
+			Config:   nil,
 			ToEngine: toEngine,
-			Fx:      []interface{}{fx},
-			Sender:  nil,
+			Fx:       []interface{}{fx},
+			Sender:   nil,
 		},
 	)
 	require.ErrorIs(err, errUnknownFx)
@@ -164,18 +165,13 @@ func TestIssueNFT(t *testing.T) {
 	}
 	utxos, err := lux.GetAllUTXOs(env.vm.state, moveAddrs)
 	require.NoError(err)
-	transferOp, _, err := env.vm.SpendNFT(
+
+	transferNFTTx, err := env.txBuilder.TransferNFT(
 		utxos,
 		kc,
 		createAssetTx.ID(),
 		1,
 		keys[2].Address(),
-	)
-	require.NoError(err)
-
-	transferNFTTx, err := env.txBuilder.Operation(
-		transferOp,
-		kc,
 		key.Address(),
 	)
 	require.NoError(err)

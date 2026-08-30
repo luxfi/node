@@ -141,87 +141,55 @@ Loss of these keys means:
 
 ## Step 3: Fund Your Wallet
 
-### Create P-Chain Address
+Your keys stay in your wallet. The node verifies and orders transactions; it
+holds no key and never signs, so there is nothing to send it but signed bytes.
 
-Generate an address to receive funds:
+### Get a P-Chain Address
 
-```bash
-# Create keystore user
-curl -X POST --data '{
-    "jsonrpc": "2.0",
-    "method": "keystore.createUser",
-    "params": {
-        "username": "myuser",
-        "password": "mypassword"
-    },
-    "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/keystore
+Derive the address from a key you hold locally. `keyutil` in the wallet
+examples loads that key:
 
-# Create P-Chain address
-curl -X POST --data '{
-    "jsonrpc": "2.0",
-    "method": "platform.createAddress",
-    "params": {
-        "username": "myuser",
-        "password": "mypassword"
-    },
-    "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+```go
+key := keyutil.MustLoadKey()
+addr := key.Address()
 ```
+
+Check what it holds with
+[`wallet/network/primary/examples/get-p-chain-balance`](https://github.com/luxfi/node/tree/main/wallet/network/primary/examples/get-p-chain-balance).
 
 ### Transfer LUX to P-Chain
 
-Transfer LUX from X-Chain or C-Chain to P-Chain:
-
-```bash
-# Export from X-Chain to P-Chain
-curl -X POST --data '{
-    "jsonrpc": "2.0",
-    "method": "xvm.exportLUX",
-    "params": {
-        "username": "myuser",
-        "password": "mypassword",
-        "to": "P-lux1xxxxx...",
-        "amount": 2000000000000
-    },
-    "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/X
-
-# Import to P-Chain
-curl -X POST --data '{
-    "jsonrpc": "2.0",
-    "method": "platform.importLUX",
-    "params": {
-        "username": "myuser",
-        "password": "mypassword",
-        "sourceChain": "X"
-    },
-    "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
-```
+A cross-chain transfer is an export on the source chain and an import on the
+destination, both built and signed locally by the wallet and submitted as
+signed bytes. See
+[`wallet/network/primary/examples/add-primary-validator/export_c_to_p.go`](https://github.com/luxfi/node/tree/main/wallet/network/primary/examples/add-primary-validator)
+for the pattern.
 
 ## Step 4: Add as Validator
 
 ### Submit Validator Transaction
 
-Add your node as a validator:
+Build and sign the transaction with the wallet, then submit it. The full
+program is
+[`wallet/network/primary/examples/add-primary-validator`](https://github.com/luxfi/node/tree/main/wallet/network/primary/examples/add-primary-validator):
 
-```bash
-curl -X POST --data '{
-    "jsonrpc": "2.0",
-    "method": "platform.addValidator",
-    "params": {
-        "username": "myuser",
-        "password": "mypassword",
-        "nodeID": "NodeID-5KqnQfaFQxY9rsFBAa68377qWSherYLQ7",
-        "startTime": 1704067200,
-        "endTime": 1735689600,
-        "stakeAmount": 2000000000000,
-        "rewardAddress": "P-lux1xxxxx...",
-        "delegationFeeRate": 10
-    },
-    "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
+```go
+kc := primary.NewKeychainAdapter(secp256k1fx.NewKeychain(key))
+wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
+    URI:         uri,
+    LUXKeychain: kc,
+    EVMKeychain: kc,
+})
+tx, err := wallet.P().IssueAddPermissionlessValidatorTx(
+    &txs.ChainValidator{Validator: txs.Validator{
+        NodeID: nodeID, Start: start, End: end, Wght: weight,
+    }},
+    pop,
+    utxoAssetID,
+    validationRewardOwner,
+    delegationRewardOwner,
+    delegationFee,
+)
 ```
 
 Parameters:
@@ -356,25 +324,9 @@ curl -X POST --data '{
 
 ### Join a Chain
 
-Validate additional chains for extra rewards:
-
-```bash
-# Add chain validator
-curl -X POST --data '{
-    "jsonrpc": "2.0",
-    "method": "platform.addChainValidator",
-    "params": {
-        "username": "myuser",
-        "password": "mypassword",
-        "nodeID": "NodeID-xxx",
-        "chainID": "chain-xxx",
-        "startTime": 1704067200,
-        "endTime": 1735689600,
-        "weight": 1000
-    },
-    "id": 1
-}' -H 'content-type:application/json;' http://localhost:9630/v1/bc/P
-```
+Validate additional chains for extra rewards. The transaction is built and
+signed by the wallet, as with the primary network — see
+[`wallet/network/primary/examples/add-permissioned-chain-validator`](https://github.com/luxfi/node/tree/main/wallet/network/primary/examples/add-permissioned-chain-validator).
 
 ### Chain Requirements
 

@@ -11,8 +11,8 @@ import (
 	"slices"
 
 	"github.com/go-json-experiment/json"
-	jsonv1 "github.com/go-json-experiment/json/v1"
 	"github.com/go-json-experiment/json/jsontext"
+	jsonv1 "github.com/go-json-experiment/json/v1"
 	"github.com/luxfi/address"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
@@ -105,12 +105,24 @@ type AssetDefinition struct {
 	// Alias is the name the asset is known by. On the wire it is the key the
 	// definition hangs under rather than one of its fields, which is what
 	// `json:"-"` says; Assets supplies it.
-	Alias        string              `json:"-"`
-	Name         string              `json:"name"`
-	Symbol       string              `json:"symbol"`
-	Denomination avajson.Uint8       `json:"denomination"`
-	InitialState InitialState   `json:"initialState"`
-	Memo         string              `json:"memo"`
+	Alias        string        `json:"-"`
+	Name         string        `json:"name"`
+	Symbol       string        `json:"symbol"`
+	Denomination avajson.Uint8 `json:"denomination"`
+	InitialState InitialState  `json:"initialState"`
+	Memo         string        `json:"memo"`
+}
+
+// Holder describes how much an address owns of an asset
+type Holder struct {
+	Amount  avajson.Uint64 `json:"amount"`
+	Address string         `json:"address"`
+}
+
+// Owners describes who can perform an action
+type Owners struct {
+	Threshold avajson.Uint32 `json:"threshold"`
+	Minters   []string       `json:"minters"`
 }
 
 // InitialState is what an asset holds at genesis.
