@@ -153,5 +153,4 @@ var messages = []any{
 	&xvm.GetAssetDescriptionReply{},
 	&xvm.GetBalanceArgs{},
 	&xvm.GetBalanceReply{},
-	&xvm.GetTxStatusReply{},
 }
