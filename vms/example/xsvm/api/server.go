@@ -4,11 +4,10 @@
 package api
 
 import (
-	"fmt"
-	"net/http"
+	"context"
+	"errors"
 	"sync"
 
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/example/xsvm/block"
@@ -18,19 +17,23 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/state"
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 	"github.com/luxfi/node/vms/platformvm/warp"
+	"github.com/luxfi/runtime"
 )
 
-// Server defines the xsvm API server.
-type Server interface {
-	Network(r *http.Request, args *struct{}, reply *NetworkReply) error
-	Genesis(r *http.Request, args *struct{}, reply *GenesisReply) error
-	Nonce(r *http.Request, args *NonceArgs, reply *NonceReply) error
-	Balance(r *http.Request, args *BalanceArgs, reply *BalanceReply) error
-	Loan(r *http.Request, args *LoanArgs, reply *LoanReply) error
-	IssueTx(r *http.Request, args *IssueTxArgs, reply *IssueTxReply) error
-	LastAccepted(r *http.Request, args *struct{}, reply *LastAcceptedReply) error
-	Block(r *http.Request, args *BlockArgs, reply *BlockReply) error
-	Message(r *http.Request, args *MessageArgs, reply *MessageReply) error
+// errNoWarpSigner is why a message read here carries no signature: this example
+// chain is handed no warp key, so it can produce the message and never a
+// signature over it.
+var errNoWarpSigner = errors.New("warp signer not available")
+
+// Server answers what this chain holds. Its operations are registered by
+// [Server.Ops].
+type Server struct {
+	rt      *runtime.Runtime
+	genesis *genesis.Genesis
+	state   database.KeyValueReader
+	chain   chain.Chain
+	builder builder.Builder
+	lock    sync.RWMutex
 }
 
 func NewServer(
@@ -39,8 +42,8 @@ func NewServer(
 	state database.KeyValueReader,
 	chain chain.Chain,
 	builder builder.Builder,
-) Server {
-	return &server{
+) *Server {
+	return &Server{
 		rt:      rt,
 		genesis: genesis,
 		state:   state,
@@ -49,33 +52,30 @@ func NewServer(
 	}
 }
 
-type server struct {
-	rt      *runtime.Runtime
-	genesis *genesis.Genesis
-	state   database.KeyValueReader
-	chain   chain.Chain
-	builder builder.Builder
-	lock    sync.RWMutex // For thread safety
-}
-
 type NetworkReply struct {
 	NetworkID uint32 `json:"networkID"`
 	ChainID   ids.ID `json:"chainID"`
 }
 
-func (s *server) Network(_ *http.Request, _ *struct{}, reply *NetworkReply) error {
-	reply.NetworkID = s.rt.NetworkID
-	reply.ChainID = s.rt.ChainID
-	return nil
+// Network is the network this node runs on and the chain it answers for.
+//
+// Response: {"networkID": 1, "chainID": "11111111111111111111111111111111LpoYY"}
+func (s *Server) getNetwork(context.Context, *struct{}) (*NetworkReply, error) {
+	return &NetworkReply{
+		NetworkID: s.rt.NetworkID,
+		ChainID:   s.rt.ChainID,
+	}, nil
 }
 
 type GenesisReply struct {
 	Genesis *genesis.Genesis `json:"genesis"`
 }
 
-func (s *server) Genesis(_ *http.Request, _ *struct{}, reply *GenesisReply) error {
-	reply.Genesis = s.genesis
-	return nil
+// Genesis is the state this chain started from.
+//
+// Response: {"genesis": null}
+func (s *Server) getGenesis(context.Context, *struct{}) (*GenesisReply, error) {
+	return &GenesisReply{Genesis: s.genesis}, nil
 }
 
 type NonceArgs struct {
@@ -86,10 +86,13 @@ type NonceReply struct {
 	Nonce uint64 `json:"nonce"`
 }
 
-func (s *server) Nonce(_ *http.Request, args *NonceArgs, reply *NonceReply) error {
-	nonce, err := state.GetNonce(s.state, args.Address)
-	reply.Nonce = nonce
-	return err
+// Nonce is how many transactions this chain has accepted from an address.
+//
+// Example: {"address": "6HgC8KRBEhXYbF4riJyJFLSHt37UNuRt"}
+// Response: {"nonce": 0}
+func (s *Server) getNonce(_ context.Context, in *NonceArgs) (*NonceReply, error) {
+	nonce, err := state.GetNonce(s.state, in.Address)
+	return &NonceReply{Nonce: nonce}, err
 }
 
 type BalanceArgs struct {
@@ -101,10 +104,13 @@ type BalanceReply struct {
 	Balance uint64 `json:"balance"`
 }
 
-func (s *server) Balance(_ *http.Request, args *BalanceArgs, reply *BalanceReply) error {
-	balance, err := state.GetBalance(s.state, args.Address, args.AssetID)
-	reply.Balance = balance
-	return err
+// Balance is how much of one asset an address holds.
+//
+// Example: {"address": "6HgC8KRBEhXYbF4riJyJFLSHt37UNuRt", "assetID": "11111111111111111111111111111111LpoYY"}
+// Response: {"balance": 0}
+func (s *Server) getBalance(_ context.Context, in *BalanceArgs) (*BalanceReply, error) {
+	balance, err := state.GetBalance(s.state, in.Address, in.AssetID)
+	return &BalanceReply{Balance: balance}, err
 }
 
 type LoanArgs struct {
@@ -115,10 +121,13 @@ type LoanReply struct {
 	Amount uint64 `json:"amount"`
 }
 
-func (s *server) Loan(_ *http.Request, args *LoanArgs, reply *LoanReply) error {
-	amount, err := state.GetLoan(s.state, args.ChainID)
-	reply.Amount = amount
-	return err
+// Loan is how much this chain has exported to another and not had returned.
+//
+// Example: {"chainID": "11111111111111111111111111111111LpoYY"}
+// Response: {"amount": 0}
+func (s *Server) getLoan(_ context.Context, in *LoanArgs) (*LoanReply, error) {
+	amount, err := state.GetLoan(s.state, in.ChainID)
+	return &LoanReply{Amount: amount}, err
 }
 
 type IssueTxArgs struct {
@@ -129,22 +138,25 @@ type IssueTxReply struct {
 	TxID ids.ID `json:"txID"`
 }
 
-func (s *server) IssueTx(r *http.Request, args *IssueTxArgs, reply *IssueTxReply) error {
-	newTx, err := tx.Parse(args.Tx)
+// IssueTx hands this chain a signed transaction and answers with its id.
+//
+// Example: {"tx": null}
+// Response: {"txID": "11111111111111111111111111111111LpoYY"}
+func (s *Server) issueTx(ctx context.Context, in *IssueTxArgs) (*IssueTxReply, error) {
+	newTx, err := tx.Parse(in.Tx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	s.lock.Lock()
-	err = s.builder.AddTx(r.Context(), newTx)
+	err = s.builder.AddTx(ctx, newTx)
 	s.lock.Unlock()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	txID, err := newTx.ID()
-	reply.TxID = txID
-	return err
+	return &IssueTxReply{TxID: txID}, err
 }
 
 type LastAcceptedReply struct {
@@ -152,17 +164,19 @@ type LastAcceptedReply struct {
 	Block   *block.Stateless `json:"block"`
 }
 
-func (s *server) LastAccepted(_ *http.Request, _ *struct{}, reply *LastAcceptedReply) error {
+// LastAccepted is the most recent block this chain accepted.
+//
+// Response: {"blockID": "11111111111111111111111111111111LpoYY", "block": null}
+func (s *Server) getLastAccepted(context.Context, *struct{}) (*LastAcceptedReply, error) {
 	s.lock.RLock()
-	reply.BlockID = s.chain.LastAccepted()
+	blkID := s.chain.LastAccepted()
 	s.lock.RUnlock()
-	blkBytes, err := state.GetBlock(s.state, reply.BlockID)
-	if err != nil {
-		return err
-	}
 
-	reply.Block, err = block.Parse(blkBytes)
-	return err
+	blk, err := s.read(blkID)
+	if err != nil {
+		return nil, err
+	}
+	return &LastAcceptedReply{BlockID: blkID, Block: blk}, nil
 }
 
 type BlockArgs struct {
@@ -173,14 +187,25 @@ type BlockReply struct {
 	Block *block.Stateless `json:"block"`
 }
 
-func (s *server) Block(_ *http.Request, args *BlockArgs, reply *BlockReply) error {
-	blkBytes, err := state.GetBlock(s.state, args.BlockID)
+// Block is one block, the one whose id is asked for.
+//
+// Example: {"blockID": "11111111111111111111111111111111LpoYY"}
+// Response: {"block": null}
+func (s *Server) getBlock(_ context.Context, in *BlockArgs) (*BlockReply, error) {
+	blk, err := s.read(in.BlockID)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return &BlockReply{Block: blk}, nil
+}
 
-	reply.Block, err = block.Parse(blkBytes)
-	return err
+// read is one block out of state, parsed. Both block reads want it.
+func (s *Server) read(blkID ids.ID) (*block.Stateless, error) {
+	blkBytes, err := state.GetBlock(s.state, blkID)
+	if err != nil {
+		return nil, err
+	}
+	return block.Parse(blkBytes)
 }
 
 type MessageArgs struct {
@@ -192,14 +217,14 @@ type MessageReply struct {
 	Signature []byte                `json:"signature"`
 }
 
-func (s *server) Message(_ *http.Request, args *MessageArgs, reply *MessageReply) error {
-	message, err := state.GetMessage(s.state, args.TxID)
+// Message is the warp message an export transaction produced.
+//
+// Example: {"txID": "11111111111111111111111111111111LpoYY"}
+// Response: {"message": null, "signature": null}
+func (s *Server) getMessage(_ context.Context, in *MessageArgs) (*MessageReply, error) {
+	message, err := state.GetMessage(s.state, in.TxID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	reply.Message = message
-
-	// WarpSigner is not available in the xsvm example context.
-	return fmt.Errorf("warp signer not available")
+	return &MessageReply{Message: message}, errNoWarpSigner
 }

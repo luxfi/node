@@ -33,10 +33,9 @@ import (
 // one.
 //
 // Everything that writes an object here writes it under
-// jsonv1.DefaultOptionsV1, because the JSON-RPC envelope around these replies
-// is gorilla's json2 codec and that is v1: v1 orders map entries and writes a
-// nil []byte as null, v2 does neither, and both differences are visible in what
-// mainnet answers. Reading does NOT pass the option — under it a map key whose
+// jsonv1.DefaultOptionsV1, because v1 is the spelling mainnet answers in: v1
+// orders map entries and writes a nil []byte as null, v2 does neither, and both
+// differences are visible in what mainnet answers. Reading does NOT pass the option — under it a map key whose
 // type has UnmarshalText is handed to UnmarshalJSON unquoted instead and every
 // id-keyed object fails to decode.
 

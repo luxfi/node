@@ -8,18 +8,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/rpc/v2"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/consensus/core/interfaces"
 	enginechain "github.com/luxfi/consensus/engine/chain"
-	"github.com/luxfi/constants"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
-	"github.com/luxfi/node/utils/json"
+	server "github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/vms/example/xsvm/api"
 	"github.com/luxfi/node/vms/example/xsvm/builder"
 	"github.com/luxfi/node/vms/example/xsvm/execute"
@@ -44,6 +42,7 @@ type VM struct {
 
 	rt      *runtime.Runtime
 	db      database.Database
+	log     log.Logger
 	genesis *genesis.Genesis
 
 	chain   xschain.Chain
@@ -62,6 +61,7 @@ func (vm *VM) Initialize(
 	if logger == nil {
 		logger = rt.Log.(log.Logger)
 	}
+	vm.log = logger
 	logger.Info("initializing xsvm",
 		log.Stringer("version", Version),
 	)
@@ -158,20 +158,26 @@ func (*VM) Version(context.Context) (string, error) {
 	return Version.String(), nil
 }
 
+// CreateHandlers maps an endpoint under this chain base to what answers there.
+//
+// One entry, and it is not the base. The router records a prefix mount only for
+// a NAMED endpoint, so an app registered at "" would be an exact route owning
+// nothing beneath it. /ops is what makes the ops, the document and the docs page
+// reachable.
 func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
-	server := rpc.NewServer()
-	server.RegisterCodec(json.NewCodec(), "application/json")
-	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
-	jsonRPCAPI := api.NewServer(
+	handler, err := server.Mount(api.NewServer(
 		vm.rt,
 		vm.genesis,
 		vm.db,
 		vm.chain,
 		vm.builder,
-	)
+	).Ops(vm.log))
+	if err != nil {
+		return nil, err
+	}
 	return map[string]http.Handler{
-		"": server,
-	}, server.RegisterService(jsonRPCAPI, constants.XSVMName)
+		server.Ops: handler,
+	}, nil
 }
 
 // NewHTTPHandler is defined in vm_http_grpc.go (with grpc build tag)

@@ -20,8 +20,7 @@ require (
 	github.com/google/btree v1.1.3
 	github.com/google/renameio/v2 v2.0.2
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/mux v1.8.1
-	github.com/gorilla/rpc v1.2.1
+	github.com/gorilla/rpc v1.2.1 // indirect
 	github.com/holiman/uint256 v1.3.2
 	github.com/huin/goupnp v1.3.0
 	github.com/jackpal/gateway v1.1.1
@@ -116,10 +115,10 @@ require (
 	github.com/consensys/gnark-crypto v0.20.1
 	github.com/go-json-experiment/json v0.0.0-20260601182631-00ed12fed2a6
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/luxfi/accel v1.3.1
+	github.com/luxfi/accel v1.3.2
 	github.com/luxfi/api v1.1.14
 	github.com/luxfi/atomic v1.0.0
-	github.com/luxfi/chains v1.7.33
+	github.com/luxfi/chains v1.7.35-0.20260830214534-fe1f7cd5e658
 	github.com/luxfi/codec v1.2.1
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.4
@@ -144,7 +143,7 @@ require (
 	github.com/luxfi/utils v1.3.1
 	github.com/luxfi/utxo v0.5.10
 	github.com/luxfi/validators v1.3.3
-	github.com/luxfi/vm v1.3.14
+	github.com/luxfi/vm v1.3.16
 	github.com/luxfi/warp v1.24.1
 	github.com/luxfi/zap v1.2.7
 	github.com/luxfi/zwing v0.6.1
@@ -181,7 +180,6 @@ require (
 	github.com/aws/smithy-go v1.24.2 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.5.0 // indirect
 	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
-	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
@@ -189,7 +187,6 @@ require (
 	github.com/gofiber/schema v1.7.1 // indirect
 	github.com/gofiber/utils/v2 v2.0.4 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.2.0 // indirect
 	github.com/hanzoai/vfs v0.4.3 // indirect
@@ -198,8 +195,6 @@ require (
 	github.com/hanzos3/md5-simd v1.1.3 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.6.0 // indirect
-	github.com/luxfi/bft v0.1.5 // indirect
-	github.com/luxfi/config v1.1.2 // indirect
 	github.com/luxfi/corona v0.10.4 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
@@ -210,7 +205,6 @@ require (
 	github.com/luxfi/magnetar v1.2.3 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/mlwe v0.3.0 // indirect
-	github.com/luxfi/netrunner v1.18.5-0.20260519042948-50731517be59 // indirect
 	github.com/luxfi/pq v1.1.0 // indirect
 	github.com/luxfi/precompile v0.19.8 // indirect
 	github.com/luxfi/pulsar v1.9.2 // indirect
@@ -226,9 +220,7 @@ require (
 	github.com/zap-proto/fiber/v3 v3.2.1 // indirect
 	github.com/zap-proto/mcp v1.0.5 // indirect
 	go.mongodb.org/mongo-driver v1.17.9 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260825221802-da73d73af1c5 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
-	google.golang.org/grpc v1.81.1 // indirect
 )
 
 require (

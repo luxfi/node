@@ -7,11 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
+	"path"
 	"sync"
 
 	"github.com/go-json-experiment/json"
-	"github.com/gorilla/mux"
 
 	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/math/set"
@@ -50,8 +49,7 @@ type RootInfoProvider interface {
 }
 
 type router struct {
-	lock   sync.RWMutex
-	router *mux.Router
+	lock sync.RWMutex
 
 	routeLock      sync.Mutex
 	reservedRoutes set.Set[string]     // Reserves routes so that there can't be alias that conflict
@@ -61,6 +59,9 @@ type router struct {
 	headerRoutes map[string]http.Handler
 	// legacy url-based routing
 	routes map[string]map[string]http.Handler // Maps routes to a handler
+	// paths maps a full url (base+endpoint) to the handler registered at
+	// exactly that path. Every endpoint appears here.
+	paths map[string]http.Handler
 	// mounts maps a full endpoint url (base+endpoint) to its handler. A base is
 	// a namespace shared by sibling endpoints; an endpoint is a mount, and it
 	// owns the paths beneath it. Only non-empty endpoints appear here.
@@ -71,16 +72,14 @@ type router struct {
 }
 
 func newRouter() *router {
-	r := &router{
-		router:         mux.NewRouter(),
+	return &router{
 		reservedRoutes: make(set.Set[string]),
 		aliases:        make(map[string][]string),
 		headerRoutes:   make(map[string]http.Handler),
 		routes:         make(map[string]map[string]http.Handler),
+		paths:          make(map[string]http.Handler),
 		mounts:         make(map[string]http.Handler),
 	}
-	r.router.NotFoundHandler = http.HandlerFunc(r.serveBelowMount)
-	return r
 }
 
 // serveBelowMount answers a request that matched no exact route by handing it
@@ -113,39 +112,45 @@ func (r *router) serveBelowMount(writer http.ResponseWriter, request *http.Reque
 	http.NotFound(writer, request)
 }
 
-// servePath dispatches on the URL, matching case-insensitively where it can.
+// servePath dispatches on the URL: the canonical spelling of the path, then
+// the route registered at exactly that path, then the endpoint it lives under.
 //
-// A path is a name a person types, and a person does not expect /v1/chain/M
-// and /v1/chain/m to be different places. So a path that matches nothing is
-// tried again in lower case.
-//
-// It cannot simply be lowercased on the way in. A chain id is base58 —
-// `2erizn2pu4gbafsFzbyfqwzhkR2RT1qFdwr7kKKwn5T3BH3wW8` — where case carries
-// information, and flattening it would make every id-addressed route
-// unreachable. Matching as sent first means an id hits on the first attempt
-// and never reaches the retry; only paths that already failed are folded.
+// A doubled separator or a dot segment names a place the client could have
+// named plainly, so it is sent to the plain name rather than served at two
+// addresses. A trailing slash is not noise and is kept — /rpc is the mount
+// and /rpc/ is the root beneath it, which are two different requests.
 func (r *router) servePath(writer http.ResponseWriter, request *http.Request) {
-	var match mux.RouteMatch
-	if r.router.Match(request, &match) {
-		r.router.ServeHTTP(writer, request)
+	if clean := canonical(request.URL.Path); clean != request.URL.Path {
+		here := *request.URL
+		here.Path = clean
+		writer.Header().Set("Location", here.String())
+		writer.WriteHeader(http.StatusMovedPermanently)
 		return
 	}
 
-	lower := strings.ToLower(request.URL.Path)
-	if lower == request.URL.Path {
-		// Already folded and still no match: this path is not served, and
-		// answering as the mux does keeps the 404 in one place.
-		r.router.ServeHTTP(writer, request)
+	r.routeLock.Lock()
+	handler, ok := r.paths[request.URL.Path]
+	r.routeLock.Unlock()
+	if ok {
+		handler.ServeHTTP(writer, request)
 		return
 	}
+	r.serveBelowMount(writer, request)
+}
 
-	folded := request.Clone(request.Context())
-	folded.URL.Path = lower
-	if r.router.Match(folded, &match) {
-		r.router.ServeHTTP(writer, folded)
-		return
+// canonical is path.Clean with the trailing slash left on.
+func canonical(p string) string {
+	if p == "" {
+		return "/"
 	}
-	r.router.ServeHTTP(writer, request)
+	if p[0] != '/' {
+		p = "/" + p
+	}
+	clean := path.Clean(p)
+	if clean != "/" && p[len(p)-1] == '/' {
+		clean += "/"
+	}
+	return clean
 }
 
 func (r *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -274,9 +279,7 @@ func (r *router) SetRootInfoProvider(provider RootInfoProvider) {
 	r.rootInfoProvider = provider
 }
 
-// handleHealthz returns a minimal health response for K8s probes.
-// This delegates to the full /v1/health handler when available,
-// falling back to a static 200 response during early startup.
+// GetHandler is the handler registered at one base and endpoint.
 func (r *router) GetHandler(base, endpoint string) (http.Handler, error) {
 	r.routeLock.Lock()
 	defer r.routeLock.Unlock()
@@ -337,13 +340,11 @@ func (r *router) forceAddRouter(base, endpoint string, handler http.Handler) err
 	if endpoint != "" {
 		r.mounts[url] = handler
 	}
-
-	// Name routes based on their URL for easy retrieval in the future
-	route := r.router.Handle(url, handler)
-	if route == nil {
-		return fmt.Errorf("failed to create new route for %s", url)
+	// A base and an endpoint can concatenate to a url another pair already
+	// holds; the pair that got there first keeps it.
+	if _, taken := r.paths[url]; !taken {
+		r.paths[url] = handler
 	}
-	route.Name(url)
 
 	var err error
 	if aliases, exists := r.aliases[base]; exists {

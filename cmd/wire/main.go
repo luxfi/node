@@ -12,9 +12,9 @@
 //
 // Two passes, because the two halves know different things.
 //
-//	go run ./cmd/wire -scan     reads the SOURCE for every gorilla/rpc handler
-//	                            and writes messages.go, the list of what those
-//	                            handlers take and return
+//	go run ./cmd/wire -scan     reads the SOURCE for every handler and writes
+//	                            messages.go, the list of what those handlers
+//	                            take and return
 //	go run ./cmd/wire           reads those TYPES and writes each package's
 //	                            zap_gen.go from [zip.LayoutOf]
 //
@@ -271,13 +271,13 @@ func handlers(root string) error {
 // carried reports the two payload types a handler carries — its input and its
 // answer — in either spelling a handler has in this tree:
 //
-//	func (r *T) M(*http.Request, *In, *Out) error      the gorilla/rpc shape
+//	func (r *T) M(*http.Request, *In, *Out) error      writes into a pointer
 //	func (r *T) m(context.Context, *In) (*Out, error)  the typed op
 //
 // One predicate, because it is one question: what does this handler put on the
-// wire? Whether the name is exported is not part of the answer — gorilla finds
-// its methods by reflection and so needs them exported, while a typed op is
-// named by its own registration and does not. Keying the scan on exportedness
+// wire? Whether the name is exported is not part of the answer — the first
+// shape was dispatched by reflection and so needed its methods exported, while
+// a typed op is named by its own registration and does not. Keying the scan on exportedness
 // would have quietly emptied the message list as each service was converted,
 // and an op whose types state no wire cannot cross the plane at all.
 func carried(fn *ast.FuncDecl, ops map[string]bool) ([]ast.Expr, bool) {
