@@ -481,10 +481,10 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 		return err
 	}
 
-	// VALIDATE BEFORE ASSIGN — the wedge a rejoining validator falls into.
+	// VALIDATE BEFORE ASSIGN.
 	//
-	// The prior code assigned vm.preferred = preferred BEFORE fetching the block. A
-	// preference for a block this proposervm does not hold therefore POISONED
+	// Assigning vm.preferred before fetching the block would let a preference for
+	// a block this proposervm does not hold POISON
 	// vm.preferred permanently: BuildBlock reads vm.preferred (getBlock) and, on the
 	// poisoned id, logs "failed to fetch preferred block" and errors on EVERY build
 	// attempt forever. Quasar's cert-finality has no polling re-converge path, so the
@@ -1053,10 +1053,9 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		// is the safe crash direction for the current inner-first accept order, and is
 		// also the shape left by the legacy pre-fork fallback or a truncated restore.
 		//
-		// This used to be a hard init failure, which killed the chain on the node
-		// ("non-critical chain failed to initialize chainAlias=C") and made every
-		// restart fatal. It is now REPAIRED — outer-only, with no inner
-		// re-execution:
+		// It is REPAIRED rather than fatal — outer-only, with no inner
+		// re-execution — because a state a clean shutdown can leave behind is a
+		// state the node has to come back from:
 		//
 		//  1. re-derive the index from the outer envelopes already in this node's
 		//     block store, each bound to the inner block WE accepted at that height;

@@ -899,13 +899,6 @@ func allFlags() []FlagSpec {
 			Category:    CategoryAPI,
 		},
 		{
-			Key:         "api-keystore-enabled",
-			Type:        TypeBool,
-			Default:     false,
-			Description: "If true, this node exposes the Keystore API",
-			Category:    CategoryAPI,
-		},
-		{
 			Key:         "api-metrics-enabled",
 			Type:        TypeBool,
 			Default:     true,

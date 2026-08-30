@@ -463,6 +463,96 @@ type ManagerConfig struct {
 	SecurityProfile *consensusconfig.ChainSecurityProfile
 }
 
+// chainPrefixes are the path segments every chain's HTTP routes are served
+// under, canonical first.
+//
+// "chain" is what these are: C-Chain, X-Chain, M-Chain. "bc" was short for
+// "blockchain", which is a word that does not survive contact with what we
+// actually run — a chain here may be a DAG or another graph, and none of them
+// is required to be a chain of blocks. It also saved three characters at the
+// cost of a reader knowing what it meant.
+//
+// "bc" stays because it is a live public route. Removing it would break every
+// deployed client and every integrator's bookmark, and a public path is not
+// ours to retract on a rename. It is an alias at the router — the same handler
+// reachable two ways — not a compatibility layer: nothing branches on it and
+// nothing translates.
+// lettersFor returns the single-letter routes a chain name earns, in both
+// cases. "M-Chain" gives {"M", "m"}; a name that is not <letter>-Chain gives
+// nothing.
+//
+// Derived rather than listed because a list goes stale silently: the map this
+// replaced named six letters while eleven chains were running, and nothing
+// about a missing entry looked like a missing entry.
+// isPrimary reports whether this chain belongs to the primary network, which
+// is what entitles it to a reserved name.
+func (m *manager) isPrimary(p ChainParameters) bool {
+	// ChainParameters.ChainID is the net that VALIDATES this chain, despite
+	// the name. The primary network's own id is what entitles a chain to a
+	// reserved name.
+	return p.ChainID == constants.PrimaryNetworkID
+}
+
+func lettersFor(name string) map[string]struct{} {
+	out := map[string]struct{}{}
+	if len(name) < 2 || name[1] != '-' {
+		return out
+	}
+	if !strings.EqualFold(name[2:], "chain") {
+		return out
+	}
+	c := name[:1]
+	if c[0] < 'A' || (c[0] > 'Z' && c[0] < 'a') || c[0] > 'z' {
+		return out
+	}
+	out[strings.ToUpper(c)] = struct{}{}
+	out[strings.ToLower(c)] = struct{}{}
+	return out
+}
+
+// reserved reports whether a path segment belongs to the primary network and
+// may not be claimed by any other chain.
+//
+// Without this a chain may name itself "m" and register at /v1/chain/m while
+// M-Chain sits at /v1/chain/M. HTTP paths are case-sensitive, so those are two
+// routes, and a reader looking at either would not be able to tell which is
+// the register that signs. The names of the primary network's chains are not
+// available to anyone else, in any case, under any of the forms a route can
+// take: the letter, the full name, and the VM suffix people reach for.
+func reserved(segment string) bool {
+	seg := strings.ToLower(segment)
+
+	// Every letter, in every form a route can take. A chain is reached by its
+	// letter, and people reach for the other three when they know the chain by
+	// its full name or its VM.
+	for c := byte('a'); c <= 'z'; c++ {
+		l := string(c)
+		if seg == l || seg == l+"-chain" || seg == l+"chain" || seg == l+"vm" {
+			return true
+		}
+	}
+
+	// And the VMs by name. `mpc` is what M-Chain does and `mpcvm` is what
+	// implements it, so both are names a reader would take for the register
+	// that signs — which is exactly why neither may belong to anything else.
+	for _, vm := range vmNames {
+		if seg == vm || seg == vm+"vm" || seg == vm+"-chain" {
+			return true
+		}
+	}
+	return false
+}
+
+// vmNames are the primary network's VMs, by the name each is known by. The
+// suffixed forms are derived in reserved() rather than listed, so adding one
+// here reserves every way of writing it.
+var vmNames = []string{
+	"mpc", "bridge", "oracle", "relay", "dex", "graph",
+	"identity", "key", "quantum", "zk", "ai", "platform", "avm", "evm",
+}
+
+var chainPrefixes = []string{"chain", "bc"}
+
 type manager struct {
 	// Note: The string representation of a chain's ID is also considered to be an alias of the chain
 	// That is, [chainID].String() is an alias for the chain, too
@@ -873,35 +963,65 @@ func (m *manager) createChain(chainParams ChainParameters) {
 					chainAlias = "C"
 				}
 
-				// The base is just "bc/<chainID>" and endpoint is "/rpc" or "/"
-				chainBase := fmt.Sprintf("bc/%s", chainAlias)
-				chainIDBase := fmt.Sprintf("bc/%s", chainParams.ID.String())
-
-				// AddRoute will build the full path as /v1/<base><endpoint>
-				m.Server.AddRoute(handler, chainBase, endpoint)
-				if chainAlias != chainParams.ID.String() {
-					m.Server.AddRoute(handler, chainIDBase, endpoint)
+				// AddRoute builds the full path as /v1/<base><endpoint>, so a
+				// base of "chain/C" and an endpoint of "/rpc" is
+				// /v1/chain/C/rpc.
+				//
+				// Every route is registered under both prefixes. `chain` is
+				// the name; `bc` is what it used to be called and answers so
+				// that deployed clients and anyone's bookmarks keep working.
+				// That is two paths to one handler rather than a compatibility
+				// layer — there is no second code path, nothing translates,
+				// and deleting the old prefix later is deleting a slice entry.
+				route := func(base string) {
+					for _, prefix := range chainPrefixes {
+						m.Server.AddRoute(handler, prefix+"/"+base, endpoint)
+					}
 				}
 
-				// Also register with chain name alias for user-friendly routing (e.g., /v1/bc/zoo/rpc)
-				if chainParams.Name != "" {
+				route(chainAlias)
+				if chainAlias != chainParams.ID.String() {
+					route(chainParams.ID.String())
+				}
+
+				// Also register with chain name alias for user-friendly routing (e.g., /v1/chain/zoo/rpc)
+				// A chain outside the primary network may not register under
+				// a name the primary network's chains answer to. The letters
+				// and their derivations are the register's own identity, and
+				// a second chain reachable at a name that looks like M-Chain's
+				// is a chain a reader cannot tell apart from the one that
+				// signs.
+				if chainParams.Name != "" && reserved(strings.ToLower(chainParams.Name)) && !m.isPrimary(chainParams) {
+					m.Log.Warn("refusing a reserved chain name",
+						log.String("name", chainParams.Name),
+						log.Stringer("chainID", chainParams.ID),
+					)
+				} else if chainParams.Name != "" {
 					nameLower := strings.ToLower(chainParams.Name)
-					nameBase := fmt.Sprintf("bc/%s", nameLower)
-					m.Server.AddRoute(handler, nameBase, endpoint)
+					route(nameLower)
 					m.Log.Info("Registered HTTP handler with chain name",
 						log.String("chainName", nameLower),
 						log.Stringer("chainID", chainParams.ID),
-						log.String("base", nameBase),
+						log.String("base", nameLower),
 						log.String("endpoint", endpoint),
 					)
 
-					// Register standard chain aliases (uppercase single-letter)
-					for alias, name := range map[string]string{
-						"C": "C-Chain", "X": "X-Chain", "D": "D-Chain",
-						"P": "P-Chain", "Q": "Q-Chain", "T": "T-Chain",
-					} {
-						if strings.EqualFold(chainParams.Name, name) {
-							m.Server.AddRoute(handler, "bc/"+alias, endpoint)
+					// Register the chain's letter, in both cases.
+					//
+					// The letter is derived from the name rather than looked
+					// up: a hand-written map listed six letters while the
+					// network ran eleven chains, so M, B, A, Z, G, K and F had
+					// no letter route at all and the list had no way of
+					// noticing. `M-Chain` yields `M`, and that is the whole
+					// rule.
+					//
+					// Both cases because HTTP paths are case-sensitive and a
+					// reader does not expect them to be. `/v1/chain/m/rpc`
+					// answering while `/v1/chain/M/rpc` does not is a
+					// distinction nobody asked for.
+					for alias := range lettersFor(chainParams.Name) {
+						if alias != "" {
+							route(alias)
 							m.Log.Info("Registered HTTP handler with chain alias",
 								log.String("alias", alias),
 								log.Stringer("chainID", chainParams.ID),
@@ -914,7 +1034,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				m.Log.Info("Registered HTTP handler",
 					log.String("chainAlias", chainAlias),
 					log.Stringer("chainID", chainParams.ID),
-					log.String("base", chainBase),
+					log.String("prefixes", strings.Join(chainPrefixes, ",")),
 					log.String("endpoint", endpoint),
 				)
 			}
@@ -4424,9 +4544,9 @@ func (b *blockHandler) AcceptedFrontier(ctx context.Context, nodeID ids.NodeID, 
 }
 
 // logFrontierDecision names WHICH branch of the frontier decision ran, because that
-// branch IS whether we fetch. Every one of them used to be silent, so a node that
-// concluded "not behind" and a node that received no reply at all produced byte-
-// identical output — the same unanswerable question the Chits sites had.
+// branch IS whether we fetch. A silent branch makes "concluded not behind" and
+// "received no reply at all" produce byte-identical output, which is an
+// unanswerable question at exactly the moment someone is asking it.
 //
 // Sampled per branch: each outcome carries its own counter, so a common decision
 // cannot bury a rare one and the first occurrence of every branch is visible.
@@ -5389,9 +5509,9 @@ var _ consensuschain.QuorumGossiper = (*networkGossiper)(nil)
 // collects α distinct signed votes can assemble + gossip the cert, so finality
 // no longer hinges on one node's inbound Chits.
 func (g *networkGossiper) BroadcastVote(chainID ids.ID, networkID ids.ID, blockID ids.ID, voteBytes []byte) int {
-	// Every return of 0 here is a vote that never left this node, and all three
-	// paths used to be silent — which is indistinguishable from "no vote was due"
-	// when a chain stops finalizing.
+	// Every return of 0 here is a vote that never left this node. Said silently
+	// that is indistinguishable from "no vote was due", which is the question
+	// being asked when a chain stops finalizing.
 	if g.net == nil || g.msgCreator == nil {
 		if g.log != nil {
 			g.log.Warn("quorum: vote NOT broadcast — nil transport",

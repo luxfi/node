@@ -7,7 +7,7 @@ module github.com/luxfi/node
 //
 // - If updating between minor versions (e.g. 1.23.x -> 1.24.x):
 //   - Consider updating the version of golangci-lint (in scripts/lint.sh).
-go 1.26.4
+go 1.26.5
 
 exclude github.com/luxfi/geth v1.16.1
 
@@ -36,7 +36,7 @@ require (
 	github.com/luxfi/metric v1.10.1
 	github.com/luxfi/mock v0.1.1
 	github.com/mr-tron/base58 v1.3.0
-	github.com/onsi/ginkgo/v2 v2.28.1
+	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/pires/go-proxyproto v0.11.0
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
@@ -118,12 +118,12 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.3.1
-	github.com/luxfi/api v1.1.9
+	github.com/luxfi/api v1.1.13
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.7.33
 	github.com/luxfi/codec v1.2.1
 	github.com/luxfi/compress v0.1.1
-	github.com/luxfi/constants v1.6.2
+	github.com/luxfi/constants v1.6.4
 	github.com/luxfi/container v0.2.2
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.16.19
@@ -143,15 +143,16 @@ require (
 	github.com/luxfi/timer v1.1.1
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.3.1
-	github.com/luxfi/utxo v0.5.8
-	github.com/luxfi/validators v1.3.1
+	github.com/luxfi/utxo v0.5.10
+	github.com/luxfi/validators v1.3.3
 	github.com/luxfi/vm v1.3.14
 	github.com/luxfi/warp v1.24.1
-	github.com/luxfi/zap v1.2.6
+	github.com/luxfi/zap v1.2.7
 	github.com/luxfi/zwing v0.6.1
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/valyala/fasthttp v1.73.0
-	github.com/zap-proto/http v0.3.0
+	github.com/zap-proto/http v0.3.5
+	github.com/zap-proto/zip v1.36.31
 	go.uber.org/zap v1.27.1
 )
 
@@ -184,6 +185,8 @@ require (
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
+	github.com/gofiber/schema v1.7.1 // indirect
+	github.com/gofiber/utils/v2 v2.0.4 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.2.0 // indirect
@@ -215,14 +218,16 @@ require (
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/zap-proto/go v1.1.0 // indirect
+	github.com/zap-proto/fiber/v3 v3.2.1 // indirect
+	github.com/zap-proto/go v1.3.0 // indirect
+	github.com/zap-proto/mcp v1.0.5 // indirect
 	go.mongodb.org/mongo-driver v1.17.9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 )
 
 require (
 	github.com/luxfi/concurrent v0.1.1
-	github.com/luxfi/proto v1.4.3
+	github.com/luxfi/proto v1.4.10
 	github.com/luxfi/upgrade v1.0.3 // indirect
 	github.com/luxfi/version v1.0.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
@@ -242,7 +247,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/flatbuffers v25.12.19+incompatible // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260302011040-a15ffb7f9dcc // indirect
+	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/luxfi/address v1.1.1
 	github.com/luxfi/cache v1.3.1 // indirect

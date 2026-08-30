@@ -294,9 +294,10 @@ func (vm *pChainHeightVM) BuildBlock(ctx context.Context) (block.Block, error) {
 // only if the inner re-parse of the framed payload ALSO succeeds. So when the
 // prefix matches, attempt to parse b[header:] as an inner block; if that FAILS,
 // fall back to parsing the WHOLE b as a raw inner block (the colliding raw block,
-// whose bytes minus the 12-byte prefix are not a valid inner block). This removes
-// the bootstrap stall a magic collision used to cause (mis-framed → inner decode
-// fails closed → stall on that chain).
+// whose bytes minus the 12-byte prefix are not a valid inner block). A raw block
+// whose leading bytes happen to match the magic is therefore still read as the
+// raw block it is, rather than mis-framed into an inner decode that fails
+// closed.
 //
 // RECENCY GATE. A real frame's stamped epoch H must be
 // recent relative to THIS node's live P-chain height: H ≤ localCurrentH + slack.
@@ -365,11 +366,20 @@ func (vm *pChainHeightVM) LastAccepted(ctx context.Context) (ids.ID, error) {
 	return vm.inner.LastAccepted(ctx)
 }
 
-// NOTE: this wrapper deliberately does NOT forward GetBlockIDAtHeight. The bootstrap acceptance
-// oracle's fork-sibling check reads the IN-PROCESS consensus finalized ledger
-// (blockHandler.finalizedBlockAtHeight → engine.FinalizedBlockAtHeight), NOT a VM height index —
-// because the VM index is dead over ZAP (the zap server has no MsgGetBlockIDAtHeight handler, so
-// the real C-Chain returns nothing). A forwarder here would only re-expose that dead path.
+// This wrapper deliberately does NOT forward GetBlockIDAtHeight. The bootstrap
+// acceptance oracle's fork-sibling check reads the in-process consensus
+// finalized ledger (blockHandler.finalizedBlockAtHeight →
+// engine.FinalizedBlockAtHeight), and that is the only place it should read.
+//
+// The ledger is what finality means here. A VM's height index answers a
+// different question — what that VM has accepted — and the two can disagree
+// while a decision is in flight. Deciding finality from whichever of them
+// answers is how a rule ends up enforced at one door and not the other, so
+// there is one door.
+//
+// That is the whole of the reason, and it does not depend on what any transport
+// happens to support: the index being reachable would not make it the right
+// thing to ask.
 
 // SetPreference delegates to the inner VM.
 func (vm *pChainHeightVM) SetPreference(ctx context.Context, id ids.ID) error {

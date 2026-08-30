@@ -88,8 +88,8 @@ func TestIsValid(t *testing.T) {
 // TestIsValidRejectsLongButGuessable pins that strength is scored, not measured
 // in characters. Every password here clears the 20-character bar the length-only
 // fallback applied at OK (Fair), and each is one of the first guesses a cracker
-// makes. The fallback shipped in the default build, so these were accepted by
-// keystore.CreateUser and auth.ChangePassword.
+// makes. The fallback shipped in the default build, so these cleared the bar
+// anywhere a password was set.
 func TestIsValidRejectsLongButGuessable(t *testing.T) {
 	for _, pw := range []string{
 		"aaaaaaaaaaaaaaaaaaaa",
