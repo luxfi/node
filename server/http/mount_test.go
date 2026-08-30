@@ -60,7 +60,7 @@ func TestChainHandlerServesItsOwnPaths(t *testing.T) {
 		require.NoError(t, r.AddRouter(base, endpoint, h))
 	}
 
-	for _, path := range []string{"/rpc/getStatus", "/rpc/getUTXOCount", "/proof/getProofStats"} {
+	for _, path := range []string{"/getStatus", "/getUTXOCount", "/getProofStats"} {
 		req := httptest.NewRequest(http.MethodGet, base+path, nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
