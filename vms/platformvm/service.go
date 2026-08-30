@@ -1856,9 +1856,9 @@ type GetValidatorsAtArgs struct {
 }
 
 // The two validator-set replies build their own object rather than letting the
-// codec walk a struct, and they do it under jsonv1.DefaultOptionsV1 because the
-// response envelope around them is written by gorilla's json2 codec, which is
-// v1. Two v1/v2 differences are visible in exactly these bytes: a nil []byte is
+// codec walk a struct, and they do it under jsonv1.DefaultOptionsV1 because v1
+// is the spelling mainnet answers in. Two v1/v2 differences are visible in
+// exactly these bytes: a nil []byte is
 // null under v1 and "" under v2, and map entries are ordered under v1 and are
 // not under v2. Both show in what mainnet answers today — see testdata/ — so
 // the semantics are part of the wire, not a preference.

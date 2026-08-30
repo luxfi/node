@@ -406,6 +406,26 @@ type Keychain interface {
 - ❌ `github.com/luxfi/*` legacy upstream forks
 - ❌ `github.com/ethereum/go-ethereum`
 
+### One HTTP transport — zip, not gorilla
+`gorilla/mux` and `gorilla/rpc` are gone from this module's source. A service
+states its surface as typed ops on a `*zip.App` (`Ops()`), the node mounts it at
+`server.Ops`, and the address IS the operation — no method name in a body, no
+second router. `server/http/router.go` matches an exact path against its own
+table and falls through to the mount scan.
+
+`gorilla/websocket` STAYS and is load-bearing: `pubsub` serves the X-Chain
+subscription `vms/xvm` mounts at `/events`.
+
+After `go mod tidy`: mux is gone outright, websocket is direct, and
+`gorilla/rpc` survives only as `// indirect`, because two dependencies import it:
+
+- `luxfi/metric` (root package) for `APIInterceptor` — which nothing drives any
+  more, since no gorilla server is left to call it
+- `luxfi/rpc` for its JSON-RPC codec — though node now uses that module ONLY for
+  the request-options type (`rpc.Option`), which is not a JSON-RPC concern
+
+Taking `gorilla/rpc` out of go.mod entirely means dropping those two.
+
 ### Import Aliasing
 Avoid conflicts with consensus packages:
 ```go
@@ -776,7 +796,7 @@ schema states an id correctly, and the type is expected to state its own wire
 rather than quietly acquiring one by reflection. Until it does, a reply carrying
 an id cannot cross at all, and most of what P and X answer with carries one.
 
-**Measured over every gorilla/rpc handler in the module, before and after:**
+**Measured over every handler in the module, before and after:**
 
 | | ops |
 |---|---|

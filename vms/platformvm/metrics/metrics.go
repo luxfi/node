@@ -4,13 +4,11 @@
 package metrics
 
 import (
-	"errors"
 	"time"
 
 	"github.com/luxfi/metric"
 
 	"github.com/luxfi/ids"
-	utilmetric "github.com/luxfi/node/utils/metric"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/utils/wrappers"
@@ -47,8 +45,6 @@ type Block struct {
 }
 
 type Metrics interface {
-	utilmetric.APIInterceptor
-
 	// Mark that the given block was accepted.
 	MarkAccepted(Block) error
 
@@ -146,14 +142,6 @@ func New(registerer metric.Registerer) (Metrics, error) {
 	}
 
 	errs := wrappers.Errs{Err: err}
-	registry, ok := registerer.(metric.Registry)
-	if !ok {
-		return nil, errors.New("registerer must be a Registry")
-	}
-	apiRequestMetrics, err := utilmetric.NewAPIInterceptor(registry)
-	errs.Add(err)
-	m.APIInterceptor = apiRequestMetrics
-
 	errs.Add(
 		registerer.Register(m.timeUntilUnstake),
 		registerer.Register(m.timeUntilNetUnstake),
@@ -176,8 +164,6 @@ func New(registerer metric.Registerer) (Metrics, error) {
 }
 
 type metricsImpl struct {
-	utilmetric.APIInterceptor
-
 	blockMetrics *blockMetrics
 
 	// Staking metrics

@@ -36,8 +36,8 @@ import (
 //     have: a permissioned validator, an L1 validator, a non-empty balance
 //     map, a nil map against an empty one.
 //
-// The encoder here is encoding/json because that is the one gorilla's json2
-// codec writes the response with.
+// The encoder here is encoding/json because that is the one the recorded
+// responses were written with.
 
 // golden/ holds bodies recorded from api.lux.network, byte for byte as the node
 // sent them. It is not called testdata because this repository does not track a

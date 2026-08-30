@@ -1822,17 +1822,14 @@ func (n *Node) initInfoAPI() error {
 }
 
 // initSecurityAPI exposes the chain-wide ChainSecurityProfile as a
-// read-only API surface. Three endpoints share one handler:
+// read-only API surface: two reads on one Service receiver, registered by
+// its Ops and mounted under "security".
 //
-//   - JSON-RPC: POST /v1/security with methods securityProfile and
-//     blockSecurity (dispatched on the wire as security_securityProfile
-//     / security_blockSecurity per gorilla/rpc namespace convention)
-//   - REST:     GET  /v1/security/profile
-//   - REST:     GET  /v1/security/block/{n}
+//   - GET /profile        the profile this node runs under
+//   - GET /block/profile  the profile a block was accepted under
 //
-// All three share the same Service receiver; the shape returned is
-// the SCREAMING_SNAKE canonical profile JSON consumed by audit tooling,
-// wallet posture banners, and block explorers.
+// Both answer the SCREAMING_SNAKE canonical profile JSON consumed by
+// audit tooling, wallet posture banners, and block explorers.
 //
 // Prometheus gauges for the active profile are stamped onto the
 // node-wide metrics gatherer here so /v1/metrics carries the profile

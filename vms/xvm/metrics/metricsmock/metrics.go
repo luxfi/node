@@ -10,10 +10,8 @@
 package metricsmock
 
 import (
-	http "net/http"
 	reflect "reflect"
 
-	rpc "github.com/gorilla/rpc/v2"
 	block "github.com/luxfi/node/vms/xvm/block"
 	txs "github.com/luxfi/node/vms/xvm/txs"
 	gomock "go.uber.org/mock/gomock"
@@ -41,18 +39,6 @@ func NewMetrics(ctrl *gomock.Controller) *Metrics {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *Metrics) EXPECT() *MetricsMockRecorder {
 	return m.recorder
-}
-
-// AfterRequest mocks base method.
-func (m *Metrics) AfterRequest(i *rpc.RequestInfo) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AfterRequest", i)
-}
-
-// AfterRequest indicates an expected call of AfterRequest.
-func (mr *MetricsMockRecorder) AfterRequest(i any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AfterRequest", reflect.TypeOf((*Metrics)(nil).AfterRequest), i)
 }
 
 // IncTxRefreshHits mocks base method.
@@ -89,20 +75,6 @@ func (m *Metrics) IncTxRefreshes() {
 func (mr *MetricsMockRecorder) IncTxRefreshes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncTxRefreshes", reflect.TypeOf((*Metrics)(nil).IncTxRefreshes))
-}
-
-// InterceptRequest mocks base method.
-func (m *Metrics) InterceptRequest(i *rpc.RequestInfo) *http.Request {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InterceptRequest", i)
-	ret0, _ := ret[0].(*http.Request)
-	return ret0
-}
-
-// InterceptRequest indicates an expected call of InterceptRequest.
-func (mr *MetricsMockRecorder) InterceptRequest(i any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InterceptRequest", reflect.TypeOf((*Metrics)(nil).InterceptRequest), i)
 }
 
 // MarkBlockAccepted mocks base method.
