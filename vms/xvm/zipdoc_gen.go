@@ -9,47 +9,47 @@ import (
 )
 
 func init() {
-	zip.Describe("GET /asset", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm GET /asset", zip.Doc{
 		Description: "Returns an asset's name, symbol and denomination.",
 		Example:     json.RawMessage(`{"assetID":"LUX"}`),
 	})
-	zip.Describe("GET /balance", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm GET /balance", zip.Doc{
 		Description: "Returns the balance of one asset held by an address.\n\nWithout includePartial it counts only what the address holds outright — a\n1-of-1 output whose locktime has passed. With it, partially held and\nstill-locked outputs count too.",
 		Fields: map[string]string{
 			"UTXOID.txID": "Serialized:",
 		},
 		Example: json.RawMessage(`{"address":"X-lux1...","assetID":"LUX"}`),
 	})
-	zip.Describe("GET /balances", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm GET /balances", zip.Doc{
 		Description: "Returns every asset an address holds a non-zero balance of.\n\nWithout includePartial it counts only what the address holds outright — a\n1-of-1 output whose locktime has passed. With it, partially held and\nstill-locked outputs count too.",
 		Example:     json.RawMessage(`{"address":"X-lux1..."}`),
 	})
-	zip.Describe("GET /block", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm GET /block", zip.Doc{
 		Description: "Returns the block with the given id.",
 		Fields: map[string]string{
 			"GetBlockResponse.encoding": "If GetBlockResponse.Encoding is formatting.Hex, GetBlockResponse.Block is\nthe string representation of the block under hex encoding.\nIf GetBlockResponse.Encoding is formatting.JSON, GetBlockResponse.Block\nis the actual block returned as a JSON.",
 		},
 		Example: json.RawMessage(`{"blockID":"11111111111111111111111111111111LpoYY","encoding":"hex"}`),
 	})
-	zip.Describe("GET /block/:height", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm GET /block/:height", zip.Doc{
 		Description: "Returns the block accepted at the given height.",
 		Fields: map[string]string{
 			"GetBlockResponse.encoding": "If GetBlockResponse.Encoding is formatting.Hex, GetBlockResponse.Block is\nthe string representation of the block under hex encoding.\nIf GetBlockResponse.Encoding is formatting.JSON, GetBlockResponse.Block\nis the actual block returned as a JSON.",
 		},
 		Example: json.RawMessage(`{"height":"1","encoding":"hex"}`),
 	})
-	zip.Describe("GET /height", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm GET /height", zip.Doc{
 		Description: "Returns the height of the last accepted block.",
 		Response:    json.RawMessage(`{"height":"1"}`),
 	})
-	zip.Describe("GET /tx", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm GET /tx", zip.Doc{
 		Description: "Returns the transaction with the given id.",
 		Fields: map[string]string{
 			"GetTxReply.tx": "If [GetTxArgs.Encoding] is [Hex], [Tx] is the string representation of\nthe tx under hex encoding.\nIf [GetTxArgs.Encoding] is [JSON], [Tx] is the actual tx, which will be\nreturned as JSON to the caller.",
 		},
 		Example: json.RawMessage(`{"txID":"11111111111111111111111111111111LpoYY","encoding":"hex"}`),
 	})
-	zip.Describe("GET /txs", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm GET /txs", zip.Doc{
 		Description: "Returns the transactions of an address, one page at a time.\n\nThe reply carries the cursor to pass back for the next page.",
 		Fields: map[string]string{
 			"GetAddressTxsArgs.assetID":  "AssetID defaulted to LUX if omitted or left blank",
@@ -58,7 +58,7 @@ func init() {
 			"GetAddressTxsReply.cursor":  "Cursor used as a page index / offset",
 		},
 	})
-	zip.Describe("GET /utxos", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm GET /utxos", zip.Doc{
 		Description: "Returns the UTXOs referencing at least one of the given addresses.\n\nThe reply's endIndex is where the next page starts: pass it back as\nstartIndex to continue.",
 		Fields: map[string]string{
 			"GetUTXOsReply.encoding":   "Encoding specifies the encoding format the UTXOs are returned in.",
@@ -69,7 +69,7 @@ func init() {
 			"Index.utxo":               "The UTXO ID as a string",
 		},
 	})
-	zip.Describe("POST /tx", zip.Doc{
+	zip.Describe("github.com/luxfi/node/vms/xvm POST /tx", zip.Doc{
 		Description: "Sends a signed transaction to consensus and returns its id.\n\nThe bytes carry their own authority: the node holds no key that could have\nsigned them, so it checks no signature and consensus is what decides.",
 		Example:     json.RawMessage(`{"tx":"0x00000000000...","encoding":"hex"}`),
 	})

@@ -134,7 +134,13 @@ func (x *BaseL1Validator) UnmarshalZAP(data []byte) error {
 		return fmt.Errorf("BaseL1Validator: %w", err)
 	}
 	o := m.Root()
-	copy(x.ValidationID[:], o.BytesFixed(baseL1ValidatorValidationIDAt, 32))
+	if raw := o.BytesFixed(baseL1ValidatorValidationIDAt, 32); len(raw) > 0 {
+		var v ids.ID
+		copy(v[:], raw)
+		if v != (ids.ID{}) {
+			x.ValidationID = &v
+		}
+	}
 	if raw := o.Bytes(baseL1ValidatorPublicKeyAt); len(raw) > 0 {
 		v := types.JSONByteSlice(append([]byte(nil), raw...))
 		x.PublicKey = &v

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"maps"
 	"math"
-	"net/http"
 	"slices"
 
 	"github.com/go-json-experiment/json"
@@ -82,9 +81,9 @@ type stakerAttributes struct {
 	proofOfPossession      *signer.ProofOfPossession
 }
 
-// GetHeight returns the height of the last accepted block
-func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *apitypes.GetHeightResponse) error {
-
+// getHeight returns the height of the last accepted block.
+func (s *Service) getHeight(ctx context.Context, _ *struct{}) (*apitypes.GetHeightResponse, error) {
+	response := &apitypes.GetHeightResponse{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getHeight",
@@ -93,15 +92,14 @@ func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *apitypes.Get
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	ctx := r.Context()
 	height, err := s.vm.GetCurrentHeight(ctx)
 	response.Height = apitypes.Uint64(height)
-	return err
+	return nil, err
 }
 
-// GetProposedHeight returns the current ProposerVM height
-func (s *Service) GetProposedHeight(r *http.Request, _ *struct{}, reply *apitypes.GetHeightResponse) error {
-
+// getProposedHeight returns the height the next proposal will be built at.
+func (s *Service) getProposedHeight(ctx context.Context, _ *struct{}) (*apitypes.GetHeightResponse, error) {
+	reply := &apitypes.GetHeightResponse{}
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getProposedHeight"),
@@ -112,10 +110,10 @@ func (s *Service) GetProposedHeight(r *http.Request, _ *struct{}, reply *apitype
 	lastAcceptedID := s.vm.state.GetLastAccepted()
 	lastAcceptedBlock, err := s.vm.manager.GetStatelessBlock(lastAcceptedID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	reply.Height = apitypes.Uint64(lastAcceptedBlock.Height())
-	return nil
+	return reply, nil
 }
 
 type GetBalanceRequest struct {
@@ -126,20 +124,24 @@ type GetBalanceRequest struct {
 // compatibility.
 type GetBalanceResponse struct {
 	// Balance, in µLUX, of the address
-	Balance             avajson.Uint64            `json:"balance"`
-	Unlocked            avajson.Uint64            `json:"unlocked"`
-	LockedStakeable     avajson.Uint64            `json:"lockedStakeable"`
-	LockedNotStakeable  avajson.Uint64            `json:"lockedNotStakeable"`
-	Balances            Amounts       `json:"balances"`
-	Unlockeds           Amounts       `json:"unlockeds"`
-	LockedStakeables    Amounts       `json:"lockedStakeables"`
-	LockedNotStakeables Amounts       `json:"lockedNotStakeables"`
-	UTXOIDs             []*lux.UTXOID `json:"utxoIDs"`
+	Balance             avajson.Uint64 `json:"balance"`
+	Unlocked            avajson.Uint64 `json:"unlocked"`
+	LockedStakeable     avajson.Uint64 `json:"lockedStakeable"`
+	LockedNotStakeable  avajson.Uint64 `json:"lockedNotStakeable"`
+	Balances            Amounts        `json:"balances"`
+	Unlockeds           Amounts        `json:"unlockeds"`
+	LockedStakeables    Amounts        `json:"lockedStakeables"`
+	LockedNotStakeables Amounts        `json:"lockedNotStakeables"`
+	UTXOIDs             []*lux.UTXOID  `json:"utxoIDs"`
 }
 
-// GetBalance gets the balance of an address
-func (s *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, response *GetBalanceResponse) error {
-
+// getBalance returns what a set of addresses holds, per asset and in total.
+//
+// Deprecated: read the UTXOs with getUTXOs and add them up. The totals here are
+// a walk of every UTXO an address owns, which is unbounded work for a caller
+// that usually wants one asset.
+func (s *Service) getBalance(ctx context.Context, args *GetBalanceRequest) (*GetBalanceResponse, error) {
+	response := &GetBalanceResponse{}
 	s.vm.log.Debug("deprecated API called",
 		"service", "platform",
 		"method", "getBalance",
@@ -148,7 +150,7 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, response 
 
 	addrs, err := lux.ParseServiceAddresses(s.addrManager, args.Addresses)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	s.vm.lock.Lock()
@@ -156,7 +158,7 @@ func (s *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, response 
 
 	utxos, err := lux.GetAllUTXOs(s.vm.state, addrs)
 	if err != nil {
-		return fmt.Errorf("couldn't get UTXO set of %v: %w", args.Addresses, err)
+		return nil, fmt.Errorf("couldn't get UTXO set of %v: %w", args.Addresses, err)
 	}
 
 	currentTime := s.vm.nodeClock.Unix()
@@ -248,7 +250,7 @@ utxoFor:
 	response.Unlocked = avajson.Uint64(unlockeds[s.vm.utxoAssetID])
 	response.LockedStakeable = avajson.Uint64(lockedStakeables[s.vm.utxoAssetID])
 	response.LockedNotStakeable = avajson.Uint64(lockedNotStakeables[s.vm.utxoAssetID])
-	return nil
+	return response, nil
 }
 
 // Index is an address and an associated UTXO.
@@ -258,18 +260,23 @@ type Index struct {
 	UTXO    string `json:"utxo"`    // The UTXO ID as a string
 }
 
-// GetUTXOs returns the UTXOs controlled by the given addresses
-func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, response *apitypes.GetUTXOsReply) error {
+// getUTXOs returns one page of the UTXOs a set of addresses owns.
+//
+// A page ends at a cursor, and the next page starts from it: pass the endIndex
+// of one answer as the startIndex of the next. The same UTXO may appear in two
+// pages if the set changes underneath the walk.
+func (s *Service) getUTXOs(ctx context.Context, args *apitypes.GetUTXOsArgs) (*apitypes.GetUTXOsReply, error) {
+	response := &apitypes.GetUTXOsReply{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getUTXOs",
 	)
 
 	if len(args.Addresses) == 0 {
-		return errNoAddresses
+		return nil, errNoAddresses
 	}
 	if len(args.Addresses) > maxGetUTXOsAddrs {
-		return fmt.Errorf("number of addresses given, %d, exceeds maximum, %d", len(args.Addresses), maxGetUTXOsAddrs)
+		return nil, fmt.Errorf("number of addresses given, %d, exceeds maximum, %d", len(args.Addresses), maxGetUTXOsAddrs)
 	}
 
 	var sourceChain ids.ID
@@ -282,14 +289,14 @@ func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, respons
 			// If not a valid ID, try as an alias
 			// Note: bcLookup doesn't have Lookup method, would need reverse lookup
 			// For now, just return error
-			return fmt.Errorf("problem parsing source chainID %q: %w", args.SourceChain, err)
+			return nil, fmt.Errorf("problem parsing source chainID %q: %w", args.SourceChain, err)
 		}
 		sourceChain = chainID
 	}
 
 	addrSet, err := lux.ParseServiceAddresses(s.addrManager, args.Addresses)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	startAddr := ids.ShortEmpty
@@ -297,11 +304,11 @@ func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, respons
 	if args.StartIndex.Address != "" || args.StartIndex.UTXO != "" {
 		startAddr, err = lux.ParseServiceAddress(s.addrManager, args.StartIndex.Address)
 		if err != nil {
-			return fmt.Errorf("couldn't parse start index address %q: %w", args.StartIndex.Address, err)
+			return nil, fmt.Errorf("couldn't parse start index address %q: %w", args.StartIndex.Address, err)
 		}
 		startUTXO, err = ids.FromString(args.StartIndex.UTXO)
 		if err != nil {
-			return fmt.Errorf("couldn't parse start index utxo: %w", err)
+			return nil, fmt.Errorf("couldn't parse start index utxo: %w", err)
 		}
 	}
 
@@ -334,31 +341,31 @@ func (s *Service) GetUTXOs(_ *http.Request, args *apitypes.GetUTXOsArgs, respons
 		err = nil
 	}
 	if err != nil {
-		return fmt.Errorf("problem retrieving UTXOs: %w", err)
+		return nil, fmt.Errorf("problem retrieving UTXOs: %w", err)
 	}
 
 	response.UTXOs = make([]string, len(utxos))
 	for i, utxo := range utxos {
 		bytes, err := utxo.WireBytes()
 		if err != nil {
-			return fmt.Errorf("couldn't serialize UTXO %q: %w", utxo.InputID(), err)
+			return nil, fmt.Errorf("couldn't serialize UTXO %q: %w", utxo.InputID(), err)
 		}
 		response.UTXOs[i], err = formatting.Encode(args.Encoding, bytes)
 		if err != nil {
-			return fmt.Errorf("couldn't encode UTXO %s as %s: %w", utxo.InputID(), args.Encoding, err)
+			return nil, fmt.Errorf("couldn't encode UTXO %s as %s: %w", utxo.InputID(), args.Encoding, err)
 		}
 	}
 
 	endAddress, err := s.addrManager.FormatLocalAddress(endAddr)
 	if err != nil {
-		return fmt.Errorf("problem formatting address: %w", err)
+		return nil, fmt.Errorf("problem formatting address: %w", err)
 	}
 
 	response.EndIndex.Address = endAddress
 	response.EndIndex.UTXO = endUTXOID.String()
 	response.NumFetched = apitypes.Uint64(len(utxos))
 	response.Encoding = args.Encoding
-	return nil
+	return response, nil
 }
 
 // GetNetArgs are the arguments to GetNet
@@ -383,7 +390,10 @@ type GetNetResponse struct {
 	ManagerAddress types.JSONByteSlice `json:"managerAddress"`
 }
 
-func (s *Service) GetNet(_ *http.Request, args *GetNetArgs, response *GetNetResponse) error {
+// getNet returns a net's ownership and, if it has been converted to an L1, the
+// chain and address that manage its validators.
+func (s *Service) getNet(ctx context.Context, args *GetNetArgs) (*GetNetResponse, error) {
+	response := &GetNetResponse{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getNet",
@@ -391,7 +401,7 @@ func (s *Service) GetNet(_ *http.Request, args *GetNetArgs, response *GetNetResp
 	)
 
 	if args.ChainID == constants.PrimaryNetworkID {
-		return errPrimaryNetworkIsNotANet
+		return nil, errPrimaryNetworkIsNotANet
 	}
 
 	s.vm.lock.Lock()
@@ -399,17 +409,17 @@ func (s *Service) GetNet(_ *http.Request, args *GetNetArgs, response *GetNetResp
 
 	netOwner, err := s.vm.state.GetNetOwner(args.ChainID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	owner, ok := netOwner.(*secp256k1fx.OutputOwners)
 	if !ok {
-		return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", netOwner)
+		return nil, fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", netOwner)
 	}
 	controlAddrs := make([]string, len(owner.Addrs))
 	for i, controlKeyID := range owner.Addrs {
 		addr, err := s.addrManager.FormatLocalAddress(controlKeyID)
 		if err != nil {
-			return fmt.Errorf("problem formatting address: %w", err)
+			return nil, fmt.Errorf("problem formatting address: %w", err)
 		}
 		controlAddrs[i] = addr
 	}
@@ -426,7 +436,7 @@ func (s *Service) GetNet(_ *http.Request, args *GetNetArgs, response *GetNetResp
 		response.IsPermissioned = true
 		response.NetTransformationTxID = ids.Empty
 	default:
-		return err
+		return nil, err
 	}
 
 	switch c, err := s.vm.state.GetNetToL1Conversion(args.ChainID); err {
@@ -440,10 +450,10 @@ func (s *Service) GetNet(_ *http.Request, args *GetNetArgs, response *GetNetResp
 		response.ManagerChainID = ids.Empty
 		response.ManagerAddress = []byte(nil)
 	default:
-		return err
+		return nil, err
 	}
 
-	return nil
+	return response, nil
 }
 
 // APINet is a representation of a net used in API calls
@@ -472,9 +482,13 @@ type GetNetsResponse struct {
 	Nets []APINet `json:"nets"`
 }
 
-// GetNets returns the nets whose ID are in [args.IDs]
-// The response will include the primary network
-func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsResponse) error {
+// getNets returns the nets named, or every net when none is named. The primary
+// network is always among them.
+//
+// Deprecated: use getChains, which answers the same thing under the name the
+// concept now has.
+func (s *Service) getNets(ctx context.Context, args *GetNetsArgs) (*GetNetsResponse, error) {
+	response := &GetNetsResponse{}
 	s.vm.log.Debug("deprecated API called",
 		"service", "platform",
 		"method", "getNets",
@@ -487,7 +501,7 @@ func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsR
 	if getAll {
 		netIDs, err := s.vm.state.GetChainIDs() // all nets
 		if err != nil {
-			return fmt.Errorf("error getting nets from database: %w", err)
+			return nil, fmt.Errorf("error getting nets from database: %w", err)
 		}
 
 		response.Nets = make([]APINet, len(netIDs)+1)
@@ -503,19 +517,19 @@ func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsR
 
 			netOwner, err := s.vm.state.GetNetOwner(netID)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			owner, ok := netOwner.(*secp256k1fx.OutputOwners)
 			if !ok {
-				return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", netOwner)
+				return nil, fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", netOwner)
 			}
 
 			controlAddrs := make([]string, len(owner.Addrs))
 			for i, controlKeyID := range owner.Addrs {
 				addr, err := s.addrManager.FormatLocalAddress(controlKeyID)
 				if err != nil {
-					return fmt.Errorf("problem formatting address: %w", err)
+					return nil, fmt.Errorf("problem formatting address: %w", err)
 				}
 				controlAddrs[i] = addr
 			}
@@ -531,7 +545,7 @@ func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsR
 			ControlKeys: []string{},
 			Threshold:   avajson.Uint32(0),
 		}
-		return nil
+		return response, nil
 	}
 
 	netSet := set.NewSet[ids.ID](len(args.IDs))
@@ -566,19 +580,19 @@ func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsR
 			continue
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		owner, ok := netOwner.(*secp256k1fx.OutputOwners)
 		if !ok {
-			return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", netOwner)
+			return nil, fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", netOwner)
 		}
 
 		controlAddrs := make([]string, len(owner.Addrs))
 		for i, controlKeyID := range owner.Addrs {
 			addr, err := s.addrManager.FormatLocalAddress(controlKeyID)
 			if err != nil {
-				return fmt.Errorf("problem formatting address: %w", err)
+				return nil, fmt.Errorf("problem formatting address: %w", err)
 			}
 			controlAddrs[i] = addr
 		}
@@ -589,7 +603,7 @@ func (s *Service) GetNets(_ *http.Request, args *GetNetsArgs, response *GetNetsR
 			Threshold:   avajson.Uint32(owner.Threshold),
 		})
 	}
-	return nil
+	return response, nil
 }
 
 // APIChain is the canonical wire-shape for a chain registered on the
@@ -619,17 +633,10 @@ type GetChainsResponse struct {
 	Chains []APIChain `json:"chains"`
 }
 
-// GetChains is the canonical RPC for listing chains registered on the
-// platform. Behaviorally identical to GetNets (which it supersedes):
-// returns every chain when IDs is empty, otherwise filters to the
-// listed IDs, including the primary network sentinel
-// (constants.PrimaryNetworkID) regardless of filter — callers
-// deciding whether a chain is the primary network should compare the
-// returned ID rather than relying on omission.
-//
-// Use this in new code; GetNets stays available indefinitely for
-// wire-protocol compatibility but logs every call as deprecated.
-func (s *Service) GetChains(r *http.Request, args *GetChainsArgs, response *GetChainsResponse) error {
+// getChains returns the chains named, or every chain when none is named. The
+// primary network is always among them.
+func (s *Service) getChains(ctx context.Context, args *GetChainsArgs) (*GetChainsResponse, error) {
+	response := &GetChainsResponse{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getChains",
@@ -638,15 +645,15 @@ func (s *Service) GetChains(r *http.Request, args *GetChainsArgs, response *GetC
 	// avoids re-implementing the state walk and keeps the two methods
 	// in lock-step. APIChain is structurally identical to APINet (same
 	// JSON tags), so the cast is safe and free at runtime.
-	netsResp := &GetNetsResponse{}
-	if err := s.GetNets(r, &GetNetsArgs{IDs: args.IDs}, netsResp); err != nil {
-		return err
+	nets, err := s.getNets(ctx, &GetNetsArgs{IDs: args.IDs})
+	if err != nil {
+		return nil, err
 	}
-	response.Chains = make([]APIChain, len(netsResp.Nets))
-	for i, n := range netsResp.Nets {
+	response.Chains = make([]APIChain, len(nets.Nets))
+	for i, n := range nets.Nets {
 		response.Chains[i] = APIChain(n)
 	}
-	return nil
+	return response, nil
 }
 
 // GetStakingAssetIDArgs are the arguments to GetStakingAssetID
@@ -659,9 +666,9 @@ type GetStakingAssetIDResponse struct {
 	AssetID ids.ID `json:"assetID"`
 }
 
-// GetStakingAssetID returns the assetID of the token used to stake on the
-// provided net
-func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs, response *GetStakingAssetIDResponse) error {
+// getStakingAssetID returns the asset a net is staked in.
+func (s *Service) getStakingAssetID(ctx context.Context, args *GetStakingAssetIDArgs) (*GetStakingAssetIDResponse, error) {
+	response := &GetStakingAssetIDResponse{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getStakingAssetID",
@@ -669,7 +676,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 
 	if args.ChainID == constants.PrimaryNetworkID {
 		response.AssetID = s.vm.utxoAssetID
-		return nil
+		return response, nil
 	}
 
 	s.vm.lock.Lock()
@@ -677,7 +684,7 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 
 	transformNetIntf, err := s.vm.state.GetNetTransformation(args.ChainID)
 	if err != nil {
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"failed fetching net transformation for %s: %w",
 			args.ChainID,
 			err,
@@ -685,14 +692,14 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 	}
 	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformChainTx)
 	if !ok {
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"unexpected net transformation tx type fetched %T",
 			transformNetIntf.Unsigned,
 		)
 	}
 
 	response.AssetID = transformNet.AssetID()
-	return nil
+	return response, nil
 }
 
 // GetCurrentValidatorsArgs are the arguments for calling GetCurrentValidators
@@ -755,10 +762,14 @@ func (s *Service) loadStakerTxAttributes(txID ids.ID) (*stakerAttributes, error)
 	return attr, nil
 }
 
-// GetCurrentValidators returns the current validators. If a single nodeID
-// is provided, full delegators information is also returned. Otherwise only
-// delegators' number and total weight is returned.
-func (s *Service) GetCurrentValidators(request *http.Request, args *GetCurrentValidatorsArgs, reply *GetCurrentValidatorsReply) error {
+// getCurrentValidators returns a net's current validators.
+//
+// Naming nodes narrows the answer to those nodes and adds each one's delegators
+// in full; naming one node is how a caller reads a single validator's
+// delegation. Naming none returns every validator with its delegators counted
+// and weighed but not listed.
+func (s *Service) getCurrentValidators(ctx context.Context, args *GetCurrentValidatorsArgs) (*GetCurrentValidatorsReply, error) {
+	reply := &GetCurrentValidatorsReply{}
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getCurrentValidators"),
@@ -779,24 +790,24 @@ func (s *Service) GetCurrentValidators(request *http.Request, args *GetCurrentVa
 			nodeIDs,
 		)
 		if err != nil {
-			return fmt.Errorf("failed to get primary or net validators: %w", err)
+			return nil, fmt.Errorf("failed to get primary or net validators: %w", err)
 		}
-		return nil
+		return reply, nil
 	}
 	if err != nil {
-		return fmt.Errorf("failed to get net to L1 conversion: %w", err)
+		return nil, fmt.Errorf("failed to get net to L1 conversion: %w", err)
 	}
 
 	// Net is L1, get validators for L1
 	reply.Validators, err = s.getL1Validators(
-		request.Context(),
+		ctx,
 		args.ChainID,
 		nodeIDs,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to get L1 validators: %w", err)
+		return nil, fmt.Errorf("failed to get L1 validators: %w", err)
 	}
-	return nil
+	return reply, nil
 }
 
 func (s *Service) getL1Validators(
@@ -1032,8 +1043,10 @@ type GetL1ValidatorReply struct {
 	Height avajson.Uint64 `json:"height"`
 }
 
-// GetL1Validator returns the L1 validator if it exists
-func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, reply *GetL1ValidatorReply) error {
+// getL1Validator returns one L1 validator by its validation id, with the
+// balance left to pay for its continued validation.
+func (s *Service) getL1Validator(ctx context.Context, args *GetL1ValidatorArgs) (*GetL1ValidatorReply, error) {
+	reply := &GetL1ValidatorReply{}
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getL1Validator"),
@@ -1045,23 +1058,22 @@ func (s *Service) GetL1Validator(r *http.Request, args *GetL1ValidatorArgs, repl
 
 	l1Validator, err := s.vm.state.GetL1Validator(args.ValidationID)
 	if err != nil {
-		return fmt.Errorf("fetching L1 validator %q failed: %w", args.ValidationID, err)
+		return nil, fmt.Errorf("fetching L1 validator %q failed: %w", args.ValidationID, err)
 	}
 
-	ctx := r.Context()
 	height, err := s.vm.GetCurrentHeight(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get the current height: %w", err)
+		return nil, fmt.Errorf("failed to get the current height: %w", err)
 	}
 	apiVdr, err := s.convertL1ValidatorToAPI(l1Validator)
 	if err != nil {
-		return fmt.Errorf("failed to convert L1 validator to API format: %w", err)
+		return nil, fmt.Errorf("failed to convert L1 validator to API format: %w", err)
 	}
 
 	reply.APIL1Validator = apiVdr
 	reply.ChainID = l1Validator.ChainID
 	reply.Height = avajson.Uint64(height)
-	return nil
+	return reply, nil
 }
 
 func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapitypes.APIL1Validator, error) {
@@ -1129,8 +1141,10 @@ type GetCurrentSupplyReply struct {
 	Height avajson.Uint64 `json:"height"`
 }
 
-// GetCurrentSupply returns an upper bound on the supply of LUX in the system
-func (s *Service) GetCurrentSupply(r *http.Request, args *GetCurrentSupplyArgs, reply *GetCurrentSupplyReply) error {
+// getCurrentSupply returns an upper bound on the supply of LUX on a net, and
+// the height it was read at.
+func (s *Service) getCurrentSupply(ctx context.Context, args *GetCurrentSupplyArgs) (*GetCurrentSupplyReply, error) {
+	reply := &GetCurrentSupplyReply{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getCurrentSupply",
@@ -1141,45 +1155,17 @@ func (s *Service) GetCurrentSupply(r *http.Request, args *GetCurrentSupplyArgs, 
 
 	supply, err := s.vm.state.GetCurrentSupply(args.ChainID)
 	if err != nil {
-		return fmt.Errorf("fetching current supply failed: %w", err)
+		return nil, fmt.Errorf("fetching current supply failed: %w", err)
 	}
 	reply.Supply = avajson.Uint64(supply)
 
-	ctx := r.Context()
 	height, err := s.vm.GetCurrentHeight(ctx)
 	if err != nil {
-		return fmt.Errorf("fetching current height failed: %w", err)
+		return nil, fmt.Errorf("fetching current height failed: %w", err)
 	}
 	reply.Height = avajson.Uint64(height)
 
-	return nil
-}
-
-// SampleValidatorsArgs are the arguments for calling SampleValidators
-type SampleValidatorsArgs struct {
-	// Number of validators in the sample
-	Size avajson.Uint16 `json:"size"`
-
-	// ID of net to sample validators from
-	// If omitted, defaults to the primary network
-	ChainID ids.ID `json:"netID"`
-}
-
-// SampleValidatorsReply are the results from calling Sample
-type SampleValidatorsReply struct {
-	Validators []ids.NodeID `json:"validators"`
-}
-
-// SampleValidators returns a sampling of the list of current validators
-func (s *Service) SampleValidators(_ *http.Request, args *SampleValidatorsArgs, reply *SampleValidatorsReply) error {
-	s.vm.log.Debug("API called",
-		"service", "platform",
-		"method", "sampleValidators",
-		"size", uint16(args.Size),
-	)
-
-	// Sampling is not supported by validators.Manager; return an error.
-	return fmt.Errorf("validator sampling is not supported")
+	return reply, nil
 }
 
 // GetBlockchainStatusArgs is the arguments for calling GetBlockchainStatus
@@ -1194,15 +1180,17 @@ type GetBlockchainStatusReply struct {
 	Status status.BlockchainStatus `json:"status"`
 }
 
-// GetBlockchainStatus gets the status of a blockchain with the ID [args.BlockchainID].
-func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatusArgs, reply *GetBlockchainStatusReply) error {
+// getBlockchainStatus returns how far along a blockchain is: whether this node
+// validates it, whether it has been created, and whether it is preferred.
+func (s *Service) getBlockchainStatus(ctx context.Context, args *GetBlockchainStatusArgs) (*GetBlockchainStatusReply, error) {
+	reply := &GetBlockchainStatusReply{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getBlockchainStatus",
 	)
 
 	if args.BlockchainID == "" {
-		return errMissingBlockchainID
+		return nil, errMissingBlockchainID
 	}
 
 	s.vm.lock.Lock()
@@ -1212,44 +1200,43 @@ func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatus
 	if aliasedID, err := s.vm.Chains.Lookup(args.BlockchainID); err == nil {
 		if s.nodeValidates(aliasedID) {
 			reply.Status = status.Validating
-			return nil
+			return reply, nil
 		}
 
 		reply.Status = status.Syncing
-		return nil
+		return reply, nil
 	}
 
 	blockchainID, err := ids.FromString(args.BlockchainID)
 	if err != nil {
-		return fmt.Errorf("problem parsing blockchainID %q: %w", args.BlockchainID, err)
+		return nil, fmt.Errorf("problem parsing blockchainID %q: %w", args.BlockchainID, err)
 	}
 
-	ctx := r.Context()
 	lastAcceptedID, err := s.vm.LastAccepted(ctx)
 	if err != nil {
-		return fmt.Errorf("problem loading last accepted ID: %w", err)
+		return nil, fmt.Errorf("problem loading last accepted ID: %w", err)
 	}
 
 	exists, err := s.chainExists(ctx, lastAcceptedID, blockchainID)
 	if err != nil {
-		return fmt.Errorf("problem looking up blockchain: %w", err)
+		return nil, fmt.Errorf("problem looking up blockchain: %w", err)
 	}
 	if exists {
 		reply.Status = status.Created
-		return nil
+		return reply, nil
 	}
 
 	preferredBlkID := s.vm.manager.Preferred()
 	preferred, err := s.chainExists(ctx, preferredBlkID, blockchainID)
 	if err != nil {
-		return fmt.Errorf("problem looking up blockchain: %w", err)
+		return nil, fmt.Errorf("problem looking up blockchain: %w", err)
 	}
 	if preferred {
 		reply.Status = status.Preferred
 	} else {
 		reply.Status = status.UnknownChain
 	}
-	return nil
+	return reply, nil
 }
 
 func (s *Service) nodeValidates(blockchainID ids.ID) bool {
@@ -1303,8 +1290,9 @@ type ValidatedByResponse struct {
 	ChainID ids.ID `json:"netID"`
 }
 
-// ValidatedBy returns the ID of the Net that validates [args.BlockchainID]
-func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *ValidatedByResponse) error {
+// validatedBy returns the net that validates a blockchain.
+func (s *Service) validatedBy(ctx context.Context, args *ValidatedByArgs) (*ValidatedByResponse, error) {
+	response := &ValidatedByResponse{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "validatedBy",
@@ -1316,7 +1304,7 @@ func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *
 	// GetChainID is not available in the current validators.Manager interface
 	// Return primary network for now
 	response.ChainID = constants.PrimaryNetworkID
-	return nil
+	return response, nil
 }
 
 // ValidatesArgs are the arguments to Validates
@@ -1329,8 +1317,9 @@ type ValidatesResponse struct {
 	BlockchainIDs []ids.ID `json:"blockchainIDs"`
 }
 
-// Validates returns the IDs of the blockchains validated by [args.ChainID]
-func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *ValidatesResponse) error {
+// validates returns the blockchains a net validates.
+func (s *Service) validates(ctx context.Context, args *ValidatesArgs) (*ValidatesResponse, error) {
+	response := &ValidatesResponse{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "validates",
@@ -1342,7 +1331,7 @@ func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *Vali
 	if args.ChainID != constants.PrimaryNetworkID {
 		netTx, _, err := s.vm.state.GetTx(args.ChainID)
 		if err != nil {
-			return fmt.Errorf(
+			return nil, fmt.Errorf(
 				"problem retrieving net %q: %w",
 				args.ChainID,
 				err,
@@ -1350,21 +1339,21 @@ func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *Vali
 		}
 		_, ok := netTx.Unsigned.(*txs.CreateChainTx)
 		if !ok {
-			return fmt.Errorf("%q is not a net", args.ChainID)
+			return nil, fmt.Errorf("%q is not a net", args.ChainID)
 		}
 	}
 
 	// Get the chains that exist
 	chains, err := s.vm.state.GetChains(args.ChainID)
 	if err != nil {
-		return fmt.Errorf("problem retrieving chains for net %q: %w", args.ChainID, err)
+		return nil, fmt.Errorf("problem retrieving chains for net %q: %w", args.ChainID, err)
 	}
 
 	response.BlockchainIDs = make([]ids.ID, len(chains))
 	for i, chain := range chains {
 		response.BlockchainIDs[i] = chain.ID()
 	}
-	return nil
+	return response, nil
 }
 
 // APIBlockchain is the representation of a blockchain used in API calls
@@ -1388,8 +1377,10 @@ type GetBlockchainsResponse struct {
 	Blockchains []APIBlockchain `json:"blockchains"`
 }
 
-// GetBlockchains returns all of the blockchains that exist
-func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBlockchainsResponse) error {
+// getBlockchains returns every blockchain that exists, with the net that
+// validates it and the VM it runs.
+func (s *Service) getBlockchains(ctx context.Context, _ *struct{}) (*GetBlockchainsResponse, error) {
+	response := &GetBlockchainsResponse{}
 	s.vm.log.Debug("deprecated API called",
 		"service", "platform",
 		"method", "getBlockchains",
@@ -1400,14 +1391,14 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 
 	netIDs, err := s.vm.state.GetChainIDs()
 	if err != nil {
-		return fmt.Errorf("couldn't retrieve nets: %w", err)
+		return nil, fmt.Errorf("couldn't retrieve nets: %w", err)
 	}
 
 	response.Blockchains = []APIBlockchain{}
 	for _, netID := range netIDs {
 		chains, err := s.vm.state.GetChains(netID)
 		if err != nil {
-			return fmt.Errorf(
+			return nil, fmt.Errorf(
 				"couldn't retrieve chains for net %q: %w",
 				netID,
 				err,
@@ -1418,7 +1409,7 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 			chainID := chainTx.ID()
 			chain, ok := chainTx.Unsigned.(*txs.CreateChainTx)
 			if !ok {
-				return fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chainTx.Unsigned)
+				return nil, fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chainTx.Unsigned)
 			}
 			response.Blockchains = append(response.Blockchains, APIBlockchain{
 				ID:      chainID,
@@ -1431,13 +1422,13 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 
 	chains, err := s.vm.state.GetChains(constants.PrimaryNetworkID)
 	if err != nil {
-		return fmt.Errorf("couldn't retrieve nets: %w", err)
+		return nil, fmt.Errorf("couldn't retrieve nets: %w", err)
 	}
 	for _, chainTx := range chains {
 		chainID := chainTx.ID()
 		chain, ok := chainTx.Unsigned.(*txs.CreateChainTx)
 		if !ok {
-			return fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chainTx.Unsigned)
+			return nil, fmt.Errorf("expected tx type *txs.CreateChainTx but got %T", chainTx.Unsigned)
 		}
 		response.Blockchains = append(response.Blockchains, APIBlockchain{
 			ID:      chainID,
@@ -1447,10 +1438,17 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 		})
 	}
 
-	return nil
+	return response, nil
 }
 
-func (s *Service) IssueTx(_ *http.Request, args *apitypes.FormattedTx, response *apitypes.JSONTxID) error {
+// issueTx hands already-signed transaction bytes to consensus and returns the
+// transaction's id.
+//
+// The node checks no signature here and holds no key that could have made one:
+// the bytes carry their own authority, which is why this address answers anyone
+// (see [server.Relay]).
+func (s *Service) issueTx(ctx context.Context, args *apitypes.FormattedTx) (*apitypes.JSONTxID, error) {
+	response := &apitypes.JSONTxID{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "issueTx",
@@ -1458,22 +1456,27 @@ func (s *Service) IssueTx(_ *http.Request, args *apitypes.FormattedTx, response 
 
 	txBytes, err := formatting.Decode(args.Encoding, args.Tx)
 	if err != nil {
-		return fmt.Errorf("problem decoding transaction: %w", err)
+		return nil, fmt.Errorf("problem decoding transaction: %w", err)
 	}
 	tx, err := txs.Parse(txBytes)
 	if err != nil {
-		return fmt.Errorf("couldn't parse tx: %w", err)
+		return nil, fmt.Errorf("couldn't parse tx: %w", err)
 	}
 
 	if err := s.vm.issueTxFromRPC(tx); err != nil {
-		return fmt.Errorf("couldn't issue tx: %w", err)
+		return nil, fmt.Errorf("couldn't issue tx: %w", err)
 	}
 
 	response.TxID = tx.ID()
-	return nil
+	return response, nil
 }
 
-func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, response *apitypes.GetTxReply) error {
+// getTx returns a transaction by its id.
+//
+// The encoding chooses the shape of the answer: hex returns the signed bytes as
+// one string, and json returns the transaction as an object.
+func (s *Service) getTx(ctx context.Context, args *apitypes.GetTxArgs) (*apitypes.GetTxReply, error) {
+	response := &apitypes.GetTxReply{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getTx",
@@ -1484,7 +1487,7 @@ func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, response *api
 
 	tx, _, err := s.vm.state.GetTx(args.TxID)
 	if err != nil {
-		return fmt.Errorf("couldn't get tx: %w", err)
+		return nil, fmt.Errorf("couldn't get tx: %w", err)
 	}
 	response.Encoding = args.Encoding
 
@@ -1495,12 +1498,12 @@ func (s *Service) GetTx(_ *http.Request, args *apitypes.GetTxArgs, response *api
 	} else {
 		result, err = formatting.Encode(args.Encoding, tx.Bytes())
 		if err != nil {
-			return fmt.Errorf("couldn't encode tx as %s: %w", args.Encoding, err)
+			return nil, fmt.Errorf("couldn't encode tx as %s: %w", args.Encoding, err)
 		}
 	}
 
 	response.Tx, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
-	return err
+	return nil, err
 }
 
 type GetTxStatusArgs struct {
@@ -1514,8 +1517,10 @@ type GetTxStatusResponse struct {
 	Reason string `json:"reason,omitempty"`
 }
 
-// GetTxStatus gets a tx's status
-func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *GetTxStatusResponse) error {
+// getTxStatus returns where a transaction stands: accepted, still processing,
+// dropped with a reason, or unknown to this node.
+func (s *Service) getTxStatus(ctx context.Context, args *GetTxStatusArgs) (*GetTxStatusResponse, error) {
+	response := &GetTxStatusResponse{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getTxStatus",
@@ -1527,10 +1532,10 @@ func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *
 	_, txStatus, err := s.vm.state.GetTx(args.TxID)
 	if err == nil { // Found the status. Report it.
 		response.Status = txStatus
-		return nil
+		return response, nil
 	}
 	if err != database.ErrNotFound {
-		return err
+		return nil, err
 	}
 
 	// The status of this transaction is not in the database - check if the tx
@@ -1543,7 +1548,7 @@ func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *
 		lastAccepted := s.vm.manager.LastAccepted()
 		onAccept, ok = s.vm.manager.GetState(lastAccepted)
 		if !ok {
-			return fmt.Errorf("could not retrieve state for block %s", preferredID)
+			return nil, fmt.Errorf("could not retrieve state for block %s", preferredID)
 		}
 	}
 
@@ -1551,16 +1556,16 @@ func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *
 	if err == nil {
 		// Found the status in the preferred block's db. Report tx is processing.
 		response.Status = status.Processing
-		return nil
+		return response, nil
 	}
 	if err != database.ErrNotFound {
-		return err
+		return nil, err
 	}
 
 	if _, ok := s.vm.Builder.Get(args.TxID); ok {
 		// Found the tx in the mempool. Report tx is processing.
 		response.Status = status.Processing
-		return nil
+		return response, nil
 	}
 
 	// Note: we check if tx is dropped only after having looked for it
@@ -1569,13 +1574,13 @@ func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *
 	if reason == nil {
 		// The tx isn't being tracked by the node.
 		response.Status = status.Unknown
-		return nil
+		return response, nil
 	}
 
 	// The tx was recently dropped because it was invalid.
 	response.Status = status.Dropped
 	response.Reason = reason.Error()
-	return nil
+	return response, nil
 }
 
 type GetStakeArgs struct {
@@ -1595,26 +1600,26 @@ type GetStakeReply struct {
 	Encoding formatting.Encoding `json:"encoding"`
 }
 
-// GetStake returns the amount of µLUX that [args.Addresses] have cumulatively
-// staked on the Primary Network.
+// getStake returns what a set of addresses has staked on the primary network,
+// and the outputs that stake is locked in.
 //
-// This method assumes that each stake output has only owner
-// This method assumes only LUX can be staked
-// This method only concerns itself with the Primary Network, not nets
-// in a data structure rather than re-calculating it by iterating over stakers
-func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
+// Deprecated: read the stake off the validators with getCurrentValidators, or
+// off the staking transaction with getTx. This walks every current and pending
+// staker on every call.
+func (s *Service) getStake(ctx context.Context, args *GetStakeArgs) (*GetStakeReply, error) {
+	response := &GetStakeReply{}
 	s.vm.log.Debug("deprecated API called",
 		"service", "platform",
 		"method", "getStake",
 	)
 
 	if len(args.Addresses) > maxGetStakeAddrs {
-		return fmt.Errorf("%d addresses provided but this method can take at most %d", len(args.Addresses), maxGetStakeAddrs)
+		return nil, fmt.Errorf("%d addresses provided but this method can take at most %d", len(args.Addresses), maxGetStakeAddrs)
 	}
 
 	addrs, err := lux.ParseServiceAddresses(s.addrManager, args.Addresses)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	s.vm.lock.Lock()
@@ -1622,7 +1627,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 
 	currentStakerIterator, err := s.vm.state.GetCurrentStakerIterator()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer currentStakerIterator.Release()
 
@@ -1639,7 +1644,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 
 		tx, _, err := s.vm.state.GetTx(staker.TxID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		stakedOuts = append(stakedOuts, getStakeHelper(tx, addrs, totalAmountStaked)...)
@@ -1647,7 +1652,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 
 	pendingStakerIterator, err := s.vm.state.GetPendingStakerIterator()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer pendingStakerIterator.Release()
 
@@ -1660,7 +1665,7 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 
 		tx, _, err := s.vm.state.GetTx(staker.TxID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		stakedOuts = append(stakedOuts, getStakeHelper(tx, addrs, totalAmountStaked)...)
@@ -1680,16 +1685,16 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 		}
 		bytes, err := utxo.WireBytes()
 		if err != nil {
-			return fmt.Errorf("couldn't serialize output %s: %w", output.ID, err)
+			return nil, fmt.Errorf("couldn't serialize output %s: %w", output.ID, err)
 		}
 		response.Outputs[i], err = formatting.Encode(args.Encoding, bytes)
 		if err != nil {
-			return fmt.Errorf("couldn't encode output %s as %s: %w", output.ID, args.Encoding, err)
+			return nil, fmt.Errorf("couldn't encode output %s as %s: %w", output.ID, args.Encoding, err)
 		}
 	}
 	response.Encoding = args.Encoding
 
-	return nil
+	return response, nil
 }
 
 // GetMinStakeArgs are the arguments for calling GetMinStake.
@@ -1705,8 +1710,10 @@ type GetMinStakeReply struct {
 	MinDelegatorStake avajson.Uint64 `json:"minDelegatorStake"`
 }
 
-// GetMinStake returns the minimum staking amount in µLUX.
-func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
+// getMinStake returns the least that can be staked on a net, as a validator
+// and as a delegator.
+func (s *Service) getMinStake(ctx context.Context, args *GetMinStakeArgs) (*GetMinStakeReply, error) {
+	reply := &GetMinStakeReply{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getMinStake",
@@ -1715,7 +1722,7 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 	if args.ChainID == constants.PrimaryNetworkID {
 		reply.MinValidatorStake = avajson.Uint64(s.vm.MinValidatorStake)
 		reply.MinDelegatorStake = avajson.Uint64(s.vm.MinDelegatorStake)
-		return nil
+		return reply, nil
 	}
 
 	s.vm.lock.Lock()
@@ -1723,7 +1730,7 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 
 	transformNetIntf, err := s.vm.state.GetNetTransformation(args.ChainID)
 	if err != nil {
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"failed fetching net transformation for %s: %w",
 			args.ChainID,
 			err,
@@ -1731,7 +1738,7 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 	}
 	transformNet, ok := transformNetIntf.Unsigned.(*txs.TransformChainTx)
 	if !ok {
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"unexpected net transformation tx type fetched %T",
 			transformNetIntf.Unsigned,
 		)
@@ -1740,7 +1747,7 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 	reply.MinValidatorStake = avajson.Uint64(transformNet.MinValidatorStake())
 	reply.MinDelegatorStake = avajson.Uint64(transformNet.MinDelegatorStake())
 
-	return nil
+	return reply, nil
 }
 
 // GetTotalStakeArgs are the arguments for calling GetTotalStake
@@ -1758,8 +1765,9 @@ type GetTotalStakeReply struct {
 	Weight avajson.Uint64 `json:"weight"`
 }
 
-// GetTotalStake returns the total amount staked on the Primary Network
-func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply *GetTotalStakeReply) error {
+// getTotalStake returns the total weight of a net's validator set.
+func (s *Service) getTotalStake(ctx context.Context, args *GetTotalStakeArgs) (*GetTotalStakeReply, error) {
+	reply := &GetTotalStakeReply{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getTotalStake",
@@ -1767,12 +1775,12 @@ func (s *Service) GetTotalStake(_ *http.Request, args *GetTotalStakeArgs, reply 
 
 	totalWeight, err := s.vm.Validators.TotalWeight(args.ChainID)
 	if err != nil {
-		return fmt.Errorf("couldn't get total weight: %w", err)
+		return nil, fmt.Errorf("couldn't get total weight: %w", err)
 	}
 	weight := avajson.Uint64(totalWeight)
 	reply.Weight = weight
 	reply.Stake = weight
-	return nil
+	return reply, nil
 }
 
 // GetRewardUTXOsReply defines the GetRewardUTXOs replies returned from the API
@@ -1785,9 +1793,10 @@ type GetRewardUTXOsReply struct {
 	Encoding formatting.Encoding `json:"encoding"`
 }
 
-// GetRewardUTXOs returns the UTXOs that were rewarded after the provided
-// transaction's staking period ended.
-func (s *Service) GetRewardUTXOs(_ *http.Request, args *apitypes.GetTxArgs, reply *GetRewardUTXOsReply) error {
+// getRewardUTXOs returns the UTXOs paid out when a staking transaction's period
+// ended.
+func (s *Service) getRewardUTXOs(ctx context.Context, args *apitypes.GetTxArgs) (*GetRewardUTXOsReply, error) {
+	reply := &GetRewardUTXOsReply{}
 	s.vm.log.Debug("deprecated API called",
 		"service", "platform",
 		"method", "getRewardUTXOs",
@@ -1798,7 +1807,7 @@ func (s *Service) GetRewardUTXOs(_ *http.Request, args *apitypes.GetTxArgs, repl
 
 	utxos, err := s.vm.state.GetRewardUTXOs(args.TxID)
 	if err != nil {
-		return fmt.Errorf("couldn't get reward UTXOs: %w", err)
+		return nil, fmt.Errorf("couldn't get reward UTXOs: %w", err)
 	}
 
 	reply.NumFetched = avajson.Uint64(len(utxos))
@@ -1806,17 +1815,17 @@ func (s *Service) GetRewardUTXOs(_ *http.Request, args *apitypes.GetTxArgs, repl
 	for i, utxo := range utxos {
 		utxoBytes, err := utxo.WireBytes()
 		if err != nil {
-			return fmt.Errorf("couldn't encode UTXO to bytes: %w", err)
+			return nil, fmt.Errorf("couldn't encode UTXO to bytes: %w", err)
 		}
 
 		utxoStr, err := formatting.Encode(args.Encoding, utxoBytes)
 		if err != nil {
-			return fmt.Errorf("couldn't encode utxo as %s: %w", args.Encoding, err)
+			return nil, fmt.Errorf("couldn't encode utxo as %s: %w", args.Encoding, err)
 		}
 		reply.UTXOs[i] = utxoStr
 	}
 	reply.Encoding = args.Encoding
-	return nil
+	return reply, nil
 }
 
 // GetTimestampReply is the response from GetTimestamp
@@ -1825,8 +1834,9 @@ type GetTimestampReply struct {
 	Timestamp avajson.Time `json:"timestamp"`
 }
 
-// GetTimestamp returns the current timestamp on chain.
-func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestampReply) error {
+// getTimestamp returns the chain's current time.
+func (s *Service) getTimestamp(ctx context.Context, _ *struct{}) (*GetTimestampReply, error) {
+	reply := &GetTimestampReply{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getTimestamp",
@@ -1836,7 +1846,7 @@ func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestamp
 	defer s.vm.lock.Unlock()
 
 	reply.Timestamp = avajson.NewTime(s.vm.state.GetTimestamp())
-	return nil
+	return reply, nil
 }
 
 // GetValidatorsAtArgs is the response from GetValidatorsAt
@@ -1920,11 +1930,12 @@ type GetValidatorsAtReply struct {
 	Validators ValidatorSet
 }
 
-// GetValidatorsAt returns the weights of the validator set of a provided net
-// at the specified height. Height is a u64 whose reserved value MaxUint64 asks
-// for the height the next proposal will be built at; the JSON edge spells that
-// value "proposed".
-func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
+// getValidatorsAt returns a net's validator set as it stood at a height: each
+// node, its BLS key where it has one, and its weight.
+//
+// The height "proposed" asks for the height the next proposal will be built at.
+func (s *Service) getValidatorsAt(ctx context.Context, args *GetValidatorsAtArgs) (*GetValidatorsAtReply, error) {
+	reply := &GetValidatorsAtReply{}
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getValidatorsAt"),
@@ -1936,24 +1947,23 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	ctx := r.Context()
 	height := uint64(args.Height)
 	if args.Height.IsProposed() {
 		// Get the proposed height from the last accepted block
 		lastAcceptedID := s.vm.state.GetLastAccepted()
 		lastAcceptedBlock, err := s.vm.manager.GetStatelessBlock(lastAcceptedID)
 		if err != nil {
-			return fmt.Errorf("failed to get last accepted block: %w", err)
+			return nil, fmt.Errorf("failed to get last accepted block: %w", err)
 		}
 		height = lastAcceptedBlock.Height()
 	}
 
 	set, err := s.vm.GetValidatorSet(ctx, height, args.ChainID)
 	if err != nil {
-		return fmt.Errorf("failed to get validator set: %w", err)
+		return nil, fmt.Errorf("failed to get validator set: %w", err)
 	}
 	reply.Validators = newValidatorSet(set)
-	return nil
+	return reply, nil
 }
 
 // GetAllValidatorsAtArgs are the arguments to GetAllValidatorsAt
@@ -2008,11 +2018,12 @@ func (v *GetAllValidatorsAtReply) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// GetAllValidatorsAt returns the validator sets of all nets (including primary
-// network) at the specified height. Height is a u64 whose reserved value
-// MaxUint64 asks for the height the next proposal will be built at; the JSON
-// edge spells that value "proposed".
-func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtArgs, reply *GetAllValidatorsAtReply) error {
+// getAllValidatorsAt returns every net's validator set as it stood at a height,
+// the primary network included.
+//
+// The height "proposed" asks for the height the next proposal will be built at.
+func (s *Service) getAllValidatorsAt(ctx context.Context, args *GetAllValidatorsAtArgs) (*GetAllValidatorsAtReply, error) {
+	reply := &GetAllValidatorsAtReply{}
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getAllValidatorsAt"),
@@ -2023,14 +2034,13 @@ func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtAr
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	ctx := r.Context()
 	height := uint64(args.Height)
 	if args.Height.IsProposed() {
 		// Get the proposed height from the last accepted block
 		lastAcceptedID := s.vm.state.GetLastAccepted()
 		lastAcceptedBlock, err := s.vm.manager.GetStatelessBlock(lastAcceptedID)
 		if err != nil {
-			return fmt.Errorf("failed to get last accepted block: %w", err)
+			return nil, fmt.Errorf("failed to get last accepted block: %w", err)
 		}
 		height = lastAcceptedBlock.Height()
 	}
@@ -2038,7 +2048,7 @@ func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtAr
 	// Get all net IDs
 	netIDs, err := s.vm.state.GetChainIDs()
 	if err != nil {
-		return fmt.Errorf("failed to get net IDs: %w", err)
+		return nil, fmt.Errorf("failed to get net IDs: %w", err)
 	}
 
 	reply.ValidatorSets = make([]ChainValidatorSet, 0, len(netIDs)+1)
@@ -2046,7 +2056,7 @@ func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtAr
 	// Add primary network first
 	primaryValidators, err := s.vm.GetValidatorSet(ctx, height, constants.PrimaryNetworkID)
 	if err != nil {
-		return fmt.Errorf("failed to get primary network validator set: %w", err)
+		return nil, fmt.Errorf("failed to get primary network validator set: %w", err)
 	}
 	reply.ValidatorSets = append(reply.ValidatorSets, newChainValidatorSet(constants.PrimaryNetworkID, primaryValidators))
 
@@ -2054,7 +2064,7 @@ func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtAr
 	for _, netID := range netIDs {
 		netValidators, err := s.vm.GetValidatorSet(ctx, height, netID)
 		if err != nil {
-			return fmt.Errorf("failed to get validator set for net %s: %w", netID, err)
+			return nil, fmt.Errorf("failed to get validator set for net %s: %w", netID, err)
 		}
 		reply.ValidatorSets = append(reply.ValidatorSets, newChainValidatorSet(netID, netValidators))
 	}
@@ -2062,10 +2072,15 @@ func (s *Service) GetAllValidatorsAt(r *http.Request, args *GetAllValidatorsAtAr
 		return x.ChainID.Compare(y.ChainID)
 	})
 
-	return nil
+	return reply, nil
 }
 
-func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, response *apitypes.GetBlockResponse) error {
+// getBlock returns a block by its id.
+//
+// The encoding chooses the shape of the answer: hex returns the block's bytes as
+// one string, and json returns the block as an object.
+func (s *Service) getBlock(ctx context.Context, args *apitypes.GetBlockArgs) (*apitypes.GetBlockResponse, error) {
+	response := &apitypes.GetBlockResponse{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getBlock",
@@ -2078,7 +2093,7 @@ func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, respons
 
 	block, err := s.vm.manager.GetStatelessBlock(args.BlockID)
 	if err != nil {
-		return fmt.Errorf("couldn't get block with id %s: %w", args.BlockID, err)
+		return nil, fmt.Errorf("couldn't get block with id %s: %w", args.BlockID, err)
 	}
 	response.Encoding = args.Encoding
 
@@ -2089,16 +2104,20 @@ func (s *Service) GetBlock(_ *http.Request, args *apitypes.GetBlockArgs, respons
 	} else {
 		result, err = formatting.Encode(args.Encoding, block.Bytes())
 		if err != nil {
-			return fmt.Errorf("couldn't encode block %s as %s: %w", args.BlockID, args.Encoding, err)
+			return nil, fmt.Errorf("couldn't encode block %s as %s: %w", args.BlockID, args.Encoding, err)
 		}
 	}
 
 	response.Block, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
-	return err
+	return nil, err
 }
 
-// GetBlockByHeight returns the block at the given height.
-func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHeightArgs, response *apitypes.GetBlockResponse) error {
+// getBlockByHeight returns the accepted block at a height.
+//
+// The encoding chooses the shape of the answer: hex returns the block's bytes as
+// one string, and json returns the block as an object.
+func (s *Service) getBlockByHeight(ctx context.Context, args *apitypes.GetBlockByHeightArgs) (*apitypes.GetBlockResponse, error) {
+	response := &apitypes.GetBlockResponse{}
 	s.vm.log.Debug("API called",
 		"service", "platform",
 		"method", "getBlockByHeight",
@@ -2111,7 +2130,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHei
 
 	blockID, err := s.vm.state.GetBlockIDAtHeight(uint64(args.Height))
 	if err != nil {
-		return fmt.Errorf("couldn't get block at height %d: %w", args.Height, err)
+		return nil, fmt.Errorf("couldn't get block at height %d: %w", args.Height, err)
 	}
 
 	block, err := s.vm.manager.GetStatelessBlock(blockID)
@@ -2120,7 +2139,7 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHei
 			"blkID", blockID,
 			"error", err,
 		)
-		return fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
+		return nil, fmt.Errorf("couldn't get block with id %s: %w", blockID, err)
 	}
 	response.Encoding = args.Encoding
 
@@ -2131,23 +2150,26 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *apitypes.GetBlockByHei
 	} else {
 		result, err = formatting.Encode(args.Encoding, block.Bytes())
 		if err != nil {
-			return fmt.Errorf("couldn't encode block %s as %s: %w", blockID, args.Encoding, err)
+			return nil, fmt.Errorf("couldn't encode block %s as %s: %w", blockID, args.Encoding, err)
 		}
 	}
 
 	response.Block, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
-	return err
+	return nil, err
 }
 
-// GetFeeConfig returns the dynamic fee config of the chain.
-func (s *Service) GetFeeConfig(_ *http.Request, _ *struct{}, reply *GetFeeConfigReply) error {
+// getFeeConfig returns the chain's dynamic-fee configuration: what gas each
+// dimension of a transaction costs, the capacity and target per second, and the
+// constants the price curve is drawn from.
+func (s *Service) getFeeConfig(ctx context.Context, _ *struct{}) (*GetFeeConfigReply, error) {
+	reply := &GetFeeConfigReply{}
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getFeeConfig"),
 	)
 
 	*reply = newFeeConfig(s.vm.DynamicFeeConfig)
-	return nil
+	return reply, nil
 }
 
 type GetFeeStateReply struct {
@@ -2156,8 +2178,11 @@ type GetFeeStateReply struct {
 	Time  avajson.Time `json:"timestamp"`
 }
 
-// GetFeeState returns the current fee state of the chain.
-func (s *Service) GetFeeState(_ *http.Request, _ *struct{}, reply *GetFeeStateReply) error {
+// getFeeState returns the chain's current fee state: the gas consumed, the
+// excess it is priced off, the price that excess implies, and the time it was
+// read at.
+func (s *Service) getFeeState(ctx context.Context, _ *struct{}) (*GetFeeStateReply, error) {
+	reply := &GetFeeStateReply{}
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getFeeState"),
@@ -2173,18 +2198,20 @@ func (s *Service) GetFeeState(_ *http.Request, _ *struct{}, reply *GetFeeStateRe
 		s.vm.DynamicFeeConfig.ExcessConversionConstant,
 	)
 	reply.Time = avajson.NewTime(s.vm.state.GetTimestamp())
-	return nil
+	return reply, nil
 }
 
-// GetValidatorFeeConfig returns the validator fee config of the chain.
-func (s *Service) GetValidatorFeeConfig(_ *http.Request, _ *struct{}, reply *fee.Config) error {
+// getValidatorFeeConfig returns the configuration the L1 validator fee is
+// calculated from.
+func (s *Service) getValidatorFeeConfig(ctx context.Context, _ *struct{}) (*fee.Config, error) {
+	reply := &fee.Config{}
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getValidatorFeeConfig"),
 	)
 
 	*reply = s.vm.ValidatorFeeConfig
-	return nil
+	return reply, nil
 }
 
 type GetValidatorFeeStateReply struct {
@@ -2193,8 +2220,10 @@ type GetValidatorFeeStateReply struct {
 	Time   avajson.Time `json:"timestamp"`
 }
 
-// GetValidatorFeeState returns the current validator fee state of the chain.
-func (s *Service) GetValidatorFeeState(_ *http.Request, _ *struct{}, reply *GetValidatorFeeStateReply) error {
+// getValidatorFeeState returns what an L1 validator is currently charged per
+// second to keep validating, and the time it was read at.
+func (s *Service) getValidatorFeeState(ctx context.Context, _ *struct{}) (*GetValidatorFeeStateReply, error) {
+	reply := &GetValidatorFeeStateReply{}
 	s.vm.log.Debug("API called",
 		log.String("service", "platform"),
 		log.String("method", "getValidatorFeeState"),
@@ -2210,7 +2239,7 @@ func (s *Service) GetValidatorFeeState(_ *http.Request, _ *struct{}, reply *GetV
 		s.vm.ValidatorFeeConfig.ExcessConversionConstant,
 	)
 	reply.Time = avajson.NewTime(s.vm.state.GetTimestamp())
-	return nil
+	return reply, nil
 }
 
 func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapitypes.Owner, error) {

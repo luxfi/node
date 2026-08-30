@@ -134,8 +134,6 @@ var messages = []any{
 	&platformvm.GetValidatorFeeStateReply{},
 	&platformvm.GetValidatorsAtArgs{},
 	&platformvm.GetValidatorsAtReply{},
-	&platformvm.SampleValidatorsArgs{},
-	&platformvm.SampleValidatorsReply{},
 	&platformvm.ValidatedByArgs{},
 	&platformvm.ValidatedByResponse{},
 	&platformvm.ValidatesArgs{},

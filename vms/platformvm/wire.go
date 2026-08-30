@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/ids"
 
 	avajson "github.com/luxfi/node/utils/json"
-	api "github.com/luxfi/node/vms/platformvm/api"
 	"github.com/luxfi/node/vms/components/gas"
+	api "github.com/luxfi/node/vms/platformvm/api"
 	validators "github.com/luxfi/validators"
 )
 
