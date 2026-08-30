@@ -31,8 +31,12 @@ on:
 # trigger removes that race. If a corrective tag supersedes a build still in flight,
 # cancel it so only the newest immutable release consumes the publisher. Branch
 # pushes are covered by ci.yml, which tests without publishing.
+# One release, one image. The group is keyed on the REF, not the repository:
+# a repo-wide group means pushing v1.36.173 cancels v1.36.172's build, and a
+# batch of tags leaves one image and a row of versions that promise an artifact
+# nobody can pull. Re-running the same tag still supersedes its own run.
 concurrency:
-  group: release-${{ github.repository }}
+  group: release-${{ github.repository }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
