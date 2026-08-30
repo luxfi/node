@@ -136,7 +136,7 @@ func TestPassingChecks(t *testing.T) {
 		require.Contains(readinessResult, "check")
 
 		result := readinessResult["check"]
-		require.Empty(result.Details)
+		require.JSONEq(`""`, string(result.Details), "the check answered with an empty string and the reply carries exactly that")
 		require.Nil(result.Error)
 		require.Zero(result.ContiguousFailures)
 		require.True(readiness)
@@ -150,7 +150,7 @@ func TestPassingChecks(t *testing.T) {
 		require.Contains(healthResult, "check")
 
 		result := healthResult["check"]
-		require.Empty(result.Details)
+		require.JSONEq(`""`, string(result.Details), "the check answered with an empty string and the reply carries exactly that")
 		require.Nil(result.Error)
 		require.Zero(result.ContiguousFailures)
 		require.True(health)
@@ -164,7 +164,7 @@ func TestPassingChecks(t *testing.T) {
 		require.Contains(livenessResult, "check")
 
 		result := livenessResult["check"]
-		require.Empty(result.Details)
+		require.JSONEq(`""`, string(result.Details), "the check answered with an empty string and the reply carries exactly that")
 		require.Nil(result.Error)
 		require.Zero(result.ContiguousFailures)
 		require.True(liveness)

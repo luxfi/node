@@ -52,6 +52,7 @@ import (
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
 	server "github.com/luxfi/node/server/http"
+	"github.com/zap-proto/zip"
 	"github.com/luxfi/node/service/admin"
 	"github.com/luxfi/node/service/health"
 	"github.com/luxfi/node/service/info"
@@ -1753,15 +1754,7 @@ func (n *Node) initAdminAPI() error {
 		Network:      n.Net,
 		DataDir:      n.Config.DatabaseConfig.Path,
 	})
-	handler, err := service.CreateHandler()
-	if err != nil {
-		return err
-	}
-	return n.APIServer.AddRoute(
-		handler,
-		"admin",
-		"",
-	)
+	return n.mountOps(service.Ops(), "admin")
 }
 
 // initProfiler initializes the continuous profiling
@@ -1806,7 +1799,7 @@ func (n *Node) initInfoAPI() error {
 		return fmt.Errorf("problem creating proof of possession: %w", err)
 	}
 
-	service, err := info.NewService(
+	service := info.New(
 		info.Parameters{
 			Version:   version.CurrentApp,
 			NodeID:    n.ID,
@@ -1825,14 +1818,7 @@ func (n *Node) initInfoAPI() error {
 		n.Config.NetworkConfig.MyIPPort,
 		n.Net,
 	)
-	if err != nil {
-		return err
-	}
-	return n.APIServer.AddRoute(
-		service,
-		"info",
-		"",
-	)
+	return n.mountOps(service.Ops(), "info")
 }
 
 // initSecurityAPI exposes the chain-wide ChainSecurityProfile as a
@@ -1869,15 +1855,7 @@ func (n *Node) initSecurityAPI() error {
 	securityMetrics := luxsecurity.NewMetrics(metric.NewWithRegistry("security", securityMetricsReg))
 	securityMetrics.SetActiveProfile(n.securityProfile)
 
-	handler, err := luxsecurity.NewHandler(n.Log, n.securityProfile)
-	if err != nil {
-		return err
-	}
-	return n.APIServer.AddRoute(
-		handler,
-		"security",
-		"",
-	)
+	return n.mountOps(luxsecurity.New(n.Log, n.securityProfile).Ops(), "security")
 }
 
 // initHealthAPI initializes the Health API service
@@ -1965,43 +1943,19 @@ func (n *Node) initHealthAPI() error {
 		return fmt.Errorf("couldn't register bls health check: %w", err)
 	}
 
-	handler, err := health.NewGetAndPostHandler(n.Log, n.health)
+	return n.mountOps(health.NewService(n.Log, n.health).Ops(), "health")
+}
+
+// mountOps serves an app of typed operations beneath the base its service
+// answers on: /v1/info/ops, /v1/admin/ops. [server.Mount] is what installs the
+// node's authorization rule, so this is the one verb that puts a zip app on the
+// router and every app on it is under the rule by construction.
+func (n *Node) mountOps(app *zip.App, base string) error {
+	handler, err := server.Mount(app)
 	if err != nil {
 		return err
 	}
-
-	err = n.APIServer.AddRoute(
-		handler,
-		"health",
-		"",
-	)
-	if err != nil {
-		return err
-	}
-
-	err = n.APIServer.AddRoute(
-		health.NewGetHandler(n.health.Readiness),
-		"health",
-		"/readiness",
-	)
-	if err != nil {
-		return err
-	}
-
-	err = n.APIServer.AddRoute(
-		health.NewGetHandler(n.health.Health),
-		"health",
-		"/health",
-	)
-	if err != nil {
-		return err
-	}
-
-	return n.APIServer.AddRoute(
-		health.NewGetHandler(n.health.Liveness),
-		"health",
-		"/liveness",
-	)
+	return n.APIServer.AddRoute(handler, base, server.Ops)
 }
 
 // Give chains aliases as specified by the genesis information

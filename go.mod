@@ -64,7 +64,7 @@ require (
 	golang.org/x/time v0.15.0
 	golang.org/x/tools v0.47.0
 	gonum.org/v1/gonum v0.17.0
-	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -115,10 +115,9 @@ require (
 	github.com/cloudflare/circl v1.6.3
 	github.com/consensys/gnark-crypto v0.20.1
 	github.com/go-json-experiment/json v0.0.0-20260601182631-00ed12fed2a6
-	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.3.1
-	github.com/luxfi/api v1.1.13
+	github.com/luxfi/api v1.1.14
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.7.33
 	github.com/luxfi/codec v1.2.1
@@ -137,7 +136,7 @@ require (
 	github.com/luxfi/resource v0.1.1
 	github.com/luxfi/rpc v1.1.0
 	github.com/luxfi/runtime v1.3.1
-	github.com/luxfi/sdk v1.18.1
+	github.com/luxfi/sdk v1.18.9
 	github.com/luxfi/sys v0.1.0
 	github.com/luxfi/threshold v1.12.6
 	github.com/luxfi/timer v1.1.1
@@ -151,6 +150,7 @@ require (
 	github.com/luxfi/zwing v0.6.1
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/valyala/fasthttp v1.73.0
+	github.com/zap-proto/go v1.3.0
 	github.com/zap-proto/http v0.3.5
 	github.com/zap-proto/zip v1.36.34
 	go.uber.org/zap v1.27.1
@@ -181,6 +181,7 @@ require (
 	github.com/aws/smithy-go v1.24.2 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.5.0 // indirect
 	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
@@ -188,6 +189,7 @@ require (
 	github.com/gofiber/schema v1.7.1 // indirect
 	github.com/gofiber/utils/v2 v2.0.4 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.2.0 // indirect
 	github.com/hanzoai/vfs v0.4.3 // indirect
@@ -196,6 +198,8 @@ require (
 	github.com/hanzos3/md5-simd v1.1.3 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/luxfi/age v1.6.0 // indirect
+	github.com/luxfi/bft v0.1.5 // indirect
+	github.com/luxfi/config v1.1.2 // indirect
 	github.com/luxfi/corona v0.10.4 // indirect
 	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
@@ -206,6 +210,7 @@ require (
 	github.com/luxfi/magnetar v1.2.3 // indirect
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/mlwe v0.3.0 // indirect
+	github.com/luxfi/netrunner v1.18.5-0.20260519042948-50731517be59 // indirect
 	github.com/luxfi/pq v1.1.0 // indirect
 	github.com/luxfi/precompile v0.19.8 // indirect
 	github.com/luxfi/pulsar v1.9.2 // indirect
@@ -219,10 +224,11 @@ require (
 	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/zap-proto/fiber/v3 v3.2.1 // indirect
-	github.com/zap-proto/go v1.3.0 // indirect
 	github.com/zap-proto/mcp v1.0.5 // indirect
 	go.mongodb.org/mongo-driver v1.17.9 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260825221802-da73d73af1c5 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
+	google.golang.org/grpc v1.81.1 // indirect
 )
 
 require (

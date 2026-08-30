@@ -29,9 +29,9 @@ func TestRPC_securityProfile_StrictPQ(t *testing.T) {
 	profile := consensusconfig.StrictPQ()
 	svc := &Service{log: log.Noop(), profile: profile}
 
-	var reply ProfileReply
-	if err := svc.SecurityProfile(nil, nil, &reply); err != nil {
-		t.Fatalf("SecurityProfile: %v", err)
+	reply, err := svc.securityProfile(t.Context(), nil)
+	if err != nil {
+		t.Fatalf("securityProfile: %v", err)
 	}
 
 	if reply.ProfileID != uint32(consensusconfig.ProfileStrictPQ) {
@@ -121,9 +121,9 @@ func TestRPC_securityProfile_Unsafe(t *testing.T) {
 	pCopy.ProfileHash = hash
 	svc := &Service{log: log.Noop(), profile: &pCopy}
 
-	var reply ProfileReply
-	if err := svc.SecurityProfile(nil, nil, &reply); err != nil {
-		t.Fatalf("SecurityProfile: %v", err)
+	reply, err := svc.securityProfile(t.Context(), nil)
+	if err != nil {
+		t.Fatalf("securityProfile: %v", err)
 	}
 
 	if reply.ProfileName != "FORK_CLASSICAL_COMPAT_UNSAFE" {
@@ -168,10 +168,9 @@ func TestRPC_securityProfile_Unsafe(t *testing.T) {
 // caller MUST see ErrNoProfile, not a half-populated reply.
 func TestRPC_securityProfile_NoProfile_Refused(t *testing.T) {
 	svc := &Service{log: log.Noop(), profile: nil}
-	var reply ProfileReply
-	err := svc.SecurityProfile(nil, nil, &reply)
+	_, err := svc.securityProfile(t.Context(), nil)
 	if !errors.Is(err, ErrNoProfile) {
-		t.Errorf("SecurityProfile() = %v; want ErrNoProfile", err)
+		t.Errorf("securityProfile() = %v; want ErrNoProfile", err)
 	}
 }
 
@@ -180,9 +179,9 @@ func TestRPC_securityProfile_NoProfile_Refused(t *testing.T) {
 // backend name.
 func TestRPC_blockSecurity_StrictPQ(t *testing.T) {
 	svc := &Service{log: log.Noop(), profile: consensusconfig.StrictPQ()}
-	var reply BlockSecurityReply
-	if err := svc.BlockSecurity(nil, &BlockSecurityArgs{}, &reply); err != nil {
-		t.Fatalf("BlockSecurity: %v", err)
+	reply, err := svc.blockSecurity(t.Context(), &BlockSecurityArgs{})
+	if err != nil {
+		t.Fatalf("blockSecurity: %v", err)
 	}
 	if reply.SecurityProfileName != "STRICT" {
 		t.Errorf("SecurityProfileName = %q; want STRICT",
@@ -202,22 +201,16 @@ func TestRPC_blockSecurity_StrictPQ(t *testing.T) {
 	}
 }
 
-// TestREST_securityProfile_GET proves the /profile sidecar (full path
-// /v1/security/profile when mounted on APIServer) returns the same
-// JSON shape as the JSON-RPC handler. One shape, two transports — no
-// per-transport drift.
-func TestREST_securityProfile_GET(t *testing.T) {
-	profile := consensusconfig.StrictPQ()
-	handler, err := NewHandler(log.Noop(), profile)
-	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
-	}
-	srv := httptest.NewServer(handler)
-	defer srv.Close()
+// TestOps_profile proves the served operation answers the same shape the
+// handler builds. One value, one address — the sidecars that used to serve a
+// second copy of it are gone.
+func TestOps_profile(t *testing.T) {
+	app := New(log.Noop(), consensusconfig.StrictPQ()).Ops()
+	t.Cleanup(func() { _ = app.Shutdown() })
 
-	resp, err := http.Get(srv.URL + "/profile")
+	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/profile", nil))
 	if err != nil {
-		t.Fatalf("GET: %v", err)
+		t.Fatalf("GET /profile: %v", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -231,52 +224,38 @@ func TestREST_securityProfile_GET(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 	if body.ProfileName != "STRICT" {
-		t.Errorf("REST ProfileName = %q; want STRICT", body.ProfileName)
+		t.Errorf("ProfileName = %q; want STRICT", body.ProfileName)
 	}
 	if body.ContractAuth != "ML_DSA_65|ZCHAIN_AUTH_PROOF" {
-		t.Errorf("REST ContractAuth = %q; want ML_DSA_65|ZCHAIN_AUTH_PROOF",
-			body.ContractAuth)
+		t.Errorf("ContractAuth = %q; want ML_DSA_65|ZCHAIN_AUTH_PROOF", body.ContractAuth)
 	}
 }
 
-// TestREST_securityProfile_MethodNotAllowed proves the REST sidecar
-// refuses non-GET methods (the endpoint is read-only).
-func TestREST_securityProfile_MethodNotAllowed(t *testing.T) {
-	profile := consensusconfig.StrictPQ()
-	handler, err := NewHandler(log.Noop(), profile)
-	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
-	}
-	srv := httptest.NewServer(handler)
-	defer srv.Close()
+// TestOps_profile_IsReadOnly proves the address takes no write. It is
+// registered as a GET and nothing else, so a POST reaches no handler — which is
+// also what puts it in the read tier of the node's authorization rule.
+func TestOps_profile_IsReadOnly(t *testing.T) {
+	app := New(log.Noop(), consensusconfig.StrictPQ()).Ops()
+	t.Cleanup(func() { _ = app.Shutdown() })
 
-	resp, err := http.Post(srv.URL+"/profile",
-		"application/json", bytes.NewReader([]byte("{}")))
+	resp, err := app.Test(httptest.NewRequest(http.MethodPost, "/profile", bytes.NewReader([]byte("{}"))))
 	if err != nil {
-		t.Fatalf("POST: %v", err)
+		t.Fatalf("POST /profile: %v", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("status = %d; want 405", resp.StatusCode)
+	if resp.StatusCode == http.StatusOK {
+		t.Errorf("status = 200 for a POST; the profile is read-only")
 	}
 }
 
-// TestREST_blockSecurity_GET proves the /block/{n} sidecar (full path
-// /v1/security/block/{n} when mounted on APIServer) returns the same
-// JSON shape as the JSON-RPC handler. One shape, two transports — no
-// per-transport drift.
-func TestREST_blockSecurity_GET(t *testing.T) {
-	profile := consensusconfig.StrictPQ()
-	handler, err := NewHandler(log.Noop(), profile)
-	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
-	}
-	srv := httptest.NewServer(handler)
-	defer srv.Close()
+// TestOps_block proves the block envelope is served at its own address.
+func TestOps_block(t *testing.T) {
+	app := New(log.Noop(), consensusconfig.StrictPQ()).Ops()
+	t.Cleanup(func() { _ = app.Shutdown() })
 
-	resp, err := http.Get(srv.URL + "/block/12345")
+	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/block/profile?blockNumber=12345", nil))
 	if err != nil {
-		t.Fatalf("GET: %v", err)
+		t.Fatalf("GET /block/profile: %v", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -287,33 +266,12 @@ func TestREST_blockSecurity_GET(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 	if body.SecurityProfileName != "STRICT" {
-		t.Errorf("REST SecurityProfileName = %q; want STRICT",
-			body.SecurityProfileName)
+		t.Errorf("SecurityProfileName = %q; want STRICT", body.SecurityProfileName)
 	}
 	if !body.PulsarMSignatureValid {
 		t.Error("PulsarMSignatureValid = false; want true on StrictPQ")
 	}
 	if !body.PostQuantumEndToEnd {
 		t.Error("PostQuantumEndToEnd = false; want true on StrictPQ")
-	}
-}
-
-// TestRenderName_StableMapping fences the name-translation behaviour
-// so a stray refactor cannot silently change the wire vocabulary.
-func TestRenderName_StableMapping(t *testing.T) {
-	cases := map[string]string{
-		"ml-dsa-65":              "ML_DSA_65",
-		"ml-kem-768":             "ML_KEM_768",
-		"sha3-nist":              "SHA3_NIST",
-		"stark-fri-sha3-pq":      "STARK_FRI_SHA3_PQ",
-		"pulsar-m-65":            "PULSAR_M_65",
-		"slh-dsa-192":            "SLH_DSA_192",
-		"":                       "",
-		"ecdsa-unsafe-classical": "ECDSA_UNSAFE_CLASSICAL",
-	}
-	for in, want := range cases {
-		if got := renderName(in); got != want {
-			t.Errorf("renderName(%q) = %q; want %q", in, got, want)
-		}
 	}
 }

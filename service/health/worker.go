@@ -4,6 +4,7 @@
 package health
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	apihealth "github.com/luxfi/api/health"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/metric"
@@ -235,9 +237,19 @@ func (w *worker) runCheck(ctx context.Context, wg *sync.WaitGroup, name string, 
 	details, err := check.checker.HealthCheck(ctx)
 	end := time.Now()
 
+	// A check says what it likes — the disk check answers with an object, the
+	// BLS check with a sentence, a chain's check with whatever suits it — so
+	// the details are encoded HERE, where the concrete type is still known,
+	// and travel as the bytes of their own JSON. That is the one shape every
+	// check shares, and a caller reads exactly what was produced.
+	said, encodeErr := apitypes.RawOf(details)
+	if encodeErr != nil {
+		said, err = nil, cmp.Or(err, fmt.Errorf("check details could not be encoded: %w", encodeErr))
+	}
+
 	result := apihealth.Result{
-		Details:   details,
-		Timestamp: end,
+		Details:   said,
+		Timestamp: apitypes.TimeOf(end),
 		Duration:  end.Sub(start),
 	}
 
@@ -252,7 +264,8 @@ func (w *worker) runCheck(ctx context.Context, wg *sync.WaitGroup, name string, 
 		if prevResult.ContiguousFailures > 0 {
 			result.TimeOfFirstFailure = prevResult.TimeOfFirstFailure
 		} else {
-			result.TimeOfFirstFailure = &end
+			first := apitypes.TimeOf(end)
+			result.TimeOfFirstFailure = &first
 		}
 
 		if prevResult.Error == nil {
