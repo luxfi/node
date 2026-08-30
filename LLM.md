@@ -767,6 +767,65 @@ v2 semantic differences worth knowing (these change wire shape):
 
 ---
 
+## The RPC messages state their own ZAP wire — `cmd/wire`
+
+An op crosses the zip op-call plane as ZAP, and a field on that wire IS an
+offset. An `ids.ID` is `[32]byte` — `bytes_fixed[32]` — and the DERIVED encoder
+refuses a fixed array outright, on purpose: the layout knows the shape, so a
+schema states an id correctly, and the type is expected to state its own wire
+rather than quietly acquiring one by reflection. Until it does, a reply carrying
+an id cannot cross at all, and most of what P and X answer with carries one.
+
+**Measured over every gorilla/rpc handler in the module, before and after:**
+
+| | ops |
+|---|---|
+| total registered handlers | 99 |
+| crossed before | 38 |
+| blocked by `bytes_fixed[N]` | 48 → **0** |
+| blocked at layout (a map, an interface) | 13 → 13 |
+| **crossed after** | **86** |
+
+`cmd/wire` is how. Two passes, because the two halves know different things:
+
+```
+go run ./cmd/wire -scan     reads the SOURCE for every func (r *T) M(*http.Request, *In, *Out) error
+                            and writes cmd/wire/messages.go — the list of what those handlers carry
+go run ./cmd/wire           reads those TYPES and writes each package's zap_gen.go from zip.LayoutOf
+```
+
+Neither pass derives a layout of its own: the offsets a codec states are the ones
+the plane already encodes against, which is what lets a codec go out one node at
+a time. zip holds that byte for byte against its reflective encoder
+(`zip/internal/codec.TestTheCodecKeepsTheWire`).
+
+The generated file declares no package-level name — the `zip.Wire` assertion is an
+inline interface literal — so it depends on the ZAP builder and nothing else. That
+is what lets `luxfi/api`, `luxfi/utxo` and `luxfi/validators` state their wire
+without taking a web framework as a dependency. Regenerating across a zip upgrade
+means deleting the files first (`find . -name zap_gen.go -delete`), since a stale
+one stops `cmd/wire` compiling.
+
+**The JSON edge does not move.** `encoding/json` reads struct tags and knows
+nothing about a ZAP codec. `vms/platformvm/wire_test.go` holds that against bodies
+recorded from api.lux.network in `vms/platformvm/golden/`.
+
+**13 ops still need a TYPE change**, not a codec, and they are all one of two
+shapes. A field is a `map` (`admin.ListVMsReply.VMs`, `LoadVMsReply.NewVMs`,
+`LoggerLevelReply.LoggerLevels`, `health.APIReply.Checks`,
+`info.GetNodeVersionReply.VMVersions`, `GetVMsReply.VMs`, `LPsReply.LPs`,
+`PeerInfo.TrackedChains`) or an interface (`admin.GetConfig`'s `*any`,
+`xsvm.Tx.Unsigned` under `BlockReply` and `LastAcceptedReply`). A map has no
+fixed layout and an offset is what a ZAP field is; the cure is the one
+`GetValidatorsAtReply` already took — a list of a stated element type, marshalling
+to the same JSON.
+
+`cmd/wire/wire_test.go` is the standing count and the end-to-end proof: every
+message either states its wire or has no layout, and ten families round-trip an
+`ids.ID` over a real unix socket through `zip.Call`.
+
+---
+
 ## Housekeeping
 
 Removed 6 generated write-ups / stale root artifacts (`LAUNCH_CHECKLIST.md`,

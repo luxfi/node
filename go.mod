@@ -118,7 +118,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/luxfi/accel v1.3.1
-	github.com/luxfi/api v1.1.9
+	github.com/luxfi/api v1.1.13
 	github.com/luxfi/atomic v1.0.0
 	github.com/luxfi/chains v1.7.33
 	github.com/luxfi/codec v1.2.1
@@ -143,8 +143,8 @@ require (
 	github.com/luxfi/timer v1.1.1
 	github.com/luxfi/units v1.0.0
 	github.com/luxfi/utils v1.3.1
-	github.com/luxfi/utxo v0.5.8
-	github.com/luxfi/validators v1.3.1
+	github.com/luxfi/utxo v0.5.10
+	github.com/luxfi/validators v1.3.3
 	github.com/luxfi/vm v1.3.14
 	github.com/luxfi/warp v1.24.1
 	github.com/luxfi/zap v1.2.7
@@ -152,7 +152,7 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/valyala/fasthttp v1.73.0
 	github.com/zap-proto/http v0.3.5
-	github.com/zap-proto/zip v1.36.16
+	github.com/zap-proto/zip v1.36.31
 	go.uber.org/zap v1.27.1
 )
 
