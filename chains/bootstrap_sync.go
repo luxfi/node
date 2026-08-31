@@ -1347,7 +1347,7 @@ func (b *blockHandler) BootstrapFailure() error {
 // head) and waiting for the quorum to return; the network cannot make progress without it.
 // monitorBootstrap's no-progress watchdog polls this so it does NOT force-STOP a node that is
 // deliberately waiting — which, given the K8s probes only poll the always-green
-// /v1/health/liveness, would be a permanent brick. It is the discriminator between "stuck on a
+// /v1/health/ops/liveness, would be a permanent brick. It is the discriminator between "stuck on a
 // served gap" (a real stall → stop) and "waiting for the quorum" (self-heal → keep waiting).
 // Distinct from BootstrapFailed (a terminal/structural fail).
 //
@@ -1506,7 +1506,7 @@ func (b *blockHandler) runBootstrapThenPoll(ctx context.Context) {
 // no-progress watchdog treats it as a deliberate WAIT, not a stall: the node stays in Bootstrapping
 // (serving nothing as head, NEVER live at the stale height) and CONVERGES the instant the quorum
 // returns — the in-process self-heal the K8s probes do NOT provide (they poll the always-green
-// /v1/health/liveness, so a fail-safe-DOWN node is never restarted). A STRUCTURAL failure (deep gap
+// /v1/health/ops/liveness, so a fail-safe-DOWN node is never restarted). A STRUCTURAL failure (deep gap
 // → state-sync) or an exhausted attempt bound returns false WITHOUT going Ready, bootstrapFailed
 // recording the reason so monitorBootstrap surfaces it. The node NEVER false-completes at its stale
 // height, and a transient outage NEVER becomes a permanent brick.
@@ -1557,7 +1557,7 @@ func (b *blockHandler) runInitialSync(ctx context.Context) bool {
 	// (eclipse / partition / a majority co-restart still in flight) is RE-ATTEMPTED — the node stays
 	// in Bootstrapping (engine alive, VM serving nothing as head, never live at the stale height)
 	// and CONVERGES the instant the quorum returns. This is the recovery the K8s probes do NOT
-	// provide (they all poll the always-green /v1/health/liveness, so a fail-safe-DOWN node is
+	// provide (they all poll the always-green /v1/health/ops/liveness, so a fail-safe-DOWN node is
 	// never restarted). bootstrapMaxAttempts ≤ 0 ⇒ retry until the quorum returns or shutdown; a
 	// test pins it to 1 to assert the single-attempt terminal fail-safe. A STRUCTURAL failure (deep
 	// gap → state-sync) is NOT retried — a retry cannot fix it; it is surfaced for the operator.

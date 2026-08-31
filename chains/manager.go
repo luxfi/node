@@ -3231,7 +3231,7 @@ type blockHandler struct {
 	// is not waiting. It tells monitorBootstrap's no-progress watchdog this is a deliberate WAIT for
 	// the quorum to return (the network cannot make progress without it), NOT a stall — so the
 	// watchdog does not force-STOP a node that is correctly failing safe and waiting, which (given
-	// the K8s probes only poll the always-green /v1/health/liveness) would otherwise be a permanent
+	// the K8s probes only poll the always-green /v1/health/ops/liveness) would otherwise be a permanent
 	// brick. Carrying the reason rather than a bare flag is what lets the health check name the
 	// condition instead of restating that a chain is not bootstrapped.
 	bootstrapWait gatomic.Pointer[string]
@@ -3357,7 +3357,7 @@ type blockHandler struct {
 	// DOWN — never live at a stale height) and CONVERGES the instant the quorum returns. ≤0 ⇒
 	// UNLIMITED (retry until the quorum returns or shutdown) — the production default, because a
 	// node without a quorum must keep trying to rejoin and the K8s liveness probe does NOT restart
-	// it (all luxd probes poll the always-green /v1/health/liveness). A STRUCTURAL failure (deep
+	// it (all luxd probes poll the always-green /v1/health/ops/liveness). A STRUCTURAL failure (deep
 	// gap → state-sync) is never retried regardless. Tests pin it to 1 to assert the single-attempt
 	// terminal fail-safe in isolation.
 	bootstrapMaxAttempts int
