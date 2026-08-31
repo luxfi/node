@@ -236,15 +236,13 @@ older module — the binary is not a function of the repository alone. See
 
 ## Essential Commands
 
-### Release & build (canonical) — via platform.hanzo.ai, NOT GitHub Actions
-The ONE way to build + publish releases is **[`RELEASE.md`](./RELEASE.md)**:
-platform.hanzo.ai reads [`hanzo.yml`](./hanzo.yml) on a `v*` tag push and
-schedules the image build onto self-hosted **arcd** pools (`lux-build-linux-*`)
-over the native long-poll fabric — no GitHub-Actions hop. ONE `Dockerfile`
-build yields BOTH artifacts: the node image (`ghcr.io/luxfi/node:vX.Y.Z`, luxd
-+ 12 baked VM plugins) and, via [`scripts/publish_plugin_set.sh`](./scripts/publish_plugin_set.sh),
+### Release & build (canonical)
+The ONE way to build + publish releases is **[`RELEASE.md`](./RELEASE.md)**: a
+`v*` tag push runs [`.hanzo/workflows/release.yml`](./.hanzo/workflows/release.yml)
+on the `lux-build-linux-amd64` pool at `git.hanzo.ai`. ONE `Dockerfile` build
+yields BOTH artifacts: the node image (`ghcr.io/luxfi/node:vX.Y.Z`, luxd + 12
+baked VM plugins) and, via [`scripts/publish_plugin_set.sh`](./scripts/publish_plugin_set.sh),
 the plugin set to `s3://lux-plugins-<env>/<pluginset>/` (operator `pluginSource`).
-The `.github/workflows/*` build/release workflows are retired (RELEASE.md §Retire).
 
 ### Go toolchain policy
 Two rules, both required, for every Dockerfile stage that compiles Go:

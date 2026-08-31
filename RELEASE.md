@@ -1,10 +1,9 @@
-# Lux release — build + publish via platform.hanzo.ai (the ONE canonical way)
+# Lux release — build + publish (the ONE canonical way)
 
 This is the single, repeatable way to build and publish the Lux release
-artifacts. It runs entirely on our own infrastructure — **the PaaS
-(platform.hanzo.ai) + self-hosted arcd runners + DOKS/fleet**. There is **no
-GitHub Actions build path** (the `.github/workflows/*` build/release workflows
-are retired — see [§Retire](#retire-the-github-actions-build-workflows)).
+artifacts. It runs entirely on our own infrastructure — **Hanzo Git Actions
+(`git.hanzo.ai`) + the self-hosted runner fleet + DOKS**. GitHub is a mirror,
+never the compute.
 
 ## What a release produces
 
@@ -30,79 +29,44 @@ this repo's `go.mod`:
 ## The machinery
 
 ```
-git tag vX.Y.Z (push)
-        │  GitHub App webhook ─▶ https://platform.hanzo.ai/v1/github-webhook
+git tag vX.Y.Z (push to git.hanzo.ai)
         ▼
-  platform BuildScheduler  ── reads hanzo.yml @ tag, validates, enqueues
-        │                      one build_job per matrix entry
+  .hanzo/workflows/release.yml        Hanzo Git Actions
+        │  runs-on: lux-build-linux-amd64
         ▼
-  native long-poll fabric (build-queue.ts)        NO GitHub Actions hop
-        │  arcd runner POST /v1/arcd/poll  (HMAC)
+  act_runner on the git-runner fleet
+        │  checkout @ tag → buildx build -f Dockerfile . → push
         ▼
-  arcd runner on pool lux-build-linux-<arch>
-        │  git checkout @ tag → docker build -f Dockerfile . → docker push
-        ▼
-  ghcr.io/luxfi/node:vX.Y.Z         (artifact 1)
-        │  POST /v1/arcd/complete (status, image_digest)
-        ▼
-  build_job (DB, system-of-record)
+  ghcr.io/luxfi/node:vX.Y.Z          (artifact 1)
 ```
 
-- **PaaS**: `platform.hanzo.ai` (`~/work/hanzo/platform`,
-  `pkg/platform/src/services/ci/`). Owns the schema, the scheduler, the durable
-  `build_job` record, and the native long-poll dispatch.
-- **Build muscle**: self-hosted **arcd** runner pools, `lux-build-linux-amd64`
-  and `lux-build-linux-arm64` (one daemon per fleet host; `spark` = linux/arm64,
-  amd64 via buildx). NO GitHub-hosted runners; NO GitHub Actions orchestration
-  on the native path.
-- **Contract**: `~/work/hanzo/platform/docs/PLATFORM_CI.md`.
+- **Workflow**: [`.hanzo/workflows/release.yml`](./.hanzo/workflows/release.yml)
+  — the one thing that builds and pushes this image.
+- **Build muscle**: the self-hosted runner fleet registered to `git.hanzo.ai`.
+  Label taxonomy: `hanzoai/.github:RUNNERS.md`.
 
 ## Build — the one command
 
-A release is a semver tag push. The declarative entrypoint is this repo's
-[`hanzo.yml`](./hanzo.yml); the trigger is one of:
-
-**(a) Tag push (normal release).** Cutting the tag IS the release:
+A release is a semver tag push. Cutting the tag IS the release:
 
 ```bash
 git tag v1.30.41 && git push origin v1.30.41
 ```
 
-The webhook maps `refs/tags/v1.30.41` → `branch=v1.30.41`; `hanzo.yml`'s
-`tag-pattern: "{{git.branch}}"` yields the image tag `v1.30.41`. Platform
-schedules the amd64 + arm64 builds onto the live `lux-build-*` arcd pools and
-pushes the multi-arch image to GHCR.
+`release.yml` builds `ghcr.io/luxfi/node:v1.30.41` and pushes it. The tag is
+immutable and semver-only — no `:latest`, no floating tags.
 
-**(b) On-demand (re-release / backfill).** The platform `buildJob.trigger`
-tRPC mutation schedules the same build for an explicit ref, no push required:
-
-```
-buildJob.trigger({
-  installationId: "<luxfi GitHub App installation id>",
-  repo: "luxfi/node",
-  sha:  "<commit at the tag>",
-  ref:  "refs/tags/v1.30.41",
-  branch: "v1.30.41"            // → image tag via {{git.branch}}
-})
-```
-
-Track it: `buildJob.list` / `buildJob.one` / `buildJob.logs` (org-scoped).
-
-> A pool goes **native** the moment an arcd runner self-registers for it
-> (`arcd_runner.lastSeen` within 90s); until then platform transparently falls
-> back to `workflow_dispatch` so a build is never stranded. To run a release
-> fully GitHub-free, ensure a `lux-build-linux-{amd64,arm64}` runner is live
-> (`tRPC arcd` / the `arcd_runner` table). Set platform env
-> `WORKFLOW_DISPATCH_FALLBACK=false` to forbid the legacy hop.
+To re-run a release without moving the tag, dispatch the same workflow from
+Hanzo Git Actions against the tag ref.
 
 ### What the runner runs (identical on a fleet host, for manual/DR builds)
 
 The native path runs exactly the repo's `Dockerfile`. To reproduce on a fleet
-host directly (e.g. `spark`), with no platform and no GitHub:
+host directly (e.g. `spark`), with no CI at all:
 
 ```bash
 # on spark (linux/arm64; amd64 via buildx)
-git clone --branch v1.30.41 git@github.com:luxfi/node.git && cd node
+git clone --branch v1.30.41 https://git.hanzo.ai/luxfi/node.git && cd node
 docker buildx build --platform linux/amd64 \
   --build-arg CGO_ENABLED=0 \
   -t ghcr.io/luxfi/node:v1.30.41 -f Dockerfile --push .
@@ -112,7 +76,7 @@ docker buildx build --platform linux/amd64 \
 
 After the image exists, publish artifact 2 from it (one command, idempotent,
 no second compile). Run on any fleet host or a DOKS Job that has `crane`/docker
-+ `mc`; typically the same arcd runner that just built the image:
++ `mc`; typically the same runner that just built the image:
 
 ```bash
 scripts/publish_plugin_set.sh \
@@ -160,28 +124,3 @@ deliberately decoupled from build: `hanzo.yml` has **no `deploy:` block**.
 - To make releases bit-reproducible (future hardening, patch-only): add
   `-trimpath` to every plugin `go build` and pin `go.sum` (drop the strip +
   `-mod=mod`). Tracked as a follow-up; not required for correctness.
-
-## Retire the GitHub Actions build workflows
-
-These `.github/workflows/*` build/release/CI workflows are superseded by this
-flow and must be removed/disabled (platform owns build; the native long-poll
-owns dispatch). Delete them once a `lux-build-*` arcd runner is live:
-
-| Workflow | Replaced by |
-|----------|-------------|
-| `docker.yml` (built `ghcr.io/luxfi/node` on the `lux-build` ARC pool) | `hanzo.yml` (artifact 1) — native long-poll, NO GitHub Actions |
-| `release.yml` | the tag-push trigger above + `scripts/publish_plugin_set.sh` |
-| `build.yml`, `ci.yml` | platform CI test step (runner runs `go test` pre-build) |
-| `build-linux-binaries.yml` | `Dockerfile` builder stage (luxd binary) |
-| `build-ubuntu-amd64-release.yml`, `build-ubuntu-arm64-release.yml` | `Dockerfile` + buildx multi-arch |
-| `build-macos-release.yml`, `build-win-release.yml`, `build-and-test-mac-windows.yml` | arcd `lux-build-{macos,windows}-*` pools (matrix in `hanzo.yml` when desired) |
-| `build-deb-pkg.sh`, `build-tgz-pkg.sh` (under `.github/workflows/`) | packaging step on the arcd runner (post-build), not GitHub Actions |
-| `codeql-analysis.yml`, `fuzz.yml`, `fuzz_merkledb.yml`, `test-database-replay.yml` | scheduled jobs on arcd / DOKS (not a build dependency) |
-| `buf-lint.yml`, `buf-push.yml`, `labels.yml`, `stale.yml` | repo-hygiene; migrate to arcd cron or drop |
-
-The same retirement applies to the equivalent build/release workflows in the
-plugin-source repos (`luxfi/evm`, `luxfi/chains`, `luxfi/dex`): their artifacts
-are built from source by THIS repo's `Dockerfile` at the pinned refs, so those
-repos need no independent image/release CI — only their tags. Migrate each by
-adding a `hanzo.yml` (if it ships its own image) or deleting its build CI (if it
-is consumed only as a Go module / plugin source here).
