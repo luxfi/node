@@ -739,7 +739,7 @@ Testing conducted on a single Lux validator node (testnet mode, macOS):
 **Benchmark Command:**
 ```bash
 cd ~/work/lux/benchmarks
-NODE_ENDPOINT="http://localhost:9640/v1/bc/C/rpc" \
+NODE_ENDPOINT="http://localhost:9640/v1/chain/C/rpc" \
 PRIVATE_KEY="<funded_key>" \
 ./bin/bench tps --chains=lux --duration=60s --concurrency=5
 ```

@@ -26,7 +26,7 @@ else
 fi
 
 # Check API responsiveness
-if curl -s http://localhost:9630/v1/health > /dev/null 2>&1; then
+if curl -s http://localhost:9630/v1/health/ops/health > /dev/null 2>&1; then
     echo "✅ API is responsive"
 else
     echo "❌ API is NOT responsive"

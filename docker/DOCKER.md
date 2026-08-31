@@ -137,7 +137,7 @@ The node exposes metrics at `http://localhost:9630/v1/metrics`
 
 ### Health Checks
 
-- Liveness: `http://localhost:9630/v1/health`
+- Liveness: `http://localhost:9630/v1/health/ops/liveness`
 - Readiness: `http://localhost:9630/v1/info`
 
 ### Grafana Dashboard
