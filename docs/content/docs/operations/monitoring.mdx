@@ -419,11 +419,11 @@ groups:
 
 ```bash
 # Basic health check
-curl http://localhost:9630/v1/health
+curl http://localhost:9630/v1/health/ops/health
 
 # Detailed health with readiness/liveness
-curl http://localhost:9630/v1/health/readiness
-curl http://localhost:9630/v1/health/liveness
+curl http://localhost:9630/v1/health/ops/readiness
+curl http://localhost:9630/v1/health/ops/liveness
 ```
 
 ### Custom Health Script
@@ -443,7 +443,7 @@ send_alert() {
 }
 
 # Check if node is responsive
-if ! curl -s "$NODE_URL/v1/health" > /dev/null; then
+if ! curl -s "$NODE_URL/v1/health/ops/health" > /dev/null; then
     send_alert "Node is not responding!"
     exit 1
 fi

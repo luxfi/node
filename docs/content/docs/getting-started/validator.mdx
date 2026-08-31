@@ -245,7 +245,7 @@ Key metrics to track:
 
 ```bash
 # Node health
-curl http://localhost:9630/v1/health
+curl http://localhost:9630/v1/health/ops/health
 
 # Prometheus metrics
 curl http://localhost:9630/v1/metrics | grep -E "uptime|stake|validator"
@@ -276,7 +276,7 @@ NODE_URL="http://localhost:9630"
 WEBHOOK_URL="your-webhook-url"
 
 # Check if node is responsive
-if ! curl -s "$NODE_URL/v1/health" > /dev/null; then
+if ! curl -s "$NODE_URL/v1/health/ops/health" > /dev/null; then
   curl -X POST "$WEBHOOK_URL" -d '{"text":"ALERT: Node is not responding!"}'
 fi
 

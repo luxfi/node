@@ -455,7 +455,7 @@ set_log_level "info"
 # auto_restart.sh
 
 check_health() {
-    curl -s http://localhost:9630/v1/health | jq -r '.healthy'
+    curl -s http://localhost:9630/v1/health/ops/health | jq -r '.healthy'
 }
 
 restart_node() {
