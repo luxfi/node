@@ -151,7 +151,7 @@ require (
 	github.com/valyala/fasthttp v1.73.0
 	github.com/zap-proto/go v1.3.0
 	github.com/zap-proto/http v0.3.5
-	github.com/zap-proto/zip v1.36.38
+	github.com/zap-proto/zip v1.36.41
 	go.uber.org/zap v1.27.1
 )
 
