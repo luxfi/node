@@ -5,6 +5,9 @@ package node
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -271,29 +274,38 @@ func (r *chainRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	healthy := true
 	details := make(map[string]interface{})
+	var failing []string
 
 	connectedCount := r.connectedPeers.Len()
 	details["connectedPeers"] = connectedCount
 	if connectedCount < r.healthConfig.MinConnectedPeers {
-		healthy = false
-		details["error"] = "insufficient connected peers"
+		failing = append(failing, fmt.Sprintf("connected to %d peers, want %d",
+			connectedCount, r.healthConfig.MinConnectedPeers))
 	}
 
 	timeSinceMsg := time.Since(r.lastMsgTime)
 	details["timeSinceLastMessage"] = timeSinceMsg.String()
 	if timeSinceMsg > r.healthConfig.MaxTimeSinceMsgReceived {
-		healthy = false
-		details["error"] = "no recent messages"
+		failing = append(failing, fmt.Sprintf("no message in %s, want one within %s",
+			timeSinceMsg.Round(time.Second), r.healthConfig.MaxTimeSinceMsgReceived))
 	}
 
 	details["chains"] = len(r.chains)
-	details["healthy"] = healthy
+	details["healthy"] = len(failing) == 0
 
+	// The verdict rides the ERROR, because that is what the health framework
+	// reads. Reporting it only as a key in the message means a router that has
+	// heard nothing for days is indistinguishable from a healthy one: the check
+	// carried the answer and the node still answered 200.
+	//
+	// Both reasons are named. The second used to overwrite the first, so a node
+	// that was short of peers AND silent reported only silence.
+	if len(failing) != 0 {
+		return details, errors.New(strings.Join(failing, "; "))
+	}
 	return details, nil
 }
-
 
 // Trace wraps a router with tracing capabilities
 func Trace(router Router, name string, tracer trace.Tracer) Router {
