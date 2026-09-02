@@ -654,6 +654,20 @@ func registerOwnSet(
 			return err
 		}
 
+		// [vdrs] is a FRESH decode of the tx buffer, so each Signer holds only
+		// wire bytes: ProofOfPossession.Key() is populated by Verify(), and the
+		// Verify() SyntacticVerify ran was against its own, separate decode.
+		// Verifying here is what makes Key() the parsed, possession-proven key
+		// instead of nil.
+		//
+		// This is fail-closed on purpose. A validator stored without a key
+		// still carries its weight in the quorum denominator but can never sign
+		// a vote toward it, so a set seeded keyless cannot reach finality —
+		// refusing the tx is the only outcome that does not strand the L1.
+		if err := vdr.Signer.Verify(); err != nil {
+			return err
+		}
+
 		// Owner blobs are the native standalone-owner encoding (txs.MarshalOwner
 		// / txs.UnmarshalOwner) — the same bytes the P-Chain state DB stores; no
 		// codec. message.PChainOwner maps directly onto secp256k1fx.OutputOwners.
