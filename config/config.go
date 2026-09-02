@@ -912,6 +912,21 @@ func pemBytesOrFile(v *viper.Viper, contentKey, pathKey, expectType string) ([]b
 // — a missing pair means classical-compat mode. A strict-PQ chain
 // profile enforces presence at the validator-set boundary.
 func loadStakingMLDSA(v *viper.Viper) (*mldsa.PrivateKey, []byte, string, string, error) {
+	// A node that was not handed an identity makes one, exactly as it does
+	// for the classical staking TLS keypair. Only at the default paths and
+	// only when nothing was supplied: an explicit --staking-mldsa-key-file
+	// names a key the operator holds, and writing over that would replace a
+	// validator's identity on a restart.
+	if v.GetString(StakingMLDSAKeyContentKey) == "" &&
+		!v.IsSet(StakingMLDSAKeyPathKey) && !v.IsSet(StakingMLDSAPubKeyPathKey) {
+		privPath := getExpandedArg(v, StakingMLDSAKeyPathKey)
+		pubPath := getExpandedArg(v, StakingMLDSAPubKeyPathKey)
+		if privPath != "" && pubPath != "" {
+			if err := staking.InitNodePQKeyPair(privPath, pubPath); err != nil {
+				return nil, nil, privPath, pubPath, fmt.Errorf("couldn't generate staking ML-DSA keypair: %w", err)
+			}
+		}
+	}
 	privBytes, privPath, err := pemBytesOrFile(v,
 		StakingMLDSAKeyContentKey, StakingMLDSAKeyPathKey, "ML-DSA-65 PRIVATE KEY")
 	if err != nil {
