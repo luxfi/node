@@ -114,6 +114,10 @@ func ParseBootstrapper(b genesiscfg.Bootstrapper) (Bootstrapper, error) {
 
 // parseProofOfPossession converts a genesis config ProofOfPossession (with hex strings)
 // to a node signer.ProofOfPossession (with byte arrays).
+//
+// network.declaredKey reads this same pair out of this same config when a node
+// seeds validators from it, and the two refuse the same lengths, so the field
+// is read one way wherever it is read.
 func parseProofOfPossession(pop *genesiscfg.ProofOfPossession) (*signer.ProofOfPossession, error) {
 	if pop == nil {
 		return nil, nil
@@ -132,6 +136,20 @@ func parseProofOfPossession(pop *genesiscfg.ProofOfPossession) (*signer.ProofOfP
 	}
 
 	result := &signer.ProofOfPossession{}
+
+	// Both halves land in fixed arrays, so a copy resizes the field to fit
+	// rather than refusing it: a long one loses its tail, a short one gains
+	// zeros. The long case is the one that gets away with it, because what is
+	// left after the tail is dropped still verifies — genesis then carries a
+	// key the config does not spell. The arrays are the authority on what
+	// fits, so the check reads its lengths off them.
+	if len(pkBytes) != len(result.PublicKey) {
+		return nil, fmt.Errorf("publicKey is %d bytes, want %d", len(pkBytes), len(result.PublicKey))
+	}
+	if len(popBytes) != len(result.ProofOfPossession) {
+		return nil, fmt.Errorf("proofOfPossession is %d bytes, want %d", len(popBytes), len(result.ProofOfPossession))
+	}
+
 	copy(result.PublicKey[:], pkBytes)
 	copy(result.ProofOfPossession[:], popBytes)
 
