@@ -1012,7 +1012,11 @@ func (n *Node) SecurityProfile() *consensusconfig.ChainSecurityProfile {
 //
 // Closes red-team finding F102 at the node bootstrap layer.
 func (n *Node) initSecurityProfile() error {
-	cfg := genesiscfg.GetConfig(n.Config.NetworkID)
+	// The canonical config, which is the network's own. The pin says which
+	// cryptography this chain is allowed to run, so reading it from a home
+	// directory meant whoever could write ~/.lux/genesis/<network> chose that
+	// — downgrade included. builder.GetConfig ships it instead.
+	cfg := builder.GetConfig(n.Config.NetworkID)
 	if cfg == nil {
 		n.Log.Warn("genesis config not found — node boots in classical-compat mode")
 		return nil
@@ -1025,7 +1029,7 @@ func (n *Node) initSecurityProfile() error {
 // it through consensus/config.ProfileByID + ComputeHash verification,
 // stamp the result onto n.securityProfile, and emit the startup banner.
 // Split out so unit tests can exercise the resolve+banner path without
-// touching the filesystem-based genesiscfg.GetConfig.
+// going through builder.GetConfig.
 //
 // The startup banner format is fixed (callers grep on these strings):
 //

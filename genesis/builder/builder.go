@@ -8,6 +8,7 @@ package builder
 
 import (
 	"encoding/base64"
+	stdjson "encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-json-experiment/json"
@@ -163,14 +164,14 @@ func parseProofOfPossession(pop *genesiscfg.ProofOfPossession) (*signer.ProofOfP
 
 // GetBootstrappers returns parsed bootstrappers for the network
 func GetBootstrappers(networkID uint32) ([]Bootstrapper, error) {
-	cfgBootstrappers := genesiscfg.GetBootstrappers(networkID)
-	if len(cfgBootstrappers) == 0 {
-		// The disk paths genesiscfg checks (~/work/lux/genesis, /etc/lux) are
-		// empty inside a node container, so fall back to the bootstrappers
-		// embedded in the genesis module — a node then finds peers with zero
-		// on-disk config.
-		cfgBootstrappers = genesisconfigs.GetBootstrappers(networkID)
-	}
+	// Embedded, and only embedded. The disk sweep this used to try first
+	// (BOOTSTRAPPERS_FILE, then bootstrappers.json under ~/work/lux/genesis,
+	// ~/.lux and /etc/lux) is empty inside a node container and outranked the
+	// shipped list everywhere else — whoever could write one of those files
+	// chose which peers a node dialled to bootstrap from. Peers are named by
+	// the network, so they ship with it; an operator who wants different ones
+	// passes --bootstrap-ips/--bootstrap-ids and says so on the command line.
+	cfgBootstrappers := genesisconfigs.GetBootstrappers(networkID)
 	result := make([]Bootstrapper, 0, len(cfgBootstrappers))
 	for _, b := range cfgBootstrappers {
 		parsed, err := ParseBootstrapper(b)
@@ -343,16 +344,50 @@ func GetTxFeeConfig(networkID uint32) TxFeeConfig {
 	}
 }
 
-// GetConfig returns the genesis config for the given network ID
+// GetConfig returns the canonical genesis config for a network ID.
+//
+// The canonical configs are compiled into the binary by luxfi/genesis, and
+// they are the only thing this reads. What a network allocates, who its
+// initial stakers are and which security profile it pins are properties of
+// the NETWORK, not of the box a node happens to run on — two nodes on one
+// network ID either build the same genesis or they never agree on one.
+//
+// So there is no environment variable and no home directory here. Both used
+// to reach this call: PCHAIN_ALLOCS and PCHAIN_ALLOCS_FILE carried a whole
+// P-chain shard, and ~/.lux/genesis/<network> carried the same shard from
+// disk. A shard taken from any of them replaced the shipped initialStakers
+// wholesale, which is how a "canonical" config came to name validators the
+// network never chose. Whoever could set one chose the validator set.
+//
+// A network ID outside the canonical set has no config to return, and gets an
+// empty one. Those networks are founded from an explicit --genesis-file, which
+// is the one remaining way to supply genesis this package does not ship.
 func GetConfig(networkID uint32) *genesiscfg.Config {
-	// Use embedded genesis configs (//go:embed) first.
-	// The genesis/pkg/genesis.GetConfig() checks filesystem paths which
-	// don't exist in Docker containers, returning an empty config.
-	if cfg, err := genesisconfigs.GetConfig(networkID); err == nil && len(cfg.Allocations) > 0 {
-		return cfg
+	config, err := canonicalConfig(networkID)
+	if err != nil {
+		return &genesiscfg.Config{NetworkID: networkID}
 	}
-	// Fallback to filesystem-based config (local dev)
-	return genesiscfg.GetConfig(networkID)
+	return config
+}
+
+// canonicalConfig reads the config compiled in for a network ID.
+//
+// It fails for a network that ships none, and for a shipped one that no longer
+// parses. Those are different problems with the same answer at GetConfig — an
+// empty config — so the difference is checked once, in a test that reads every
+// shipped ID (TestCanonicalConfigsParse), rather than guessed at at runtime.
+func canonicalConfig(networkID uint32) (*genesiscfg.Config, error) {
+	// Supplying no allocations is what selects the embedded P-chain shard:
+	// the loader reads a caller's allocations only when given some.
+	data, err := genesisconfigs.GetGenesisWithAllocations(networkID, nil)
+	if err != nil {
+		return nil, err
+	}
+	var output genesiscfg.ConfigOutput
+	if err := stdjson.Unmarshal(data, &output); err != nil {
+		return nil, fmt.Errorf("network %d: parse canonical genesis: %w", networkID, err)
+	}
+	return genesiscfg.ParseConfigOutput(&output, networkID)
 }
 
 // FromConfig builds genesis bytes from a config.
@@ -713,7 +748,7 @@ func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig
 
 // FromDatabase returns genesis data for database replay mode
 func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
-	config := genesiscfg.GetConfig(constants.LocalID)
+	config := GetConfig(constants.LocalID)
 	config.NetworkID = networkID
 	config.Message = "DATABASE_REPLAY_MODE"
 	return FromConfig(config)

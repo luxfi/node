@@ -131,14 +131,11 @@ func TestParseProofOfPossessionRefusesAFieldThatDoesNotFit(t *testing.T) {
 // ARE the population FromConfig runs against, and the question "does the
 // stricter rule refuse anybody?" has one answer per staker.
 func TestShippedConfigsParseTheirWholeSignerSet(t *testing.T) {
-	// SHIPPED is the whole claim. PCHAIN_ALLOCS, PCHAIN_ALLOCS_FILE and two
-	// home-directory paths each replace a network's stakers before GetConfig
-	// returns them, so a box with any of them set answers this with its own
-	// configuration instead of with what the network ships.
-	t.Setenv("PCHAIN_ALLOCS", "")
-	t.Setenv("PCHAIN_ALLOCS_FILE", "")
-	t.Setenv("HOME", t.TempDir())
-
+	// SHIPPED is the whole claim, and GetConfig now has nothing else to
+	// answer with: the shipped configs are compiled in, and no environment
+	// variable or home directory reaches them (TestCanonicalConfigIsTheOnly-
+	// Source). So this reads what the network ships on any box.
+	//
 	// The well-known networks and the chain-ID aliases GetConfig also answers
 	// to, named by the package that SHIPS them.
 	signed := 0

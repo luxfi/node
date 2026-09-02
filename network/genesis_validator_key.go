@@ -121,12 +121,19 @@ func declaredKey(staker genesiscfg.Staker) ([]byte, error) {
 // together with the ones it refuses.
 //
 // builder.GetConfig reads the shipped configs and every one of them verifies,
-// so the shipped stakers arrive intact. They are not the only stakers that can
-// arrive: PCHAIN_ALLOCS, PCHAIN_ALLOCS_FILE and the genesis trees under $HOME
-// each carry a whole initialStakers list into that same call, which is how a
-// canonical config comes to declare a node this network never chose. Checking
-// the possession proof is what closes that: whoever drives one of them can name
-// any node ID, and still cannot produce the pairing for a key they do not hold.
+// so the shipped stakers arrive intact.
+//
+// They used not to be the only stakers that could arrive: PCHAIN_ALLOCS,
+// PCHAIN_ALLOCS_FILE and the genesis trees under $HOME each carried a whole
+// initialStakers list into that same call, which is how a "canonical" config
+// came to declare a node this network never chose. Those are gone — the call
+// reads the compiled-in config and nothing else.
+//
+// Checking the possession proof stays, because it answers a question the
+// source never can: a node ID is a name anyone can write, and a key is only
+// this validator's if the pairing holds. That still has to be checked on the
+// genesis bytes a node is started with and on an operator's --genesis-file,
+// neither of which this package ships.
 //
 // Mapping the slice here rather than looping at the call site is what makes the
 // refusal checkable: the decision is a value, and a staker that is refused is

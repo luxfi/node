@@ -5,7 +5,6 @@ package network
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"slices"
 	"sync"
@@ -444,11 +443,11 @@ func declaredBy(t *testing.T, pop *signer.ProofOfPossession) genesiscfg.Staker {
 // seeding decision to failing CLOSED.
 //
 // builder.GetConfig reads the shipped configs and every one of them verifies,
-// so a bad staker does not arrive through the shipped ones. It can arrive
-// through the overrides that feed the same call — PCHAIN_ALLOCS, its file
-// sibling, and the genesis trees under $HOME — which replace the staker list
-// outright. declaredKey IS the decision every one of them lands on, so this
-// checks the decision itself rather than a way of reaching it.
+// so a bad staker does not arrive through the shipped ones — and the overrides
+// that used to replace the staker list outright are gone. What is left is an
+// operator's own --genesis-file, whose stakers this same decision reads.
+// declaredKey IS that decision, so this checks the decision itself rather than
+// a way of reaching it.
 //
 // A key that PARSES is only half of it. genesis/builder verifies the possession
 // proof when it builds genesis from this same config, so a staker it refuses
@@ -566,10 +565,10 @@ func mustHex(t *testing.T, b []byte) string {
 // stakers ARE the population this path runs against in production, and the
 // question "does the stricter rule drop anybody?" has one answer per staker.
 func TestShippedConfigsStillSeedTheirFullValidatorSet(t *testing.T) {
-	// SHIPPED is the whole claim, so nothing a box happens to have configured
-	// may stand in for one.
-	unconfigured(t)
-
+	// SHIPPED is the whole claim, and builder.GetConfig now has nothing else
+	// to answer with, so nothing a box happens to have configured can stand in
+	// for one (builder.TestCanonicalConfigIsTheOnlySource).
+	//
 	// The well-known networks and the chain-ID aliases GetConfig also answers
 	// to, named by the package that SHIPS them — luxfi/constants carries its own
 	// copy of the aliases and they do not all agree (its DevnetChainID is 96370,
@@ -720,12 +719,11 @@ func TestEmptyValidatorSetIsAnError(t *testing.T) {
 	t.Run("the canonical config declares nobody", func(t *testing.T) {
 		require := require.New(t)
 
-		// An unknown network ID resolves to the localnet NAME, and that name is
-		// looked up under $HOME before it is given up on. On a box with a
-		// genesis checkout this case reads a real validator set off the
-		// developer's disk and stops being the case it is named for.
-		unconfigured(t)
-
+		// An unknown network ID ships no config, and nothing else is
+		// consulted, so this is the same empty answer on every box. It used to
+		// resolve to the localnet NAME and get looked up under $HOME, where a
+		// developer's genesis checkout answered with a real validator set and
+		// this case stopped being the one it is named for.
 		require.Empty(builder.GetConfig(unknownNetwork).InitialStakers,
 			"network %d ships stakers after all, so this case proves nothing", unknownNetwork)
 
@@ -753,18 +751,29 @@ func TestEmptyValidatorSetIsAnError(t *testing.T) {
 	t.Run("the canonical config lost every validator it declares", func(t *testing.T) {
 		require := require.New(t)
 
-		// This node declares nothing, so it falls back — and what it falls
-		// back to declares a validator that cannot prove its key. The canonical
-		// config DID name somebody, so saying nobody was named would name the
-		// wrong why for the one path that reaches it.
-		declareCanonically(t, forgedPoP(t))
+		// The node falls back, and what it falls back to declares a validator
+		// that cannot prove its key. The canonical config DID name somebody, so
+		// saying nobody was named would name the wrong why.
+		//
+		// This is the one case with no end-to-end route left. Reaching it
+		// needed a canonical config that declares an unprovable key, and the
+		// shipped ones all verify (TestShippedConfigsStillSeedTheirFullValidator-
+		// Set) — the only other way in was PCHAIN_ALLOCS, which no longer
+		// reaches builder.GetConfig. That the case is now unreachable IS the
+		// fix; what is left to hold is that the two halves still compose to the
+		// right answer, so they are composed here over a forged set.
+		refusable := []genesiscfg.Staker{{
+			NodeID: ids.GenerateTestNodeID(),
+			Signer: declaredSigner(t, forgedPoP(t)),
+		}}
 
-		logger := newRecorder()
-		vdrs := seedFromGenesis(t, constants.LocalID, nil, logger)
+		seeded, refused := canonicalStakers(refusable)
+		require.Empty(seeded, "a validator that cannot prove its key was seeded anyway")
+		require.Len(refused, len(refusable))
 
-		require.Empty(vdrs.GetValidatorIDs(constants.PrimaryNetworkID))
-		require.Contains(logger.errors(), emptyValidatorSetReason(0, 1),
-			"a node that refused every validator the canonical config declares said it was declared none")
+		require.Equal(emptyValidatorSetReason(0, len(refusable)),
+			emptyValidatorSetReason(len(seeded), len(refusable)),
+			"a node that refused every validator the canonical config declares says it was declared none")
 	})
 
 	t.Run("a seeded node says none of them", func(t *testing.T) {
@@ -800,61 +809,16 @@ func emptyValidatorSetReasons() []string {
 	}
 }
 
-// unconfigured cuts every override that feeds builder.GetConfig, for the
-// duration of the test.
-//
-// Two environment variables and two home-directory paths each replace a
-// network's stakers before any caller sees them. A test that asks what a
-// network ships — or what an unknown one does NOT ship — otherwise answers with
-// whatever the box it runs on happens to have configured, and passes or fails
-// for a reason that is not in the test.
-func unconfigured(t *testing.T) {
+// declaredSigner is a possession proof in the shape a canonical config carries
+// it: two hex strings, which is what the config format has and what
+// canonicalStakers is handed.
+func declaredSigner(t *testing.T, pop *signer.ProofOfPossession) *genesiscfg.ProofOfPossession {
 	t.Helper()
 
-	t.Setenv("PCHAIN_ALLOCS", "")
-	t.Setenv("PCHAIN_ALLOCS_FILE", "")
-	t.Setenv("HOME", t.TempDir())
-}
-
-// declareCanonically makes the canonical config for LocalID declare exactly one
-// staker carrying [pop], for the duration of the test.
-//
-// PCHAIN_ALLOCS is read by the same builder.GetConfig the fallback calls, and a
-// P-chain shard supplied through it replaces the embedded initialStakers
-// wholesale — the seam by which a canonical config comes to name a node this
-// network never chose. Allocations must be non-empty for the shard to be taken
-// at all, and the stake duration non-zero or the embedded stakers are merged
-// back in; both are copied from the localnet config so only the staker list
-// differs.
-func declareCanonically(t *testing.T, pop *signer.ProofOfPossession) {
-	t.Helper()
-	require := require.New(t)
-
-	const localnetRewardAddr = "P-local1tuhk0usyez9w520ftjw7mdctkky4yrheyx62w9"
-
-	shard, err := json.Marshal(map[string]any{
-		"initialStakeDuration": 31536000,
-		"allocations": []any{map[string]any{
-			"initialAmount": 50000000000000,
-			"utxoAddr":      localnetRewardAddr,
-			"evmAddr":       "0x5369615110ca435bdf798f31c20ba6163d7b0a54",
-		}},
-		"initialStakedFunds": []string{localnetRewardAddr},
-		"initialStakers": []any{map[string]any{
-			"nodeID":        ids.GenerateTestNodeID().String(),
-			"rewardAddress": localnetRewardAddr,
-			"delegationFee": 20000,
-			"signer": map[string]any{
-				"publicKey":         mustHex(t, pop.PublicKey[:]),
-				"proofOfPossession": mustHex(t, pop.ProofOfPossession[:]),
-			},
-		}},
-	})
-	require.NoError(err)
-	t.Setenv("PCHAIN_ALLOCS", string(shard))
-
-	require.Len(builder.GetConfig(constants.LocalID).InitialStakers, 1,
-		"the canonical config did not take the declared staker, so this case proves nothing")
+	return &genesiscfg.ProofOfPossession{
+		PublicKey:         mustHex(t, pop.PublicKey[:]),
+		ProofOfPossession: mustHex(t, pop.ProofOfPossession[:]),
+	}
 }
 
 // TestUnreadableGenesisIsAWarning holds the substitution to being audible.
