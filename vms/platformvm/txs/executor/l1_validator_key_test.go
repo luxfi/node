@@ -28,6 +28,32 @@ import (
 	"github.com/luxfi/node/vms/platformvm/validators/fee"
 )
 
+// ownSetState is the live diff both own-set fixtures execute against: a state
+// holding no prior validators, so every registration under test is the tx's own.
+func ownSetState(t *testing.T) state.Diff {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	parent := state.NewMockState(ctrl)
+	parent.EXPECT().GetTimestamp().Return(time.Unix(1000, 0)).AnyTimes()
+	parent.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
+	parent.EXPECT().GetL1ValidatorExcess().Return(gas.Gas(0)).AnyTimes()
+	parent.EXPECT().GetAccruedFees().Return(uint64(0)).AnyTimes()
+	parent.EXPECT().NumActiveL1Validators().Return(0).AnyTimes()
+	parent.EXPECT().GetL1Validator(gomock.Any()).Return(state.L1Validator{}, database.ErrNotFound).AnyTimes()
+	parent.EXPECT().GetCurrentValidator(gomock.Any(), gomock.Any()).Return(nil, database.ErrNotFound).AnyTimes()
+	parent.EXPECT().HasL1Validator(gomock.Any(), gomock.Any()).Return(false, nil).AnyTimes()
+	parent.EXPECT().WeightOfL1Validators(gomock.Any()).Return(uint64(0), nil).AnyTimes()
+	// Reached only if a caller's SyntacticVerify gate is gone and execution
+	// runs on. Answering it keeps that a legible assertion failure rather than
+	// an unexpected-call report about the mock.
+	parent.EXPECT().GetNetOwner(gomock.Any()).Return(nil, database.ErrNotFound).AnyTimes()
+
+	diff, err := state.NewDiffOn(parent)
+	require.NoError(t, err)
+	return diff
+}
+
 // ownSetFixture builds a real ConvertNetworkTx carrying [n] genesis validators,
 // each with a real BLS key + proof of possession, and returns an executor whose
 // state is a live diff.
@@ -76,23 +102,8 @@ func ownSetFixture(t *testing.T, n int, balance uint64) (*standardTxExecutor, *t
 	// which is exactly why the executor's later decode is unverified.
 	require.NoError(tx.SyntacticVerify(rt))
 
-	ctrl := gomock.NewController(t)
-	parent := state.NewMockState(ctrl)
-	parent.EXPECT().GetTimestamp().Return(time.Unix(1000, 0)).AnyTimes()
-	parent.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
-	parent.EXPECT().GetL1ValidatorExcess().Return(gas.Gas(0)).AnyTimes()
-	parent.EXPECT().GetAccruedFees().Return(uint64(0)).AnyTimes()
-	parent.EXPECT().NumActiveL1Validators().Return(0).AnyTimes()
-	parent.EXPECT().GetL1Validator(gomock.Any()).Return(state.L1Validator{}, database.ErrNotFound).AnyTimes()
-	parent.EXPECT().GetCurrentValidator(gomock.Any(), gomock.Any()).Return(nil, database.ErrNotFound).AnyTimes()
-	parent.EXPECT().HasL1Validator(gomock.Any(), gomock.Any()).Return(false, nil).AnyTimes()
-	parent.EXPECT().WeightOfL1Validators(gomock.Any()).Return(uint64(0), nil).AnyTimes()
-
-	diff, err := state.NewDiffOn(parent)
-	require.NoError(err)
-
 	e := &standardTxExecutor{
-		state: diff,
+		state: ownSetState(t),
 		backend: &Backend{
 			Config: &config.Internal{
 				ValidatorFeeConfig: fee.Config{Capacity: 1000},

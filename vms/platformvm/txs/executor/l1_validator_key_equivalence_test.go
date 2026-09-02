@@ -16,9 +16,11 @@ import (
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 
+	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/security"
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/node/vms/platformvm/validators/fee"
 )
 
 // TestRegisterOwnSetStoresTheKeyVerifyWouldHave pins the two ways of turning a
@@ -74,10 +76,18 @@ func TestRegisterOwnSetStoresTheKeyVerifyWouldHave(t *testing.T) {
 //
 // Parsing and verifying differ by exactly one thing: the possession pairing. So
 // the question is whether a validator whose key PARSES but whose possession
-// proof FAILS can reach registerOwnSet. It cannot — SyntacticVerify is the first
-// statement of both callers and verifies every validator's proof against this
-// same tx — and this test builds precisely that validator to prove the gate
-// holds. If the gate is ever removed, this fails, and the parse becomes unsafe.
+// proof FAILS can reach registerOwnSet. It cannot: SyntacticVerify is the first
+// statement of both callers, and it verifies every validator's proof against
+// this same tx.
+//
+// The gate is two things — the per-validator Verify() loop inside
+// SyntacticVerify, and the executor CALLING SyntacticVerify — and dropping
+// either one makes the parse unsafe. So the tx goes through StandardTx, the
+// real entry point, rather than having its SyntacticVerify called here: that
+// covers the second half, which a direct call cannot see. Asserting on the
+// possession error specifically is what makes it a gate test and not an
+// "errors somewhere" test — with the call deleted, execution runs on and fails
+// somewhere else, and this fails.
 func TestForgedProofOfPossessionIsRefusedBeforeExecution(t *testing.T) {
 	require := require.New(t)
 
@@ -113,7 +123,7 @@ func TestForgedProofOfPossessionIsRefusedBeforeExecution(t *testing.T) {
 	}}
 	utils.Sort(vdrs)
 
-	tx, err := txs.NewConvertNetworkTx(
+	utx, err := txs.NewConvertNetworkTx(
 		&lux.BaseTx{NetworkID: rt.NetworkID, BlockchainID: rt.ChainID},
 		ids.GenerateTestID(),
 		ids.GenerateTestID(),
@@ -125,7 +135,20 @@ func TestForgedProofOfPossessionIsRefusedBeforeExecution(t *testing.T) {
 	)
 	require.NoError(err)
 
-	// The gate. Execution never begins, so registerOwnSet never sees it.
-	require.Error(tx.SyntacticVerify(rt),
+	tx := &txs.Tx{Unsigned: utx}
+	require.NoError(tx.Initialize())
+
+	// The gate, driven where production drives it. Execution never begins, so
+	// registerOwnSet never sees this validator.
+	_, _, _, err = StandardTx(
+		&Backend{
+			Runtime: rt,
+			Config:  &config.Internal{ValidatorFeeConfig: fee.Config{Capacity: 1000}},
+		},
+		nil, // the fee calculator is past the gate, so it is never reached
+		tx,
+		ownSetState(t),
+	)
+	require.ErrorIs(err, signer.ErrInvalidProofOfPossession,
 		"a validator whose possession proof is forged must be refused before execution")
 }

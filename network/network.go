@@ -359,13 +359,26 @@ func NewNetwork(
 					// parsed key is nil until this call verifies it; reading
 					// Key() directly registered every genesis validator with
 					// full weight and no key.
-					var blsKey []byte
-					if pubKey, hasKey, err := tx.PublicKey(); err != nil {
-						log.Warn("genesis validator signer failed to verify",
+					//
+					// A signer that does not verify is a declared key nothing
+					// can be checked against. Seeding it anyway keeps the full
+					// genesis weight while peer.shouldDisconnect returns early
+					// for a keyless entry, so it would vote for the whole
+					// bootstrap window with no proof anyone holds the key.
+					// A validator we cannot check is not seeded.
+					pubKey, hasKey, err := tx.PublicKey()
+					if err != nil {
+						log.Warn("skipping genesis validator whose signer failed to verify",
 							zap.Stringer("nodeID", nodeID),
 							zap.Error(err),
 						)
-					} else if hasKey {
+						continue
+					}
+					// hasKey false is a validator that declares no BLS key at
+					// all, which is a shape the wire allows. That entry is
+					// seeded keyless because keyless is what it says it is.
+					var blsKey []byte
+					if hasKey {
 						blsKey = bls.PublicKeyToUncompressedBytes(pubKey)
 					}
 
@@ -430,22 +443,30 @@ func NewNetwork(
 				// every character is in the base64 alphabet, so it yielded 72
 				// bytes of garbage and an error that was discarded. Validators
 				// are registered in the uncompressed form every reader parses.
+				//
+				// Same rule as the genesis-bytes path above: a declared key
+				// that does not decode is not a key, and seeding it keyless
+				// would hand the entry full weight with its signed IP never
+				// checked.
 				var blsKey []byte
 				if staker.Signer != nil && staker.Signer.PublicKey != "" {
 					pkBytes, err := formatting.Decode(formatting.HexNC, staker.Signer.PublicKey)
 					if err != nil {
-						log.Warn("failed to decode genesis validator public key",
+						log.Warn("skipping genesis validator whose public key does not decode",
 							zap.Stringer("nodeID", staker.NodeID),
 							zap.Error(err),
 						)
-					} else if pubKey, err := bls.PublicKeyFromCompressedBytes(pkBytes); err != nil {
-						log.Warn("genesis validator public key is not a valid BLS key",
-							zap.Stringer("nodeID", staker.NodeID),
-							zap.Error(err),
-						)
-					} else {
-						blsKey = bls.PublicKeyToUncompressedBytes(pubKey)
+						continue
 					}
+					pubKey, err := bls.PublicKeyFromCompressedBytes(pkBytes)
+					if err != nil {
+						log.Warn("skipping genesis validator whose public key is not a valid BLS key",
+							zap.Stringer("nodeID", staker.NodeID),
+							zap.Error(err),
+						)
+						continue
+					}
+					blsKey = bls.PublicKeyToUncompressedBytes(pubKey)
 				}
 				weight := staker.Weight
 				if weight == 0 {
