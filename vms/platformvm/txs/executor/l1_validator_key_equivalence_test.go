@@ -4,6 +4,7 @@
 package executor
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -88,10 +89,104 @@ func TestRegisterOwnSetStoresTheKeyVerifyWouldHave(t *testing.T) {
 // possession error specifically is what makes it a gate test and not an
 // "errors somewhere" test — with the call deleted, execution runs on and fails
 // somewhere else, and this fails.
+//
+// registerOwnSet has TWO callers, each with its own SyntacticVerify, so each is
+// its own gate and each needs its own row here. Pinning one left the other free
+// to lose its call with every test still green.
 func TestForgedProofOfPossessionIsRefusedBeforeExecution(t *testing.T) {
-	require := require.New(t)
-
 	rt := consensustest.Runtime(t, ids.GenerateTestID())
+
+	nodeID := ids.GenerateTestNodeID()
+	vdrs := []*txs.NetworkValidator{{
+		NodeID: nodeID[:],
+		Weight: 100,
+		Signer: forgedSigner(t),
+	}}
+	utils.Sort(vdrs)
+
+	sec := security.Mode{Admission: security.Gated, Manager: security.PChain}
+	base := func() *lux.BaseTx {
+		return &lux.BaseTx{NetworkID: rt.NetworkID, BlockchainID: rt.ChainID}
+	}
+
+	for _, caller := range []struct {
+		name  string
+		build func() (txs.UnsignedTx, error)
+	}{
+		{
+			name: "ConvertNetworkTx",
+			build: func() (txs.UnsignedTx, error) {
+				return txs.NewConvertNetworkTx(
+					base(),
+					ids.GenerateTestID(),
+					ids.GenerateTestID(),
+					ids.GenerateTestID(),
+					sec,
+					nil,
+					vdrs,
+					&secp256k1fx.Input{SigIndices: []uint32{0}},
+				)
+			},
+		},
+		{
+			name: "CreateNetworkTx",
+			build: func() (txs.UnsignedTx, error) {
+				return txs.NewCreateNetworkTx(
+					base(),
+					ids.GenerateTestID(),
+					&secp256k1fx.OutputOwners{},
+					sec,
+					vdrs,
+					ids.Empty,
+					nil,
+				)
+			},
+		},
+	} {
+		t.Run(caller.name, func(t *testing.T) {
+			require := require.New(t)
+
+			utx, err := caller.build()
+			require.NoError(err)
+
+			tx := &txs.Tx{Unsigned: utx}
+			require.NoError(tx.Initialize())
+
+			// The gate, driven where production drives it. Execution never
+			// begins, so registerOwnSet never sees this validator.
+			_, _, _, err = StandardTx(
+				&Backend{
+					Runtime: rt,
+					Config:  &config.Internal{ValidatorFeeConfig: fee.Config{Capacity: 1000}},
+				},
+				unreached{}, // the fee calculator is past the gate
+				tx,
+				ownSetState(t),
+			)
+			require.ErrorIs(err, signer.ErrInvalidProofOfPossession,
+				"a validator whose possession proof is forged must be refused before execution")
+		})
+	}
+}
+
+// unreached is the fee calculator this test never reaches: the gate refuses the
+// tx first. It answers with an error rather than a fee so that losing a gate
+// fails as an assertion naming the reason, instead of as a nil-pointer panic
+// that takes the whole package's test binary down with it.
+type unreached struct{}
+
+func (unreached) CalculateFee(txs.UnsignedTx) (uint64, error) {
+	return 0, errors.New("execution reached the fee calculator, so a caller's SyntacticVerify gate is gone")
+}
+
+// forgedSigner is a real public key carrying someone else's possession proof.
+//
+// Both halves are well-formed points, so nothing short of the pairing rejects
+// it: the key parses and possession does not hold, which is the whole delta
+// between parsing a signer and verifying one.
+func forgedSigner(t *testing.T) signer.ProofOfPossession {
+	t.Helper()
+	require := require.New(t)
 
 	victim, err := localsigner.New()
 	require.NoError(err)
@@ -103,52 +198,13 @@ func TestForgedProofOfPossessionIsRefusedBeforeExecution(t *testing.T) {
 	otherPoP, err := signer.NewProofOfPossession(other)
 	require.NoError(err)
 
-	// A real public key carrying someone else's possession proof. Both halves
-	// are well-formed points, so nothing short of the pairing rejects it.
 	forged := *victimPoP
 	forged.ProofOfPossession = otherPoP.ProofOfPossession
 
-	// The delta between parsing and verifying, made concrete: the key parses...
 	parsed, err := bls.PublicKeyFromCompressedBytes(forged.PublicKey[:])
 	require.NoError(err, "the forged signer's key must parse — otherwise this proves nothing")
 	require.NotNil(parsed)
-	// ...and possession does not hold.
 	require.Error(forged.Verify(), "a forged possession proof must not verify")
 
-	nodeID := ids.GenerateTestNodeID()
-	vdrs := []*txs.NetworkValidator{{
-		NodeID: nodeID[:],
-		Weight: 100,
-		Signer: forged,
-	}}
-	utils.Sort(vdrs)
-
-	utx, err := txs.NewConvertNetworkTx(
-		&lux.BaseTx{NetworkID: rt.NetworkID, BlockchainID: rt.ChainID},
-		ids.GenerateTestID(),
-		ids.GenerateTestID(),
-		ids.GenerateTestID(),
-		security.Mode{Admission: security.Gated, Manager: security.PChain},
-		nil,
-		vdrs,
-		&secp256k1fx.Input{SigIndices: []uint32{0}},
-	)
-	require.NoError(err)
-
-	tx := &txs.Tx{Unsigned: utx}
-	require.NoError(tx.Initialize())
-
-	// The gate, driven where production drives it. Execution never begins, so
-	// registerOwnSet never sees this validator.
-	_, _, _, err = StandardTx(
-		&Backend{
-			Runtime: rt,
-			Config:  &config.Internal{ValidatorFeeConfig: fee.Config{Capacity: 1000}},
-		},
-		nil, // the fee calculator is past the gate, so it is never reached
-		tx,
-		ownSetState(t),
-	)
-	require.ErrorIs(err, signer.ErrInvalidProofOfPossession,
-		"a validator whose possession proof is forged must be refused before execution")
+	return forged
 }

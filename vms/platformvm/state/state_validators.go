@@ -278,7 +278,7 @@ func (s *state) loadActiveL1Validators() error {
 func (s *state) loadCurrentValidators() error {
 	s.currentStakers = newBaseStakers()
 
-	log.Warn("loadCurrentValidators: starting", "dbPrefix", "currentValidatorList")
+	log.Debug("loadCurrentValidators: starting", "dbPrefix", "currentValidatorList")
 	validatorCount := 0
 	validatorIt := s.currentValidatorList.NewIterator()
 	defer validatorIt.Release()
@@ -325,7 +325,7 @@ func (s *state) loadCurrentValidators() error {
 		}
 
 		s.currentStakers.LoadValidator(staker)
-		log.Warn("loadCurrentValidators: loaded validator",
+		log.Debug("loadCurrentValidators: loaded validator",
 			"txID", staker.TxID,
 			"nodeID", staker.NodeID,
 			"chainID", staker.ChainID,

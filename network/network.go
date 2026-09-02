@@ -20,8 +20,6 @@ import (
 	consensusconfig "github.com/luxfi/consensus/config"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/constants"
-	"github.com/luxfi/crypto/bls"
-	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -333,10 +331,18 @@ func NewNetwork(
 		BLSKey []byte
 	}
 
+	// declaredStakers counts the validators this node's OWN genesis declares,
+	// whatever becomes of them below. Once genesisStakers is empty it can no
+	// longer tell "this node has no genesis set" from "this node has one and
+	// every member of it failed its key check" — and those two want opposite
+	// answers from the canonical fallback.
+	declaredStakers := 0
+
 	// First, try to parse actual genesis bytes from node config using P-chain codec
 	if len(config.GenesisBytes) > 0 {
 		parsedGenesis, err := genesis.Parse(config.GenesisBytes)
 		if err == nil && len(parsedGenesis.Validators) > 0 {
+			declaredStakers = len(parsedGenesis.Validators)
 			log.Info("using actual P-chain genesis bytes for initial stakers",
 				zap.Int("count", len(parsedGenesis.Validators)),
 			)
@@ -353,33 +359,16 @@ func NewNetwork(
 						weight = 1
 					}
 
-					// tx.PublicKey() is the accessor that honours the Signer
-					// invariant "Key() only after Verify() returns nil". The
-					// signer here is a fresh decode of the tx buffer, so its
-					// parsed key is nil until this call verifies it; reading
-					// Key() directly registered every genesis validator with
-					// full weight and no key.
-					//
 					// A signer that does not verify is a declared key nothing
-					// can be checked against. Seeding it anyway keeps the full
-					// genesis weight while peer.shouldDisconnect returns early
-					// for a keyless entry, so it would vote for the whole
-					// bootstrap window with no proof anyone holds the key.
-					// A validator we cannot check is not seeded.
-					pubKey, hasKey, err := tx.PublicKey()
+					// can be checked against, so the validator is not seeded.
+					// provenKey is where that decision lives.
+					blsKey, err := provenKey(tx)
 					if err != nil {
 						log.Warn("skipping genesis validator whose signer failed to verify",
 							zap.Stringer("nodeID", nodeID),
 							zap.Error(err),
 						)
 						continue
-					}
-					// hasKey false is a validator that declares no BLS key at
-					// all, which is a shape the wire allows. That entry is
-					// seeded keyless because keyless is what it says it is.
-					var blsKey []byte
-					if hasKey {
-						blsKey = bls.PublicKeyToUncompressedBytes(pubKey)
 					}
 
 					genesisStakers = append(genesisStakers, struct {
@@ -429,44 +418,38 @@ func NewNetwork(
 		}
 	}
 
-	// Fall back to canonical config if no genesis bytes or parsing failed
-	if len(genesisStakers) == 0 {
+	// A genesis that declared a set and lost every member of it leaves this
+	// node with no validators, and that is the answer. The canonical config
+	// below holds a DIFFERENT network's stakers, so substituting them here
+	// would answer "who validates this network?" with nodes that do not. The
+	// node bootstraps from its beacons instead.
+	if declaredStakers > 0 && len(genesisStakers) == 0 {
+		log.Error("every validator declared in genesis failed its key check; starting with an empty validator set",
+			zap.Int("declared", declaredStakers),
+		)
+	}
+
+	// Fall back to the canonical config only when this node has no
+	// genesis-declared set of its own: no genesis bytes, or bytes that do not
+	// parse into validators.
+	if declaredStakers == 0 {
 		genesisConfig := builder.GetConfig(config.NetworkID)
 		if genesisConfig != nil && len(genesisConfig.InitialStakers) > 0 {
 			log.Info("using canonical genesis config for initial stakers",
 				zap.Int("count", len(genesisConfig.InitialStakers)),
 			)
 			for _, staker := range genesisConfig.InitialStakers {
-				// genesiscfg publicKey is a 0x-prefixed hex string of the
-				// COMPRESSED key — the same field genesis/builder decodes with
-				// formatting.HexNC. Base64-decoding it does not fail cleanly:
-				// every character is in the base64 alphabet, so it yielded 72
-				// bytes of garbage and an error that was discarded. Validators
-				// are registered in the uncompressed form every reader parses.
-				//
 				// Same rule as the genesis-bytes path above: a declared key
-				// that does not decode is not a key, and seeding it keyless
+				// that does not parse is not a key, and seeding it keyless
 				// would hand the entry full weight with its signed IP never
-				// checked.
-				var blsKey []byte
-				if staker.Signer != nil && staker.Signer.PublicKey != "" {
-					pkBytes, err := formatting.Decode(formatting.HexNC, staker.Signer.PublicKey)
-					if err != nil {
-						log.Warn("skipping genesis validator whose public key does not decode",
-							zap.Stringer("nodeID", staker.NodeID),
-							zap.Error(err),
-						)
-						continue
-					}
-					pubKey, err := bls.PublicKeyFromCompressedBytes(pkBytes)
-					if err != nil {
-						log.Warn("skipping genesis validator whose public key is not a valid BLS key",
-							zap.Stringer("nodeID", staker.NodeID),
-							zap.Error(err),
-						)
-						continue
-					}
-					blsKey = bls.PublicKeyToUncompressedBytes(pubKey)
+				// checked. declaredKey is where that decision lives.
+				blsKey, err := declaredKey(staker)
+				if err != nil {
+					log.Warn("skipping genesis validator whose declared public key does not parse",
+						zap.Stringer("nodeID", staker.NodeID),
+						zap.Error(err),
+					)
+					continue
 				}
 				weight := staker.Weight
 				if weight == 0 {

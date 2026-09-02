@@ -1542,12 +1542,12 @@ func (n *Node) initVMs() error {
 	// allows the node's validator sets to be determined by network connections.
 	if !n.Config.SybilProtectionEnabled {
 		vdrs = nodevalidators.NewManager()
-		n.Log.Warn("[VALIDATOR DEBUG] Sybil protection DISABLED - using separate validator manager for PlatformVM")
+		n.Log.Warn("sybil protection is disabled; the P-chain gets a validator manager of its own")
 	} else {
-		n.Log.Info("[VALIDATOR DEBUG] Sybil protection ENABLED - sharing validator manager",
-			"nodeVdrsPtr", fmt.Sprintf("%p", n.vdrs),
-			"platformVdrsPtr", fmt.Sprintf("%p", vdrs),
-			"networkVdrsPtr", fmt.Sprintf("%p", n.Config.NetworkConfig.Validators),
+		n.Log.Debug("sybil protection is enabled; sharing the validator manager",
+			"nodeVdrs", fmt.Sprintf("%p", n.vdrs),
+			"platformVdrs", fmt.Sprintf("%p", vdrs),
+			"networkVdrs", fmt.Sprintf("%p", n.Config.NetworkConfig.Validators),
 			"sameInstance", n.vdrs == n.Config.NetworkConfig.Validators,
 		)
 	}
