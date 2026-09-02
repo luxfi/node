@@ -654,17 +654,21 @@ func registerOwnSet(
 			return err
 		}
 
-		// [vdrs] is a FRESH decode of the tx buffer, so each Signer holds only
-		// wire bytes: ProofOfPossession.Key() is populated by Verify(), and the
-		// Verify() SyntacticVerify ran was against its own, separate decode.
-		// Verifying here is what makes Key() the parsed, possession-proven key
-		// instead of nil.
+		// [vdrs] is a FRESH decode of the tx buffer, so Key() — which Verify()
+		// populates — is nil here. This is the call Verify() makes to fill it,
+		// on the same bytes, so it yields the same key; what it leaves out is
+		// the possession pairing. Both callers run SyntacticVerify on this
+		// unsigned tx first, and that already proves possession for every
+		// validator against the buffer this decode reads, so pairing again
+		// would just pay it twice on every node executing the block —
+		// ~17x this call, and nothing caps the validator count below 2MiB.
 		//
-		// This is fail-closed on purpose. A validator stored without a key
-		// still carries its weight in the quorum denominator but can never sign
-		// a vote toward it, so a set seeded keyless cannot reach finality —
-		// refusing the tx is the only outcome that does not strand the L1.
-		if err := vdr.Signer.Verify(); err != nil {
+		// Still fail-closed: a key that does not parse is refused. A validator
+		// stored without a usable key carries its weight in the quorum
+		// denominator but can never sign a vote toward it, so a set seeded
+		// keyless cannot reach finality.
+		publicKey, err := bls.PublicKeyFromCompressedBytes(vdr.Signer.PublicKey[:])
+		if err != nil {
 			return err
 		}
 
@@ -690,7 +694,7 @@ func registerOwnSet(
 			ValidationID:          id.Append(uint32(i)),
 			ChainID:               id,
 			NodeID:                nodeID,
-			PublicKey:             bls.PublicKeyToUncompressedBytes(vdr.Signer.Key()),
+			PublicKey:             bls.PublicKeyToUncompressedBytes(publicKey),
 			RemainingBalanceOwner: remainingBalanceOwner,
 			DeactivationOwner:     deactivationOwner,
 			StartTime:             startTime,
