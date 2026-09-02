@@ -77,8 +77,10 @@ func provenKey(tx *txs.AddPermissionlessValidatorTx) ([]byte, error) {
 //
 // builder.parseProofOfPossession VERIFIES that proof when it builds genesis
 // FROM this config, and so does this function, so the field is read one way
-// wherever it is read: the two accept the same stakers and refuse the same
-// ones. It costs one pairing per staker, once, at boot.
+// wherever it is read: both check the pairing, and both refuse a half that is
+// not the length its array holds — the builder used to resize a long one to fit
+// and accept what was left, which was the one shape the two disagreed on. It
+// costs one pairing per staker, once, at boot.
 func declaredKey(staker genesiscfg.Staker) ([]byte, error) {
 	if staker.Signer == nil || staker.Signer.PublicKey == "" {
 		return nil, nil
@@ -119,11 +121,16 @@ func declaredKey(staker genesiscfg.Staker) ([]byte, error) {
 // together with the ones it refuses.
 //
 // builder.GetConfig reads the shipped configs and every one of them verifies,
-// so the caller cannot be shown a bad staker through it — and there is no seam
-// to inject one, by design. Mapping the slice here rather than looping at the
-// call site is what makes the refusal checkable: the decision is a value, and a
-// staker that is refused is absent from [seeded] rather than quietly present
-// with no key.
+// so the shipped stakers arrive intact. They are not the only stakers that can
+// arrive: PCHAIN_ALLOCS, PCHAIN_ALLOCS_FILE and the genesis trees under $HOME
+// each carry a whole initialStakers list into that same call, which is how a
+// canonical config comes to declare a node this network never chose. Checking
+// the possession proof is what closes that: whoever drives one of them can name
+// any node ID, and still cannot produce the pairing for a key they do not hold.
+//
+// Mapping the slice here rather than looping at the call site is what makes the
+// refusal checkable: the decision is a value, and a staker that is refused is
+// absent from [seeded] rather than quietly present with no key.
 func canonicalStakers(stakers []genesiscfg.Staker) (seeded []genesisStaker, refused []refusal) {
 	for _, staker := range stakers {
 		blsKey, err := declaredKey(staker)
@@ -146,13 +153,22 @@ func canonicalStakers(stakers []genesiscfg.Staker) (seeded []genesisStaker, refu
 
 // emptyValidatorSetReason names why a node is starting with no validators.
 //
-// The declared count is the whole input, and it separates the two ways there: a
-// node that declared stakers and has none left refused its own, while a node
-// that declared none was handed none — by its genesis and by the canonical
-// config it fell back to.
-func emptyValidatorSetReason(declared int) string {
-	if declared > 0 {
+// The two counts are the whole input, and they separate the three ways there.
+// A node that declared stakers and has none left refused its own. A node that
+// declared none and fell back to a canonical config that declares some refused
+// THOSE — which is what canonicalStakers refusing every staker looks like from
+// here, and which reads nothing like being handed nobody. Only a node with
+// neither was never given a validator at all.
+//
+// [canonical] is the count the fallback found, and it is zero on a node that
+// never reached the fallback, so the first case still answers first.
+func emptyValidatorSetReason(declared, canonical int) string {
+	switch {
+	case declared > 0:
 		return "every validator declared in genesis failed its key check; starting with an empty validator set"
+	case canonical > 0:
+		return "every validator the canonical config declares failed its key check; starting with an empty validator set"
+	default:
+		return "neither this node's genesis nor the canonical config declares a validator; starting with an empty validator set"
 	}
-	return "neither this node's genesis nor the canonical config declares a validator; starting with an empty validator set"
 }

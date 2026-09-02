@@ -419,11 +419,13 @@ func NewNetwork(
 	// Fall back to the canonical config only when this node has no
 	// genesis-declared set of its own: no genesis bytes, or bytes that do not
 	// parse into validators.
+	canonicalStakerCount := 0
 	if declaredStakers == 0 {
 		genesisConfig := builder.GetConfig(config.NetworkID)
 		if genesisConfig != nil && len(genesisConfig.InitialStakers) > 0 {
+			canonicalStakerCount = len(genesisConfig.InitialStakers)
 			log.Info("using canonical genesis config for initial stakers",
-				zap.Int("count", len(genesisConfig.InitialStakers)),
+				zap.Int("count", canonicalStakerCount),
 			)
 			// Same rule as the genesis-bytes path above: a declared key
 			// nothing proves is not a key, and seeding it keyless would hand
@@ -442,7 +444,9 @@ func NewNetwork(
 
 	// Whichever path ran, ending with no validators is the fact worth an ERROR,
 	// and the reason separates a node that refused its own stakers from one
-	// that was never given any.
+	// that refused the canonical config's and from one that was never given
+	// any. The canonical count is zero unless the fallback above ran, so it
+	// only speaks for the path that produced it.
 	//
 	// An empty set also arms the bootstrap fallback in samplePeers below: with
 	// nothing registered, every chain-tracking peer counts as a validator
@@ -454,8 +458,9 @@ func NewNetwork(
 	// manager, the platform chain being the one that overrides to its own
 	// CustomBeacons (chains.Manager).
 	if len(genesisStakers) == 0 {
-		log.Error(emptyValidatorSetReason(declaredStakers),
+		log.Error(emptyValidatorSetReason(declaredStakers, canonicalStakerCount),
 			zap.Int("declared", declaredStakers),
+			zap.Int("canonicalDeclared", canonicalStakerCount),
 		)
 	}
 
