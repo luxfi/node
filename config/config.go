@@ -5,6 +5,7 @@ package config
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
@@ -1157,24 +1158,17 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	// below — same as a real network. C-Chain genesis comes from the
 	// canonical luxfi/genesis embedded config or --genesis-file. Period.
 
-	// HIGHEST PRIORITY: Raw genesis bytes - use directly without rebuilding
-	// This is critical for snapshot resume to avoid hash mismatch
-	if v.IsSet(GenesisRawBytesKey) {
-		genesisB64 := v.GetString(GenesisRawBytesKey)
-		genesisBytes, err := base64.StdEncoding.DecodeString(genesisB64)
-		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("failed to decode %s: %w", GenesisRawBytesKey, err)
-		}
-		utxoAssetID, err := resolveUTXOAssetID(networkID, genesisBytes)
-		if err != nil {
-			return nil, ids.Empty, fmt.Errorf("resolve X-Chain asset ID from %s: %w", GenesisRawBytesKey, err)
-		}
-		log.Info("loaded raw genesis bytes directly",
-			"size", len(genesisBytes),
-			"utxoAssetID", utxoAssetID,
-		)
-		return genesisBytes, utxoAssetID, nil
-	}
+	// (Removed: genesis-raw-bytes.) It took a whole base64 platform genesis
+	// and returned it as the chain's, ahead of every other source and
+	// without passing validateConfig, FromConfig or the possession check —
+	// so a node founded the network it was handed rather than the one it
+	// was told to join. It was never registered as a flag, so it did not
+	// appear in --help, but viper's AutomaticEnv still bound it, and
+	// LUXD_GENESIS_RAW_BYTES in the environment was enough.
+	//
+	// It was there to hold the genesis hash stable across a snapshot resume.
+	// The genesis.bytes cache below already does exactly that, for the one
+	// source that needs it, bound to the file it was built from.
 
 	// Check if genesis-db is specified for database replay
 	if v.IsSet(GenesisDBKey) {
@@ -1201,9 +1195,17 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 	// if content is not specified go for the file
 	if v.IsSet(GenesisFileKey) {
 		genesisFileName := getExpandedArg(v, GenesisFileKey)
-		// Check if we have cached genesis bytes to avoid rebuilding
+		// The cache answers only for the file it was built from. It is keyed
+		// on that file's content, because the cache outranks the file: an
+		// operator who edits --genesis-file, or points it somewhere else,
+		// otherwise keeps booting the blob from the last run and is told
+		// nothing. Any edit changes the hash, and the cache stops answering.
+		sourceHash, err := hashGenesisSource(genesisFileName)
+		if err != nil {
+			return nil, ids.Empty, err
+		}
 		cacheFile := filepath.Join(dataDir, "genesis.bytes")
-		if cachedBytes, err := loadCachedGenesisBytes(cacheFile); err == nil && len(cachedBytes) > 0 {
+		if cachedBytes, err := loadCachedGenesisBytes(cacheFile, sourceHash); err == nil && len(cachedBytes) > 0 {
 			utxoAssetID, err := resolveUTXOAssetID(networkID, cachedBytes)
 			if err == nil {
 				log.Info("loaded cached genesis bytes for hash stability",
@@ -1234,7 +1236,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 			return nil, ids.Empty, err
 		}
 		// Cache the built bytes for future restarts
-		if err := saveCachedGenesisBytes(cacheFile, genesisBytes); err != nil {
+		if err := saveCachedGenesisBytes(cacheFile, sourceHash, genesisBytes); err != nil {
 			log.Warn("failed to cache genesis bytes (hash stability may be affected on restart)",
 				"error", err,
 			)
@@ -1247,8 +1249,14 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *builder.Stakin
 		return genesisBytes, utxoAssetID, nil
 	}
 
-	// finally if file is not specified/readable go for the predefined config
-	config := builder.GetConfig(networkID)
+	// Finally, the config this binary ships for the network. A network ID it
+	// ships nothing for does not fall through to an empty genesis: it stops
+	// here, because the alternative is founding a chain with no validators
+	// and no allocations and reporting success.
+	config, err := builder.GetConfig(networkID)
+	if err != nil {
+		return nil, ids.Empty, err
+	}
 	return builder.FromConfig(config)
 }
 
@@ -2138,15 +2146,48 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	return nodeConfig, nil
 }
 
-// loadCachedGenesisBytes loads cached platform genesis bytes from a file.
-// Returns the bytes if found, or an error if not found/unreadable.
-func loadCachedGenesisBytes(cacheFile string) ([]byte, error) {
-	return os.ReadFile(cacheFile)
+// hashGenesisSource is the identity of the genesis file a cache entry was
+// built from — its content, not its path, so moving or rewriting the file is
+// the same event to the cache.
+func hashGenesisSource(genesisFile string) ([sha256.Size]byte, error) {
+	content, err := os.ReadFile(genesisFile)
+	if err != nil {
+		return [sha256.Size]byte{}, fmt.Errorf("read genesis file %s: %w", genesisFile, err)
+	}
+	return sha256.Sum256(content), nil
 }
 
-// saveCachedGenesisBytes saves platform genesis bytes to a cache file.
-func saveCachedGenesisBytes(cacheFile string, genesisBytes []byte) error {
-	return os.WriteFile(cacheFile, genesisBytes, 0o600)
+// loadCachedGenesisBytes loads cached platform genesis bytes, and returns them
+// only if they were built from [sourceHash].
+//
+// The cache exists to hold the genesis hash stable across restarts, and it is
+// consulted BEFORE the genesis file is read, so an entry that cannot say what
+// it was built from answers for a file it may never have seen. The hash it was
+// built from is stored in front of it and checked here.
+//
+// This does not make the cache trustworthy against someone who can write the
+// data directory — they can recompute the prefix as easily as we can, and a
+// node whose data directory is writable by an attacker is already theirs. What
+// it fixes is the silent one: an operator changes --genesis-file, the stale
+// blob still parses, and the node keeps founding the old chain.
+func loadCachedGenesisBytes(cacheFile string, sourceHash [sha256.Size]byte) ([]byte, error) {
+	cached, err := os.ReadFile(cacheFile)
+	if err != nil {
+		return nil, err
+	}
+	if len(cached) < sha256.Size {
+		return nil, fmt.Errorf("genesis cache is %d bytes, too short to name the file it was built from", len(cached))
+	}
+	if !bytes.Equal(cached[:sha256.Size], sourceHash[:]) {
+		return nil, errors.New("genesis cache was built from a different genesis file")
+	}
+	return cached[sha256.Size:], nil
+}
+
+// saveCachedGenesisBytes saves platform genesis bytes behind the hash of the
+// genesis file they were built from.
+func saveCachedGenesisBytes(cacheFile string, sourceHash [sha256.Size]byte, genesisBytes []byte) error {
+	return os.WriteFile(cacheFile, append(sourceHash[:], genesisBytes...), 0o600)
 }
 
 func providedFlags(v *viper.Viper) map[string]interface{} {

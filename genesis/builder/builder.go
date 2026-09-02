@@ -359,35 +359,34 @@ func GetTxFeeConfig(networkID uint32) TxFeeConfig {
 // wholesale, which is how a "canonical" config came to name validators the
 // network never chose. Whoever could set one chose the validator set.
 //
-// A network ID outside the canonical set has no config to return, and gets an
-// empty one. Those networks are founded from an explicit --genesis-file, which
-// is the one remaining way to supply genesis this package does not ship.
-func GetConfig(networkID uint32) *genesiscfg.Config {
-	config, err := canonicalConfig(networkID)
-	if err != nil {
-		return &genesiscfg.Config{NetworkID: networkID}
-	}
-	return config
-}
-
-// canonicalConfig reads the config compiled in for a network ID.
+// Two things fail, and neither is a genesis, so neither comes back as one. A
+// network ID outside the canonical set ships nothing — that is a custom
+// network, and it is founded from an explicit --genesis-file. A canonical ID
+// whose shipped config will not parse is a broken build.
 //
-// It fails for a network that ships none, and for a shipped one that no longer
-// parses. Those are different problems with the same answer at GetConfig — an
-// empty config — so the difference is checked once, in a test that reads every
-// shipped ID (TestCanonicalConfigsParse), rather than guessed at at runtime.
-func canonicalConfig(networkID uint32) (*genesiscfg.Config, error) {
+// Both used to return an empty config and no error. That built an 88-byte
+// genesis — no allocations, no validators, no C-Chain, no profile pin — and
+// the node founded a chain nobody could join and said nothing. A typo in
+// --network-id was enough to reach it.
+func GetConfig(networkID uint32) (*genesiscfg.Config, error) {
 	// Supplying no allocations is what selects the embedded P-chain shard:
 	// the loader reads a caller's allocations only when given some.
 	data, err := genesisconfigs.GetGenesisWithAllocations(networkID, nil)
 	if err != nil {
-		return nil, err
+		if genesisconfigs.IsCustom(networkID) {
+			return nil, fmt.Errorf("network %d ships no genesis, because it is not one of the networks this binary carries; a custom network is founded with --genesis-file", networkID)
+		}
+		return nil, fmt.Errorf("network %d: load shipped genesis: %w", networkID, err)
 	}
 	var output genesiscfg.ConfigOutput
 	if err := stdjson.Unmarshal(data, &output); err != nil {
-		return nil, fmt.Errorf("network %d: parse canonical genesis: %w", networkID, err)
+		return nil, fmt.Errorf("network %d: parse shipped genesis: %w", networkID, err)
 	}
-	return genesiscfg.ParseConfigOutput(&output, networkID)
+	config, err := genesiscfg.ParseConfigOutput(&output, networkID)
+	if err != nil {
+		return nil, fmt.Errorf("network %d: read shipped genesis: %w", networkID, err)
+	}
+	return config, nil
 }
 
 // FromConfig builds genesis bytes from a config.
@@ -748,7 +747,10 @@ func FromFlag(networkID uint32, genesisContent string, stakingCfg *StakingConfig
 
 // FromDatabase returns genesis data for database replay mode
 func FromDatabase(networkID uint32, dbPath string, dbType string, stakingCfg *StakingConfig) ([]byte, ids.ID, error) {
-	config := GetConfig(constants.LocalID)
+	config, err := GetConfig(constants.LocalID)
+	if err != nil {
+		return nil, ids.Empty, err
+	}
 	config.NetworkID = networkID
 	config.Message = "DATABASE_REPLAY_MODE"
 	return FromConfig(config)

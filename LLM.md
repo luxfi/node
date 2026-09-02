@@ -13,6 +13,44 @@ Lux blockchain node implementation - a high-performance, multi-chain blockchain 
 - Go Version: go.mod floor `1.26.4`; builder images pin `1.26.5` (see [Go toolchain policy](#go-toolchain-policy))
 - Database: ZapDB (primary, default)
 
+## Genesis has one source, and mainnet now honours its PQ pin
+
+Genesis comes from the config compiled into the binary by `luxfi/genesis`, and
+from nothing else. `builder.GetConfig` reads that and returns an error when
+there is nothing to read; `builder.GetBootstrappers` reads the shipped peer
+list the same way. Genesis the binary does not ship arrives on the command
+line: `--genesis-file`, `--genesis-file-content`, `--genesis-db`.
+
+Removed, because each supplied genesis from the environment or the disk and
+outranked the shipped config: `PCHAIN_ALLOCS`, `PCHAIN_ALLOCS_FILE`, the
+`~/.lux/genesis` and `~/work/lux/genesis/configs` trees, `BOOTSTRAPPERS_FILE`
+and its directory sweep, and `genesis-raw-bytes` (never a registered flag, but
+`viper.AutomaticEnv` bound it, so `LUXD_GENESIS_RAW_BYTES` supplied a whole
+platform genesis ahead of every other source and past every check).
+
+### Staged rollout: mainnet resolves StrictPQ from this release on
+
+The shipped mainnet config has always pinned StrictPQ, and it was never
+reached: the runtime image mounts no genesis tree, the disk sweep found
+nothing, and the node booted classical-compat with a nil profile. Reading the
+compiled-in config honours the pin, so `profileRequiresPQHandshake` is true on
+mainnet for the first time. Three consequences, all F102 working as designed:
+
+1. **Peers.** The node runs the ML-KEM + ML-DSA handshake and refuses bare
+   TLS. An upgraded node will not peer with one that has not upgraded, in
+   either direction. Upgrade bootstrappers and validators together, or the
+   network partitions along the version line.
+2. **Boot.** A node with no ML-DSA-65 staking identity refuses to start. Give
+   it one with `pqkeygen <staking-dir>` and
+   `--staking-mldsa-key-file` / `--staking-mldsa-pub-key-file`, or place
+   `mldsa.key` and `mldsa.pub` in `<data-dir>/staking/`.
+3. **NodeID changes.** It is derived from the ML-DSA key, not the TLS
+   certificate. A validator's registration must carry the new ID.
+
+`SECURITY PROFILE:` / `PEER HANDSHAKE:` in the startup banner say which mode a
+node came up in, and the network layer logs
+`post-quantum peer handshake ACTIVE` at WARN when the handshake is armed.
+
 ## Post-E2E-PQ State (current)
 
 Node now consumes the locked `ChainSecurityProfile` end-to-end and enforces

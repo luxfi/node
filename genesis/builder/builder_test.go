@@ -151,8 +151,8 @@ func TestGetConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := GetConfig(tt.networkID)
-			require.NotNil(t, cfg)
+			cfg, err := GetConfig(tt.networkID)
+			require.NoError(t, err)
 			require.Greater(t, cfg.NetworkID, uint32(0))
 		})
 	}
@@ -173,8 +173,8 @@ func TestGetConfigAllocations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := GetConfig(tt.networkID)
-			require.NotNil(t, cfg)
+			cfg, err := GetConfig(tt.networkID)
+			require.NoError(t, err)
 			require.GreaterOrEqual(t, len(cfg.Allocations), tt.minAllocs,
 				"network %d must have at least %d allocations", tt.networkID, tt.minAllocs)
 			require.GreaterOrEqual(t, len(cfg.InitialStakers), tt.minStakers,
@@ -186,8 +186,8 @@ func TestGetConfigAllocations(t *testing.T) {
 func TestFromConfigNonZeroSupply(t *testing.T) {
 	for _, networkID := range []uint32{constants.MainnetID, constants.TestnetID, constants.DevnetID, constants.LocalID} {
 		t.Run(fmt.Sprintf("network_%d", networkID), func(t *testing.T) {
-			cfg := GetConfig(networkID)
-			require.NotNil(t, cfg)
+			cfg, err := GetConfig(networkID)
+			require.NoError(t, err)
 
 			genesisBytes, _, err := FromConfig(cfg)
 			require.NoError(t, err)

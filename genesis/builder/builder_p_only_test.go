@@ -28,8 +28,8 @@ func TestUTXOAssetIDFromGenesisBytes_Sovereign(t *testing.T) {
 
 	// Use the local devnet config — it has an X-Chain genesis baked in,
 	// so the helper must derive a real ID (not just fall back).
-	cfg := GetConfig(constants.LocalID)
-	require.NotNil(cfg)
+	cfg, err := GetConfig(constants.LocalID)
+	require.NoError(err)
 	require.NotEmpty(cfg.XChainGenesis, "fixture must bake X-Chain")
 
 	genesisBytes, fromConfigID, err := FromConfig(cfg)

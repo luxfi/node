@@ -32,9 +32,9 @@ func TestZZZ_GateProbe_PerChainDigest(t *testing.T) {
 	}
 
 	for _, n := range nets {
-		cfg := GetConfig(n.id)
-		if cfg == nil {
-			t.Fatalf("%s GetConfig: nil", n.name)
+		cfg, err := GetConfig(n.id)
+		if err != nil {
+			t.Fatalf("%s GetConfig: %v", n.name, err)
 		}
 		gb, rootID, err := FromConfig(cfg)
 		if err != nil {

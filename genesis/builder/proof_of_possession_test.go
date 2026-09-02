@@ -146,8 +146,8 @@ func TestShippedConfigsParseTheirWholeSignerSet(t *testing.T) {
 		t.Run(fmt.Sprint(networkID), func(t *testing.T) {
 			require := require.New(t)
 
-			cfg := GetConfig(networkID)
-			require.NotNil(cfg)
+			cfg, err := GetConfig(networkID)
+			require.NoError(err)
 			require.NotEmpty(cfg.InitialStakers,
 				"network %d ships no stakers, so this case asserts nothing", networkID)
 

@@ -75,8 +75,8 @@ var wantPolicy = map[uint32]string{
 // depend on that.
 func TestMChainIsAGenesisChain(t *testing.T) {
 	for _, networkID := range mchainNetworks {
-		cfg := GetConfig(networkID)
-		require.NotNilf(t, cfg, "network %d has no genesis config", networkID)
+		cfg, err := GetConfig(networkID)
+		require.NoErrorf(t, err, "network %d has no genesis config", networkID)
 		require.NotEmptyf(t, cfg.MChainGenesis,
 			"network %d carries no mchain.json, so the builder skips M-Chain entirely", networkID)
 
@@ -113,8 +113,8 @@ func TestMChainIsAGenesisChain(t *testing.T) {
 // as the degree to every threshold library, and those differ by one.
 func TestMChainGenesisPolicyIsUnambiguousAndDeployable(t *testing.T) {
 	for _, networkID := range mchainNetworks {
-		cfg := GetConfig(networkID)
-		require.NotNil(t, cfg)
+		cfg, err := GetConfig(networkID)
+		require.NoError(t, err)
 
 		want, ok := wantPolicy[networkID]
 		require.Truef(t, ok, "network %d has no expected quorum; decide it rather than skipping it", networkID)
@@ -141,8 +141,8 @@ func TestMChainGenesisPolicyIsUnambiguousAndDeployable(t *testing.T) {
 // of the policy field is that there is exactly one.
 func TestMChainGenesisHasNoAmbiguousThresholdFields(t *testing.T) {
 	for _, networkID := range mchainNetworks {
-		cfg := GetConfig(networkID)
-		require.NotNil(t, cfg)
+		cfg, err := GetConfig(networkID)
+		require.NoError(t, err)
 
 		var blob map[string]any
 		require.NoError(t, json.Unmarshal([]byte(cfg.MChainGenesis), &blob))
@@ -166,8 +166,8 @@ func TestMChainGenesisHasNoAmbiguousThresholdFields(t *testing.T) {
 // harmless now that the policy is authoritative.
 func TestMChainPolicyIsSatisfiableByTheGenesisValidatorSet(t *testing.T) {
 	for _, networkID := range mchainNetworks {
-		cfg := GetConfig(networkID)
-		require.NotNil(t, cfg)
+		cfg, err := GetConfig(networkID)
+		require.NoError(t, err)
 
 		raw, _, err := FromConfig(cfg)
 		require.NoError(t, err)

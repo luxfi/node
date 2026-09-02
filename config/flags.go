@@ -109,7 +109,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(ConfigContentTypeKey, "json", "Specifies the format of the base64 encoded config content. Available values: 'json', 'yaml', 'toml'")
 
 	// Genesis
-	fs.String(GenesisFileKey, "", fmt.Sprintf("Specifies a genesis config file path. Ignored when running standard networks or if %s is specified",
+	fs.String(GenesisFileKey, "", fmt.Sprintf("Specifies a genesis config file path. Honored on every network, including the ones this binary ships a config for — the caller owns the choice. Ignored only if %s is specified",
 		GenesisFileContentKey))
 	fs.String(GenesisFileContentKey, "", "Specifies base64 encoded genesis content")
 	fs.String(GenesisDBKey, "", "Path to existing genesis database for replay. Cannot be used with genesis-file or genesis-file-content")

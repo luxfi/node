@@ -45,8 +45,8 @@ func networkNameOf(networkID uint32) string {
 // every ID that ships something.
 func TestCanonicalConfigsParse(t *testing.T) {
 	for _, networkID := range canonicalNetworks {
-		cfg := GetConfig(networkID)
-		require.NotNilf(t, cfg, "network %d", networkID)
+		cfg, err := GetConfig(networkID)
+		require.NoErrorf(t, err, "network %d", networkID)
 		require.NotEmptyf(t, cfg.Allocations, "network %d ships no allocations", networkID)
 		require.NotEmptyf(t, cfg.InitialStakers, "network %d ships no stakers", networkID)
 		require.NotNilf(t, cfg.SecurityProfile, "network %d ships no security profile pin", networkID)
@@ -98,14 +98,16 @@ func TestCanonicalConfigIsTheOnlySource(t *testing.T) {
 	// What the network ships, read before anything is set. Every case
 	// compares against this, so it has to be a real set or they compare
 	// nothing to nothing.
-	shipped := GetConfig(genesisconfigs.LocalID)
+	shipped, err := GetConfig(genesisconfigs.LocalID)
+	require.NoError(t, err)
 	require.NotEmpty(t, shipped.InitialStakers, "the shipped config declares nobody, so these cases prove nothing")
 
 	unchanged := func(t *testing.T) {
 		t.Helper()
 		require := require.New(t)
 
-		got := GetConfig(genesisconfigs.LocalID)
+		got, err := GetConfig(genesisconfigs.LocalID)
+		require.NoError(err)
 		require.Equal(shipped, got, "an override reached the canonical config")
 		for _, staker := range got.InitialStakers {
 			require.NotEqual(hostileNodeID, staker.NodeID.String(), "an override seeded its own validator")
@@ -124,19 +126,23 @@ func TestCanonicalConfigIsTheOnlySource(t *testing.T) {
 		unchanged(t)
 	})
 
-	// Both home-directory trees, at the names each was read under.
-	for _, tree := range []string{".lux/genesis", "work/lux/genesis/configs"} {
-		t.Run(tree, func(t *testing.T) {
-			home := t.TempDir()
-			t.Setenv("HOME", home)
+	// ~/.lux/genesis is the disk half of the same override: the loader read a
+	// bare pchain.json out of it, ahead of the shipped one.
+	//
+	// The other tree, ~/work/lux/genesis/configs, never reached THIS call —
+	// it was read by genesiscfg.GetConfig, which is what the node used for
+	// the security-profile pin. That one is held in the node package, where
+	// the call was (node.TestPlantedGenesisTreeCannotDowngradeTheProfile).
+	t.Run(".lux/genesis", func(t *testing.T) {
+		home := t.TempDir()
+		t.Setenv("HOME", home)
 
-			dir := filepath.Join(home, tree, "localnet")
-			require.NoError(t, os.MkdirAll(dir, 0o755))
-			require.NoError(t, os.WriteFile(filepath.Join(dir, "pchain.json"), hostilePChainShard(t), 0o600))
+		dir := filepath.Join(home, ".lux/genesis", "localnet")
+		require.NoError(t, os.MkdirAll(dir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "pchain.json"), hostilePChainShard(t), 0o600))
 
-			unchanged(t)
-		})
-	}
+		unchanged(t)
+	})
 }
 
 // TestBootstrappersAreTheOnesShipped holds the peer list to the same rule.

@@ -19,6 +19,7 @@ import (
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/constants"
+	genesisconfigs "github.com/luxfi/genesis/configs"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis/builder"
@@ -709,8 +710,8 @@ func TestDevModeFlags(t *testing.T) {
 func TestResolveUTXOAssetID_FromSovereignGenesis(t *testing.T) {
 	require := require.New(t)
 
-	cfg := builder.GetConfig(constants.LocalID)
-	require.NotNil(cfg)
+	cfg, err := builder.GetConfig(constants.LocalID)
+	require.NoError(err)
 	require.NotEmpty(cfg.XChainGenesis, "fixture must bake X-Chain")
 
 	genesisBytes, expectedID, err := builder.FromConfig(cfg)
@@ -750,4 +751,124 @@ func TestResolveUTXOAssetID_Malformed(t *testing.T) {
 
 	_, err := resolveUTXOAssetID(1, []byte{0xff, 0xfe, 0xfd, 0xfc})
 	require.Error(err)
+}
+
+// envViper is a viper configured exactly as the node configures it at
+// startup, so a test sees the same environment binding a running node does.
+//
+// That binding is the point: AutomaticEnv makes EVERY key settable from the
+// environment, whether or not it was ever registered as a flag, so a key that
+// does not appear in --help is still reachable as LUXD_<KEY>.
+func envViper() *viper.Viper {
+	v := viper.New()
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(DashesToUnderscores)
+	v.SetEnvPrefix(EnvPrefix)
+	return v
+}
+
+// TestGenesisIsNotSuppliedByTheEnvironment holds the whole platform genesis to
+// the network it was built for.
+//
+// genesis-raw-bytes was read first of every source, ahead of --genesis-file
+// and ahead of the shipped config, and it returned its blob without passing
+// validateConfig, without FromConfig, and so without the possession check over
+// the validator set. It was never registered as a flag, so it was invisible in
+// --help, but AutomaticEnv bound it anyway: LUXD_GENESIS_RAW_BYTES was enough
+// to hand a mainnet node another network's genesis and have it founded as its
+// own.
+func TestGenesisIsNotSuppliedByTheEnvironment(t *testing.T) {
+	require := require.New(t)
+
+	// Another network's genesis, which is what makes the substitution visible:
+	// if it is taken, mainnet comes up on bytes that are demonstrably not
+	// mainnet's.
+	foreignCfg, err := builder.GetConfig(constants.TestnetID)
+	require.NoError(err)
+	foreign, _, err := builder.FromConfig(foreignCfg)
+	require.NoError(err)
+
+	mainnetCfg, err := builder.GetConfig(constants.MainnetID)
+	require.NoError(err)
+	want, _, err := builder.FromConfig(mainnetCfg)
+	require.NoError(err)
+	require.NotEqual(want, foreign, "the two networks build the same genesis, so this case proves nothing")
+
+	t.Setenv("LUXD_GENESIS_RAW_BYTES", base64.StdEncoding.EncodeToString(foreign))
+
+	stakingCfg := builder.GetStakingConfig(constants.MainnetID)
+	got, _, err := getGenesisData(envViper(), constants.MainnetID, &stakingCfg, t.TempDir())
+	require.NoError(err)
+
+	require.NotEqual(foreign, got, "the environment supplied this node's genesis")
+	require.Equal(want, got, "mainnet did not come up on mainnet's genesis")
+}
+
+// TestUnknownNetworkRefusesToBuildGenesis holds a mistyped network ID to
+// failing loudly.
+//
+// A network ID this binary ships no config for used to fall through to an
+// empty config, and an empty config builds: no allocations, no validators, no
+// C-Chain and no security profile, about 88 bytes of genesis, reported as
+// success. The node then founded a chain with no validator set — which also
+// arms the bootstrap fallback, where every peer counts as a validator
+// candidate — and nothing said the network ID was wrong.
+func TestUnknownNetworkRefusesToBuildGenesis(t *testing.T) {
+	const mistyped = 424242
+
+	stakingCfg := builder.GetStakingConfig(mistyped)
+	_, _, err := getGenesisData(envViper(), mistyped, &stakingCfg, t.TempDir())
+	require.ErrorContains(t, err, "--genesis-file",
+		"a network this binary ships nothing for built a genesis anyway")
+}
+
+// TestGenesisCacheAnswersOnlyForItsOwnFile holds the cache to the file it was
+// built from.
+//
+// The cache outranks --genesis-file: it is read before the file is, and it
+// used to answer whenever its contents merely parsed. So an operator who
+// edited the genesis file, or pointed the flag at a different one, kept
+// booting the blob built on the previous run and was told nothing.
+func TestGenesisCacheAnswersOnlyForItsOwnFile(t *testing.T) {
+	require := require.New(t)
+
+	dataDir := t.TempDir()
+	genesisFile := filepath.Join(t.TempDir(), "genesis.json")
+
+	shipped, err := genesisconfigs.GetGenesisWithAllocations(constants.LocalID, nil)
+	require.NoError(err)
+	var first map[string]any
+	require.NoError(json.Unmarshal(shipped, &first))
+
+	stakingCfg := builder.GetStakingConfig(constants.LocalID)
+	build := func() []byte {
+		t.Helper()
+		v := envViper()
+		v.Set(GenesisFileKey, genesisFile)
+		genesisBytes, _, err := getGenesisData(v, constants.LocalID, &stakingCfg, dataDir)
+		require.NoError(err)
+		return genesisBytes
+	}
+	write := func(cfg map[string]any) {
+		t.Helper()
+		body, err := json.Marshal(cfg)
+		require.NoError(err)
+		require.NoError(os.WriteFile(genesisFile, body, 0o600))
+	}
+
+	write(first)
+	before := build()
+	require.FileExists(filepath.Join(dataDir, "genesis.bytes"), "nothing was cached, so this case proves nothing")
+
+	// The same file, edited. Anything that reaches the built bytes will do;
+	// the network's own message is the smallest thing that does.
+	second := make(map[string]any, len(first))
+	for k, val := range first {
+		second[k] = val
+	}
+	second["message"] = "a different genesis"
+	write(second)
+
+	after := build()
+	require.NotEqual(before, after, "the cache answered for a genesis file it was not built from")
 }

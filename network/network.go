@@ -421,8 +421,19 @@ func NewNetwork(
 	// parse into validators.
 	canonicalStakerCount := 0
 	if declaredStakers == 0 {
-		genesisConfig := builder.GetConfig(config.NetworkID)
-		if genesisConfig != nil && len(genesisConfig.InitialStakers) > 0 {
+		// A network that ships no config is the custom-network case, and it
+		// reaches here having already been founded from its own genesis
+		// bytes — so there is nothing to fall back TO, and that is not an
+		// error here. It is still said out loud, because arriving here at
+		// all means this node's own genesis named no validator.
+		genesisConfig, err := builder.GetConfig(config.NetworkID)
+		if err != nil {
+			log.Info("no shipped genesis config for this network id",
+				zap.Uint32("networkID", config.NetworkID),
+				zap.Error(err),
+			)
+		}
+		if err == nil && len(genesisConfig.InitialStakers) > 0 {
 			canonicalStakerCount = len(genesisConfig.InitialStakers)
 			log.Info("using canonical genesis config for initial stakers",
 				zap.Int("count", canonicalStakerCount),
@@ -571,7 +582,19 @@ func NewNetwork(
 		// every strict-PQ peer was classified as a non-validator and the
 		// P-chain never formed consensus (no block production).
 		if config.StakingMLDSA == nil || len(config.StakingMLDSAPub) == 0 {
-			return nil, errors.New("network: strict-PQ profile requires the staking ML-DSA keypair, but StakingMLDSA/StakingMLDSAPub were not populated on the network config")
+			// This node's chain pins a post-quantum profile, and the node has
+			// no post-quantum staking identity to run it with. Refusing is
+			// right — a node that booted anyway would derive its NodeID from
+			// the TLS cert and be refused by every peer on the network. Say
+			// what to do about it, because the answer is two commands and
+			// otherwise reads as an internal error.
+			return nil, fmt.Errorf(
+				"this network pins the %s security profile, which requires an ML-DSA-65 staking identity, and none is loaded. "+
+					"Generate one with `pqkeygen <staking-dir>` (writes mldsa.key and mldsa.pub), then point the node at it with "+
+					"--staking-mldsa-key-file / --staking-mldsa-pub-key-file, or place them at <data-dir>/staking/ where they are "+
+					"read by default. Note this changes the NodeID: it is derived from the ML-DSA key, not the TLS certificate",
+				config.SecurityProfile.ProfileName,
+			)
 		}
 		pqIdent, err := peer.NewLocalIdentityFromStakingKey(config.MyNodeID, config.StakingMLDSAPub, config.StakingMLDSA.Bytes())
 		if err != nil {
@@ -583,7 +606,13 @@ func NewNetwork(
 			ForbidClassicalKEM: true,
 		}
 		peerConfig.PQLocalIdentity = pqIdent
-		log.Info("peer PQ handshake active",
+		// Loud on purpose. This is the line that explains a peer count
+		// dropping to zero after an upgrade: every peer now has to complete
+		// the ML-KEM + ML-DSA handshake, and a node still on bare TLS cannot,
+		// so it is refused. That is the profile working, not a fault, but it
+		// is invisible from the other side.
+		log.Warn("post-quantum peer handshake ACTIVE — bare-TLS peers will be refused",
+			zap.String("profile", config.SecurityProfile.ProfileName),
 			zap.Stringer("scheme", peerConfig.PQHandshakeConfig.KEMScheme),
 			zap.Stringer("nodeID", config.MyNodeID),
 		)

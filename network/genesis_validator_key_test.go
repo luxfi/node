@@ -183,8 +183,8 @@ func TestGenesisValidatorKeyIsUsableByPeerVerification(t *testing.T) {
 func TestCanonicalGenesisConfigKeyIsUsableByPeerVerification(t *testing.T) {
 	require := require.New(t)
 
-	genesisConfig := builder.GetConfig(constants.LocalID)
-	require.NotNil(genesisConfig)
+	genesisConfig, err := builder.GetConfig(constants.LocalID)
+	require.NoError(err)
 
 	declared := map[ids.NodeID]string{}
 	for _, staker := range genesisConfig.InitialStakers {
@@ -407,8 +407,8 @@ func TestEmptiedGenesisSetIsNotReplacedByTheCanonicalOne(t *testing.T) {
 
 	// A network whose canonical config carries stakers, so a substitution is
 	// visible here rather than indistinguishable from the right answer.
-	canonical := builder.GetConfig(constants.LocalID)
-	require.NotNil(canonical)
+	canonical, err := builder.GetConfig(constants.LocalID)
+	require.NoError(err)
 	require.NotEmpty(canonical.InitialStakers,
 		"the canonical config declares no stakers, so a wrong fallback would look exactly like the right answer")
 
@@ -581,8 +581,8 @@ func TestShippedConfigsStillSeedTheirFullValidatorSet(t *testing.T) {
 		t.Run(fmt.Sprint(networkID), func(t *testing.T) {
 			require := require.New(t)
 
-			cfg := builder.GetConfig(networkID)
-			require.NotNil(cfg)
+			cfg, err := builder.GetConfig(networkID)
+			require.NoError(err)
 			require.NotEmpty(cfg.InitialStakers,
 				"network %d ships no stakers, so this case asserts nothing", networkID)
 
@@ -720,12 +720,13 @@ func TestEmptyValidatorSetIsAnError(t *testing.T) {
 		require := require.New(t)
 
 		// An unknown network ID ships no config, and nothing else is
-		// consulted, so this is the same empty answer on every box. It used to
+		// consulted, so this is the same answer on every box. It used to
 		// resolve to the localnet NAME and get looked up under $HOME, where a
 		// developer's genesis checkout answered with a real validator set and
 		// this case stopped being the one it is named for.
-		require.Empty(builder.GetConfig(unknownNetwork).InitialStakers,
-			"network %d ships stakers after all, so this case proves nothing", unknownNetwork)
+		_, err := builder.GetConfig(unknownNetwork)
+		require.Error(err,
+			"network %d ships a config after all, so this case proves nothing", unknownNetwork)
 
 		logger := newRecorder()
 		vdrs := seedFromGenesis(t, unknownNetwork, nil, logger)
@@ -771,9 +772,16 @@ func TestEmptyValidatorSetIsAnError(t *testing.T) {
 		require.Empty(seeded, "a validator that cannot prove its key was seeded anyway")
 		require.Len(refused, len(refusable))
 
-		require.Equal(emptyValidatorSetReason(0, len(refusable)),
-			emptyValidatorSetReason(len(seeded), len(refusable)),
-			"a node that refused every validator the canonical config declares says it was declared none")
+		// What the node then says. The counts it says it FROM are the two
+		// above, so the assertion worth making is that they reach the reason
+		// naming the canonical config — not the one for a node nobody named a
+		// validator to, which is the same empty validator set and a different
+		// fact.
+		reason := emptyValidatorSetReason(len(seeded), len(refusable))
+		require.Contains(reason, "canonical",
+			"a node that refused every validator the canonical config declares did not say so")
+		require.NotEqual(emptyValidatorSetReason(0, 0), reason,
+			"a node that refused the canonical config's validators says it was declared none")
 	})
 
 	t.Run("a seeded node says none of them", func(t *testing.T) {

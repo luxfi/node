@@ -1016,9 +1016,9 @@ func (n *Node) initSecurityProfile() error {
 	// cryptography this chain is allowed to run, so reading it from a home
 	// directory meant whoever could write ~/.lux/genesis/<network> chose that
 	// — downgrade included. builder.GetConfig ships it instead.
-	cfg := builder.GetConfig(n.Config.NetworkID)
-	if cfg == nil {
-		n.Log.Warn("genesis config not found — node boots in classical-compat mode")
+	cfg, err := builder.GetConfig(n.Config.NetworkID)
+	if err != nil {
+		n.Log.Warn("genesis config not found — node boots in classical-compat mode: " + err.Error())
 		return nil
 	}
 	return n.applySecurityProfile(cfg.SecurityProfile)
@@ -1067,12 +1067,23 @@ func (n *Node) applySecurityProfile(pin *genesiscfg.SecurityProfile) error {
 	nistFriendly := profile.HashSuiteID == consensusconfig.HashSuiteSHA3NIST
 	hashHex := fmt.Sprintf("%x", profile.ProfileHash[:])
 
+	// Whether this profile makes the node refuse bare-TLS peers. Same two
+	// profile IDs the network layer builds its PQ handshake under, named here
+	// because this banner is where an operator looks first and the peer
+	// consequence is the part that is felt.
+	peerHandshake := "TLS (classical)"
+	if profile.ProfileID == uint32(consensusconfig.ProfileStrictPQ) ||
+		profile.ProfileID == uint32(consensusconfig.ProfileFIPS) {
+		peerHandshake = "ML-KEM + ML-DSA (bare TLS refused)"
+	}
+
 	n.Log.Info("SECURITY PROFILE: " + profile.ProfileName)
 	n.Log.Info("PROFILE HASH:     " + hashHex)
 	n.Log.Info(fmt.Sprintf("POST-QUANTUM:     %v", postQuantum))
 	n.Log.Info(fmt.Sprintf("NIST-FRIENDLY:    %v", nistFriendly))
 	n.Log.Info("CLASSICAL SNARKS: " + classicalSNARKs)
 	n.Log.Info("BLS FALLBACK:     " + blsFallback)
+	n.Log.Info("PEER HANDSHAKE:   " + peerHandshake)
 
 	return nil
 }
