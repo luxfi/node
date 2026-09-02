@@ -597,6 +597,22 @@ func (s *state) initValidatorSets() error {
 				primaryStaker = primaryValidator.validator
 				chainStaker   = chainValidator.validator
 			)
+			// An entry here is not proof of a validator: DeleteValidator nils
+			// the validator and pruneValidatorLocked keeps the entry while
+			// delegators remain. Both stakers are dereferenced immediately
+			// below, and this runs at startup, so a placeholder is a boot panic.
+			if chainStaker == nil {
+				// The delegators outlived the validator they backed; there is
+				// no staker to register their weight against.
+				continue
+			}
+			if primaryStaker == nil {
+				// No primary validator left to inherit a key from. GetValidator
+				// already reads a nil validator as absent, so this takes the
+				// same answer as the missing case above — registering the
+				// staker keyless would strand its weight in the denominator.
+				return fmt.Errorf("%w: %s", errMissingPrimaryNetworkValidator, nodeID)
+			}
 			if err := s.validators.AddStaker(chainID, nodeID, bls.PublicKeyToUncompressedBytes(primaryStaker.PublicKey), chainStaker.TxID, chainStaker.Weight); err != nil {
 				return err
 			}

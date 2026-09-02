@@ -5,7 +5,6 @@ package network
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -22,6 +21,7 @@ import (
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
+	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -353,11 +353,20 @@ func NewNetwork(
 						weight = 1
 					}
 
+					// tx.PublicKey() is the accessor that honours the Signer
+					// invariant "Key() only after Verify() returns nil". The
+					// signer here is a fresh decode of the tx buffer, so its
+					// parsed key is nil until this call verifies it; reading
+					// Key() directly registered every genesis validator with
+					// full weight and no key.
 					var blsKey []byte
-					if s := tx.Signer(); s != nil {
-						if pubKey := s.Key(); pubKey != nil {
-							blsKey = bls.PublicKeyToCompressedBytes(pubKey)
-						}
+					if pubKey, hasKey, err := tx.PublicKey(); err != nil {
+						log.Warn("genesis validator signer failed to verify",
+							zap.Stringer("nodeID", nodeID),
+							zap.Error(err),
+						)
+					} else if hasKey {
+						blsKey = bls.PublicKeyToUncompressedBytes(pubKey)
 					}
 
 					genesisStakers = append(genesisStakers, struct {
@@ -415,9 +424,28 @@ func NewNetwork(
 				zap.Int("count", len(genesisConfig.InitialStakers)),
 			)
 			for _, staker := range genesisConfig.InitialStakers {
+				// genesiscfg publicKey is a 0x-prefixed hex string of the
+				// COMPRESSED key — the same field genesis/builder decodes with
+				// formatting.HexNC. Base64-decoding it does not fail cleanly:
+				// every character is in the base64 alphabet, so it yielded 72
+				// bytes of garbage and an error that was discarded. Validators
+				// are registered in the uncompressed form every reader parses.
 				var blsKey []byte
 				if staker.Signer != nil && staker.Signer.PublicKey != "" {
-					blsKey, _ = base64.StdEncoding.DecodeString(staker.Signer.PublicKey)
+					pkBytes, err := formatting.Decode(formatting.HexNC, staker.Signer.PublicKey)
+					if err != nil {
+						log.Warn("failed to decode genesis validator public key",
+							zap.Stringer("nodeID", staker.NodeID),
+							zap.Error(err),
+						)
+					} else if pubKey, err := bls.PublicKeyFromCompressedBytes(pkBytes); err != nil {
+						log.Warn("genesis validator public key is not a valid BLS key",
+							zap.Stringer("nodeID", staker.NodeID),
+							zap.Error(err),
+						)
+					} else {
+						blsKey = bls.PublicKeyToUncompressedBytes(pubKey)
+					}
 				}
 				weight := staker.Weight
 				if weight == 0 {
