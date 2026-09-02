@@ -24,7 +24,37 @@ func (s *state) GetCurrentValidators(ctx context.Context, chainID ids.ID) ([]*St
 	legacyBaseStakers := s.currentStakers.validators[chainID]
 	legacyStakers := make([]*Staker, 0, len(legacyBaseStakers))
 	for _, staker := range legacyBaseStakers {
-		legacyStakers = append(legacyStakers, staker.validator)
+		validator := staker.validator
+		if validator == nil {
+			continue
+		}
+
+		// A legacy chain validator holds no key of its own — AddChainValidatorTx
+		// carries no signer — but it signs with the key of its primary-network
+		// validator. That inherited key is what initValidatorSets registers in
+		// the validator manager and what the height diffs record, so it is also
+		// what this set has to name: quorum and warp read the key from here, and
+		// a validator surfaced keyless keeps its weight in the denominator with
+		// no way to ever vote toward it.
+		if chainID != constants.PrimaryNetworkID && validator.PublicKey == nil {
+			publicKey, err := s.getInheritedPublicKey(validator.NodeID)
+			if err != nil {
+				return nil, nil, 0, err
+			}
+			// getInheritedPublicKey returns a nil key without error for a
+			// primary-network validator registered before BLS keys existed.
+			// There is no key to inherit in that case.
+			if publicKey != nil {
+				// The stakers in currentStakers are live state shared with the
+				// write paths, so hand back a copy rather than writing the
+				// inherited key into the stored chain staker.
+				inherited := *validator
+				inherited.PublicKey = publicKey
+				validator = &inherited
+			}
+		}
+
+		legacyStakers = append(legacyStakers, validator)
 	}
 
 	// Then iterate over chainIDNodeID DB and add the L1 validators
