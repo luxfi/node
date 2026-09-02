@@ -4,6 +4,7 @@
 package network
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/formatting"
+	genesiscfg "github.com/luxfi/genesis/pkg/genesis"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
@@ -37,37 +39,8 @@ import (
 // actually started with, parsed by the same genesis.Parse NewNetwork calls.
 func genesisBytesForValidator(t *testing.T, nodeID ids.NodeID, sk bls.Signer) []byte {
 	t.Helper()
-	require := require.New(t)
 
-	pop, err := signer.NewProofOfPossession(sk)
-	require.NoError(err)
-
-	utx, err := txs.NewAddPermissionlessValidatorTx(
-		&lux.BaseTx{},
-		txs.Validator{NodeID: nodeID, Wght: 100},
-		constants.PrimaryNetworkID,
-		pop,
-		nil,
-		&secp256k1fx.OutputOwners{},
-		&secp256k1fx.OutputOwners{},
-		0,
-	)
-	require.NoError(err)
-
-	tx := &txs.Tx{Unsigned: utx}
-	require.NoError(tx.Initialize())
-
-	genesisBytes, err := (&genesis.Genesis{Validators: []*txs.Tx{tx}}).Bytes()
-	require.NoError(err)
-
-	// The seeding path this test exercises only runs if genesis.Parse succeeds
-	// and yields a validator, so hold it to that here rather than discovering a
-	// silently-skipped path as a passing test.
-	parsed, err := genesis.Parse(genesisBytes)
-	require.NoError(err)
-	require.Len(parsed.Validators, 1)
-
-	return genesisBytes
+	return genesisBytesFor(t, declaration{nodeID, popFor(t, sk)})
 }
 
 // runGenesisSeededPeer starts two real networks and lets them handshake.
@@ -259,54 +232,65 @@ func TestCanonicalGenesisConfigKeyIsUsableByPeerVerification(t *testing.T) {
 	}
 }
 
-// genesisBytesForPair builds real P-chain genesis declaring two validators: one
-// whose signer proves possession of its key, and one whose signer carries a
-// well-formed key together with somebody else's possession proof.
+// declaration is a genesis entry under test: a node ID and the signer genesis
+// declares for it.
+type declaration struct {
+	nodeID ids.NodeID
+	sig    signer.Signer
+}
+
+// popFor is [sk]'s proof that it holds its own key.
+func popFor(t *testing.T, sk bls.Signer) *signer.ProofOfPossession {
+	t.Helper()
+
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(t, err)
+	return pop
+}
+
+// honestPoP is a fresh key together with its own possession proof.
+func honestPoP(t *testing.T) *signer.ProofOfPossession {
+	t.Helper()
+
+	sk, err := localsigner.New()
+	require.NoError(t, err)
+	return popFor(t, sk)
+}
+
+// forgedPoP is a well-formed key carrying somebody else's possession proof.
 //
-// Both halves of the forged signer are valid curve points, so it survives the
-// wire round trip and its key parses. Only the pairing rejects it — which is
-// exactly the case tx.PublicKey() reports as an error.
-func genesisBytesForPair(t *testing.T, honest, forged ids.NodeID) []byte {
+// Both halves are valid curve points, so it survives the wire round trip and
+// its key parses. Only the pairing rejects it — which is exactly the case
+// tx.PublicKey() reports as an error, and the only forgery worth testing: one
+// whose key did not parse would prove nothing about the seeding decision.
+func forgedPoP(t *testing.T) *signer.ProofOfPossession {
 	t.Helper()
 	require := require.New(t)
 
-	honestKey, err := localsigner.New()
-	require.NoError(err)
-	honestPoP, err := signer.NewProofOfPossession(honestKey)
-	require.NoError(err)
+	forged := *honestPoP(t)
+	forged.ProofOfPossession = honestPoP(t).ProofOfPossession
 
-	victim, err := localsigner.New()
-	require.NoError(err)
-	victimPoP, err := signer.NewProofOfPossession(victim)
-	require.NoError(err)
-	other, err := localsigner.New()
-	require.NoError(err)
-	otherPoP, err := signer.NewProofOfPossession(other)
-	require.NoError(err)
-
-	forgedPoP := *victimPoP
-	forgedPoP.ProofOfPossession = otherPoP.ProofOfPossession
-
-	// The forgery is the interesting kind: the key parses, possession does not
-	// hold. Without both of these the test would be proving something else.
-	parsed, err := bls.PublicKeyFromCompressedBytes(forgedPoP.PublicKey[:])
+	parsed, err := bls.PublicKeyFromCompressedBytes(forged.PublicKey[:])
 	require.NoError(err, "the forged signer's key must parse — otherwise this proves nothing")
 	require.NotNil(parsed)
-	require.Error(forgedPoP.Verify(), "a forged possession proof must not verify")
+	require.Error(forged.Verify(), "a forged possession proof must not verify")
 
-	txsIn := make([]*txs.Tx, 0, 2)
-	for _, v := range []struct {
-		nodeID ids.NodeID
-		pop    *signer.ProofOfPossession
-	}{
-		{honest, honestPoP},
-		{forged, &forgedPoP},
-	} {
+	return &forged
+}
+
+// genesisBytesFor builds real P-chain genesis declaring one validator per
+// entry, using the same encoder that writes the genesis a node is started with.
+func genesisBytesFor(t *testing.T, vdrs ...declaration) []byte {
+	t.Helper()
+	require := require.New(t)
+
+	txsIn := make([]*txs.Tx, 0, len(vdrs))
+	for _, v := range vdrs {
 		utx, err := txs.NewAddPermissionlessValidatorTx(
 			&lux.BaseTx{},
 			txs.Validator{NodeID: v.nodeID, Wght: 100},
 			constants.PrimaryNetworkID,
-			v.pop,
+			v.sig,
 			nil,
 			&secp256k1fx.OutputOwners{},
 			&secp256k1fx.OutputOwners{},
@@ -322,19 +306,19 @@ func genesisBytesForPair(t *testing.T, honest, forged ids.NodeID) []byte {
 	genesisBytes, err := (&genesis.Genesis{Validators: txsIn}).Bytes()
 	require.NoError(err)
 
-	// genesis.Parse is a wire decode and checks no possession proof, so the
-	// forged validator does reach the seeding path. If that ever changes this
-	// test stops covering the seeding decision and says so here.
+	// genesis.Parse is a wire decode and checks no possession proof, so a
+	// forged validator does reach the seeding path. If that ever changes these
+	// tests stop covering the seeding decision and say so here.
 	parsedGenesis, err := genesis.Parse(genesisBytes)
 	require.NoError(err)
-	require.Len(parsedGenesis.Validators, 2)
+	require.Len(parsedGenesis.Validators, len(vdrs))
 
 	return genesisBytes
 }
 
 // seedFromGenesis runs NewNetwork's genesis-seeding path over [genesisBytes]
-// and returns the validator set it produced.
-func seedFromGenesis(t *testing.T, genesisBytes []byte) validators.Manager {
+// for [networkID] and returns the validator set it produced.
+func seedFromGenesis(t *testing.T, networkID uint32, genesisBytes []byte) validators.Manager {
 	t.Helper()
 	require := require.New(t)
 
@@ -344,6 +328,7 @@ func seedFromGenesis(t *testing.T, genesisBytes []byte) validators.Manager {
 	config.Validators = validators.NewManager()
 	config.TrackedChains = set.NewSet[ids.ID](0)
 	config.UptimeCalculator = &uptime.NoOpCalculator{}
+	config.NetworkID = networkID
 	config.GenesisBytes = genesisBytes
 
 	net, err := NewNetwork(
@@ -363,7 +348,7 @@ func seedFromGenesis(t *testing.T, genesisBytes []byte) validators.Manager {
 }
 
 // TestGenesisValidatorWithUnverifiableSignerIsNotSeeded holds the seeding path
-// to failing CLOSED.
+// to failing CLOSED, and to failing closed only where it should.
 //
 // A signer that does not verify is a declared key nothing can be checked
 // against. Seeding it anyway kept the validator's full genesis weight while
@@ -372,22 +357,135 @@ func seedFromGenesis(t *testing.T, genesisBytes []byte) validators.Manager {
 // bootstrap window with nobody proving they hold the key — the same fail-open
 // the surrounding seeding fixes closed elsewhere.
 //
-// The honest validator in the same genesis is the control: it says the seeding
-// path ran and that the skip is surgical rather than a wholesale bail-out.
+// The other two validators are what keep the skip surgical: an honest one says
+// the seeding path ran at all, and one that declares no key at all is seeded
+// keyless, because keyless is what it says it is and the wire allows it.
 func TestGenesisValidatorWithUnverifiableSignerIsNotSeeded(t *testing.T) {
 	require := require.New(t)
 
-	honest, forged := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
-	vdrs := seedFromGenesis(t, genesisBytesForPair(t, honest, forged))
+	honest, keyless, forged := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+	vdrs := seedFromGenesis(t, constants.LocalID, genesisBytesFor(t,
+		declaration{honest, honestPoP(t)},
+		declaration{keyless, &signer.Empty{}},
+		declaration{forged, forgedPoP(t)},
+	))
 
 	honestVdr, ok := vdrs.GetValidator(constants.PrimaryNetworkID, honest)
 	require.True(ok, "the honest genesis validator was not seeded, so this test asserts nothing")
 	require.NotEmpty(honestVdr.PublicKey)
+
+	keylessVdr, ok := vdrs.GetValidator(constants.PrimaryNetworkID, keyless)
+	require.True(ok, "a validator declaring no key is a shape the wire allows and must still be seeded")
+	require.Empty(keylessVdr.PublicKey)
 
 	// The whole point. Not "seeded with no key" — not seeded.
 	if forgedVdr, ok := vdrs.GetValidator(constants.PrimaryNetworkID, forged); ok {
 		require.Fail("genesis validator seeded despite an unverifiable signer",
 			"weight %d, key %x — and a keyless entry is never checked by peer.shouldDisconnect",
 			forgedVdr.Weight, forgedVdr.PublicKey)
+	}
+}
+
+// TestEmptiedGenesisSetIsNotReplacedByTheCanonicalOne holds the canonical
+// fallback to the one question it answers.
+//
+// The fallback used to be gated on the seeded slice being empty, which was
+// unreachable while an unverifiable validator was still seeded keyless. Failing
+// closed makes it reachable: a node started with custom genesis whose every
+// validator is skipped now empties that slice, and the fallback would hand it
+// builder.GetConfig(NetworkID) — a DIFFERENT network's stakers, answering "who
+// validates here?" with nodes that do not.
+//
+// A genesis that declared a set and lost all of it leaves this node with no
+// validators. That is the answer; it bootstraps from its beacons.
+func TestEmptiedGenesisSetIsNotReplacedByTheCanonicalOne(t *testing.T) {
+	require := require.New(t)
+
+	// A network whose canonical config carries stakers, so a substitution is
+	// visible here rather than indistinguishable from the right answer.
+	canonical := builder.GetConfig(constants.LocalID)
+	require.NotNil(canonical)
+	require.NotEmpty(canonical.InitialStakers,
+		"the canonical config declares no stakers, so a wrong fallback would look exactly like the right answer")
+
+	vdrs := seedFromGenesis(t, constants.LocalID, genesisBytesFor(t,
+		declaration{ids.GenerateTestNodeID(), forgedPoP(t)},
+		declaration{ids.GenerateTestNodeID(), forgedPoP(t)},
+	))
+
+	require.Empty(vdrs.GetValidatorIDs(constants.PrimaryNetworkID),
+		"a genesis whose every validator was skipped seeded validators anyway; if these are the "+
+			"canonical config's node IDs, the fallback substituted another network's set")
+}
+
+// TestDeclaredKeyRefusesAKeyThatIsNotOne holds the canonical half of the
+// seeding decision to failing CLOSED.
+//
+// builder.GetConfig reads the shipped configs and every one of them decodes, so
+// the canonical loop cannot be shown a bad staker through it — and there is no
+// seam to inject one, by design. declaredKey IS that decision, so this checks
+// the decision itself rather than a way of reaching it.
+func TestDeclaredKeyRefusesAKeyThatIsNotOne(t *testing.T) {
+	declaredPoP := honestPoP(t)
+
+	real, err := formatting.Encode(formatting.HexNC, declaredPoP.PublicKey[:])
+	require.NoError(t, err)
+	realKey, err := bls.PublicKeyFromCompressedBytes(declaredPoP.PublicKey[:])
+	require.NoError(t, err)
+
+	// Right length, valid hex, not a point on the curve.
+	notAPoint, err := formatting.Encode(formatting.HexNC, bytes.Repeat([]byte{0xff}, bls.PublicKeyLen))
+	require.NoError(t, err)
+
+	withKey := func(key string) genesiscfg.Staker {
+		return genesiscfg.Staker{Signer: &genesiscfg.ProofOfPossession{PublicKey: key}}
+	}
+
+	for _, test := range []struct {
+		name   string
+		staker genesiscfg.Staker
+		want   []byte
+		refuse bool
+	}{
+		{
+			// Declaring no key is a shape the config allows, and such a staker
+			// is seeded keyless because keyless is what it says it is.
+			name:   "no signer at all",
+			staker: genesiscfg.Staker{},
+		},
+		{
+			name:   "signer declaring no key",
+			staker: withKey(""),
+		},
+		{
+			name:   "key that is not hex",
+			staker: withKey("0xnot-a-key"),
+			refuse: true,
+		},
+		{
+			// The case base64 used to turn into 72 bytes of garbage that then
+			// passed the has-a-key guard and failed the uncompressed reader.
+			name:   "hex that is not a curve point",
+			staker: withKey(notAPoint),
+			refuse: true,
+		},
+		{
+			name:   "a real key",
+			staker: withKey(real),
+			want:   bls.PublicKeyToUncompressedBytes(realKey),
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			require := require.New(t)
+
+			key, err := declaredKey(test.staker)
+			if test.refuse {
+				require.Error(err, "a declared key that is not a key was accepted")
+				require.Nil(key, "a refused staker must carry no key, keyless least of all")
+				return
+			}
+			require.NoError(err)
+			require.Equal(test.want, key)
+		})
 	}
 }
