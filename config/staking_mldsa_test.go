@@ -96,13 +96,63 @@ func TestLoadStakingMLDSA_EmptyContentFallsThroughToPath(t *testing.T) {
 	require.Equal(t, pubPath, gotPubPath)
 }
 
-// TestLoadStakingMLDSA_NeitherIsClassicalCompat: no key material at all (and a
-// default pub path that does not exist) is classical-compat — empty, no error.
-func TestLoadStakingMLDSA_NeitherIsClassicalCompat(t *testing.T) {
-	// Point DataDir at an empty dir so the default pub path resolves to a
-	// non-existent file rather than picking up a developer's ~/.lux key.
+// TestLoadStakingMLDSA_NothingSuppliedMints: a node handed no staking identity
+// makes one, at the default paths, exactly as it does for the classical TLS
+// keypair. This is the ordinary first boot. Under a strict-PQ profile the
+// network layer refuses to start without this key, so minting it here is what
+// lets a fresh node come up instead of stopping to ask for `pqkeygen`.
+func TestLoadStakingMLDSA_NothingSuppliedMints(t *testing.T) {
+	// Point DataDir at an empty dir so the default paths resolve under it
+	// rather than picking up a developer's ~/.lux key.
 	v, err := BuildViper(BuildFlagSet(), []string{
 		"--" + DataDirKey + "=" + t.TempDir(),
+	})
+	require.NoError(t, err)
+
+	priv, pub, privPath, pubPath, err := loadStakingMLDSA(v)
+	require.NoError(t, err)
+	require.NotNil(t, priv)
+	require.NotEmpty(t, pub)
+	require.FileExists(t, privPath)
+	require.FileExists(t, pubPath)
+}
+
+// TestLoadStakingMLDSA_MintSurvivesRestart: the mint happens once. The NodeID
+// of a strict-PQ node is derived from this key, so a second boot that minted
+// again would hand the node a new identity and leave its stake behind on the
+// old one. The key on disk wins every time after the first.
+func TestLoadStakingMLDSA_MintSurvivesRestart(t *testing.T) {
+	dir := t.TempDir()
+	boot := func() ([]byte, []byte) {
+		v, err := BuildViper(BuildFlagSet(), []string{"--" + DataDirKey + "=" + dir})
+		require.NoError(t, err)
+		_, pub, privPath, _, err := loadStakingMLDSA(v)
+		require.NoError(t, err)
+		onDisk, err := os.ReadFile(privPath)
+		require.NoError(t, err)
+		return pub, onDisk
+	}
+
+	firstPub, firstPriv := boot()
+	secondPub, secondPriv := boot()
+	require.Equal(t, firstPub, secondPub, "a restart must not change the NodeID")
+	require.Equal(t, firstPriv, secondPriv, "a restart must not rewrite the key")
+}
+
+// TestLoadStakingMLDSA_NamedButMissingDoesNotMint: an operator who names a key
+// is holding it. If the path is empty the answer is not to invent a different
+// key there — that would swap a validator's identity for a fresh one and file
+// it under success. The loader stands down and reports nothing, which leaves a
+// strict-PQ node to refuse at the network layer and say `pqkeygen`.
+func TestLoadStakingMLDSA_NamedButMissingDoesNotMint(t *testing.T) {
+	dir := t.TempDir()
+	privPath := filepath.Join(dir, "held-elsewhere.key")
+	pubPath := filepath.Join(dir, "held-elsewhere.pub")
+
+	v, err := BuildViper(BuildFlagSet(), []string{
+		"--" + DataDirKey + "=" + dir,
+		"--" + StakingMLDSAKeyPathKey + "=" + privPath,
+		"--" + StakingMLDSAPubKeyPathKey + "=" + pubPath,
 	})
 	require.NoError(t, err)
 
@@ -110,6 +160,8 @@ func TestLoadStakingMLDSA_NeitherIsClassicalCompat(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, priv)
 	require.Empty(t, pub)
+	require.NoFileExists(t, privPath, "a named key must never be minted over")
+	require.NoFileExists(t, pubPath, "a named key must never be minted over")
 }
 
 // TestLoadStakingMLDSA_PrivOnlyIsFatal: a private key with no public key is a

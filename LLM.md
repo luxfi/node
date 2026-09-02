@@ -40,12 +40,27 @@ mainnet for the first time. Three consequences, all F102 working as designed:
    TLS. An upgraded node will not peer with one that has not upgraded, in
    either direction. Upgrade bootstrappers and validators together, or the
    network partitions along the version line.
-2. **Boot.** A node with no ML-DSA-65 staking identity refuses to start. Give
-   it one with `pqkeygen <staking-dir>` and
-   `--staking-mldsa-key-file` / `--staking-mldsa-pub-key-file`, or place
-   `mldsa.key` and `mldsa.pub` in `<data-dir>/staking/`.
-3. **NodeID changes.** It is derived from the ML-DSA key, not the TLS
-   certificate. A validator's registration must carry the new ID.
+2. **Boot.** A node handed no ML-DSA-65 staking identity mints one, at
+   `<data-dir>/staking/mldsa.key` and `mldsa.pub`, and comes up. It mints
+   once: the key on disk wins on every later boot, so a restart does not
+   change the identity. An operator who would rather hold the key names it
+   with `--staking-mldsa-key-file` / `--staking-mldsa-pub-key-file`, or
+   writes it with `pqkeygen <staking-dir>`; a named key is never minted over.
+   Name a key that is not there and the node still refuses to start, and the
+   network layer says `pqkeygen` — the refusal now fires only for the case
+   where an operator meant to supply something and it is missing.
+3. **NodeID changes — this is the migration, and minting does not solve it.**
+   The NodeID is derived from the ML-DSA key, not the TLS certificate, so a
+   node that mints a fresh key gets a fresh NodeID with no stake behind it.
+   For a new node that is the point. For a validator already in the set it is
+   the whole problem: its registration, and the 5 stakers the shipped mainnet
+   genesis names, were minted under the derivation in force when they were
+   registered. A validator that arrives under a newly minted ID is not in the
+   set and cannot join. Minting is a greenfield convenience; moving an
+   existing fleet still means carrying each validator's own key forward and
+   re-registering the ID. Nothing warns about this at the mint site, so a
+   validator upgraded with no key in place will come up healthy, under the
+   wrong identity, and simply not be a validator.
 
 `SECURITY PROFILE:` / `PEER HANDSHAKE:` in the startup banner say which mode a
 node came up in, and the network layer logs
