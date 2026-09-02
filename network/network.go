@@ -325,11 +325,7 @@ func NewNetwork(
 	// CRITICAL: We first try to parse the actual genesis bytes passed to the node.
 	// This ensures we use the correct validators for networks started with custom
 	// genesis (e.g., netrunner) rather than canonical configs which may differ.
-	var genesisStakers []struct {
-		NodeID ids.NodeID
-		Weight uint64
-		BLSKey []byte
-	}
+	var genesisStakers []genesisStaker
 
 	// declaredStakers counts the validators this node's OWN genesis declares,
 	// whatever becomes of them below. Once genesisStakers is empty it can no
@@ -371,11 +367,7 @@ func NewNetwork(
 						continue
 					}
 
-					genesisStakers = append(genesisStakers, struct {
-						NodeID ids.NodeID
-						Weight uint64
-						BLSKey []byte
-					}{
+					genesisStakers = append(genesisStakers, genesisStaker{
 						NodeID: nodeID,
 						Weight: weight,
 						BLSKey: blsKey,
@@ -393,11 +385,7 @@ func NewNetwork(
 						weight = 1
 					}
 
-					genesisStakers = append(genesisStakers, struct {
-						NodeID ids.NodeID
-						Weight uint64
-						BLSKey []byte
-					}{
+					genesisStakers = append(genesisStakers, genesisStaker{
 						NodeID: nodeID,
 						Weight: weight,
 					})
@@ -412,7 +400,11 @@ func NewNetwork(
 				}
 			}
 		} else if err != nil {
-			log.Debug("failed to parse P-chain genesis bytes, will try canonical config",
+			// Bytes that do not parse leave declaredStakers at zero, so a node
+			// started with a CORRUPT custom genesis takes the canonical set for
+			// this network ID — another network's stakers, under a genesis it
+			// could not read. Worth saying out loud.
+			log.Warn("failed to parse P-chain genesis bytes, will try canonical config",
 				zap.Error(err),
 			)
 		}
@@ -423,12 +415,7 @@ func NewNetwork(
 	// below holds a DIFFERENT network's stakers, so substituting them here
 	// would answer "who validates this network?" with nodes that do not. The
 	// node bootstraps from its beacons instead.
-	if declaredStakers > 0 && len(genesisStakers) == 0 {
-		log.Error("every validator declared in genesis failed its key check; starting with an empty validator set",
-			zap.Int("declared", declaredStakers),
-		)
-	}
-
+	//
 	// Fall back to the canonical config only when this node has no
 	// genesis-declared set of its own: no genesis bytes, or bytes that do not
 	// parse into validators.
@@ -438,34 +425,38 @@ func NewNetwork(
 			log.Info("using canonical genesis config for initial stakers",
 				zap.Int("count", len(genesisConfig.InitialStakers)),
 			)
-			for _, staker := range genesisConfig.InitialStakers {
-				// Same rule as the genesis-bytes path above: a declared key
-				// that does not parse is not a key, and seeding it keyless
-				// would hand the entry full weight with its signed IP never
-				// checked. declaredKey is where that decision lives.
-				blsKey, err := declaredKey(staker)
-				if err != nil {
-					log.Warn("skipping genesis validator whose declared public key does not parse",
-						zap.Stringer("nodeID", staker.NodeID),
-						zap.Error(err),
-					)
-					continue
-				}
-				weight := staker.Weight
-				if weight == 0 {
-					weight = 1
-				}
-				genesisStakers = append(genesisStakers, struct {
-					NodeID ids.NodeID
-					Weight uint64
-					BLSKey []byte
-				}{
-					NodeID: staker.NodeID,
-					Weight: weight,
-					BLSKey: blsKey,
-				})
+			// Same rule as the genesis-bytes path above: a declared key
+			// nothing proves is not a key, and seeding it keyless would hand
+			// the entry full weight with its signed IP never checked.
+			// canonicalStakers is that decision, over the whole slice.
+			seeded, refused := canonicalStakers(genesisConfig.InitialStakers)
+			for _, r := range refused {
+				log.Warn("skipping genesis validator whose declared key is not one it proved it holds",
+					zap.Stringer("nodeID", r.NodeID),
+					zap.Error(r.Err),
+				)
 			}
+			genesisStakers = append(genesisStakers, seeded...)
 		}
+	}
+
+	// Whichever path ran, ending with no validators is the fact worth an ERROR,
+	// and the reason separates a node that refused its own stakers from one
+	// that was never given any.
+	//
+	// An empty set also arms the bootstrap fallback in samplePeers below: with
+	// nothing registered, every chain-tracking peer counts as a validator
+	// candidate. That widens who is ASKED, not who is believed — a Chits
+	// response carries no signature, and a chain with K>1 drops unsigned
+	// preferences outright (signedVotesRequired, chains/nova_poll.go), leaving
+	// finality on signed BroadcastVote; K==1 is the sole-validator shape. The
+	// native chains (C/X/Q...) anchor their bootstrap beacons to this same
+	// manager, the platform chain being the one that overrides to its own
+	// CustomBeacons (chains.Manager).
+	if len(genesisStakers) == 0 {
+		log.Error(emptyValidatorSetReason(declaredStakers),
+			zap.Int("declared", declaredStakers),
+		)
 	}
 
 	// Add all genesis stakers to validators manager and track their IPs
