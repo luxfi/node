@@ -278,7 +278,6 @@ func (s *state) loadActiveL1Validators() error {
 func (s *state) loadCurrentValidators() error {
 	s.currentStakers = newBaseStakers()
 
-	fmt.Println("[VALIDATOR DEBUG] loadCurrentValidators: STARTING")
 	log.Warn("loadCurrentValidators: starting", "dbPrefix", "currentValidatorList")
 	validatorCount := 0
 	validatorIt := s.currentValidatorList.NewIterator()
