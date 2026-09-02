@@ -31,14 +31,18 @@ GENESIS="${GENESIS:-$HOME/work/lux/genesis/live/mainnet/genesis.json}"
 NETWORK_ID="${NETWORK_ID:-96369}"
 PORT_BASE="${PORT_BASE:-30000}"
 BATCH="${BATCH:-10}"
-# How many of the fleet everyone dials at startup. These are validators, so
-# peer gossip carries the rest; dialling the whole fleet from every node
-# costs far more memory and produces a worse mesh.
-SEEDS="${SEEDS:-5}"
-# A poll cannot ask more validators than exist, and a quorum larger than the
-# sample can never be met — the node then polls forever and finalises nothing.
 K="${K:-$([ "$NODES" -lt 20 ] && echo "$NODES" || echo 20)}"
 ALPHA="${ALPHA:-$(( (K * 7 + 9) / 10 ))}"
+
+# How many of the fleet everyone dials at startup. Peer gossip carries the
+# rest, so this does not have to be large — but it cannot be smaller than the
+# quorum below. The frontier poll a bootstrapping node sends goes to the
+# bootstrappers alone, while the agreement it waits for is sized from the
+# whole validator set: fewer bootstrappers than ALPHA and the poll can never
+# be answered, so every chain past the P-Chain bootstraps forever.
+SEEDS="${SEEDS:-$K}"
+# A poll cannot ask more validators than exist, and a quorum larger than the
+# sample can never be met — the node then polls forever and finalises nothing.
 # Refuse to start another batch below this much free space.
 MIN_FREE_GB="${MIN_FREE_GB:-40}"
 # Memory is a disk constraint too: squeezed hard enough, macOS grows the
@@ -268,11 +272,14 @@ print(",".join(d["nodeID"] for d in ids[:int(sys.argv[2])]))' "$BASE" "$SEEDS")
 }
 
 cmd_status() {
-  local up=0 total=0 peers
-  for d in "$BASE"/node-*; do
-    [ -d "$d" ] || continue
-    total=$((total + 1))
-    kill -0 "$(cat "$d/pid" 2>/dev/null)" 2>/dev/null && up=$((up + 1))
+  # Count the fleet this invocation describes, not every directory left on
+  # disk: node dirs outlive the run that made them, and a smaller fleet
+  # started over a larger one otherwise reports itself mostly dead.
+  local up=0 total="$NODES" n=0
+  local peers
+  while [ "$n" -lt "$total" ]; do
+    kill -0 "$(cat "$(node_dir "$n")/pid" 2>/dev/null)" 2>/dev/null && up=$((up + 1))
+    n=$((n + 1))
   done
   peers=$(info "$(http_port 0)" /peers | sed -n 's/.*"numPeers":"\{0,1\}\([0-9]*\).*/\1/p')
   printf '%s of %s processes alive, node 0 sees %s peers\n' "$up" "$total" "${peers:-?}"
