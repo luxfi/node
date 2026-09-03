@@ -95,10 +95,6 @@ start_node() { # start_node <index> <bootstrap-ips> <bootstrap-ids>
     --consensus-sample-size="$K"
     --consensus-quorum-size="$ALPHA"
   )
-  # Sybil protection stays off across the fleet. Left on, a node creates the
-  # P-Chain and stops there — it never reaches the other eight, so it serves
-  # no C-Chain and casts no vote, and the first block never becomes final.
-  args+=(--sybil-protection-enabled=false)
   if [ -n "$boot_ip" ]; then
     args+=(--bootstrap-ips="$boot_ip" --bootstrap-ids="$boot_id")
   else

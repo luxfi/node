@@ -7,6 +7,7 @@ import (
 	"time"
 
 	consensusconfig "github.com/luxfi/consensus/config"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/chains"
@@ -46,7 +47,6 @@ type Internal struct {
 	SybilProtectionEnabled bool
 
 	// If true, only the P-chain will be instantiated on the primary network.
-	PartialSyncPrimaryNetwork bool
 
 	// Set of chains that this node is validating
 	TrackedChains set.Set[ids.ID]
@@ -146,20 +146,20 @@ func (c *Internal) StakingPolicyAt(t int64) stakingparams.Params {
 	return c.StakingParams.At(t)
 }
 
-// Create the blockchain described in [tx], but only if this node is a member of
-// the chain that validates the blockchain.
+// Create the blockchain described in [tx].
 //
-// P-only primary network: P-Chain is the sole mandatory chain (created out
-// of band by the chain manager at startup). EVERY other chain — X-Chain
-// (XVM), C-Chain (EVM), Q-Chain (Quantum), D-Chain (DEX), and any
-// per-chain blockchain — opt-in via --track-chains / --track-all
-// or by being present in platform genesis. Operators bring up exactly what
-// their workload needs, nothing more.
+// A validator of the primary network validates every chain the primary network
+// runs. Which chains those are is decided by genesis, and a chain whose VM this
+// node does not ship is declined by the chain manager, so neither needs a
+// second switch here.
+// Tracking governs the nets beyond the primary network: with sybil protection on,
+// a chain on one of those is created only if this node asked to track it.
 func (c *Internal) CreateChain(blockchainID ids.ID, tx *txs.CreateChainTx) {
-	if c.SybilProtectionEnabled &&
-		!c.TrackAllChains && // Not tracking all chains automatically
-		!c.TrackedChains.Contains(tx.ChainID()) && // Check if chain ID is tracked
-		!c.TrackedChains.Contains(blockchainID) { // Check if blockchain ID is tracked
+	if tx.ChainID() != constants.PrimaryNetworkID &&
+		c.SybilProtectionEnabled &&
+		!c.TrackAllChains &&
+		!c.TrackedChains.Contains(tx.ChainID()) &&
+		!c.TrackedChains.Contains(blockchainID) {
 		return
 	}
 
