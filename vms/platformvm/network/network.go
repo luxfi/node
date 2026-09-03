@@ -11,7 +11,6 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/vms/platformvm/config"
@@ -21,15 +20,15 @@ import (
 	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/p2p"
 	"github.com/luxfi/p2p/gossip"
+	validators "github.com/luxfi/validators"
 	extwarp "github.com/luxfi/warp"
 )
 
 type Network struct {
 	*p2p.Network
 
-	log                       log.Logger
-	mempool                   *gossipMempool
-	partialSyncPrimaryNetwork bool
+	log     log.Logger
+	mempool *gossipMempool
 
 	txPushGossiper        *gossip.PushGossiper[*txs.Tx]
 	txPushGossipFrequency time.Duration
@@ -65,7 +64,6 @@ func New(
 	vdrs validators.State,
 	txVerifier TxVerifier,
 	mempool mempool.Mempool[*txs.Tx],
-	partialSyncPrimaryNetwork bool,
 	appSender extwarp.Sender,
 	stateLock sync.Locker,
 	state state.Chain,
@@ -205,14 +203,13 @@ func New(
 	}
 
 	return &Network{
-		Network:                   p2pNetwork,
-		log:                       log,
-		mempool:                   gossipMempool,
-		partialSyncPrimaryNetwork: partialSyncPrimaryNetwork,
-		txPushGossiper:            txPushGossiper,
-		txPushGossipFrequency:     config.PushGossipFrequency,
-		txPullGossiper:            txPullGossiper,
-		txPullGossipFrequency:     config.PullGossipFrequency,
+		Network:               p2pNetwork,
+		log:                   log,
+		mempool:               gossipMempool,
+		txPushGossiper:        txPushGossiper,
+		txPushGossipFrequency: config.PushGossipFrequency,
+		txPullGossiper:        txPullGossiper,
+		txPullGossipFrequency: config.PullGossipFrequency,
 	}, nil
 }
 
@@ -221,23 +218,10 @@ func (n *Network) PushGossip(ctx context.Context) {
 }
 
 func (n *Network) PullGossip(ctx context.Context) {
-	// If the node is running partial sync, we do not perform any pull gossip
-	// because we should never be a validator.
-	if n.partialSyncPrimaryNetwork {
-		return
-	}
-
 	gossip.Every(ctx, n.log, n.txPullGossiper, n.txPullGossipFrequency)
 }
 
 func (n *Network) Gossip(ctx context.Context, nodeID ids.NodeID, msgBytes []byte) error {
-	if n.partialSyncPrimaryNetwork {
-		n.log.Debug("dropping Gossip message",
-			log.String("reason", "primary network is not being fully synced"),
-		)
-		return nil
-	}
-
 	return n.Network.Gossip(ctx, nodeID, msgBytes)
 }
 

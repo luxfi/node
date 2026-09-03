@@ -998,7 +998,6 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 	config := node.StakingConfig{
 		SybilProtectionEnabled:        v.GetBool(SybilProtectionEnabledKey),
 		SybilProtectionDisabledWeight: v.GetUint64(SybilProtectionDisabledWeightKey),
-		PartialSyncPrimaryNetwork:     v.GetBool(PartialSyncPrimaryNetworkKey),
 		StakingKeyPath:                getExpandedArg(v, StakingTLSKeyPathKey),
 		StakingCertPath:               getExpandedArg(v, StakingCertPathKey),
 		StakingSignerPath:             getExpandedArg(v, StakingSignerKeyPathKey),

@@ -9,9 +9,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luxfi/log"
-
-	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
@@ -129,14 +126,6 @@ func (e *standardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	lux.Consume(e.state, tx.Inputs())
 	lux.Produce(e.state, txID, tx.Outputs())
 
-	if e.backend.Config.PartialSyncPrimaryNetwork && tx.Validator().NodeID == e.backend.Runtime.NodeID {
-		e.backend.Log.Warn("verified transaction that would cause this node to become unhealthy",
-			log.String("reason", "primary network is not being fully synced"),
-			log.Stringer("txID", txID),
-			log.String("txType", "addValidator"),
-			log.Stringer("nodeID", tx.Validator().NodeID),
-		)
-	}
 	return nil
 }
 
@@ -308,7 +297,7 @@ func (e *standardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 	// Skip verification of the shared memory inputs if the other primary
 	// network chains are not guaranteed to be up-to-date.
 	var allUTXOBytes [][]byte
-	if e.backend.Bootstrapped.Get() && !e.backend.Config.PartialSyncPrimaryNetwork {
+	if e.backend.Bootstrapped.Get() {
 		if err := verify.SameChain(context.TODO(), e.backend.Runtime, tx.SourceChain()); err != nil {
 			return err
 		}
@@ -518,17 +507,6 @@ func (e *standardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 	txID := e.tx.ID()
 	lux.Consume(e.state, tx.Inputs())
 	lux.Produce(e.state, txID, tx.Outputs())
-
-	if e.backend.Config.PartialSyncPrimaryNetwork &&
-		tx.Chain() == constants.PrimaryNetworkID &&
-		tx.Validator().NodeID == e.backend.Runtime.NodeID {
-		e.backend.Log.Warn("verified transaction that would cause this node to become unhealthy",
-			log.String("reason", "primary network is not being fully synced"),
-			log.Stringer("txID", txID),
-			log.String("txType", "addPermissionlessValidator"),
-			log.Stringer("nodeID", tx.Validator().NodeID),
-		)
-	}
 
 	return nil
 }

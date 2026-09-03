@@ -1152,13 +1152,6 @@ func allFlags() []FlagSpec {
 			Category:    CategoryStaking,
 		},
 		{
-			Key:         "partial-sync-primary-network",
-			Type:        TypeBool,
-			Default:     false,
-			Description: "Only sync the P-chain on the Primary Network. If the node is a Primary Network validator, it will report unhealthy",
-			Category:    CategoryStaking,
-		},
-		{
 			Key:         "uptime-requirement",
 			Type:        TypeFloat64,
 			Default:     0.8,

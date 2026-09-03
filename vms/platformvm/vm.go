@@ -353,7 +353,6 @@ func (vm *VM) Initialize(
 		),
 		txVerifier,
 		mempool,
-		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
 		appSender,
 		&init.Runtime.Lock,
 		vm.state,
@@ -466,9 +465,7 @@ func (vm *VM) pruneMempool() error {
 
 // Create all chains that exist that this node validates.
 func (vm *VM) initBlockchains() error {
-	if vm.Internal.PartialSyncPrimaryNetwork {
-		vm.log.Info("skipping primary network chain creation")
-	} else if err := vm.createNet(constants.PrimaryNetworkID); err != nil {
+	if err := vm.createNet(constants.PrimaryNetworkID); err != nil {
 		return err
 	}
 

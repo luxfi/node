@@ -618,15 +618,6 @@ If true, don't use TLS when exporting trace data. Defaults to `true`.
 The fraction of traces to sample. If >= 1, always sample. If `<= 0`, never sample.
 Defaults to `0.1`.
 
-## Partial Sync Primary Network
-
-#### `--partial-sync-primary-network` (string)
-
-Partial sync enables nodes that are not primary network validators to optionally sync
-only the P-chain on the primary network. Nodes that use this option can still track
-Chains. Nodes that use this option can also validate L1s.
-This config defaults to `false`.
-
 ## Public IP
 
 Validators must know one of their public facing IP addresses so they can enable

@@ -16,8 +16,7 @@ var _ block.Visitor = (*rejector)(nil)
 // being shutdown.
 type rejector struct {
 	*backend
-	toEngine        chan<- vmcore.Message
-	addTxsToMempool bool
+	toEngine chan<- vmcore.Message
 }
 
 func (r *rejector) AbortBlock(b *block.AbortBlock) error {
@@ -47,10 +46,6 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 		"height", b.Height(),
 		"parentID", b.Parent(),
 	)
-
-	if !r.addTxsToMempool {
-		return nil
-	}
 
 	// Only the decision txs go back. They were submitted by someone else and
 	// are still theirs to have included. A proposal block's own tx is not

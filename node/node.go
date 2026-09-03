@@ -52,7 +52,6 @@ import (
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
 	server "github.com/luxfi/node/server/http"
-	"github.com/zap-proto/zip"
 	"github.com/luxfi/node/service/admin"
 	"github.com/luxfi/node/service/health"
 	"github.com/luxfi/node/service/info"
@@ -70,6 +69,7 @@ import (
 	"github.com/luxfi/node/vms/xvm"
 	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/vm/chains/atomic"
+	"github.com/zap-proto/zip"
 
 	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/filesystem"
@@ -1373,36 +1373,35 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 
 	n.chainManager, err = chains.New(
 		&chains.ManagerConfig{
-			SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
-			ConsensusOverrides:        n.Config.ConsensusOverrides,
-			StakingTLSSigner:          n.StakingTLSSigner,
-			StakingTLSCert:            n.StakingTLSCert,
-			StakingMLDSASigner:        n.Config.StakingConfig.StakingMLDSA,
-			StakingMLDSAPub:           n.Config.StakingConfig.StakingMLDSAPub,
-			ProposerWindowDuration:    n.Config.ProposerWindowDuration,
-			ProposerMinBlockDelay:     n.Config.ProposerMinBlockDelay,
-			StakingBLSKey:             n.Config.StakingSigningKey,
-			Log:                       n.Log,
-			LogFactory:                n.LogFactory,
-			VMManager:                 n.VMManager,
-			BlockAcceptorGroup:        n.BlockAcceptorGroup,
-			TxAcceptorGroup:           n.TxAcceptorGroup,
-			VertexAcceptorGroup:       n.VertexAcceptorGroup,
-			DB:                        n.DB,
-			MsgCreator:                n.msgCreator,
-			Router:                    n.chainRouter,
-			Net:                       n.Net,
-			Validators:                n.vdrs,
-			PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
-			NodeID:                    n.ID,
-			NetworkID:                 n.Config.NetworkID,
-			Server:                    n.APIServer,
-			AtomicMemory:              n.sharedMemory,
-			UTXOAssetID:               utxoAssetID,
-			XChainID:                  xChainID,
-			CChainID:                  cChainID,
-			DChainID:                  dChainID,
-			CriticalChains:            criticalChains,
+			SybilProtectionEnabled: n.Config.SybilProtectionEnabled,
+			ConsensusOverrides:     n.Config.ConsensusOverrides,
+			StakingTLSSigner:       n.StakingTLSSigner,
+			StakingTLSCert:         n.StakingTLSCert,
+			StakingMLDSASigner:     n.Config.StakingConfig.StakingMLDSA,
+			StakingMLDSAPub:        n.Config.StakingConfig.StakingMLDSAPub,
+			ProposerWindowDuration: n.Config.ProposerWindowDuration,
+			ProposerMinBlockDelay:  n.Config.ProposerMinBlockDelay,
+			StakingBLSKey:          n.Config.StakingSigningKey,
+			Log:                    n.Log,
+			LogFactory:             n.LogFactory,
+			VMManager:              n.VMManager,
+			BlockAcceptorGroup:     n.BlockAcceptorGroup,
+			TxAcceptorGroup:        n.TxAcceptorGroup,
+			VertexAcceptorGroup:    n.VertexAcceptorGroup,
+			DB:                     n.DB,
+			MsgCreator:             n.msgCreator,
+			Router:                 n.chainRouter,
+			Net:                    n.Net,
+			Validators:             n.vdrs,
+			NodeID:                 n.ID,
+			NetworkID:              n.Config.NetworkID,
+			Server:                 n.APIServer,
+			AtomicMemory:           n.sharedMemory,
+			UTXOAssetID:            utxoAssetID,
+			XChainID:               xChainID,
+			CChainID:               cChainID,
+			DChainID:               dChainID,
+			CriticalChains:         criticalChains,
 			// MChainID is where ownership attestations live. Empty when this
 			// network's genesis has no M-Chain, in which case every restricted
 			// chain refuses — there is no way to prove entitlement.
@@ -1571,26 +1570,25 @@ func (n *Node) initVMs() error {
 	err := errors.Join(
 		n.VMManager.RegisterFactory(context.Background(), constants.PlatformVMID, &platformvm.Factory{
 			Internal: platformconfig.Internal{
-				Chains:                    n.chainManager,
-				Validators:                vdrs,
-				UptimeLockedCalculator:    n.uptimeCalculator,
-				SybilProtectionEnabled:    n.Config.SybilProtectionEnabled,
-				PartialSyncPrimaryNetwork: n.Config.PartialSyncPrimaryNetwork,
-				TrackedChains:             n.Config.TrackedChains,
-				TrackAllChains:            n.Config.TrackAllChains,
-				DynamicFeeConfig:          n.Config.DynamicFeeConfig,
-				ValidatorFeeConfig:        n.Config.ValidatorFeeConfig,
-				UptimePercentage:          n.Config.UptimeRequirement,
-				MinValidatorStake:         n.Config.MinValidatorStake,
-				MaxValidatorStake:         n.Config.MaxValidatorStake,
-				StakingParams:             stakingHistoryFor(n.Config.NetworkID),
-				MinDelegatorStake:         n.Config.MinDelegatorStake,
-				MinDelegationFee:          n.Config.MinDelegationFee,
-				MinStakeDuration:          n.Config.MinStakeDuration,
-				MaxStakeDuration:          n.Config.MaxStakeDuration,
-				RewardConfig:              n.Config.RewardConfig,
-				UpgradeConfig:             n.Config.UpgradeConfig,
-				UseCurrentHeight:          n.Config.UseCurrentHeight,
+				Chains:                 n.chainManager,
+				Validators:             vdrs,
+				UptimeLockedCalculator: n.uptimeCalculator,
+				SybilProtectionEnabled: n.Config.SybilProtectionEnabled,
+				TrackedChains:          n.Config.TrackedChains,
+				TrackAllChains:         n.Config.TrackAllChains,
+				DynamicFeeConfig:       n.Config.DynamicFeeConfig,
+				ValidatorFeeConfig:     n.Config.ValidatorFeeConfig,
+				UptimePercentage:       n.Config.UptimeRequirement,
+				MinValidatorStake:      n.Config.MinValidatorStake,
+				MaxValidatorStake:      n.Config.MaxValidatorStake,
+				StakingParams:          stakingHistoryFor(n.Config.NetworkID),
+				MinDelegatorStake:      n.Config.MinDelegatorStake,
+				MinDelegationFee:       n.Config.MinDelegationFee,
+				MinStakeDuration:       n.Config.MinStakeDuration,
+				MaxStakeDuration:       n.Config.MaxStakeDuration,
+				RewardConfig:           n.Config.RewardConfig,
+				UpgradeConfig:          n.Config.UpgradeConfig,
+				UseCurrentHeight:       n.Config.UseCurrentHeight,
 				// F102 close-out: thread the chain-wide profile into the
 				// P-chain mempool builder. Nil for legacy networks; the
 				// chain builder MUST set this for strict-PQ chains.

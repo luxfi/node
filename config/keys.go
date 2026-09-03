@@ -172,7 +172,6 @@ const (
 	ConsensusMaxProcessingKey                          = "consensus-max-processing"
 	ConsensusMaxTimeProcessingKey                      = "consensus-max-time-processing"
 	ConsensusConvergenceSettleWindowKey                = "consensus-convergence-settle-window"
-	PartialSyncPrimaryNetworkKey                       = "partial-sync-primary-network"
 	TrackChainsKey                                     = "track-chains"
 	TrackAllChainsKey                                  = "track-all-chains"
 	DexValidatorKey                                    = "dex-validator"

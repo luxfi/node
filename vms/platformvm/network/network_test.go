@@ -352,7 +352,6 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				validatorState,
 				tt.txVerifier,
 				tt.mempool,
-				false,
 				tt.appSenderFunc(ctrl),
 				nil,
 				nil,
