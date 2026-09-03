@@ -27,8 +27,8 @@ import (
 var _ Wallet = (*wallet)(nil)
 
 // EVMKeychain is the interface for keychains that expose 20-byte
-// account addresses used by EVM-runtime chains (Lux C-Chain, Liquid
-// EVM, Hanzo EVM, and every EVM-compatible chain).
+// account addresses used by EVM-runtime chains (Lux C-Chain, Hanzo
+// EVM, Zoo EVM, and every EVM-compatible chain).
 //
 // Naming: the value IS "EVM-runtime account address". The internal
 // derivation uses Keccak256 of the secp256k1 pubkey — that's HOW it's

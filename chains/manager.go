@@ -135,10 +135,9 @@ var (
 	// Bootstrapping prefixes for ChainVMs
 	ChainBootstrappingDBPrefix = []byte("interval_bs")
 
-	errUnknownVMType           = errors.New("the vm should have type lux.DAGVM or chain.ChainVM")
-	errCreatePlatformVM        = errors.New("attempted to create a chain running the PlatformVM")
-	errNotBootstrapped         = errors.New("chains not bootstrapped")
-	errPartialSyncAsAValidator = errors.New("partial sync should not be configured for a validator")
+	errUnknownVMType    = errors.New("the vm should have type lux.DAGVM or chain.ChainVM")
+	errCreatePlatformVM = errors.New("attempted to create a chain running the PlatformVM")
+	errNotBootstrapped  = errors.New("chains not bootstrapped")
 
 	// fxs lists every Feature eXtension factory the node knows how to load
 	// when a chain genesis references it. Must stay in sync with the X-Chain
@@ -370,30 +369,29 @@ type ManagerConfig struct {
 	StakingBLSKey         bls.Signer
 	TracingEnabled        bool
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
-	Tracer                    trace.Tracer
-	Log                       log.Logger
-	LogFactory                log.Factory
-	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
-	BlockAcceptorGroup        nodeconsensus.AcceptorGroup
-	TxAcceptorGroup           nodeconsensus.AcceptorGroup
-	VertexAcceptorGroup       nodeconsensus.AcceptorGroup
-	DB                        database.Database
-	MsgCreator                message.OutboundMsgBuilder // message creator, shared with network
-	Router                    ChainRouter                // Routes incoming messages to the appropriate chain
-	Net                       network.Network            // Sends consensus messages to other validators
-	Validators                validators.Manager         // Validators validating on this chain
-	NodeID                    ids.NodeID                 // The ID of this node
-	NetworkID                 uint32                     // ID of the network this node is connected to
-	PartialSyncPrimaryNetwork bool
-	Server                    server.Server // Handles HTTP API calls
-	AtomicMemory              *atomic.Memory
-	UTXOAssetID               ids.ID
-	SkipBootstrap             bool            // Skip bootstrapping and start processing immediately
-	EnableAutomining          bool            // Enable automining in POA mode
-	XChainID                  ids.ID          // ID of the X-Chain,
-	CChainID                  ids.ID          // ID of the C-Chain,
-	DChainID                  ids.ID          // ID of the D-Chain (DEX),
-	CriticalChains            set.Set[ids.ID] // Chains that can't exit gracefully
+	Tracer              trace.Tracer
+	Log                 log.Logger
+	LogFactory          log.Factory
+	VMManager           vms.Manager // Manage mappings from vm ID --> vm
+	BlockAcceptorGroup  nodeconsensus.AcceptorGroup
+	TxAcceptorGroup     nodeconsensus.AcceptorGroup
+	VertexAcceptorGroup nodeconsensus.AcceptorGroup
+	DB                  database.Database
+	MsgCreator          message.OutboundMsgBuilder // message creator, shared with network
+	Router              ChainRouter                // Routes incoming messages to the appropriate chain
+	Net                 network.Network            // Sends consensus messages to other validators
+	Validators          validators.Manager         // Validators validating on this chain
+	NodeID              ids.NodeID                 // The ID of this node
+	NetworkID           uint32                     // ID of the network this node is connected to
+	Server              server.Server              // Handles HTTP API calls
+	AtomicMemory        *atomic.Memory
+	UTXOAssetID         ids.ID
+	SkipBootstrap       bool            // Skip bootstrapping and start processing immediately
+	EnableAutomining    bool            // Enable automining in POA mode
+	XChainID            ids.ID          // ID of the X-Chain,
+	CChainID            ids.ID          // ID of the C-Chain,
+	DChainID            ids.ID          // ID of the D-Chain (DEX),
+	CriticalChains      set.Set[ids.ID] // Chains that can't exit gracefully
 
 	// MChainID is the ID of the M-Chain (MPC), whose committed state holds the
 	// ownership attestations that entitle a node to a restricted chain. Empty when
@@ -839,10 +837,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 		// Plugin-not-loaded is a deliberate skip, not a failure.
 		//
-		// Each validator opts into chains by loading their VM plugin
-		// (Liquid loads /dex/fhe; doesn't load Lux's upstream
-		// EVM plugin for C-Chain because Liquid runs its own EVM as a
-		// chain on the primary's P-chain). When the chain manager hits a
+		// Each validator opts into chains by loading their VM plugin: a
+		// sovereign L1 that runs its own EVM as a chain on the P-Chain
+		// ships no C-Chain plugin at all. When the chain manager hits a
 		// chain whose VM isn't registered, that's the validator's "no I
 		// don't validate this one" signal — log info, mark the slot
 		// bootstrapped, and return WITHOUT registering a failing health
@@ -2689,31 +2686,6 @@ func (m *manager) registerBootstrappedHealthChecks() error {
 		return fmt.Errorf("couldn't register bootstrapped health check: %w", err)
 	}
 
-	// We should only report unhealthy if the node is partially syncing the
-	// primary network and is a validator.
-	if !m.PartialSyncPrimaryNetwork {
-		return nil
-	}
-
-	partialSyncCheck := health.CheckerFunc(func(context.Context) (interface{}, error) {
-		// Note: The health check is skipped during bootstrapping to allow a
-		// node to sync the network even if it was previously a validator.
-		if !m.IsBootstrapped(constants.PlatformChainID) {
-			return "node is currently bootstrapping", nil
-		}
-		if _, ok := m.Validators.GetValidator(constants.PrimaryNetworkID, m.NodeID); !ok {
-			return "node is not a primary network validator", nil
-		}
-
-		m.Log.Warn("node is a primary network validator",
-			log.Err(errPartialSyncAsAValidator),
-		)
-		return "node is a primary network validator", errPartialSyncAsAValidator
-	})
-
-	if err := m.Health.RegisterHealthCheck("validation", partialSyncCheck, health.ApplicationTag); err != nil {
-		return fmt.Errorf("couldn't register validation health check: %w", err)
-	}
 	return nil
 }
 

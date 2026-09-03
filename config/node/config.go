@@ -77,7 +77,6 @@ type IPConfig struct {
 type StakingConfig struct {
 	builder.StakingConfig
 	SybilProtectionEnabled        bool            `json:"sybilProtectionEnabled"`
-	PartialSyncPrimaryNetwork     bool            `json:"partialSyncPrimaryNetwork"`
 	StakingTLSCert                tls.Certificate `json:"-"`
 	StakingSigningKey             bls.Signer      `json:"-"`
 	SybilProtectionDisabledWeight uint64          `json:"sybilProtectionDisabledWeight"`
@@ -96,7 +95,7 @@ type StakingConfig struct {
 	// replaces ids.NodeIDFromCert(StakingTLSCert) — the TLS cert becomes
 	// transport-only, no longer the identity anchor.
 	//
-	// HandshakeMLKEMPub is the peer-facing KEM public key that lqd
+	// HandshakeMLKEMPub is the peer-facing KEM public key a validator
 	// publishes in its validator-set entry so peers can encapsulate to it
 	// for session-key establishment with no classical fallback. The
 	// HandshakeMLKEMPriv stays local to the pod.

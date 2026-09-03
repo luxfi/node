@@ -344,7 +344,7 @@ func NewCreateChainTxFixture() *txs.CreateChainTx {
 	utx, err := txs.NewCreateChainTx(
 		&base,
 		ids.GenerateTestID(),
-		"lqd bench chain",
+		"bench chain",
 		ids.GenerateTestID(),
 		[]ids.ID{ids.GenerateTestID()},
 		make([]byte, 256),

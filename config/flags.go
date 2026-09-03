@@ -46,8 +46,7 @@ var (
 	defaultStakingTLSKeyPath    = filepath.Join(defaultStakingPath, "staker.key")
 	defaultStakingCertPath      = filepath.Join(defaultStakingPath, "staker.crt")
 	defaultStakingSignerKeyPath = filepath.Join(defaultStakingPath, "signer.key")
-	// Strict-PQ default paths — mirror downstream-tenant CLI `<tenantctl> key gen`
-	// layout so the operator init container + lqd see the same files.
+	// Strict-PQ default paths, beside the classical staking material.
 	defaultStakingMLDSAKeyPath      = filepath.Join(defaultStakingPath, "mldsa.key")
 	defaultStakingMLDSAPubKeyPath   = filepath.Join(defaultStakingPath, "mldsa.pub")
 	defaultHandshakeMLKEMKeyPath    = filepath.Join(defaultStakingPath, "mlkem.key")
@@ -297,8 +296,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// When the ML-DSA pubkey is provided, NodeID derivation pivots from
 	// the classical TLS-cert path to the wire-discriminated strict-PQ
 	// scheme (ids.NodeIDSchemeMLDSA65.DeriveMLDSA). Both pairs default
-	// to the layout downstream-tenant CLI `<tenantctl> key gen` writes — wire the
-	// init container and lqd reads the files with zero extra config.
+	// to the staking directory, beside the classical material.
 	fs.String(StakingMLDSAKeyPathKey, defaultStakingMLDSAKeyPath, fmt.Sprintf("Path to the ML-DSA-65 staking private key (FIPS 204 PEM). Ignored if %s is specified", StakingMLDSAKeyContentKey))
 	fs.String(StakingMLDSAKeyContentKey, "", "Base64-encoded ML-DSA-65 staking private key (FIPS 204 PEM)")
 	fs.String(StakingMLDSAPubKeyPathKey, defaultStakingMLDSAPubKeyPath, fmt.Sprintf("Path to the ML-DSA-65 staking public key (FIPS 204 PEM). Ignored if %s is specified", StakingMLDSAPubKeyContentKey))
@@ -312,7 +310,6 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.String(StakingKMSTokenKey, "", "KMS auth token for staking key retrieval")
 	fs.Bool(SybilProtectionEnabledKey, true, "Enables sybil protection. If enabled, Network TLS is required")
 	fs.Uint64(SybilProtectionDisabledWeightKey, 100, "Weight to provide to each peer when sybil protection is disabled")
-	fs.Bool(PartialSyncPrimaryNetworkKey, false, "Only sync the P-chain on the Primary Network. If the node is a Primary Network validator, it will report unhealthy")
 	// Uptime Requirement
 	fs.Float64(UptimeRequirementKey, genesis.LocalParams.UptimeRequirement, "Fraction of time a validator must be online to receive rewards")
 	// Minimum Stake required to validate the Primary Network
