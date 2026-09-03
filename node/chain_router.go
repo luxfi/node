@@ -277,18 +277,21 @@ func (r *chainRouter) HealthCheck(ctx context.Context) (interface{}, error) {
 	details := make(map[string]interface{})
 	var failing []string
 
+	// A limit of zero is a limit nobody set, and an unset limit constrains
+	// nothing. Comparing against it instead reads as "no message may be older
+	// than no time at all", which every router fails on its liveliest day.
 	connectedCount := r.connectedPeers.Len()
 	details["connectedPeers"] = connectedCount
-	if connectedCount < r.healthConfig.MinConnectedPeers {
+	if min := r.healthConfig.MinConnectedPeers; min > 0 && connectedCount < min {
 		failing = append(failing, fmt.Sprintf("connected to %d peers, want %d",
-			connectedCount, r.healthConfig.MinConnectedPeers))
+			connectedCount, min))
 	}
 
 	timeSinceMsg := time.Since(r.lastMsgTime)
 	details["timeSinceLastMessage"] = timeSinceMsg.String()
-	if timeSinceMsg > r.healthConfig.MaxTimeSinceMsgReceived {
+	if max := r.healthConfig.MaxTimeSinceMsgReceived; max > 0 && timeSinceMsg > max {
 		failing = append(failing, fmt.Sprintf("no message in %s, want one within %s",
-			timeSinceMsg.Round(time.Second), r.healthConfig.MaxTimeSinceMsgReceived))
+			timeSinceMsg.Round(time.Second), max))
 	}
 
 	details["chains"] = len(r.chains)
