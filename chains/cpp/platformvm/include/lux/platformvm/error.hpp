@@ -196,6 +196,17 @@ enum class Err {
     InsufficientUnlockedFunds,   // utxo.ErrInsufficientUnlockedFunds
     DuplicateNetwork,            // executor: network already exists
     DuplicateChain,              // executor: chain already exists
+
+    // ── fx (github.com/luxfi/utxo/secp256k1fx)
+    Timelocked,                     // secp256k1fx.ErrTimelocked
+    TooManySigners,                 // secp256k1fx.ErrTooManySigners
+    TooFewSigners,                  // secp256k1fx.ErrTooFewSigners
+    InputCredentialSignersMismatch, // secp256k1fx.ErrInputCredentialSignersMismatch
+    InputOutputIndexOutOfBounds,    // secp256k1fx.ErrInputOutputIndexOutOfBounds
+    WrongSig,                       // secp256k1fx.ErrWrongSig
+    MismatchedAmounts,              // secp256k1fx.ErrMismatchedAmounts
+    UnrecoverableSignature,         // secp256k1.RecoverPubkey failure
+    WrongNumberCredentials,         // utxo.errWrongNumberCredentials
 };
 
 std::string_view err_name(Err e);
