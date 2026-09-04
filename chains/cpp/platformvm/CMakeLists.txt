@@ -130,7 +130,8 @@ add_library(lux_platformvm STATIC
   src/state.cpp
   src/fx.cpp
   src/flow.cpp
-  src/executor.cpp)
+  src/executor.cpp
+  src/vm.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
 target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
@@ -161,7 +162,7 @@ if(PLATFORMVM_BUILD_TESTS)
   target_include_directories(pvm_test_main PUBLIC test include "${CRYPTO_DIR}/secp256k1/cpp" "${BLST_DIR}/bindings")
   target_link_libraries(pvm_test_main PUBLIC lux_platformvm)
 
-  foreach(_t zap sha256 reward components txs block state flow executor)
+  foreach(_t zap sha256 reward components txs block state flow executor vm)
     add_executable(pvm_${_t}_test test/${_t}_test.cpp)
     target_link_libraries(pvm_${_t}_test PRIVATE pvm_test_main)
     target_compile_options(pvm_${_t}_test PRIVATE -Wall -Wextra)
