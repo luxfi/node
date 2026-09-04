@@ -64,6 +64,7 @@ include/lux/platformvm/
   warpmsg.hpp      what that message SAYS
   l1.hpp           a validator of a sovereign network, and the fee it pays
   staking.hpp      the terms of validating, and what may change them
+  adopt.hpp        the register of networks Lux did not create
   genesis.hpp      the state the network starts in
   vm.hpp           the chain, as the node's VM seam sees it
 ```
@@ -115,7 +116,7 @@ what a fork does. So:
 
 ## What is here, and what is not
 
-215 cases across 17 suites, all green, clean under address+undefined sanitizers.
+226 cases across 18 suites, all green, clean under address+undefined sanitizers.
 
 **Ported and tested.** All nineteen transaction kinds and all four block kinds,
 byte-identical, with their full syntactic verification. Every execution path the
@@ -136,7 +137,9 @@ samples and its commitment, and the set at any height that has already passed �
 which is what makes a signature from back then checkable now. The staking
 constitution: what the validator set may vote about its own terms, the envelope
 no vote leaves, the brake on exclusionary change, and the history that makes a
-validator judged on the terms it agreed to. The genesis blob — the money, the
+validator judged on the terms it agreed to. The LP-1021 register of networks
+Lux did not create — what is believed about each one, on what basis, and the
+single question a bridge asks before it releases anything. The genesis blob — the money, the
 first validators and the first chains a network starts with — encoded, parsed
 and validated, against the bytes the Go package wrote. And the VM itself — build, parse, get,
 prefer, verify, accept — through the node's seam.
