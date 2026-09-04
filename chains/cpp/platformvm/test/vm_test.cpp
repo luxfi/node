@@ -488,3 +488,36 @@ TEST(TheRewardGate) {
     // caused by the proposer and a lost reward cannot be given back.
     run(-1.0, true);
 }
+
+// The node asks the chain who validates, and the answer changes exactly when a
+// block that changes the set is accepted.
+TEST(TheChainAnswersWhoValidates) {
+    vm::PlatformVM chain(kPChain, make_backend(), genesis());
+    const std::uint64_t end = kGenesisTime + 90 * 24 * 60 * 60;
+
+    auto before = chain.validator_set(kPrimaryNetworkId);
+    REQUIRE_OK(before);
+    REQUIRE(before.value().empty());
+    auto empty_root = chain.validator_set_root(kPrimaryNetworkId);
+    REQUIRE_OK(empty_root);
+    REQUIRE_EQ(kEmptyId, empty_root.value());
+
+    chain.submit(join_tx(10'000'000'000, 5'000'000'000, end));
+    auto blk = chain.build();
+    REQUIRE(blk != nullptr);
+    REQUIRE(blk->verify());
+
+    // Verifying changes nothing: the set is what the ACCEPTED state says.
+    REQUIRE(chain.validator_set(kPrimaryNetworkId).value().empty());
+
+    blk->accept();
+    auto after = chain.validator_set(kPrimaryNetworkId);
+    REQUIRE_OK(after);
+    REQUIRE_EQ_NUM(1, after.value().size());
+    REQUIRE_U64(5'000'000'000u, after.value().at(node_of(0x90)).weight);
+    REQUIRE(after.value().at(node_of(0x90)).public_key.has_value());
+
+    auto root = chain.validator_set_root(kPrimaryNetworkId);
+    REQUIRE_OK(root);
+    REQUIRE(!(root.value() == kEmptyId));
+}

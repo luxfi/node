@@ -30,6 +30,7 @@
 #include "lux/platformvm/executor.hpp"
 #include "lux/platformvm/state.hpp"
 #include "lux/platformvm/txs.hpp"
+#include "lux/platformvm/validators.hpp"
 
 #include "lux/node/vm.hpp"
 
@@ -100,6 +101,19 @@ class PlatformVM final : public lux::node::VM {
     // parsed; whether it EXECUTES is decided when a block carrying it is built.
     void submit(const txs::Tx& tx) { mempool_.push_back(tx); }
     std::size_t mempool_size() const { return mempool_.size(); }
+
+    // Who validates a network, as of the last accepted block, and the
+    // commitment a vote binds that set with. This is what the node samples to
+    // decide whose vote counts and for how much — the P-chain's whole reason to
+    // exist from the node's point of view.
+    Result<std::map<NodeId, validators::Validator>> validator_set(const Id& network_id) const {
+        return validators::current_set(state_, network_id);
+    }
+    Result<Id> validator_set_root(const Id& network_id) const {
+        auto set = validator_set(network_id);
+        if (!set) return std::unexpected(set.error());
+        return validators::set_root(set.value());
+    }
 
     // What the last accepted block asked the shared memory to do. The node
     // applies these alongside the state it just wrote; a block that imports or
