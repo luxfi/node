@@ -344,13 +344,9 @@ impl Bounds {
 /// reaches. A `cur` of 0 admits a move to 1, so a field parked at zero is not
 /// frozen there forever.
 fn step_limit(cur: u64, step: u32) -> u64 {
-    let denom = PERCENT_DENOMINATOR;
-    let s = step as u64;
-    let lim = (cur / denom) * s + (cur % denom) * s / denom;
-    if lim == 0 {
-        1
-    } else {
-        lim
+    match crate::reward::percent_of(cur, step as u64) {
+        0 => 1,
+        lim => lim,
     }
 }
 

@@ -2244,4 +2244,32 @@ mod tests {
             Ok(())
         );
     }
+
+    /// Which asset a network stakes is the executor's question, not the
+    /// bytes'.
+    ///
+    /// The transaction below is well formed — Go's syntactic check compares a
+    /// stake output only to the other stake outputs — and it stakes something
+    /// that is not the chain's own asset on the primary network, where the
+    /// asset is fixed. It is the executor that knows that, and the executor
+    /// that refuses it.
+    #[test]
+    fn the_primary_network_is_staked_in_its_own_asset_and_nothing_else() {
+        let now = 1000;
+        let (mut state, input) = funded(now, 10 * MEGA);
+        let mut unsigned = add_validator(5, 10 * MEGA, now + YEAR, input, 0);
+        if let Unsigned::AddPermissionlessValidator { stake, .. } = &mut unsigned {
+            for out in stake.iter_mut() {
+                out.asset = [0xee; 32];
+            }
+        }
+        // Well formed: the stake is one asset and it adds to the weight.
+        assert_eq!(unsigned.syntactic_verify(config().native_asset), Ok(()));
+
+        let tx = signed(unsigned, 1);
+        assert_eq!(
+            execute_standard(&mut state, &tx, &config(), &fees()),
+            Err(Error::WrongStakedAsset)
+        );
+    }
 }
