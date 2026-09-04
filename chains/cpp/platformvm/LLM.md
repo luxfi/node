@@ -128,14 +128,18 @@ a success it has not earned:
 
 - **The L1 subsystem** — `RegisterL1ValidatorTx`, `SetL1ValidatorWeightTx`,
   `IncreaseL1ValidatorBalanceTx`, `DisableL1ValidatorTx`, `ConvertNetworkTx`,
-  the L1 validator state and the continuous validator fee. They rest on warp:
-  a cross-chain message with an aggregated BLS signature over a validator set at
-  a height. An L1 transaction that did not verify its message would be a
-  validator set anyone could rewrite. The transaction WIRE for all five is
-  ported and byte-identical; only their execution is absent.
-- **Warp complexity** — pricing a warp message means counting its signers, which
-  means parsing it. The fee schedule refuses those two kinds rather than
-  guessing at what they cost.
+  the L1 validator state and the continuous validator fee. Warp itself IS ported
+  (`warp.hpp` — the message wire, the canonical validator set and the aggregated
+  BitSet signature, verified against the Go reference's own aggregate); what is
+  absent is the LAYER above it: the addressed-call payloads those five
+  transactions carry, and the L1 validator records they write. The transaction
+  WIRE for all five is ported and byte-identical; only their execution is not.
+- **The post-quantum warp signature** (`CoronaSignature`) and the teleport
+  payloads — threshold BLS over ML-KEM, a separate scheme. Their wire kinds
+  parse to a named refusal rather than to a signature that verifies trivially.
+- **Warp complexity** — pricing a warp message means counting its signers, and
+  the number is read from the payload layer that is not here. The fee schedule
+  refuses those two kinds rather than guessing at what they cost.
 - **`TransformChainTx` execution** — refused here, as in the reference, which
   refuses it permanently.
 - **State persistence** — `state::MemState` is the accepted state in memory. The

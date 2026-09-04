@@ -172,6 +172,11 @@ std::string_view err_name(Err e) {
         case Err::WrongNumberCredentials: return "WrongNumberCredentials";
         case Err::InsufficientCapacity: return "InsufficientCapacity";
         case Err::UnsupportedTx: return "UnsupportedTx";
+        case Err::InvalidBitSet: return "InvalidBitSet";
+        case Err::UnknownValidator: return "UnknownValidator";
+        case Err::InsufficientWeight: return "InsufficientWeight";
+        case Err::InvalidWarpSignature: return "InvalidWarpSignature";
+        case Err::UnknownWarpSignature: return "UnknownWarpSignature";
     }
     return "Unknown";
 }
