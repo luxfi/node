@@ -688,3 +688,33 @@ TEST(TheRewardGateJudgesTheTermsThatWereAgreed) {
     // there was one: the compiled-in 80%.
     run("no history at all", staking::History{}, true);
 }
+
+// What the chain will not spend anything on. Anyone can submit, so this is the
+// surface an attacker reaches before anything has been paid for.
+TEST(TheChainRefusesWhatItWillNotSpendOn) {
+    vm::PlatformVM chain(kPChain, make_backend(), genesis());
+    const std::uint64_t end = kGenesisTime + 90 * 24 * 60 * 60;
+    const auto tx = join_tx(10'000'000'000, 5'000'000'000, end);
+
+    REQUIRE_OK(chain.submit(tx));
+    REQUIRE_EQ_NUM(1, chain.mempool_size());
+    REQUIRE_ERR(chain.submit(tx), Err::DuplicateTx);
+
+    // A rival for the same output cannot wait beside it: at most one of them
+    // can ever be accepted.
+    REQUIRE_ERR(chain.submit(join_tx(10'000'000'000, 4'000'000'000, end)), Err::ConflictsWithOtherTx);
+    REQUIRE_EQ_NUM(1, chain.mempool_size());
+
+    // And the chain's own reward transaction is not something anyone submits.
+    txs::Tx reward;
+    reward.unsigned_tx = txs::RewardValidatorTx::create(tx.tx_id);
+    REQUIRE_OK(reward.initialize());
+    REQUIRE_ERR(chain.submit(reward), Err::CantIssueRewardValidatorTx);
+
+    // Once the block carrying it is accepted, nothing is waiting.
+    auto blk = chain.build();
+    REQUIRE(blk != nullptr);
+    REQUIRE(blk->verify());
+    blk->accept();
+    REQUIRE_EQ_NUM(0, chain.mempool_size());
+}
