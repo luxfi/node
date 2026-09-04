@@ -845,4 +845,479 @@ mod tests {
             Ok(())
         );
     }
+
+    // ---- Go's `TestVerifySpendUTXOs`, case for case ----
+    //
+    // Go checks the arithmetic and the signatures in one call
+    // (`VerifySpendUTXOs`); here they are two, so the two cases in that table
+    // that are about a credential rather than about value —"invalid
+    // credential" and "invalid signature" — are the credential tests above,
+    // where they live. Every other case is here, with the same inputs and the
+    // same verdict.
+
+    /// The instant Go's table is evaluated at.
+    const GO_NOW: u64 = 1_607_133_207;
+
+    /// An owner with nothing in it — the one every value in Go's table has,
+    /// so every locked entry is tallied under the same owner.
+    fn nobody() -> Owners {
+        Owners {
+            locktime: 0,
+            threshold: 0,
+            addrs: Vec::new(),
+        }
+    }
+
+    fn go_utxo(n: u8, asset: Id, amount: u64, lock: u64) -> Utxo {
+        Utxo {
+            id: UtxoId {
+                tx_id: [n; 32],
+                output_index: 0,
+            },
+            output: Output {
+                asset,
+                stake_lock: lock,
+                amount,
+                owners: nobody(),
+            },
+        }
+    }
+
+    fn go_in(n: u8, asset: Id, amount: u64, lock: u64) -> Input {
+        Input {
+            utxo: UtxoId {
+                tx_id: [n; 32],
+                output_index: 0,
+            },
+            asset,
+            stake_lock: lock,
+            amount,
+            sig_indices: Vec::new(),
+        }
+    }
+
+    fn go_out(asset: Id, amount: u64, lock: u64) -> Output {
+        Output {
+            asset,
+            stake_lock: lock,
+            amount,
+            owners: nobody(),
+        }
+    }
+
+    fn owed(asset: Id, amount: u64) -> HashMap<Id, u64> {
+        let mut m = HashMap::new();
+        m.insert(asset, amount);
+        m
+    }
+
+    /// The asset the chain's own fees are denominated in, and one that is not.
+    const NATIVE: Id = [0xaa; 32];
+    const CUSTOM: Id = [0xbb; 32];
+
+    fn go_case(
+        utxos: Vec<Utxo>,
+        ins: Vec<Input>,
+        outs: Vec<Output>,
+        creds: usize,
+        fees: HashMap<Id, u64>,
+    ) -> Result<(), Error> {
+        verify_spend(&utxos, &ins, &outs, &creds_n(creds), &fees, GO_NOW)
+    }
+
+    fn creds_n(n: usize) -> Vec<Credential> {
+        vec![Credential::default(); n]
+    }
+
+    #[test]
+    fn go_nothing_in_nothing_out_no_fee() {
+        assert_eq!(go_case(vec![], vec![], vec![], 0, HashMap::new()), Ok(()));
+    }
+
+    #[test]
+    fn go_nothing_in_nothing_out_positive_fee() {
+        assert_eq!(
+            go_case(vec![], vec![], vec![], 0, owed(NATIVE, 1)),
+            Err(Error::InsufficientUnlockedFunds {
+                needed: 1,
+                asset: NATIVE
+            })
+        );
+    }
+
+    #[test]
+    fn go_the_output_named_is_not_the_asset_claimed() {
+        // The unspent output is one asset and the input says another.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, CUSTOM, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::AssetMismatch)
+        );
+        // And the other way around.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, CUSTOM, 1, 0)],
+                vec![],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::AssetMismatch)
+        );
+    }
+
+    #[test]
+    fn go_one_asset_in_another_out() {
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![go_out(CUSTOM, 1, 0)],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::InsufficientUnlockedFunds {
+                needed: 1,
+                asset: CUSTOM
+            })
+        );
+    }
+
+    #[test]
+    fn go_a_locked_output_may_not_be_spent_as_unlocked() {
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, GO_NOW + 1)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::LockedFundsNotMarkedAsLocked)
+        );
+    }
+
+    #[test]
+    fn go_an_input_may_not_restate_the_locktime() {
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, GO_NOW + 1)],
+                vec![go_in(1, NATIVE, 1, GO_NOW)],
+                vec![],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::LocktimeMismatch {
+                claimed: GO_NOW,
+                actual: GO_NOW + 1
+            })
+        );
+    }
+
+    #[test]
+    fn go_one_input_no_outputs_positive_fee() {
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![],
+                1,
+                owed(NATIVE, 1)
+            ),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn go_one_credential_per_input_and_one_output_per_input() {
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![],
+                0,
+                owed(NATIVE, 1)
+            ),
+            Err(Error::WrongNumberOfCredentials {
+                inputs: 1,
+                credentials: 0
+            })
+        );
+        assert_eq!(
+            go_case(
+                vec![],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![],
+                1,
+                owed(NATIVE, 1)
+            ),
+            Err(Error::WrongNumberOfUtxos {
+                inputs: 1,
+                utxos: 0
+            })
+        );
+    }
+
+    #[test]
+    fn go_locked_in_nothing_out_no_fee() {
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, GO_NOW + 1)],
+                vec![go_in(1, NATIVE, 1, GO_NOW + 1)],
+                vec![],
+                1,
+                HashMap::new()
+            ),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn go_locked_value_does_not_pay_a_fee() {
+        // The fee is unlocked value, and this transaction consumes none.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, GO_NOW + 1)],
+                vec![go_in(1, NATIVE, 1, GO_NOW + 1)],
+                vec![],
+                1,
+                owed(NATIVE, 1)
+            ),
+            Err(Error::InsufficientUnlockedFunds {
+                needed: 1,
+                asset: NATIVE
+            })
+        );
+    }
+
+    #[test]
+    fn go_one_locked_and_one_unlocked_in_one_locked_out_with_a_fee() {
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, GO_NOW + 1), go_utxo(2, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, GO_NOW + 1), go_in(2, NATIVE, 1, 0)],
+                vec![go_out(NATIVE, 1, GO_NOW + 1)],
+                2,
+                owed(NATIVE, 1)
+            ),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn go_unlocked_value_may_be_locked_alongside_a_fee() {
+        // Two consumed, one locked; the output locks two — the extra one comes
+        // out of the unlocked input, and the fee out of what remains.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, GO_NOW + 1), go_utxo(2, NATIVE, 2, 0)],
+                vec![go_in(1, NATIVE, 1, GO_NOW + 1), go_in(2, NATIVE, 2, 0)],
+                vec![go_out(NATIVE, 2, GO_NOW + 1)],
+                2,
+                owed(NATIVE, 1)
+            ),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn go_an_expired_lock_spends_as_unlocked() {
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, GO_NOW - 1)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![go_out(NATIVE, 1, 0)],
+                1,
+                HashMap::new()
+            ),
+            Ok(())
+        );
+        // The same, for an asset that is not the chain's own.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, CUSTOM, 1, GO_NOW - 1)],
+                vec![go_in(1, CUSTOM, 1, 0)],
+                vec![go_out(CUSTOM, 1, 0)],
+                1,
+                HashMap::new()
+            ),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn go_a_sum_that_does_not_fit_is_not_a_sum() {
+        // Unlocked.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![go_out(NATIVE, 2, 0), go_out(NATIVE, u64::MAX, 0)],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::Overflow)
+        );
+        // And locked, under one owner at one time.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![go_out(NATIVE, 2, 1), go_out(NATIVE, u64::MAX, 1)],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::Overflow)
+        );
+    }
+
+    #[test]
+    fn go_locking_is_not_a_way_to_mint() {
+        // One consumed, two locked out.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![go_out(NATIVE, 2, 1)],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::InsufficientLockedFunds)
+        );
+        // Nor by mixing, in either order.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![go_out(NATIVE, 2, 0), go_out(NATIVE, u64::MAX, 1)],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::InsufficientLockedFunds)
+        );
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![go_out(NATIVE, u64::MAX, 0), go_out(NATIVE, 2, 1)],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::InsufficientLockedFunds)
+        );
+    }
+
+    #[test]
+    fn go_an_asset_that_is_not_the_chains_own_moves_and_locks() {
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, CUSTOM, 1, 0)],
+                vec![go_in(1, CUSTOM, 1, 0)],
+                vec![go_out(CUSTOM, 1, 0)],
+                1,
+                HashMap::new()
+            ),
+            Ok(())
+        );
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, CUSTOM, 1, 0)],
+                vec![go_in(1, CUSTOM, 1, 0)],
+                vec![go_out(CUSTOM, 1, GO_NOW + 1)],
+                1,
+                HashMap::new()
+            ),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn go_one_asset_is_not_another() {
+        // Consuming one asset does not pay for producing another.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![go_out(CUSTOM, 1, 0)],
+                1,
+                HashMap::new()
+            ),
+            Err(Error::InsufficientUnlockedFunds {
+                needed: 1,
+                asset: CUSTOM
+            })
+        );
+        // Nor does burning one pay a fee denominated in another.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, CUSTOM, 1, 0)],
+                vec![go_in(1, CUSTOM, 1, 0)],
+                vec![],
+                1,
+                owed(NATIVE, 1)
+            ),
+            Err(Error::InsufficientUnlockedFunds {
+                needed: 1,
+                asset: NATIVE
+            })
+        );
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0)],
+                vec![],
+                1,
+                owed(CUSTOM, 1)
+            ),
+            Err(Error::InsufficientUnlockedFunds {
+                needed: 1,
+                asset: CUSTOM
+            })
+        );
+    }
+
+    #[test]
+    fn go_two_assets_are_tallied_apart() {
+        // One asset pays the fee, the other passes through.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0), go_utxo(2, CUSTOM, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0), go_in(2, CUSTOM, 1, 0)],
+                vec![go_out(CUSTOM, 1, 0)],
+                2,
+                owed(NATIVE, 1)
+            ),
+            Ok(())
+        );
+        // A fee in each.
+        let mut both = HashMap::new();
+        both.insert(NATIVE, 1);
+        both.insert(CUSTOM, 1);
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, NATIVE, 1, 0), go_utxo(2, CUSTOM, 1, 0)],
+                vec![go_in(1, NATIVE, 1, 0), go_in(2, CUSTOM, 1, 0)],
+                vec![],
+                2,
+                both
+            ),
+            Ok(())
+        );
+        // A fee paid in the asset it is denominated in.
+        assert_eq!(
+            go_case(
+                vec![go_utxo(1, CUSTOM, 1, 0)],
+                vec![go_in(1, CUSTOM, 1, 0)],
+                vec![],
+                1,
+                owed(CUSTOM, 1)
+            ),
+            Ok(())
+        );
+    }
 }
