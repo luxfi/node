@@ -12,7 +12,7 @@ and signed for by whoever owns it. None exists to make entry selective.
 
 ```
 cd chains/rust/platformvm
-PATH=~/.cargo/bin:$PATH cargo test          # 287 tests
+PATH=~/.cargo/bin:$PATH cargo test          # 289 tests
 PATH=~/.cargo/bin:$PATH cargo clippy --all-targets
 ```
 
@@ -114,6 +114,15 @@ refuses **by name** with its own error, rather than succeeding against nothing.
   is refused rather than trusted.
 - **`TransformChainTx`.** Refused — which is *fidelity*, not a gap: Go refuses
   it permanently too (`errTransformChainTxNotPermitted`).
+- **A network's own staking terms.** A network states them in the
+  transformation that made it staked, and since that transaction is refused,
+  no transformation is ever recorded. So the only network whose terms can be
+  answered is the primary one, and everything that would need another's says
+  `NetworkTermsNotHeld`: admitting a validator, admitting a delegator,
+  promoting one into a set (which would mint on the wrong schedule), and the
+  reward gate. Substituting the primary network's terms would judge a
+  network's validators on rules nobody agreed to, which is worse than
+  answering nobody.
 - **Dynamic fees.** `FlatFees` is Go's static schedule. The gas-metered
   alternative — complexity times weights times a price that moves with demand —
   is not ported.
