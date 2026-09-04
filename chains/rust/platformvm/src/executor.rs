@@ -275,6 +275,8 @@ pub enum Error {
     OwnSetNotHeld,
     /// A transaction that acts on a validator registered on an L1.
     L1ValidatorPlaneNotHeld(Kind),
+    /// A reward that names nothing.
+    InvalidId,
     /// Nothing could say how reachable the validator had been.
     UptimeUnknown,
     /// A network's own staking terms, which live in its transformation.
@@ -343,6 +345,7 @@ impl std::fmt::Display for Error {
                 f,
                 "{k:?} acts on an L1 validator, which this port does not hold"
             ),
+            Error::InvalidId => write!(f, "invalid ID"),
             Error::UptimeUnknown => write!(f, "nothing can say how reachable the validator was"),
             Error::NetworkTermsNotHeld => {
                 write!(f, "a network's own staking terms are not held by this port")
@@ -490,7 +493,12 @@ pub fn execute_standard(
 
             let now = state.timestamp();
             let duration = validator.end.saturating_sub(now);
-            let rules = &config.staking;
+            // The terms are the network's own, and a network states them in
+            // its transformation. This port does not hold one, so for any
+            // network but the primary there is nothing to judge against, and
+            // judging against the primary network's terms would admit a
+            // validator on somebody else's rules.
+            let rules = network_rules(config, *chain)?;
 
             if validator.weight < rules.min_validator_stake {
                 return Err(Error::WeightTooSmall);
@@ -543,7 +551,7 @@ pub fn execute_standard(
 
             let now = state.timestamp();
             let duration = validator.end.saturating_sub(now);
-            let rules = &config.staking;
+            let rules = network_rules(config, *chain)?;
 
             if validator.weight < rules.min_delegator_stake {
                 return Err(Error::WeightTooSmall);
@@ -673,6 +681,21 @@ pub fn execute_standard(
             Err(Error::L1ValidatorPlaneNotHeld(tx.unsigned.kind()))
         }
     }
+}
+
+/// The staking terms a network admits on.
+///
+/// Go reads these out of the network's own transformation for every network
+/// but the primary. This port does not hold a transformation — the transaction
+/// that writes one is refused, as it is in Go — so there is only one network
+/// whose terms can be answered, and the rest are named rather than guessed at.
+/// Substituting the primary network's terms would judge a network's validators
+/// on rules nobody agreed to.
+fn network_rules(config: &Config, chain: Id) -> Result<&StakingPolicy, Error> {
+    if chain != PRIMARY_NETWORK_ID {
+        return Err(Error::NetworkTermsNotHeld);
+    }
+    Ok(&config.staking)
 }
 
 /// Read the UTXOs an input names and check the arithmetic.
@@ -849,6 +872,11 @@ pub fn execute_proposal(tx: &Tx, on_commit: &mut State, on_abort: &mut State) ->
         Unsigned::RewardValidator { staker_tx_id } => *staker_tx_id,
         other => return Err(Error::WrongTxType(other.kind())),
     };
+    if staker_tx_id == [0u8; 32] {
+        // No transaction is named by the zero id — an id is a hash — so a
+        // reward naming it names nothing.
+        return Err(Error::InvalidId);
+    }
     if !tx.creds.is_empty() {
         return Err(Error::WrongNumberOfCredentials);
     }
@@ -1108,6 +1136,13 @@ pub fn advance_time_to(state: &mut State, new_time: u64, config: &Config) -> Res
         }
 
         let supply = state.current_supply(&old.chain)?;
+        // What a network mints is the network's own schedule, written in its
+        // transformation. Only the primary network's is compiled in, so a
+        // staker entering another network's set is refused rather than paid on
+        // the primary network's emission.
+        if old.chain != PRIMARY_NETWORK_ID {
+            return Err(Error::NetworkTermsNotHeld);
+        }
         let calculator = reward::Calculator::new(config.reward);
         promoted.potential_reward = calculator.calculate(
             std::time::Duration::from_secs(old.end_time.saturating_sub(old.start_time)),
@@ -2365,6 +2400,47 @@ mod tests {
         assert_eq!(
             execute_standard(&mut state, &tx, &config(), &fees()),
             Err(Error::WrongStakedAsset)
+        );
+    }
+
+    /// A network's staking terms are that network's own.
+    ///
+    /// Go reads them out of the network's transformation. This port does not
+    /// hold one, so it says so rather than judging a network's validators on
+    /// the primary network's terms — admitting somebody on rules nobody agreed
+    /// to is worse than admitting nobody.
+    #[test]
+    fn a_network_is_not_staked_on_the_primary_networks_terms() {
+        let now = 1000;
+        let (mut state, input) = funded(now, 10 * MEGA);
+        let mut unsigned = add_validator(5, 10 * MEGA, now + YEAR, input, 0);
+        if let Unsigned::AddPermissionlessValidator { chain, signer, .. } = &mut unsigned {
+            *chain = [6; 32];
+            // A network validator registers no key, as the wire requires.
+            *signer = crate::signer::Signer::Empty;
+        }
+        let tx = signed(unsigned, 1);
+        assert_eq!(
+            execute_standard(&mut state, &tx, &config(), &fees()),
+            Err(Error::NetworkTermsNotHeld)
+        );
+    }
+
+    /// A reward naming nothing rewards nobody.
+    #[test]
+    fn a_reward_naming_the_zero_id_is_refused() {
+        let now = 1000;
+        let (mut state, _) = with_validator(now, 10 * MEGA, now + YEAR);
+        let mut on_abort = state.clone();
+        let tx = Tx::new(
+            Unsigned::RewardValidator {
+                staker_tx_id: [0; 32],
+            },
+            Vec::new(),
+        );
+        assert_eq!(
+            execute_proposal(&tx, &mut state, &mut on_abort),
+            Err(Error::InvalidId)
         );
     }
 }
