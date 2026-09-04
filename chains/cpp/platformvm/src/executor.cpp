@@ -120,9 +120,13 @@ struct ValidatorRules {
 
 Result<ValidatorRules> validator_rules(const Backend& backend, const state::Chain& s, const Id& chain_id) {
     if (chain_id == kPrimaryNetworkId) {
-        return ValidatorRules{backend.runtime.utxo_asset_id, backend.policy.min_validator_stake,
-                              backend.policy.max_validator_stake,  backend.policy.min_stake_duration,
-                              backend.policy.max_stake_duration,   backend.policy.min_delegation_fee};
+        // A joiner accepts the policy in force at the moment it joins, so the
+        // instant to resolve is the chain's own clock. With no governed history
+        // this is the compiled-in policy, unchanged.
+        const auto p = backend.policy_at(static_cast<std::int64_t>(s.timestamp()));
+        return ValidatorRules{backend.runtime.utxo_asset_id, p.min_validator_stake,
+                              p.max_validator_stake,         p.min_stake_duration,
+                              p.max_stake_duration,          p.min_delegation_fee};
     }
     auto t = s.network_transformation(chain_id);
     if (!t) return fail(Err::ChainNotFound, "network " + chain_id.hex() + " was never transformed");
@@ -143,13 +147,12 @@ struct DelegatorRules {
 
 Result<DelegatorRules> delegator_rules(const Backend& backend, const state::Chain& s, const Id& chain_id) {
     if (chain_id == kPrimaryNetworkId) {
-        // The delegator floor is deliberately NOT governed: it is the rule about
-        // who may delegate at all, and delegators are the one constituency that
-        // cannot defend itself by voting, because the vote belongs to the
-        // validator they delegate to.
+        // The delegator floor is the one threshold here that no vote reaches;
+        // everything else is read at the moment the delegator commits.
+        const auto p = backend.policy_at(static_cast<std::int64_t>(s.timestamp()));
         return DelegatorRules{backend.runtime.utxo_asset_id, backend.policy.min_delegator_stake,
-                              backend.policy.max_validator_stake, backend.policy.min_stake_duration,
-                              backend.policy.max_stake_duration,  kMaxValidatorWeightFactor};
+                              p.max_validator_stake,         p.min_stake_duration,
+                              p.max_stake_duration,          kMaxValidatorWeightFactor};
     }
     auto t = s.network_transformation(chain_id);
     if (!t) return fail(Err::ChainNotFound, "network " + chain_id.hex() + " was never transformed");
