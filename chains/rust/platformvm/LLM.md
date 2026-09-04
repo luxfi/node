@@ -12,7 +12,7 @@ and signed for by whoever owns it. None exists to make entry selective.
 
 ```
 cd chains/rust/platformvm
-PATH=~/.cargo/bin:$PATH cargo test          # 271 tests
+PATH=~/.cargo/bin:$PATH cargo test          # 287 tests
 PATH=~/.cargo/bin:$PATH cargo clippy --all-targets
 ```
 
@@ -71,6 +71,7 @@ whole `stakingparams` suite, `TestGoldenAbortBlock`, and
 | `reward` | what a staker is paid. |
 | `flow` | value is not created, and the spend is authorised. |
 | `state` | what the chain believes. |
+| `uptime` | how much of its term a validator was reachable for — the node's measurement, not the chain's. |
 | `executor` | what a transaction does to that belief. |
 | `block` | the four things a block can be. |
 | `genesis` | how the chain is born. |
@@ -116,13 +117,11 @@ refuses **by name** with its own error, rather than succeeding against nothing.
 - **Dynamic fees.** `FlatFees` is Go's static schedule. The gas-metered
   alternative — complexity times weights times a price that moves with demand —
   is not ported.
-- **Measuring uptime.** The reward gate is here — `executor::prefers_reward`
-  decides commit or abort, judging a validator on the uptime rule that was in
-  force when it BONDED — but *measuring* reachability is not, and cannot be:
-  two honest nodes see different numbers, which is why the reward is a
-  proposal every node answers for itself. `executor::Uptime` is the seam the
-  node fills. A node that cannot say pays, as Go does, because erring the
-  other way lets an unusual case take an honest validator's reward.
+- **Persisting a node's measurements.** `uptime::Tracker` is ported whole,
+  with Go's whole test suite, and `uptime::Ledger` keeps its measurements in
+  memory. A node that wants them to survive a restart writes its own
+  `uptime::Record` over whatever it already persists — which is right, because
+  these numbers are not agreed and must not be in the state that is.
 - **Persistence.** `State` is in memory. There is no database, no versioned
   diff layer, and no height-indexed validator sets (Go's weight diffs, which
   answer "who was validating at height N").

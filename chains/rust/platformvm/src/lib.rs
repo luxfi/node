@@ -33,6 +33,7 @@
 //! - [`state`] — what the chain believes.
 //! - [`executor`] — what a transaction does to that belief.
 //! - [`block`] — the four things a block can be.
+//! - [`uptime`] — how much of its term a validator was reachable for.
 //! - [`vm`] — the chain, as the node holds it.
 
 pub mod block;
@@ -48,6 +49,7 @@ pub mod signer;
 pub mod stakingparams;
 pub mod state;
 pub mod txs;
+pub mod uptime;
 pub mod vm;
 pub mod zap;
 
