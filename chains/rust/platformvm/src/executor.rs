@@ -55,6 +55,9 @@ pub struct StakingPolicy {
     /// The smallest cut a validator may take from its delegators, in
     /// millionths.
     pub min_delegation_fee: u32,
+    /// How much of its term a validator must have been reachable for to be
+    /// paid, in millionths.
+    pub uptime_requirement: u32,
 }
 
 /// Everything the executor needs that is not state.
@@ -64,6 +67,14 @@ pub struct Config {
     pub native_asset: Id,
     pub staking: StakingPolicy,
     pub reward: reward::Config,
+    /// Every staking policy that has been in force, oldest first.
+    ///
+    /// A validator is judged on the terms it agreed to when it bonded, so the
+    /// uptime a reward is measured against is read out of this at the
+    /// validator's start time rather than at the present. Without it,
+    /// [`StakingPolicy::uptime_requirement`] binds always, which is what an
+    /// ungoverned chain has.
+    pub staking_history: Option<crate::stakingparams::History>,
     /// False while the node is still catching up. Go skips the checks that
     /// need a complete view of the world until this is true, because a node
     /// that has not finished syncing would refuse valid transactions.
@@ -121,6 +132,80 @@ impl Fees for FlatFees {
             _ => self.tx,
         }
     }
+}
+
+/// How much of its term a validator was reachable for.
+///
+/// The chain cannot measure this: reachability is something each node observes
+/// for itself, and two honest nodes will observe slightly different numbers.
+/// That is why the reward is a *proposal* — every node answers it from its own
+/// measurement and the stake-weighted vote settles it — and why this is a seam
+/// the node fills rather than something state holds.
+pub trait Uptime: Send + Sync {
+    /// The fraction of the time since `since` that `node` was reachable on
+    /// `chain`, between 0 and 1, or nothing when it cannot be said.
+    fn fraction_since(&self, node: &NodeId, chain: &Id, since: u64) -> Option<f64>;
+}
+
+/// Whether this node would pay the staker the transaction retires.
+///
+/// This is the whole reward gate. A validator is judged against the uptime
+/// rule that was in force when it BONDED, not the one in force now — which is
+/// what stops a governed uptime requirement from being retroactive. Without
+/// it, a stake majority could raise the bar the day before a rival's stake
+/// matures and take its reward, and that is expropriation rather than
+/// governance.
+///
+/// A refusal here is not "do not pay": it is "this node cannot say", and the
+/// caller answers that by paying. Go does the same and says why — err on the
+/// side of over-rewarding rather than under-rewarding, because the alternative
+/// is that an unusual case or a hostile block proposer costs an honest
+/// validator its reward.
+pub fn prefers_reward(
+    state: &State,
+    tx: &Tx,
+    config: &Config,
+    uptime: &dyn Uptime,
+) -> Result<bool, Error> {
+    let Unsigned::RewardValidator { staker_tx_id } = &tx.unsigned else {
+        return Err(Error::WrongTxType(tx.unsigned.kind()));
+    };
+    let staker_tx = state.tx(staker_tx_id)?;
+    let staker = staker_tx
+        .unsigned
+        .staker()
+        .ok_or(Error::ShouldBePermissionlessStaker)?;
+    let node = staker.validator.node_id;
+
+    // The bond is on the primary network even when the stake is not: a
+    // network validator is one only for as long as it validates the primary
+    // network, and that is the term its reachability is measured over.
+    let primary = state.current_validator(&PRIMARY_NETWORK_ID, &node)?;
+
+    let required = required_uptime(config, staker.chain, primary.start_time)?;
+    let measured = uptime
+        .fraction_since(&node, &staker.chain, primary.start_time)
+        .ok_or(Error::UptimeUnknown)?;
+    Ok(measured >= required)
+}
+
+/// The fraction of its term a validator bonding at `bonded_at` must have been
+/// reachable for.
+fn required_uptime(config: &Config, chain: Id, bonded_at: u64) -> Result<f64, Error> {
+    if chain != PRIMARY_NETWORK_ID {
+        // A network states its own requirement in its transformation, and
+        // this port does not hold one. Named rather than guessed at: guessing
+        // would judge a network's validators on the primary network's terms.
+        return Err(Error::NetworkTermsNotHeld);
+    }
+    let millionths = match &config.staking_history {
+        Some(history) => history
+            .at(bonded_at as i64)
+            .map(|p| p.uptime_requirement)
+            .unwrap_or(config.staking.uptime_requirement),
+        None => config.staking.uptime_requirement,
+    };
+    Ok(millionths as f64 / crate::reward::PERCENT_DENOMINATOR as f64)
 }
 
 /// Why a transaction did not execute.
@@ -190,6 +275,10 @@ pub enum Error {
     OwnSetNotHeld,
     /// A transaction that acts on a validator registered on an L1.
     L1ValidatorPlaneNotHeld(Kind),
+    /// Nothing could say how reachable the validator had been.
+    UptimeUnknown,
+    /// A network's own staking terms, which live in its transformation.
+    NetworkTermsNotHeld,
 }
 
 impl std::fmt::Display for Error {
@@ -254,6 +343,10 @@ impl std::fmt::Display for Error {
                 f,
                 "{k:?} acts on an L1 validator, which this port does not hold"
             ),
+            Error::UptimeUnknown => write!(f, "nothing can say how reachable the validator was"),
+            Error::NetworkTermsNotHeld => {
+                write!(f, "a network's own staking terms are not held by this port")
+            }
         }
     }
 }
@@ -1082,7 +1175,9 @@ mod tests {
                 min_stake_duration: 2 * 7 * DAY,
                 max_stake_duration: YEAR,
                 min_delegation_fee: 20_000,
+                uptime_requirement: 800_000,
             },
+            staking_history: None,
             reward: reward::Config {
                 max_consumption_rate: 120_000,
                 min_consumption_rate: 100_000,
