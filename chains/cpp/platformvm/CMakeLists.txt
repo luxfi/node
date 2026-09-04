@@ -94,7 +94,9 @@ add_library(lux_platformvm STATIC
   src/components.cpp
   src/txs_wire.cpp
   src/txs.cpp
-  src/txs_parse.cpp)
+  src/txs_parse.cpp
+  src/block.cpp
+  src/state.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
 target_link_libraries(lux_platformvm PUBLIC blst)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
@@ -125,7 +127,7 @@ if(PLATFORMVM_BUILD_TESTS)
   target_include_directories(pvm_test_main PUBLIC test include)
   target_link_libraries(pvm_test_main PUBLIC lux_platformvm)
 
-  foreach(_t zap sha256 reward components txs)
+  foreach(_t zap sha256 reward components txs block state)
     add_executable(pvm_${_t}_test test/${_t}_test.cpp)
     target_link_libraries(pvm_${_t}_test PRIVATE pvm_test_main)
     target_compile_options(pvm_${_t}_test PRIVATE -Wall -Wextra)

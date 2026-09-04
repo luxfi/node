@@ -171,6 +171,31 @@ enum class Err {
     TimestampTooFar,                 // block executor: beyond the sync bound
     EmptyBlock,                      // block: a standard block with no txs
     BadGenesis,                      // genesis parse
+
+    // ── block wire
+    UnknownBlockKind,   // block.Parse "unknown block kind"
+    BlockExtraSpace,    // block.ErrExtraSpace
+    NoProposalTx,       // block.errNoProposalTx
+    TxOverrunsBlob,     // block.readTxList "tx length overruns blob"
+    NilBlockTx,         // block.writeTxList "nil tx at index"
+
+    // ── state / chain time
+    ChildBlockEarlierThanParent, // executor.ErrChildBlockEarlierThanParent
+    ChildBlockBeyondSyncBound,   // executor.ErrChildBlockBeyondSyncBound
+    RemoveStakerTooEarly,        // executor.ErrRemoveStakerTooEarly
+    RemoveWrongStaker,           // executor.ErrRemoveWrongStaker
+    ShouldBePermissionlessStaker,// executor.ErrShouldBePermissionlessStaker
+    ProposedAddStakerTxNotPermitted, // executor.ErrProposedAddStakerTxNotPermitted
+    InvalidID,                   // executor.ErrInvalidID
+    WrongNumberOfCredentials,    // executor.errWrongNumberOfCredentials
+    WrongNumberUTXOs,            // utxo.errWrongNumberUTXOs
+    AssetIDMismatch,             // utxo.errAssetIDMismatch
+    LockedFundsNotMarkedAsLocked,// utxo.errLockedFundsNotMarkedAsLocked
+    LocktimeMismatch,            // utxo.errLocktimeMismatch
+    InsufficientLockedFunds,     // utxo.ErrInsufficientLockedFunds
+    InsufficientUnlockedFunds,   // utxo.ErrInsufficientUnlockedFunds
+    DuplicateNetwork,            // executor: network already exists
+    DuplicateChain,              // executor: chain already exists
 };
 
 std::string_view err_name(Err e);
