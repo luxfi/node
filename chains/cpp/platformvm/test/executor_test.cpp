@@ -13,6 +13,7 @@
 // that makes this chain a public good, and it is asserted, not assumed.
 
 #include "harness.hpp"
+#include "lux/platformvm/atomic.hpp"
 #include "lux/platformvm/executor.hpp"
 #include "signing.hpp"
 
@@ -666,4 +667,161 @@ TEST(CreateNetworkTx) {
     auto owner = layer.network_owner(tx.tx_id);
     REQUIRE_OK(owner);
     REQUIRE_EQ(mine(), owner.value());
+}
+
+// ── crossing chains
+//
+// An import is the one transaction that spends something this chain has never
+// seen, so it has to ask the other chain. Go: standardTxExecutor.ImportTx /
+// ExportTx.
+namespace {
+
+// The other chain's side of the ledger, as a test can state it.
+struct FakeSharedMemory final : atomic::SharedMemory {
+    std::map<Id, std::map<Id, UTXO>> by_chain;
+
+    Result<std::vector<UTXO>> get(const Id& peer, const std::vector<Id>& keys) const override {
+        const auto chain = by_chain.find(peer);
+        if (chain == by_chain.end()) return fail(Err::NotFound, "unknown peer chain");
+        std::vector<UTXO> out;
+        for (const auto& k : keys) {
+            const auto it = chain->second.find(k);
+            // A key the peer chain did not produce is a refusal, never a zero:
+            // a zero here would be money out of nowhere.
+            if (it == chain->second.end()) return fail(Err::NotFound, "no such output on the peer chain");
+            out.push_back(it->second);
+        }
+        return out;
+    }
+};
+
+const Id kXChain = id_of(0x60);
+
+}  // namespace
+
+TEST(ImportTx) {
+    // The output the other chain produced, and the input that spends it.
+    UTXO remote;
+    remote.utxo = UtxoId{id_of(0xB0), 0};
+    remote.asset = kLux;
+    remote.out = TransferOutput{4'000'000'000, mine()};
+
+    FakeSharedMemory sm;
+    sm.by_chain[kXChain][remote.id()] = remote;
+
+    auto b = backend();
+    b.shared_memory = &sm;
+
+    TransferableInput imported;
+    imported.utxo = remote.utxo;
+    imported.asset = kLux;
+    imported.in = TransferInput{4'000'000'000, {0}};
+
+    auto build = [&](const Id& source) {
+        // 10 LUX local + 4 LUX imported in; 13 LUX out; 1 LUX fee.
+        auto u = txs::ImportTx::create(envelope(10'000'000'000, {out_to_me(13'000'000'000)}), source,
+                                       {imported});
+        txs::Tx tx;
+        tx.unsigned_tx = u.value();
+        // One credential per input, local then imported, in that order.
+        tx.creds.push_back(key().sign(tx.unsigned_tx->bytes()));
+        tx.creds.push_back(key().sign(tx.unsigned_tx->bytes()));
+        (void)tx.initialize();
+        return tx;
+    };
+
+    {  // the happy path
+        auto base = funded(10'000'000'000);
+        state::Diff layer(&base);
+        const auto tx = build(kXChain);
+        auto effects = ex::standard_tx(b, tx, layer);
+        REQUIRE_OK(effects);
+
+        // Both the local and the remote output are spent.
+        REQUIRE_ERR(layer.get_utxo(UtxoId{id_of(0xA0), 0}.input_id()), Err::NotFound);
+        REQUIRE(effects.value().inputs.count(remote.id()) == 1);
+
+        // And the shared memory is asked to drop what was imported.
+        const auto& req = effects.value().atomic_requests.at(kXChain);
+        REQUIRE_EQ_NUM(1, req.remove.size());
+        REQUIRE_EQ(remote.id(), req.remove[0]);
+        REQUIRE(req.put.empty());
+
+        // The change is here.
+        auto change = layer.get_utxo(UtxoId{tx.tx_id, 0}.input_id());
+        REQUIRE_OK(change);
+        REQUIRE_U64(13'000'000'000u, change.value().out.amt);
+    }
+    {  // importing from a chain the node cannot reach
+        auto base = funded(10'000'000'000);
+        state::Diff layer(&base);
+        REQUIRE_ERR(ex::standard_tx(b, build(id_of(0x61)), layer), Err::NotFound);
+    }
+    {  // importing from this very chain is spending twice
+        auto base = funded(10'000'000'000);
+        state::Diff layer(&base);
+        REQUIRE_ERR(ex::standard_tx(b, build(kPChain), layer), Err::WrongChainID);
+    }
+    {  // a node with no shared memory refuses rather than believing the tx
+        auto without = backend();
+        auto base = funded(10'000'000'000);
+        state::Diff layer(&base);
+        REQUIRE_ERR(ex::standard_tx(without, build(kXChain), layer), Err::InvalidState);
+    }
+    {  // and the money still has to add up
+        auto base = funded(10'000'000'000);
+        state::Diff layer(&base);
+        auto u = txs::ImportTx::create(envelope(10'000'000'000, {out_to_me(14'000'000'000)}), kXChain,
+                                        {imported});
+        txs::Tx tx;
+        tx.unsigned_tx = u.value();
+        tx.creds.push_back(key().sign(tx.unsigned_tx->bytes()));
+        tx.creds.push_back(key().sign(tx.unsigned_tx->bytes()));
+        (void)tx.initialize();
+        REQUIRE_ERR(ex::standard_tx(b, tx, layer), Err::FlowCheckFailed);
+    }
+}
+
+TEST(ExportTx) {
+    auto b = backend();
+
+    auto build = [&](const Id& destination) {
+        // 10 LUX in; 5 LUX stays, 4 LUX leaves, 1 LUX fee.
+        auto u = txs::ExportTx::create(envelope(10'000'000'000, {out_to_me(5'000'000'000)}), destination,
+                                       {out_to_me(4'000'000'000)});
+        return sign(u.value());
+    };
+
+    {
+        auto base = funded(10'000'000'000);
+        state::Diff layer(&base);
+        const auto tx = build(kXChain);
+        auto effects = ex::standard_tx(b, tx, layer);
+        REQUIRE_OK(effects);
+
+        // The exported output is NOT in this chain's set — it left.
+        REQUIRE_OK(layer.get_utxo(UtxoId{tx.tx_id, 0}.input_id()));
+        REQUIRE_ERR(layer.get_utxo(UtxoId{tx.tx_id, 1}.input_id()), Err::NotFound);
+
+        // It is in the request the other chain will be handed instead, indexed
+        // under the addresses that chain will look it up by.
+        const auto& req = effects.value().atomic_requests.at(kXChain);
+        REQUIRE(req.remove.empty());
+        REQUIRE_EQ_NUM(1, req.put.size());
+        REQUIRE_U64(4'000'000'000u, req.put[0].utxo.out.amt);
+        REQUIRE_EQ(UtxoId({tx.tx_id, 1}).input_id(), req.put[0].key);
+        REQUIRE_EQ(std::vector<ShortId>({key().address()}), req.put[0].traits);
+    }
+    {  // exporting to this very chain is not an export
+        auto base = funded(10'000'000'000);
+        state::Diff layer(&base);
+        REQUIRE_ERR(ex::standard_tx(b, build(kPChain), layer), Err::WrongChainID);
+    }
+    {  // and the money still has to add up: the exported output is produced too
+        auto base = funded(10'000'000'000);
+        state::Diff layer(&base);
+        auto u = txs::ExportTx::create(envelope(10'000'000'000, {out_to_me(9'000'000'000)}), kXChain,
+                                        {out_to_me(4'000'000'000)});
+        REQUIRE_ERR(ex::standard_tx(b, sign(u.value()), layer), Err::FlowCheckFailed);
+    }
 }
