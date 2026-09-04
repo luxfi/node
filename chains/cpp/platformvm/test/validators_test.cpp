@@ -13,6 +13,7 @@
 #include "lux/platformvm/validators.hpp"
 #include "signing.hpp"
 
+#include <algorithm>
 #include <functional>
 
 #ifdef LUX_PLATFORMVM_HAS_NODE_SET_ROOT
