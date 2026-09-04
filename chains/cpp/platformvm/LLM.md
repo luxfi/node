@@ -63,6 +63,7 @@ include/lux/platformvm/
   warp.hpp         a message another chain signed, and the aggregated proof
   warpmsg.hpp      what that message SAYS
   l1.hpp           a validator of a sovereign network, and the fee it pays
+  genesis.hpp      the state the network starts in
   vm.hpp           the chain, as the node's VM seam sees it
 ```
 
@@ -113,7 +114,7 @@ what a fork does. So:
 
 ## What is here, and what is not
 
-189 cases across 15 suites, all green, clean under address+undefined sanitizers.
+195 cases across 16 suites, all green, clean under address+undefined sanitizers.
 
 **Ported and tested.** All nineteen transaction kinds and all four block kinds,
 byte-identical, with their full syntactic verification. Every execution path the
@@ -130,8 +131,10 @@ envelope and the four things an L1 says. The whole L1 subsystem: the validator
 record, the expiry set that refuses a replay, the LP-77 continuous fee, the four
 transactions that register, reweight, top up and switch off an L1 validator, and
 the two that establish a sovereign network's own set. The validator set consensus
-samples and its commitment. And the VM itself — build, parse, get, prefer,
-verify, accept — through the node's seam.
+samples and its commitment. The genesis blob — the money, the first validators
+and the first chains a network starts with — encoded, parsed and validated,
+against the bytes the Go package wrote. And the VM itself — build, parse, get,
+prefer, verify, accept — through the node's seam.
 
 **Absent, and why.** Each of these returns the reason it cannot run rather than
 a success it has not earned:
@@ -150,8 +153,6 @@ a success it has not earned:
   ACCEPTED height is here and correct.
 - **The JSON-RPC service and client** (~3,200 lines) — the node's seam does not
   ask for them.
-- **Genesis parsing** — `vm::Genesis` is a value the host supplies. The
-  reference's genesis wire format is not parsed.
 - **Gossip, metrics, and the uptime tracker** — the first two are node
   integration; uptime is a MEASUREMENT the node makes, so it enters through
   `uptime::Calculator` and no other way. A VM that could compute its own uptime

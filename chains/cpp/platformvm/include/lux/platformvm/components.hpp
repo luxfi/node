@@ -132,6 +132,10 @@ struct TransferableOutput {
     // The canonical bytes this output orders by: its inner fx wire envelope,
     // the very bytes that reach the wire and the disk. Defined in components.cpp.
     std::vector<std::uint8_t> wire_bytes() const;
+
+    // The inverse. A shape this port does not implement — one of the six other
+    // signature families, or a mint — is a refusal rather than a guess.
+    static Result<TransferableOutput> from_wire_bytes(std::span<const std::uint8_t> b, const Id& asset);
 };
 
 struct TransferableInput {
@@ -164,6 +168,13 @@ struct UTXO {
 
     friend bool operator==(const UTXO&, const UTXO&) = default;
     Id id() const { return utxo.input_id(); }
+
+    // The cross-chain envelope: the id it is reachable by, the asset, and the
+    // output's own envelope inside it. This is what genesis stores and what
+    // crosses to another chain, so it is the ONE encoding of a UTXO.
+    // Rendered from github.com/luxfi/utxo/wire/utxo.go.
+    std::vector<std::uint8_t> wire_bytes() const;
+    static Result<UTXO> from_wire_bytes(std::span<const std::uint8_t> b);
 };
 
 // The spending envelope every non-proposal transaction carries.
