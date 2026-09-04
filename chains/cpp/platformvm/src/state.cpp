@@ -387,6 +387,16 @@ std::vector<UTXO> MemState::reward_utxos(const Id& tx_id) const {
 // in the set has no ledger, and asking about one is a refusal rather than a
 // zero: zero is a real balance, and confusing the two would silently pay a
 // staker that is not there.
+std::vector<UTXO> MemState::utxos() const {
+    std::vector<UTXO> out;
+    out.reserve(utxos_.size());
+    for (const auto& [id, u] : utxos_) {
+        (void)id;
+        out.push_back(u);
+    }
+    return out;
+}
+
 Result<std::uint64_t> MemState::delegatee_reward(const Id& chain_id, const NodeId& node_id) const {
     const auto chain = delegatee_rewards_.find(chain_id);
     if (chain == delegatee_rewards_.end()) return fail(Err::NotFound);
@@ -476,6 +486,29 @@ std::vector<UTXO> Diff::reward_utxos(const Id& tx_id) const {
     const auto it = reward_utxos_.find(tx_id);
     if (it != reward_utxos_.end()) return it->second;
     return parent_->reward_utxos(tx_id);
+}
+
+// The parent's set, minus what this layer deleted, plus what it added — in id
+// order, so two nodes fold the same bytes.
+std::vector<UTXO> Diff::utxos() const {
+    std::map<Id, UTXO> merged;
+    for (const auto& u : parent_->utxos()) merged[u.id()] = u;
+    for (const auto& id : deleted_utxos_) merged.erase(id);
+    for (const auto& [id, u] : added_utxos_) merged[id] = u;
+    std::vector<UTXO> out;
+    out.reserve(merged.size());
+    for (const auto& [id, u] : merged) {
+        (void)id;
+        out.push_back(u);
+    }
+    return out;
+}
+
+std::vector<Id> Diff::networks() const {
+    std::set<Id> merged;
+    for (const auto& id : parent_->networks()) merged.insert(id);
+    for (const auto& id : added_networks_) merged.insert(id);
+    return {merged.begin(), merged.end()};
 }
 
 Result<Staker> Diff::get_current_validator(const Id& chain_id, const NodeId& node_id) const {
@@ -663,6 +696,98 @@ std::uint64_t next_staker_change_time(const Chain& chain, std::uint64_t upper) {
     const auto pending = chain.pending_stakers();
     if (!pending.empty()) next = std::min(next, pending.front().next_time);
     return next;
+}
+
+// ── the commitment a block carries
+
+namespace {
+
+struct Fold {
+    std::vector<std::uint8_t> b;
+    void u8(std::uint8_t v) { b.push_back(v); }
+    void u64(std::uint64_t v) {
+        for (int i = 0; i < 8; ++i) b.push_back(static_cast<std::uint8_t>(v >> (8 * i)));
+    }
+    void u32(std::uint32_t v) {
+        for (int i = 0; i < 4; ++i) b.push_back(static_cast<std::uint8_t>(v >> (8 * i)));
+    }
+    void bytes(std::span<const std::uint8_t> v) {
+        u64(v.size());
+        b.insert(b.end(), v.begin(), v.end());
+    }
+    void owners(const OutputOwners& o) {
+        u64(o.locktime);
+        u32(o.threshold);
+        u64(o.addrs.size());
+        for (const auto& a : o.addrs) b.insert(b.end(), a.b.begin(), a.b.end());
+    }
+    void staker(const Staker& s) {
+        b.insert(b.end(), s.tx_id.b.begin(), s.tx_id.b.end());
+        b.insert(b.end(), s.node_id.b.begin(), s.node_id.b.end());
+        b.insert(b.end(), s.chain_id.b.begin(), s.chain_id.b.end());
+        u8(s.public_key ? 1 : 0);
+        if (s.public_key) b.insert(b.end(), s.public_key->begin(), s.public_key->end());
+        u64(s.weight);
+        u64(s.start_time);
+        u64(s.end_time);
+        u64(s.potential_reward);
+        u64(s.next_time);
+        u8(static_cast<std::uint8_t>(s.priority));
+    }
+};
+
+}  // namespace
+
+Id state_root(const Chain& chain) {
+    Fold f;
+    f.u64(chain.timestamp());
+    f.u64(chain.accrued_fees());
+
+    const auto nets = chain.networks();
+    f.u64(nets.size());
+    for (const auto& n : nets) {
+        f.b.insert(f.b.end(), n.b.begin(), n.b.end());
+        if (const auto o = chain.network_owner(n); o) {
+            f.u8(1);
+            f.owners(o.value());
+        } else {
+            f.u8(0);
+        }
+        if (const auto s = chain.current_supply(n); s) {
+            f.u8(1);
+            f.u64(s.value());
+        } else {
+            f.u8(0);
+        }
+    }
+    // The primary network's supply is not reachable through networks(): it is
+    // the chain itself, not something a transaction created.
+    if (const auto s = chain.current_supply(kPrimaryNetworkId); s) {
+        f.u8(1);
+        f.u64(s.value());
+    } else {
+        f.u8(0);
+    }
+
+    const auto current = chain.current_stakers();
+    f.u64(current.size());
+    for (const auto& s : current) f.staker(s);
+
+    const auto pending = chain.pending_stakers();
+    f.u64(pending.size());
+    for (const auto& s : pending) f.staker(s);
+
+    const auto utxos = chain.utxos();
+    f.u64(utxos.size());
+    for (const auto& u : utxos) {
+        const Id id = u.id();
+        f.b.insert(f.b.end(), id.b.begin(), id.b.end());
+        f.b.insert(f.b.end(), u.asset.b.begin(), u.asset.b.end());
+        f.u64(u.stake_lock);
+        f.u64(u.out.amt);
+        f.owners(u.out.owners);
+    }
+    return id_from_hash(sha256(f.b));
 }
 
 }  // namespace lux::platformvm::state
