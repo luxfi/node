@@ -58,6 +58,13 @@ set(NODE_DIR      "${_node}"      CACHE PATH "lux-cpp/node checkout (the VM seam
 set(CONSENSUS_DIR "${_consensus}" CACHE PATH "lux-cpp/consensus checkout (the id type)")
 set(BLST_DIR      "${LUXCPP_ROOT}/blst" CACHE PATH "blst source tree")
 
+# The first-party secp256k1 recovery and ripemd160 live in the same luxcpp
+# checkout as blst. They are what makes the fx signature check real: an address
+# is ripemd160(sha256(compressed recovered key)), so both are REQUIRED for the
+# same reason blst is — a chain that cannot check who signed does not have a
+# spending rule.
+set(CRYPTO_DIR "${LUXCPP_ROOT}/crypto" CACHE PATH "luxcpp/crypto checkout (secp256k1, ripemd160)")
+
 foreach(_p "${BLST_DIR}/bindings/blst.h" "${BLST_DIR}/src/server.c" "${BLST_DIR}/build/assembly.S")
   if(NOT EXISTS "${_p}")
     message(FATAL_ERROR "platformvm: blst is required and was not found: ${_p}\n"
@@ -82,6 +89,29 @@ elseif(BLST_ISA STREQUAL "auto")
   endif()
 endif()
 
+# keccak comes along because the recovery's batch pipeline composes an EVM
+# address from a recovered key; the P-chain never asks for that address, but the
+# symbol is in the same translation unit.
+foreach(_p "${CRYPTO_DIR}/secp256k1/cpp/ecrecover.cpp" "${CRYPTO_DIR}/ripemd160/cpp/ripemd160.cpp"
+           "${CRYPTO_DIR}/keccak/cpp/keccak.cpp" "${CRYPTO_DIR}/include/lux/crypto/secp256k1.h")
+  if(NOT EXISTS "${_p}")
+    message(FATAL_ERROR "platformvm: the first-party crypto is required and was not found: ${_p}\n"
+                        "set -DCRYPTO_DIR=/path/to/luxcpp/crypto")
+  endif()
+endforeach()
+
+if(NOT TARGET lux_pvm_crypto)
+  add_library(lux_pvm_crypto STATIC
+    "${CRYPTO_DIR}/secp256k1/cpp/ecrecover.cpp"
+    "${CRYPTO_DIR}/secp256k1/cpp/batch_inv.cpp"
+    "${CRYPTO_DIR}/ripemd160/cpp/ripemd160.cpp"
+    "${CRYPTO_DIR}/keccak/cpp/keccak.cpp")
+  target_include_directories(lux_pvm_crypto PUBLIC
+    "${CRYPTO_DIR}/include" "${CRYPTO_DIR}/secp256k1/cpp" "${CRYPTO_DIR}/ripemd160/cpp"
+    "${CRYPTO_DIR}/keccak/cpp")
+  target_compile_options(lux_pvm_crypto PRIVATE -O2)
+endif()
+
 if(NOT TARGET blst)
   add_library(blst STATIC "${BLST_DIR}/src/server.c" "${BLST_DIR}/build/assembly.S")
   target_compile_options(blst PRIVATE -O2 -fno-builtin ${BLST_ISA_FLAGS})
@@ -96,9 +126,11 @@ add_library(lux_platformvm STATIC
   src/txs.cpp
   src/txs_parse.cpp
   src/block.cpp
-  src/state.cpp)
+  src/state.cpp
+  src/fx.cpp
+  src/flow.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
-target_link_libraries(lux_platformvm PUBLIC blst)
+target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
 # __int128, a compiler extension every target this ships on has.
 target_compile_options(lux_platformvm PRIVATE -Wall -Wextra)
@@ -127,7 +159,7 @@ if(PLATFORMVM_BUILD_TESTS)
   target_include_directories(pvm_test_main PUBLIC test include)
   target_link_libraries(pvm_test_main PUBLIC lux_platformvm)
 
-  foreach(_t zap sha256 reward components txs block state)
+  foreach(_t zap sha256 reward components txs block state flow)
     add_executable(pvm_${_t}_test test/${_t}_test.cpp)
     target_link_libraries(pvm_${_t}_test PRIVATE pvm_test_main)
     target_compile_options(pvm_${_t}_test PRIVATE -Wall -Wextra)
