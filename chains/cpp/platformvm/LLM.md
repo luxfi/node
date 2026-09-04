@@ -142,17 +142,21 @@ validator judged on the terms it agreed to. The LP-1021 register of networks
 Lux did not create — what is believed about each one, on what basis, and the
 single question a bridge asks before it releases anything. What is waiting to go
 into a block, and everything a node refuses to spend on a stranger. The genesis
-blob — the money, the
-first validators and the first chains a network starts with — encoded, parsed
-and validated, against the bytes the Go package wrote. And the VM itself — build, parse, get,
-prefer, verify, accept — through the node's seam.
+blob — the money, the first validators and the first chains a network starts
+with — encoded, parsed and validated, against the bytes the Go package wrote.
+And the VM itself — build, parse, get, prefer, verify, accept — through the
+node's seam.
 
 **Absent, and why.** Each of these returns the reason it cannot run rather than
 a success it has not earned:
 
-- **The post-quantum warp signature** (`CoronaSignature`) and the teleport
-  payloads — threshold BLS over ML-KEM, a separate construction. Their wire kinds
-  parse to a named refusal rather than to a signature that verifies trivially.
+- **The post-quantum warp signature** (`CoronaSignature`) and the encrypted
+  teleport payloads. This one is BLOCKED, not deferred: verifying it means the
+  Corona lattice threshold scheme and ML-KEM, and the reference reaches both
+  through a Go scheme registry that has no counterpart in the C++ estate. There
+  is nothing to render it from and nothing to check it against, so the wire
+  kinds parse to a named refusal. A signature routine written from the paper and
+  checked against nothing would verify whatever it was given.
 - **`TransformChainTx` execution** — refused here, as in the reference, which
   refuses it permanently.
 - **State persistence** — `state::MemState` is the accepted state in memory. The
@@ -163,8 +167,12 @@ a success it has not earned:
   accepted, so the set at any past height is the set now with everything since
   undone — but it lives in memory with the state, and a node that restarts
   starts that record again.
-- **The JSON-RPC service and client** (~3,200 lines) — the node's seam does not
-  ask for them.
+- **The JSON-RPC service and client** (~3,200 lines) and the warp signature
+  transport — the node's seam does not ask for them, and both are how a node is
+  TALKED TO rather than what it decides.
+- **The wallet-side spender** — choosing which outputs to spend and building a
+  transaction from them. It is what a client does before submitting; this is the
+  chain that judges the result.
 - **Gossip, metrics, and the uptime tracker** — the first two are node
   integration; uptime is a MEASUREMENT the node makes, so it enters through
   `uptime::Calculator` and no other way. A VM that could compute its own uptime
