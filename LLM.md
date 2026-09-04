@@ -3,9 +3,16 @@
 `node2` is a structural shell, not a fourth implementation. It imports the
 three existing Lux node runtimes — Go, Rust, C++ — behind one `Makefile` and
 runs the one conformance corpus that already holds across all three. Nothing
-under `runtime/`, `chains/`, or `gpu/` is a copy or a fork; each is a README
-naming an absolute path on this machine and the exact invocation that builds
-it. Delete `node2` and every one of those repos is exactly as it was.
+under `runtime/` or `gpu/` is a copy or a fork; each is a README naming an
+absolute path on this machine and the exact invocation that builds it. Delete
+`node2` and every one of those repos is exactly as it was.
+
+One thing under `chains/` is not a README. `chains/rust/xvm` is the X-Chain
+itself, in Rust, ported from `~/work/lux/node/vms/xvm` against the VM seam of
+`~/work/lux-rs/node` — 13,388 lines, 239 tests, and twelve golden vectors
+printed by the Go chain that prove the two produce the same bytes and give a
+transaction the same name. It lives here rather than in a shim because there
+was no clean Rust X-Chain to import; see `chains/rust/xvm/LLM.md`.
 
 The reason this exists: `luxfi/node` (`~/work/lux/node`) carries ava-labs
 lineage, and three separate teams have since built clean replacements for
@@ -18,23 +25,12 @@ retiring it is the outcome this repo works toward, not a precondition of it.
 
 ```
 runtime/{go,rust,cpp}   thin shim READMEs — what gets built, from where, how
-chains/cpp/xvm          the X-Chain in C++, behind lux-cpp/node's VM seam
-chains/{go,rust}        Phase 2 placeholders — the rest of the P/X/C/Q/Z suite
+chains/{go,rust,cpp}    the P/X/C/Q/Z chain suite — rust/xvm is real, the rest READMEs
 gpu/                    thin shim to the GPU kernel library
 conformance/            wires the existing pop/verdict corpus per language
 bin/                    build output — luxd-go, luxd-rust, luxd-cpp (gitignored)
 Makefile                the one build entry point
 ```
-
-## The one place node2 holds real code
-
-`chains/cpp/xvm` is written, not imported: no C++ X-Chain existed to shim. It
-is the Lux X-Chain — the UTXO DAG and asset transfers — ported from
-`~/work/lux/node/vms/xvm` and built against `lux-cpp/node`'s VM seam. Its wire
-bytes are checked against the bytes the Go implementation emits for the same
-values (`chains/cpp/xvm/test/golden_gen.go` regenerates them from the Go
-checkout), so the two cannot drift without a test failing. Its build imports no
-Go module and no `luxfi/node`. See `chains/cpp/xvm/LLM.md`.
 
 ## The three runtimes, honestly
 
@@ -96,8 +92,8 @@ than trusting that it stayed true.
 A clean Go node **host** does not exist on disk yet, anywhere. That is new
 implementation work — a plugin loader, P2P over ZAP, bootstrap, and
 `luxfi/consensus` wired together — which this structural-shell pass does not
-do, on the same principle that keeps `chains/{rust,cpp}` empty: import,
-don't reimplement. Its template already exists, just not in Go:
+do, on the same principle that keeps the other `chains/` slots empty: import
+where something clean exists, write it once where nothing does. Its template already exists, just not in Go:
 `lux-rs/node` is exactly that architecture, already clean, already proven
 against the Go side in a live mesh. A Go host (`luxd2`) mirrors it. The other
 half of the gap is smaller than it looks — extracting the five-package
