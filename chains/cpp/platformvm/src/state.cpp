@@ -610,6 +610,7 @@ Result<std::pair<txs::Tx, status::Status>> Diff::get_tx(const Id& tx_id) const {
 Status Diff::apply(Chain& target) const {
     target.set_timestamp(timestamp_);
     target.set_accrued_fees(accrued_fees_);
+    target.set_fee_state(fee_state_);
     for (const auto& [chain_id, s] : supply_) target.set_current_supply(chain_id, s);
 
     for (const auto& [chain_id, nodes] : current_.validator_diffs()) {
@@ -742,6 +743,8 @@ Id state_root(const Chain& chain) {
     Fold f;
     f.u64(chain.timestamp());
     f.u64(chain.accrued_fees());
+    f.u64(chain.fee_state().capacity);
+    f.u64(chain.fee_state().excess);
 
     const auto nets = chain.networks();
     f.u64(nets.size());

@@ -45,11 +45,6 @@ const signer::ProofOfPossession& pop() {
 
 OutputOwners mine() { return OutputOwners{0, 1, {key().address()}}; }
 
-const ex::FlatFee& fees() {
-    static ex::FlatFee f(1'000'000);
-    return f;
-}
-
 ex::Backend make_backend() {
     ex::Backend b;
     b.runtime = Runtime{kNetworkId, kPChain, kLux};
@@ -63,7 +58,15 @@ ex::Backend make_backend() {
     b.reward_config.min_consumption_rate = 100'000;
     b.reward_config.minting_period = 365 * reward::kDay;
     b.reward_config.supply_cap = 720'000'000'000'000;
-    b.fees = &fees();
+    // LP-103: price by bandwidth alone at one µLUX per byte, which keeps the
+    // arithmetic in these cases readable while still going through the real
+    // mechanism — the chain reads its price off its own excess.
+    b.gas_config.weights[gas::Bandwidth] = 1;
+    b.gas_config.max_capacity = 1'000'000;
+    b.gas_config.max_per_second = 1'000;
+    b.gas_config.target_per_second = 100;
+    b.gas_config.min_price = 1;
+    b.gas_config.excess_conversion_constant = 100'000;
     b.bootstrapped = true;
     b.now = kGenesisTime;
     return b;
@@ -72,6 +75,7 @@ ex::Backend make_backend() {
 vm::Genesis genesis(std::uint64_t funds = 10'000'000'000) {
     vm::Genesis g;
     g.timestamp = kGenesisTime;
+    g.fee_state = gas::State{1'000'000, 0};
     g.initial_supply = kSupply;
     UTXO u;
     u.utxo = UtxoId{id_of(0xA0), 0};
@@ -350,4 +354,75 @@ TEST(ConflictingTxsCannotShareABlock) {
     REQUIRE(built->verify());
     auto* inner = dynamic_cast<vm::VmBlock*>(built.get());
     REQUIRE_EQ_NUM(1, inner->inner().decision_txs().size());
+}
+
+// LP-103 is live: a block spends the chain's gas capacity and raises its excess,
+// and the price the next block pays is read off that excess.
+TEST(ABlockSpendsTheChainsGas) {
+    vm::PlatformVM chain(kPChain, make_backend(), genesis());
+    const std::uint64_t end = kGenesisTime + 90 * 24 * 60 * 60;
+    chain.submit(join_tx(10'000'000'000, 5'000'000'000, end));
+
+    const auto before = chain.accepted().fee_state();
+    REQUIRE_U64(0u, before.excess);
+
+    auto blk = chain.build();
+    REQUIRE(blk != nullptr);
+    REQUIRE(blk->verify());
+    blk->accept();
+
+    const auto after = chain.accepted().fee_state();
+    REQUIRE(after.excess > 0);
+    REQUIRE(after.capacity < before.capacity);
+
+    // The price follows the excess, so the same transaction now costs more.
+    const auto cheap = ex::pick_fee_calculator(chain.backend().gas_config, chain.accepted());
+    const auto at_zero = ex::DynamicFee(chain.backend().gas_config.weights,
+                                        gas::calculate_price(chain.backend().gas_config.min_price, 0,
+                                                             chain.backend().gas_config
+                                                                 .excess_conversion_constant));
+    auto probe = txs::BaseTxUnsigned::create(envelope(10'000'000'000, {out_to_me(1)}));
+    REQUIRE_OK(probe);
+    auto now_price = cheap.calculate(*probe.value());
+    auto then_price = at_zero.calculate(*probe.value());
+    REQUIRE_OK(now_price);
+    REQUIRE_OK(then_price);
+    REQUIRE(now_price.value() >= then_price.value());
+}
+
+// A block asking for more gas than the chain has is refused as a block, before
+// any of its transactions run.
+TEST(ABlockBeyondCapacityIsRefused) {
+    auto b = make_backend();
+    // A chain with almost no capacity left.
+    auto g = genesis();
+    g.fee_state = gas::State{1, 0};
+    vm::PlatformVM chain(kPChain, b, g);
+
+    const std::uint64_t end = kGenesisTime + 90 * 24 * 60 * 60;
+    const auto tx = join_tx(10'000'000'000, 5'000'000'000, end);
+
+    Id parent{};
+    std::memcpy(parent.b.data(), chain.last_accepted().data(), kIdLen);
+    auto blk = block::StandardBlock::create(kGenesisTime, parent, 1, {tx});
+    REQUIRE_OK(blk);
+    const std::vector<std::uint8_t> wire(blk.value()->bytes().begin(), blk.value()->bytes().end());
+    auto parsed = chain.parse(wire);
+    REQUIRE(parsed != nullptr);
+    REQUIRE(!parsed->verify());
+    auto* inner = dynamic_cast<vm::VmBlock*>(parsed.get());
+    REQUIRE(inner->refusal().find("InsufficientCapacity") != std::string::npos);
+
+    // And with no room for the clock to advance — so no capacity to refill —
+    // the builder offers nothing rather than a block that cannot be accepted.
+    chain.set_wall_clock(kGenesisTime - ex::kSyncBound);
+    chain.submit(tx);
+    REQUIRE(chain.build() == nullptr);
+
+    // Give the clock room and the capacity refills, so the same transaction
+    // becomes affordable. That is the mechanism working, not a loophole.
+    chain.set_wall_clock(kGenesisTime + 100);
+    auto later = chain.build();
+    REQUIRE(later != nullptr);
+    REQUIRE(later->verify());
 }
