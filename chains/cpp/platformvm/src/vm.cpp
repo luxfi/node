@@ -54,6 +54,16 @@ Status consume_block_gas(const executor::Backend& backend, state::Chain& layer,
     return ok();
 }
 
+// Two transactions in one block can both touch the same peer chain; their
+// requests are one request when the block is accepted.
+void merge(std::map<Id, atomic::Requests>& into, const std::map<Id, atomic::Requests>& from) {
+    for (const auto& [chain, req] : from) {
+        auto& dst = into[chain];
+        dst.remove.insert(dst.remove.end(), req.remove.begin(), req.remove.end());
+        dst.put.insert(dst.put.end(), req.put.begin(), req.put.end());
+    }
+}
+
 }  // namespace
 
 // ── the block as consensus sees it
@@ -190,12 +200,16 @@ Status PlatformVM::verify_block(const block::Block& b, Verified& out) {
 
             std::set<Id> inputs;
             for (const auto& tx : block_txs) {
-                if (auto st = executor::standard_tx(backend, tx, *layer); !st) return st;
+                auto effects = executor::standard_tx(backend, tx, *layer);
+                if (!effects) return std::unexpected(effects.error());
                 // Two transactions in one block may not spend the same output:
                 // both would verify against the layer as it stood before either
-                // ran, so the overlap has to be refused explicitly.
-                for (const auto& in : tx.input_ids())
+                // ran, so the overlap has to be refused explicitly. An import's
+                // consumed outputs are in there too, which is why the executor
+                // reports them rather than the caller re-deriving them.
+                for (const auto& in : effects.value().inputs)
                     if (!inputs.insert(in).second) return fail(Err::ConflictingBlockTxs);
+                merge(out.atomic_requests, effects.value().atomic_requests);
                 layer->add_tx(tx, status::Status::Committed);
             }
 
@@ -226,9 +240,11 @@ Status PlatformVM::verify_block(const block::Block& b, Verified& out) {
 
             std::set<Id> inputs;
             for (const auto& tx : decision_txs) {
-                if (auto st = executor::standard_tx(backend, tx, *decision); !st) return st;
-                for (const auto& in : tx.input_ids())
+                auto effects = executor::standard_tx(backend, tx, *decision);
+                if (!effects) return std::unexpected(effects.error());
+                for (const auto& in : effects.value().inputs)
                     if (!inputs.insert(in).second) return fail(Err::ConflictingBlockTxs);
+                merge(out.atomic_requests, effects.value().atomic_requests);
                 decision->add_tx(tx, status::Status::Committed);
             }
 
@@ -277,6 +293,7 @@ Status PlatformVM::accept_block(const block::Block& b) {
 
     if (is_option) verified_.erase(b.parent());
 
+    atomic_requests_ = it->second.atomic_requests;
     last_accepted_ = b.id();
     last_accepted_height_ = b.height();
     preferred_ = last_accepted_;
@@ -295,6 +312,81 @@ Status PlatformVM::accept_block(const block::Block& b) {
                                   }),
                    mempool_.end());
     return ok();
+}
+
+namespace {
+
+// Go: options.prefersCommit. True iff the staker being settled met the uptime
+// requirement that bound it.
+Result<bool> prefers_commit(const executor::Backend& backend, const state::Chain& s,
+                            const block::ProposalBlock& b) {
+    auto tx = b.tx();
+    if (!tx) return std::unexpected(tx.error());
+    const auto* reward_tx = dynamic_cast<const txs::RewardValidatorTx*>(tx.value().unsigned_tx.get());
+    if (reward_tx == nullptr) return fail(Err::WrongTxType, "proposal is not a reward");
+
+    auto staker_tx = s.get_tx(reward_tx->tx_id());
+    if (!staker_tx) return std::unexpected(staker_tx.error());
+    auto view = txs::staker_of(*staker_tx.value().first.unsigned_tx);
+    if (!view) return std::unexpected(view.error());
+    if (!view.value()) return fail(Err::WrongTxType, "the settled transaction admits no staker");
+
+    const NodeId node_id = view.value()->node_id;
+    const Id chain_id = view.value()->chain_id;
+
+    // The uptime rule is read against the PRIMARY network entry, because that is
+    // the term the node actually bonded for.
+    auto primary = s.get_current_validator(kPrimaryNetworkId, node_id);
+    if (!primary) return std::unexpected(primary.error());
+
+    double required = static_cast<double>(backend.policy.uptime_requirement) /
+                      static_cast<double>(reward::kPercentDenominator);
+    if (!(chain_id == kPrimaryNetworkId)) {
+        auto transform = s.network_transformation(chain_id);
+        if (!transform) return std::unexpected(transform.error());
+        const auto* t = dynamic_cast<const txs::TransformChainTx*>(transform.value().unsigned_tx.get());
+        if (t == nullptr) return fail(Err::IsNotTransformChainTx);
+        required = static_cast<double>(t->uptime_requirement()) /
+                   static_cast<double>(reward::kPercentDenominator);
+    }
+
+    if (backend.uptimes == nullptr) return fail(Err::InvalidState, "no uptime calculator");
+    auto measured = backend.uptimes->percent_from(node_id, chain_id, primary.value().start_time);
+    if (!measured) return std::unexpected(measured.error());
+    return measured.value() >= required;
+}
+
+}  // namespace
+
+Result<std::pair<std::shared_ptr<lux::node::Block>, std::shared_ptr<lux::node::Block>>> PlatformVM::options(
+    const block::ProposalBlock& b) {
+    const Id parent = b.id();
+    const std::uint64_t height = b.height() + 1;
+    auto commit = block::CommitBlock::create(b.timestamp(), parent, height);
+    if (!commit) return std::unexpected(commit.error());
+    auto abort = block::AbortBlock::create(b.timestamp(), parent, height);
+    if (!abort) return std::unexpected(abort.error());
+    blocks_[commit.value()->id()] = commit.value();
+    blocks_[abort.value()->id()] = abort.value();
+
+    state::Chain* s = state_after(b.parent());
+    if (s == nullptr) s = &state_;
+    // A node that cannot answer prefers commit: the failure can be caused by the
+    // proposer, and erring toward over-rewarding cannot take a validator's
+    // reward away from it.
+    const auto answer = prefers_commit(backend_, *s, b);
+    const bool prefer_commit = answer ? answer.value() : true;
+
+    auto preferred = std::make_shared<VmBlock>(this, prefer_commit ? std::static_pointer_cast<block::Block>(
+                                                                         commit.value())
+                                                                   : std::static_pointer_cast<block::Block>(
+                                                                         abort.value()));
+    auto alternate = std::make_shared<VmBlock>(this, prefer_commit ? std::static_pointer_cast<block::Block>(
+                                                                         abort.value())
+                                                                   : std::static_pointer_cast<block::Block>(
+                                                                         commit.value()));
+    return std::make_pair(std::static_pointer_cast<lux::node::Block>(preferred),
+                          std::static_pointer_cast<lux::node::Block>(alternate));
 }
 
 std::shared_ptr<lux::node::Block> PlatformVM::build() {

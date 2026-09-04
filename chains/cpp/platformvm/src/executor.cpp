@@ -434,12 +434,83 @@ class Standard final : public txs::Visitor {
     // would be an import that accepts money nobody sent, and an L1 transaction
     // that does not verify its cross-chain message would be a validator set
     // anyone could rewrite. Each returns the reason.
-    Status import_tx(const txs::ImportTx&) override {
-        return fail(Err::WrongTxType, "ImportTx needs the shared-memory seam, which this port does not have");
+    // An import spends outputs another chain produced. This chain has never
+    // seen them, so it asks — and a node that cannot ask refuses.
+    Status import_tx(const txs::ImportTx& t) override {
+        if (auto st = shape(t); !st) return st;
+
+        const auto imported = t.imported_inputs();
+        std::vector<Id> keys;
+        keys.reserve(imported.size());
+        for (const auto& in : imported) {
+            keys.push_back(in.input_id());
+            effects_.inputs.insert(in.input_id());
+        }
+
+        if (b_.bootstrapped) {
+            // The source must be a chain this one shares memory with, and never
+            // itself: importing from yourself is spending twice.
+            if (t.source_chain() == b_.runtime.chain_id)
+                return fail(Err::WrongChainID, "cannot import from this chain");
+            if (b_.shared_memory == nullptr)
+                return fail(Err::InvalidState, "no shared memory to read the imported outputs from");
+            auto peer = b_.shared_memory->get(t.source_chain(), keys);
+            if (!peer) return std::unexpected(peer.error());
+
+            auto local = read_utxos(s_, t.inputs());
+            if (!local) return std::unexpected(local.error());
+            std::vector<UTXO> utxos = local.value();
+            utxos.insert(utxos.end(), peer.value().begin(), peer.value().end());
+
+            std::vector<TransferableInput> ins = t.inputs();
+            ins.insert(ins.end(), imported.begin(), imported.end());
+
+            auto fee = b_.fees->calculate(t);
+            if (!fee) return std::unexpected(fee.error());
+            flow::Produced produced;
+            if (fee.value() != 0) produced[b_.runtime.utxo_asset_id] = fee.value();
+            auto st = flow::verify_spend_utxos(b_.fx, t.bytes(), utxos, ins, t.outputs(), tx_.creds,
+                                               std::move(produced), b_.now);
+            if (!st) return fail(Err::FlowCheckFailed, st.error().message());
+        }
+
+        move(t);
+        // The removal is recorded whether or not it was verified, so the shared
+        // state is right if this node later starts verifying.
+        effects_.atomic_requests[t.source_chain()].remove = std::move(keys);
+        return ok();
     }
-    Status export_tx(const txs::ExportTx&) override {
-        return fail(Err::WrongTxType, "ExportTx needs the shared-memory seam, which this port does not have");
+
+    // An export produces outputs another chain will hand out. They leave this
+    // chain's UTXO set entirely and enter the shared memory instead.
+    Status export_tx(const txs::ExportTx& t) override {
+        if (auto st = shape(t); !st) return st;
+        if (b_.bootstrapped && t.destination_chain() == b_.runtime.chain_id)
+            return fail(Err::WrongChainID, "cannot export to this chain");
+
+        const auto own = t.outputs();
+        const auto exported = t.exported_outputs();
+        std::vector<TransferableOutput> outs = own;
+        outs.insert(outs.end(), exported.begin(), exported.end());
+
+        auto fee = b_.fees->calculate(t);
+        if (!fee) return std::unexpected(fee.error());
+        if (auto st = flow_check(b_, s_, t, t.inputs(), outs, tx_.creds, fee.value()); !st) return st;
+
+        move(t);
+
+        atomic::Requests& req = effects_.atomic_requests[t.destination_chain()];
+        for (std::size_t i = 0; i < exported.size(); ++i) {
+            UTXO u;
+            u.utxo = UtxoId{tx_.tx_id, static_cast<std::uint32_t>(own.size() + i)};
+            u.asset = exported[i].asset;
+            u.stake_lock = exported[i].stake_lock;
+            u.out = exported[i].out;
+            req.put.push_back(atomic::Element{u.id(), u, exported[i].out.owners.addrs});
+        }
+        return ok();
     }
+
     Status convert_network_tx(const txs::ConvertNetworkTx&) override {
         return fail(Err::WrongTxType, "ConvertNetworkTx is not executed by this port");
     }
@@ -465,6 +536,7 @@ class Standard final : public txs::Visitor {
     }
 
     void move(const txs::SpendingTx& t) {
+        for (const auto& in : t.inputs()) effects_.inputs.insert(in.input_id());
         consume(s_, t.inputs());
         produce(s_, tx_.tx_id, t.outputs());
     }
@@ -472,6 +544,9 @@ class Standard final : public txs::Visitor {
     const Backend& b_;
     const txs::Tx& tx_;
     state::Diff& s_;
+
+  public:
+    Effects effects_;
 };
 
 // ── the proposal visitor
@@ -859,10 +934,11 @@ Result<bool> advance_time_to(const Backend& backend, state::Chain& parent, std::
     return changed;
 }
 
-Status standard_tx(const Backend& backend, const txs::Tx& tx, state::Diff& layer) {
+Result<Effects> standard_tx(const Backend& backend, const txs::Tx& tx, state::Diff& layer) {
     if (!backend.fees) return fail(Err::InvalidState, "no fee calculator");
     Standard e(backend, tx, layer);
-    return tx.unsigned_tx->visit(e);
+    if (auto st = tx.unsigned_tx->visit(e); !st) return std::unexpected(st.error());
+    return std::move(e.effects_);
 }
 
 Status proposal_tx(const Backend& backend, const txs::Tx& tx, state::Diff& on_commit, state::Diff& on_abort) {

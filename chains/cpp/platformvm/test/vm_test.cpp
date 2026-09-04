@@ -9,6 +9,7 @@
 // unit test fails here.
 
 #include "harness.hpp"
+#include "lux/platformvm/uptime.hpp"
 #include "lux/platformvm/vm.hpp"
 #include "signing.hpp"
 
@@ -425,4 +426,65 @@ TEST(ABlockBeyondCapacityIsRefused) {
     auto later = chain.build();
     REQUIRE(later != nullptr);
     REQUIRE(later->verify());
+}
+
+// The reward gate. A proposal block has two children, and which one this node
+// prefers is the validator's own uptime against the requirement that bound it.
+namespace {
+struct FixedUptime final : uptime::Calculator {
+    explicit FixedUptime(double p) : percent(p) {}
+    Result<double> percent_from(const NodeId&, const Id&, std::uint64_t) const override {
+        if (percent < 0) return fail(Err::NotFound, "no uptime recorded");
+        return percent;
+    }
+    double percent;
+};
+}  // namespace
+
+TEST(TheRewardGate) {
+    const std::uint64_t end = kGenesisTime + 90 * 24 * 60 * 60;
+
+    // uptime: what the node measured; expect_commit: which child it prefers.
+    auto run = [&](double uptime_percent, bool expect_commit) {
+        auto b = make_backend();
+        b.policy.uptime_requirement = 800'000;  // 80%
+        FixedUptime u(uptime_percent);
+        b.uptimes = &u;
+
+        vm::PlatformVM chain(kPChain, b, genesis());
+        chain.submit(join_tx(10'000'000'000, 5'000'000'000, end));
+        auto join = chain.build();
+        REQUIRE_MSG(join != nullptr, "the join block was not built");
+        REQUIRE_MSG(join->verify(), "the join block did not verify");
+        join->accept();
+
+        chain.set_wall_clock(end);
+        auto proposal = chain.build();
+        REQUIRE_MSG(proposal != nullptr, "the proposal block was not built");
+        auto* inner = dynamic_cast<vm::VmBlock*>(proposal.get());
+        REQUIRE_MSG(proposal->verify(), inner->refusal());
+        proposal->accept();
+
+        const auto* pb = dynamic_cast<const block::ProposalBlock*>(&inner->inner());
+        REQUIRE_MSG(pb != nullptr, "the built block is not a proposal");
+        auto opts = chain.options(*pb);
+        REQUIRE_MSG(opts.has_value(), "options were not produced");
+
+        auto* preferred = dynamic_cast<vm::VmBlock*>(opts.value().first.get());
+        auto* alternate = dynamic_cast<vm::VmBlock*>(opts.value().second.get());
+        const auto want = expect_commit ? block::Kind::Commit : block::Kind::Abort;
+        const auto other = expect_commit ? block::Kind::Abort : block::Kind::Commit;
+        REQUIRE_MSG(preferred->inner().kind() == want, "the wrong child was preferred");
+        REQUIRE_MSG(alternate->inner().kind() == other, "the wrong child was the alternate");
+
+        // Both children are real blocks the chain will accept.
+        REQUIRE_MSG(opts.value().first->verify(), preferred->refusal());
+    };
+
+    run(0.95, true);   // met the requirement: pay it
+    run(0.80, true);   // exactly the requirement: pay it
+    run(0.79, false);  // short of it: do not
+    // A node that cannot measure errs toward paying, because the failure can be
+    // caused by the proposer and a lost reward cannot be given back.
+    run(-1.0, true);
 }

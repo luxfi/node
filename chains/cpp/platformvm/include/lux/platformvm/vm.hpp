@@ -101,12 +101,31 @@ class PlatformVM final : public lux::node::VM {
     void submit(const txs::Tx& tx) { mempool_.push_back(tx); }
     std::size_t mempool_size() const { return mempool_.size(); }
 
+    // What the last accepted block asked the shared memory to do. The node
+    // applies these alongside the state it just wrote; a block that imports or
+    // exports nothing leaves this empty.
+    const std::map<Id, atomic::Requests>& pending_atomic_requests() const { return atomic_requests_; }
+
     // The accepted state — what the chain remembers.
     const state::MemState& accepted() const { return state_; }
     state::MemState& accepted() { return state_; }
 
     executor::Backend& backend() { return backend_; }
     const executor::Backend& backend() const { return backend_; }
+
+    // Go: block/executor/options.go. A proposal block has two children — commit
+    // and abort — and this is which one this node prefers. The answer is the
+    // validator's own uptime against the requirement in force when it BONDED,
+    // never the one in force now: judging it by today's rule would let a stake
+    // majority raise the bar the day before a rival's stake matures and take its
+    // reward.
+    //
+    // Returns {preferred, alternate}. A node that cannot compute the uptime
+    // prefers COMMIT, erring toward over-rewarding rather than under-rewarding —
+    // the same fallback the reference takes, and for the same reason: the error
+    // can be caused by the proposer.
+    Result<std::pair<std::shared_ptr<lux::node::Block>, std::shared_ptr<lux::node::Block>>> options(
+        const block::ProposalBlock& b);
 
     // The wall clock the sync bound is judged against. Explicit, because a
     // consensus rule that reads the machine's clock is a rule that cannot be
@@ -129,6 +148,8 @@ class PlatformVM final : public lux::node::VM {
         std::shared_ptr<state::Diff> on_abort;
         Id root{};
         std::uint64_t timestamp = 0;
+        // What this block asks the shared memory to do once it is accepted.
+        std::map<Id, atomic::Requests> atomic_requests;
     };
 
     Status verify_block(const block::Block& b, Verified& out);
@@ -149,6 +170,7 @@ class PlatformVM final : public lux::node::VM {
     std::uint64_t last_accepted_height_ = 0;
     Id preferred_{};
     std::uint64_t wall_clock_ = 0;
+    std::map<Id, atomic::Requests> atomic_requests_;
 };
 
 }  // namespace lux::platformvm::vm

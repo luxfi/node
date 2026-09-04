@@ -23,16 +23,19 @@
 #pragma once
 
 #include "lux/platformvm/error.hpp"
+#include "lux/platformvm/atomic.hpp"
 #include "lux/platformvm/complexity.hpp"
 #include "lux/platformvm/fx.hpp"
 #include "lux/platformvm/gas.hpp"
 #include "lux/platformvm/reward.hpp"
 #include "lux/platformvm/state.hpp"
+#include "lux/platformvm/uptime.hpp"
 #include "lux/platformvm/txs.hpp"
 
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace lux::platformvm::executor {
@@ -105,6 +108,17 @@ struct Backend {
     const FeeCalculator* fees = nullptr;
     fx::Fx fx{true};
 
+    // How the node measures whether a validator was there. Uptime is a fact
+    // about connections rather than about state, so it enters through this one
+    // question. Absent means the reward gate cannot be evaluated, and the
+    // caller is told so rather than given a default.
+    const uptime::Calculator* uptimes = nullptr;
+
+    // The other chains' side of the ledger. An import is the one transaction
+    // that spends something this chain has never seen, so without this it is
+    // refused rather than believed.
+    const atomic::SharedMemory* shared_memory = nullptr;
+
     // Go: Backend.Bootstrapped. False means this node is still replaying history
     // the network already agreed on; it re-checks everything once caught up.
     bool bootstrapped = true;
@@ -122,8 +136,16 @@ Status verify_new_chain_time(std::uint64_t new_chain_time, std::uint64_t now, co
 // clock to `new_chain_time`, and answers whether the validator set changed.
 Result<bool> advance_time_to(const Backend& backend, state::Chain& parent, std::uint64_t new_chain_time);
 
+// What executing one transaction leaves behind beyond the state it changed:
+// which outputs it consumed (so two transactions in one block cannot both spend
+// one), and what it asks the shared memory to do once the block is accepted.
+struct Effects {
+    std::set<Id> inputs;
+    std::map<Id, atomic::Requests> atomic_requests;
+};
+
 // Go: executor.StandardTx. Executes a submitted transaction against `layer`.
-Status standard_tx(const Backend& backend, const txs::Tx& tx, state::Diff& layer);
+Result<Effects> standard_tx(const Backend& backend, const txs::Tx& tx, state::Diff& layer);
 
 // Go: executor.ProposalTx. Executes the chain's own transaction against both
 // outcomes, so the vote that follows only has to pick one.
