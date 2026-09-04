@@ -217,6 +217,18 @@ Result<gas::Dimensions> signer_complexity(const signer::Signer& s) {
     return gas::Dimensions{};
 }
 
+Result<gas::Dimensions> warp_complexity(std::span<const std::uint8_t> message) {
+    auto parsed = warp::Message::parse(message);
+    if (!parsed) return std::unexpected(parsed.error());
+    auto signers = parsed.value().signature.num_signers();
+    if (!signers) return std::unexpected(signers.error());
+    auto aggregation = mul64(static_cast<std::uint64_t>(signers.value()), kBlsAggregateCompute);
+    if (!aggregation) return std::unexpected(aggregation.error());
+    auto compute = add64(aggregation.value(), kBlsVerifyCompute);
+    if (!compute) return std::unexpected(compute.error());
+    return dims(message.size(), kIntrinsicWarpDBReads, 0, compute.value());
+}
+
 Result<gas::Dimensions> tx_complexity(const txs::UnsignedTx& tx) {
     switch (tx.kind()) {
         case txs::Kind::Base: {
@@ -361,12 +373,24 @@ Result<gas::Dimensions> tx_complexity(const txs::UnsignedTx& tx) {
         }
 
         // The two warp-carrying transactions price the message they carry, and
-        // pricing it means parsing it. Absent rather than guessed: a fee that
-        // does not count the signers is a fee that does not count the work.
-        case txs::Kind::RegisterL1Validator:
-        case txs::Kind::SetL1ValidatorWeight:
-            return fail(Err::WrongTxType,
-                        "warp complexity needs the warp seam, which this port does not have");
+        // pricing it means parsing it: every signer is an aggregation every node
+        // performs, so a fee that does not count them does not count the work.
+        case txs::Kind::RegisterL1Validator: {
+            const auto& t = static_cast<const txs::RegisterL1ValidatorTx&>(tx);
+            auto base = base_tx_complexity(t);
+            if (!base) return base;
+            auto w = warp_complexity(t.message());
+            if (!w) return w;
+            return sum({intrinsic_register_l1_validator_tx(), base.value(), w.value()});
+        }
+        case txs::Kind::SetL1ValidatorWeight: {
+            const auto& t = static_cast<const txs::SetL1ValidatorWeightTx&>(tx);
+            auto base = base_tx_complexity(t);
+            if (!base) return base;
+            auto w = warp_complexity(t.message());
+            if (!w) return w;
+            return sum({intrinsic_set_l1_validator_weight_tx(), base.value(), w.value()});
+        }
 
         // The legacy staker transactions and the chain's own transaction carry
         // no price: nobody submitted them, so nobody pays.

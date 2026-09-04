@@ -457,6 +457,92 @@ Result<std::pair<txs::Tx, status::Status>> MemState::get_tx(const Id& tx_id) con
     return it->second;
 }
 
+// ── the L1 validator set, in memory
+
+// Go: state.PutL1Validator. Three invariants, all of them about a validation id
+// naming ONE validator for its whole life.
+Status MemState::put_l1_validator(const l1::Validator& v) {
+    const auto existing = l1_validators_.find(v.validation_id);
+    if (existing != l1_validators_.end() && !existing->second.immutable_fields_unmodified(v))
+        return fail(Err::MutatedL1Validator, "a constant field of " + v.validation_id.hex() + " changed");
+
+    if (v.is_deleted()) {
+        l1_validators_.erase(v.validation_id);
+        return ok();
+    }
+
+    // One (chain, node) pair at a time: two validators sharing it would be one
+    // node voting twice.
+    for (const auto& [id, other] : l1_validators_) {
+        if (id == v.validation_id) continue;
+        if (other.chain_id == v.chain_id && other.node_id == v.node_id)
+            return fail(Err::DuplicateL1Validator,
+                        v.node_id.hex() + " already validates " + v.chain_id.hex());
+    }
+
+    // And the chain's total must stay a number.
+    std::uint64_t total = 0;
+    for (const auto& [id, other] : l1_validators_) {
+        if (id == v.validation_id) continue;
+        if (!(other.chain_id == v.chain_id)) continue;
+        auto sum = add64(total, other.weight);
+        if (!sum) return fail(Err::Overflow, "the chain's L1 weight overflows");
+        total = sum.value();
+    }
+    if (!add64(total, v.weight)) return fail(Err::Overflow, "the chain's L1 weight overflows");
+
+    l1_validators_[v.validation_id] = v;
+    return ok();
+}
+
+Result<l1::Validator> MemState::get_l1_validator(const Id& validation_id) const {
+    const auto it = l1_validators_.find(validation_id);
+    if (it == l1_validators_.end()) return fail(Err::NotFound);
+    return it->second;
+}
+
+bool MemState::has_l1_validator(const Id& chain_id, const NodeId& node_id) const {
+    for (const auto& [id, v] : l1_validators_) {
+        (void)id;
+        if (v.chain_id == chain_id && v.node_id == node_id) return true;
+    }
+    return false;
+}
+
+// In increasing EndAccumulatedFee, so advancing the clock deactivates exactly
+// the prefix that can no longer pay and stops at the first one that can.
+std::vector<l1::Validator> MemState::active_l1_validators() const {
+    std::vector<l1::Validator> out;
+    for (const auto& [id, v] : l1_validators_) {
+        (void)id;
+        if (v.is_active()) out.push_back(v);
+    }
+    std::sort(out.begin(), out.end(), l1::ValidatorLess{});
+    return out;
+}
+
+std::size_t MemState::num_active_l1_validators() const {
+    std::size_t n = 0;
+    for (const auto& [id, v] : l1_validators_) {
+        (void)id;
+        if (v.is_active()) ++n;
+    }
+    return n;
+}
+
+// Active AND inactive: an inactive validator still weighs on the set it is in.
+Result<std::uint64_t> MemState::weight_of_l1_validators(const Id& chain_id) const {
+    std::uint64_t total = 0;
+    for (const auto& [id, v] : l1_validators_) {
+        (void)id;
+        if (!(v.chain_id == chain_id)) continue;
+        auto sum = add64(total, v.weight);
+        if (!sum) return fail(Err::Overflow, "the chain\'s L1 weight overflows");
+        total = sum.value();
+    }
+    return total;
+}
+
 // ── the diff layer
 
 Result<std::uint64_t> Diff::current_supply(const Id& chain_id) const {
@@ -551,6 +637,97 @@ Status Diff::set_delegatee_reward(const Id& chain_id, const NodeId& node_id, std
     return ok();
 }
 
+// The layer's L1 view: what this layer says, then what the parent says. A
+// deletion is recorded as a zero-weight record rather than as an absence, so a
+// read cannot fall through to the parent and resurrect it.
+Result<l1::Validator> Diff::get_l1_validator(const Id& validation_id) const {
+    const auto it = l1_validators_.find(validation_id);
+    if (it != l1_validators_.end()) {
+        if (it->second.is_deleted()) return fail(Err::NotFound);
+        return it->second;
+    }
+    return parent_->get_l1_validator(validation_id);
+}
+
+bool Diff::has_l1_validator(const Id& chain_id, const NodeId& node_id) const {
+    for (const auto& [id, v] : l1_validators_) {
+        (void)id;
+        if (v.chain_id == chain_id && v.node_id == node_id) return !v.is_deleted();
+    }
+    return parent_->has_l1_validator(chain_id, node_id);
+}
+
+Status Diff::put_l1_validator(const l1::Validator& v) {
+    if (auto existing = get_l1_validator(v.validation_id);
+        existing && !existing.value().immutable_fields_unmodified(v))
+        return fail(Err::MutatedL1Validator, "a constant field of " + v.validation_id.hex() + " changed");
+    l1_validators_[v.validation_id] = v;
+    return ok();
+}
+
+std::vector<l1::Validator> Diff::active_l1_validators() const {
+    std::map<Id, l1::Validator> merged;
+    for (const auto& v : parent_->active_l1_validators()) merged[v.validation_id] = v;
+    for (const auto& [id, v] : l1_validators_) {
+        if (v.is_active()) {
+            merged[id] = v;
+        } else {
+            merged.erase(id);
+        }
+    }
+    std::vector<l1::Validator> out;
+    out.reserve(merged.size());
+    for (const auto& [id, v] : merged) {
+        (void)id;
+        out.push_back(v);
+    }
+    std::sort(out.begin(), out.end(), l1::ValidatorLess{});
+    return out;
+}
+
+std::size_t Diff::num_active_l1_validators() const { return active_l1_validators().size(); }
+
+Result<std::uint64_t> Diff::weight_of_l1_validators(const Id& chain_id) const {
+    auto base = parent_->weight_of_l1_validators(chain_id);
+    if (!base) return base;
+    std::uint64_t total = base.value();
+    for (const auto& [id, v] : l1_validators_) {
+        if (!(v.chain_id == chain_id)) continue;
+        // What the layer says replaces what the parent said about the same id.
+        if (auto old = parent_->get_l1_validator(id); old && old.value().chain_id == chain_id) {
+            auto without = sub64(total, old.value().weight);
+            if (!without) return fail(Err::Underflow, "the chain\'s L1 weight underflows");
+            total = without.value();
+        }
+        auto sum = add64(total, v.weight);
+        if (!sum) return fail(Err::Overflow, "the chain\'s L1 weight overflows");
+        total = sum.value();
+    }
+    return total;
+}
+
+std::vector<l1::ExpiryEntry> Diff::expiries() const {
+    std::set<l1::ExpiryEntry, l1::ExpiryLess> merged;
+    for (const auto& e : parent_->expiries()) merged.insert(e);
+    for (const auto& [e, added] : expiry_diff_) {
+        if (added) {
+            merged.insert(e);
+        } else {
+            merged.erase(e);
+        }
+    }
+    return {merged.begin(), merged.end()};
+}
+
+bool Diff::has_expiry(const l1::ExpiryEntry& e) const {
+    const auto it = expiry_diff_.find(e);
+    if (it != expiry_diff_.end()) return it->second;
+    return parent_->has_expiry(e);
+}
+
+void Diff::put_expiry(const l1::ExpiryEntry& e) { expiry_diff_[e] = true; }
+void Diff::delete_expiry(const l1::ExpiryEntry& e) { expiry_diff_[e] = false; }
+
 bool Diff::has_network(const Id& network_id) const {
     return added_networks_.count(network_id) != 0 || parent_->has_network(network_id);
 }
@@ -611,6 +788,28 @@ Status Diff::apply(Chain& target) const {
     target.set_timestamp(timestamp_);
     target.set_accrued_fees(accrued_fees_);
     target.set_fee_state(fee_state_);
+    target.set_l1_validator_excess(l1_excess_);
+
+    // Every DELETION lands before any addition, so a (chain, node) pair that was
+    // removed and re-added in one layer cannot be rejected as a duplicate of
+    // itself. The reference orders these for the same reason.
+    for (const auto& [id, v] : l1_validators_) {
+        (void)id;
+        if (!v.is_deleted()) continue;
+        if (auto s = target.put_l1_validator(v); !s) return s;
+    }
+    for (const auto& [id, v] : l1_validators_) {
+        (void)id;
+        if (v.is_deleted()) continue;
+        if (auto s = target.put_l1_validator(v); !s) return s;
+    }
+    for (const auto& [e, added] : expiry_diff_) {
+        if (added) {
+            target.put_expiry(e);
+        } else {
+            target.delete_expiry(e);
+        }
+    }
     for (const auto& [chain_id, s] : supply_) target.set_current_supply(chain_id, s);
 
     for (const auto& [chain_id, nodes] : current_.validator_diffs()) {
@@ -745,6 +944,7 @@ Id state_root(const Chain& chain) {
     f.u64(chain.accrued_fees());
     f.u64(chain.fee_state().capacity);
     f.u64(chain.fee_state().excess);
+    f.u64(chain.l1_validator_excess());
 
     const auto nets = chain.networks();
     f.u64(nets.size());
@@ -779,6 +979,29 @@ Id state_root(const Chain& chain) {
     const auto pending = chain.pending_stakers();
     f.u64(pending.size());
     for (const auto& s : pending) f.staker(s);
+
+    // L1 validators and the expiries that gate their registration are state a
+    // block changed, so the commitment covers them too.
+    const auto l1s = chain.active_l1_validators();
+    f.u64(l1s.size());
+    for (const auto& v : l1s) {
+        f.b.insert(f.b.end(), v.validation_id.b.begin(), v.validation_id.b.end());
+        f.b.insert(f.b.end(), v.chain_id.b.begin(), v.chain_id.b.end());
+        f.b.insert(f.b.end(), v.node_id.b.begin(), v.node_id.b.end());
+        f.bytes(v.public_key);
+        f.bytes(v.remaining_balance_owner);
+        f.bytes(v.deactivation_owner);
+        f.u64(v.start_time);
+        f.u64(v.weight);
+        f.u64(v.min_nonce);
+        f.u64(v.end_accumulated_fee);
+    }
+    const auto exp = chain.expiries();
+    f.u64(exp.size());
+    for (const auto& e : exp) {
+        f.u64(e.timestamp);
+        f.b.insert(f.b.end(), e.validation_id.b.begin(), e.validation_id.b.end());
+    }
 
     const auto utxos = chain.utxos();
     f.u64(utxos.size());
