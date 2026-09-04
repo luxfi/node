@@ -65,10 +65,12 @@ message(STATUS "xvm: reusing crypto at ${_crypto}")
 find_checkout(_node "include/lux/node/vm.hpp"
   "${NODE_DIR}"
   "$ENV{HOME}/work/lux-cpp/node"
+  "$ENV{HOME}/work/lux/node2"
   "${CMAKE_SOURCE_DIR}/../../../../lux-cpp/node")
 find_checkout(_consensus "include/lux/consensus/quorum_cert_engine.hpp"
   "${CONSENSUS_DIR}"
   "$ENV{HOME}/work/lux-cpp/consensus"
+  "$ENV{HOME}/work/luxcpp/consensus"
   "${CMAKE_SOURCE_DIR}/../../../../lux-cpp/consensus")
 
 # The seam is the point of the port, so its absence is a hard error rather than
