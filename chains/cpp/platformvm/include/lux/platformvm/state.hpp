@@ -278,6 +278,11 @@ class Chain {
     virtual void add_reward_utxo(const Id& tx_id, const UTXO& u) = 0;
     virtual std::vector<UTXO> reward_utxos(const Id& tx_id) const = 0;
 
+    // Every unspent output, in id order. The whole set, because a commitment to
+    // "the state this block produced" that omits the money is a commitment a
+    // node can forge balances underneath.
+    virtual std::vector<UTXO> utxos() const = 0;
+
     // the current staker set
     virtual Result<Staker> get_current_validator(const Id& chain_id, const NodeId& node_id) const = 0;
     virtual Status put_current_validator(const Staker& s) = 0;
@@ -311,6 +316,7 @@ class Chain {
     virtual void add_network_transformation(const txs::Tx& tx) = 0;
     virtual void add_chain(const txs::Tx& create_chain_tx) = 0;
     virtual std::vector<txs::Tx> chains(const Id& network_id) const = 0;
+    virtual std::vector<Id> networks() const = 0;
     virtual bool chain_name_taken(const std::string& name) const = 0;
 
     // transactions, by id
@@ -334,6 +340,7 @@ class MemState final : public Chain {
     void delete_utxo(const Id& utxo_id) override { utxos_.erase(utxo_id); }
     void add_reward_utxo(const Id& tx_id, const UTXO& u) override { reward_utxos_[tx_id].push_back(u); }
     std::vector<UTXO> reward_utxos(const Id& tx_id) const override;
+    std::vector<UTXO> utxos() const override;
 
     Result<Staker> get_current_validator(const Id& chain_id, const NodeId& node_id) const override {
         return current_.get_validator(chain_id, node_id);
@@ -392,6 +399,7 @@ class MemState final : public Chain {
     void add_network_transformation(const txs::Tx& tx) override;
     void add_chain(const txs::Tx& create_chain_tx) override;
     std::vector<txs::Tx> chains(const Id& network_id) const override;
+    std::vector<Id> networks() const override { return {networks_.begin(), networks_.end()}; }
     bool chain_name_taken(const std::string& name) const override { return chain_names_.count(name) != 0; }
 
     Result<std::pair<txs::Tx, status::Status>> get_tx(const Id& tx_id) const override;
@@ -448,6 +456,7 @@ class Diff final : public Chain {
     void delete_utxo(const Id& utxo_id) override;
     void add_reward_utxo(const Id& tx_id, const UTXO& u) override { reward_utxos_[tx_id].push_back(u); }
     std::vector<UTXO> reward_utxos(const Id& tx_id) const override;
+    std::vector<UTXO> utxos() const override;
 
     Result<Staker> get_current_validator(const Id& chain_id, const NodeId& node_id) const override;
     Status put_current_validator(const Staker& s) override { return current_.put_validator(s); }
@@ -480,6 +489,7 @@ class Diff final : public Chain {
     void add_network_transformation(const txs::Tx& tx) override;
     void add_chain(const txs::Tx& create_chain_tx) override;
     std::vector<txs::Tx> chains(const Id& network_id) const override;
+    std::vector<Id> networks() const override;
     bool chain_name_taken(const std::string& name) const override;
 
     Result<std::pair<txs::Tx, status::Status>> get_tx(const Id& tx_id) const override;
@@ -510,5 +520,16 @@ class Diff final : public Chain {
 // state.GetNextStakerChangeTime, with the L1 fee arm left to the caller that
 // has a fee config. `upper` bounds the answer.
 std::uint64_t next_staker_change_time(const Chain& chain, std::uint64_t upper);
+
+// The commitment a block carries: sha256 over a canonical walk of the state its
+// execution produced — the clock, the accrued fees, the supply of every network,
+// the current and pending staker sets in their consensus order, every unspent
+// output in id order, and every network with its owner.
+//
+// It is the whole state rather than an incremental root, which costs a walk per
+// block. That is the honest trade at this size: a validator signs what it
+// executed, and a commitment that skips a part of the state is a part a node can
+// forge underneath.
+Id state_root(const Chain& chain);
 
 }  // namespace lux::platformvm::state
