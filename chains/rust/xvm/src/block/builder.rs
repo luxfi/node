@@ -133,6 +133,7 @@ pub fn build(mgr: &Manager, backend: &Backend<'_>, now: u64, candidates: &[Tx]) 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ids;
     use crate::fx::secp256k1::{address_of, MintOutput, TransferInput, TransferOutput};
     use crate::fx::{self, Input, Owners, State};
     use crate::ids::{ShortId, EMPTY};
@@ -146,10 +147,10 @@ mod tests {
     const NETWORK_ID: u32 = 10;
 
     fn chain_id() -> Id {
-        Id::prefixed_bytes(&[5])
+        ids::prefixed(&[5])
     }
     fn asset() -> Id {
-        Id::prefixed_bytes(&[1])
+        ids::prefixed(&[1])
     }
     fn key(n: u8) -> [u8; 32] {
         let mut k = [0u8; 32];
@@ -182,7 +183,7 @@ mod tests {
                 network_id: NETWORK_ID,
                 chain_id: chain_id(),
             },
-            net_id: Id::prefixed_bytes(&[0xAB]),
+            net_id: ids::prefixed(&[0xAB]),
             config: Config {
                 tx_fee: 0,
                 create_asset_tx_fee: 0,
@@ -275,7 +276,7 @@ mod tests {
     #[test]
     fn nothing_to_build_is_said_rather_than_an_empty_block() {
         let (mgr, _) = started(&[]);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 100);
         assert_eq!(
@@ -286,9 +287,9 @@ mod tests {
 
     #[test]
     fn a_built_block_verifies_against_the_manager_that_built_it() {
-        let src = Id::prefixed_bytes(&[9]);
+        let src = ids::prefixed(&[9]);
         let (mut mgr, _) = started(&[(src, 100, 1)]);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 100);
 
@@ -303,9 +304,9 @@ mod tests {
     #[test]
     fn a_later_transaction_sees_what_an_earlier_one_did() {
         // Spend a UTXO, then spend the output it produced — in one block.
-        let src = Id::prefixed_bytes(&[9]);
+        let src = ids::prefixed(&[9]);
         let (mut mgr, _) = started(&[(src, 100, 1)]);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 100);
 
@@ -319,15 +320,15 @@ mod tests {
 
     #[test]
     fn a_transaction_that_cannot_verify_is_dropped_and_named() {
-        let src = Id::prefixed_bytes(&[9]);
+        let src = ids::prefixed(&[9]);
         let (mgr, _) = started(&[(src, 100, 1)]);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 100);
 
         let good = spend(src, 100, 1);
         // Spends a UTXO nothing produced.
-        let bad = spend(Id::prefixed_bytes(&[0xDD]), 100, 1);
+        let bad = spend(ids::prefixed(&[0xDD]), 100, 1);
         let built = build(&mgr, &b, 100, &[good.clone(), bad.clone()]).unwrap();
         assert_eq!(built.block.txs().len(), 1);
         assert_eq!(built.block.txs()[0].id(), good.id());
@@ -338,9 +339,9 @@ mod tests {
 
     #[test]
     fn the_same_transaction_twice_takes_only_the_first() {
-        let src = Id::prefixed_bytes(&[9]);
+        let src = ids::prefixed(&[9]);
         let (mgr, _) = started(&[(src, 100, 1)]);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 100);
         let tx = spend(src, 100, 1);
@@ -351,11 +352,11 @@ mod tests {
 
     #[test]
     fn the_block_time_never_runs_backwards() {
-        let src = Id::prefixed_bytes(&[9]);
+        let src = ids::prefixed(&[9]);
         let mut mgr = Manager::new(with_asset_and_funds(&[(src, 100, 1)]));
         let g = Block::new(EMPTY, 0, 500, EMPTY, vec![]).unwrap();
         mgr.set_genesis(g);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 100);
         // The clock says 100; the parent says 500.
@@ -365,9 +366,9 @@ mod tests {
 
     #[test]
     fn a_transaction_bigger_than_what_is_left_stops_the_loop() {
-        let src = Id::prefixed_bytes(&[9]);
+        let src = ids::prefixed(&[9]);
         let (mgr, _) = started(&[(src, 100, 1)]);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 100);
         // Nothing fits in nothing, and the loop breaks before the first one.

@@ -12,7 +12,7 @@
 //! its parent's buffer, reached by a pointer.
 
 use super::{open, write_envelope_prefix, Error, ShapeKind, TypeKind};
-use crate::ids::Id;
+use crate::ids::{self, Id};
 use crate::zap::{self, Builder, Object};
 
 /// One 4-byte pointer slot in an out-of-line object list.
@@ -38,7 +38,7 @@ impl<'a> TransferableOut<'a> {
     }
 
     pub fn asset_id(&self) -> Id {
-        Id::prefixed_bytes(self.obj.bytes_fixed(OFF_TRANSFERABLE_OUT_ASSET, 32))
+        ids::prefixed(self.obj.bytes_fixed(OFF_TRANSFERABLE_OUT_ASSET, 32))
     }
 
     /// The inner fx Output envelope. Dispatch on its own discriminator.
@@ -55,7 +55,7 @@ impl<'a> TransferableOut<'a> {
 /// pointer slot names.
 pub fn append_transferable_out(b: &mut Builder, asset_id: &Id, inner: &[u8]) -> usize {
     let ob = b.start_object(SIZE_TRANSFERABLE_OUT);
-    ob.set_bytes_fixed(b, OFF_TRANSFERABLE_OUT_ASSET, &asset_id.0);
+    ob.set_bytes_fixed(b, OFF_TRANSFERABLE_OUT_ASSET, asset_id);
     ob.set_bytes(b, OFF_TRANSFERABLE_OUT_OUTPUT, inner);
     ob.offset()
 }
@@ -83,13 +83,13 @@ impl<'a> TransferableIn<'a> {
     }
 
     pub fn tx_id(&self) -> Id {
-        Id::prefixed_bytes(self.obj.bytes_fixed(OFF_TRANSFERABLE_IN_TXID, 32))
+        ids::prefixed(self.obj.bytes_fixed(OFF_TRANSFERABLE_IN_TXID, 32))
     }
     pub fn output_index(&self) -> u32 {
         self.obj.u32(OFF_TRANSFERABLE_IN_INDEX)
     }
     pub fn asset_id(&self) -> Id {
-        Id::prefixed_bytes(self.obj.bytes_fixed(OFF_TRANSFERABLE_IN_ASSET, 32))
+        ids::prefixed(self.obj.bytes_fixed(OFF_TRANSFERABLE_IN_ASSET, 32))
     }
     pub fn input_bytes(&self) -> &'a [u8] {
         self.obj.bytes(OFF_TRANSFERABLE_IN_INPUT)
@@ -107,9 +107,9 @@ pub fn append_transferable_in(
     inner: &[u8],
 ) -> usize {
     let ob = b.start_object(SIZE_TRANSFERABLE_IN);
-    ob.set_bytes_fixed(b, OFF_TRANSFERABLE_IN_TXID, &tx_id.0);
+    ob.set_bytes_fixed(b, OFF_TRANSFERABLE_IN_TXID, tx_id);
     ob.set_u32(b, OFF_TRANSFERABLE_IN_INDEX, output_index);
-    ob.set_bytes_fixed(b, OFF_TRANSFERABLE_IN_ASSET, &asset_id.0);
+    ob.set_bytes_fixed(b, OFF_TRANSFERABLE_IN_ASSET, asset_id);
     ob.set_bytes(b, OFF_TRANSFERABLE_IN_INPUT, inner);
     ob.offset()
 }
@@ -135,13 +135,13 @@ pub struct Utxo<'a> {
 
 impl<'a> Utxo<'a> {
     pub fn tx_id(&self) -> Id {
-        Id::prefixed_bytes(self.obj.bytes_fixed(OFF_UTXO_TXID, 32))
+        ids::prefixed(self.obj.bytes_fixed(OFF_UTXO_TXID, 32))
     }
     pub fn output_index(&self) -> u32 {
         self.obj.u32(OFF_UTXO_INDEX)
     }
     pub fn asset_id(&self) -> Id {
-        Id::prefixed_bytes(self.obj.bytes_fixed(OFF_UTXO_ASSET, 32))
+        ids::prefixed(self.obj.bytes_fixed(OFF_UTXO_ASSET, 32))
     }
     pub fn output_bytes(&self) -> &'a [u8] {
         self.obj.bytes(OFF_UTXO_OUTPUT)
@@ -156,9 +156,9 @@ pub fn wrap_utxo(b: &[u8]) -> Result<Utxo<'_>, Error> {
 pub fn new_utxo(tx_id: &Id, output_index: u32, asset_id: &Id, output: &[u8]) -> Vec<u8> {
     let mut b = Builder::default();
     let ob = b.start_object(SIZE_UTXO);
-    ob.set_bytes_fixed(&mut b, OFF_UTXO_TXID, &tx_id.0);
+    ob.set_bytes_fixed(&mut b, OFF_UTXO_TXID, tx_id);
     ob.set_u32(&mut b, OFF_UTXO_INDEX, output_index);
-    ob.set_bytes_fixed(&mut b, OFF_UTXO_ASSET, &asset_id.0);
+    ob.set_bytes_fixed(&mut b, OFF_UTXO_ASSET, asset_id);
     ob.set_bytes(&mut b, OFF_UTXO_OUTPUT, output);
     ob.finish_as_root(&mut b);
     write_envelope_prefix(TypeKind::Reserved, ShapeKind::Utxo, b.finish())
@@ -193,7 +193,7 @@ impl<'a> XvmBaseTx<'a> {
         self.obj.u32(OFF_BASE_NETWORK)
     }
     pub fn blockchain_id(&self) -> Id {
-        Id::prefixed_bytes(self.obj.bytes_fixed(OFF_BASE_CHAIN, 32))
+        ids::prefixed(self.obj.bytes_fixed(OFF_BASE_CHAIN, 32))
     }
     pub fn outs_count(&self) -> usize {
         self.obj.list_stride(OFF_BASE_OUTS, OBJ_PTR_STRIDE).len()
@@ -281,7 +281,7 @@ pub fn new_xvm_base_tx(
 
     let ob = b.start_object(SIZE_XVM_BASE_TX);
     ob.set_u32(&mut b, OFF_BASE_NETWORK, network_id);
-    ob.set_bytes_fixed(&mut b, OFF_BASE_CHAIN, &blockchain_id.0);
+    ob.set_bytes_fixed(&mut b, OFF_BASE_CHAIN, blockchain_id);
     ob.set_list(&mut b, OFF_BASE_OUTS, outs_off, outs_len);
     ob.set_list(&mut b, OFF_BASE_INS, ins_off, ins_len);
     ob.set_bytes(&mut b, OFF_BASE_MEMO, memo);
@@ -417,7 +417,7 @@ pub fn write_utxo_ids(b: &mut Builder, ids: &[(Id, u32)]) -> (usize, usize) {
     let mut lb = b.start_list();
     for (tx_id, index) in ids {
         let mut e = [0u8; 36];
-        e[0..32].copy_from_slice(&tx_id.0);
+        e[0..32].copy_from_slice(tx_id);
         e[32..36].copy_from_slice(&index.to_le_bytes());
         lb.add_bytes(b, &e);
     }
@@ -430,7 +430,7 @@ pub fn read_utxo_ids(obj: &Object<'_>, field: usize) -> Vec<(Id, u32)> {
     (0..list.len())
         .map(|i| {
             let e = list.object(i, UTXO_ID_STRIDE as usize);
-            (Id::prefixed_bytes(e.bytes_fixed(0, 32)), e.u32(32))
+            (ids::prefixed(e.bytes_fixed(0, 32)), e.u32(32))
         })
         .collect()
 }
@@ -454,7 +454,7 @@ mod tests {
     use crate::wire::shapes;
 
     fn asset(n: u8) -> Id {
-        Id::prefixed_bytes(&[n])
+        ids::prefixed(&[n])
     }
 
     #[test]
