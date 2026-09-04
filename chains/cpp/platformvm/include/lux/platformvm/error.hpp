@@ -248,6 +248,26 @@ enum class Err {
     EmptyHistory,     // stakingparams.ErrEmptyHistory
     NotMonotonic,     // stakingparams.ErrNotMonotonic
     BoundsIncoherent, // stakingparams.ErrBoundsIncoherent
+
+    // ── the register of adopted networks (vms/platformvm/adopt)
+    NoChainId,      // adopt.ErrNoChainID
+    NoIdentity,     // adopt.ErrNoIdentity
+    BadAnchor,      // adopt.ErrBadAnchor
+    BadHolding,     // adopt.ErrBadHolding
+    NoEndpoints,    // adopt.ErrNoEndpoints
+    SelfParent,     // adopt.ErrSelfParent
+    CustodyUnheld,  // adopt.ErrCustodyUnheld
+    NoCustody,      // adopt.ErrNoCustody
+    AlreadyAdopted, // adopt.ErrAlreadyAdopted
+    NotAdopted,     // adopt.ErrNotAdopted
+    NoParent,       // adopt.ErrNoParent
+    ParentHeld,     // adopt.ErrParentHeld
+    WeakerAnchor,   // adopt.ErrWeakerAnchor
+    // The two refusals the reference states inline rather than as sentinels.
+    // Named here because a refusal is a value in this port, and an unnamed one
+    // could only be asserted as "something went wrong".
+    SourceNotRevisable, // adopt.Registry.Revise "security source is not revisable"
+    NotWeaker,          // adopt.Registry.Weaken "is not weaker than"
 };
 
 std::string_view err_name(Err e);
