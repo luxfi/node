@@ -203,6 +203,21 @@ std::string_view err_name(Err e) {
         case Err::EmptyHistory: return "EmptyHistory";
         case Err::NotMonotonic: return "NotMonotonic";
         case Err::BoundsIncoherent: return "BoundsIncoherent";
+        case Err::NoChainId: return "NoChainId";
+        case Err::NoIdentity: return "NoIdentity";
+        case Err::BadAnchor: return "BadAnchor";
+        case Err::BadHolding: return "BadHolding";
+        case Err::NoEndpoints: return "NoEndpoints";
+        case Err::SelfParent: return "SelfParent";
+        case Err::CustodyUnheld: return "CustodyUnheld";
+        case Err::NoCustody: return "NoCustody";
+        case Err::AlreadyAdopted: return "AlreadyAdopted";
+        case Err::NotAdopted: return "NotAdopted";
+        case Err::NoParent: return "NoParent";
+        case Err::ParentHeld: return "ParentHeld";
+        case Err::WeakerAnchor: return "WeakerAnchor";
+        case Err::SourceNotRevisable: return "SourceNotRevisable";
+        case Err::NotWeaker: return "NotWeaker";
     }
     return "Unknown";
 }
