@@ -18,12 +18,23 @@ retiring it is the outcome this repo works toward, not a precondition of it.
 
 ```
 runtime/{go,rust,cpp}   thin shim READMEs — what gets built, from where, how
-chains/{go,rust,cpp}    Phase 2 placeholders — the P/X/C/Q/Z chain suite
+chains/cpp/xvm          the X-Chain in C++, behind lux-cpp/node's VM seam
+chains/{go,rust}        Phase 2 placeholders — the rest of the P/X/C/Q/Z suite
 gpu/                    thin shim to the GPU kernel library
 conformance/            wires the existing pop/verdict corpus per language
 bin/                    build output — luxd-go, luxd-rust, luxd-cpp (gitignored)
 Makefile                the one build entry point
 ```
+
+## The one place node2 holds real code
+
+`chains/cpp/xvm` is written, not imported: no C++ X-Chain existed to shim. It
+is the Lux X-Chain — the UTXO DAG and asset transfers — ported from
+`~/work/lux/node/vms/xvm` and built against `lux-cpp/node`'s VM seam. Its wire
+bytes are checked against the bytes the Go implementation emits for the same
+values (`chains/cpp/xvm/test/golden_gen.go` regenerates them from the Go
+checkout), so the two cannot drift without a test failing. Its build imports no
+Go module and no `luxfi/node`. See `chains/cpp/xvm/LLM.md`.
 
 ## The three runtimes, honestly
 
