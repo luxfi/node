@@ -12,7 +12,9 @@ require (
 	github.com/luxfi/consensus v1.36.91
 	github.com/luxfi/crypto v1.20.2
 	github.com/luxfi/ids v1.3.2
+	github.com/luxfi/node v1.36.15
 	github.com/luxfi/proto v1.4.10
+	github.com/luxfi/utxo v0.5.8
 	github.com/luxfi/validators v1.3.1
 )
 
@@ -42,6 +44,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.10 // indirect
 	github.com/aws/smithy-go v1.24.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.5.0 // indirect
+	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
+	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
@@ -53,12 +58,14 @@ require (
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
 	github.com/cronokirby/saferith v0.33.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
 	github.com/getsentry/sentry-go v0.44.1 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260601182631-00ed12fed2a6 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -67,6 +74,7 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/rpc v1.2.1 // indirect
+	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/grandcat/zeroconf v1.0.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.2.0 // indirect
@@ -81,7 +89,9 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/luxfi/accel v1.2.4 // indirect
+	github.com/luxfi/address v1.1.1 // indirect
 	github.com/luxfi/age v1.6.0 // indirect
+	github.com/luxfi/api v1.1.6 // indirect
 	github.com/luxfi/atomic v1.0.0 // indirect
 	github.com/luxfi/cache v1.3.1 // indirect
 	github.com/luxfi/compress v0.1.1 // indirect
@@ -91,7 +101,9 @@ require (
 	github.com/luxfi/corona v0.10.4 // indirect
 	github.com/luxfi/database v1.21.5 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
+	github.com/luxfi/formatting v1.1.1 // indirect
 	github.com/luxfi/geth v1.20.2 // indirect
+	github.com/luxfi/keychain v1.1.1 // indirect
 	github.com/luxfi/lattice/v7 v7.1.4 // indirect
 	github.com/luxfi/lens v0.2.1 // indirect
 	github.com/luxfi/log v1.4.3 // indirect
@@ -105,9 +117,11 @@ require (
 	github.com/luxfi/p2p v1.22.1 // indirect
 	github.com/luxfi/pq v1.1.0 // indirect
 	github.com/luxfi/pulsar v1.9.2 // indirect
+	github.com/luxfi/rpc v1.1.0 // indirect
 	github.com/luxfi/runtime v1.3.1 // indirect
 	github.com/luxfi/sampler v1.1.0 // indirect
 	github.com/luxfi/threshold v1.12.3 // indirect
+	github.com/luxfi/timer v1.1.1 // indirect
 	github.com/luxfi/utils v1.3.1 // indirect
 	github.com/luxfi/version v1.0.1 // indirect
 	github.com/luxfi/vm v1.3.12 // indirect

@@ -4,7 +4,7 @@
 // wire_test.cpp — the bytes, against Go's.
 //
 // This is the load-bearing test of the whole port. Every constant in golden.hpp
-// was produced by the GO X-Chain (test/golden_gen.go run against
+// was produced by the GO X-Chain (test/golden/golden_gen.go run against
 // luxfi/node/vms/xvm); this file builds the SAME value in C++ and compares the
 // hex. If a byte moves, the two implementations have forked the chain, and that
 // is what fails here rather than in production.

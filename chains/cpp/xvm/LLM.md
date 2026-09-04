@@ -21,12 +21,12 @@ test/              eleven suites, 677 assertions, all green
 **The bytes.** A transaction's id is `sha256` of its wire bytes, so a C++ node
 that encodes a field one byte differently gives every transaction a different
 name and is simply a different chain. `test/golden.hpp` is therefore not
-hand-written: `test/golden_gen.go` builds the same values with the **Go
+hand-written: `test/golden/golden_gen.go` builds the same values with the **Go
 implementation** and prints their canonical bytes, and `wire_test` /
 `genesis_test` assert against them verbatim. Regenerate and diff at any time:
 
 ```sh
-cp test/golden_gen.go /tmp/gg/main.go
+cp test/golden/golden_gen.go /tmp/gg/main.go
 cd ~/work/lux/node && GOWORK=off go run /tmp/gg/main.go > /tmp/golden.hpp
 diff /tmp/golden.hpp <this>/test/golden.hpp     # must be empty
 ```
