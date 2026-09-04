@@ -342,6 +342,11 @@ class Chain {
     virtual bool has_l1_validator(const Id& chain_id, const NodeId& node_id) const = 0;
     virtual Status put_l1_validator(const l1::Validator& v) = 0;
     virtual std::vector<l1::Validator> active_l1_validators() const = 0;
+    // Every L1 validator of one network, active and inactive alike, in name
+    // order. An inactive one holds weight it cannot vote with, which is exactly
+    // why the set has to name it: weight nobody can vote with still sits in the
+    // denominator of every quorum.
+    virtual std::vector<l1::Validator> l1_validators(const Id& chain_id) const = 0;
     virtual std::size_t num_active_l1_validators() const = 0;
     virtual Result<std::uint64_t> weight_of_l1_validators(const Id& chain_id) const = 0;
 
@@ -444,6 +449,7 @@ class MemState final : public Chain {
     bool has_l1_validator(const Id& chain_id, const NodeId& node_id) const override;
     Status put_l1_validator(const l1::Validator& v) override;
     std::vector<l1::Validator> active_l1_validators() const override;
+    std::vector<l1::Validator> l1_validators(const Id& chain_id) const override;
     std::size_t num_active_l1_validators() const override;
     Result<std::uint64_t> weight_of_l1_validators(const Id& chain_id) const override;
 
@@ -555,6 +561,7 @@ class Diff final : public Chain {
     bool has_l1_validator(const Id& chain_id, const NodeId& node_id) const override;
     Status put_l1_validator(const l1::Validator& v) override;
     std::vector<l1::Validator> active_l1_validators() const override;
+    std::vector<l1::Validator> l1_validators(const Id& chain_id) const override;
     std::size_t num_active_l1_validators() const override;
     Result<std::uint64_t> weight_of_l1_validators(const Id& chain_id) const override;
 
@@ -562,6 +569,14 @@ class Diff final : public Chain {
     bool has_expiry(const l1::ExpiryEntry& e) const override;
     void put_expiry(const l1::ExpiryEntry& e) override;
     void delete_expiry(const l1::ExpiryEntry& e) override;
+
+    // What this layer changed about the validator sets. A node that has to
+    // answer "who validated at height H" reads these, because the set at H is
+    // the set now with every change since undone.
+    const std::map<Id, std::map<NodeId, ValidatorDiff>>& current_validator_diffs() const {
+        return current_.validator_diffs();
+    }
+    const std::map<Id, l1::Validator>& l1_changes() const { return l1_validators_; }
 
   private:
     Chain* parent_;

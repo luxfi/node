@@ -114,7 +114,7 @@ what a fork does. So:
 
 ## What is here, and what is not
 
-195 cases across 16 suites, all green, clean under address+undefined sanitizers.
+200 cases across 16 suites, all green, clean under address+undefined sanitizers.
 
 **Ported and tested.** All nineteen transaction kinds and all four block kinds,
 byte-identical, with their full syntactic verification. Every execution path the
@@ -131,7 +131,8 @@ envelope and the four things an L1 says. The whole L1 subsystem: the validator
 record, the expiry set that refuses a replay, the LP-77 continuous fee, the four
 transactions that register, reweight, top up and switch off an L1 validator, and
 the two that establish a sovereign network's own set. The validator set consensus
-samples and its commitment. The genesis blob — the money, the first validators
+samples and its commitment, and the set at any height that has already passed —
+which is what makes a signature from back then checkable now. The genesis blob — the money, the first validators
 and the first chains a network starts with — encoded, parsed and validated,
 against the bytes the Go package wrote. And the VM itself — build, parse, get,
 prefer, verify, accept — through the node's seam.
@@ -147,10 +148,11 @@ a success it has not earned:
 - **State persistence** — `state::MemState` is the accepted state in memory. The
   reference's on-disk layout (~2,000 lines of key encodings, height diffs and
   batched commits) is not ported. Nothing above it assumes memory: `Chain` is an
-  interface and a disk-backed implementation is a sibling of `MemState`. The
-  height-indexed weight and key diffs a node needs to answer "who validated at
-  height H" live with that layout and are absent with it; the set at the LAST
-  ACCEPTED height is here and correct.
+  interface and a disk-backed implementation is a sibling of `MemState`. What
+  each height CHANGED about the validator sets is here — recorded as blocks are
+  accepted, so the set at any past height is the set now with everything since
+  undone — but it lives in memory with the state, and a node that restarts
+  starts that record again.
 - **The JSON-RPC service and client** (~3,200 lines) — the node's seam does not
   ask for them.
 - **Gossip, metrics, and the uptime tracker** — the first two are node
