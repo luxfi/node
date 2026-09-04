@@ -38,4 +38,47 @@ bool verify_pop(const PublicKeyBytes& pk, const SignatureBytes& sig, std::span<c
                                      /*aug=*/nullptr, /*aug_len=*/0) == BLST_SUCCESS;
 }
 
+bool verify_signature(const PublicKeyBytes& pk, const SignatureBytes& sig,
+                      std::span<const std::uint8_t> msg) {
+    blst_p1_affine p{};
+    if (blst_p1_uncompress(&p, pk.data()) != BLST_SUCCESS) return false;
+    if (blst_p1_affine_is_inf(&p)) return false;
+    blst_p2_affine s{};
+    if (blst_p2_uncompress(&s, sig.data()) != BLST_SUCCESS) return false;
+    return blst_core_verify_pk_in_g1(&p, &s, /*hash_or_encode=*/true, msg.data(), msg.size(),
+                                     reinterpret_cast<const byte*>(kSigDst), kSigDstLen,
+                                     /*aug=*/nullptr, /*aug_len=*/0) == BLST_SUCCESS;
+}
+
+std::optional<PublicKeyBytes> aggregate_public_keys(const std::vector<PublicKeyBytes>& keys) {
+    if (keys.empty()) return std::nullopt;
+    blst_p1 acc{};
+    bool first = true;
+    for (const auto& k : keys) {
+        blst_p1_affine a{};
+        if (blst_p1_uncompress(&a, k.data()) != BLST_SUCCESS) return std::nullopt;
+        if (blst_p1_affine_is_inf(&a)) return std::nullopt;
+        if (first) {
+            blst_p1_from_affine(&acc, &a);
+            first = false;
+        } else {
+            blst_p1_add_or_double_affine(&acc, &acc, &a);
+        }
+    }
+    PublicKeyBytes out{};
+    blst_p1_compress(out.data(), &acc);
+    return out;
+}
+
+std::optional<PublicKeyBytes> compress_public_key(std::span<const std::uint8_t> uncompressed) {
+    if (uncompressed.size() != 96) return std::nullopt;
+    blst_p1_affine a{};
+    if (blst_p1_deserialize(&a, uncompressed.data()) != BLST_SUCCESS) return std::nullopt;
+    if (blst_p1_affine_is_inf(&a)) return std::nullopt;
+    if (!blst_p1_affine_in_g1(&a)) return std::nullopt;
+    PublicKeyBytes out{};
+    blst_p1_affine_compress(out.data(), &a);
+    return out;
+}
+
 }  // namespace lux::platformvm::signer
