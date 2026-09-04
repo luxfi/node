@@ -277,6 +277,13 @@ class Standard final : public txs::Visitor {
         // transaction, so nothing has to be assigned or agreed.
         s_.add_network(tx_.tx_id);
         s_.set_network_owner(tx_.tx_id, t.owner());
+
+        // A sovereign network runs its OWN validator set from birth. Same
+        // primitive as the promotion below, so a set is established exactly one
+        // way whichever transaction establishes it.
+        if (t.security_mode().sovereign())
+            return register_own_set(tx_.tx_id, t.validators(), t.manager_chain_id(),
+                                    t.manager_address());
         return ok();
     }
 
@@ -544,8 +551,34 @@ class Standard final : public txs::Visitor {
         return ok();
     }
 
-    Status convert_network_tx(const txs::ConvertNetworkTx&) override {
-        return fail(Err::WrongTxType, "ConvertNetworkTx is not executed by this port");
+    // The promotion: an existing network establishes its OWN validator set and
+    // names the authority that may change it. The network's owner authorises
+    // it, and every validator that starts ACTIVE has its balance spent here —
+    // otherwise the LUX backing those balances would be minted.
+    Status convert_network_tx(const txs::ConvertNetworkTx& t) override {
+        if (auto st = shape(t); !st) return st;
+
+        auto creds = verify_poa_chain_authorization(b_, s_, tx_, t.network(), t.auth());
+        if (!creds) return std::unexpected(creds.error());
+
+        auto fee = b_.fees->calculate(t);
+        if (!fee) return std::unexpected(fee.error());
+        std::uint64_t total = fee.value();
+        for (const auto& v : t.validators()) {
+            if (v.balance == 0) continue;
+            auto sum = add64(total, v.balance);
+            if (!sum) return std::unexpected(sum.error());
+            total = sum.value();
+        }
+
+        if (auto st = register_own_set(t.network(), t.validators(), t.manager_chain_id(),
+                                       t.manager_address());
+            !st)
+            return st;
+
+        if (auto st = flow_check(b_, s_, t, t.inputs(), t.outputs(), creds.value(), total); !st) return st;
+        move(t);
+        return ok();
     }
     // An L1 tells the P-chain to start tracking a validator. The balance the
     // transaction carries is prepaid fee, so it is spent like one.
@@ -753,6 +786,72 @@ class Standard final : public txs::Visitor {
         for (const auto& in : t.inputs()) effects_.inputs.insert(in.input_id());
         consume(s_, t.inputs());
         produce(s_, tx_.tx_id, t.outputs());
+    }
+
+    // Go: registerOwnSet. Seeds a network's own validator set and records the
+    // authority that may change it. The ONE primitive behind both the ∅→Network
+    // constructor and the Network→Network promotion.
+    Status register_own_set(const Id& network_id, const std::vector<txs::NetworkValidator>& vdrs,
+                            const Id& manager_chain_id, std::span<const std::uint8_t> manager_address) {
+        const std::uint64_t start_time = s_.timestamp();
+        const std::uint64_t accrued = s_.accrued_fees();
+
+        warpmsg::ConversionData data;
+        data.chain_id = network_id;
+        data.manager_chain_id = manager_chain_id;
+        data.manager_address.assign(manager_address.begin(), manager_address.end());
+        data.validators.reserve(vdrs.size());
+
+        for (std::size_t i = 0; i < vdrs.size(); ++i) {
+            const auto& v = vdrs[i];
+            if (v.node_id.size() != kNodeIdLen) return fail(Err::InvalidNodeIDLength);
+
+            // The possession pairing was already run by SyntacticVerify over
+            // these same bytes, so this is the decode alone. Still fail-closed:
+            // a key that does not parse is refused, because a validator stored
+            // keyless carries weight in the quorum denominator with no way for
+            // anyone to vote toward it.
+            auto uncompressed = signer::uncompress_for_set(v.pop.public_key);
+            if (!uncompressed) return std::unexpected(uncompressed.error());
+
+            l1::Validator record;
+            // The name is DERIVED — the network's id with the index appended —
+            // rather than assigned, so genesis validators need nothing agreed.
+            record.validation_id = append_id(network_id, static_cast<std::uint32_t>(i));
+            record.chain_id = network_id;
+            record.node_id = NodeId::from(v.node_id);
+            record.public_key = uncompressed.value();
+            record.remaining_balance_owner = txs::marshal_owner(
+                txs::Owner{0, v.remaining_balance_owner.threshold, v.remaining_balance_owner.addresses});
+            record.deactivation_owner = txs::marshal_owner(
+                txs::Owner{0, v.deactivation_owner.threshold, v.deactivation_owner.addresses});
+            record.start_time = start_time;
+            record.weight = v.weight;
+            record.min_nonce = 0;
+            record.end_accumulated_fee = 0;  // a zero balance leaves it inactive
+
+            if (v.balance != 0) {
+                if (s_.num_active_l1_validators() >= b_.validator_fee_config.capacity)
+                    return fail(Err::MaxNumActiveValidators);
+                auto mark = add64(v.balance, accrued);
+                if (!mark) return std::unexpected(mark.error());
+                record.end_accumulated_fee = mark.value();
+            }
+            if (auto st = s_.put_l1_validator(record); !st) return st;
+
+            data.validators.push_back(
+                warpmsg::ConversionValidator{v.node_id, v.pop.public_key, v.weight});
+        }
+
+        // The conversion id is the hash of the set as it was established, and it
+        // is what every later message about this L1 refers to.
+        auto conversion_id = data.conversion_id();
+        if (!conversion_id) return std::unexpected(conversion_id.error());
+        s_.set_network_conversion(network_id,
+                                  state::NetToL1Conversion{manager_chain_id,
+                                                           {manager_address.begin(), manager_address.end()},
+                                                           conversion_id.value()});
+        return ok();
     }
 
     // What an L1 validator prepaid and did not spend, back to the owner the
