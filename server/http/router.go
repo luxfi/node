@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 	"sync"
 
 	"github.com/go-json-experiment/json"
 
 	apitypes "github.com/luxfi/api/types"
+	"github.com/luxfi/constants"
 	"github.com/luxfi/math/set"
 )
 
@@ -66,6 +68,11 @@ type router struct {
 	// a namespace shared by sibling endpoints; an endpoint is a mount, and it
 	// owns the paths beneath it. Only non-empty endpoints appear here.
 	mounts map[string]http.Handler
+	// chainSpelling maps a chain alias folded to lower case back to the
+	// spelling it registered under, so a caller who wrote the alias in another
+	// case can be sent to the one place it lives. Filled where routes are, so
+	// it cannot drift from them.
+	chainSpelling map[string]string
 
 	// rootInfoProvider provides node information for GET /
 	rootInfoProvider RootInfoProvider
@@ -79,7 +86,57 @@ func newRouter() *router {
 		routes:         make(map[string]map[string]http.Handler),
 		paths:          make(map[string]http.Handler),
 		mounts:         make(map[string]http.Handler),
+		chainSpelling:  make(map[string]string),
 	}
+}
+
+// chainPrefix is what a path that names a chain starts with.
+var chainPrefix = baseURL + "/" + constants.ChainAliasPrefix + "/"
+
+// rpcEndpoint is the endpoint a chain's JSON-RPC registers at, and the one a
+// caller may leave off.
+const rpcEndpoint = "/rpc"
+
+// spellings lists the other paths a request could have meant, in the order they
+// are tried. THE one place that decides `/v1/chain/C/rpc`, `/v1/chain/c/rpc`,
+// `/v1/chain/C` and `/v1/chain/c` are one route rather than four: the alias is
+// matched without regard to case, and the `/rpc` a directory listing once told
+// a client to write is optional. Only the alias is the caller's to spell — the
+// words around it are literals — so nothing else is folded.
+//
+// A path naming no chain this node serves has no other spelling and is left
+// exactly as the client wrote it.
+func (r *router) spellings(p string) []string {
+	rest, isChain := strings.CutPrefix(p, chainPrefix)
+	if !isChain {
+		return nil
+	}
+	alias, endpoint, _ := strings.Cut(rest, "/")
+	if alias == "" {
+		return nil
+	}
+
+	r.routeLock.Lock()
+	registered, known := r.chainSpelling[strings.ToLower(alias)]
+	r.routeLock.Unlock()
+	if !known {
+		return nil
+	}
+
+	named := chainPrefix + registered
+	if endpoint != "" {
+		named += "/" + endpoint
+		if named == p {
+			return nil
+		}
+		return []string{named}
+	}
+	// No endpoint named: the chain itself, then its RPC. Trying the chain
+	// first means a VM that answers at its own root keeps doing so.
+	if named == p {
+		return []string{named + rpcEndpoint}
+	}
+	return []string{named, named + rpcEndpoint}
 }
 
 // serveBelowMount answers a request that matched no exact route by handing it
@@ -95,21 +152,37 @@ func newRouter() *router {
 // Exact routes are matched first by construction, so an endpoint can never
 // shadow a sibling.
 func (r *router) serveBelowMount(writer http.ResponseWriter, request *http.Request) {
-	path := request.URL.Path
-	for i := len(path) - 1; i > 0; i-- {
-		if path[i] != '/' {
+	if handler, mount, ok := r.mountFor(request.URL.Path); ok {
+		http.StripPrefix(mount, handler).ServeHTTP(writer, request)
+		return
+	}
+	http.NotFound(writer, request)
+}
+
+// handlerAt is the route registered at exactly this path.
+func (r *router) handlerAt(p string) (http.Handler, bool) {
+	r.routeLock.Lock()
+	defer r.routeLock.Unlock()
+	handler, ok := r.paths[p]
+	return handler, ok
+}
+
+// mountFor is the endpoint a path lives under, and the prefix to strip to reach
+// it. The longest mount wins, so an endpoint never shadows a sibling.
+func (r *router) mountFor(p string) (http.Handler, string, bool) {
+	for i := len(p) - 1; i > 0; i-- {
+		if p[i] != '/' {
 			continue
 		}
-		mount := path[:i]
+		mount := p[:i]
 		r.routeLock.Lock()
 		handler, ok := r.mounts[mount]
 		r.routeLock.Unlock()
 		if ok {
-			http.StripPrefix(mount, handler).ServeHTTP(writer, request)
-			return
+			return handler, mount, true
 		}
 	}
-	http.NotFound(writer, request)
+	return nil, "", false
 }
 
 // servePath dispatches on the URL: the canonical spelling of the path, then
@@ -128,13 +201,28 @@ func (r *router) servePath(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	r.routeLock.Lock()
-	handler, ok := r.paths[request.URL.Path]
-	r.routeLock.Unlock()
-	if ok {
+	if handler, ok := r.handlerAt(request.URL.Path); ok {
 		handler.ServeHTTP(writer, request)
 		return
 	}
+
+	// The same chain, spelled another way. The request is REWRITTEN to the
+	// spelling the chain registered and then takes the SAME two steps — the
+	// exact route, then the endpoint it lives under — so a mounted VM reads
+	// the path it was mounted at rather than the one the caller typed.
+	for _, spelling := range r.spellings(request.URL.Path) {
+		named := request.Clone(request.Context())
+		named.URL.Path = spelling
+		if handler, ok := r.handlerAt(spelling); ok {
+			handler.ServeHTTP(writer, named)
+			return
+		}
+		if handler, mount, ok := r.mountFor(spelling); ok {
+			http.StripPrefix(mount, handler).ServeHTTP(writer, named)
+			return
+		}
+	}
+
 	r.serveBelowMount(writer, request)
 }
 
@@ -344,6 +432,16 @@ func (r *router) forceAddRouter(base, endpoint string, handler http.Handler) err
 	// holds; the pair that got there first keeps it.
 	if _, taken := r.paths[url]; !taken {
 		r.paths[url] = handler
+	}
+	// Remember how this chain spelled its alias, so a caller who folds it can
+	// be sent here. Recorded beside the path it belongs to — the two are
+	// written in one place and cannot disagree.
+	if rest, isChain := strings.CutPrefix(base, chainPrefix); isChain && rest != "" {
+		if alias, _, _ := strings.Cut(rest, "/"); alias != "" {
+			if _, taken := r.chainSpelling[strings.ToLower(alias)]; !taken {
+				r.chainSpelling[strings.ToLower(alias)] = alias
+			}
+		}
 	}
 
 	var err error

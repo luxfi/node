@@ -677,19 +677,35 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # potentially emulated execution container.
 RUN mkdir -p /luxd/build
 
+# Everything the runtime image needs a directory for, made HERE. The runtime has
+# no shell to make one with, which is the point of it.
+RUN mkdir -p /luxd/build/plugins /home/nonroot/.lpm /home/nonroot/.lux/plugins && \
+    chown -R 65532:65532 /luxd /home/nonroot
+
 # ============= Runtime Stage ================
 # Commands executed in this stage may be emulated (i.e. very slow) if TARGETPLATFORM and
 # BUILDPLATFORM have different arches.
-FROM debian:12-slim AS execution
-
-# Install runtime dependencies (curl for RPC, git for lpm source installs, ca-certificates for TLS)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates git \
-    && rm -rf /var/lib/apt/lists/*
-
-# GPU crypto library (optional -- only present when built with CGO_ENABLED=1 + luxcpp).
-# Pure Go fallbacks are used when the library is absent.
-RUN ldconfig 2>/dev/null || true
+#
+# THE BUILDER'S DEBIAN RELEASE IS THE RUNTIME'S, AND THAT IS LOAD-BEARING.
+# A binary carries the symbol versions of the glibc it was linked against, and
+# distroless-*-debian12 provides Debian 12's: glibc 2.36, GLIBCXX_3.4.30. Built
+# anywhere newer, it builds, it pushes, and it dies on first exec with
+# `version GLIBC_2.38 not found` — a failure that no build log shows. Measured,
+# not assumed: a host-built binary was run against this base and did exactly
+# that, and one built in bookworm ran.
+#
+# A node, and nothing else that could be run. Distroless carries glibc, the CA
+# bundle and time zones — which is exactly what this binary links and no more.
+# There is no shell, no package manager and no curl or git: the tools that were
+# here "for RPC" and "for source installs" are a debugger's convenience and an
+# attacker's, and neither belongs in the thing that holds the staking key.
+#
+# base-debian12 rather than static-debian12 because the binary is dynamically
+# linked against libc (measured, not assumed: `ldd build/luxd` reports
+# libc.so.6 and nothing else) and because the optional GPU crypto library is a
+# shared object loaded at runtime. A CGO_ENABLED=0 build is fully static and can
+# move to static-debian12 unchanged.
+FROM gcr.io/distroless/base-debian12:nonroot AS execution
 
 # Maintain compatibility with previous images.
 # In the builder stage /luxd/build contains ONLY plugins/ (the luxd + lpm binaries
@@ -729,15 +745,20 @@ COPY --from=builder \
 WORKDIR /luxd/build
 
 # Copy the executables into the container
-COPY --from=builder /build/build/ .
-COPY --from=builder /luxd/build/repair-cchain ./repair-cchain
+COPY --from=builder --chown=65532:65532 /build/build/ .
+COPY --from=builder --chown=65532:65532 /luxd/build/repair-cchain ./repair-cchain
 
-# Create plugins directory and lpm state directory
-RUN mkdir -p /luxd/build/plugins /root/.lpm /root/.lux/plugins
+# The state directories, made in the builder because there is no shell here.
+COPY --from=builder --chown=65532:65532 /home/nonroot /home/nonroot
 
 # Add lpm to PATH
 ENV PATH="/luxd/build:${PATH}"
+ENV HOME=/home/nonroot
+
+# Unprivileged, and unable to become otherwise: the image ships no setuid binary
+# and no shell to run one from.
+USER nonroot
 
 EXPOSE 9630 9631
 
-CMD [ "./luxd" ]
+ENTRYPOINT [ "/luxd/build/luxd" ]
