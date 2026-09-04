@@ -318,14 +318,9 @@ Status PlatformVM::accept_block(const block::Block& b) {
     // A proposal block keeps its layers until its option block chooses one.
     if (b.kind() != block::Kind::Proposal) verified_.erase(it);
 
-    // Anything the block carried is no longer waiting.
-    const auto included = b.decision_txs();
-    mempool_.erase(std::remove_if(mempool_.begin(), mempool_.end(),
-                                  [&](const txs::Tx& t) {
-                                      return std::any_of(included.begin(), included.end(),
-                                                         [&](const txs::Tx& c) { return c.tx_id == t.tx_id; });
-                                  }),
-                   mempool_.end());
+    // Anything the block carried is no longer waiting — nor is anything that
+    // was waiting to spend the same outputs, which can never be accepted now.
+    mempool_.remove(b.decision_txs());
     return ok();
 }
 
@@ -451,7 +446,7 @@ std::shared_ptr<lux::node::Block> PlatformVM::build() {
 
     std::vector<txs::Tx> included;
     std::set<Id> inputs;
-    for (const auto& tx : mempool_) {
+    for (const auto& tx : mempool_.peek(mempool_.size())) {
         bool overlaps = false;
         for (const auto& in : tx.input_ids())
             if (inputs.count(in) != 0) overlaps = true;

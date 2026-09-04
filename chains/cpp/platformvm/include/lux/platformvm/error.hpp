@@ -268,6 +268,13 @@ enum class Err {
     // could only be asserted as "something went wrong".
     SourceNotRevisable, // adopt.Registry.Revise "security source is not revisable"
     NotWeaker,          // adopt.Registry.Weaken "is not weaker than"
+
+    // ── what is waiting to go into a block (vms/txs/mempool)
+    DuplicateTx,               // mempool.ErrDuplicateTx
+    TxTooLarge,                // mempool.ErrTxTooLarge
+    MempoolFull,               // mempool.ErrMempoolFull
+    ConflictsWithOtherTx,      // mempool.ErrConflictsWithOtherTx
+    CantIssueRewardValidatorTx, // mempool.ErrCantIssueRewardValidatorTx
 };
 
 std::string_view err_name(Err e);
