@@ -70,6 +70,15 @@ std::optional<PublicKeyBytes> aggregate_public_keys(const std::vector<PublicKeyB
     return out;
 }
 
+lux::platformvm::Result<std::vector<std::uint8_t>> uncompress_for_set(const PublicKeyBytes& compressed) {
+    blst_p1_affine a{};
+    if (blst_p1_uncompress(&a, compressed.data()) != BLST_SUCCESS)
+        return fail(Err::InvalidPublicKey, "the registered key does not decompress");
+    std::vector<std::uint8_t> out(96);
+    blst_p1_affine_serialize(out.data(), &a);
+    return out;
+}
+
 std::optional<PublicKeyBytes> compress_public_key(std::span<const std::uint8_t> uncompressed) {
     if (uncompressed.size() != 96) return std::nullopt;
     blst_p1_affine a{};

@@ -13,6 +13,7 @@
 #include "golden.hpp"
 #include "harness.hpp"
 #include "lux/platformvm/warp.hpp"
+#include "lux/platformvm/warpmsg.hpp"
 
 #include <string>
 
@@ -274,4 +275,202 @@ TEST(AnUnimplementedSchemeIsRefused) {
         (static_cast<std::uint32_t>(b[sig_buf + 11]) << 24);
     b[sig_buf + sig_root] = 0x01;  // the post-quantum scheme
     REQUIRE_ERR(warp::Message::parse(b), Err::UnknownWarpSignature);
+}
+
+// ── the payload layer: what a warp message SAYS
+//
+// Ported from Go warp/payload (payload_test, addressed_call_test, hash_test)
+// and warp/message (register_l1_validator_test, l1_validator_registration_test,
+// l1_validator_weight_test, chain_to_l1_conversion_test).
+
+namespace {
+
+ShortId short_of(std::uint8_t b) {
+    ShortId v{};
+    for (std::size_t i = 0; i < kShortIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    return v;
+}
+
+signer::PublicKeyBytes reference_key() {
+    signer::PublicKeyBytes k{};
+    for (std::size_t i = 0; i < k.size(); ++i) k[i] = static_cast<std::uint8_t>(0x20 + i);
+    return k;
+}
+
+}  // namespace
+
+// The envelope says WHO sent this and from what address; the message inside
+// says what.
+TEST(TheEnvelopeWire) {
+    auto h = warpmsg::Hash::build(id_of(0xD0));
+    REQUIRE_OK(h);
+    REQUIRE_EQ(std::string(pvmgold::payload_hash), hex(h.value().bytes));
+
+    const std::string src = "source-addr", call = "the-call";
+    auto a = warpmsg::AddressedCall::build(
+        std::vector<std::uint8_t>(src.begin(), src.end()),
+        std::vector<std::uint8_t>(call.begin(), call.end()));
+    REQUIRE_OK(a);
+    REQUIRE_EQ(std::string(pvmgold::payload_addressed_call), hex(a.value().bytes));
+
+    auto back = warpmsg::parse_envelope(a.value().bytes);
+    REQUIRE_OK(back);
+    const auto* parsed = std::get_if<warpmsg::AddressedCall>(&back.value());
+    REQUIRE(parsed != nullptr);
+    REQUIRE_EQ(std::vector<std::uint8_t>(src.begin(), src.end()), parsed->source_address);
+    REQUIRE_EQ(std::vector<std::uint8_t>(call.begin(), call.end()), parsed->payload);
+
+    auto back_hash = warpmsg::parse_envelope(h.value().bytes);
+    REQUIRE_OK(back_hash);
+    REQUIRE(std::get_if<warpmsg::Hash>(&back_hash.value()) != nullptr);
+
+    // A kind that names nothing is refused rather than guessed at.
+    auto junk = h.value().bytes;
+    const std::uint32_t root = static_cast<std::uint32_t>(junk[8]) |
+                               (static_cast<std::uint32_t>(junk[9]) << 8) |
+                               (static_cast<std::uint32_t>(junk[10]) << 16) |
+                               (static_cast<std::uint32_t>(junk[11]) << 24);
+    junk[root] = 0x7f;
+    REQUIRE_ERR(warpmsg::parse_envelope(junk), Err::WrongPayloadType);
+}
+
+// A validator's NAME on the P-chain is the hash of the message that registered
+// it. Two registrations differing anywhere are two validators, and a replay of
+// one cannot become the other.
+TEST(RegisterL1ValidatorWire) {
+    auto m = warpmsg::RegisterL1Validator::build(
+        id_of(0xD1), node_of(0xD2), reference_key(), 1717171717,
+        warpmsg::PChainOwner{1, {short_of(0x30)}},
+        warpmsg::PChainOwner{2, {short_of(0x40), short_of(0x50)}}, 9000);
+    REQUIRE_OK(m);
+    REQUIRE_EQ(std::string(pvmgold::msg_register_l1_validator), hex(m.value().bytes));
+    REQUIRE_EQ(std::string(pvmgold::msg_register_l1_validator_id), m.value().validation_id().hex());
+    REQUIRE_OK(m.value().verify());
+
+    auto back = warpmsg::parse_message(m.value().bytes);
+    REQUIRE_OK(back);
+    const auto* parsed = std::get_if<warpmsg::RegisterL1Validator>(&back.value());
+    REQUIRE(parsed != nullptr);
+    REQUIRE_EQ(id_of(0xD1), parsed->chain_id);
+    REQUIRE_U64(1717171717u, parsed->expiry);
+    REQUIRE_U64(9000u, parsed->weight);
+    REQUIRE(parsed->bls_public_key == reference_key());
+    REQUIRE_EQ(warpmsg::PChainOwner({1, {short_of(0x30)}}), parsed->remaining_balance_owner);
+    REQUIRE_EQ(warpmsg::PChainOwner({2, {short_of(0x40), short_of(0x50)}}), parsed->disable_owner);
+    // The name follows the bytes, so it survives the round trip.
+    REQUIRE_EQ(m.value().validation_id(), parsed->validation_id());
+
+    // One changed field is a different validator.
+    auto other = warpmsg::RegisterL1Validator::build(
+        id_of(0xD1), node_of(0xD2), reference_key(), 1717171717,
+        warpmsg::PChainOwner{1, {short_of(0x30)}},
+        warpmsg::PChainOwner{2, {short_of(0x40), short_of(0x50)}}, 9001);
+    REQUIRE_OK(other);
+    REQUIRE(!(other.value().validation_id() == m.value().validation_id()));
+}
+
+// Go: RegisterL1Validator.Verify — the four refusals.
+TEST(RegisterL1ValidatorVerify) {
+    auto build = [&](const Id& chain, const NodeId& node, std::uint64_t weight,
+                     const warpmsg::PChainOwner& rem, const warpmsg::PChainOwner& dis) {
+        return warpmsg::RegisterL1Validator::build(chain, node, reference_key(), 1, rem, dis, weight);
+    };
+    const warpmsg::PChainOwner good{1, {short_of(0x30)}};
+
+    // The primary network is not an L1 and does not register validators this way.
+    auto primary = build(kPrimaryNetworkId, node_of(1), 1, good, good);
+    REQUIRE_OK(primary);
+    REQUIRE_ERR(primary.value().verify(), Err::InvalidChainID);
+
+    auto weightless = build(id_of(0xD1), node_of(1), 0, good, good);
+    REQUIRE_OK(weightless);
+    REQUIRE_ERR(weightless.value().verify(), Err::InvalidWeight);
+
+    NodeId empty{};
+    auto anonymous = build(id_of(0xD1), empty, 1, good, good);
+    REQUIRE_OK(anonymous);
+    REQUIRE_ERR(anonymous.value().verify(), Err::InvalidNodeID);
+
+    // An owner nobody can satisfy would make the balance unrecoverable.
+    const warpmsg::PChainOwner unspendable{1, {}};
+    auto bad_owner = build(id_of(0xD1), node_of(1), 1, unspendable, good);
+    REQUIRE_OK(bad_owner);
+    REQUIRE_ERR(bad_owner.value().verify(), Err::InvalidOwner);
+
+    auto ok_msg = build(id_of(0xD1), node_of(1), 1, good, good);
+    REQUIRE_OK(ok_msg);
+    REQUIRE_OK(ok_msg.value().verify());
+}
+
+// Registration and weight: the two things an L1 tells the P-chain about a
+// validator after it exists.
+TEST(RegistrationAndWeightWire) {
+    auto reg = warpmsg::L1ValidatorRegistration::build(id_of(0xD3), true);
+    REQUIRE_OK(reg);
+    REQUIRE_EQ(std::string(pvmgold::msg_l1_validator_registration), hex(reg.value().bytes));
+
+    auto back = warpmsg::parse_message(reg.value().bytes);
+    REQUIRE_OK(back);
+    const auto* p = std::get_if<warpmsg::L1ValidatorRegistration>(&back.value());
+    REQUIRE(p != nullptr);
+    REQUIRE_EQ(id_of(0xD3), p->validation_id);
+    REQUIRE(p->registered);
+
+    // False here is permanent: this id is not and can never become a validator,
+    // which is what makes an expiry final rather than a retry.
+    auto never = warpmsg::L1ValidatorRegistration::build(id_of(0xD3), false);
+    REQUIRE_OK(never);
+    auto never_back = warpmsg::parse_message(never.value().bytes);
+    REQUIRE_OK(never_back);
+    REQUIRE(!std::get_if<warpmsg::L1ValidatorRegistration>(&never_back.value())->registered);
+
+    auto vw = warpmsg::L1ValidatorWeight::build(id_of(0xD4), 7, 12345);
+    REQUIRE_OK(vw);
+    REQUIRE_EQ(std::string(pvmgold::msg_l1_validator_weight), hex(vw.value().bytes));
+    auto vw_back = warpmsg::parse_message(vw.value().bytes);
+    REQUIRE_OK(vw_back);
+    const auto* w = std::get_if<warpmsg::L1ValidatorWeight>(&vw_back.value());
+    REQUIRE(w != nullptr);
+    REQUIRE_EQ(id_of(0xD4), w->validation_id);
+    // The nonce is what stops an old weight being replayed over a newer one.
+    REQUIRE_U64(7u, w->nonce);
+    REQUIRE_U64(12345u, w->weight);
+}
+
+// The conversion: what a network became when it went sovereign. Its id is the
+// hash of its own canonical encoding, so the id and the bytes cannot diverge.
+TEST(ConversionWire) {
+    warpmsg::ConversionData d;
+    d.chain_id = id_of(0xD5);
+    d.manager_chain_id = id_of(0xD6);
+    const std::string mgr = "manager";
+    d.manager_address.assign(mgr.begin(), mgr.end());
+    const auto n1 = node_of(0xD7), n2 = node_of(0xD8);
+    d.validators = {
+        {std::vector<std::uint8_t>(n1.b.begin(), n1.b.end()), reference_key(), 11},
+        {std::vector<std::uint8_t>(n2.b.begin(), n2.b.end()), reference_key(), 22},
+    };
+
+    auto encoded = d.encode();
+    REQUIRE_OK(encoded);
+    REQUIRE_EQ(std::string(pvmgold::conversion_data), hex(encoded.value()));
+
+    auto cid = d.conversion_id();
+    REQUIRE_OK(cid);
+    REQUIRE_EQ(std::string(pvmgold::conversion_id), cid.value().hex());
+
+    auto m = warpmsg::ChainToL1Conversion::build(cid.value());
+    REQUIRE_OK(m);
+    REQUIRE_EQ(std::string(pvmgold::msg_chain_to_l1_conversion), hex(m.value().bytes));
+
+    auto back = warpmsg::parse_message(m.value().bytes);
+    REQUIRE_OK(back);
+    const auto* p = std::get_if<warpmsg::ChainToL1Conversion>(&back.value());
+    REQUIRE(p != nullptr);
+    REQUIRE_EQ(cid.value(), p->id);
+
+    // One changed validator weight is a different conversion.
+    auto d2 = d;
+    d2.validators[1].weight = 23;
+    REQUIRE(!(d2.conversion_id().value() == cid.value()));
 }

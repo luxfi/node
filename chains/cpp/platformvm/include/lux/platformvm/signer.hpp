@@ -79,6 +79,10 @@ std::optional<PublicKeyBytes> aggregate_public_keys(const std::vector<PublicKeyB
 // aggregates the compressed one, so this is where the two forms meet.
 std::optional<PublicKeyBytes> compress_public_key(std::span<const std::uint8_t> uncompressed);
 
+// The 48-byte compressed key as the 96-byte uncompressed form a validator set
+// carries. The refusing counterpart of compress_public_key.
+lux::platformvm::Result<std::vector<std::uint8_t>> uncompress_for_set(const PublicKeyBytes& compressed);
+
 struct Empty {
     friend bool operator==(const Empty&, const Empty&) = default;
 };

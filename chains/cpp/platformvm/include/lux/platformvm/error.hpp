@@ -218,6 +218,26 @@ enum class Err {
     InsufficientWeight,    // warp.ErrInsufficientWeight
     InvalidWarpSignature,  // warp.ErrInvalidSignature
     UnknownWarpSignature,  // warp: a signature scheme this port does not implement
+    WrongPayloadType,      // payload.ErrWrongType / message.ErrWrongType
+    InvalidChainID,        // message.ErrInvalidChainID
+    InvalidWeight,         // message.ErrInvalidWeight
+    InvalidNodeID,         // message.ErrInvalidNodeID
+    InvalidOwner,          // message.ErrInvalidOwner
+
+    // ── L1 validators
+    MutatedL1Validator,   // state: a constant field of a validation id changed
+    DuplicateL1Validator, // state: one (chain, node) pair, one validator
+    CouldNotLoadConversion,   // executor.errCouldNotLoadChainToL1Conversion
+    WrongWarpSourceChain,     // executor.errWrongWarpMessageSourceChainID
+    WrongWarpSourceAddress,   // executor.errWrongWarpMessageSourceAddress
+    WarpMessageExpired,       // executor.errWarpMessageExpired
+    WarpMessageNotYetAllowed, // executor.errWarpMessageNotYetAllowed
+    WarpMessageAlreadyIssued, // executor.errWarpMessageAlreadyIssued
+    CouldNotLoadL1Validator,  // executor.errCouldNotLoadL1Validator
+    StaleNonce,               // executor.errWarpMessageContainsStaleNonce
+    NonceReservedForRemoval,  // message.ErrNonceReservedForRemoval
+    RemovingLastValidator,    // executor.errRemovingLastValidator
+    MaxNumActiveValidators,   // executor.errMaxNumActiveValidators
 };
 
 std::string_view err_name(Err e);

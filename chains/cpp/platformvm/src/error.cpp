@@ -177,6 +177,24 @@ std::string_view err_name(Err e) {
         case Err::InsufficientWeight: return "InsufficientWeight";
         case Err::InvalidWarpSignature: return "InvalidWarpSignature";
         case Err::UnknownWarpSignature: return "UnknownWarpSignature";
+        case Err::WrongPayloadType: return "WrongPayloadType";
+        case Err::InvalidChainID: return "InvalidChainID";
+        case Err::InvalidWeight: return "InvalidWeight";
+        case Err::InvalidNodeID: return "InvalidNodeID";
+        case Err::InvalidOwner: return "InvalidOwner";
+        case Err::MutatedL1Validator: return "MutatedL1Validator";
+        case Err::DuplicateL1Validator: return "DuplicateL1Validator";
+        case Err::CouldNotLoadConversion: return "CouldNotLoadConversion";
+        case Err::WrongWarpSourceChain: return "WrongWarpSourceChain";
+        case Err::WrongWarpSourceAddress: return "WrongWarpSourceAddress";
+        case Err::WarpMessageExpired: return "WarpMessageExpired";
+        case Err::WarpMessageNotYetAllowed: return "WarpMessageNotYetAllowed";
+        case Err::WarpMessageAlreadyIssued: return "WarpMessageAlreadyIssued";
+        case Err::CouldNotLoadL1Validator: return "CouldNotLoadL1Validator";
+        case Err::StaleNonce: return "StaleNonce";
+        case Err::NonceReservedForRemoval: return "NonceReservedForRemoval";
+        case Err::RemovingLastValidator: return "RemovingLastValidator";
+        case Err::MaxNumActiveValidators: return "MaxNumActiveValidators";
     }
     return "Unknown";
 }

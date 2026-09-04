@@ -31,6 +31,7 @@
 #include "lux/platformvm/error.hpp"
 #include "lux/platformvm/gas.hpp"
 #include "lux/platformvm/ids.hpp"
+#include "lux/platformvm/l1.hpp"
 #include "lux/platformvm/priority.hpp"
 #include "lux/platformvm/signer.hpp"
 #include "lux/platformvm/status.hpp"
@@ -271,6 +272,10 @@ class Chain {
     // target it has been running. The price follows the excess.
     virtual gas::State fee_state() const = 0;
     virtual void set_fee_state(const gas::State& f) = 0;
+    // The LP-77 continuous-fee position for L1 validators: how far above target
+    // their number has been running, and what has accrued so far.
+    virtual std::uint64_t l1_validator_excess() const = 0;
+    virtual void set_l1_validator_excess(std::uint64_t e) = 0;
 
     // supply, per network
     virtual Result<std::uint64_t> current_supply(const Id& chain_id) const = 0;
@@ -327,6 +332,27 @@ class Chain {
     // transactions, by id
     virtual Result<std::pair<txs::Tx, status::Status>> get_tx(const Id& tx_id) const = 0;
     virtual void add_tx(const txs::Tx& tx, status::Status s) = 0;
+
+    // ── L1 validators (Go: state.L1Validators)
+    //
+    // A weight of zero REMOVES; an EndAccumulatedFee of zero deactivates. The
+    // active walk is in increasing EndAccumulatedFee, so advancing the clock
+    // deactivates exactly the prefix that can no longer pay.
+    virtual Result<l1::Validator> get_l1_validator(const Id& validation_id) const = 0;
+    virtual bool has_l1_validator(const Id& chain_id, const NodeId& node_id) const = 0;
+    virtual Status put_l1_validator(const l1::Validator& v) = 0;
+    virtual std::vector<l1::Validator> active_l1_validators() const = 0;
+    virtual std::size_t num_active_l1_validators() const = 0;
+    virtual Result<std::uint64_t> weight_of_l1_validators(const Id& chain_id) const = 0;
+
+    // ── expiries (Go: state.Expiry)
+    //
+    // Registration messages that may still be issued, and the moment after
+    // which they may not. Walked in time order, so the clock drops a prefix.
+    virtual std::vector<l1::ExpiryEntry> expiries() const = 0;
+    virtual bool has_expiry(const l1::ExpiryEntry& e) const = 0;
+    virtual void put_expiry(const l1::ExpiryEntry& e) = 0;
+    virtual void delete_expiry(const l1::ExpiryEntry& e) = 0;
 };
 
 // The materialised state: what the chain remembers once a block is accepted.
@@ -338,6 +364,8 @@ class MemState final : public Chain {
     void set_accrued_fees(std::uint64_t f) override { accrued_fees_ = f; }
     gas::State fee_state() const override { return fee_state_; }
     void set_fee_state(const gas::State& f) override { fee_state_ = f; }
+    std::uint64_t l1_validator_excess() const override { return l1_excess_; }
+    void set_l1_validator_excess(std::uint64_t e) override { l1_excess_ = e; }
 
     Result<std::uint64_t> current_supply(const Id& chain_id) const override;
     void set_current_supply(const Id& chain_id, std::uint64_t s) override { supply_[chain_id] = s; }
@@ -412,6 +440,18 @@ class MemState final : public Chain {
     Result<std::pair<txs::Tx, status::Status>> get_tx(const Id& tx_id) const override;
     void add_tx(const txs::Tx& tx, status::Status s) override { txs_.insert_or_assign(tx.tx_id, std::make_pair(tx, s)); }
 
+    Result<l1::Validator> get_l1_validator(const Id& validation_id) const override;
+    bool has_l1_validator(const Id& chain_id, const NodeId& node_id) const override;
+    Status put_l1_validator(const l1::Validator& v) override;
+    std::vector<l1::Validator> active_l1_validators() const override;
+    std::size_t num_active_l1_validators() const override;
+    Result<std::uint64_t> weight_of_l1_validators(const Id& chain_id) const override;
+
+    std::vector<l1::ExpiryEntry> expiries() const override { return {expiries_.begin(), expiries_.end()}; }
+    bool has_expiry(const l1::ExpiryEntry& e) const override { return expiries_.count(e) != 0; }
+    void put_expiry(const l1::ExpiryEntry& e) override { expiries_.insert(e); }
+    void delete_expiry(const l1::ExpiryEntry& e) override { expiries_.erase(e); }
+
     // Loading a genesis or a snapshot: no diff is recorded.
     void load_current_validator(const Staker& s) {
         current_.load_validator(s);
@@ -425,11 +465,14 @@ class MemState final : public Chain {
     std::uint64_t timestamp_ = 0;
     std::uint64_t accrued_fees_ = 0;
     gas::State fee_state_{};
+    std::uint64_t l1_excess_ = 0;
     std::map<Id, std::uint64_t> supply_;
     std::map<Id, UTXO> utxos_;
     std::map<Id, std::vector<UTXO>> reward_utxos_;
     BaseStakers current_;
     BaseStakers pending_;
+    std::map<Id, l1::Validator> l1_validators_;
+    std::set<l1::ExpiryEntry, l1::ExpiryLess> expiries_;
     std::map<Id, std::map<NodeId, std::uint64_t>> delegatee_rewards_;
     std::set<Id> networks_;
     std::map<Id, txs::Owner> net_owners_;
@@ -447,7 +490,7 @@ class Diff final : public Chain {
   public:
     explicit Diff(Chain* parent)
         : parent_(parent), timestamp_(parent->timestamp()), accrued_fees_(parent->accrued_fees()),
-          fee_state_(parent->fee_state()) {}
+          fee_state_(parent->fee_state()), l1_excess_(parent->l1_validator_excess()) {}
 
     // Write everything this layer holds into the target. Go: Diff.Apply.
     Status apply(Chain& target) const;
@@ -458,6 +501,8 @@ class Diff final : public Chain {
     void set_accrued_fees(std::uint64_t f) override { accrued_fees_ = f; }
     gas::State fee_state() const override { return fee_state_; }
     void set_fee_state(const gas::State& f) override { fee_state_ = f; }
+    std::uint64_t l1_validator_excess() const override { return l1_excess_; }
+    void set_l1_validator_excess(std::uint64_t e) override { l1_excess_ = e; }
 
     Result<std::uint64_t> current_supply(const Id& chain_id) const override;
     void set_current_supply(const Id& chain_id, std::uint64_t s) override { supply_[chain_id] = s; }
@@ -506,11 +551,26 @@ class Diff final : public Chain {
     Result<std::pair<txs::Tx, status::Status>> get_tx(const Id& tx_id) const override;
     void add_tx(const txs::Tx& tx, status::Status s) override { added_txs_.insert_or_assign(tx.tx_id, std::make_pair(tx, s)); }
 
+    Result<l1::Validator> get_l1_validator(const Id& validation_id) const override;
+    bool has_l1_validator(const Id& chain_id, const NodeId& node_id) const override;
+    Status put_l1_validator(const l1::Validator& v) override;
+    std::vector<l1::Validator> active_l1_validators() const override;
+    std::size_t num_active_l1_validators() const override;
+    Result<std::uint64_t> weight_of_l1_validators(const Id& chain_id) const override;
+
+    std::vector<l1::ExpiryEntry> expiries() const override;
+    bool has_expiry(const l1::ExpiryEntry& e) const override;
+    void put_expiry(const l1::ExpiryEntry& e) override;
+    void delete_expiry(const l1::ExpiryEntry& e) override;
+
   private:
     Chain* parent_;
     std::uint64_t timestamp_ = 0;
     std::uint64_t accrued_fees_ = 0;
     gas::State fee_state_{};
+    std::uint64_t l1_excess_ = 0;
+    std::map<Id, l1::Validator> l1_validators_;
+    std::map<l1::ExpiryEntry, bool, l1::ExpiryLess> expiry_diff_;  // true = added
     std::map<Id, std::uint64_t> supply_;
     std::map<Id, UTXO> added_utxos_;
     std::set<Id> deleted_utxos_;

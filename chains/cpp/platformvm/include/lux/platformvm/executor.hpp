@@ -30,6 +30,8 @@
 #include "lux/platformvm/reward.hpp"
 #include "lux/platformvm/state.hpp"
 #include "lux/platformvm/uptime.hpp"
+#include "lux/platformvm/warp.hpp"
+#include "lux/platformvm/warpmsg.hpp"
 #include "lux/platformvm/txs.hpp"
 
 #include <cstdint>
@@ -43,6 +45,16 @@ namespace lux::platformvm::executor {
 // Go: executor.SyncBound / MaxValidatorWeightFactor.
 inline constexpr std::uint64_t kSyncBound = 10;  // seconds
 inline constexpr std::uint64_t kMaxValidatorWeightFactor = 5;
+
+// Go: executor.RegisterL1ValidatorTxExpiryWindow. A registration may name an
+// expiry at most a day out, which bounds the set of messages the chain has to
+// remember in order to refuse a replay.
+inline constexpr std::uint64_t kRegisterL1ValidatorExpiryWindow = 24 * 60 * 60;
+
+// Go: executor.WarpQuorumNumerator / Denominator. 67% of the source chain's
+// weight has to have signed.
+inline constexpr std::uint64_t kWarpQuorumNumerator = 67;
+inline constexpr std::uint64_t kWarpQuorumDenominator = 100;
 
 // The primary network's staking policy. Rendered from
 // vms/platformvm/stakingparams.Params plus the two Config fields that are not
@@ -119,6 +131,10 @@ struct Backend {
     // refused rather than believed.
     const atomic::SharedMemory* shared_memory = nullptr;
 
+    // The LP-77 continuous fee for L1 validators: how many the chain targets,
+    // how many it will hold, and what it charges when there are more.
+    l1::FeeConfig validator_fee_config;
+
     // Go: Backend.Bootstrapped. False means this node is still replaying history
     // the network already agreed on; it re-checks everything once caught up.
     bool bootstrapped = true;
@@ -150,6 +166,13 @@ Result<Effects> standard_tx(const Backend& backend, const txs::Tx& tx, state::Di
 // Go: executor.ProposalTx. Executes the chain's own transaction against both
 // outcomes, so the vote that follows only has to pick one.
 Status proposal_tx(const Backend& backend, const txs::Tx& tx, state::Diff& on_commit, state::Diff& on_abort);
+
+// Go: executor.VerifyWarpMessages. The signature on a transaction's warp
+// message must be by at least 67% of the SOURCE chain's weight — which is a
+// question about the P-chain's own state, so the caller resolves the set and
+// hands it in.
+Status verify_warp_messages(const txs::UnsignedTx& tx, std::uint32_t network_id,
+                            const warp::CanonicalValidatorSet& source_set);
 
 // Go: state.PickFeeCalculator. The price is read off the chain's own excess, so
 // a caller cannot choose a cheaper one.

@@ -170,6 +170,39 @@ Status verify_primary_network_requirements(const state::Chain& s, const txs::Val
     return ok();
 }
 
+// Go: verifyL1Conversion. The message must have come from the chain and the
+// address the conversion recorded — otherwise anyone with a chain could speak
+// for this L1.
+Status verify_l1_conversion(const state::Chain& s, const Id& chain_id, const Id& source_chain,
+                            std::span<const std::uint8_t> source_address) {
+    auto conv = s.network_conversion(chain_id);
+    if (!conv) return fail(Err::CouldNotLoadConversion, chain_id.hex());
+    if (!(conv.value().chain_id == source_chain))
+        return fail(Err::WrongWarpSourceChain,
+                    "expected " + conv.value().chain_id.hex() + ", got " + source_chain.hex());
+    if (conv.value().addr.size() != source_address.size() ||
+        !std::equal(conv.value().addr.begin(), conv.value().addr.end(), source_address.begin()))
+        return fail(Err::WrongWarpSourceAddress);
+    return ok();
+}
+
+// The three layers a warp-carrying transaction wraps its message in: the signed
+// envelope, the addressed call that says who sent it, and the L1's own message.
+struct WarpCall {
+    warp::Message message;
+    warpmsg::AddressedCall call;
+};
+
+Result<WarpCall> open_warp_call(std::span<const std::uint8_t> raw) {
+    auto message = warp::Message::parse(raw);
+    if (!message) return std::unexpected(message.error());
+    auto envelope = warpmsg::parse_envelope(message.value().unsigned_message.payload);
+    if (!envelope) return std::unexpected(envelope.error());
+    const auto* call = std::get_if<warpmsg::AddressedCall>(&envelope.value());
+    if (call == nullptr) return fail(Err::WrongPayloadType, "the warp payload is not an addressed call");
+    return WarpCall{std::move(message.value()), *call};
+}
+
 // Go: standardTxExecutor.putStaker. A staker enters the CURRENT set immediately,
 // with the chain time as its start; its potential reward is fixed here, and the
 // supply moves by exactly that much.
@@ -514,17 +547,198 @@ class Standard final : public txs::Visitor {
     Status convert_network_tx(const txs::ConvertNetworkTx&) override {
         return fail(Err::WrongTxType, "ConvertNetworkTx is not executed by this port");
     }
-    Status register_l1_validator_tx(const txs::RegisterL1ValidatorTx&) override {
-        return fail(Err::WrongTxType, "RegisterL1ValidatorTx needs the warp seam, which this port does not have");
+    // An L1 tells the P-chain to start tracking a validator. The balance the
+    // transaction carries is prepaid fee, so it is spent like one.
+    Status register_l1_validator_tx(const txs::RegisterL1ValidatorTx& t) override {
+        if (auto st = shape(t); !st) return st;
+        const std::uint64_t now = s_.timestamp();
+
+        auto fee = b_.fees->calculate(t);
+        if (!fee) return std::unexpected(fee.error());
+        auto total = add64(fee.value(), t.balance());
+        if (!total) return std::unexpected(total.error());
+        if (auto st = flow_check(b_, s_, t, t.inputs(), t.outputs(), tx_.creds, total.value()); !st)
+            return st;
+
+        auto opened = open_warp_call(t.message());
+        if (!opened) return std::unexpected(opened.error());
+        auto payload = warpmsg::parse_message(opened.value().call.payload);
+        if (!payload) return std::unexpected(payload.error());
+        const auto* msg = std::get_if<warpmsg::RegisterL1Validator>(&payload.value());
+        if (msg == nullptr) return fail(Err::WrongPayloadType, "not a registration");
+        if (auto st = msg->verify(); !st) return st;
+
+        if (auto st = verify_l1_conversion(s_, msg->chain_id,
+                                           opened.value().message.unsigned_message.source_chain_id,
+                                           opened.value().call.source_address);
+            !st)
+            return st;
+
+        // The expiry bounds how long the chain has to remember this message in
+        // order to refuse a replay of it.
+        if (msg->expiry <= now)
+            return fail(Err::WarpMessageExpired, "expired at " + std::to_string(msg->expiry) +
+                                                     ", now " + std::to_string(now));
+        if (msg->expiry - now > kRegisterL1ValidatorExpiryWindow)
+            return fail(Err::WarpMessageNotYetAllowed,
+                        std::to_string(msg->expiry - now) + " seconds out, limit " +
+                            std::to_string(kRegisterL1ValidatorExpiryWindow));
+
+        const Id validation_id = msg->validation_id();
+        const l1::ExpiryEntry expiry{msg->expiry, validation_id};
+        // The whole replay defence: the chain remembers every registration it
+        // has seen until the moment that registration could no longer be issued.
+        if (s_.has_expiry(expiry)) return fail(Err::WarpMessageAlreadyIssued, validation_id.hex());
+
+        // The message says which key; the TRANSACTION proves whoever sent it
+        // holds that key. Neither alone is enough.
+        const signer::ProofOfPossession pop{msg->bls_public_key, t.proof_of_possession()};
+        if (auto st = pop.verify(); !st) return st;
+
+        if (msg->node_id.size() != kNodeIdLen) return fail(Err::InvalidNodeIDLength);
+
+        l1::Validator v;
+        v.validation_id = validation_id;
+        v.chain_id = msg->chain_id;
+        v.node_id = NodeId::from(msg->node_id);
+        auto uncompressed = signer::uncompress_for_set(msg->bls_public_key);
+        if (!uncompressed) return std::unexpected(uncompressed.error());
+        v.public_key = uncompressed.value();
+        v.remaining_balance_owner =
+            txs::marshal_owner(txs::Owner{0, msg->remaining_balance_owner.threshold,
+                                          msg->remaining_balance_owner.addresses});
+        v.deactivation_owner = txs::marshal_owner(
+            txs::Owner{0, msg->disable_owner.threshold, msg->disable_owner.addresses});
+        v.start_time = now;
+        v.weight = msg->weight;
+        v.min_nonce = 0;
+        v.end_accumulated_fee = 0;  // a zero balance leaves it inactive
+
+        if (t.balance() != 0) {
+            if (s_.num_active_l1_validators() >= b_.validator_fee_config.capacity)
+                return fail(Err::MaxNumActiveValidators);
+            // The balance is stored as the accrued-fee mark it can pay up to, so
+            // deactivation is a comparison rather than a per-validator decrement.
+            auto mark = add64(t.balance(), s_.accrued_fees());
+            if (!mark) return std::unexpected(mark.error());
+            v.end_accumulated_fee = mark.value();
+        }
+
+        if (auto st = s_.put_l1_validator(v); !st) return st;
+        move(t);
+        s_.put_expiry(expiry);
+        return ok();
     }
-    Status set_l1_validator_weight_tx(const txs::SetL1ValidatorWeightTx&) override {
-        return fail(Err::WrongTxType, "SetL1ValidatorWeightTx needs the warp seam, which this port does not have");
+
+    // An L1 tells the P-chain a validator's new weight. Zero removes it.
+    Status set_l1_validator_weight_tx(const txs::SetL1ValidatorWeightTx& t) override {
+        if (auto st = shape(t); !st) return st;
+        auto fee = b_.fees->calculate(t);
+        if (!fee) return std::unexpected(fee.error());
+        if (auto st = flow_check(b_, s_, t, t.inputs(), t.outputs(), tx_.creds, fee.value()); !st)
+            return st;
+
+        auto opened = open_warp_call(t.message());
+        if (!opened) return std::unexpected(opened.error());
+        auto payload = warpmsg::parse_message(opened.value().call.payload);
+        if (!payload) return std::unexpected(payload.error());
+        const auto* msg = std::get_if<warpmsg::L1ValidatorWeight>(&payload.value());
+        if (msg == nullptr) return fail(Err::WrongPayloadType, "not a weight change");
+        // The largest nonce is reserved for the change that removes a validator,
+        // so that the increment below can never overflow for one that stays.
+        if (msg->nonce == UINT64_MAX && msg->weight != 0) return fail(Err::NonceReservedForRemoval);
+
+        auto found = s_.get_l1_validator(msg->validation_id);
+        if (!found) return fail(Err::CouldNotLoadL1Validator, msg->validation_id.hex());
+        l1::Validator v = found.value();
+
+        // The nonce is the whole replay defence for weight: an old message
+        // cannot be re-sent over a newer one.
+        if (msg->nonce < v.min_nonce)
+            return fail(Err::StaleNonce, std::to_string(msg->nonce) + " < " + std::to_string(v.min_nonce));
+
+        if (auto st = verify_l1_conversion(s_, v.chain_id,
+                                           opened.value().message.unsigned_message.source_chain_id,
+                                           opened.value().call.source_address);
+            !st)
+            return st;
+
+        if (msg->weight == 0) {
+            // A chain with no validators is a chain nobody can ever speak for
+            // again, so the last one cannot be removed.
+            auto weight = s_.weight_of_l1_validators(v.chain_id);
+            if (!weight) return std::unexpected(weight.error());
+            if (weight.value() == v.weight) return fail(Err::RemovingLastValidator);
+
+            if (v.end_accumulated_fee != 0) {
+                if (auto st = refund_remaining_balance(t.outputs().size(), v); !st) return st;
+            }
+        }
+
+        v.min_nonce = msg->nonce + 1;
+        v.weight = msg->weight;
+        if (auto st = s_.put_l1_validator(v); !st) return st;
+        move(t);
+        return ok();
     }
-    Status increase_l1_validator_balance_tx(const txs::IncreaseL1ValidatorBalanceTx&) override {
-        return fail(Err::WrongTxType, "IncreaseL1ValidatorBalanceTx is not executed by this port");
+
+    // Anyone may top up an L1 validator's balance; nobody has to be authorised
+    // to pay someone else's fees.
+    Status increase_l1_validator_balance_tx(const txs::IncreaseL1ValidatorBalanceTx& t) override {
+        if (auto st = shape(t); !st) return st;
+        auto fee = b_.fees->calculate(t);
+        if (!fee) return std::unexpected(fee.error());
+        auto total = add64(fee.value(), t.balance());
+        if (!total) return std::unexpected(total.error());
+        if (auto st = flow_check(b_, s_, t, t.inputs(), t.outputs(), tx_.creds, total.value()); !st)
+            return st;
+
+        auto found = s_.get_l1_validator(t.validation_id());
+        if (!found) return fail(Err::CouldNotLoadL1Validator, t.validation_id().hex());
+        l1::Validator v = found.value();
+
+        // A top-up of an inactive validator activates it, and there is only so
+        // much room for active ones.
+        if (v.end_accumulated_fee == 0) {
+            if (s_.num_active_l1_validators() >= b_.validator_fee_config.capacity)
+                return fail(Err::MaxNumActiveValidators);
+            v.end_accumulated_fee = s_.accrued_fees();
+        }
+        auto mark = add64(v.end_accumulated_fee, t.balance());
+        if (!mark) return std::unexpected(mark.error());
+        v.end_accumulated_fee = mark.value();
+
+        if (auto st = s_.put_l1_validator(v); !st) return st;
+        move(t);
+        return ok();
     }
-    Status disable_l1_validator_tx(const txs::DisableL1ValidatorTx&) override {
-        return fail(Err::WrongTxType, "DisableL1ValidatorTx is not executed by this port");
+
+    // Switching a validator off is the ONE L1 operation the P-chain authorises
+    // itself, against the deactivation owner the registration named.
+    Status disable_l1_validator_tx(const txs::DisableL1ValidatorTx& t) override {
+        if (auto st = shape(t); !st) return st;
+
+        auto found = s_.get_l1_validator(t.validation_id());
+        if (!found) return fail(Err::CouldNotLoadL1Validator, t.validation_id().hex());
+        l1::Validator v = found.value();
+
+        auto owner = txs::unmarshal_owner(v.deactivation_owner);
+        if (!owner) return fail(Err::InvalidState, "the deactivation owner is malformed");
+        auto creds = verify_authorization(b_, tx_, owner.value(), t.disable_auth());
+        if (!creds) return std::unexpected(creds.error());
+
+        auto fee = b_.fees->calculate(t);
+        if (!fee) return std::unexpected(fee.error());
+        if (auto st = flow_check(b_, s_, t, t.inputs(), t.outputs(), creds.value(), fee.value()); !st)
+            return st;
+
+        move(t);
+
+        // Already off: nothing to refund and nothing to change.
+        if (v.end_accumulated_fee == 0) return ok();
+        if (auto st = refund_remaining_balance(t.outputs().size(), v); !st) return st;
+        v.end_accumulated_fee = 0;
+        return s_.put_l1_validator(v);
     }
 
   private:
@@ -539,6 +753,24 @@ class Standard final : public txs::Visitor {
         for (const auto& in : t.inputs()) effects_.inputs.insert(in.input_id());
         consume(s_, t.inputs());
         produce(s_, tx_.tx_id, t.outputs());
+    }
+
+    // What an L1 validator prepaid and did not spend, back to the owner the
+    // registration named, as the output after the transaction\'s own.
+    Status refund_remaining_balance(std::size_t own_outputs, const l1::Validator& v) {
+        auto owner = txs::unmarshal_owner(v.remaining_balance_owner);
+        if (!owner) return fail(Err::InvalidState, "the remaining-balance owner is malformed");
+        const std::uint64_t accrued = s_.accrued_fees();
+        // Unreachable if the fee state is sound; kept because the alternative to
+        // an impossible refusal here is minting LUX out of a corrupt record.
+        if (v.end_accumulated_fee <= accrued)
+            return fail(Err::InvalidState, "the validator should already have been disabled");
+        UTXO u;
+        u.utxo = UtxoId{tx_.tx_id, static_cast<std::uint32_t>(own_outputs)};
+        u.asset = b_.runtime.utxo_asset_id;
+        u.out = TransferOutput{v.end_accumulated_fee - accrued, owner.value()};
+        s_.add_utxo(u);
+        return ok();
     }
 
     const Backend& b_;
@@ -810,6 +1042,34 @@ class Proposal final : public txs::Visitor {
 
 }  // namespace
 
+Status verify_warp_messages(const txs::UnsignedTx& tx, std::uint32_t network_id,
+                            const warp::CanonicalValidatorSet& source_set) {
+    // Only the two transactions that CARRY a message have one to check. Every
+    // other kind answers yes because there is nothing to answer about.
+    std::span<const std::uint8_t> raw;
+    switch (tx.kind()) {
+        case txs::Kind::RegisterL1Validator: {
+            static thread_local std::vector<std::uint8_t> buf;
+            buf = static_cast<const txs::RegisterL1ValidatorTx&>(tx).message();
+            raw = buf;
+            break;
+        }
+        case txs::Kind::SetL1ValidatorWeight: {
+            static thread_local std::vector<std::uint8_t> buf;
+            buf = static_cast<const txs::SetL1ValidatorWeightTx&>(tx).message();
+            raw = buf;
+            break;
+        }
+        default:
+            return ok();
+    }
+
+    auto message = warp::Message::parse(raw);
+    if (!message) return std::unexpected(message.error());
+    return warp::verify(message.value().signature, message.value().unsigned_message, network_id, source_set,
+                        kWarpQuorumNumerator, kWarpQuorumDenominator);
+}
+
 DynamicFee pick_fee_calculator(const gas::Config& config, const state::Chain& chain) {
     const gas::Price price =
         gas::calculate_price(config.min_price, chain.fee_state().excess, config.excess_conversion_constant);
@@ -928,6 +1188,31 @@ Result<bool> advance_time_to(const Backend& backend, state::Chain& parent, std::
     changes.set_fee_state(changes.fee_state().advance_time(backend.gas_config.max_capacity,
                                                            backend.gas_config.max_per_second,
                                                            backend.gas_config.target_per_second, seconds));
+
+    // And it charges every ACTIVE L1 validator for the time that passed. The
+    // charge is one number for all of them — the accrued mark — so deactivating
+    // the ones that can no longer pay is walking a prefix rather than touching
+    // every record.
+    {
+        const l1::FeeState validator_fee{static_cast<gas::Gas>(changes.num_active_l1_validators()),
+                                         changes.l1_validator_excess()};
+        const std::uint64_t cost = validator_fee.cost_of(backend.validator_fee_config, seconds);
+        auto accrued = add64(changes.accrued_fees(), cost);
+        if (!accrued) return fail(Err::Overflow, "the accrued validator fees overflow");
+
+        // Walk the PARENT's list: a walk over something being changed is a walk
+        // over nothing in particular.
+        for (auto v : parent.active_l1_validators()) {
+            if (v.end_accumulated_fee > accrued.value()) break;
+            v.end_accumulated_fee = 0;  // out of money: off, but still in the set
+            if (auto st = changes.put_l1_validator(v); !st) return std::unexpected(st.error());
+            changed = true;
+        }
+
+        changes.set_l1_validator_excess(
+            validator_fee.advance_time(backend.validator_fee_config.target, seconds).excess);
+        changes.set_accrued_fees(accrued.value());
+    }
 
     changes.set_timestamp(new_chain_time);
     if (auto st = changes.apply(parent); !st) return std::unexpected(st.error());
