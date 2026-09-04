@@ -1,0 +1,32 @@
+[package]
+name = "lux-xvm"
+version = "0.1.0"
+edition = "2021"
+description = "The Lux X-Chain in Rust: the UTXO DAG and asset transfers, ZAP on the wire."
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node2"
+publish = false
+
+[dependencies]
+# The three hashes the chain is defined over, and nothing else does them.
+# A tx id is SHA-256 of its signed bytes; an address is RIPEMD-160 of the
+# SHA-256 of a public key; every state-root leaf is Ethereum Keccak-256.
+# Writing any of the three by hand would be a second implementation to keep
+# in step with Go and C++.
+sha2 = "0.10"
+ripemd = "0.1"
+sha3 = "0.10"
+
+# What makes a signature spendable: the sender is RECOVERED from it, so a
+# node that cannot recover a public key cannot verify a transfer. Same curve
+# the Go node signs with.
+k256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
+
+# The one boundary where a chain answers a caller in a shape it did not
+# choose. A hand-written parser at a boundary is a vulnerability with a
+# schedule.
+serde_json = "1"
+
+[dev-dependencies]
+# Golden vectors are hex, because that is how the Go generator prints them.
+hex = "0.4"
