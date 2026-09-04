@@ -28,6 +28,7 @@
 #include "lux/platformvm/fx.hpp"
 #include "lux/platformvm/gas.hpp"
 #include "lux/platformvm/reward.hpp"
+#include "lux/platformvm/staking.hpp"
 #include "lux/platformvm/state.hpp"
 #include "lux/platformvm/uptime.hpp"
 #include "lux/platformvm/warp.hpp"
@@ -56,9 +57,13 @@ inline constexpr std::uint64_t kRegisterL1ValidatorExpiryWindow = 24 * 60 * 60;
 inline constexpr std::uint64_t kWarpQuorumNumerator = 67;
 inline constexpr std::uint64_t kWarpQuorumDenominator = 100;
 
-// The primary network's staking policy. Rendered from
-// vms/platformvm/stakingparams.Params plus the two Config fields that are not
-// governed. Durations are seconds, matching the wire.
+// The primary network's staking policy in force, as one value. It is
+// staking::Params plus the two fields that are NOT governed — the delegator
+// floor, and everything about money, which lives in reward::Config.
+//
+// The delegator floor is deliberately ungoverned: it is the rule about who may
+// delegate at all, and delegators are the one constituency that cannot defend
+// itself by voting, because the vote belongs to the validator they delegate to.
 struct StakingPolicy {
     std::uint64_t min_validator_stake = 0;
     std::uint64_t max_validator_stake = 0;
@@ -112,6 +117,11 @@ class DynamicFee final : public FeeCalculator {
 struct Backend {
     Runtime runtime;
     StakingPolicy policy;
+    // The governed policy as a history of activations. Empty means ungoverned:
+    // `policy` is used verbatim, which is what a chain that has never voted
+    // does. Every primary-network staking rule is read through policy_at, so
+    // moving where the history comes from changes nothing else.
+    staking::History staking;
     reward::Config reward_config;
     gas::Config gas_config;
     // What this execution charges. A running chain replaces it per block with
@@ -142,6 +152,33 @@ struct Backend {
     // The clock a transaction's locktimes are judged against. Chain time is what
     // the reference uses for admission, so this defaults to it.
     std::uint64_t now = 0;
+
+    // Go: Internal.StakingPolicyAt. The policy binding someone who committed at
+    // unix time `t`. The argument is the whole non-retroactivity guarantee, and
+    // a caller must pass the moment the party bound ITSELF, not the moment of
+    // the check:
+    //
+    //  - admission passes the current chain time, because a joiner is choosing
+    //    to accept the rules in force now;
+    //  - the reward gate passes the staker's start time, because a validator
+    //    that bonded under an 80% uptime rule must be judged at 80% however
+    //    stake votes afterwards.
+    //
+    // Getting the second one wrong makes the uptime requirement retroactive and
+    // hands a stake majority the power to raise the bar the day before a
+    // rival's stake matures and take its reward.
+    StakingPolicy policy_at(std::int64_t t) const {
+        if (staking.empty()) return policy;
+        const auto p = staking.at(t);
+        StakingPolicy out = policy;  // carries the ungoverned delegator floor
+        out.min_validator_stake = p.min_validator_stake;
+        out.max_validator_stake = p.max_validator_stake;
+        out.min_stake_duration = p.min_stake_duration;
+        out.max_stake_duration = p.max_stake_duration;
+        out.min_delegation_fee = p.min_delegation_fee;
+        out.uptime_requirement = p.uptime_requirement;
+        return out;
+    }
 };
 
 // Go: executor.VerifyNewChainTime. The clock may only move forward, only as far

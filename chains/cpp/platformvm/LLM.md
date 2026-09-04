@@ -63,6 +63,7 @@ include/lux/platformvm/
   warp.hpp         a message another chain signed, and the aggregated proof
   warpmsg.hpp      what that message SAYS
   l1.hpp           a validator of a sovereign network, and the fee it pays
+  staking.hpp      the terms of validating, and what may change them
   genesis.hpp      the state the network starts in
   vm.hpp           the chain, as the node's VM seam sees it
 ```
@@ -114,7 +115,7 @@ what a fork does. So:
 
 ## What is here, and what is not
 
-200 cases across 16 suites, all green, clean under address+undefined sanitizers.
+215 cases across 17 suites, all green, clean under address+undefined sanitizers.
 
 **Ported and tested.** All nineteen transaction kinds and all four block kinds,
 byte-identical, with their full syntactic verification. Every execution path the
@@ -132,9 +133,12 @@ record, the expiry set that refuses a replay, the LP-77 continuous fee, the four
 transactions that register, reweight, top up and switch off an L1 validator, and
 the two that establish a sovereign network's own set. The validator set consensus
 samples and its commitment, and the set at any height that has already passed —
-which is what makes a signature from back then checkable now. The genesis blob — the money, the first validators
-and the first chains a network starts with — encoded, parsed and validated,
-against the bytes the Go package wrote. And the VM itself — build, parse, get,
+which is what makes a signature from back then checkable now. The staking
+constitution: what the validator set may vote about its own terms, the envelope
+no vote leaves, the brake on exclusionary change, and the history that makes a
+validator judged on the terms it agreed to. The genesis blob — the money, the
+first validators and the first chains a network starts with — encoded, parsed
+and validated, against the bytes the Go package wrote. And the VM itself — build, parse, get,
 prefer, verify, accept — through the node's seam.
 
 **Absent, and why.** Each of these returns the reason it cannot run rather than
