@@ -28,6 +28,21 @@ use std::time::Duration;
 /// The denominator every rate and share is measured against.
 pub const PERCENT_DENOMINATOR: u64 = 1_000_000;
 
+/// A percentage of a value, without overflowing.
+///
+/// The naive `value * percent / DENOMINATOR` overflows a u64 at the weights
+/// the P-Chain actually carries — a validator's weight runs to ~1.8e19 and the
+/// denominator is 1e6, so the product does not fit. Splitting the value at the
+/// denominator first keeps every intermediate inside a u64 and gives the same
+/// answer everywhere the product would have fitted.
+///
+/// Go writes this arithmetic in two places — the staking-policy rate limit and
+/// the slash amount — and both are this. One value, one function.
+pub fn percent_of(value: u64, percent: u64) -> u64 {
+    let denom = PERCENT_DENOMINATOR;
+    (value / denom) * percent + (value % denom) * percent / denom
+}
+
 /// What a chain pays and how fast.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Config {
@@ -408,5 +423,48 @@ mod tests {
             c.calculate(MAX_STAKING_DURATION, MEGA_LUX, 720 * MEGA_LUX),
             0
         );
+    }
+
+    /// Go: `TestHIGH2_SlashAmountNoOverflow`, value for value.
+    #[test]
+    fn a_percentage_of_a_large_value_does_not_overflow() {
+        let denom = PERCENT_DENOMINATOR;
+        let cases: [(u64, u64, u64); 7] = [
+            (1_000_000_000, 100_000, 100_000_000),
+            (1_000_000_000, 500_000, 500_000_000),
+            // The one that overflows the naive product.
+            (u64::MAX / 2, 500_000, u64::MAX / 4),
+            (u64::MAX, 100_000, u64::MAX / 10),
+            (denom, 500_000, 500_000),
+            (999_999, 500_000, 499_999),
+            (1, 1, 0),
+        ];
+        for (value, percent, want) in cases {
+            assert_eq!(
+                percent_of(value, percent),
+                want,
+                "{percent} millionths of {value}"
+            );
+        }
+    }
+
+    /// Go: `TestHIGH2_SlashAmountMatchesNaive` — where the naive product does
+    /// fit, the safe form gives exactly the same answer, so nothing was traded
+    /// for the safety.
+    #[test]
+    fn where_the_naive_product_fits_the_answers_agree() {
+        let denom = PERCENT_DENOMINATOR;
+        for value in [0u64, 1, 100, 1_000_000, 1_000_000_000, denom, denom * 2] {
+            for percent in [0u64, 1, 100_000, 500_000, 999_999, 1_000_000] {
+                if value > 0 && percent > 0 && value > u64::MAX / percent {
+                    continue; // the naive form would not fit
+                }
+                assert_eq!(
+                    value * percent / denom,
+                    percent_of(value, percent),
+                    "value {value}, percent {percent}"
+                );
+            }
+        }
     }
 }
