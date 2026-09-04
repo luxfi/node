@@ -161,6 +161,15 @@ std::string_view err_name(Err e) {
         case Err::InsufficientUnlockedFunds: return "InsufficientUnlockedFunds";
         case Err::DuplicateNetwork: return "DuplicateNetwork";
         case Err::DuplicateChain: return "DuplicateChain";
+        case Err::Timelocked: return "Timelocked";
+        case Err::TooManySigners: return "TooManySigners";
+        case Err::TooFewSigners: return "TooFewSigners";
+        case Err::InputCredentialSignersMismatch: return "InputCredentialSignersMismatch";
+        case Err::InputOutputIndexOutOfBounds: return "InputOutputIndexOutOfBounds";
+        case Err::WrongSig: return "WrongSig";
+        case Err::MismatchedAmounts: return "MismatchedAmounts";
+        case Err::UnrecoverableSignature: return "UnrecoverableSignature";
+        case Err::WrongNumberCredentials: return "WrongNumberCredentials";
     }
     return "Unknown";
 }
