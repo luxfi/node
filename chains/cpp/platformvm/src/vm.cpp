@@ -32,6 +32,28 @@ Id from_node_id(const lux::node::Id& id) {
     return out;
 }
 
+// Go: verifier.processStandardTxs, the complexity gate. The whole block's
+// complexity is priced and taken out of the chain's capacity before a single
+// transaction runs, so an oversized block is refused as a block rather than
+// discovered halfway through.
+Status consume_block_gas(const executor::Backend& backend, state::Chain& layer,
+                         const std::vector<txs::Tx>& block_txs) {
+    gas::Dimensions complexity;
+    for (const auto& tx : block_txs) {
+        auto c = fee::tx_complexity(*tx.unsigned_tx);
+        if (!c) return std::unexpected(c.error());
+        auto s = complexity.add(c.value());
+        if (!s) return std::unexpected(s.error());
+        complexity = s.value();
+    }
+    auto g = complexity.to_gas(backend.gas_config.weights);
+    if (!g) return std::unexpected(g.error());
+    auto consumed = layer.fee_state().consume(g.value());
+    if (!consumed) return std::unexpected(consumed.error());
+    layer.set_fee_state(consumed.value());
+    return ok();
+}
+
 }  // namespace
 
 // ── the block as consensus sees it
@@ -64,6 +86,7 @@ PlatformVM::PlatformVM(const Id& chain_id, executor::Backend backend, const Gene
     : chain_id_(chain_id), backend_(std::move(backend)) {
     state_.set_timestamp(genesis.timestamp);
     state_.set_current_supply(kPrimaryNetworkId, genesis.initial_supply);
+    state_.set_fee_state(genesis.fee_state);
     for (const auto& u : genesis.utxos) state_.add_utxo(u);
     for (const auto& [staker, tx] : genesis.validators) {
         (void)state_.put_current_validator(staker);
@@ -158,6 +181,13 @@ Status PlatformVM::verify_block(const block::Block& b, Verified& out) {
             if (!changed) return std::unexpected(changed.error());
 
             const auto block_txs = b.decision_txs();
+            // The price comes off the chain's own excess, and the block's gas is
+            // taken out of the chain's capacity BEFORE anything executes: a block
+            // that asks for more than the chain has is refused whole.
+            const executor::DynamicFee fees = executor::pick_fee_calculator(backend.gas_config, *layer);
+            backend.fees = &fees;
+            if (auto st = consume_block_gas(backend, *layer, block_txs); !st) return st;
+
             std::set<Id> inputs;
             for (const auto& tx : block_txs) {
                 if (auto st = executor::standard_tx(backend, tx, *layer); !st) return st;
@@ -189,8 +219,13 @@ Status PlatformVM::verify_block(const block::Block& b, Verified& out) {
             auto changed = executor::advance_time_to(backend, *decision, b.timestamp());
             if (!changed) return std::unexpected(changed.error());
 
+            const auto decision_txs = b.decision_txs();
+            const executor::DynamicFee fees = executor::pick_fee_calculator(backend.gas_config, *decision);
+            backend.fees = &fees;
+            if (auto st = consume_block_gas(backend, *decision, decision_txs); !st) return st;
+
             std::set<Id> inputs;
-            for (const auto& tx : b.decision_txs()) {
+            for (const auto& tx : decision_txs) {
                 if (auto st = executor::standard_tx(backend, tx, *decision); !st) return st;
                 for (const auto& in : tx.input_ids())
                     if (!inputs.insert(in).second) return fail(Err::ConflictingBlockTxs);
@@ -300,6 +335,8 @@ std::shared_ptr<lux::node::Block> PlatformVM::build() {
     backend.now = timestamp;
     auto changed = executor::advance_time_to(backend, trial, timestamp);
     if (!changed) return nullptr;
+    const executor::DynamicFee fees = executor::pick_fee_calculator(backend.gas_config, trial);
+    backend.fees = &fees;
 
     std::vector<txs::Tx> included;
     std::set<Id> inputs;
@@ -311,6 +348,9 @@ std::shared_ptr<lux::node::Block> PlatformVM::build() {
         state::Diff probe(&trial);
         if (!executor::standard_tx(backend, tx, probe)) continue;
         if (!probe.apply(trial)) continue;
+        // Charge the block's own gas as it is filled, so a block this builder
+        // offers is a block this verifier accepts.
+        if (!consume_block_gas(backend, trial, {tx})) continue;
         trial.add_tx(tx, status::Status::Committed);
         for (const auto& in : tx.input_ids()) inputs.insert(in);
         included.push_back(tx);

@@ -44,6 +44,9 @@ namespace lux::platformvm::vm {
 struct Genesis {
     std::uint64_t timestamp = 0;
     std::uint64_t initial_supply = 0;
+    // The chain's starting fee position: how much gas it may spend before it has
+    // to wait for the clock.
+    gas::State fee_state{};
     std::vector<UTXO> utxos;
     // Validators that exist from the first block, with the transaction that
     // created each so a reward can later name it.

@@ -207,6 +207,10 @@ enum class Err {
     MismatchedAmounts,              // secp256k1fx.ErrMismatchedAmounts
     UnrecoverableSignature,         // secp256k1.RecoverPubkey failure
     WrongNumberCredentials,         // utxo.errWrongNumberCredentials
+
+    // ── fees (LP-103)
+    InsufficientCapacity, // gas.ErrInsufficientCapacity
+    UnsupportedTx,        // fee.ErrUnsupportedTx
 };
 
 std::string_view err_name(Err e);
