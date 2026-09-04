@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/block"
@@ -300,6 +301,20 @@ func main() {
 	sighash := bytes32(0x07)
 	sigBytes, err := sk.SignHash(sighash)
 	emit("spend_signature", sigBytes, err)
+
+	// A validator's BLS key and the proof that it holds it, from a fixed
+	// secret, so the Rust side can check that it verifies under the same
+	// domain tag Go signs under.
+	blsKey, err := localsigner.FromSeed(bytes32(0x21))
+	if err != nil {
+		panic(err)
+	}
+	blsPoP, err := signer.NewProofOfPossession(blsKey)
+	if err != nil {
+		panic(err)
+	}
+	emit("bls_public_key", blsPoP.PublicKey[:], nil)
+	emit("bls_proof_of_possession", blsPoP.ProofOfPossession[:], nil)
 }
 
 func bytes32(b byte) []byte {

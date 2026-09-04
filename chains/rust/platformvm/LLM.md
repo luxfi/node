@@ -12,7 +12,7 @@ and signed for by whoever owns it. None exists to make entry selective.
 
 ```
 cd chains/rust/platformvm
-PATH=~/.cargo/bin:$PATH cargo test          # 230 tests
+PATH=~/.cargo/bin:$PATH cargo test          # 267 tests
 PATH=~/.cargo/bin:$PATH cargo clippy --all-targets
 ```
 
@@ -38,11 +38,24 @@ EOF
 go mod tidy && go run .
 ```
 
-30 vectors are checked this way: every transaction kind that carries an
-envelope, the signed form with three credentials, all four block kinds, the
-unspent-output envelope locked and unlocked, a whole genesis blob, and a
-signature Go made — which this port recovers to the same address Go derives
-from the key that made it.
+33 vectors are checked this way: every transaction kind that carries an
+envelope, the signed form with three credentials, all four block kinds
+(including the golden abort block Go pins byte for byte), the unspent-output
+envelope locked and unlocked, a whole genesis blob, a signature Go made —
+which this port recovers to the same address Go derives from the key that made
+it — and a proof of possession Go made, which verifies here under the same
+domain tag.
+
+Beyond the bytes, these Go test tables are ported case for case, and each one
+is named in the Rust test that carries it: `TestVerifySpendUTXOs` (what value
+may be created, locked and burned), `TestStakerDiffIterator` and
+`TestMutableStakerIterator` (the order weight changes are read in),
+`TestStakerLess` and the `TestBaseStakers*` set,
+`TestAddPermissionlessValidatorTxSyntacticVerify` and its delegator sibling,
+`TestUnsignedCreateChainTxVerify`, `TestTransformChainTxSyntacticVerify`, the
+six `TestPriorityIs*`, `TestParseCredsBuf*`, `TestRewards`/`TestSplit`, the
+whole `stakingparams` suite, `TestGoldenAbortBlock`, and
+`TestHIGH2_SlashAmount*`.
 
 ## What is here
 
