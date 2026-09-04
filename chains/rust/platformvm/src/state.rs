@@ -856,4 +856,142 @@ mod tests {
         assert_eq!(diff.next().map(|(s, a)| (s.tx_id[0], a)), Some((2, false)));
         assert!(diff.next().is_none());
     }
+
+    /// Go: `TestStakerLess`, case for case — both directions of each clause,
+    /// and the equal case.
+    #[test]
+    fn the_staker_order_answers_what_go_answers() {
+        let s = |tx: u8, next: u64, priority: Priority| Staker {
+            tx_id: [tx; 32],
+            node_id: NodeId([0; 20]),
+            public_key: None,
+            chain: crate::ids::PRIMARY_NETWORK_ID,
+            weight: 0,
+            start_time: 0,
+            end_time: 0,
+            potential_reward: 0,
+            next_time: next,
+            priority,
+        };
+        let cur = Priority::PrimaryNetworkValidatorCurrent;
+        let vdr_pending = Priority::PrimaryNetworkValidatorPending;
+        let dlg_pending = Priority::PrimaryNetworkDelegatorLegacyPending;
+
+        // When.
+        assert!(s(0, 0, cur) < s(0, 1, cur));
+        assert!(!(s(0, 1, cur) < s(0, 0, cur)));
+        // Then priority.
+        assert!(s(0, 0, dlg_pending) < s(0, 0, vdr_pending));
+        assert!(!(s(0, 0, vdr_pending) < s(0, 0, dlg_pending)));
+        // Then name.
+        assert!(s(0, 0, vdr_pending) < s(1, 0, vdr_pending));
+        assert!(!(s(1, 0, vdr_pending) < s(0, 0, vdr_pending)));
+        // And nothing is less than itself, which is what makes the order a
+        // total one and the successor of a staker unambiguous.
+        assert!(!(s(0, 0, cur) < s(0, 0, cur)));
+    }
+
+    /// Go: `TestBaseStakersValidator` — a delegator is not a validator, and
+    /// asking for one under the wrong network or the wrong node finds
+    /// nothing.
+    #[test]
+    fn a_delegator_is_not_the_validator_it_backs() {
+        let mut state = State::new();
+        let chain = crate::ids::PRIMARY_NETWORK_ID;
+        let node = NodeId([5; 20]);
+
+        let mut delegator = staker(1, 100, Priority::PrimaryNetworkDelegatorCurrent);
+        delegator.node_id = node;
+        state.put_current_delegator(delegator.clone());
+
+        assert_eq!(
+            state.current_validator(&[9; 32], &node),
+            Err(Error::NotFound)
+        );
+        assert_eq!(
+            state.current_validator(&chain, &NodeId([6; 20])),
+            Err(Error::NotFound)
+        );
+        assert_eq!(state.current_validator(&chain, &node), Err(Error::NotFound));
+        // It is in the set all the same — it is a staker, just not that one.
+        assert_eq!(state.current_stakers().count(), 1);
+
+        let mut validator = staker(2, 200, Priority::PrimaryNetworkValidatorCurrent);
+        validator.node_id = node;
+        state.put_current_validator(validator.clone()).unwrap();
+        assert_eq!(state.current_validator(&chain, &node), Ok(&validator));
+
+        state.delete_current_delegator(&delegator);
+        assert_eq!(
+            state.current_stakers().cloned().collect::<Vec<_>>(),
+            vec![validator.clone()]
+        );
+
+        state.delete_current_validator(&validator);
+        assert_eq!(state.current_validator(&chain, &node), Err(Error::NotFound));
+        assert_eq!(state.current_stakers().count(), 0);
+    }
+
+    /// Go: `TestBaseStakersDelegator` — the delegators of a validator are the
+    /// ones that named it, and nobody else's.
+    #[test]
+    fn the_delegators_of_a_validator_are_the_ones_that_named_it() {
+        let mut state = State::new();
+        let chain = crate::ids::PRIMARY_NETWORK_ID;
+        let node = NodeId([5; 20]);
+        assert_eq!(state.current_delegators(&chain, &node).count(), 0);
+
+        let mut delegator = staker(1, 100, Priority::PrimaryNetworkDelegatorCurrent);
+        delegator.node_id = node;
+        state.put_current_delegator(delegator.clone());
+
+        assert_eq!(
+            state.current_delegators(&chain, &NodeId([6; 20])).count(),
+            0
+        );
+        assert_eq!(
+            state
+                .current_delegators(&chain, &node)
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec![delegator.clone()]
+        );
+
+        state.delete_current_delegator(&delegator);
+        assert_eq!(state.current_delegators(&chain, &node).count(), 0);
+    }
+
+    /// Go: `TestBaseStakersPruning` — a validator and its delegators come and
+    /// go independently, in either order, and when both are gone nothing is
+    /// left behind.
+    #[test]
+    fn a_validator_and_its_delegators_come_and_go_independently() {
+        let mut state = State::new();
+        let chain = crate::ids::PRIMARY_NETWORK_ID;
+        let node = NodeId([5; 20]);
+
+        let mut validator = staker(1, 200, Priority::PrimaryNetworkValidatorCurrent);
+        validator.node_id = node;
+        let mut delegator = staker(2, 100, Priority::PrimaryNetworkDelegatorCurrent);
+        delegator.node_id = node;
+
+        // Validator first, then delegator; validator away first.
+        state.put_current_validator(validator.clone()).unwrap();
+        assert!(state.current_validator(&chain, &node).is_ok());
+        state.put_current_delegator(delegator.clone());
+        assert!(state.current_validator(&chain, &node).is_ok());
+        state.delete_current_validator(&validator);
+        assert_eq!(state.current_validator(&chain, &node), Err(Error::NotFound));
+        state.delete_current_delegator(&delegator);
+        assert_eq!(state.current_stakers().count(), 0);
+
+        // And the other order: delegator away first, validator still there.
+        state.put_current_validator(validator.clone()).unwrap();
+        state.put_current_delegator(delegator.clone());
+        state.delete_current_delegator(&delegator);
+        assert!(state.current_validator(&chain, &node).is_ok());
+        state.delete_current_validator(&validator);
+        assert_eq!(state.current_validator(&chain, &node), Err(Error::NotFound));
+        assert_eq!(state.current_stakers().count(), 0);
+    }
 }
