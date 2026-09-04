@@ -735,6 +735,12 @@ class Proposal final : public txs::Visitor {
 
 }  // namespace
 
+DynamicFee pick_fee_calculator(const gas::Config& config, const state::Chain& chain) {
+    const gas::Price price =
+        gas::calculate_price(config.min_price, chain.fee_state().excess, config.excess_conversion_constant);
+    return DynamicFee(config.weights, price);
+}
+
 Result<state::Staker> get_validator(const state::Chain& chain, const Id& chain_id, const NodeId& node_id) {
     auto current = chain.get_current_validator(chain_id, node_id);
     if (current) return current;
@@ -839,6 +845,14 @@ Result<bool> advance_time_to(const Backend& backend, state::Chain& parent, std::
         changes.delete_current_validator(to_remove);
         changed = true;
     }
+
+    // The chain's own clock also refills its fee capacity and drains its excess,
+    // which is what makes an idle chain cheap again.
+    const std::uint64_t previous = parent.timestamp();
+    const std::uint64_t seconds = new_chain_time > previous ? new_chain_time - previous : 0;
+    changes.set_fee_state(changes.fee_state().advance_time(backend.gas_config.max_capacity,
+                                                           backend.gas_config.max_per_second,
+                                                           backend.gas_config.target_per_second, seconds));
 
     changes.set_timestamp(new_chain_time);
     if (auto st = changes.apply(parent); !st) return std::unexpected(st.error());

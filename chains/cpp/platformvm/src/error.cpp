@@ -170,6 +170,8 @@ std::string_view err_name(Err e) {
         case Err::MismatchedAmounts: return "MismatchedAmounts";
         case Err::UnrecoverableSignature: return "UnrecoverableSignature";
         case Err::WrongNumberCredentials: return "WrongNumberCredentials";
+        case Err::InsufficientCapacity: return "InsufficientCapacity";
+        case Err::UnsupportedTx: return "UnsupportedTx";
     }
     return "Unknown";
 }

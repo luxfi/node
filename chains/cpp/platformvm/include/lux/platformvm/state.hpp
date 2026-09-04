@@ -29,6 +29,7 @@
 #include "lux/platformvm/block.hpp"
 #include "lux/platformvm/components.hpp"
 #include "lux/platformvm/error.hpp"
+#include "lux/platformvm/gas.hpp"
 #include "lux/platformvm/ids.hpp"
 #include "lux/platformvm/priority.hpp"
 #include "lux/platformvm/signer.hpp"
@@ -266,6 +267,10 @@ class Chain {
     virtual void set_timestamp(std::uint64_t t) = 0;
     virtual std::uint64_t accrued_fees() const = 0;
     virtual void set_accrued_fees(std::uint64_t f) = 0;
+    // The chain's LP-103 position: what it may still spend, and how far above
+    // target it has been running. The price follows the excess.
+    virtual gas::State fee_state() const = 0;
+    virtual void set_fee_state(const gas::State& f) = 0;
 
     // supply, per network
     virtual Result<std::uint64_t> current_supply(const Id& chain_id) const = 0;
@@ -331,6 +336,8 @@ class MemState final : public Chain {
     void set_timestamp(std::uint64_t t) override { timestamp_ = t; }
     std::uint64_t accrued_fees() const override { return accrued_fees_; }
     void set_accrued_fees(std::uint64_t f) override { accrued_fees_ = f; }
+    gas::State fee_state() const override { return fee_state_; }
+    void set_fee_state(const gas::State& f) override { fee_state_ = f; }
 
     Result<std::uint64_t> current_supply(const Id& chain_id) const override;
     void set_current_supply(const Id& chain_id, std::uint64_t s) override { supply_[chain_id] = s; }
@@ -417,6 +424,7 @@ class MemState final : public Chain {
   private:
     std::uint64_t timestamp_ = 0;
     std::uint64_t accrued_fees_ = 0;
+    gas::State fee_state_{};
     std::map<Id, std::uint64_t> supply_;
     std::map<Id, UTXO> utxos_;
     std::map<Id, std::vector<UTXO>> reward_utxos_;
@@ -437,8 +445,9 @@ class MemState final : public Chain {
 // parent never knew.
 class Diff final : public Chain {
   public:
-    explicit Diff(Chain* parent) : parent_(parent), timestamp_(parent->timestamp()),
-                                   accrued_fees_(parent->accrued_fees()) {}
+    explicit Diff(Chain* parent)
+        : parent_(parent), timestamp_(parent->timestamp()), accrued_fees_(parent->accrued_fees()),
+          fee_state_(parent->fee_state()) {}
 
     // Write everything this layer holds into the target. Go: Diff.Apply.
     Status apply(Chain& target) const;
@@ -447,6 +456,8 @@ class Diff final : public Chain {
     void set_timestamp(std::uint64_t t) override { timestamp_ = t; }
     std::uint64_t accrued_fees() const override { return accrued_fees_; }
     void set_accrued_fees(std::uint64_t f) override { accrued_fees_ = f; }
+    gas::State fee_state() const override { return fee_state_; }
+    void set_fee_state(const gas::State& f) override { fee_state_ = f; }
 
     Result<std::uint64_t> current_supply(const Id& chain_id) const override;
     void set_current_supply(const Id& chain_id, std::uint64_t s) override { supply_[chain_id] = s; }
@@ -499,6 +510,7 @@ class Diff final : public Chain {
     Chain* parent_;
     std::uint64_t timestamp_ = 0;
     std::uint64_t accrued_fees_ = 0;
+    gas::State fee_state_{};
     std::map<Id, std::uint64_t> supply_;
     std::map<Id, UTXO> added_utxos_;
     std::set<Id> deleted_utxos_;

@@ -23,7 +23,9 @@
 #pragma once
 
 #include "lux/platformvm/error.hpp"
+#include "lux/platformvm/complexity.hpp"
 #include "lux/platformvm/fx.hpp"
+#include "lux/platformvm/gas.hpp"
 #include "lux/platformvm/reward.hpp"
 #include "lux/platformvm/state.hpp"
 #include "lux/platformvm/txs.hpp"
@@ -59,14 +61,10 @@ class FeeCalculator {
     virtual Result<std::uint64_t> calculate(const txs::UnsignedTx& tx) const = 0;
 };
 
-// A fee that does not depend on the transaction. This is the whole of Go's
-// StaticConfig for a chain that charges one price.
-//
-// The dynamic (complexity-priced) calculator is NOT here. It is a separate
-// module in the reference — vms/platformvm/txs/fee/complexity.go — and a
-// half-ported pricing rule would be worse than an absent one, because a node
-// that prices a transaction differently from its peers rejects blocks they
-// accept. Supply your own FeeCalculator to charge by complexity.
+// A fee that does not depend on the transaction — Go's StaticConfig for a chain
+// that charges one price. It is what a caller driving the executor directly
+// hands it; a running chain prices by complexity (below) and reads the price off
+// its own state, so nobody can choose a cheaper one.
 class FlatFee final : public FeeCalculator {
   public:
     explicit FlatFee(std::uint64_t fee = 0) : fee_(fee) {}
@@ -76,11 +74,34 @@ class FlatFee final : public FeeCalculator {
     std::uint64_t fee_;
 };
 
+// The LP-103 calculator: a transaction's four-dimensional complexity, merged by
+// the chain's weights, times the price the excess implies. This is what makes a
+// congested chain expensive and an idle one cheap, per dimension.
+class DynamicFee final : public FeeCalculator {
+  public:
+    DynamicFee(gas::Dimensions weights, gas::Price price) : weights_(weights), price_(price) {}
+    Result<std::uint64_t> calculate(const txs::UnsignedTx& tx) const override {
+        auto complexity = fee::tx_complexity(tx);
+        if (!complexity) return std::unexpected(complexity.error());
+        auto g = complexity.value().to_gas(weights_);
+        if (!g) return std::unexpected(g.error());
+        return gas::cost(g.value(), price_);
+    }
+
+  private:
+    gas::Dimensions weights_;
+    gas::Price price_;
+};
+
 // Everything an execution needs that is not the state or the transaction.
 struct Backend {
     Runtime runtime;
     StakingPolicy policy;
     reward::Config reward_config;
+    gas::Config gas_config;
+    // What this execution charges. A running chain replaces it per block with
+    // the calculator its own fee state implies; a caller driving the executor
+    // directly supplies one.
     const FeeCalculator* fees = nullptr;
     fx::Fx fx{true};
 
@@ -107,6 +128,10 @@ Status standard_tx(const Backend& backend, const txs::Tx& tx, state::Diff& layer
 // Go: executor.ProposalTx. Executes the chain's own transaction against both
 // outcomes, so the vote that follows only has to pick one.
 Status proposal_tx(const Backend& backend, const txs::Tx& tx, state::Diff& on_commit, state::Diff& on_abort);
+
+// Go: state.PickFeeCalculator. The price is read off the chain's own excess, so
+// a caller cannot choose a cheaper one.
+DynamicFee pick_fee_calculator(const gas::Config& config, const state::Chain& chain);
 
 // Go: executor.GetValidator — current first, then pending.
 Result<state::Staker> get_validator(const state::Chain& chain, const Id& chain_id, const NodeId& node_id);
