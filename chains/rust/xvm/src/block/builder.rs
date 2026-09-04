@@ -133,9 +133,9 @@ pub fn build(mgr: &Manager, backend: &Backend<'_>, now: u64, candidates: &[Tx]) 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ids;
     use crate::fx::secp256k1::{address_of, MintOutput, TransferInput, TransferOutput};
     use crate::fx::{self, Input, Owners, State};
+    use crate::ids;
     use crate::ids::{ShortId, EMPTY};
     use crate::state::{ChainRef, Store};
     use crate::txs::executor::{AtomicRequests, Config, Net, SharedMemory};

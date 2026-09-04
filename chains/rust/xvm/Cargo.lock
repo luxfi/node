@@ -1898,10 +1898,12 @@ dependencies = [
 name = "lux-xvm"
 version = "0.1.0"
 dependencies = [
+ "blst",
  "hex",
  "k256",
  "lux-consensus",
  "lux-node",
+ "lux-pq",
  "ripemd",
  "serde_json",
  "sha2",
