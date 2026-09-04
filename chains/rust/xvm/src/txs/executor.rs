@@ -38,10 +38,10 @@ const MAX_DENOMINATION: u8 = 32;
 /// It is on the chain, it was accepted before the rule that would refuse it,
 /// and history does not get to be re-decided. The value is the id itself, so
 /// this exempts exactly one transaction and nothing that resembles it.
-pub const EXEMPT_OPERATION_TX: Id = Id([
+pub const EXEMPT_OPERATION_TX: Id = [
     0x2f, 0x21, 0xd5, 0x74, 0x88, 0x89, 0x2c, 0x35, 0xa3, 0x39, 0xd1, 0xbf, 0x09, 0x6f, 0x8f, 0x33,
     0xe0, 0xe6, 0x01, 0x51, 0xc3, 0xf4, 0x2a, 0x99, 0x23, 0x73, 0x5b, 0x79, 0xbf, 0x4b, 0x2e, 0x68,
-]);
+];
 
 /// What the chain charges.
 #[derive(Clone, Copy, Debug)]
@@ -287,7 +287,7 @@ pub fn verify_semantic(backend: &Backend<'_>, state: &dyn ReadOnlyChain, tx: &Tx
             let keys: Vec<Vec<u8>> = t
                 .imported_ins
                 .iter()
-                .map(|i| i.input_id().0.to_vec())
+                .map(|i| i.input_id().to_vec())
                 .collect();
             let sm = backend.shared_memory.ok_or(Error::NotFound)?;
             let raw = sm.get(&t.source_chain, &keys)?;
@@ -496,7 +496,7 @@ pub fn execute(state: &mut dyn Chain, tx: &Tx) -> Result<Effects> {
             for in_ in &t.imported_ins {
                 let utxo_id = in_.input_id();
                 effects.inputs.insert(utxo_id);
-                removes.push(utxo_id.0.to_vec());
+                removes.push(utxo_id.to_vec());
             }
             effects.atomic_requests.push((
                 t.source_chain,
@@ -518,7 +518,7 @@ pub fn execute(state: &mut dyn Chain, tx: &Tx) -> Result<Effects> {
                 index += 1;
                 // The same encoding on shared memory and on disk.
                 let bytes = utxo.wire_bytes();
-                let key = utxo.input_id().0.to_vec();
+                let key = utxo.input_id().to_vec();
                 puts.push(AtomicElement {
                     key,
                     value: bytes,
@@ -541,6 +541,7 @@ pub fn execute(state: &mut dyn Chain, tx: &Tx) -> Result<Effects> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ids;
     use crate::fx::secp256k1::{
         address_of, MintOperation, MintOutput, TransferInput, TransferOutput,
     };
@@ -557,7 +558,7 @@ mod tests {
     const OTHER_KEY: [u8; 32] = [12u8; 32];
 
     fn asset(n: u8) -> Id {
-        Id::prefixed_bytes(&[n])
+        ids::prefixed(&[n])
     }
 
     fn chain() -> Id {
@@ -1332,7 +1333,7 @@ mod tests {
         assert_eq!(effects.atomic_requests.len(), 1);
         let (peer, reqs) = &effects.atomic_requests[0];
         assert_eq!(*peer, asset(9));
-        assert_eq!(reqs.removes, vec![imported.input_id().0.to_vec()]);
+        assert_eq!(reqs.removes, vec![imported.input_id().to_vec()]);
         assert!(reqs.puts.is_empty());
     }
 
@@ -1368,7 +1369,7 @@ mod tests {
                 owners: owners(),
             }),
         };
-        assert_eq!(put.key, want.input_id().0.to_vec());
+        assert_eq!(put.key, want.input_id().to_vec());
         // The other chain reads exactly these bytes back.
         assert_eq!(Utxo::from_wire(&put.value).unwrap(), want);
         assert_eq!(put.traits, vec![me().0.to_vec()]);
@@ -1380,11 +1381,11 @@ mod tests {
     fn the_exempt_operation_transaction_is_the_one_id_and_no_other() {
         // The value is the id, so nothing that merely resembles it is waived.
         assert_eq!(
-            hex::encode(EXEMPT_OPERATION_TX.0),
+            hex::encode(EXEMPT_OPERATION_TX),
             "2f21d57488892c35a339d1bf096f8f33e0e60151c3f42a9923735b79bf4b2e68"
         );
         let mut near = EXEMPT_OPERATION_TX;
-        near.0[31] ^= 1;
+        near[31] ^= 1;
         assert_ne!(near, EXEMPT_OPERATION_TX);
     }
 
