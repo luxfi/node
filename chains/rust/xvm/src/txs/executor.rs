@@ -541,12 +541,12 @@ pub fn execute(state: &mut dyn Chain, tx: &Tx) -> Result<Effects> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ids;
     use crate::fx::secp256k1::{
         address_of, MintOperation, MintOutput, TransferInput, TransferOutput,
     };
     use crate::fx::{property, Cred, Credential, Input, Owners, State};
     use crate::hash::sha256;
+    use crate::ids;
     use crate::ids::ShortId;
     use crate::state::Store;
     use crate::txs::{

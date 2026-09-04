@@ -324,10 +324,10 @@ pub fn genesis_parent_root() -> Id {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ids;
     use crate::block::root::block_execution_root;
     use crate::fx::secp256k1::{address_of, TransferInput, TransferOutput};
     use crate::fx::{self, Input, Owners, State};
+    use crate::ids;
     use crate::ids::ShortId;
     use crate::state::Store;
     use crate::txs::executor::{Config, Net, SharedMemory};
@@ -687,10 +687,7 @@ mod tests {
     #[test]
     fn accepting_a_block_nobody_verified_is_refused() {
         let mut mgr = started();
-        assert_eq!(
-            mgr.accept(&ids::prefixed(&[7])),
-            Err(Error::BlockNotFound)
-        );
+        assert_eq!(mgr.accept(&ids::prefixed(&[7])), Err(Error::BlockNotFound));
     }
 
     #[test]
