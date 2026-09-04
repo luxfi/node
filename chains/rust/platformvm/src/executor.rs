@@ -704,38 +704,43 @@ fn over_delegated(
 /// adding a pending delegator's weight when it starts and removing a current
 /// one's when it ends, and takes the running maximum inside the window.
 fn max_weight(state: &State, validator: &Staker, start: u64, end: u64) -> Result<u64, Error> {
+    let current: Vec<Staker> = state
+        .current_delegators(&validator.chain, &validator.node_id)
+        .cloned()
+        .collect();
+    let pending: Vec<Staker> = state
+        .pending_delegators(&validator.chain, &validator.node_id)
+        .cloned()
+        .collect();
+
+    // What is on the validator right now: its own weight and every delegation
+    // already backing it.
     let mut current_weight = validator.weight;
-    for d in state.current_delegators(&validator.chain, &validator.node_id) {
+    for d in &current {
         current_weight = current_weight
             .checked_add(d.weight)
             .ok_or(Error::Overflow)?;
     }
 
-    // Every change to this validator's weight, in the order time will apply
-    // it: a current delegator leaving at its end time, a pending one arriving
-    // at its start time.
-    let mut changes: Vec<(u64, bool, u64)> = Vec::new();
-    for d in state.current_delegators(&validator.chain, &validator.node_id) {
-        changes.push((d.end_time, false, d.weight));
-    }
-    for d in state.pending_delegators(&validator.chain, &validator.node_id) {
-        changes.push((d.start_time, true, d.weight));
-        changes.push((d.end_time, false, d.weight));
-    }
-    changes.sort_by_key(|(t, added, _)| (*t, *added));
-
+    // Then walk the changes in the order time will apply them, taking the
+    // weight before each one — the weight before an arrival is the weight the
+    // arrival is being added to, and the weight before a departure is the
+    // weight that was actually carried.
+    let mut changes = crate::state::StakerDiff::new(current, pending);
     let mut current_max = 0u64;
-    for (time, added, weight) in changes {
-        if time > end {
+    while let Some((delegator, arriving)) = changes.next() {
+        if delegator.next_time > end {
             break;
         }
-        if time >= start {
+        if delegator.next_time >= start {
             current_max = current_max.max(current_weight);
         }
-        current_weight = if added {
-            current_weight.checked_add(weight).ok_or(Error::Overflow)?
+        current_weight = if arriving {
+            current_weight
+                .checked_add(delegator.weight)
+                .ok_or(Error::Overflow)?
         } else {
-            current_weight.saturating_sub(weight)
+            current_weight.saturating_sub(delegator.weight)
         };
     }
     Ok(current_max.max(current_weight))
@@ -2179,6 +2184,64 @@ mod tests {
                     needed: 1
                 }
             ))
+        );
+    }
+
+    /// A delegation that leaves as another arrives is two delegations at once
+    /// for an instant, and the limit is measured over that instant.
+    ///
+    /// The validator carries 10 of its own and 20 delegated, and its ceiling
+    /// is 50. At one instant a 20 leaves and a 15 arrives: for that instant
+    /// the validator carries 45, not 30. A 6 on top of that is 51 and is
+    /// refused. Reading the departure first would report 30, admit the 6, and
+    /// put the validator past its ceiling — which is why the order of changes
+    /// at one instant is a rule and not a detail.
+    #[test]
+    fn a_delegation_leaving_as_another_arrives_counts_at_its_peak() {
+        let now = 1000;
+        let change = now + 100;
+        let (mut state, _) = with_validator(now, 10 * MEGA, now + YEAR);
+
+        state.put_current_delegator(crate::state::Staker {
+            tx_id: [0xd1; 32],
+            node_id: NodeId([5; 20]),
+            public_key: None,
+            chain: PRIMARY_NETWORK_ID,
+            weight: 20 * MEGA,
+            start_time: now,
+            end_time: change,
+            potential_reward: 0,
+            next_time: change,
+            priority: Priority::PrimaryNetworkDelegatorCurrent,
+        });
+        state.put_pending_delegator(crate::state::Staker {
+            tx_id: [0xd2; 32],
+            node_id: NodeId([5; 20]),
+            public_key: None,
+            chain: PRIMARY_NETWORK_ID,
+            weight: 15 * MEGA,
+            start_time: change,
+            end_time: now + YEAR,
+            potential_reward: 0,
+            next_time: change,
+            priority: Priority::PrimaryNetworkDelegatorPermissionlessPending,
+        });
+
+        // 10 own + 20 leaving + 15 arriving = 45 at the instant they overlap,
+        // so 6 more is 51 against a ceiling of 50.
+        let input = fund_more(&mut state, 4, 6 * MEGA);
+        let over = signed(delegate(5, 6 * MEGA, now + YEAR, input), 1);
+        assert_eq!(
+            execute_standard(&mut state, &over, &config(), &fees()),
+            Err(Error::OverDelegated)
+        );
+
+        // And a 5 is 50 exactly, which is the ceiling and not past it.
+        let input = fund_more(&mut state, 5, 5 * MEGA);
+        let ok = signed(delegate(5, 5 * MEGA, now + YEAR, input), 1);
+        assert_eq!(
+            execute_standard(&mut state, &ok, &config(), &fees()),
+            Ok(())
         );
     }
 }
