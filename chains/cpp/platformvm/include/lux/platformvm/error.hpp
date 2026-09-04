@@ -211,6 +211,13 @@ enum class Err {
     // ── fees (LP-103)
     InsufficientCapacity, // gas.ErrInsufficientCapacity
     UnsupportedTx,        // fee.ErrUnsupportedTx
+
+    // ── warp
+    InvalidBitSet,         // warp.ErrInvalidBitSet
+    UnknownValidator,      // warp.ErrUnknownValidator
+    InsufficientWeight,    // warp.ErrInsufficientWeight
+    InvalidWarpSignature,  // warp.ErrInvalidSignature
+    UnknownWarpSignature,  // warp: a signature scheme this port does not implement
 };
 
 std::string_view err_name(Err e);

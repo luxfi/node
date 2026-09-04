@@ -29,7 +29,9 @@
 #include <array>
 #include <cstdint>
 #include <span>
+#include <optional>
 #include <variant>
+#include <vector>
 
 namespace lux::platformvm::signer {
 
@@ -43,6 +45,13 @@ using SignatureBytes = std::array<std::uint8_t, kSignatureLen>;
 inline constexpr char kPopDst[] = "BLS_POP_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 inline constexpr std::size_t kPopDstLen = sizeof(kPopDst) - 1;  // 43, drops the terminator
 
+// The ordinary-signature ciphersuite, byte-identical to Go bls.dstSignature.
+// It is a DIFFERENT tag from the possession one, which is the whole point: a
+// proof of possession must never be usable as a vote, and a vote must never be
+// usable as a proof.
+inline constexpr char kSigDst[] = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
+inline constexpr std::size_t kSigDstLen = sizeof(kSigDst) - 1;
+
 // A 48-byte string is a public key iff it decompresses to a non-identity point
 // of the prime-order subgroup of G1. Mirrors Go PublicKeyFromCompressedBytes.
 bool public_key_valid(const PublicKeyBytes& pk);
@@ -53,6 +62,22 @@ bool signature_valid(const SignatureBytes& sig);
 
 // The pairing check e(pk, H_pop(msg)) == e(G1, sig). Real, or not at all.
 bool verify_pop(const PublicKeyBytes& pk, const SignatureBytes& sig, std::span<const std::uint8_t> msg);
+
+// An ordinary BLS signature over `msg`, under the signature tag. The key may be
+// an aggregate, which is what makes a warp signature one signature rather than
+// hundreds.
+bool verify_signature(const PublicKeyBytes& pk, const SignatureBytes& sig,
+                      std::span<const std::uint8_t> msg);
+
+// The sum of a set of public keys, as one key. Go: bls.AggregatePublicKeys.
+// An empty set has no aggregate, and neither does one holding a key that does
+// not decompress.
+std::optional<PublicKeyBytes> aggregate_public_keys(const std::vector<PublicKeyBytes>& keys);
+
+// The 96-byte uncompressed key as its 48-byte compressed form. A validator set
+// carries the uncompressed key (the set commitment hashes it) and a signature
+// aggregates the compressed one, so this is where the two forms meet.
+std::optional<PublicKeyBytes> compress_public_key(std::span<const std::uint8_t> uncompressed);
 
 struct Empty {
     friend bool operator==(const Empty&, const Empty&) = default;

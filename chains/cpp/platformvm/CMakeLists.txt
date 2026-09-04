@@ -133,7 +133,8 @@ add_library(lux_platformvm STATIC
   src/executor.cpp
   src/vm.cpp
   src/complexity.cpp
-  src/validators.cpp)
+  src/validators.cpp
+  src/warp.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
 target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
@@ -181,7 +182,7 @@ if(PLATFORMVM_BUILD_TESTS)
     target_compile_definitions(pvm_test_main PUBLIC LUX_PLATFORMVM_HAS_NODE_SET_ROOT=1)
   endif()
 
-  foreach(_t zap sha256 reward components txs syntactic block state flow fee executor validators vm)
+  foreach(_t zap sha256 reward components txs syntactic block state flow fee warp executor validators vm)
     add_executable(pvm_${_t}_test test/${_t}_test.cpp)
     target_link_libraries(pvm_${_t}_test PRIVATE pvm_test_main)
     target_compile_options(pvm_${_t}_test PRIVATE -Wall -Wextra)
