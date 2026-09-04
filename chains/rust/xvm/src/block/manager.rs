@@ -324,6 +324,7 @@ pub fn genesis_parent_root() -> Id {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ids;
     use crate::block::root::block_execution_root;
     use crate::fx::secp256k1::{address_of, TransferInput, TransferOutput};
     use crate::fx::{self, Input, Owners, State};
@@ -338,10 +339,10 @@ mod tests {
     const NETWORK_ID: u32 = 10;
 
     fn chain_id() -> Id {
-        Id::prefixed_bytes(&[5])
+        ids::prefixed(&[5])
     }
     fn asset() -> Id {
-        Id::prefixed_bytes(&[1])
+        ids::prefixed(&[1])
     }
     fn key(n: u8) -> [u8; 32] {
         let mut k = [0u8; 32];
@@ -374,7 +375,7 @@ mod tests {
                 network_id: NETWORK_ID,
                 chain_id: chain_id(),
             },
-            net_id: Id::prefixed_bytes(&[0xAB]),
+            net_id: ids::prefixed(&[0xAB]),
             config: Config {
                 tx_fee: 0,
                 create_asset_tx_fee: 0,
@@ -392,7 +393,7 @@ mod tests {
     /// A UTXO worth `amt`, owned by key `n`, produced by transaction `src`.
     fn funded(src: u8, amt: u64, n: u8) -> Utxo {
         Utxo {
-            utxo_id: UtxoId::new(Id::prefixed_bytes(&[src]), 0),
+            utxo_id: UtxoId::new(ids::prefixed(&[src]), 0),
             asset: Asset { id: asset() },
             out: State::Transfer(TransferOutput {
                 amt,
@@ -415,7 +416,7 @@ mod tests {
                     }),
                 }],
                 ins: vec![TransferableInput {
-                    utxo_id: UtxoId::new(Id::prefixed_bytes(&[src]), 0),
+                    utxo_id: UtxoId::new(ids::prefixed(&[src]), 0),
                     asset: Asset { id: asset() },
                     input: fx::FxIn::Transfer(TransferInput {
                         amt,
@@ -499,7 +500,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store.clone());
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
 
@@ -512,7 +513,7 @@ mod tests {
         assert!(store
             .lock()
             .unwrap()
-            .get_utxo(&tx.id().prefix(&[0]))
+            .get_utxo(&ids::prefix(&tx.id(), &[0]))
             .is_err());
 
         mgr.accept(&blk.id()).unwrap();
@@ -521,7 +522,7 @@ mod tests {
         let s = store.lock().unwrap();
         // The input is gone and the output is there.
         assert!(s.get_utxo(&funded(9, 100, 1).input_id()).is_err());
-        assert!(s.get_utxo(&tx.id().prefix(&[0])).is_ok());
+        assert!(s.get_utxo(&ids::prefix(&tx.id(), &[0])).is_ok());
         assert_eq!(s.get_last_accepted(), blk.id());
     }
 
@@ -530,7 +531,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = seal(&mgr, &g, vec![spend(9, 100, 1)], 100);
@@ -543,7 +544,7 @@ mod tests {
         let store = with_asset_and_funds(&[]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = Block::new(g.id(), 1, 10, EMPTY, vec![]).unwrap();
@@ -555,7 +556,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = seal(&mgr, &g, vec![spend(9, 100, 1)], 1000 + SYNC_BOUND + 1);
@@ -567,7 +568,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = seal(&mgr, &g, vec![spend(9, 100, 1)], 1000 + SYNC_BOUND);
@@ -579,7 +580,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let good = seal(&mgr, &g, vec![spend(9, 100, 1)], 100);
@@ -592,11 +593,11 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = Block::new(
-            Id::prefixed_bytes(&[0xDE, 0xAD]),
+            ids::prefixed(&[0xDE, 0xAD]),
             1,
             100,
             EMPTY,
@@ -612,7 +613,7 @@ mod tests {
         let mut mgr = Manager::new(store);
         let g = Block::new(EMPTY, 0, 500, EMPTY, vec![]).unwrap();
         mgr.set_genesis(g.clone());
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         // Sealed at a time before the genesis time.
@@ -628,7 +629,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let good = seal(&mgr, &g, vec![spend(9, 100, 1)], 100);
@@ -636,7 +637,7 @@ mod tests {
             g.id(),
             1,
             100,
-            Id::prefixed_bytes(&[0xBA, 0xD0]),
+            ids::prefixed(&[0xBA, 0xD0]),
             good.txs().to_vec(),
         )
         .unwrap();
@@ -648,7 +649,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         // The second transaction spends a UTXO the first one already removed,
@@ -663,7 +664,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store.clone());
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let tx = spend(9, 100, 1);
@@ -687,7 +688,7 @@ mod tests {
     fn accepting_a_block_nobody_verified_is_refused() {
         let mut mgr = started();
         assert_eq!(
-            mgr.accept(&Id::prefixed_bytes(&[7])),
+            mgr.accept(&ids::prefixed(&[7])),
             Err(Error::BlockNotFound)
         );
     }
@@ -697,7 +698,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1), (8, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
 
@@ -726,14 +727,14 @@ mod tests {
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
         assert!(mgr.state_after(&g.id()).is_some());
-        assert!(mgr.state_after(&Id::prefixed_bytes(&[0xFF])).is_none());
+        assert!(mgr.state_after(&ids::prefixed(&[0xFF])).is_none());
     }
 
     #[test]
     fn unique_inputs_are_only_checked_against_blocks_still_being_decided() {
         let mgr = started();
         let mut inputs = BTreeSet::new();
-        inputs.insert(Id::prefixed_bytes(&[1]));
+        inputs.insert(ids::prefixed(&[1]));
         // Nothing is processing, so nothing conflicts.
         mgr.verify_unique_inputs(&EMPTY, &inputs).unwrap();
         // An empty claim is always fine.
@@ -745,7 +746,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let mut b = backend(&net, &sm, 1000);
         b.bootstrapped = false;
@@ -760,7 +761,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store.clone());
         genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let tx = spend(9, 100, 1);
@@ -776,7 +777,7 @@ mod tests {
     #[test]
     fn cross_chain_asks_for_one_chain_merge_into_one_entry() {
         let mut into = vec![(
-            Id::prefixed_bytes(&[1]),
+            ids::prefixed(&[1]),
             AtomicRequests {
                 puts: vec![],
                 removes: vec![vec![1]],
@@ -786,14 +787,14 @@ mod tests {
             &mut into,
             vec![
                 (
-                    Id::prefixed_bytes(&[1]),
+                    ids::prefixed(&[1]),
                     AtomicRequests {
                         puts: vec![],
                         removes: vec![vec![2]],
                     },
                 ),
                 (
-                    Id::prefixed_bytes(&[2]),
+                    ids::prefixed(&[2]),
                     AtomicRequests {
                         puts: vec![],
                         removes: vec![vec![3]],

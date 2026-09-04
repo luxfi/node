@@ -22,7 +22,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::block::Block;
 use crate::error::{Error, Result};
-use crate::ids::{Id, EMPTY};
+use crate::ids::{self, Id, EMPTY};
 use crate::txs::Tx;
 use crate::utxo::Utxo;
 
@@ -90,7 +90,7 @@ impl Store {
 
     /// Whether the chain has been given its first block.
     pub fn is_initialized(&self) -> bool {
-        !self.last_accepted.is_empty()
+        !ids::is_empty(&self.last_accepted)
     }
 
     /// Install the genesis block's identity and time. The block itself is
@@ -489,9 +489,9 @@ mod tests {
 
     fn utxo(n: u8, idx: u32) -> Utxo {
         Utxo {
-            utxo_id: UtxoId::new(Id::prefixed_bytes(&[n]), idx),
+            utxo_id: UtxoId::new(ids::prefixed(&[n]), idx),
             asset: Asset {
-                id: Id::prefixed_bytes(&[1]),
+                id: ids::prefixed(&[1]),
             },
             out: FxState::Transfer(TransferOutput {
                 amt: 1 + n as u64,
@@ -672,7 +672,7 @@ mod tests {
         d.add_utxo(utxo(3, 0));
         d.delete_utxo(&utxo(1, 0).input_id());
         d.set_timestamp(1234);
-        d.set_last_accepted(Id::prefixed_bytes(&[7]));
+        d.set_last_accepted(ids::prefixed(&[7]));
 
         d.apply(&mut store);
         assert!(store.get_utxo(&utxo(3, 0).input_id()).is_ok());
@@ -682,17 +682,17 @@ mod tests {
         );
         assert!(store.get_utxo(&utxo(2, 0).input_id()).is_ok());
         assert_eq!(store.get_timestamp(), 1234);
-        assert_eq!(store.get_last_accepted(), Id::prefixed_bytes(&[7]));
+        assert_eq!(store.get_last_accepted(), ids::prefixed(&[7]));
     }
 
     #[test]
     fn a_diff_starts_where_its_parent_stands() {
         let mut store = Store::new();
         store.set_timestamp(500);
-        store.set_last_accepted(Id::prefixed_bytes(&[3]));
+        store.set_last_accepted(ids::prefixed(&[3]));
         let d = Diff::on(store.shared());
         assert_eq!(d.get_timestamp(), 500);
-        assert_eq!(d.get_last_accepted(), Id::prefixed_bytes(&[3]));
+        assert_eq!(d.get_last_accepted(), ids::prefixed(&[3]));
     }
 
     #[test]
@@ -715,11 +715,11 @@ mod tests {
         let parent = store.shared();
         let mut d = Diff::on(parent.clone());
         assert_eq!(
-            d.get_tx(&Id::prefixed_bytes(&[1])).unwrap_err(),
+            d.get_tx(&ids::prefixed(&[1])).unwrap_err(),
             Error::NotFound
         );
         assert_eq!(
-            d.get_block(&Id::prefixed_bytes(&[1])).unwrap_err(),
+            d.get_block(&ids::prefixed(&[1])).unwrap_err(),
             Error::NotFound
         );
         assert_eq!(d.get_block_id_at_height(0).unwrap_err(), Error::NotFound);
