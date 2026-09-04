@@ -132,7 +132,8 @@ add_library(lux_platformvm STATIC
   src/flow.cpp
   src/executor.cpp
   src/vm.cpp
-  src/complexity.cpp)
+  src/complexity.cpp
+  src/validators.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
 target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
@@ -156,14 +157,31 @@ if(PLATFORMVM_SANITIZE)
   target_link_options(lux_platformvm PUBLIC -fsanitize=${PLATFORMVM_SANITIZE})
 endif()
 
+# The node's own validator-set commitment, compiled here so the test suite can
+# check this chain's answer against the NODE's rather than against itself. Two
+# implementations of one hash that only agree with themselves is exactly the
+# failure the commitment exists to prevent.
+if(NOT TARGET lux_node_validators AND EXISTS "${NODE_DIR}/src/validators.cpp"
+   AND EXISTS "${CRYPTO_DIR}/sha256/cpp/sha256.cpp")
+  add_library(lux_node_validators STATIC
+    "${NODE_DIR}/src/validators.cpp" "${CRYPTO_DIR}/sha256/cpp/sha256.cpp")
+  target_include_directories(lux_node_validators PUBLIC
+    "${NODE_DIR}/include" "${CONSENSUS_DIR}/include" "${CRYPTO_DIR}")
+  target_compile_options(lux_node_validators PRIVATE -O2)
+endif()
+
 option(PLATFORMVM_BUILD_TESTS "Build the ported Go test suite" ON)
 if(PLATFORMVM_BUILD_TESTS)
   enable_testing()
   add_library(pvm_test_main STATIC test/harness.cpp)
   target_include_directories(pvm_test_main PUBLIC test include "${CRYPTO_DIR}/secp256k1/cpp" "${BLST_DIR}/bindings")
   target_link_libraries(pvm_test_main PUBLIC lux_platformvm)
+  if(TARGET lux_node_validators)
+    target_link_libraries(pvm_test_main PUBLIC lux_node_validators)
+    target_compile_definitions(pvm_test_main PUBLIC LUX_PLATFORMVM_HAS_NODE_SET_ROOT=1)
+  endif()
 
-  foreach(_t zap sha256 reward components txs syntactic block state flow fee executor vm)
+  foreach(_t zap sha256 reward components txs syntactic block state flow fee executor validators vm)
     add_executable(pvm_${_t}_test test/${_t}_test.cpp)
     target_link_libraries(pvm_${_t}_test PRIVATE pvm_test_main)
     target_compile_options(pvm_${_t}_test PRIVATE -Wall -Wextra)
