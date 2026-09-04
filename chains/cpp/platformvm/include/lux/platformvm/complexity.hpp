@@ -21,6 +21,7 @@
 #include "lux/platformvm/error.hpp"
 #include "lux/platformvm/gas.hpp"
 #include "lux/platformvm/txs.hpp"
+#include "lux/platformvm/warp.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -81,6 +82,11 @@ Result<gas::Dimensions> input_complexity(const std::vector<TransferableInput>& i
 Result<gas::Dimensions> owner_complexity(const txs::Owner& owner);
 Result<gas::Dimensions> auth_complexity(const txs::Auth& auth);
 Result<gas::Dimensions> signer_complexity(const signer::Signer& s);
+
+// Go: fee.WarpComplexity. Pricing a warp message means COUNTING ITS SIGNERS,
+// because every signer is an aggregation every node performs — so the message
+// has to be parsed to be priced.
+Result<gas::Dimensions> warp_complexity(std::span<const std::uint8_t> message);
 
 // What one transaction costs. The chain's own transaction — the reward proposal
 // — is refused: nobody submitted it, so nobody pays for it.
