@@ -787,3 +787,167 @@ TEST(TheClockChargesL1Validators) {
     REQUIRE_OK(changed);
     REQUIRE(!changed.value());
 }
+
+// ── the birth of a sovereign network
+//
+// Go: registerOwnSet, reached by both CreateNetworkTx (∅→Network) and
+// ConvertNetworkTx (Network→Network). One primitive, so a set is established
+// exactly one way whichever transaction establishes it.
+namespace {
+
+txs::NetworkValidator genesis_validator(std::uint8_t node, std::uint64_t weight, std::uint64_t balance,
+                                        const signer::ProofOfPossession& pop) {
+    txs::NetworkValidator v;
+    const NodeId n = node_of(node);
+    v.node_id.assign(n.b.begin(), n.b.end());
+    v.weight = weight;
+    v.balance = balance;
+    v.pop = pop;
+    v.remaining_balance_owner = txs::PChainOwner{1, {key().address()}};
+    v.deactivation_owner = txs::PChainOwner{1, {key().address()}};
+    return v;
+}
+
+}  // namespace
+
+TEST(ANetworkIsBornSovereign) {
+    auto b = backend();
+    b.validator_fee_config.capacity = 4;
+
+    pvmtest::BlsKey k1(31), k2(32);
+    const std::string mgr = "0xmanager";
+    const security::Mode sovereign{false, security::Admission::Open, 1000, security::Manager::Contract};
+
+    state::MemState s;
+    s.set_timestamp(kChainTime);
+    s.set_accrued_fees(500);
+    UTXO u;
+    u.utxo = UtxoId{id_of(0xA0), 0};
+    u.asset = kLux;
+    u.out = TransferOutput{10'000'000'000, mine()};
+    s.add_utxo(u);
+    state::Diff layer(&s);
+
+    const std::vector<txs::NetworkValidator> vdrs = {
+        genesis_validator(0x70, 100, 2'000'000, k1.pop()),
+        genesis_validator(0x71, 200, 0, k2.pop()),  // no balance: in the set, inactive
+    };
+
+    auto ut = txs::CreateNetworkTx::create(
+        envelope(10'000'000'000, {out_to_me(10'000'000'000 - 2'000'000 - 1'000'000)}), kPrimaryNetworkId,
+        mine(), sovereign, vdrs, kManagerChain, std::vector<std::uint8_t>(mgr.begin(), mgr.end()));
+    REQUIRE_OK(ut);
+    const auto tx = sign(ut.value());
+    REQUIRE_OK(ex::standard_tx(b, tx, layer));
+
+    // The network exists, and it is its own transaction's id.
+    REQUIRE(layer.has_network(tx.tx_id));
+
+    // Both validators are in its set; their names are DERIVED from the network's
+    // id and their index, so nothing had to be agreed.
+    const Id first = append_id(tx.tx_id, 0);
+    const Id second = append_id(tx.tx_id, 1);
+    auto a = layer.get_l1_validator(first);
+    REQUIRE_OK(a);
+    REQUIRE_EQ(tx.tx_id, a.value().chain_id);
+    REQUIRE_EQ(node_of(0x70), a.value().node_id);
+    REQUIRE_U64(100u, a.value().weight);
+    REQUIRE_U64(kChainTime, a.value().start_time);
+    // Prepaid from where the accrued clock stands, not from zero.
+    REQUIRE_U64(2'000'500u, a.value().end_accumulated_fee);
+    REQUIRE(a.value().is_active());
+    REQUIRE_EQ_NUM(96, a.value().public_key.size());
+
+    auto second_v = layer.get_l1_validator(second);
+    REQUIRE_OK(second_v);
+    REQUIRE(!second_v.value().is_active());
+    REQUIRE_U64(200u, second_v.value().weight);
+    REQUIRE_EQ_NUM(1, layer.num_active_l1_validators());
+    REQUIRE_U64(300u, layer.weight_of_l1_validators(tx.tx_id).value());
+
+    // And the authority that may change the set is recorded, under a conversion
+    // id that is the hash of the set as it was established.
+    auto conv = layer.network_conversion(tx.tx_id);
+    REQUIRE_OK(conv);
+    REQUIRE_EQ(kManagerChain, conv.value().chain_id);
+    REQUIRE_EQ(std::vector<std::uint8_t>(mgr.begin(), mgr.end()), conv.value().addr);
+
+    warpmsg::ConversionData expected;
+    expected.chain_id = tx.tx_id;
+    expected.manager_chain_id = kManagerChain;
+    expected.manager_address.assign(mgr.begin(), mgr.end());
+    for (const auto& v : vdrs)
+        expected.validators.push_back(
+            warpmsg::ConversionValidator{v.node_id, v.pop.public_key, v.weight});
+    REQUIRE_EQ(expected.conversion_id().value(), conv.value().validation_id);
+
+    // A network that is NOT sovereign gets no set and no authority: it leans on
+    // its parent's validators instead.
+    state::MemState plain_state;
+    plain_state.set_timestamp(kChainTime);
+    plain_state.add_utxo(u);
+    state::Diff plain_layer(&plain_state);
+    const security::Mode restaked{true, security::Admission::NoOwnSet, 0, security::Manager::PChain};
+    auto pt = txs::CreateNetworkTx::create(envelope(10'000'000'000, {out_to_me(9'000'000'000)}),
+                                            kPrimaryNetworkId, mine(), restaked, {}, kEmptyId, {});
+    REQUIRE_OK(pt);
+    const auto plain_tx = sign(pt.value());
+    REQUIRE_OK(ex::standard_tx(b, plain_tx, plain_layer));
+    REQUIRE(plain_layer.has_network(plain_tx.tx_id));
+    REQUIRE_ERR(plain_layer.network_conversion(plain_tx.tx_id), Err::NotFound);
+    REQUIRE_EQ_NUM(0, plain_layer.num_active_l1_validators());
+}
+
+// The promotion: a network that already exists establishes its own set, with
+// its owner's authorisation.
+TEST(ANetworkIsPromoted) {
+    auto b = backend();
+    b.validator_fee_config.capacity = 4;
+    pvmtest::BlsKey k1(33);
+    const std::string mgr = "0xmanager";
+    const security::Mode sovereign{false, security::Admission::Open, 1000, security::Manager::Contract};
+
+    state::MemState s;
+    s.set_timestamp(kChainTime);
+    s.add_network(kL1);
+    s.set_network_owner(kL1, mine());
+    UTXO u;
+    u.utxo = UtxoId{id_of(0xA0), 0};
+    u.asset = kLux;
+    u.out = TransferOutput{10'000'000'000, mine()};
+    s.add_utxo(u);
+
+    const std::vector<txs::NetworkValidator> vdrs = {genesis_validator(0x70, 100, 3'000'000, k1.pop())};
+
+    auto build = [&](const Id& network) {
+        auto ut = txs::ConvertNetworkTx::create(
+            envelope(10'000'000'000, {out_to_me(10'000'000'000 - 3'000'000 - 1'000'000)}), network,
+            kPrimaryNetworkId, kManagerChain, sovereign,
+            std::vector<std::uint8_t>(mgr.begin(), mgr.end()), vdrs, txs::Auth{0});
+        // Two credentials: one for the spend, one for the network owner's
+        // authorisation.
+        return sign(ut.value(), 2);
+    };
+
+    {
+        state::Diff layer(&s);
+        const auto tx = build(kL1);
+        REQUIRE_OK(ex::standard_tx(b, tx, layer));
+        auto v = layer.get_l1_validator(append_id(kL1, 0));
+        REQUIRE_OK(v);
+        REQUIRE_U64(100u, v.value().weight);
+        REQUIRE(v.value().is_active());
+        REQUIRE_OK(layer.network_conversion(kL1));
+    }
+    {  // a network nobody owns cannot be promoted by anybody
+        state::Diff layer(&s);
+        REQUIRE_ERR(ex::standard_tx(b, build(id_of(0x88)), layer), Err::ChainNotFound);
+    }
+    {  // and a network that has ALREADY converted is immutable: its own rules
+       // govern it now, not the P-chain owner
+        state::MemState already = s;
+        already.set_network_conversion(kL1, state::NetToL1Conversion{kManagerChain, {}, id_of(1)});
+        state::Diff layer(&already);
+        REQUIRE_ERR(ex::standard_tx(b, build(kL1), layer), Err::NotAuthorized);
+    }
+}

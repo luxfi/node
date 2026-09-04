@@ -60,6 +60,9 @@ include/lux/platformvm/
   atomic.hpp       money crossing to and from another chain
   uptime.hpp       how much of its term a validator was there for
   validators.hpp   who validates a network, and the set commitment
+  warp.hpp         a message another chain signed, and the aggregated proof
+  warpmsg.hpp      what that message SAYS
+  l1.hpp           a validator of a sovereign network, and the fee it pays
   vm.hpp           the chain, as the node's VM seam sees it
 ```
 
@@ -102,50 +105,49 @@ what a fork does. So:
   reference's own signature over the Go reference's own transaction.
 - `validators_test.cpp` checks this chain's set commitment against the NODE's
   implementation of the same hash, not against its own.
+- `warp_test.cpp` verifies the Go reference's own aggregated signature, over the
+  Go reference's own message, by the Go reference's own three validators.
 - `reward_test.cpp` recovers a real mainnet reward from real mainnet inputs.
 - Every ported refusal asserts the SAME sentinel the Go original asserts. A rule
   that rejects for the wrong reason will one day accept for the wrong reason.
 
 ## What is here, and what is not
 
-162 cases across 13 suites, all green, clean under address+undefined sanitizers.
+189 cases across 15 suites, all green, clean under address+undefined sanitizers.
 
-**Ported and tested.** The ZAP codec; ids and hashing; the spending model; the
-BLS signer and its proof of possession; all nineteen transaction kinds with
-byte-identical wire and full syntactic verification; the four block kinds; the
-staker set with its ordering, base and diff layers, the mutable walk and the
-staker-diff walk; the state root; the fx signature check over real secp256k1
-recovery; the value-conservation flow check; the LP-103 gas dimensions, fee
-schedule and price curve; the emission curve and the reward split; the
-transaction executor (admission, delegation, removal, networks, chains,
-ownership, import and export); the clock and everything that follows from
-advancing it; the reward proposal computed on both outcomes; the reward gate;
-the validator set and its commitment; and the VM itself — build, parse, get,
-prefer, verify, accept — through the node's seam.
+**Ported and tested.** All nineteen transaction kinds and all four block kinds,
+byte-identical, with their full syntactic verification. Every execution path the
+reference runs: admission, delegation, removal, networks, chains, ownership,
+import and export, the clock and everything that follows from advancing it, the
+reward proposal computed on both outcomes before the vote, and the reward gate
+that decides which one this node prefers. The staker set with its ordering, base
+and diff layers, the mutable walk and the staker-diff walk. The fx signature
+check over real secp256k1 recovery and the value-conservation flow check. The
+LP-103 gas dimensions, fee schedule and price curve, with the chain reading its
+own price off its own excess. The emission curve and the reward split. Warp: the
+message wire, the canonical validator set, the aggregated BitSet signature, the
+envelope and the four things an L1 says. The whole L1 subsystem: the validator
+record, the expiry set that refuses a replay, the LP-77 continuous fee, the four
+transactions that register, reweight, top up and switch off an L1 validator, and
+the two that establish a sovereign network's own set. The validator set consensus
+samples and its commitment. And the VM itself — build, parse, get, prefer,
+verify, accept — through the node's seam.
 
 **Absent, and why.** Each of these returns the reason it cannot run rather than
 a success it has not earned:
 
-- **The L1 subsystem** — `RegisterL1ValidatorTx`, `SetL1ValidatorWeightTx`,
-  `IncreaseL1ValidatorBalanceTx`, `DisableL1ValidatorTx`, `ConvertNetworkTx`,
-  the L1 validator state and the continuous validator fee. Warp itself IS ported
-  (`warp.hpp` — the message wire, the canonical validator set and the aggregated
-  BitSet signature, verified against the Go reference's own aggregate); what is
-  absent is the LAYER above it: the addressed-call payloads those five
-  transactions carry, and the L1 validator records they write. The transaction
-  WIRE for all five is ported and byte-identical; only their execution is not.
 - **The post-quantum warp signature** (`CoronaSignature`) and the teleport
-  payloads — threshold BLS over ML-KEM, a separate scheme. Their wire kinds
+  payloads — threshold BLS over ML-KEM, a separate construction. Their wire kinds
   parse to a named refusal rather than to a signature that verifies trivially.
-- **Warp complexity** — pricing a warp message means counting its signers, and
-  the number is read from the payload layer that is not here. The fee schedule
-  refuses those two kinds rather than guessing at what they cost.
 - **`TransformChainTx` execution** — refused here, as in the reference, which
   refuses it permanently.
 - **State persistence** — `state::MemState` is the accepted state in memory. The
   reference's on-disk layout (~2,000 lines of key encodings, height diffs and
   batched commits) is not ported. Nothing above it assumes memory: `Chain` is an
-  interface and a disk-backed implementation is a sibling of `MemState`.
+  interface and a disk-backed implementation is a sibling of `MemState`. The
+  height-indexed weight and key diffs a node needs to answer "who validated at
+  height H" live with that layout and are absent with it; the set at the LAST
+  ACCEPTED height is here and correct.
 - **The JSON-RPC service and client** (~3,200 lines) — the node's seam does not
   ask for them.
 - **Genesis parsing** — `vm::Genesis` is a value the host supplies. The
@@ -153,7 +155,10 @@ a success it has not earned:
 - **Gossip, metrics, and the uptime tracker** — the first two are node
   integration; uptime is a MEASUREMENT the node makes, so it enters through
   `uptime::Calculator` and no other way. A VM that could compute its own uptime
-  could decide its own reward.
+  could decide its own reward. Shared memory and the source chain's validator set
+  are interfaces for the same reason: an import that could invent the other
+  chain's outputs, or a warp check that could invent the set that signed, would
+  be a chain deciding what other chains said.
 
 **One deliberate divergence from the reference's shape.** Go models a
 stake-locked output as a wrapper TYPE and unwraps it everywhere it matters; the
