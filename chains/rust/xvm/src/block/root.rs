@@ -115,9 +115,9 @@ fn tx_leaves(blk_txs: &[Tx]) -> Vec<TxLeaf> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ids;
     use crate::fx::secp256k1::TransferOutput;
     use crate::fx::{Owners, State};
+    use crate::ids;
     use crate::ids::ShortId;
     use crate::state::{Chain, Store};
     use crate::utxo::{Asset, UtxoId};

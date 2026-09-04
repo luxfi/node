@@ -293,30 +293,34 @@ fn to_host(e: ChainError) -> host::Error {
     }
 }
 
-/// A block, as the host sees one.
-struct HostBlock(Block);
-
-impl host::Block for HostBlock {
+/// A block, as consensus sees one.
+///
+/// The same block, not a wrapper around it. A chain's block and the thing the
+/// node certifies are one value seen two ways: the chain reads its
+/// transactions, the node reads its height and the two roots it commits to.
+/// Wrapping would have made a second type that has to be unwrapped at every
+/// boundary and kept in step with the first.
+impl host::Block for Block {
     fn id(&self) -> host::Id {
-        self.0.id()
+        Block::id(self)
     }
     fn parent(&self) -> host::Id {
-        self.0.parent()
+        Block::parent(self)
     }
     fn height(&self) -> u64 {
-        self.0.height()
+        Block::height(self)
     }
     fn timestamp(&self) -> u64 {
-        self.0.timestamp()
+        Block::timestamp(self)
     }
     fn bytes(&self) -> Vec<u8> {
-        self.0.bytes().to_vec()
+        Block::bytes(self).to_vec()
     }
     fn state_root(&self) -> host::Id {
-        self.0.merkle_root()
+        self.merkle_root()
     }
     fn payload_root(&self) -> host::Id {
-        crate::block::root::payload_root(self.0.txs())
+        crate::block::root::payload_root(self.txs())
     }
 }
 
@@ -344,7 +348,7 @@ impl host::Vm for Xvm {
             inner.mempool.drop_with(id, why);
         }
         inner.known.insert(built.block.id(), built.block.clone());
-        Ok(Box::new(HostBlock(built.block)))
+        Ok(Box::new(built.block))
     }
 
     fn parse(&self, raw: &[u8]) -> Result<Box<dyn host::Block>, host::Error> {
@@ -357,20 +361,20 @@ impl host::Vm for Xvm {
             .expect("chain poisoned")
             .known
             .insert(blk.id(), blk.clone());
-        Ok(Box::new(HostBlock(blk)))
+        Ok(Box::new(blk))
     }
 
     fn get(&self, id: &host::Id) -> Result<Box<dyn host::Block>, host::Error> {
         let inner = self.inner.lock().expect("chain poisoned");
         inner
-            .block(&*id)
-            .map(|b| Box::new(HostBlock(b)) as Box<dyn host::Block>)
+            .block(id)
+            .map(|b| Box::new(b) as Box<dyn host::Block>)
             .map_err(to_host)
     }
 
     fn verify(&self, id: &host::Id) -> Result<(), host::Error> {
         let mut inner = self.inner.lock().expect("chain poisoned");
-        let blk = inner.block(&*id).map_err(to_host)?;
+        let blk = inner.block(id).map_err(to_host)?;
         let backend = self.backend(inner.bootstrapped);
         inner.manager.verify(&backend, &blk).map_err(to_host)?;
         // A transaction that is in a verified block is not a candidate for
@@ -383,8 +387,8 @@ impl host::Vm for Xvm {
 
     fn accept(&self, id: &host::Id) -> Result<(), host::Error> {
         let mut inner = self.inner.lock().expect("chain poisoned");
-        let requests = inner.manager.accept(&*id).map_err(to_host)?;
-        inner.known.remove(&*id);
+        let requests = inner.manager.accept(id).map_err(to_host)?;
+        inner.known.remove(id);
         if !requests.is_empty() {
             let sm = self
                 .shared_memory
@@ -397,8 +401,8 @@ impl host::Vm for Xvm {
 
     fn reject(&self, id: &host::Id) -> Result<(), host::Error> {
         let mut inner = self.inner.lock().expect("chain poisoned");
-        let txs = inner.manager.reject(&*id).map_err(to_host)?;
-        inner.known.remove(&*id);
+        let txs = inner.manager.reject(id).map_err(to_host)?;
+        inner.known.remove(id);
         // The block did nothing, so its transactions may still be good. Each is
         // re-checked against the preferred state before it is offered again.
         let backend = self.backend(inner.bootstrapped);
@@ -429,16 +433,11 @@ impl host::Vm for Xvm {
             .expect("chain poisoned")
             .manager
             .last_accepted()
-            
     }
 
     fn block_id_at(&self, height: u64) -> Result<host::Id, host::Error> {
         let inner = self.inner.lock().expect("chain poisoned");
-        inner
-            .manager
-            .block_id_at_height(height)
-            .map(|i| i)
-            .map_err(to_host)
+        inner.manager.block_id_at_height(height).map_err(to_host)
     }
 
     fn call(

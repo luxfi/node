@@ -714,10 +714,7 @@ mod tests {
         let store = Store::new();
         let parent = store.shared();
         let mut d = Diff::on(parent.clone());
-        assert_eq!(
-            d.get_tx(&ids::prefixed(&[1])).unwrap_err(),
-            Error::NotFound
-        );
+        assert_eq!(d.get_tx(&ids::prefixed(&[1])).unwrap_err(), Error::NotFound);
         assert_eq!(
             d.get_block(&ids::prefixed(&[1])).unwrap_err(),
             Error::NotFound
