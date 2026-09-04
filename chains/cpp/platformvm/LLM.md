@@ -1,0 +1,164 @@
+# platformvm — the P-chain, in C++
+
+The Lux platform chain: the validator set, the staking rules that admit and pay
+it, and the blocks that change it. Ported from the Go reference at
+`~/work/lux/node/vms/platformvm` (42,398 LoC across 303 files, 115 of them
+tests), against the VM seam at `~/work/lux-cpp/node/include/lux/node/vm.hpp`.
+
+A node joins this chain's validator set by staking. There is no allowlist, no
+admin key and no argument anywhere in the tree to pass one — that property is
+what makes the chain a public good, and it is asserted by a test
+(`APermissionlessValidatorJoins`) rather than assumed.
+
+## Building
+
+```
+cmake -S . -B build && cmake --build build -j && (cd build && ctest)
+```
+
+Three checkouts are REQUIRED and are found where they actually sit; each is
+matched on a FILE rather than a directory name, so a same-named sibling cannot
+be mistaken for one. Override with `-DLUXCPP_ROOT`, `-DNODE_DIR`,
+`-DCONSENSUS_DIR`, `-DCRYPTO_DIR` when building from an unusual path.
+
+| what | where | why it is required |
+| --- | --- | --- |
+| `luxcpp/blst` | `~/work/luxcpp/blst` | a proof of possession is a real pairing |
+| `luxcpp/crypto` | `~/work/luxcpp/crypto` | secp256k1 recovery + ripemd160 + keccak + sha256 |
+| `lux-cpp/node` | `~/work/lux-cpp/node` | the VM seam this chain registers through |
+| `lux-cpp/consensus` | `~/work/lux-cpp/consensus` | the id type that seam is written in |
+
+There is no build in which the crypto is skipped. A validator set that admits a
+key nobody holds is not a validator set, and a chain that cannot check who
+signed has no spending rule, so a build that cannot do either does not produce a
+P-chain at all.
+
+`-DPLATFORMVM_SANITIZE=address,undefined` builds the chain's own code under
+sanitizers (blst's assembly stays clean). The suite passes under them.
+
+## Layout
+
+```
+include/lux/platformvm/
+  zap.hpp          the ZAP v1.2.7 zero-copy codec — builder and reader
+  ids.hpp          Id (32B), ShortId (20B), NodeId — three distinct types
+  sha256.hpp       the hash every id and every signature is over
+  safemath.hpp     u64 arithmetic that refuses to wrap, + the 512-bit integer
+  components.hpp   what a transaction spends and produces
+  security.hpp     a network's security mode, as two orthogonal axes
+  signer.hpp       the BLS key a validator registers, and the proof it owns it
+  priority.hpp     how stakers scheduled for one instant are ordered
+  txs.hpp          every transaction the chain accepts
+  block.hpp        the four block kinds and their wire
+  state.hpp        the validator set, the diff layers, the state root
+  fx.hpp           who may spend an output, and the proof of it
+  flow.hpp         no value is created, and locked value stays locked
+  gas.hpp          what a transaction costs the chain, in four dimensions
+  complexity.hpp   the LP-103 fee schedule
+  reward.hpp       the emission curve
+  executor.hpp     what a transaction DOES to the validator set
+  atomic.hpp       money crossing to and from another chain
+  uptime.hpp       how much of its term a validator was there for
+  validators.hpp   who validates a network, and the set commitment
+  vm.hpp           the chain, as the node's VM seam sees it
+```
+
+## The three ideas worth knowing
+
+**The struct IS the wire.** A transaction holds its ZAP buffer and reads its
+fields by offset. There is no codec, no marshal step and no second
+representation that could disagree with the first — so the bytes that were
+signed are the bytes that were stored, and "which spelling did we sign" is not a
+question anyone can ask. A signed transaction is `unsigned ‖ credentials`, both
+self-delimiting, so the unsigned bytes are a genuine byte-prefix of the signed
+ones.
+
+**Order is consensus.** A staker is ordered by when it next moves, then by
+priority, then by the id of the transaction that created it. The priority groups
+exist because permissioned stakers leave the set by the clock and permissionless
+ones leave by being paid; interleaving them would let the clock take a
+validator's stake without paying for it. Two nodes that walk the set differently
+disagree about who validates — a fork with no bytes to blame.
+
+**Execution is not optional.** `verify()` builds the state a block WOULD produce
+on a layer over its parent's and keeps it; `accept()` applies that layer. A
+block's `root()` is sha256 over what its execution produced — the clock, the fee
+position, the supply of every network, both staker sets in order, every unspent
+output, and every network with its owner — computed by running the block, never
+copied from a proposer. A validator that signed a block it had not executed
+would be certifying a name rather than a result.
+
+## Proof, not self-agreement
+
+A round-trip test proves an implementation agrees with itself, which is also
+what a fork does. So:
+
+- `test/golden.hpp` pins bytes and ids printed by the Go package itself: all
+  nineteen transaction kinds, the four block kinds, the credential buffer, the
+  owner encoding, and a signed transaction with its id. Regenerate them with a
+  Go module that imports `github.com/luxfi/node/vms/platformvm` and prints hex;
+  a diff there is a wire change, and a wire change is a hard fork.
+- `flow_test.cpp` recovers the Go reference's own address from the Go
+  reference's own signature over the Go reference's own transaction.
+- `validators_test.cpp` checks this chain's set commitment against the NODE's
+  implementation of the same hash, not against its own.
+- `reward_test.cpp` recovers a real mainnet reward from real mainnet inputs.
+- Every ported refusal asserts the SAME sentinel the Go original asserts. A rule
+  that rejects for the wrong reason will one day accept for the wrong reason.
+
+## What is here, and what is not
+
+162 cases across 13 suites, all green, clean under address+undefined sanitizers.
+
+**Ported and tested.** The ZAP codec; ids and hashing; the spending model; the
+BLS signer and its proof of possession; all nineteen transaction kinds with
+byte-identical wire and full syntactic verification; the four block kinds; the
+staker set with its ordering, base and diff layers, the mutable walk and the
+staker-diff walk; the state root; the fx signature check over real secp256k1
+recovery; the value-conservation flow check; the LP-103 gas dimensions, fee
+schedule and price curve; the emission curve and the reward split; the
+transaction executor (admission, delegation, removal, networks, chains,
+ownership, import and export); the clock and everything that follows from
+advancing it; the reward proposal computed on both outcomes; the reward gate;
+the validator set and its commitment; and the VM itself — build, parse, get,
+prefer, verify, accept — through the node's seam.
+
+**Absent, and why.** Each of these returns the reason it cannot run rather than
+a success it has not earned:
+
+- **The L1 subsystem** — `RegisterL1ValidatorTx`, `SetL1ValidatorWeightTx`,
+  `IncreaseL1ValidatorBalanceTx`, `DisableL1ValidatorTx`, `ConvertNetworkTx`,
+  the L1 validator state and the continuous validator fee. They rest on warp:
+  a cross-chain message with an aggregated BLS signature over a validator set at
+  a height. An L1 transaction that did not verify its message would be a
+  validator set anyone could rewrite. The transaction WIRE for all five is
+  ported and byte-identical; only their execution is absent.
+- **Warp complexity** — pricing a warp message means counting its signers, which
+  means parsing it. The fee schedule refuses those two kinds rather than
+  guessing at what they cost.
+- **`TransformChainTx` execution** — refused here, as in the reference, which
+  refuses it permanently.
+- **State persistence** — `state::MemState` is the accepted state in memory. The
+  reference's on-disk layout (~2,000 lines of key encodings, height diffs and
+  batched commits) is not ported. Nothing above it assumes memory: `Chain` is an
+  interface and a disk-backed implementation is a sibling of `MemState`.
+- **The JSON-RPC service and client** (~3,200 lines) — the node's seam does not
+  ask for them.
+- **Genesis parsing** — `vm::Genesis` is a value the host supplies. The
+  reference's genesis wire format is not parsed.
+- **Gossip, metrics, and the uptime tracker** — the first two are node
+  integration; uptime is a MEASUREMENT the node makes, so it enters through
+  `uptime::Calculator` and no other way. A VM that could compute its own uptime
+  could decide its own reward.
+
+**One deliberate divergence from the reference's shape.** Go models a
+stake-locked output as a wrapper TYPE and unwraps it everywhere it matters; the
+wire has always carried a stake-lock FIELD beside the output's own fields. So it
+is a value here, not a second type: zero means unlocked. Same bytes, same
+verification, one shape instead of two.
+
+**One thing the reference does that looks like a bug and is kept.** The reward
+curve's `supplyCap - existingSupply` is unguarded and wraps once supply passes
+the cap — and Lux mainnet has passed it, so the live chain's rewards are computed
+from the wrapped value. A clamp here would be a monetary change, and this is a
+port. It is reproduced and pinned by a test.
