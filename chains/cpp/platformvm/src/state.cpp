@@ -521,6 +521,15 @@ std::vector<l1::Validator> MemState::active_l1_validators() const {
     return out;
 }
 
+std::vector<l1::Validator> MemState::l1_validators(const Id& chain_id) const {
+    std::vector<l1::Validator> out;
+    for (const auto& [id, v] : l1_validators_) {
+        (void)id;
+        if (v.chain_id == chain_id) out.push_back(v);
+    }
+    return out;
+}
+
 std::size_t MemState::num_active_l1_validators() const {
     std::size_t n = 0;
     for (const auto& [id, v] : l1_validators_) {
@@ -682,6 +691,25 @@ std::vector<l1::Validator> Diff::active_l1_validators() const {
         out.push_back(v);
     }
     std::sort(out.begin(), out.end(), l1::ValidatorLess{});
+    return out;
+}
+
+std::vector<l1::Validator> Diff::l1_validators(const Id& chain_id) const {
+    std::map<Id, l1::Validator> merged;
+    for (const auto& v : parent_->l1_validators(chain_id)) merged[v.validation_id] = v;
+    for (const auto& [id, v] : l1_validators_) {
+        if (!(v.chain_id == chain_id)) continue;
+        if (v.is_deleted())
+            merged.erase(id);
+        else
+            merged[id] = v;
+    }
+    std::vector<l1::Validator> out;
+    out.reserve(merged.size());
+    for (const auto& [id, v] : merged) {
+        (void)id;
+        out.push_back(v);
+    }
     return out;
 }
 

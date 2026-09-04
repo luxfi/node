@@ -521,3 +521,65 @@ TEST(TheChainAnswersWhoValidates) {
     REQUIRE_OK(root);
     REQUIRE(!(root.value() == kEmptyId));
 }
+
+// Who validated at a height that has already passed. A message signed then is
+// checked now, so the chain has to be able to say — and it says it by taking
+// the set it holds and undoing everything since, rather than by keeping every
+// past set.
+//
+// The removal below settles across a proposal and its option block, which are
+// two layers landing at DIFFERENT heights but through the same accept path, so
+// this also drives the composition the record has to do.
+TEST(TheChainAnswersWhoValidatedThen) {
+    const std::uint64_t end = kGenesisTime + 90 * 24 * 60 * 60;
+    vm::PlatformVM chain(kPChain, make_backend(), genesis());
+
+    // Height 0: nobody.
+    REQUIRE(chain.validator_set_at(kPrimaryNetworkId, 0).value().empty());
+
+    chain.submit(join_tx(10'000'000'000, 5'000'000'000, end));
+    auto join = chain.build();
+    REQUIRE(join != nullptr);
+    REQUIRE(join->verify());
+    join->accept();
+
+    // Height 1: the validator is in, and the set at height 0 is still nobody.
+    const auto at_one = chain.validator_set(kPrimaryNetworkId);
+    REQUIRE_OK(at_one);
+    REQUIRE_EQ_NUM(1, at_one.value().size());
+    REQUIRE(chain.validator_set_at(kPrimaryNetworkId, 0).value().empty());
+    REQUIRE(chain.validator_set_at(kPrimaryNetworkId, 1).value() == at_one.value());
+
+    // Settle the stake: proposal, then the commit that pays it.
+    chain.set_wall_clock(end);
+    auto proposal = chain.build();
+    REQUIRE(proposal != nullptr);
+    REQUIRE(proposal->verify());
+    proposal->accept();
+
+    Id proposal_id{};
+    std::memcpy(proposal_id.b.data(), proposal->id().data(), kIdLen);
+    auto commit = block::CommitBlock::create(end, proposal_id, proposal->height() + 1);
+    REQUIRE_OK(commit);
+    const std::vector<std::uint8_t> wire(commit.value()->bytes().begin(), commit.value()->bytes().end());
+    auto opt = chain.parse(wire);
+    REQUIRE(opt != nullptr);
+    REQUIRE(opt->verify());
+    opt->accept();
+
+    // Now: nobody. Then: the validator, with the weight and the key it had.
+    REQUIRE(chain.validator_set(kPrimaryNetworkId).value().empty());
+    const auto then = chain.validator_set_at(kPrimaryNetworkId, 1);
+    REQUIRE_OK(then);
+    REQUIRE(then.value() == at_one.value());
+    REQUIRE_U64(5'000'000'000u, then.value().at(node_of(0x90)).weight);
+    REQUIRE(then.value().at(node_of(0x90)).public_key.has_value());
+
+    // And the commitment a vote binds is the one that set had.
+    REQUIRE_EQ(validators::set_root(at_one.value()), validators::set_root(then.value()));
+
+    // A height this chain has not reached has no set, and answering one would
+    // be inventing it.
+    REQUIRE_ERR(chain.validator_set_at(kPrimaryNetworkId, chain.last_accepted_height() + 1),
+                Err::InvalidState);
+}
