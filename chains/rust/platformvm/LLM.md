@@ -12,7 +12,7 @@ and signed for by whoever owns it. None exists to make entry selective.
 
 ```
 cd chains/rust/platformvm
-PATH=~/.cargo/bin:$PATH cargo test          # 289 tests
+PATH=~/.cargo/bin:$PATH cargo test          # 293 tests
 PATH=~/.cargo/bin:$PATH cargo clippy --all-targets
 ```
 
@@ -56,6 +56,15 @@ may be created, locked and burned), `TestStakerDiffIterator` and
 six `TestPriorityIs*`, `TestParseCredsBuf*`, `TestRewards`/`TestSplit`, the
 whole `stakingparams` suite, `TestGoldenAbortBlock`, and
 `TestHIGH2_SlashAmount*`.
+
+`tests/hostile_bytes.rs` is the other half of the wire claim: every entry
+point that takes bytes takes them from someone who chose them, so every honest
+buffer is truncated at every length, mutated a byte at a time, given a length
+nothing backs and a root pointing anywhere, and thrown at every reader. A
+reader that can be made to panic on a chosen buffer is a way to stop a node
+from a distance. The sweep reaches past the front door — most mutations still
+parse, so the field accessors are exercised on hostile content rather than
+refused at the header.
 
 ## What is here
 
