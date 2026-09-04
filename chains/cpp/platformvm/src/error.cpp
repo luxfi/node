@@ -218,6 +218,11 @@ std::string_view err_name(Err e) {
         case Err::WeakerAnchor: return "WeakerAnchor";
         case Err::SourceNotRevisable: return "SourceNotRevisable";
         case Err::NotWeaker: return "NotWeaker";
+        case Err::DuplicateTx: return "DuplicateTx";
+        case Err::TxTooLarge: return "TxTooLarge";
+        case Err::MempoolFull: return "MempoolFull";
+        case Err::ConflictsWithOtherTx: return "ConflictsWithOtherTx";
+        case Err::CantIssueRewardValidatorTx: return "CantIssueRewardValidatorTx";
     }
     return "Unknown";
 }

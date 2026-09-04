@@ -28,6 +28,7 @@
 
 #include "lux/platformvm/block.hpp"
 #include "lux/platformvm/executor.hpp"
+#include "lux/platformvm/mempool.hpp"
 #include "lux/platformvm/state.hpp"
 #include "lux/platformvm/txs.hpp"
 #include "lux/platformvm/validators.hpp"
@@ -97,10 +98,14 @@ class PlatformVM final : public lux::node::VM {
     lux::node::Id last_accepted() const override;
     std::uint64_t last_accepted_height() const override { return last_accepted_height_; }
 
-    // A transaction waiting to go into a block. Rejected here if it cannot be
-    // parsed; whether it EXECUTES is decided when a block carrying it is built.
-    void submit(const txs::Tx& tx) { mempool_.push_back(tx); }
+    // A transaction waiting to go into a block. What is refused HERE is what a
+    // node will not spend anything on: a duplicate, an oversized one, one that
+    // would overfill the pool, one that rivals something already waiting, and
+    // the chain's own reward transaction, which nobody submits. Whether it
+    // EXECUTES is decided when a block carrying it is built.
+    Status submit(const txs::Tx& tx) { return mempool_.add(tx); }
     std::size_t mempool_size() const { return mempool_.size(); }
+    const mempool::Pool& mempool() const { return mempool_; }
 
     // Who validates a network, as of the last accepted block, and the
     // commitment a vote binds that set with. This is what the node samples to
@@ -196,7 +201,7 @@ class PlatformVM final : public lux::node::VM {
     state::MemState state_;
     std::map<Id, std::shared_ptr<block::Block>> blocks_;
     std::map<Id, Verified> verified_;
-    std::vector<txs::Tx> mempool_;
+    mempool::Pool mempool_;
     Id last_accepted_{};
     std::uint64_t last_accepted_height_ = 0;
     validators::History history_;
