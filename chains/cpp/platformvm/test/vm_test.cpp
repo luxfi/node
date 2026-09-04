@@ -120,6 +120,22 @@ txs::Tx join_tx(std::uint64_t funds, std::uint64_t stake, std::uint64_t end) {
     return sign(u.value());
 }
 
+// A plain payment spending the change a previous transaction left. It carries
+// no policy of its own; it exists so a block can be built, and a block is how
+// the chain's clock moves.
+txs::Tx pay_tx(const Id& src, std::uint64_t amount, std::uint64_t fee) {
+    BaseTx b;
+    b.network_id = kNetworkId;
+    b.blockchain_id = kPChain;
+    b.outs = {out_to_me(amount - fee)};
+    TransferableInput in;
+    in.utxo = UtxoId{src, 0};
+    in.asset = kLux;
+    in.in = TransferInput{amount, {0}};
+    b.ins = {in};
+    return sign(txs::BaseTxUnsigned::create(b).value());
+}
+
 }  // namespace
 
 // The seam's own questions, answered.
@@ -582,4 +598,93 @@ TEST(TheChainAnswersWhoValidatedThen) {
     // be inventing it.
     REQUIRE_ERR(chain.validator_set_at(kPrimaryNetworkId, chain.last_accepted_height() + 1),
                 Err::InvalidState);
+}
+
+// The reward gate reads the uptime rule that was in force when the validator
+// BONDED, not the one in force when the reward is settled.
+//
+// This is the property that separates governance from expropriation. Without
+// it, a stake majority could raise the bar the day before a rival's stake
+// matures and take its reward — and the vote would look, from the outside, like
+// ordinary policy. The validator below bonded under an 80% rule and kept 85%; a
+// later vote to 90% must not reach back and take what it earned.
+TEST(TheRewardGateJudgesTheTermsThatWereAgreed) {
+    const std::uint64_t end = kGenesisTime + 90 * 24 * 60 * 60;
+
+    // A day after the chain starts, and long before the stake matures.
+    const std::int64_t voted_at = static_cast<std::int64_t>(kGenesisTime) + 24 * 60 * 60;
+
+    auto run = [&](const char* label, const staking::History& h, bool expect_commit) {
+        auto b = make_backend();
+        b.policy.uptime_requirement = 800'000;  // what an ungoverned chain uses
+        b.staking = h;
+        FixedUptime u(0.85);  // above the old rule, below the new one
+        b.uptimes = &u;
+
+        vm::PlatformVM chain(kPChain, b, genesis());
+        chain.submit(join_tx(10'000'000'000, 5'000'000'000, end));
+        auto join = chain.build();
+        REQUIRE_MSG(join != nullptr, "the join block was not built");
+        REQUIRE_MSG(join->verify(), "the join block did not verify");
+        join->accept();
+        Id join_id{};
+        {
+            const auto included = dynamic_cast<vm::VmBlock*>(join.get())->inner().decision_txs();
+            REQUIRE_MSG(included.size() == 1, "the join block did not carry its transaction");
+            join_id = included[0].tx_id;
+        }
+
+        // The moment it actually bound itself, which is later than the genesis
+        // clock: the builder advances time to the block it builds.
+        // The moment it actually bound itself, which is later than the genesis
+        // clock: the builder advances time to the block it builds.
+        const auto admitted = chain.accepted().get_current_validator(kPrimaryNetworkId, node_of(0x90));
+        REQUIRE_MSG(admitted.has_value(), "the validator did not join");
+        REQUIRE_MSG(static_cast<std::int64_t>(admitted.value().start_time) < voted_at,
+                    "the vote did not land after the bond");
+
+        // Carry the chain's clock PAST the vote, so that reading the policy at
+        // the moment of the check and reading it at the moment of the bond are
+        // two different answers. Without this the test would pass either way.
+        chain.set_wall_clock(static_cast<std::uint64_t>(voted_at) + 1);
+        chain.submit(pay_tx(join_id, 4'999'000'000, 1'000'000));
+        auto later = chain.build();
+        REQUIRE_MSG(later != nullptr, "the clock-advancing block was not built");
+        auto* later_inner = dynamic_cast<vm::VmBlock*>(later.get());
+        REQUIRE_MSG(later->verify(), later_inner->refusal());
+        later->accept();
+        REQUIRE_MSG(static_cast<std::int64_t>(chain.accepted().timestamp()) > voted_at,
+                    "the chain clock did not pass the vote");
+
+        chain.set_wall_clock(end);
+        auto proposal = chain.build();
+        REQUIRE_MSG(proposal != nullptr, "the proposal block was not built");
+        auto* inner = dynamic_cast<vm::VmBlock*>(proposal.get());
+        REQUIRE_MSG(proposal->verify(), inner->refusal());
+        proposal->accept();
+
+        const auto* pb = dynamic_cast<const block::ProposalBlock*>(&inner->inner());
+        REQUIRE_MSG(pb != nullptr, "the built block is not a proposal");
+        auto opts = chain.options(*pb);
+        REQUIRE_MSG(opts.has_value(), "options were not produced");
+        auto* preferred = dynamic_cast<vm::VmBlock*>(opts.value().first.get());
+        REQUIRE_MSG(preferred->inner().kind() == (expect_commit ? block::Kind::Commit : block::Kind::Abort),
+                    std::string("the wrong child was preferred for ") + label);
+    };
+
+    staking::Params lenient{2'000 * staking::kLux, 5 * staking::kGigaLux, 60, 365 * 24 * 60 * 60,
+                            20'000,                800'000};
+    staking::Params strict = lenient;
+    strict.uptime_requirement = 900'000;
+
+    // The vote lands AFTER the validator bonded: it is judged at 80% and paid.
+    run("a vote after it bonded",
+        staking::History{{staking::Entry{0, lenient}, staking::Entry{voted_at, strict}}}, true);
+
+    // The same rule, voted in BEFORE it bonded: it accepted 90% and falls short.
+    run("a vote before it bonded", staking::History{{staking::Entry{0, strict}}}, false);
+
+    // And with no history at all the chain behaves exactly as it did before
+    // there was one: the compiled-in 80%.
+    run("no history at all", staking::History{}, true);
 }

@@ -354,7 +354,11 @@ Result<bool> prefers_commit(const executor::Backend& backend, const state::Chain
     auto primary = s.get_current_validator(kPrimaryNetworkId, node_id);
     if (!primary) return std::unexpected(primary.error());
 
-    double required = static_cast<double>(backend.policy.uptime_requirement) /
+    // Judge the validator on the uptime rule that was in force when it BONDED,
+    // not the one in force now. Reading it at the staker's start time is what
+    // stops a governed requirement from being retroactive.
+    const auto bound_by = backend.policy_at(static_cast<std::int64_t>(primary.value().start_time));
+    double required = static_cast<double>(bound_by.uptime_requirement) /
                       static_cast<double>(reward::kPercentDenominator);
     if (!(chain_id == kPrimaryNetworkId)) {
         auto transform = s.network_transformation(chain_id);

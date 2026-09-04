@@ -238,6 +238,16 @@ enum class Err {
     NonceReservedForRemoval,  // message.ErrNonceReservedForRemoval
     RemovingLastValidator,    // executor.errRemovingLastValidator
     MaxNumActiveValidators,   // executor.errMaxNumActiveValidators
+
+    // ── the staking constitution (vms/platformvm/stakingparams)
+    OutOfBounds,      // stakingparams.ErrOutOfBounds
+    Incoherent,       // stakingparams.ErrIncoherent
+    StepTooLarge,     // stakingparams.ErrStepTooLarge
+    TooSoon,          // stakingparams.ErrTooSoon
+    NoChange,         // stakingparams.ErrNoChange
+    EmptyHistory,     // stakingparams.ErrEmptyHistory
+    NotMonotonic,     // stakingparams.ErrNotMonotonic
+    BoundsIncoherent, // stakingparams.ErrBoundsIncoherent
 };
 
 std::string_view err_name(Err e);

@@ -195,6 +195,14 @@ std::string_view err_name(Err e) {
         case Err::NonceReservedForRemoval: return "NonceReservedForRemoval";
         case Err::RemovingLastValidator: return "RemovingLastValidator";
         case Err::MaxNumActiveValidators: return "MaxNumActiveValidators";
+        case Err::OutOfBounds: return "OutOfBounds";
+        case Err::Incoherent: return "Incoherent";
+        case Err::StepTooLarge: return "StepTooLarge";
+        case Err::TooSoon: return "TooSoon";
+        case Err::NoChange: return "NoChange";
+        case Err::EmptyHistory: return "EmptyHistory";
+        case Err::NotMonotonic: return "NotMonotonic";
+        case Err::BoundsIncoherent: return "BoundsIncoherent";
     }
     return "Unknown";
 }
