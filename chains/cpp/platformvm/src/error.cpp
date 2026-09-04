@@ -140,6 +140,27 @@ std::string_view err_name(Err e) {
         case Err::TimestampTooFar: return "TimestampTooFar";
         case Err::EmptyBlock: return "EmptyBlock";
         case Err::BadGenesis: return "BadGenesis";
+        case Err::UnknownBlockKind: return "UnknownBlockKind";
+        case Err::BlockExtraSpace: return "BlockExtraSpace";
+        case Err::NoProposalTx: return "NoProposalTx";
+        case Err::TxOverrunsBlob: return "TxOverrunsBlob";
+        case Err::NilBlockTx: return "NilBlockTx";
+        case Err::ChildBlockEarlierThanParent: return "ChildBlockEarlierThanParent";
+        case Err::ChildBlockBeyondSyncBound: return "ChildBlockBeyondSyncBound";
+        case Err::RemoveStakerTooEarly: return "RemoveStakerTooEarly";
+        case Err::RemoveWrongStaker: return "RemoveWrongStaker";
+        case Err::ShouldBePermissionlessStaker: return "ShouldBePermissionlessStaker";
+        case Err::ProposedAddStakerTxNotPermitted: return "ProposedAddStakerTxNotPermitted";
+        case Err::InvalidID: return "InvalidID";
+        case Err::WrongNumberOfCredentials: return "WrongNumberOfCredentials";
+        case Err::WrongNumberUTXOs: return "WrongNumberUTXOs";
+        case Err::AssetIDMismatch: return "AssetIDMismatch";
+        case Err::LockedFundsNotMarkedAsLocked: return "LockedFundsNotMarkedAsLocked";
+        case Err::LocktimeMismatch: return "LocktimeMismatch";
+        case Err::InsufficientLockedFunds: return "InsufficientLockedFunds";
+        case Err::InsufficientUnlockedFunds: return "InsufficientUnlockedFunds";
+        case Err::DuplicateNetwork: return "DuplicateNetwork";
+        case Err::DuplicateChain: return "DuplicateChain";
     }
     return "Unknown";
 }
