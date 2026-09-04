@@ -1,0 +1,45 @@
+# Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+#
+# luxd — Go Archive / Primary Network Node
+#
+# Pure Go static scratch / distroless build (no Debian, no libc, 0 OS layers).
+# Multi-stage build with stripped symbols, CA root certs, and non-root execution.
+
+ARG GO_VERSION=1.26.5
+
+# ── builder ─────────────────────────────────────────────────────────────────
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS builder
+
+RUN apk add --no-cache ca-certificates tzdata && \
+    mkdir -p /out/etc/ssl/certs /out/usr/share/zoneinfo /out/data && \
+    cp /etc/ssl/certs/ca-certificates.crt /out/etc/ssl/certs/ && \
+    echo "luxd:x:65532:65532:nonroot:/:/bin/false" > /out/etc/passwd && \
+    echo "luxd:x:65532:" > /out/etc/group && \
+    chown -R 65532:65532 /out/data
+
+WORKDIR /build
+COPY go.mod go.sum ./
+ENV GOPRIVATE=github.com/luxfi/*,github.com/lux-private/*,github.com/hanzoai/*
+RUN go mod download
+
+COPY . .
+
+ENV CGO_ENABLED=0
+RUN go build -trimpath -ldflags="-s -w -extldflags '-static'" -tags="metrics,nattraversal" -o /out/luxd ./main
+
+# ── runtime (pure scratch, 0 bytes OS base, no Debian) ──────────────────────
+FROM scratch AS runtime
+
+COPY --from=builder /out/etc/passwd /etc/passwd
+COPY --from=builder /out/etc/group /etc/group
+COPY --from=builder /out/etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /out/data /data
+COPY --from=builder /out/luxd /usr/local/bin/luxd
+
+USER 65532:65532
+WORKDIR /data
+
+EXPOSE 9630 9631
+
+ENTRYPOINT ["/usr/local/bin/luxd"]

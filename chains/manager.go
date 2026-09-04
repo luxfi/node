@@ -955,12 +955,20 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				// none of them is required to be a chain of blocks. Clients
 				// reach the same address through [server.Chain].
 				route := func(base string) {
-					if err := m.Server.AddRoute(handler, constants.ChainAliasPrefix+"/"+base, endpoint); err != nil {
-						m.Log.Error("failed to add chain route",
-							log.String("base", base),
-							log.String("endpoint", endpoint),
-							log.Err(err),
-						)
+					endpoints := []string{endpoint}
+					if endpoint == "/rpc" {
+						endpoints = append(endpoints, "")
+					}
+					for _, ep := range endpoints {
+						if err := m.Server.AddRoute(handler, constants.ChainAliasPrefix+"/"+base, ep); err != nil {
+							m.Log.Debug("chain route exists or skipped",
+								log.String("base", base),
+								log.String("endpoint", ep),
+								log.Err(err),
+							)
+						}
+						// Legacy fallback so older tools/docker images can reach C-chain
+						_ = m.Server.AddRoute(handler, "bc/"+base, ep)
 					}
 				}
 
