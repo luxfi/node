@@ -74,6 +74,76 @@ impl PartialOrd for Staker {
     }
 }
 
+/// Every change the current staker set will undergo, in the order time will
+/// apply them.
+///
+/// There are two kinds of change: a current staker leaving at its end time,
+/// and a pending staker arriving at its start time. The order is the one Go
+/// states in `StakerDiffIterator`:
+///
+/// - by the time the change happens;
+/// - at the same time, an arrival before a departure;
+/// - and further ties by the staker order — when, then priority, then name.
+///
+/// The middle rule is the one that matters and the easy one to get backwards.
+/// A reader of this sequence is usually asking "how much weight was on this
+/// validator at its heaviest", and it answers by looking at the weight
+/// *before* each change. Putting arrivals first is what makes that reading see
+/// the peak; putting departures first would report a maximum that never
+/// happened, and admit a delegation the rest of the network refuses.
+///
+/// An arrival also schedules its own departure: when a pending staker joins,
+/// the copy that will leave at its end time is put into the departures, so a
+/// staker that arrives and leaves inside the window is seen doing both.
+pub struct StakerDiff {
+    /// Departures, least first.
+    leaving: std::collections::BinaryHeap<std::cmp::Reverse<Staker>>,
+    /// Arrivals, least first, in the order the pending set is kept.
+    arriving: std::collections::VecDeque<Staker>,
+}
+
+impl StakerDiff {
+    /// The changes to a set that currently holds `current`, given `pending`.
+    ///
+    /// Both are taken in the order they are given, and the caller gives them
+    /// in set order — which is staker order, so the arrivals are already
+    /// least-first. Sorting them again here would be a second opinion about
+    /// an order the set already holds, and the two could differ.
+    pub fn new(current: Vec<Staker>, pending: Vec<Staker>) -> StakerDiff {
+        StakerDiff {
+            leaving: current.into_iter().map(std::cmp::Reverse).collect(),
+            arriving: pending.into(),
+        }
+    }
+
+    /// The next change, and whether it is an arrival.
+    #[allow(clippy::should_implement_trait)]
+    pub fn next(&mut self) -> Option<(Staker, bool)> {
+        let take_arrival = match (self.leaving.peek(), self.arriving.front()) {
+            (None, None) => return None,
+            (None, Some(_)) => true,
+            (Some(_), None) => false,
+            // At the same instant, the arrival goes first.
+            (Some(std::cmp::Reverse(out)), Some(into)) => out.end_time >= into.start_time,
+        };
+        if take_arrival {
+            let staker = self.arriving.pop_front().expect("an arrival");
+            // What arrives will leave; schedule that now so the two are seen
+            // in the right order relative to everything else.
+            let mut departure = staker.clone();
+            departure.next_time = departure.end_time;
+            if let Some(p) = departure.priority.to_current() {
+                departure.priority = p;
+            }
+            self.leaving.push(std::cmp::Reverse(departure));
+            Some((staker, true))
+        } else {
+            let std::cmp::Reverse(staker) = self.leaving.pop().expect("a departure");
+            Some((staker, false))
+        }
+    }
+}
+
 /// Why the state could not answer.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -643,5 +713,147 @@ mod tests {
         assert_eq!(s.delegatee_reward(&chain, &node), 0);
         s.set_delegatee_reward(chain, node, 42);
         assert_eq!(s.delegatee_reward(&chain, &node), 42);
+    }
+
+    /// Go: `TestStakerDiffIterator`, with the same set and the same expected
+    /// sequence.
+    #[test]
+    fn the_changes_come_in_the_order_time_applies_them() {
+        let vdr = |tx: u8, start: u64, end: u64, next: u64, priority: Priority| Staker {
+            tx_id: [tx; 32],
+            node_id: NodeId([1; 20]),
+            public_key: None,
+            chain: crate::ids::PRIMARY_NETWORK_ID,
+            weight: 1,
+            start_time: start,
+            end_time: end,
+            potential_reward: 0,
+            next_time: next,
+            priority,
+        };
+
+        let current = vec![vdr(0, 0, 10, 10, Priority::PrimaryNetworkValidatorCurrent)];
+        let pending = vec![
+            vdr(1, 0, 5, 0, Priority::PrimaryNetworkDelegatorLegacyPending),
+            vdr(2, 5, 10, 5, Priority::PrimaryNetworkDelegatorLegacyPending),
+            vdr(3, 11, 20, 11, Priority::PrimaryNetworkValidatorPending),
+            vdr(
+                4,
+                11,
+                20,
+                11,
+                Priority::PrimaryNetworkDelegatorLegacyPending,
+            ),
+        ];
+
+        let want: Vec<(u8, bool)> = vec![
+            (1, true),
+            (2, true),
+            (1, false),
+            (2, false),
+            (0, false),
+            (3, true),
+            (4, true),
+            (4, false),
+            (3, false),
+        ];
+
+        let mut diff = StakerDiff::new(current, pending);
+        for (tx, arriving) in want {
+            let (staker, is_arriving) = diff.next().expect("a change");
+            assert_eq!(staker.tx_id[0], tx, "the staker that changes");
+            assert_eq!(is_arriving, arriving, "arriving or leaving");
+        }
+        assert!(diff.next().is_none());
+    }
+
+    /// Go: `TestMutableStakerIterator` — departures added while the walk is in
+    /// progress take their place in time, not at the end.
+    #[test]
+    fn a_departure_added_mid_walk_lands_in_its_place() {
+        let leaving = |tx: u8, end: u64| Staker {
+            tx_id: [tx; 32],
+            node_id: NodeId([1; 20]),
+            public_key: None,
+            chain: crate::ids::PRIMARY_NETWORK_ID,
+            weight: 1,
+            start_time: 0,
+            end_time: end,
+            potential_reward: 0,
+            next_time: end,
+            priority: Priority::PrimaryNetworkValidatorCurrent,
+        };
+        // Go seeds three, then adds three more that fall between them. Here
+        // the arrivals do the adding: each one schedules its own departure.
+        let arriving = |tx: u8, start: u64, end: u64| Staker {
+            tx_id: [tx; 32],
+            node_id: NodeId([1; 20]),
+            public_key: None,
+            chain: crate::ids::PRIMARY_NETWORK_ID,
+            weight: 1,
+            start_time: start,
+            end_time: end,
+            potential_reward: 0,
+            next_time: start,
+            priority: Priority::PrimaryNetworkValidatorPending,
+        };
+
+        let mut diff = StakerDiff::new(
+            vec![leaving(10, 10), leaving(20, 20), leaving(30, 30)],
+            vec![arriving(15, 1, 15), arriving(25, 2, 25)],
+        );
+
+        let mut seen = Vec::new();
+        while let Some((staker, is_arriving)) = diff.next() {
+            seen.push((staker.tx_id[0], staker.next_time, is_arriving));
+        }
+        assert_eq!(
+            seen,
+            vec![
+                (15, 1, true),
+                (25, 2, true),
+                (10, 10, false),
+                (15, 15, false),
+                (20, 20, false),
+                (25, 25, false),
+                (30, 30, false),
+            ]
+        );
+    }
+
+    /// The rule that is easy to get backwards, on its own.
+    ///
+    /// A departure and an arrival at the same instant: the arrival is seen
+    /// first, so a reader taking the weight before each change sees the moment
+    /// both were on the validator. Reversing this reports a maximum that never
+    /// happened.
+    #[test]
+    fn an_arrival_and_a_departure_at_one_instant_arrive_first() {
+        let at = |tx: u8, next: u64, start: u64, end: u64, priority: Priority| Staker {
+            tx_id: [tx; 32],
+            node_id: NodeId([1; 20]),
+            public_key: None,
+            chain: crate::ids::PRIMARY_NETWORK_ID,
+            weight: 1,
+            start_time: start,
+            end_time: end,
+            potential_reward: 0,
+            next_time: next,
+            priority,
+        };
+        let mut diff = StakerDiff::new(
+            vec![at(1, 10, 0, 10, Priority::PrimaryNetworkDelegatorCurrent)],
+            vec![at(
+                2,
+                10,
+                10,
+                20,
+                Priority::PrimaryNetworkDelegatorLegacyPending,
+            )],
+        );
+        assert_eq!(diff.next().map(|(s, a)| (s.tx_id[0], a)), Some((2, true)));
+        assert_eq!(diff.next().map(|(s, a)| (s.tx_id[0], a)), Some((1, false)));
+        assert_eq!(diff.next().map(|(s, a)| (s.tx_id[0], a)), Some((2, false)));
+        assert!(diff.next().is_none());
     }
 }

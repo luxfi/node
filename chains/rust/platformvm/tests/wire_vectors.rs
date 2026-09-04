@@ -739,3 +739,67 @@ fn a_signature_names_the_address_go_names() {
         "fc7250a211deddc70ee5a2738de5f07817351cef"
     );
 }
+
+/// Go's `TestGoldenAbortBlock`, byte for byte.
+///
+/// These bytes are the chain's commitment: an id is the hash of them, so any
+/// drift in the kind byte's position, a field's order, or the header would be
+/// a different chain. The vector is Go's own, pinned at the re-genesis
+/// cutover, with a parent of 0x00..0x1f, height 0x1122334455667788 and time
+/// 0x0102030405060708.
+#[test]
+fn the_golden_abort_block_is_byte_identical_to_go() {
+    let golden: [u8; 65] = [
+        0x5a, 0x41, 0x50, 0x00, 0x02, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x41, 0x00, 0x00,
+        0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+        0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b,
+        0x1c, 0x1d, 0x1e, 0x1f, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x08, 0x07, 0x06,
+        0x05, 0x04, 0x03, 0x02, 0x01,
+    ];
+    let mut parent = [0u8; 32];
+    for (i, b) in parent.iter_mut().enumerate() {
+        *b = i as u8;
+    }
+    let blk = block::Block::abort(parent, 0x1122_3344_5566_7788, 0x0102_0304_0506_0708);
+    assert_eq!(hex(blk.bytes()), hex(&golden), "abort block bytes drifted");
+
+    // And the id is the hash of exactly those bytes.
+    let parsed = block::Block::parse(&golden).expect("Go's golden block parses");
+    assert_eq!(parsed.id(), blk.id());
+    assert_eq!(parsed.bytes(), golden);
+}
+
+/// Go's `TestBlockRoundTripByteStability` and `TestBlockTrailingBytesRejected`:
+/// the bytes survive a read unchanged, the id is stable across it, and a
+/// buffer with a tail — which wraps the same message and hashes differently —
+/// is refused.
+#[test]
+fn every_block_kinds_bytes_survive_a_read_and_a_tail_is_refused() {
+    let tx = Tx::new(Unsigned::Base(base()), Vec::new());
+    let parent = id(0x0a);
+    let (height, ts) = (42u64, 1_700_000_000u64);
+    let blocks = [
+        block::Block::abort(parent, height, ts),
+        block::Block::commit(parent, height, ts),
+        block::Block::standard(parent, height, ts, vec![tx.clone()]),
+        block::Block::proposal(parent, height, ts, tx),
+    ];
+    for blk in blocks {
+        let wire = blk.bytes().to_vec();
+        assert!(!wire.is_empty());
+
+        let parsed = block::Block::parse(&wire).expect("a block parses");
+        assert_eq!(parsed.bytes(), wire, "a read must preserve the bytes");
+        assert_eq!(parsed.id(), blk.id(), "the name must survive a read");
+
+        let again = block::Block::parse(parsed.bytes()).expect("and again");
+        assert_eq!(again.id(), blk.id(), "the encoding is canonical");
+
+        let mut malleable = wire.clone();
+        malleable.push(0);
+        assert!(
+            block::Block::parse(&malleable).is_err(),
+            "a block with a tail must be refused"
+        );
+    }
+}

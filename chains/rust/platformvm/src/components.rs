@@ -153,42 +153,14 @@ impl Output {
 
     /// The bytes an output is ordered by.
     ///
-    /// Go orders a transaction's outputs by asset id, then by the inner fx
-    /// envelope's bytes. That envelope is a two-byte discriminator followed by
-    /// a ZAP message, and it is reproduced here exactly, because the ordering
-    /// is consensus: a differently-ordered output list is a different
-    /// transaction and every peer must agree which one is canonical.
+    /// Go orders a transaction's outputs by asset id, then by the bytes of the
+    /// output's own envelope. That is the same envelope [`Output::wire_bytes`]
+    /// writes, and it is written once: two spellings of one output would be
+    /// two answers to which of two outputs comes first, and the order is
+    /// consensus — a differently-ordered output list is a different
+    /// transaction.
     pub fn order_key(&self) -> Vec<u8> {
-        const TYPE_SECP256K1: u8 = 0x01;
-        const TYPE_RESERVED: u8 = 0x00;
-        const SHAPE_TRANSFER_OUTPUT: u8 = 0x01;
-        const SHAPE_LOCKED_OUTPUT: u8 = 0x0F;
-
-        // The transfer output's own envelope.
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + 128);
-        let (addr_off, addr_count) = write_addrs(&mut b, &self.owners.addrs);
-        let ob = b.start_object(28);
-        b.set_u64(&ob, 0, self.amount);
-        b.set_u64(&ob, 8, self.owners.locktime);
-        b.set_u32(&ob, 16, self.owners.threshold);
-        b.set_list(&ob, 20, addr_off, addr_count);
-        b.finish_as_root(&ob);
-        let mut inner = vec![TYPE_SECP256K1, SHAPE_TRANSFER_OUTPUT];
-        inner.extend_from_slice(&b.finish());
-
-        if self.stake_lock == 0 {
-            return inner;
-        }
-
-        // Wrapped in a stakeable lock.
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + 256);
-        let ob = b.start_object(16);
-        b.set_u64(&ob, 0, self.stake_lock);
-        b.set_bytes(&ob, 8, &inner);
-        b.finish_as_root(&ob);
-        let mut outer = vec![TYPE_RESERVED, SHAPE_LOCKED_OUTPUT];
-        outer.extend_from_slice(&b.finish());
-        outer
+        self.wire_bytes()
     }
 }
 

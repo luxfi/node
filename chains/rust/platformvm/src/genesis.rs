@@ -600,4 +600,31 @@ mod tests {
         assert!(back.chains.is_empty());
         assert_eq!(back.message, "");
     }
+
+    /// A lock naming time zero is not a lock.
+    ///
+    /// Go can hold the same thing — a `LockOut` whose `Locktime` is zero — and
+    /// every comparison it makes against it (`now < locktime`) is false, so it
+    /// spends as ordinary value. Reading it back as no lock is that same
+    /// value, said once.
+    #[test]
+    fn a_lock_at_time_zero_is_no_lock() {
+        let locked_at_zero = {
+            let plain = output(50, 0).wire_bytes();
+            let mut b = zap::Builder::new(zap::HEADER_SIZE + 64 + plain.len());
+            let ob = b.start_object(16);
+            b.set_u64(&ob, 0, 0);
+            b.set_bytes(&ob, 8, &plain);
+            b.finish_as_root(&ob);
+            let mut out = vec![
+                crate::components::TYPE_RESERVED,
+                crate::components::SHAPE_LOCKED_OUTPUT,
+            ];
+            out.extend_from_slice(&b.finish());
+            out
+        };
+        let back = Output::parse_wire(&locked_at_zero, [9; 32]).expect("it reads");
+        assert_eq!(back.stake_lock, 0);
+        assert_eq!(back, output(50, 0));
+    }
 }
