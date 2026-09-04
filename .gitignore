@@ -12,3 +12,6 @@ build/
 AGENTS.md
 GEMINI.md
 CLAUDE.md
+
+# Rust build output.
+target/
