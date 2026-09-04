@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
 // fixtures.hpp — the deterministic values the golden vectors were generated
-// from. They are defined ONCE here and in test/golden_gen.go, and the two must
+// from. They are defined ONCE here and in test/golden/golden_gen.go, and the two must
 // agree; that is the point of making them trivially derivable from one byte.
 
 #pragma once
