@@ -95,6 +95,19 @@ inline Id prefix_id(const Id& id, std::uint64_t p) {
     return out;
 }
 
+// Append hashes big-endian suffixes AFTER the id, where prefix_id hashes them
+// before. This is how a genesis L1 validator gets its name: the network's id
+// with its index appended, so the names are derived rather than assigned.
+inline Id append_id(const Id& id, std::uint32_t suffix) {
+    std::vector<std::uint8_t> buf(kIdLen + 4);
+    std::memcpy(buf.data(), id.b.data(), kIdLen);
+    for (int i = 0; i < 4; ++i) buf[kIdLen + i] = static_cast<std::uint8_t>(suffix >> (24 - 8 * i));
+    const Hash256 h = sha256(buf);
+    Id out{};
+    std::memcpy(out.b.data(), h.data(), kIdLen);
+    return out;
+}
+
 inline Id id_from_hash(const Hash256& h) {
     Id out{};
     std::memcpy(out.b.data(), h.data(), kIdLen);
