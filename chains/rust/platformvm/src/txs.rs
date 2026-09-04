@@ -293,6 +293,11 @@ pub enum Error {
     EmptyNodeId,
     /// A staking transaction that stakes nothing.
     NoStake,
+    /// Stake in more than one asset. Which asset a network stakes is one
+    /// question with one answer.
+    MultipleStakedAssets,
+    /// A sum that does not fit.
+    Overflow,
     /// A proof of possession that is not one.
     Signer(crate::signer::Error),
     /// A BLS key where none belongs, or none where one is required.
@@ -391,6 +396,8 @@ impl std::fmt::Display for Error {
             Error::NotInitialized => write!(f, "tx was never initialized and is not valid"),
             Error::EmptyNodeId => write!(f, "validator nodeID cannot be empty"),
             Error::NoStake => write!(f, "there is no stake"),
+            Error::MultipleStakedAssets => write!(f, "multiple staked assets"),
+            Error::Overflow => write!(f, "a sum does not fit"),
             Error::Signer(e) => write!(f, "{e}"),
             Error::InvalidSigner {
                 has_key,
@@ -2266,7 +2273,7 @@ impl Unsigned {
                 }
                 validator.verify()?;
                 rewards_owner.verify().map_err(Error::Owner)?;
-                verify_stake(stake, validator.weight, native_asset)
+                verify_stake(stake, validator.weight, Some(native_asset))
             }
             Unsigned::AddDelegator {
                 validator,
@@ -2276,7 +2283,7 @@ impl Unsigned {
             } => {
                 validator.verify()?;
                 rewards_owner.verify().map_err(Error::Owner)?;
-                verify_stake(stake, validator.weight, native_asset)
+                verify_stake(stake, validator.weight, Some(native_asset))
             }
             Unsigned::AddChainValidator {
                 validator,
@@ -2311,6 +2318,8 @@ impl Unsigned {
                 }
                 validator.verify()?;
                 signer.verify().map_err(Error::Signer)?;
+                validator_rewards_owner.verify().map_err(Error::Owner)?;
+                delegator_rewards_owner.verify().map_err(Error::Owner)?;
                 // A primary network validator must register a BLS key and a
                 // network validator must not. Consensus aggregates signatures
                 // on the primary network and nowhere else, so a key there is
@@ -2323,9 +2332,10 @@ impl Unsigned {
                         is_primary,
                     });
                 }
-                validator_rewards_owner.verify().map_err(Error::Owner)?;
-                delegator_rewards_owner.verify().map_err(Error::Owner)?;
-                verify_stake(stake, validator.weight, native_asset)
+                // Which asset a network stakes is the network's own business —
+                // only the primary network's is fixed, and the executor is
+                // what knows which. Here it must simply be one asset.
+                verify_stake(stake, validator.weight, None)
             }
             Unsigned::AddPermissionlessDelegator {
                 validator,
@@ -2333,9 +2343,12 @@ impl Unsigned {
                 rewards_owner,
                 ..
             } => {
+                if stake.is_empty() {
+                    return Err(Error::NoStake);
+                }
                 validator.verify()?;
                 rewards_owner.verify().map_err(Error::Owner)?;
-                verify_stake(stake, validator.weight, native_asset)
+                verify_stake(stake, validator.weight, None)
             }
             Unsigned::RemoveChainValidator {
                 chain, chain_auth, ..
@@ -2554,16 +2567,25 @@ fn verify_envelope(base: &Envelope) -> Result<(), Error> {
 ///
 /// The last of those is the one that matters: a weight larger than the stake
 /// would buy consensus influence that nothing backs.
-fn verify_stake(stake: &[Output], weight: u64, native_asset: Id) -> Result<(), Error> {
+/// The staked outputs must add up to exactly the declared weight, be
+/// canonically ordered, and all be the same asset — `required`, when the kind
+/// names one, or whichever the first output is when it does not.
+///
+/// The weight is the one that matters: a weight larger than the stake would
+/// buy consensus influence that nothing backs.
+fn verify_stake(stake: &[Output], weight: u64, required: Option<Id>) -> Result<(), Error> {
     let mut total: u64 = 0;
+    let staked_asset = required.or_else(|| stake.first().map(|o| o.asset));
     for o in stake {
         o.verify().map_err(Error::Output)?;
-        total = total.checked_add(o.amount).ok_or(Error::WeightMismatch {
-            declared: weight,
-            staked: u64::MAX,
-        })?;
-        if o.asset != native_asset {
-            return Err(Error::StakeMustBeNativeAsset);
+        total = total.checked_add(o.amount).ok_or(Error::Overflow)?;
+        if Some(o.asset) != staked_asset {
+            return Err(match required {
+                // The chain's own asset is the only thing these kinds stake.
+                Some(_) => Error::StakeMustBeNativeAsset,
+                // Any one asset will do, but it has to be one.
+                None => Error::MultipleStakedAssets,
+            });
         }
     }
     if !is_sorted_outputs(stake) {
@@ -3144,24 +3166,65 @@ mod tests {
         );
     }
 
+    /// A legacy staker stakes the chain's own asset, and nothing else.
     #[test]
-    fn a_staker_may_not_stake_some_other_asset() {
+    fn a_legacy_staker_may_not_stake_some_other_asset() {
         let native = [9u8; 32];
         let mut s = stake();
         s[0].asset = [1; 32];
-        let tx = Unsigned::AddPermissionlessValidator {
+        let tx = Unsigned::AddValidator {
             base: envelope(),
             validator: validator(),
-            chain: crate::ids::PRIMARY_NETWORK_ID,
-            signer: pop(),
             stake: s,
-            validator_rewards_owner: owners(3),
-            delegator_rewards_owner: owners(4),
+            rewards_owner: owners(3),
             delegation_shares: 0,
         };
         assert_eq!(
             tx.syntactic_verify(native),
             Err(Error::StakeMustBeNativeAsset)
+        );
+    }
+
+    /// A permissionless staker stakes ONE asset — which one is the network's
+    /// business, not the bytes'.
+    ///
+    /// Go's `AddPermissionlessValidatorTx.SyntacticVerify` compares every
+    /// stake output to the first one, never to the chain's own asset: a
+    /// network may be staked in whatever it says, and which asset that is is
+    /// something only the executor can know, because it is written in the
+    /// network's own transformation. Refusing it here would refuse every
+    /// network that stakes anything else.
+    #[test]
+    fn a_permissionless_staker_stakes_one_asset_whichever_it_is() {
+        let native = [9u8; 32];
+        let other = |asset: u8, amount: u64| Output {
+            asset: [asset; 32],
+            stake_lock: 0,
+            amount,
+            owners: owners(2),
+        };
+        let apv = |stake: Vec<Output>, weight: u64| Unsigned::AddPermissionlessValidator {
+            base: envelope(),
+            validator: Validator {
+                node_id: NodeId([5; 20]),
+                start: 1000,
+                end: 2000,
+                weight,
+            },
+            chain: [6; 32],
+            signer: Signer::Empty,
+            stake,
+            validator_rewards_owner: owners(3),
+            delegator_rewards_owner: owners(4),
+            delegation_shares: PERCENT_DENOMINATOR,
+        };
+
+        // One asset that is not the chain's own: fine here.
+        assert_eq!(apv(vec![other(1, 50)], 50).syntactic_verify(native), Ok(()));
+        // Two assets: not fine, whichever they are.
+        assert_eq!(
+            apv(vec![other(1, 25), other(2, 25)], 50).syntactic_verify(native),
+            Err(Error::MultipleStakedAssets)
         );
     }
 
@@ -3293,19 +3356,144 @@ mod tests {
             .is_none());
     }
 
+    /// Go: `TestPriorityIsValidator`, `IsPermissionedValidator`,
+    /// `IsCurrentValidator`, `IsCurrentDelegator`, `IsPendingValidator` and
+    /// `IsPendingDelegator` — every predicate against every priority, because
+    /// a wrong `false` is as much a fork as a wrong `true`.
     #[test]
-    fn priority_predicates_agree_with_go() {
-        assert!(Priority::PrimaryNetworkValidatorCurrent.is_current_validator());
-        assert!(Priority::ChainPermissionedValidatorCurrent.is_current_validator());
-        assert!(Priority::ChainPermissionlessValidatorCurrent.is_current_validator());
-        assert!(Priority::PrimaryNetworkDelegatorCurrent.is_current_delegator());
-        assert!(Priority::ChainPermissionlessDelegatorCurrent.is_current_delegator());
-        assert!(Priority::PrimaryNetworkValidatorPending.is_pending_validator());
-        assert!(Priority::PrimaryNetworkDelegatorLegacyPending.is_pending_delegator());
-        assert!(Priority::ChainPermissionedValidatorCurrent.is_permissioned_validator());
-        assert!(Priority::ChainPermissionedValidatorPending.is_permissioned_validator());
-        assert!(!Priority::ChainPermissionlessValidatorCurrent.is_permissioned_validator());
-        assert!(Priority::PrimaryNetworkValidatorPending.is_validator());
+    fn every_predicate_answers_what_go_answers_for_every_priority() {
+        use Priority::*;
+        // (priority, validator, permissioned, current vdr, current dlg,
+        //  pending vdr, pending dlg)
+        let table: [(Priority, bool, bool, bool, bool, bool, bool); 11] = [
+            (
+                PrimaryNetworkDelegatorLegacyPending,
+                false,
+                false,
+                false,
+                false,
+                false,
+                true,
+            ),
+            (
+                PrimaryNetworkValidatorPending,
+                true,
+                false,
+                false,
+                false,
+                true,
+                false,
+            ),
+            (
+                PrimaryNetworkDelegatorPermissionlessPending,
+                false,
+                false,
+                false,
+                false,
+                false,
+                true,
+            ),
+            (
+                ChainPermissionlessValidatorPending,
+                true,
+                false,
+                false,
+                false,
+                true,
+                false,
+            ),
+            (
+                ChainPermissionlessDelegatorPending,
+                false,
+                false,
+                false,
+                false,
+                false,
+                true,
+            ),
+            (
+                ChainPermissionedValidatorPending,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+            ),
+            (
+                ChainPermissionedValidatorCurrent,
+                true,
+                true,
+                true,
+                false,
+                false,
+                false,
+            ),
+            (
+                ChainPermissionlessDelegatorCurrent,
+                false,
+                false,
+                false,
+                true,
+                false,
+                false,
+            ),
+            (
+                ChainPermissionlessValidatorCurrent,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false,
+            ),
+            (
+                PrimaryNetworkDelegatorCurrent,
+                false,
+                false,
+                false,
+                true,
+                false,
+                false,
+            ),
+            (
+                PrimaryNetworkValidatorCurrent,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false,
+            ),
+        ];
+        for (p, validator, permissioned, cur_v, cur_d, pend_v, pend_d) in table {
+            assert_eq!(p.is_validator(), validator, "{p:?} is_validator");
+            assert_eq!(
+                p.is_permissioned_validator(),
+                permissioned,
+                "{p:?} is_permissioned_validator"
+            );
+            assert_eq!(
+                p.is_current_validator(),
+                cur_v,
+                "{p:?} is_current_validator"
+            );
+            assert_eq!(
+                p.is_current_delegator(),
+                cur_d,
+                "{p:?} is_current_delegator"
+            );
+            assert_eq!(
+                p.is_pending_validator(),
+                pend_v,
+                "{p:?} is_pending_validator"
+            );
+            assert_eq!(
+                p.is_pending_delegator(),
+                pend_d,
+                "{p:?} is_pending_delegator"
+            );
+        }
     }
 
     #[test]
@@ -3907,5 +4095,352 @@ mod tests {
             .syntactic_verify(native()),
             Err(Error::BadChainId)
         );
+    }
+
+    /// Go: `TestAddPermissionlessValidatorTxSyntacticVerify`, case for case.
+    #[test]
+    fn a_permissionless_validator_is_refused_for_each_thing_that_is_wrong() {
+        let native = [9u8; 32];
+        let good_owner = || owners(3);
+        // An owner nobody can satisfy: one signature required, no address to
+        // give it. Go reaches this case through a mock; a real unspendable
+        // owner is the same refusal.
+        let bad_owner = || Owners {
+            locktime: 0,
+            threshold: 1,
+            addrs: Vec::new(),
+        };
+        let out = |asset: u8, amount: u64| Output {
+            asset: [asset; 32],
+            stake_lock: 0,
+            amount,
+            owners: owners(2),
+        };
+        let apv = |node: NodeId,
+                   chain: Id,
+                   signer: Signer,
+                   stake: Vec<Output>,
+                   owner: Owners,
+                   weight: u64,
+                   shares: u32| {
+            Unsigned::AddPermissionlessValidator {
+                base: envelope(),
+                validator: Validator {
+                    node_id: node,
+                    start: 0,
+                    end: 0,
+                    weight,
+                },
+                chain,
+                signer,
+                stake,
+                validator_rewards_owner: owner.clone(),
+                delegator_rewards_owner: owner,
+                delegation_shares: shares,
+            }
+        };
+        let node = NodeId([5; 20]);
+        let net = [6u8; 32];
+
+        // A validator with no node.
+        assert_eq!(
+            apv(
+                NodeId([0; 20]),
+                net,
+                Signer::Empty,
+                Vec::new(),
+                good_owner(),
+                0,
+                0
+            )
+            .syntactic_verify(native),
+            Err(Error::EmptyNodeId)
+        );
+        // A validator that stakes nothing.
+        assert_eq!(
+            apv(node, net, Signer::Empty, Vec::new(), good_owner(), 0, 0).syntactic_verify(native),
+            Err(Error::NoStake)
+        );
+        // A fee larger than the whole reward.
+        assert_eq!(
+            apv(
+                node,
+                net,
+                Signer::Empty,
+                vec![out(1, 1)],
+                good_owner(),
+                0,
+                PERCENT_DENOMINATOR + 1
+            )
+            .syntactic_verify(native),
+            Err(Error::TooManyShares)
+        );
+        // A validator worth nothing.
+        assert_eq!(
+            apv(
+                node,
+                net,
+                Signer::Empty,
+                vec![out(1, 1)],
+                good_owner(),
+                0,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Err(Error::WeightTooSmall)
+        );
+        // A rewards owner nobody can satisfy.
+        assert_eq!(
+            apv(
+                node,
+                net,
+                Signer::Empty,
+                vec![out(1, 1)],
+                bad_owner(),
+                1,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Err(Error::Owner(
+                crate::components::OwnerError::ThresholdExceedsAddresses
+            ))
+        );
+        // A primary-network validator with no key to sign with.
+        assert_eq!(
+            apv(
+                node,
+                PRIMARY_NETWORK_ID,
+                Signer::Empty,
+                vec![out(1, 1)],
+                good_owner(),
+                1,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Err(Error::InvalidSigner {
+                has_key: false,
+                is_primary: true
+            })
+        );
+        // A stake output nobody can spend.
+        let unspendable = Output {
+            asset: [1; 32],
+            stake_lock: 0,
+            amount: 1,
+            owners: bad_owner(),
+        };
+        assert_eq!(
+            apv(
+                node,
+                net,
+                Signer::Empty,
+                vec![unspendable],
+                good_owner(),
+                1,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Err(Error::Output(crate::components::OutputError::Owner(
+                crate::components::OwnerError::ThresholdExceedsAddresses
+            )))
+        );
+        // A stake that does not fit in the weight it would have.
+        assert_eq!(
+            apv(
+                node,
+                net,
+                Signer::Empty,
+                vec![out(1, u64::MAX), out(1, 2)],
+                good_owner(),
+                1,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Err(Error::Overflow)
+        );
+        // Stake in two assets.
+        assert_eq!(
+            apv(
+                node,
+                net,
+                Signer::Empty,
+                vec![out(1, 1), out(2, 1)],
+                good_owner(),
+                1,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Err(Error::MultipleStakedAssets)
+        );
+        // Stake out of order.
+        assert_eq!(
+            apv(
+                node,
+                net,
+                Signer::Empty,
+                vec![out(1, 2), out(1, 1)],
+                good_owner(),
+                3,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Err(Error::OutputsNotSorted)
+        );
+        // A weight the stake does not back.
+        assert_eq!(
+            apv(
+                node,
+                net,
+                Signer::Empty,
+                vec![out(1, 1), out(1, 1)],
+                good_owner(),
+                1,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Err(Error::WeightMismatch {
+                declared: 1,
+                staked: 2
+            })
+        );
+        // A network validator, with no key, is well formed.
+        assert_eq!(
+            apv(
+                node,
+                net,
+                Signer::Empty,
+                vec![out(1, 1), out(1, 1)],
+                good_owner(),
+                2,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Ok(())
+        );
+        // And a primary-network validator, with one.
+        assert_eq!(
+            apv(
+                node,
+                PRIMARY_NETWORK_ID,
+                pop(),
+                vec![out(1, 1), out(1, 1)],
+                good_owner(),
+                2,
+                PERCENT_DENOMINATOR
+            )
+            .syntactic_verify(native),
+            Ok(())
+        );
+    }
+
+    /// Go: `TestAddPermissionlessDelegatorTxSyntacticVerify` — the same
+    /// shape, with no signer and no shares to get wrong.
+    #[test]
+    fn a_permissionless_delegator_is_refused_for_each_thing_that_is_wrong() {
+        let native = [9u8; 32];
+        let out = |asset: u8, amount: u64| Output {
+            asset: [asset; 32],
+            stake_lock: 0,
+            amount,
+            owners: owners(2),
+        };
+        let apd =
+            |stake: Vec<Output>, owner: Owners, weight: u64| Unsigned::AddPermissionlessDelegator {
+                base: envelope(),
+                validator: Validator {
+                    node_id: NodeId([5; 20]),
+                    start: 0,
+                    end: 0,
+                    weight,
+                },
+                chain: [6; 32],
+                stake,
+                rewards_owner: owner,
+            };
+        assert_eq!(
+            apd(Vec::new(), owners(3), 0).syntactic_verify(native),
+            Err(Error::NoStake)
+        );
+        assert_eq!(
+            apd(vec![out(1, 1)], owners(3), 0).syntactic_verify(native),
+            Err(Error::WeightTooSmall)
+        );
+        assert_eq!(
+            apd(vec![out(1, 1), out(2, 1)], owners(3), 2).syntactic_verify(native),
+            Err(Error::MultipleStakedAssets)
+        );
+        assert_eq!(
+            apd(vec![out(1, 1), out(1, 1)], owners(3), 1).syntactic_verify(native),
+            Err(Error::WeightMismatch {
+                declared: 1,
+                staked: 2
+            })
+        );
+        assert_eq!(
+            apd(vec![out(1, 1), out(1, 1)], owners(3), 2).syntactic_verify(native),
+            Ok(())
+        );
+    }
+
+    /// Go: `TestParseCredsBufRejectsOutOfRangeSigs` — the three shapes a
+    /// remote sender controls, each of which would otherwise be read as a
+    /// signature that is not there.
+    ///
+    /// Both numbers come off the wire: an index past the array reads nothing,
+    /// and the count alone sizes what the reader allocates.
+    #[test]
+    fn a_credential_naming_a_range_outside_the_array_is_refused() {
+        // A buffer whose single entry claims `declared` signatures while the
+        // array holds `actual`. It is what `write_credentials` writes, with
+        // the two counts decoupled.
+        let crafted = |declared: u32, actual: usize| -> Vec<u8> {
+            let mut b = zap::Builder::new(zap::HEADER_SIZE + 128 + CRED_ENTRY + actual * 65);
+            let mut lb = b.start_list();
+            let mut e = [0u8; CRED_ENTRY];
+            e[0..4].copy_from_slice(&0u32.to_le_bytes());
+            e[4..8].copy_from_slice(&declared.to_le_bytes());
+            b.list_bytes(&mut lb, &e);
+            let creds_off = lb.offset();
+
+            let (sig_off, sig_count) = if actual > 0 {
+                let mut slb = b.start_list();
+                for i in 0..actual {
+                    let mut sig = [0u8; 65];
+                    sig[0] = (i + 1) as u8;
+                    b.list_bytes(&mut slb, &sig);
+                }
+                (slb.offset(), actual)
+            } else {
+                (0, 0)
+            };
+
+            let ob = b.start_object(CREDS_OBJ_SIZE);
+            b.set_list(&ob, OFF_CREDS_LIST, creds_off, 1);
+            b.set_list(&ob, OFF_SIG_ARRAY, sig_off, sig_count);
+            b.finish_as_root(&ob);
+            b.finish()
+        };
+
+        // A count past the end of the array.
+        assert_eq!(
+            parse_credentials(&crafted(2, 1)),
+            Err(Error::CredentialRangeOutOfBounds)
+        );
+        // A count against no array at all.
+        assert_eq!(
+            parse_credentials(&crafted(1, 0)),
+            Err(Error::CredentialRangeOutOfBounds)
+        );
+        // A count that has nothing to do with the payload — the one that sizes
+        // an allocation of four billion signatures.
+        assert_eq!(
+            parse_credentials(&crafted(u32::MAX, 1)),
+            Err(Error::CredentialRangeOutOfBounds)
+        );
+
+        // And the check leaves a well-formed buffer alone, including a
+        // credential that carries no signature.
+        assert_eq!(parse_credentials(&crafted(1, 1)).map(|c| c.len()), Ok(1));
+        assert_eq!(parse_credentials(&crafted(0, 0)).map(|c| c.len()), Ok(1));
     }
 }
