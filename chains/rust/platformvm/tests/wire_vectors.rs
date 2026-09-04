@@ -803,3 +803,38 @@ fn every_block_kinds_bytes_survive_a_read_and_a_tail_is_refused() {
         );
     }
 }
+
+/// A validator's proof that it holds the key it signs with, made by Go.
+///
+/// Consensus aggregates signatures under these keys. Without the proof,
+/// anyone could register the difference between an honest validator's key and
+/// one they hold, and produce aggregates that validator never took part in.
+/// The proof is a signature under a domain separate from every other signature
+/// the network makes — and that domain has to be the same one on both sides,
+/// or each accepts proofs the other refuses.
+#[test]
+fn a_proof_of_possession_go_made_verifies_here() {
+    let mut public_key = [0u8; 48];
+    public_key.copy_from_slice(&unhex(
+        "969e07701831d8f7a168f7059d0392abafbdc9bf363bd7fff182949d2e09a709d9daa5f0e12c124d7c99ad9640bdc1c4",
+    ));
+    let mut proof = [0u8; 96];
+    proof.copy_from_slice(&unhex(
+        "a9894e862fd7d84c5adeb3e469d5da2ef54a18c3711c35662e3ca303e757ffe83aaf0db921689ee15b3334cbf3ddb867044e3003efab812b5e0103b0b6d16839e183b0e395b10079dda28ed084fe6d2995b61636aba68a4b167dd5c7953afde9",
+    ));
+
+    let signer = Signer::ProofOfPossession { public_key, proof };
+    assert_eq!(signer.verify(), Ok(()), "Go's proof must verify here");
+    assert_eq!(signer.public_key(), Some(public_key));
+
+    // And the proof is a proof of THAT key: one byte of it is another key's
+    // proof, and this refuses it.
+    let mut wrong = public_key;
+    wrong[0] ^= 0x01;
+    assert!(Signer::ProofOfPossession {
+        public_key: wrong,
+        proof
+    }
+    .verify()
+    .is_err());
+}
