@@ -163,6 +163,9 @@ pub struct PlatformVm {
 struct Inner {
     config: Config,
     fees: Box<dyn Fees + Send + Sync>,
+    /// How reachable each validator has been. The chain cannot measure it —
+    /// see [`executor::Uptime`] — so the node that runs the chain answers.
+    uptime: Box<dyn executor::Uptime>,
     /// The state as of the last accepted block.
     state: State,
     /// Every block this chain knows, accepted or not.
@@ -198,6 +201,7 @@ impl PlatformVm {
     pub fn new(
         config: Config,
         fees: Box<dyn Fees + Send + Sync>,
+        uptime: Box<dyn executor::Uptime>,
         genesis_state: State,
     ) -> PlatformVm {
         let timestamp = genesis_state.timestamp();
@@ -213,6 +217,7 @@ impl PlatformVm {
             inner: Mutex::new(Inner {
                 config,
                 fees,
+                uptime,
                 state: genesis_state,
                 blocks,
                 verified: HashMap::new(),
@@ -240,6 +245,7 @@ impl PlatformVm {
     pub fn from_genesis(
         config: Config,
         fees: Box<dyn Fees + Send + Sync>,
+        uptime: Box<dyn executor::Uptime>,
         genesis_bytes: &[u8],
     ) -> Result<PlatformVm, crate::genesis::Error> {
         let published = crate::genesis::Genesis::parse(genesis_bytes)?;
@@ -256,6 +262,7 @@ impl PlatformVm {
             inner: Mutex::new(Inner {
                 config,
                 fees,
+                uptime,
                 state,
                 blocks,
                 verified: HashMap::new(),
@@ -412,13 +419,32 @@ impl Vm for PlatformVm {
         };
         let height = parent.height() + 1;
 
-        // An outstanding question is answered first.
-        if let Some(v) = inner.verified.get(&preference) {
-            if v.on_abort.is_some() {
-                let blk = block::Block::commit(preference, height, state.timestamp());
-                inner.blocks.insert(blk.id(), blk.clone());
-                return Ok(Box::new(inner.wrap(blk)));
-            }
+        // An outstanding question is answered first, and the answer is this
+        // node's own: whether the staker being retired was reachable enough,
+        // for long enough, on the terms it agreed to when it bonded. Every
+        // node answers from what it saw and the stake-weighted vote settles
+        // it, which is why a reward is a proposal and not a decision.
+        if inner
+            .verified
+            .get(&preference)
+            .is_some_and(|v| v.on_abort.is_some())
+        {
+            let pays = match parent.proposal_tx() {
+                Some(tx) => executor::prefers_reward(&state, tx, &inner.config, &*inner.uptime)
+                    // Not "do not pay" — "cannot say". Answering that with a
+                    // refusal would let an unusual case or a hostile proposer
+                    // cost an honest validator its reward, so this errs the
+                    // way Go errs: toward paying.
+                    .unwrap_or(true),
+                None => true,
+            };
+            let blk = if pays {
+                block::Block::commit(preference, height, state.timestamp())
+            } else {
+                block::Block::abort(preference, height, state.timestamp())
+            };
+            inner.blocks.insert(blk.id(), blk.clone());
+            return Ok(Box::new(inner.wrap(blk)));
         }
 
         let now = inner.now.max(state.timestamp());
@@ -741,7 +767,9 @@ mod tests {
                 min_stake_duration: 2 * 7 * DAY,
                 max_stake_duration: YEAR,
                 min_delegation_fee: 20_000,
+                uptime_requirement: 800_000,
             },
+            staking_history: None,
             reward: reward::Config {
                 max_consumption_rate: 120_000,
                 min_consumption_rate: 100_000,
@@ -769,6 +797,32 @@ mod tests {
         }
     }
 
+    /// A node that saw the validator the whole time. Every existing test in
+    /// this file is about something other than reachability, and this is what
+    /// "nothing was wrong" looks like.
+    struct AlwaysUp;
+    impl executor::Uptime for AlwaysUp {
+        fn fraction_since(&self, _: &NodeId, _: &Id, _: u64) -> Option<f64> {
+            Some(1.0)
+        }
+    }
+
+    /// A node that saw nothing of the validator at all.
+    struct NeverUp;
+    impl executor::Uptime for NeverUp {
+        fn fraction_since(&self, _: &NodeId, _: &Id, _: u64) -> Option<f64> {
+            Some(0.0)
+        }
+    }
+
+    /// A node that cannot say — a validator it only started watching today.
+    struct Unknown;
+    impl executor::Uptime for Unknown {
+        fn fraction_since(&self, _: &NodeId, _: &Id, _: u64) -> Option<f64> {
+            None
+        }
+    }
+
     fn genesis(now: u64) -> State {
         let mut state = State::new();
         state.set_timestamp(now);
@@ -789,7 +843,12 @@ mod tests {
     }
 
     fn vm(now: u64) -> PlatformVm {
-        PlatformVm::new(config(), Box::new(FlatFees::default()), genesis(now))
+        PlatformVm::new(
+            config(),
+            Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
+            genesis(now),
+        )
     }
 
     fn a_validator_tx(now: u64) -> Tx {
@@ -954,7 +1013,12 @@ mod tests {
     }
 
     fn vm2(now: u64) -> PlatformVm {
-        PlatformVm::new(config(), Box::new(FlatFees::default()), genesis(now))
+        PlatformVm::new(
+            config(),
+            Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
+            genesis(now),
+        )
     }
 
     #[test]
@@ -1215,13 +1279,23 @@ mod tests {
         };
         let bytes = published.to_bytes();
 
-        let vm = PlatformVm::from_genesis(config(), Box::new(FlatFees::default()), &bytes)
-            .expect("the bytes are a genesis");
+        let vm = PlatformVm::from_genesis(
+            config(),
+            Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
+            &bytes,
+        )
+        .expect("the bytes are a genesis");
 
         // Two nodes reading the same publication agree about the first block
         // before they have agreed about anything else.
-        let again = PlatformVm::from_genesis(config(), Box::new(FlatFees::default()), &bytes)
-            .expect("the bytes are a genesis");
+        let again = PlatformVm::from_genesis(
+            config(),
+            Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
+            &bytes,
+        )
+        .expect("the bytes are a genesis");
         assert_eq!(vm.last_accepted(), again.last_accepted());
         assert_eq!(vm.block_id_at(0), Ok(vm.last_accepted()));
 
@@ -1251,8 +1325,149 @@ mod tests {
         assert!(PlatformVm::from_genesis(
             config(),
             Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
             b"not a genesis"
         )
         .is_err());
+    }
+
+    /// A chain built with a given uptime source, so a test can say what this
+    /// node saw.
+    fn vm_seeing(now: u64, uptime: Box<dyn executor::Uptime>) -> PlatformVm {
+        PlatformVm::new(
+            config(),
+            Box::new(FlatFees::default()),
+            uptime,
+            genesis(now),
+        )
+    }
+
+    /// Run a validator to the end of its term and return the option block this
+    /// node would build to answer the reward proposal.
+    fn answer_to_the_reward(vm: &PlatformVm, now: u64) -> Box<dyn Block> {
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+        vm.accept(&blk.id()).unwrap();
+
+        let end = now + YEAR;
+        vm.set_clock(end);
+        {
+            let mut inner = vm.inner.lock().unwrap();
+            inner.state.set_timestamp(end);
+        }
+        let proposal = vm.build().unwrap();
+        vm.verify(&proposal.id()).unwrap();
+        vm.accept(&proposal.id()).unwrap();
+        vm.build().unwrap()
+    }
+
+    /// A validator that was there is paid.
+    #[test]
+    fn a_validator_that_was_reachable_is_paid() {
+        let now = 1000;
+        let vm = vm_seeing(now, Box::new(AlwaysUp));
+        let answer = answer_to_the_reward(&vm, now);
+        vm.verify(&answer.id()).unwrap();
+        vm.accept(&answer.id()).unwrap();
+
+        let staker_tx_id = vm.state().reward_utxos_by_tx().next().map(|(id, _)| *id);
+        assert!(
+            staker_tx_id.is_some(),
+            "a validator that was there earns its reward"
+        );
+        assert!(vm.state().validator_set(&PRIMARY_NETWORK_ID).is_empty());
+    }
+
+    /// A validator that was not there gets its stake back and nothing else.
+    ///
+    /// This is the reward gate, and it is why a reward is a proposal: this
+    /// node answers from what it saw, another node answers from what it saw,
+    /// and the stake-weighted vote settles which answer the chain takes.
+    #[test]
+    fn a_validator_that_was_not_reachable_is_not_paid() {
+        let now = 1000;
+        let vm = vm_seeing(now, Box::new(NeverUp));
+        let answer = answer_to_the_reward(&vm, now);
+        vm.verify(&answer.id()).unwrap();
+        vm.accept(&answer.id()).unwrap();
+
+        // Retired either way — the stake comes back — but nothing was minted.
+        assert!(vm.state().validator_set(&PRIMARY_NETWORK_ID).is_empty());
+        assert_eq!(vm.state().reward_utxos_by_tx().count(), 0);
+    }
+
+    /// "Cannot say" is answered by paying.
+    ///
+    /// A node that has only just started watching has no measurement, and Go
+    /// says why it pays anyway: erring toward over-rewarding costs the network
+    /// a little emission, and erring the other way lets an unusual case or a
+    /// hostile proposer take an honest validator's reward.
+    #[test]
+    fn a_node_that_cannot_say_pays() {
+        let now = 1000;
+        let vm = vm_seeing(now, Box::new(Unknown));
+        let answer = answer_to_the_reward(&vm, now);
+        vm.verify(&answer.id()).unwrap();
+        vm.accept(&answer.id()).unwrap();
+        assert_eq!(vm.state().reward_utxos_by_tx().count(), 1);
+    }
+
+    /// The requirement a validator is judged against is the one that was in
+    /// force when it BONDED.
+    ///
+    /// This is the property the whole governance argument rests on. The
+    /// validator below bonds under an 80% rule and is 85% reachable. A later
+    /// vote raises the rule to 95%. It is still paid, because governance binds
+    /// the future — raising the bar the day before a rival's stake matures and
+    /// taking its reward is expropriation, not policy.
+    #[test]
+    fn a_validator_is_judged_on_the_terms_it_bonded_under() {
+        use crate::stakingparams::{Entry, History, Params, MAINNET_GENESIS};
+
+        let now = 1000;
+        let bonded_at = now;
+        let voted_at = (now + 10) as i64;
+
+        let mut governed = config();
+        governed.staking_history = Some(History(vec![
+            Entry {
+                activation: 0,
+                params: Params {
+                    uptime_requirement: 800_000,
+                    ..MAINNET_GENESIS
+                },
+            },
+            Entry {
+                activation: voted_at,
+                params: Params {
+                    uptime_requirement: 950_000,
+                    ..MAINNET_GENESIS
+                },
+            },
+        ]));
+
+        struct Reachable(f64);
+        impl executor::Uptime for Reachable {
+            fn fraction_since(&self, _: &NodeId, _: &Id, _: u64) -> Option<f64> {
+                Some(self.0)
+            }
+        }
+
+        let vm = PlatformVm::new(
+            governed,
+            Box::new(FlatFees::default()),
+            Box::new(Reachable(0.85)),
+            genesis(now),
+        );
+        let answer = answer_to_the_reward(&vm, bonded_at);
+        vm.verify(&answer.id()).unwrap();
+        vm.accept(&answer.id()).unwrap();
+        assert_eq!(
+            vm.state().reward_utxos_by_tx().count(),
+            1,
+            "a validator bonded under an 80% rule is judged at 80%"
+        );
     }
 }

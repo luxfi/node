@@ -12,7 +12,7 @@ and signed for by whoever owns it. None exists to make entry selective.
 
 ```
 cd chains/rust/platformvm
-PATH=~/.cargo/bin:$PATH cargo test          # 267 tests
+PATH=~/.cargo/bin:$PATH cargo test          # 271 tests
 PATH=~/.cargo/bin:$PATH cargo clippy --all-targets
 ```
 
@@ -116,8 +116,13 @@ refuses **by name** with its own error, rather than succeeding against nothing.
 - **Dynamic fees.** `FlatFees` is Go's static schedule. The gas-metered
   alternative — complexity times weights times a price that moves with demand —
   is not ported.
-- **Uptime.** Nothing measures whether a validator was reachable, so the
-  uptime requirement `stakingparams` governs is not yet read at reward time.
+- **Measuring uptime.** The reward gate is here — `executor::prefers_reward`
+  decides commit or abort, judging a validator on the uptime rule that was in
+  force when it BONDED — but *measuring* reachability is not, and cannot be:
+  two honest nodes see different numbers, which is why the reward is a
+  proposal every node answers for itself. `executor::Uptime` is the seam the
+  node fills. A node that cannot say pays, as Go does, because erring the
+  other way lets an unusual case take an honest validator's reward.
 - **Persistence.** `State` is in memory. There is no database, no versioned
   diff layer, and no height-indexed validator sets (Go's weight diffs, which
   answer "who was validating at height N").

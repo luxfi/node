@@ -265,6 +265,11 @@ impl State {
         self.reward_utxos.entry(tx_id).or_default().push(utxo);
     }
 
+    /// Every reward this chain has paid, by the transaction that earned it.
+    pub fn reward_utxos_by_tx(&self) -> impl Iterator<Item = (&Id, &Vec<Utxo>)> {
+        self.reward_utxos.iter()
+    }
+
     pub fn reward_utxos(&self, tx_id: &Id) -> &[Utxo] {
         self.reward_utxos
             .get(tx_id)
