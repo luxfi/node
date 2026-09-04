@@ -109,6 +109,20 @@ class PlatformVM final : public lux::node::VM {
     Result<std::map<NodeId, validators::Validator>> validator_set(const Id& network_id) const {
         return validators::current_set(state_, network_id);
     }
+    // Who validated a network at a height that has already passed. A message
+    // signed then is checked now, so this is what makes an old signature
+    // checkable at all. It is the set today with everything since undone, which
+    // is why a height the chain has not reached is a refusal rather than a
+    // guess.
+    Result<std::map<NodeId, validators::Validator>> validator_set_at(const Id& network_id,
+                                                                     std::uint64_t height) const {
+        auto set = validator_set(network_id);
+        if (!set) return set;
+        if (auto st = history_.rewind(set.value(), network_id, last_accepted_height_, height); !st)
+            return std::unexpected(st.error());
+        return set;
+    }
+
     Result<Id> validator_set_root(const Id& network_id) const {
         auto set = validator_set(network_id);
         if (!set) return std::unexpected(set.error());
@@ -119,6 +133,9 @@ class PlatformVM final : public lux::node::VM {
     // applies these alongside the state it just wrote; a block that imports or
     // exports nothing leaves this empty.
     const std::map<Id, atomic::Requests>& pending_atomic_requests() const { return atomic_requests_; }
+
+    // What every accepted height changed about the validator sets.
+    const validators::History& history() const { return history_; }
 
     // The accepted state — what the chain remembers.
     const state::MemState& accepted() const { return state_; }
@@ -182,6 +199,7 @@ class PlatformVM final : public lux::node::VM {
     std::vector<txs::Tx> mempool_;
     Id last_accepted_{};
     std::uint64_t last_accepted_height_ = 0;
+    validators::History history_;
     Id preferred_{};
     std::uint64_t wall_clock_ = 0;
     std::map<Id, atomic::Requests> atomic_requests_;

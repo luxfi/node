@@ -280,16 +280,31 @@ Status PlatformVM::accept_block(const block::Block& b) {
     // released only AFTER that outcome has been applied: the option's own layer
     // is a layer over the decision layer, so dropping the parent first would
     // pull the ground out from under it.
+    //
+    // What each layer changes about the validator sets is recorded against this
+    // height as the layer goes in, because it is the only moment both the layer
+    // and the state it lands on are in hand. Recorded before applying, since
+    // afterwards the change is indistinguishable from what was always there.
+    auto note = [&](const state::Diff& layer) -> Status {
+        auto c = validators::changes(layer, state_);
+        if (!c) return std::unexpected(c.error());
+        return history_.record(b.height(), c.value());
+    };
+
     const bool is_option = b.kind() == block::Kind::Abort || b.kind() == block::Kind::Commit;
     if (is_option) {
         const auto parent = verified_.find(b.parent());
         if (parent == verified_.end()) return fail(Err::ParentNotFound);
-        if (parent->second.on_decision)
+        if (parent->second.on_decision) {
+            if (auto st = note(*parent->second.on_decision); !st) return st;
             if (auto st = parent->second.on_decision->apply(state_); !st) return st;
+        }
     }
 
-    if (it->second.on_accept)
+    if (it->second.on_accept) {
+        if (auto st = note(*it->second.on_accept); !st) return st;
         if (auto st = it->second.on_accept->apply(state_); !st) return st;
+    }
 
     if (is_option) verified_.erase(b.parent());
 

@@ -13,6 +13,8 @@
 #include "lux/platformvm/validators.hpp"
 #include "signing.hpp"
 
+#include <functional>
+
 #ifdef LUX_PLATFORMVM_HAS_NODE_SET_ROOT
 #include "lux/node/validators.hpp"
 #endif
@@ -172,4 +174,171 @@ TEST(TheSetRootIsTheNodes) {
     keyless.at(node_of(1)).public_key.reset();
     REQUIRE(!(validators::set_root(keyless) == got));
 #endif
+}
+
+// ── the set at a height that has already passed
+
+namespace {
+
+// One accepted height: what the layer changed is recorded, then applied. The
+// order is the chain's own — a change can only be described against the state
+// it lands on.
+Status settle(state::MemState& base, validators::History& h, std::uint64_t height,
+              const std::function<void(state::Diff&)>& layer) {
+    state::Diff d(&base);
+    layer(d);
+    auto c = validators::changes(d, base);
+    if (!c) return std::unexpected(c.error());
+    if (auto st = h.record(height, c.value()); !st) return st;
+    return d.apply(base);
+}
+
+l1::Validator l1_of(const Id& validation, const Id& chain, std::uint8_t node, std::uint64_t weight,
+                    const std::vector<std::uint8_t>& key) {
+    l1::Validator v;
+    v.validation_id = validation;
+    v.chain_id = chain;
+    v.node_id = node_of(node);
+    v.public_key = key;
+    v.weight = weight;
+    v.end_accumulated_fee = 1;  // paid up: active, and therefore votable
+    return v;
+}
+
+}  // namespace
+
+// The set at a past height is the set now with everything since undone. Both
+// directions of change have to be undone — a validator that left comes back,
+// one that joined goes away — and each has to come back with what it had.
+TEST(TheSetIsRebuiltAtAPastHeight) {
+    state::MemState s;
+    s.load_current_validator(validator_of(1, kPrimaryNetworkId, 100, pop(1).public_key));
+    s.load_current_validator(validator_of(2, kPrimaryNetworkId, 200, pop(2).public_key));
+    validators::History h;
+
+    const auto at_one = validators::current_set(s, kPrimaryNetworkId).value();
+
+    // Height 2: one leaves, another joins.
+    REQUIRE_OK(settle(s, h, 2, [](state::Diff& d) {
+        d.delete_current_validator(validator_of(2, kPrimaryNetworkId, 200, pop(2).public_key));
+        (void)d.put_current_validator(validator_of(3, kPrimaryNetworkId, 300, pop(3).public_key));
+    }));
+    const auto at_two = validators::current_set(s, kPrimaryNetworkId).value();
+    REQUIRE_EQ_NUM(2, at_two.size());
+
+    // Height 3: the first leaves too.
+    REQUIRE_OK(settle(s, h, 3, [](state::Diff& d) {
+        d.delete_current_validator(validator_of(1, kPrimaryNetworkId, 100, pop(1).public_key));
+    }));
+    const auto at_three = validators::current_set(s, kPrimaryNetworkId).value();
+    REQUIRE_EQ_NUM(1, at_three.size());
+
+    auto back_to_two = at_three;
+    REQUIRE_OK(h.rewind(back_to_two, kPrimaryNetworkId, 3, 2));
+    REQUIRE(back_to_two == at_two);
+
+    auto back_to_one = at_three;
+    REQUIRE_OK(h.rewind(back_to_one, kPrimaryNetworkId, 3, 1));
+    REQUIRE(back_to_one == at_one);
+    // Including the key it signed with, which is what an old signature is
+    // checked against.
+    REQUIRE(back_to_one.at(node_of(2)).public_key.has_value());
+    REQUIRE_EQ(id_of(2), back_to_one.at(node_of(2)).tx_id);
+
+    // A walk of no distance changes nothing, and a walk forward is a refusal:
+    // a height the chain has not reached has no set.
+    auto unchanged = at_three;
+    REQUIRE_OK(h.rewind(unchanged, kPrimaryNetworkId, 3, 3));
+    REQUIRE(unchanged == at_three);
+    REQUIRE_ERR(h.rewind(unchanged, kPrimaryNetworkId, 3, 4), Err::InvalidState);
+}
+
+// One network's changes are not another's. A set is rebuilt from the record of
+// the network being asked about and nothing else.
+TEST(APastHeightIsPerNetwork) {
+    const Id net = id_of(0x40);
+    state::MemState s;
+    s.load_current_validator(validator_of(1, kPrimaryNetworkId, 100, pop(1).public_key));
+    s.load_current_validator(validator_of(1, net, 100, std::nullopt,
+                                          txs::Priority::ChainPermissionedValidatorCurrent));
+    validators::History h;
+
+    REQUIRE_OK(settle(s, h, 2, [&](state::Diff& d) {
+        d.delete_current_validator(validator_of(1, net, 100, std::nullopt,
+                                                txs::Priority::ChainPermissionedValidatorCurrent));
+    }));
+
+    // The primary network never changed, so undoing height 2 leaves it alone.
+    auto primary = validators::current_set(s, kPrimaryNetworkId).value();
+    const auto primary_now = primary;
+    REQUIRE_OK(h.rewind(primary, kPrimaryNetworkId, 2, 1));
+    REQUIRE(primary == primary_now);
+
+    // The other network's validator comes back — with the key it inherits from
+    // its primary-network entry, since it holds none of its own.
+    auto other = validators::current_set(s, net).value();
+    REQUIRE(other.empty());
+    REQUIRE_OK(h.rewind(other, net, 2, 1));
+    REQUIRE_EQ_NUM(1, other.size());
+    REQUIRE_U64(100u, other.at(node_of(1)).weight);
+    REQUIRE(other.at(node_of(1)).public_key.has_value());
+}
+
+// An L1 validator can be removed and registered again under a new name in one
+// block, at the same weight. Nothing about the weight moved, so a record that
+// only tracked weight would have nothing to say — and the entry would keep the
+// name it has NOW when a past height is rebuilt, which is the wrong name for a
+// message signed then.
+TEST(AnL1ValidatorKeepsTheNameItHad) {
+    const Id net = id_of(0x40);
+    const auto key = validators::uncompress_public_key(pop(1).public_key).value();
+    const Id first = id_of(0x50);
+    const Id second = id_of(0x60);
+
+    state::MemState s;
+    REQUIRE_OK(s.put_l1_validator(l1_of(first, net, 0x11, 100, key)));
+    validators::History h;
+
+    const auto at_one = validators::current_set(s, net).value();
+    REQUIRE_EQ_NUM(1, at_one.size());
+    REQUIRE_EQ(first, at_one.at(node_of(0x11)).tx_id);
+    REQUIRE_U64(100u, at_one.at(node_of(0x11)).weight);
+
+    REQUIRE_OK(settle(s, h, 2, [&](state::Diff& d) {
+        auto gone = l1_of(first, net, 0x11, 100, key);
+        gone.weight = 0;  // removed
+        REQUIRE_MSG(d.put_l1_validator(gone).has_value(), "the removal was refused");
+        REQUIRE_MSG(d.put_l1_validator(l1_of(second, net, 0x11, 100, key)).has_value(),
+                    "the re-registration was refused");
+    }));
+
+    const auto at_two = validators::current_set(s, net).value();
+    REQUIRE_EQ_NUM(1, at_two.size());
+    REQUIRE_EQ(second, at_two.at(node_of(0x11)).tx_id);
+
+    auto back = at_two;
+    REQUIRE_OK(h.rewind(back, net, 2, 1));
+    REQUIRE(back == at_one);
+    REQUIRE_EQ(first, back.at(node_of(0x11)).tx_id);
+    REQUIRE_U64(100u, back.at(node_of(0x11)).weight);
+}
+
+// An L1 validator that was not there yet is not there when the height it joined
+// at is undone.
+TEST(AnL1ValidatorLeavesThePastAlone) {
+    const Id net = id_of(0x40);
+    const auto key = validators::uncompress_public_key(pop(2).public_key).value();
+    state::MemState s;
+    validators::History h;
+
+    REQUIRE_OK(settle(s, h, 2, [&](state::Diff& d) {
+        REQUIRE_MSG(d.put_l1_validator(l1_of(id_of(0x50), net, 0x11, 100, key)).has_value(),
+                    "the registration was refused");
+    }));
+    const auto at_two = validators::current_set(s, net).value();
+    REQUIRE_EQ_NUM(1, at_two.size());
+
+    auto back = at_two;
+    REQUIRE_OK(h.rewind(back, net, 2, 1));
+    REQUIRE(back.empty());
 }
