@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+
+[package]
+name = "lux-platformvm"
+version = "0.1.0"
+edition = "2021"
+description = "The Lux P-Chain in Rust — validators, staking, permissionless entry, L1s"
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node2"
+publish = false
+
+[dependencies]
+# `Id` is the host seam's own id type — `lux_consensus::finality::Id`, which is
+# `[u8; 32]`. Naming it from the same crate the host names it from is what makes
+# a chain here plug into `lux-rs/node`'s `Vm` with no conversion at the join.
+lux-consensus = "1.23.0"
+
+# SHA-256. A tx id is `sha256(signed bytes)` and a block id is `sha256(bytes)`;
+# a second implementation of that would be a second answer to "which block".
+sha2 = "0.10"
+
+# The signature a validator proves possession of. Same curve, same domain tag as
+# the Go P-Chain's proof of possession — a second BLS is a second network.
+blst = "0.3"
+
+# Recovering the address that authorised a spend. secp256k1, the same curve
+# the C-Chain already recovers with, and the only way a transaction that
+# carries signatures and no keys can be checked at all.
+k256 = { version = "0.13", features = ["ecdsa"] }
+
+# The second half of a P-Chain address: ripemd160 over sha256 of the
+# compressed key. Naming it here rather than reimplementing it is the
+# difference between one address for a key and two.
+ripemd = "0.1"
+
+# JSON-RPC is the shape the seam's `call` speaks in. Hand-parsing at a boundary
+# is a vulnerability with a schedule.
+serde_json = "1"
+
+[dev-dependencies]
+# The wire vectors build a proof of possession, which needs the same curve the
+# chain verifies under.
+blst = "0.3"
