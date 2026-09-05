@@ -137,7 +137,7 @@ target_compile_options(xvm PRIVATE -Wall -Wextra)
 #   mempool     the admission gate, the pool, and the bloom filter
 #   vm          build → verify → accept → REJECT over the node's seam
 enable_testing()
-set(XVM_TESTS wire root syntactic txs fx executor address state block genesis mempool
+set(XVM_TESTS wire root syntactic txs fx executor address state block genesis mempool durability
               semantic vm)
 foreach(_t ${XVM_TESTS})
   add_executable(${_t}_test test/${_t}_test.cpp)

@@ -33,55 +33,6 @@ using namespace lux::xvm::test;
 
 namespace {
 
-constexpr std::uint32_t kNetworkID = 369;
-constexpr std::uint64_t kGenesisTime = 1749000000;
-constexpr std::uint64_t kStartingBalance = 1000000;
-
-Id chain_id() { return id(0xC1); }
-
-fx::OutputOwners owner(int key = 0) { return fx::OutputOwners{0, 1, {test_address(key)}}; }
-
-std::shared_ptr<fx::secp256k1fx::TransferOutput> tout(std::uint64_t amt, int key = 0) {
-    auto o = std::make_shared<fx::secp256k1fx::TransferOutput>();
-    o->amt = amt;
-    o->out_owners = owner(key);
-    return o;
-}
-
-std::shared_ptr<fx::secp256k1fx::TransferInput> tin(std::uint64_t amt) {
-    auto i = std::make_shared<fx::secp256k1fx::TransferInput>();
-    i->amt = amt;
-    i->input.sig_indices = {0};
-    return i;
-}
-
-// genesis_asset is the one transaction the chain starts with: it defines the
-// asset AND, through its initial state, the outputs that hold its whole supply.
-std::shared_ptr<txs::Tx> genesis_asset(int num_outputs) {
-    auto utx = std::make_shared<txs::CreateAssetTx>();
-    utx->base.network_id = kNetworkID;
-    utx->base.blockchain_id = chain_id();
-    utx->name = "Lux";
-    utx->symbol = "LUX";
-    utx->denomination = 0;
-    txs::InitialState s;
-    s.fx_index = 0;
-    for (int i = 0; i < num_outputs; ++i) s.outs.push_back(tout(kStartingBalance, 0));
-    s.sort();
-    utx->states = {s};
-
-    auto tx = std::make_shared<txs::Tx>();
-    tx->unsigned_tx = utx;
-    (void)tx->initialize();
-    return tx;
-}
-
-std::vector<executor::ParsedFx> the_fxs() {
-    return {executor::ParsedFx{id(1), std::make_shared<fx::Secp256k1Fx>()},
-            executor::ParsedFx{id(2), std::make_shared<fx::NFTFx>()},
-            executor::ParsedFx{id(3), std::make_shared<fx::PropertyFx>()}};
-}
-
 // Chain is a booted VM: genesis installed, bootstrapped, clock set.
 struct Chain {
     store::Memory store;

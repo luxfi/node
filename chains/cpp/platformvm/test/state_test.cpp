@@ -379,7 +379,7 @@ TEST(ValidatorDiffWeight) {
 
 // The layered read: a diff answers from itself, then from its parent.
 TEST(DiffReadsThroughToParent) {
-    MemState base;
+    State base;
     base.set_timestamp(100);
     base.set_current_supply(kPrimaryNetworkId, 1000);
 
@@ -416,7 +416,7 @@ TEST(DiffReadsThroughToParent) {
 
 // UTXOs: added, hidden, and deleted through a layer.
 TEST(DiffUTXOs) {
-    MemState base;
+    State base;
     UTXO u;
     u.utxo = UtxoId{id_of(9), 0};
     u.asset = id_of(0x10);
@@ -445,7 +445,7 @@ TEST(DiffUTXOs) {
 // Go: metadata.GetDelegateeReward — a validator that is not in the set has no
 // ledger, and asking is a refusal rather than a zero.
 TEST(DelegateeRewardLedgerFollowsTheValidator) {
-    MemState base;
+    State base;
     Staker s = new_test_staker();
     s.chain_id = kPrimaryNetworkId;
 
@@ -466,7 +466,7 @@ TEST(DelegateeRewardLedgerFollowsTheValidator) {
 
 // The next moment the set changes bounds how far a block may move the clock.
 TEST(NextStakerChangeTime) {
-    MemState base;
+    State base;
     base.set_timestamp(0);
     REQUIRE_U64(9999u, next_staker_change_time(base, 9999));
 
