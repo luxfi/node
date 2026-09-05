@@ -273,6 +273,21 @@ pub fn verify_credentials(
     Ok(())
 }
 
+/// The shape of the check, pinned.
+///
+/// This once took a recovery function as an argument, and nothing supplied
+/// one — so the loop above ran zero times and a transaction executed with no
+/// signature checked at all. The fix was not to find the missing caller: it
+/// was to stop the check taking an answer from outside, so that there is
+/// nothing to forget to pass.
+///
+/// The type below says exactly that. Adding a parameter of any kind — a
+/// recoverer, a verifier, a flag that skips the loop — changes this function's
+/// type and this line stops compiling. It is not a test that has to be run and
+/// it is not a rule anyone has to remember; it is the build.
+const _: fn(&[Utxo], &[Input], &[Credential], &Id, u64) -> Result<(), CredentialError> =
+    verify_credentials;
+
 /// Why the signatures do not authorise the spend.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CredentialError {

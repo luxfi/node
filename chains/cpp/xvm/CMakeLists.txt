@@ -151,3 +151,13 @@ if(XVM_SANITIZE)
     target_link_options(${_t} PRIVATE ${_san})
   endforeach()
 endif()
+
+# The C++ X-chain's evaluator for the cross-language chain differential. It is
+# not a test: it prints this chain's answer for every X vector in
+# conformance/corpus/vectors.tsv and says nothing about whether that answer is
+# right. Deciding that is the runner's job, and it needs all three answers to do
+# it. Built unconditionally — a differential that quietly lost one of its three
+# voices would report agreement among whoever was left.
+add_executable(xvm_conformance test/conformance.cpp)
+target_link_libraries(xvm_conformance PRIVATE xvm)
+target_compile_options(xvm_conformance PRIVATE -Wall -Wextra)
