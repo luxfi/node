@@ -87,6 +87,7 @@ message(STATUS "xvm: VM seam at ${_node}, Id from ${_consensus}")
 # asks a primitive through — and behind the runtime choice between computing it
 # and handing it to an installed kernel library. It used to be compiled here and
 # again in platformvm; a primitive with two builds has two places to drift.
+set(LUXCPP_CRYPTO_DIR "${_crypto}")
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../gpu/cpp ${CMAKE_CURRENT_BINARY_DIR}/lux_gpu)
 
 # ── xvm itself ───────────────────────────────────────────────────────────────
