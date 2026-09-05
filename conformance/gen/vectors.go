@@ -214,6 +214,39 @@ func buildCorpus() []Vector {
 	v = append(v, malformations(pBlocks)...)
 	v = append(v, malformations(xTx)...)
 	v = append(v, malformations(xBlk)...)
+
+	// The same treatment for the three chains whose vectors are wire. Which of
+	// them to damage is not listed by hand: a vector is damaged if this
+	// reference reads it back, which is the only property that makes damaging
+	// it meaningful. Half of a truncation is a truncation, and a vector that
+	// was already damaged on purpose is one.
+	//
+	// The F genesis is excluded by its op rather than by its size: it is not a
+	// transaction, it is the CHAIN the F transactions are judged on, and a
+	// truncated copy of it beside the real one is a second answer to the
+	// question of which chain that is.
+	v = append(v, malformations(wellFormed(qVectors()))...)
+	v = append(v, malformations(wellFormed(zVectors()))...)
+	v = append(v, malformations(wellFormed(fVectors()))...)
+	return v
+}
+
+// wellFormed keeps the vectors this reference reads back as a block or a
+// transaction, which are the only ones worth cutting short or running long.
+func wellFormed(src []Vector) []Vector {
+	var v []Vector
+	for _, s := range src {
+		if s.Op != "tx" && s.Op != "block" {
+			continue
+		}
+		if s.Wire == none || len(s.Wire) < 2*8 {
+			continue
+		}
+		if evaluate(s).Parse != "ok" {
+			continue
+		}
+		v = append(v, s)
+	}
 	return v
 }
 

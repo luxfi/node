@@ -19,12 +19,19 @@ answers next to each other.
 
 | | vectors | Go | Rust | C++ |
 | --- | --- | --- | --- | --- |
-| P platformvm | 39 | yes | yes | yes |
-| X xvm | 14 | yes | yes | yes |
-| Q quantumvm | 21 | yes | **no** | yes |
-| Z zkvm | 27 | yes | **no** | yes |
+| P platformvm | 159 | yes | yes | yes |
+| X xvm | 49 | yes | yes | yes |
+| Q quantumvm | 81 | yes | **no** | yes |
+| Z zkvm | 137 | yes | **no** | yes |
 | D dexvm | 35 | yes | **no** | yes |
-| F fhevm | 33 | yes | **no** | yes |
+| F fhevm | 168 | yes | **no** | yes |
+
+Most of those counts are damage. Every vector this reference reads back as a
+block or a transaction is also cut to a quarter, cut to a half, cut by one
+byte, extended by one and extended by four — which is where a parser reads past
+a buffer. Which vectors get that treatment is not a list anyone maintains: a
+vector is damaged if the reference parses it, because half of a truncation is a
+truncation and a vector already damaged on purpose is one.
 
 P and X come from `luxfi/node`; Q, Z, D and F from `luxfi/chains`. Both are
 PUBLISHED versions and there is no replace directive, so the corpus regenerates
@@ -226,7 +233,7 @@ make chains-corpus    regenerate the corpus from the Go reference
 ```
 
 **`make chains` fails today, and it should.** Four chains have no Rust
-evaluator, the runner lists 116 vectors under NOT ANSWERED, and it exits
+evaluator, the runner lists 421 vectors under NOT ANSWERED, and it exits
 non-zero. Silence is not agreement.
 
 The corpus is committed, so a reference that changed its mind shows up as a
@@ -251,7 +258,7 @@ on each of Q, Z, D and F, and the derived id moves on all four; Go and C++
 independently compute the SAME new id, and both differ from the corpus. A
 harness that could not do that would agree with everything.
 
-**Q — 21 of 21 agree.** The wire, the canonical re-encode, the block id, the
+**Q — 81 of 81 agree.** The wire, the canonical re-encode, the block id, the
 chain binding and the ML-DSA verification all match. What the differential
 caught was in the evaluator, and it is worth writing down: built on a
 default-CONSTRUCTED `Config` rather than the chain's `default_config()`, the
@@ -265,10 +272,11 @@ downstream says so.
 **D — 35 of 35 agree.** Every asset id, every market id, the kind and mode
 parsers, the network class and the value-activation guard.
 
-**F — 33 of 33 agree.** The six operations, every payload rule, the four ways
-a signature can fail to be the payer's, and the id the genesis block takes.
+**F — 168 of 168 agree.** The six operations, every payload rule, the four
+ways a signature can fail to be the payer's, and the id the genesis block
+takes.
 
-**Z — 27 vectors, 23 fully agree, 4 disagree on one field.**
+**Z — 137 vectors, 133 fully agree, 4 disagree on one field.**
 
 `Z_BLOCK_TIME_AHEAD`, `Z_BLOCK_GENESIS_WITH_PARENT`,
 `Z_BLOCK_DUPLICATE_NULLIFIER` and `Z_TX_EXPIRED`: Go answers `syntactic
