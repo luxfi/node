@@ -7,7 +7,8 @@
 
 namespace lux::xvm {
 
-Vm::Vm(VmConfig config, std::vector<executor::ParsedFx> fxs) : config_(std::move(config)) {
+Vm::Vm(VmConfig config, std::vector<executor::ParsedFx> fxs, store::Store& store)
+    : config_(std::move(config)), state_(store), gossip_(pool_, *this) {
     backend_.config.tx_fee = config_.tx_fee;
     backend_.config.create_asset_tx_fee = config_.create_asset_tx_fee;
     backend_.fee_asset_id = config_.fee_asset_id;
@@ -49,6 +50,23 @@ void Vm::set_now(std::uint64_t unix_seconds) {
 
 wire::Result<void> Vm::initialize(std::vector<std::shared_ptr<txs::Tx>> genesis_txs,
                                   std::uint64_t genesis_time) {
+    // Whatever the store already holds IS this chain, so it is read first. A
+    // node that installed genesis on top of it would rewrite history at every
+    // restart.
+    if (auto r = state_.load(); !r) return std::unexpected(r.error());
+
+    if (state_.initialized()) {
+        last_accepted_ = state_.get_last_accepted();
+        preferred_ = last_accepted_;
+        // The last accepted block must actually be there; a store that names a
+        // block it does not hold is a store this node cannot boot from, and
+        // saying so is better than signing from an empty chain.
+        if (auto blk = state_.get_block(last_accepted_); !blk)
+            return std::unexpected("last accepted block " + hex(last_accepted_) +
+                                   " is not in the store: " + blk.error());
+        return {};
+    }
+
     for (const auto& tx : genesis_txs) {
         if (tx == nullptr) return std::unexpected("nil genesis tx");
         state_.add_tx(tx);
@@ -60,8 +78,12 @@ wire::Result<void> Vm::initialize(std::vector<std::shared_ptr<txs::Tx>> genesis_
     if (!blk) return std::unexpected(blk.error());
     state_.add_block(*blk);
     state_.set_last_accepted((*blk)->block_id);
+    state_.set_initialized();
     last_accepted_ = (*blk)->block_id;
     preferred_ = last_accepted_;
+    // Genesis is durable before this returns: the height it closes is the one
+    // every later block is measured from.
+    if (auto r = state_.commit(); !r) return std::unexpected(r.error());
     return {};
 }
 
@@ -110,29 +132,36 @@ wire::Result<std::shared_ptr<block::StandardBlock>> Vm::stateless_block(const Id
     return state_.get_block(blk_id);
 }
 
+wire::Result<void> Vm::verify_tx(txs::Tx& tx) {
+    // A node still replaying history has no opinion worth having: its state is
+    // behind, so every verdict it reached would be about a chain that no longer
+    // exists. Go refuses outright rather than answering from a stale state.
+    if (!backend_.bootstrapped) return std::unexpected(kErrChainNotSynced);
+
+    executor::SyntacticVerifier syn(backend_, tx);
+    if (auto r = tx.unsigned_tx->visit(syn); !r) return std::unexpected(r.error());
+
+    // Against the LAST ACCEPTED state, which is Go's choice and not an
+    // arbitrary one: two nodes preferring different tips would otherwise admit
+    // different transactions, and a node's mempool would depend on which block
+    // it happened to be looking at.
+    auto diff = state::Diff::create(last_accepted_, *this);
+    if (!diff) return std::unexpected(diff.error());
+
+    executor::SemanticVerifier sem(backend_, **diff, tx);
+    if (auto r = tx.unsigned_tx->visit(sem); !r) return std::unexpected(r.error());
+
+    executor::Executor exec(**diff, tx);
+    return tx.unsigned_tx->visit(exec);
+}
+
 wire::Result<void> Vm::issue(std::shared_ptr<txs::Tx> tx) {
-    if (tx == nullptr) return std::unexpected(txs::kErrNilTx);
-
-    executor::SyntacticVerifier syn(backend_, *tx);
-    if (auto r = tx->unsigned_tx->visit(syn); !r)
-        return std::unexpected("failed to syntactically verify tx: " + r.error());
-
-    // Semantic verification runs against the PREFERRED state, which is the state
-    // the next block would be built on — verifying against the last accepted one
-    // would accept a tx that conflicts with a block already in flight.
-    state::Chain* preferred = get_state(preferred_);
-    if (preferred == nullptr) return std::unexpected(state::kErrMissingParentState);
-    executor::SemanticVerifier sem(backend_, *preferred, *tx);
-    if (auto r = tx->unsigned_tx->visit(sem); !r)
-        return std::unexpected("failed to semantically verify tx: " + r.error());
-
-    mempool_.push_back(std::move(tx));
-    return {};
+    return gossip_.add(std::move(tx));
 }
 
 std::shared_ptr<lux::node::Block> Vm::build() {
     last_error_.clear();
-    if (mempool_.empty()) {
+    if (pool_.len() == 0) {
         // Nothing to build is "no", not a failure — the house form for the whole
         // seam.
         last_error_ = kErrEmptyBlock;
@@ -165,18 +194,48 @@ std::shared_ptr<lux::node::Block> Vm::build() {
 
     std::vector<std::shared_ptr<txs::Tx>> included;
     std::set<Id> imported;
-    for (const auto& tx : mempool_) {
-        executor::SemanticVerifier sem(backend_, **diff, *tx);
-        if (auto r = tx->unsigned_tx->visit(sem); !r) continue;
-        executor::Executor exec(**diff, *tx);
-        if (auto r = tx->unsigned_tx->visit(exec); !r) continue;
+    std::size_t remaining = kTargetBlockSize;
+    while (true) {
+        auto tx = pool_.peek();
+        if (tx == nullptr || tx->size() > remaining) break;
+        // Taken out of the pool BEFORE it is tried: a transaction that fails
+        // here is finished, and one that succeeds is in the block. Either way
+        // the next round must not meet it again at the head of the queue.
+        pool_.remove(tx);
+
+        // Its own diff, so a transaction that fails halfway leaves nothing
+        // behind in the block's. Go: state.NewDiffOn.
+        auto tx_diff = state::Diff::on(**diff);
+
+        executor::SemanticVerifier sem(backend_, *tx_diff, *tx);
+        if (auto r = tx->unsigned_tx->visit(sem); !r) {
+            pool_.mark_dropped(tx->id(), r.error());
+            continue;
+        }
+        executor::Executor exec(*tx_diff, *tx);
+        if (auto r = tx->unsigned_tx->visit(exec); !r) {
+            pool_.mark_dropped(tx->id(), r.error());
+            continue;
+        }
+
         bool conflicts = false;
         for (const auto& in : exec.inputs) {
             if (imported.count(in) != 0) conflicts = true;
         }
-        if (conflicts) continue;
+        if (conflicts) {
+            pool_.mark_dropped(tx->id(), kErrConflictingBlockTxs);
+            continue;
+        }
+        if (auto r = verify_unique_inputs(preferred_, exec.inputs); !r) {
+            pool_.mark_dropped(tx->id(), r.error());
+            continue;
+        }
         for (const auto& in : exec.inputs) imported.insert(in);
-        (*diff)->add_tx(tx);
+
+        tx_diff->add_tx(tx);
+        tx_diff->apply(**diff);
+
+        remaining -= tx->size();
         included.push_back(tx);
     }
     if (included.empty()) {
@@ -254,9 +313,11 @@ wire::Result<void> Vm::verify_block(const std::shared_ptr<block::StandardBlock>&
 
     for (const auto& tx : blk->transactions) {
         executor::SyntacticVerifier syn(backend_, *tx);
-        if (auto r = tx->unsigned_tx->visit(syn); !r)
+        if (auto r = tx->unsigned_tx->visit(syn); !r) {
+            pool_.mark_dropped(tx->id(), r.error());
             return std::unexpected("failed to syntactically verify tx " + hex(tx->id()) + ": " +
                                    r.error());
+        }
     }
 
     auto parent = stateless_block(blk->parent_id);
@@ -279,17 +340,23 @@ wire::Result<void> Vm::verify_block(const std::shared_ptr<block::StandardBlock>&
 
     for (const auto& tx : blk->transactions) {
         executor::SemanticVerifier sem(backend_, **diff, *tx);
-        if (auto r = tx->unsigned_tx->visit(sem); !r)
+        if (auto r = tx->unsigned_tx->visit(sem); !r) {
+            pool_.mark_dropped(tx->id(), r.error());
             return std::unexpected("failed to semantically verify tx " + hex(tx->id()) + ": " +
                                    r.error());
+        }
 
         executor::Executor exec(**diff, *tx);
-        if (auto r = tx->unsigned_tx->visit(exec); !r)
+        if (auto r = tx->unsigned_tx->visit(exec); !r) {
+            pool_.mark_dropped(tx->id(), r.error());
             return std::unexpected("failed to execute tx " + hex(tx->id()) + ": " + r.error());
+        }
 
         for (const auto& in : exec.inputs) {
-            if (pending.imported_inputs.count(in) != 0)
+            if (pending.imported_inputs.count(in) != 0) {
+                pool_.mark_dropped(tx->id(), kErrConflictingBlockTxs);
                 return std::unexpected(kErrConflictingBlockTxs);
+            }
         }
         for (const auto& in : exec.inputs) pending.imported_inputs.insert(in);
 
@@ -327,12 +394,9 @@ wire::Result<void> Vm::verify_block(const std::shared_ptr<block::StandardBlock>&
     pending_[blk_id] = std::move(pending);
 
     // Everything in the block leaves the mempool: it is either in the chain or
-    // it conflicts with something that is.
-    for (const auto& tx : blk->transactions) {
-        std::erase_if(mempool_, [&](const std::shared_ptr<txs::Tx>& m) {
-            return m->id() == tx->id();
-        });
-    }
+    // it conflicts with something that is. `remove` takes the conflicts too,
+    // which is why it is one call rather than an erase per id.
+    pool_.remove(blk->transactions);
     return {};
 }
 
@@ -342,22 +406,53 @@ void Vm::accept_block(const Id& blk_id) {
         last_error_ = kErrBlockNotFound;
         return;
     }
+    pool_.remove(it->second.blk->transactions);
     it->second.on_accept->apply(state_);
     last_accepted_ = blk_id;
     preferred_ = blk_id;
 
-    auto blk = it->second.blk;
+    // Only THIS block's pinned state is freed. A sibling is freed when consensus
+    // rejects it, and rejecting is what returns its transactions — dropping it
+    // here instead would silently discard them. Go frees exactly one block too
+    // (manager.free).
     pending_.erase(it);
 
-    // Drop every sibling: a block that is not on the accepted chain can no
-    // longer be accepted, and keeping its diff pinned would let a later block
-    // build on state that will never exist.
-    for (auto p = pending_.begin(); p != pending_.end();) {
-        if (p->second.blk->height <= blk->height) {
-            p = pending_.erase(p);
-        } else {
-            ++p;
-        }
+    // Durable before this returns. The seam says so: last_accepted() must
+    // report this block after a restart, and that is what closes the height to
+    // a second signature.
+    if (auto r = state_.commit(); !r) last_error_ = r.error();
+}
+
+void Vm::reject_block(const Id& blk_id) {
+    last_error_.clear();
+    auto blk = stateless_block(blk_id);
+    if (!blk) {
+        last_error_ = blk.error();
+        return;
+    }
+    // The block's pinned state goes first — it can never be accepted now, and a
+    // later block must not be able to build on it.
+    pending_.erase(blk_id);
+
+    for (const auto& tx : (*blk)->transactions) {
+        // Losing a race is not the same as being wrong. Each transaction is
+        // asked again, against the state that actually won; the ones that still
+        // hold go back into the pool, and the ones that no longer do are simply
+        // let go.
+        //
+        // NOTHING IS MARKED DROPPED HERE, and that is Go's behaviour rather than
+        // an omission. A drop reason is a CACHED refusal: while it is
+        // remembered, the same transaction offered again is refused from the
+        // cache without being re-verified. A transaction invalidated by a
+        // reorganisation is exactly the kind that can become valid again, so
+        // caching a refusal for it would have this node refuse what Go admits —
+        // the same divergence in the pending set that dropping the block's
+        // transactions altogether would cause, only quieter. Go's
+        // block/executor.Block.Reject logs both failures and remembers neither;
+        // MarkDropped belongs to the admission gate (gossipMempool.Add) and to
+        // the builder, where a refusal really is about the transaction.
+        if (auto r = verify_tx(*tx); !r) continue;
+        (void)pool_.add(tx);
     }
 }
 
@@ -372,5 +467,7 @@ bool VmBlock::verify() {
 }
 
 void VmBlock::accept() { vm_->accept_block(blk_->block_id); }
+
+void VmBlock::reject() { vm_->reject_block(blk_->block_id); }
 
 }  // namespace lux::xvm

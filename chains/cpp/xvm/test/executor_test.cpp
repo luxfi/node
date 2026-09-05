@@ -115,7 +115,7 @@ bool at(const state::Chain& chain, const Id& tx_id, std::uint32_t index, const I
 void base_tx_executor() {
     std::printf("\n  -- BaseTx --\n");
 
-    state::State chain;
+    test::MemoryState chain;
     chain.add_utxo(seeded_utxo());
 
     auto utx = std::make_shared<txs::BaseTx>();
@@ -143,7 +143,7 @@ void base_tx_executor() {
 void create_asset_tx_executor() {
     std::printf("\n  -- CreateAssetTx --\n");
 
-    state::State chain;
+    test::MemoryState chain;
     chain.add_utxo(seeded_utxo());
 
     auto utx = std::make_shared<txs::CreateAssetTx>();
@@ -179,7 +179,7 @@ void create_asset_tx_executor() {
 void operation_tx_executor() {
     std::printf("\n  -- OperationTx --\n");
 
-    state::State chain;
+    test::MemoryState chain;
     chain.add_utxo(seeded_utxo(1));
 
     // The operation consumes a SECOND UTXO — a mint authority — which is not an
@@ -226,7 +226,7 @@ void operation_tx_executor() {
 void import_tx_executor() {
     std::printf("\n  -- ImportTx --\n");
 
-    state::State chain;
+    test::MemoryState chain;
     const Id source = id(0x77);
 
     auto utx = std::make_shared<txs::ImportTx>();
@@ -263,7 +263,7 @@ void import_tx_executor() {
 void export_tx_executor() {
     std::printf("\n  -- ExportTx --\n");
 
-    state::State chain;
+    test::MemoryState chain;
     chain.add_utxo(seeded_utxo());
     const Id destination = id(0x88);
 

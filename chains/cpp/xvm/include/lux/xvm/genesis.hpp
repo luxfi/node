@@ -16,9 +16,11 @@
 
 #pragma once
 
+#include "lux/xvm/address.hpp"
 #include "lux/xvm/id.hpp"
 #include "lux/xvm/txs.hpp"
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -49,6 +51,53 @@ struct Asset {
 struct Genesis {
     std::vector<Asset> assets;
 };
+
+// ---- a genesis stated rather than encoded ----
+//
+// A definition is what a person writes: how much of an asset each address
+// holds, and who may mint more. `from_definitions` turns that into the
+// transactions above, which is the only way a genesis is ever authored — the
+// buffer is an output, never an input a human edits. Go: xvm.NewGenesis.
+
+// Holder is an amount and the address that owns it, written as bech32.
+struct Holder {
+    std::uint64_t amount = 0;
+    std::string address;
+};
+
+// Owners is who may mint more of an asset, and how many of them must agree.
+struct Owners {
+    std::uint32_t threshold = 0;
+    std::vector<std::string> minters;
+};
+
+// What an asset holds the moment the chain starts: fixed holdings, and the
+// right to create more. An asset with neither is a definition with no initial
+// state at all, which is allowed and means exactly that.
+struct InitialState {
+    std::vector<Holder> fixed_cap;
+    std::vector<Owners> variable_cap;
+
+    bool empty() const { return fixed_cap.empty() && variable_cap.empty(); }
+};
+
+struct AssetDefinition {
+    std::string name;
+    std::string symbol;
+    std::uint8_t denomination = 0;
+    InitialState initial_state;
+    Bytes memo;
+};
+
+// from_definitions builds the genesis these definitions describe.
+//
+// The map is keyed by alias and the result is ordered BY that alias, so the
+// buffer does not depend on the order the definitions were given in — a genesis
+// whose bytes depended on iteration order would give two nodes two different
+// fee assets. Every created transaction names the empty chain id, as Go's does:
+// a genesis asset is defined before the chain that carries it has an id.
+Result<Genesis> from_definitions(std::uint32_t network_id,
+                                 const std::map<std::string, AssetDefinition>& definitions);
 
 // bytes writes the canonical genesis buffer:
 //

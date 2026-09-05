@@ -154,14 +154,14 @@ void store_cases() {
     auto seed_blk = a_block(id(0x30), 7, 0x31);
 
     {
-        state::State s;
+        test::MemoryState s;
         s.add_utxo(seeded);
         s.add_tx(seed_tx);
         s.add_block(seed_blk);
         chain_cases(s, seeded, seed_tx, seed_blk, "State");
     }
     {
-        state::State s;
+        test::MemoryState s;
         s.add_utxo(seeded);
         s.add_tx(seed_tx);
         s.add_block(seed_blk);
@@ -180,7 +180,7 @@ void store_cases() {
 void diff_isolation() {
     std::printf("\n  -- a diff records, it does not write --\n");
 
-    state::State s;
+    test::MemoryState s;
     const auto kept = utxo_with(id(0x11), 0, 10);
     const auto doomed = utxo_with(id(0x11), 1, 11);
     s.add_utxo(kept);
@@ -235,7 +235,7 @@ void missing_parent() {
 void ascending_order() {
     std::printf("\n  -- enumeration --\n");
 
-    state::State s;
+    test::MemoryState s;
     const Id tx_id = id(0x81);
     std::vector<txs::UTXO> want;
     for (std::uint32_t i = 0; i < 16; ++i) {
@@ -251,7 +251,7 @@ void ascending_order() {
 }
 
 void overlay_and_removal() {
-    state::State s;
+    test::MemoryState s;
     const Id tx_id = id(0x82);
     std::vector<txs::UTXO> committed;
     for (std::uint32_t i = 0; i < 4; ++i) {
@@ -272,7 +272,7 @@ void overlay_and_removal() {
 
     // Writing the same UTXOID twice replaces, never duplicates: the id is the
     // identity, so two rows under one id would be two answers to one question.
-    state::State r;
+    test::MemoryState r;
     auto orig = utxo_with(tx_id, 7, 500);
     r.add_utxo(orig);
     auto replacement = utxo_with(tx_id, 7, 777);
@@ -287,7 +287,7 @@ void overlay_and_removal() {
 }
 
 void start_and_limit() {
-    state::State s;
+    test::MemoryState s;
     const Id tx_id = id(0x83);
     std::vector<txs::UTXO> all;
     for (std::uint32_t i = 0; i < 20; ++i) {
@@ -318,13 +318,13 @@ void start_and_limit() {
 
 void empty_and_phantom() {
     {
-        state::State s;
+        test::MemoryState s;
         check(s.utxos(kEmptyId, 0).empty(), "an empty set enumerates to nothing");
     }
     {
         // Deleting something that was never there changes nothing. A phantom
         // removal that shortened the set would silently change the root.
-        state::State s;
+        test::MemoryState s;
         const Id tx_id = id(0x84);
         std::vector<txs::UTXO> committed;
         for (std::uint32_t i = 0; i < 3; ++i) {
@@ -339,7 +339,7 @@ void empty_and_phantom() {
     {
         // Repeating the enumeration gives the same answer. It has to: the root
         // is a fold over it.
-        state::State s;
+        test::MemoryState s;
         const Id tx_id = id(0x86);
         for (std::uint32_t i = 0; i < 50; ++i) s.add_utxo(utxo_with(tx_id, i, i));
         const auto first = ids_of(s.utxos(kEmptyId, 0));
@@ -352,7 +352,7 @@ void empty_and_phantom() {
 void diff_enumeration() {
     std::printf("\n  -- enumeration through a diff --\n");
 
-    state::State s;
+    test::MemoryState s;
     const Id tx_id = id(0x87);
     std::vector<txs::UTXO> parent;
     for (std::uint32_t i = 0; i < 6; ++i) {
@@ -381,7 +381,7 @@ void diff_enumeration() {
     check(std::is_sorted(got.begin(), got.end()), "the merged stream stays ascending");
 
     // A parent larger than any one page: the merge must not stop at a boundary.
-    state::State big;
+    test::MemoryState big;
     std::vector<txs::UTXO> many;
     for (std::uint32_t i = 0; i < 537; ++i) {
         many.push_back(utxo_with(tx_id, i, i));
