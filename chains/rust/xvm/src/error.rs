@@ -315,7 +315,10 @@ impl std::fmt::Display for Error {
             DuplicateTx => write!(f, "duplicate tx"),
             TxTooLarge(got, max) => write!(f, "tx too large: size ({got}) > max size ({max})"),
             MempoolFull(got, free) => {
-                write!(f, "mempool is full: size ({got}) > available space ({free})")
+                write!(
+                    f,
+                    "mempool is full: size ({got}) > available space ({free})"
+                )
             }
             ConflictsWithOtherTx => write!(f, "tx conflicts with other tx"),
             ClassicalCredentialRefused => write!(

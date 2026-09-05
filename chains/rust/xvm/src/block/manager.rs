@@ -228,6 +228,18 @@ impl Manager {
             let mut store = self.store.lock().expect("chain layer poisoned");
             diff.apply(&mut *store);
             store.add_block(p.block.clone());
+            // Where the chain now stands, in the store rather than only in this
+            // manager: a manager reads these back at start-up, so a chain that
+            // recorded the block but not its position would restart one block
+            // behind the state it holds. Go writes the same two in the same
+            // place, `SetLastAccepted` and `SetTimestamp` on the accept path.
+            store.set_last_accepted(*blk_id);
+            store.set_timestamp(p.block.timestamp());
+            // And onto the device, if there is one. Everything this block did
+            // goes in one batch with the position it moved the chain to, so a
+            // restart never sees a block applied at a height the chain has not
+            // reached, or a position pointing at a block that is not there.
+            store.commit()?;
         }
         self.last_accepted = *blk_id;
         Ok(p.atomic_requests)
@@ -283,7 +295,7 @@ impl Manager {
 
     /// Install the first block. The chain has to start somewhere, and it is not
     /// a block anybody verified — there is no parent to verify it against.
-    pub fn set_genesis(&mut self, genesis: Block) {
+    pub fn set_genesis(&mut self, genesis: Block) -> Result<()> {
         let id = genesis.id();
         let time = genesis.timestamp();
         {
@@ -291,9 +303,15 @@ impl Manager {
             store.add_block(genesis);
             store.set_last_accepted(id);
             store.set_timestamp(time);
+            // Block zero and the state its transactions produced go down
+            // together, in one batch with the position they put the chain at.
+            // A chain that wrote genesis in pieces could come back holding half
+            // of it, which is a chain nobody agrees with.
+            store.commit()?;
         }
         self.last_accepted = id;
         self.preferred = id;
+        Ok(())
     }
 }
 
@@ -484,7 +502,8 @@ mod tests {
 
     fn genesis(mgr: &mut Manager) -> Block {
         let g = Block::new(EMPTY, 0, 0, EMPTY, vec![]).unwrap();
-        mgr.set_genesis(g.clone());
+        mgr.set_genesis(g.clone())
+            .expect("a fresh manager takes its genesis");
         g
     }
 
@@ -612,7 +631,8 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1), (8, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = Block::new(EMPTY, 0, 500, EMPTY, vec![]).unwrap();
-        mgr.set_genesis(g.clone());
+        mgr.set_genesis(g.clone())
+            .expect("a fresh manager takes its genesis");
         let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);

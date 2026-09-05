@@ -25,7 +25,7 @@ use crate::host;
 use crate::ids::Id;
 use crate::mempool::Mempool;
 use crate::security::{Exempt, Profile};
-use crate::state::{Chain as _, Store};
+use crate::state::{Chain as _, ReadOnlyChain as _, Store};
 use crate::txs::executor::{Backend, Config, Net, SharedMemory};
 use crate::txs::Tx;
 use crate::utxo::Runtime;
@@ -128,7 +128,7 @@ pub struct Xvm {
 const NUM_FXS: usize = 3;
 
 impl Xvm {
-    /// Start a chain from its genesis.
+    /// Start a chain from its genesis, holding it in memory only.
     ///
     /// The genesis transactions are applied to the store and then sealed into
     /// block zero, so the chain's first state and its first block agree by
@@ -139,7 +139,85 @@ impl Xvm {
         net: Option<Arc<dyn Net>>,
         shared_memory: Option<Arc<dyn SharedMemory>>,
     ) -> crate::Result<Xvm> {
-        let mut store = Store::new();
+        Xvm::start(genesis, clock, net, shared_memory, Store::new())
+    }
+
+    /// Start a chain on a database, from its genesis or from where it was left.
+    ///
+    /// An empty database is a chain that has never run: genesis is applied and
+    /// sealed, exactly as [`Xvm::new`] does, and then written down. A database
+    /// that has been written to is a chain that HAS run, and it comes back as
+    /// it was — genesis is not re-applied, because doing so would execute
+    /// transactions that were executed once already.
+    ///
+    /// The genesis it is handed is still checked against the one on disk. A
+    /// node pointed at another chain's database has to be told so: silently
+    /// running one chain's genesis over another chain's state is how two
+    /// networks end up sharing a directory and disagreeing about history.
+    pub fn open(
+        genesis: Genesis,
+        clock: Arc<dyn Clock>,
+        net: Option<Arc<dyn Net>>,
+        shared_memory: Option<Arc<dyn SharedMemory>>,
+        db: Arc<dyn crate::db::Db>,
+    ) -> crate::Result<Xvm> {
+        let store = Store::on(db)?;
+        if !store.is_initialized() {
+            return Xvm::start(genesis, clock, net, shared_memory, store);
+        }
+
+        // The chain has run. The genesis block it ran under is block zero, and
+        // it is on disk: the caller's genesis has to seal to the same block.
+        let want = Block::new(
+            ids::EMPTY,
+            0,
+            genesis.timestamp,
+            ids::EMPTY,
+            genesis.txs.clone(),
+        )?;
+        let held = store
+            .get_block_id_at_height(0)
+            .and_then(|id| store.get_block(&id));
+        match held {
+            Ok(blk) if blk.id() == want.id() => {}
+            Ok(blk) => {
+                return Err(ChainError::Storage(format!(
+                    "this database is chain {}, not {}",
+                    ids::hex(&blk.id()),
+                    ids::hex(&want.id())
+                )))
+            }
+            Err(_) => {
+                return Err(ChainError::Storage(
+                    "an initialised database with no genesis block".into(),
+                ))
+            }
+        }
+
+        let manager = Manager::new(store.shared());
+        Ok(Xvm {
+            inner: Mutex::new(Inner {
+                manager,
+                mempool: Mempool::new(),
+                bootstrapped: false,
+                known: std::collections::HashMap::new(),
+            }),
+            genesis,
+            clock,
+            net,
+            shared_memory,
+            fx_index: fx::FxIndex::standard(),
+        })
+    }
+
+    /// Apply genesis to a fresh store and seal block zero.
+    fn start(
+        genesis: Genesis,
+        clock: Arc<dyn Clock>,
+        net: Option<Arc<dyn Net>>,
+        shared_memory: Option<Arc<dyn SharedMemory>>,
+        mut store: Store,
+    ) -> crate::Result<Xvm> {
         for tx in &genesis.txs {
             crate::txs::executor::execute(&mut store, tx)?;
             store.add_tx(tx.clone());
@@ -153,7 +231,7 @@ impl Xvm {
             ids::EMPTY,
             genesis.txs.clone(),
         )?;
-        manager.set_genesis(genesis_block);
+        manager.set_genesis(genesis_block)?;
         Ok(Xvm {
             inner: Mutex::new(Inner {
                 manager,
@@ -543,7 +621,7 @@ fn id_param(params: &serde_json::Value, name: &str) -> Result<Id, host::Error> {
 mod tests {
     use super::*;
     use crate::fx::secp256k1::{address_of, MintOutput, TransferInput, TransferOutput};
-    use crate::fx::{Input, Owners, State};
+    use crate::fx::{FxIn, Input, Owners, State};
     use crate::host::Vm as _;
     use crate::ids::ShortId;
     use crate::txs::executor::AtomicRequests;
@@ -634,6 +712,33 @@ mod tests {
         (vm, g, clock)
     }
 
+    /// The same chain, on a database, opened rather than created — so calling
+    /// it twice over one database is a restart.
+    fn a_chain_on(db: Arc<dyn crate::db::Db>, now: u64) -> (Xvm, Tx) {
+        let g = genesis_tx();
+        let vm = Xvm::open(
+            Genesis {
+                network_id: NETWORK_ID,
+                chain_id: chain_id(),
+                net_id: ids::prefixed(&[0xAB]),
+                fee_asset_id: g.id(),
+                config: Config {
+                    tx_fee: 0,
+                    create_asset_tx_fee: 0,
+                },
+                txs: vec![g.clone()],
+                timestamp: 1000,
+            },
+            Arc::new(FixedClock::new(now)),
+            Some(Arc::new(OneNet)),
+            Some(Arc::new(NoMemory)),
+            db,
+        )
+        .unwrap();
+        vm.set_bootstrapped(true);
+        (vm, g)
+    }
+
     /// Spend the genesis transfer output (index 1) into one output.
     fn spend_genesis(g: &Tx, amt: u64, n: u8) -> Tx {
         let mut tx = Tx::new(Unsigned::Base(BaseTx {
@@ -669,6 +774,205 @@ mod tests {
         let (vm, _, _) = a_chain(1000);
         assert_eq!(vm.name(), "X");
         assert_eq!(vm.version(), env!("CARGO_PKG_VERSION"));
+    }
+
+    // ------------------------------------------------------- across a restart --
+
+    #[test]
+    fn a_chain_comes_back_where_it_left_off() {
+        let db: Arc<dyn crate::db::Db> = Arc::new(crate::db::Memory::new());
+
+        // A chain runs, accepts a block, and the process ends.
+        let (state_root, block_id, spent, made, genesis_id) = {
+            let (vm, g) = a_chain_on(db.clone(), 1000);
+            let genesis_id = vm.last_accepted();
+            let tx = spend_genesis(&g, 1_000, 2);
+            vm.issue(tx.clone()).unwrap();
+            let blk = vm.build().unwrap();
+            vm.verify(&blk.id()).unwrap();
+            vm.accept(&blk.id()).unwrap();
+            (
+                blk.state_root(),
+                blk.id(),
+                ids::prefix(&g.id(), &[1]),
+                ids::prefix(&tx.id(), &[0]),
+                genesis_id,
+            )
+        };
+
+        // A new chain, over the same database. Nothing is replayed.
+        let (again, _) = a_chain_on(db.clone(), 2000);
+        assert_eq!(again.last_accepted(), block_id, "at the block it accepted");
+        assert_eq!(again.block_id_at(0).unwrap(), genesis_id);
+        assert_eq!(again.block_id_at(1).unwrap(), block_id);
+
+        // The ledger is the ledger it had: the output that was spent is gone
+        // and the output that was made is there.
+        assert_eq!(
+            again.committed_utxo(&spent).unwrap_err(),
+            ChainError::NotFound
+        );
+        assert_eq!(again.committed_utxo(&made).unwrap().out.amount(), 1_000);
+
+        // And the block reads back as the same bytes, which means it hashes to
+        // the id it is filed under and commits to the same state root.
+        let blk = again.get(&block_id).unwrap();
+        assert_eq!(blk.id(), block_id);
+        assert_eq!(blk.state_root(), state_root);
+        assert_eq!(blk.height(), 1);
+
+        // The chain keeps going from there.
+        let (vm3, g3) = (again, genesis_tx());
+        assert_eq!(g3.id(), vm3.committed_tx(&g3.id()).unwrap().id());
+        let next = spend_second(&vm3, block_id);
+        assert_eq!(next, 2, "the next block is height two");
+    }
+
+    /// Build an empty-mempool chain's next block by re-offering the only output
+    /// left, and return the height it reached.
+    fn spend_second(vm: &Xvm, _parent: Id) -> u64 {
+        // The one spendable output after the first block is the one it made,
+        // owned by key 2. Spend it back to key 1.
+        let last = vm.last_accepted();
+        let blk = vm.get(&last).unwrap();
+        let prev = Block::parse(&blk.bytes()).unwrap();
+        let source = prev.txs()[0].id();
+        let mut tx = Tx::new(Unsigned::Base(BaseTx {
+            base: BaseTxFields {
+                network_id: NETWORK_ID,
+                blockchain_id: chain_id(),
+                outs: vec![TransferableOutput {
+                    asset: Asset {
+                        id: genesis_tx().id(),
+                    },
+                    out: State::Transfer(TransferOutput {
+                        amt: 1_000,
+                        owners: Owners::new(1, vec![addr(1)]),
+                    }),
+                }],
+                ins: vec![TransferableInput {
+                    utxo_id: UtxoId::new(source, 0),
+                    asset: Asset {
+                        id: genesis_tx().id(),
+                    },
+                    input: FxIn::Transfer(TransferInput {
+                        amt: 1_000,
+                        input: Input {
+                            sig_indices: vec![0],
+                        },
+                    }),
+                }],
+                memo: vec![],
+            },
+        }));
+        tx.sign(fx::Family::Secp256k1, &[vec![key(2)]]).unwrap();
+        vm.issue(tx).unwrap();
+        let built = vm.build().unwrap();
+        vm.verify(&built.id()).unwrap();
+        vm.accept(&built.id()).unwrap();
+        built.height()
+    }
+
+    #[test]
+    fn a_block_that_was_verified_and_never_accepted_leaves_nothing_behind() {
+        let db: Arc<dyn crate::db::Db> = Arc::new(crate::db::Memory::new());
+        let at_genesis = {
+            let (vm, g) = a_chain_on(db.clone(), 1000);
+            vm.issue(spend_genesis(&g, 1_000, 2)).unwrap();
+            let blk = vm.build().unwrap();
+            vm.verify(&blk.id()).unwrap();
+            // Verified — the whole block executed — and then the process ends
+            // without it being accepted.
+            vm.last_accepted()
+        };
+        let (again, g) = a_chain_on(db, 2000);
+        assert_eq!(again.last_accepted(), at_genesis, "still at genesis");
+        assert_eq!(again.block_id_at(1).unwrap_err(), host::Error::NotFound);
+        // The output the unaccepted block would have spent is still spendable.
+        assert_eq!(
+            again
+                .committed_utxo(&ids::prefix(&g.id(), &[1]))
+                .unwrap()
+                .out
+                .amount(),
+            1_000
+        );
+    }
+
+    #[test]
+    fn a_database_written_by_another_chain_is_refused_by_name() {
+        let db: Arc<dyn crate::db::Db> = Arc::new(crate::db::Memory::new());
+        let _ = a_chain_on(db.clone(), 1000);
+
+        // The same database, handed a genesis that seals to a different block.
+        let mut other = genesis_tx();
+        if let Unsigned::CreateAsset(ref mut ca) = other.unsigned {
+            ca.symbol = "OTH".into();
+        }
+        let other = Tx::new(other.unsigned.clone());
+        let refused = Xvm::open(
+            Genesis {
+                network_id: NETWORK_ID,
+                chain_id: chain_id(),
+                net_id: ids::prefixed(&[0xAB]),
+                fee_asset_id: other.id(),
+                config: Config {
+                    tx_fee: 0,
+                    create_asset_tx_fee: 0,
+                },
+                txs: vec![other],
+                timestamp: 1000,
+            },
+            Arc::new(FixedClock::new(1000)),
+            Some(Arc::new(OneNet)),
+            Some(Arc::new(NoMemory)),
+            db,
+        )
+        .err()
+        .expect("another chain's database must not open");
+        assert!(
+            matches!(&refused, ChainError::Storage(why) if why.contains("this database is chain")),
+            "{refused:?}"
+        );
+    }
+
+    #[test]
+    fn a_chain_on_a_file_comes_back_from_the_file() {
+        // The same restart, through a real file rather than a map: the frames
+        // are written, flushed, and replayed by a second process's worth of
+        // `Log::open`. Nothing above the database changes.
+        let mut path = std::env::temp_dir();
+        path.push(format!("lux-xvm-chain-{}.log", std::process::id()));
+        std::fs::remove_file(&path).ok();
+
+        let want = {
+            let db: Arc<dyn crate::db::Db> = Arc::new(crate::db::Log::open(&path).unwrap());
+            let (vm, g) = a_chain_on(db, 1000);
+            vm.issue(spend_genesis(&g, 1_000, 2)).unwrap();
+            let blk = vm.build().unwrap();
+            vm.verify(&blk.id()).unwrap();
+            vm.accept(&blk.id()).unwrap();
+            blk.id()
+        };
+        assert!(std::fs::metadata(&path).unwrap().len() > 0, "it wrote");
+
+        let db: Arc<dyn crate::db::Db> = Arc::new(crate::db::Log::open(&path).unwrap());
+        let (again, _) = a_chain_on(db, 2000);
+        assert_eq!(again.last_accepted(), want);
+        assert_eq!(again.get(&want).unwrap().height(), 1);
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn a_chain_with_no_database_still_runs_and_writes_nothing() {
+        // The memory-only path is the same path: `new` is `open` without a
+        // device, and a commit it cannot make is not an error it reports.
+        let (vm, g, _) = a_chain(1000);
+        vm.issue(spend_genesis(&g, 1_000, 2)).unwrap();
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+        vm.accept(&blk.id()).unwrap();
+        assert_eq!(vm.last_accepted(), blk.id());
     }
 
     #[test]
@@ -896,7 +1200,10 @@ mod tests {
         // in what it accepts.
         let (vm, g, _) = a_chain(1000);
         vm.hold_to(crate::security::strict_pq(), None);
-        assert_eq!(vm.profile().map(|p| p.which), Some(crate::security::Which::StrictPq));
+        assert_eq!(
+            vm.profile().map(|p| p.which),
+            Some(crate::security::Which::StrictPq)
+        );
         let tx = spend_genesis(&g, 1_000, 2);
         let id = tx.id();
         assert_eq!(
