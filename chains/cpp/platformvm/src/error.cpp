@@ -223,6 +223,8 @@ std::string_view err_name(Err e) {
         case Err::MempoolFull: return "MempoolFull";
         case Err::ConflictsWithOtherTx: return "ConflictsWithOtherTx";
         case Err::CantIssueRewardValidatorTx: return "CantIssueRewardValidatorTx";
+        case Err::StoreUnwritable: return "StoreUnwritable";
+        case Err::StoreCorrupt: return "StoreCorrupt";
     }
     return "Unknown";
 }

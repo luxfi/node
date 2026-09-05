@@ -1144,32 +1144,38 @@ class Proposal final : public txs::Visitor {
 
 }  // namespace
 
+Result<Id> network_of_chain(const state::Chain& chain, const Id& platform_chain_id, const Id& chain_id) {
+    if (chain_id == platform_chain_id) return kPrimaryNetworkId;
+    auto tx = chain.get_tx(chain_id);
+    if (!tx) return fail(Err::ChainNotFound, "chain " + chain_id.hex() + " is not on this P-chain");
+    const auto* c = dynamic_cast<const txs::CreateChainTx*>(tx.value().first.unsigned_tx.get());
+    if (c == nullptr)
+        return fail(Err::ChainNotFound, chain_id.hex() + " names a transaction that created no chain");
+    return c->chain_id();
+}
+
 Status verify_warp_messages(const txs::UnsignedTx& tx, std::uint32_t network_id,
-                            const warp::CanonicalValidatorSet& source_set) {
+                            const SourceSet& source_set) {
     // Only the two transactions that CARRY a message have one to check. Every
     // other kind answers yes because there is nothing to answer about.
-    std::span<const std::uint8_t> raw;
+    std::vector<std::uint8_t> raw;
     switch (tx.kind()) {
-        case txs::Kind::RegisterL1Validator: {
-            static thread_local std::vector<std::uint8_t> buf;
-            buf = static_cast<const txs::RegisterL1ValidatorTx&>(tx).message();
-            raw = buf;
+        case txs::Kind::RegisterL1Validator:
+            raw = static_cast<const txs::RegisterL1ValidatorTx&>(tx).message();
             break;
-        }
-        case txs::Kind::SetL1ValidatorWeight: {
-            static thread_local std::vector<std::uint8_t> buf;
-            buf = static_cast<const txs::SetL1ValidatorWeightTx&>(tx).message();
-            raw = buf;
+        case txs::Kind::SetL1ValidatorWeight:
+            raw = static_cast<const txs::SetL1ValidatorWeightTx&>(tx).message();
             break;
-        }
         default:
             return ok();
     }
 
     auto message = warp::Message::parse(raw);
     if (!message) return std::unexpected(message.error());
-    return warp::verify(message.value().signature, message.value().unsigned_message, network_id, source_set,
-                        kWarpQuorumNumerator, kWarpQuorumDenominator);
+    auto set = source_set(message.value().unsigned_message.source_chain_id);
+    if (!set) return std::unexpected(set.error());
+    return warp::verify(message.value().signature, message.value().unsigned_message, network_id,
+                        set.value(), kWarpQuorumNumerator, kWarpQuorumDenominator);
 }
 
 DynamicFee pick_fee_calculator(const gas::Config& config, const state::Chain& chain) {

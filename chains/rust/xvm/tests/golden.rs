@@ -21,7 +21,7 @@
 
 use lux_xvm::fx::secp256k1::{Credential, MintOutput, TransferInput, TransferOutput};
 use lux_xvm::fx::{FxIn, Input, Owners, State};
-use lux_xvm::ids::{Id, ShortId};
+use lux_xvm::ids::{self, ShortId};
 use lux_xvm::txs::{BaseTx, Tx, Unsigned};
 use lux_xvm::utxo::{Asset, BaseTxFields, TransferableInput, TransferableOutput, Utxo, UtxoId};
 
@@ -36,10 +36,10 @@ fn the_transaction() -> Tx {
     Tx::new(Unsigned::Base(BaseTx {
         base: BaseTxFields {
             network_id: 10,
-            blockchain_id: Id::prefixed_bytes(&[5]),
+            blockchain_id: ids::prefixed(&[5]),
             outs: vec![TransferableOutput {
                 asset: Asset {
-                    id: Id::prefixed_bytes(&[1]),
+                    id: ids::prefixed(&[1]),
                 },
                 out: State::Transfer(TransferOutput {
                     amt: 12345,
@@ -51,9 +51,9 @@ fn the_transaction() -> Tx {
                 }),
             }],
             ins: vec![TransferableInput {
-                utxo_id: UtxoId::new(Id::prefixed_bytes(&[2]), 7),
+                utxo_id: UtxoId::new(ids::prefixed(&[2]), 7),
                 asset: Asset {
-                    id: Id::prefixed_bytes(&[1]),
+                    id: ids::prefixed(&[1]),
                 },
                 input: FxIn::Transfer(TransferInput {
                     amt: 12346,
@@ -95,7 +95,7 @@ fn a_transaction_has_the_same_name_in_both_languages() {
     // above — and it is asserted separately because it is the thing that would
     // actually break: two nodes calling one transaction by two names.
     let tx = the_transaction();
-    assert_eq!(hex(&tx.id().0), GO_BASETX_ID);
+    assert_eq!(hex(&tx.id()), GO_BASETX_ID);
 }
 
 #[test]
@@ -105,10 +105,10 @@ fn a_transaction_go_encoded_reads_back_here_as_the_same_transaction() {
         .map(|i| u8::from_str_radix(&GO_BASETX_SIGNED_NOCREDS[i..i + 2], 16).unwrap())
         .collect();
     let parsed = Tx::parse(&raw).unwrap();
-    assert_eq!(hex(&parsed.id().0), GO_BASETX_ID);
+    assert_eq!(hex(&parsed.id()), GO_BASETX_ID);
     let base = parsed.unsigned.base();
     assert_eq!(base.network_id, 10);
-    assert_eq!(base.blockchain_id, Id::prefixed_bytes(&[5]));
+    assert_eq!(base.blockchain_id, ids::prefixed(&[5]));
     assert_eq!(base.memo, b"memo");
     assert_eq!(base.outs.len(), 1);
     assert_eq!(base.outs[0].out.amount(), 12345);
@@ -170,9 +170,9 @@ fn every_fx_primitive_envelope_is_the_envelope_go_writes() {
 #[test]
 fn an_unspent_output_crosses_between_chains_as_the_bytes_go_writes() {
     let utxo = Utxo {
-        utxo_id: UtxoId::new(Id::prefixed_bytes(&[3]), 1),
+        utxo_id: UtxoId::new(ids::prefixed(&[3]), 1),
         asset: Asset {
-            id: Id::prefixed_bytes(&[1]),
+            id: ids::prefixed(&[1]),
         },
         out: State::Transfer(TransferOutput {
             amt: 7,
@@ -202,10 +202,10 @@ use lux_xvm::txs::{CreateAssetTx, ExportTx, ImportTx, InitialState, Operation, O
 fn base_fields() -> BaseTxFields {
     BaseTxFields {
         network_id: 10,
-        blockchain_id: Id::prefixed_bytes(&[5]),
+        blockchain_id: ids::prefixed(&[5]),
         outs: vec![TransferableOutput {
             asset: Asset {
-                id: Id::prefixed_bytes(&[1]),
+                id: ids::prefixed(&[1]),
             },
             out: State::Transfer(TransferOutput {
                 amt: 12345,
@@ -213,9 +213,9 @@ fn base_fields() -> BaseTxFields {
             }),
         }],
         ins: vec![TransferableInput {
-            utxo_id: UtxoId::new(Id::prefixed_bytes(&[2]), 7),
+            utxo_id: UtxoId::new(ids::prefixed(&[2]), 7),
             asset: Asset {
-                id: Id::prefixed_bytes(&[1]),
+                id: ids::prefixed(&[1]),
             },
             input: FxIn::Transfer(TransferInput {
                 amt: 12346,
@@ -238,7 +238,7 @@ fn check(u: Unsigned, unsigned: &str, signed: &str, id: &str) {
     let tx = Tx::new(u);
     assert_eq!(hex(tx.unsigned_bytes()), unsigned, "unsigned bytes");
     assert_eq!(hex(tx.bytes()), signed, "signed bytes");
-    assert_eq!(hex(&tx.id().0), id, "id");
+    assert_eq!(hex(&tx.id()), id, "id");
     // And what Go wrote reads back here as the same transaction.
     let raw: Vec<u8> = (0..signed.len())
         .step_by(2)
@@ -274,8 +274,8 @@ fn an_operation_transaction_is_the_bytes_go_writes() {
         Unsigned::Operation(OperationTx {
             base: base_fields(),
             ops: vec![Operation {
-                asset: Asset { id: Id::prefixed_bytes(&[1]) },
-                utxo_ids: vec![UtxoId::new(Id::prefixed_bytes(&[4]), 2)],
+                asset: Asset { id: ids::prefixed(&[1]) },
+                utxo_ids: vec![UtxoId::new(ids::prefixed(&[4]), 2)],
                 op: Op::PropertyBurn(property::BurnOperation {
                     input: Input { sig_indices: vec![0] },
                 }),
@@ -292,10 +292,10 @@ fn an_import_is_the_bytes_go_writes() {
     check(
         Unsigned::Import(ImportTx {
             base: base_fields(),
-            source_chain: Id::prefixed_bytes(&[6]),
+            source_chain: ids::prefixed(&[6]),
             imported_ins: vec![TransferableInput {
-                utxo_id: UtxoId::new(Id::prefixed_bytes(&[8]), 3),
-                asset: Asset { id: Id::prefixed_bytes(&[1]) },
+                utxo_id: UtxoId::new(ids::prefixed(&[8]), 3),
+                asset: Asset { id: ids::prefixed(&[1]) },
                 input: FxIn::Transfer(TransferInput {
                     amt: 50,
                     input: Input { sig_indices: vec![0] },
@@ -313,9 +313,9 @@ fn an_export_is_the_bytes_go_writes() {
     check(
         Unsigned::Export(ExportTx {
             base: base_fields(),
-            destination_chain: Id::prefixed_bytes(&[6]),
+            destination_chain: ids::prefixed(&[6]),
             exported_outs: vec![TransferableOutput {
-                asset: Asset { id: Id::prefixed_bytes(&[1]) },
+                asset: Asset { id: ids::prefixed(&[1]) },
                 out: State::Transfer(TransferOutput { amt: 50, owners: owner9() }),
             }],
         }),
@@ -329,10 +329,10 @@ fn an_export_is_the_bytes_go_writes() {
 fn a_block_is_the_bytes_go_writes_and_has_the_name_go_gives_it() {
     let tx = Tx::new(Unsigned::Export(ExportTx {
         base: base_fields(),
-        destination_chain: Id::prefixed_bytes(&[6]),
+        destination_chain: ids::prefixed(&[6]),
         exported_outs: vec![TransferableOutput {
             asset: Asset {
-                id: Id::prefixed_bytes(&[1]),
+                id: ids::prefixed(&[1]),
             },
             out: State::Transfer(TransferOutput {
                 amt: 50,
@@ -341,16 +341,16 @@ fn a_block_is_the_bytes_go_writes_and_has_the_name_go_gives_it() {
         }],
     }));
     let blk = Block::new(
-        Id::prefixed_bytes(&[0xB1]),
+        ids::prefixed(&[0xB1]),
         42,
         123_456,
-        Id::prefixed_bytes(&[0xAA]),
+        ids::prefixed(&[0xAA]),
         vec![tx],
     )
     .unwrap();
     assert_eq!(hex(blk.bytes()), "5a4150000200000018000000ac0200003402000000000000b1000000000000000000000000000000000000000000000000000000000000002a0000000000000040e2010000000000aa00000000000000000000000000000000000000000000000000000000000000a8ffffff010000000800000034020000000e5a415000020000001000000032020000140000000e0200000000000000000000000000005a41500002000000880000000e0200000100000000000000000000000000000000000000000000000000000000000000080000004600000001015a4150000200000028000000440000000900000000000000000000000000000000000000000000003200000000000000000000000000000001000000d4ffffff01000000000090ffffff000000000500000000000000300000004e0100000600000000000000000000000000000000000000000000000000000000000000c8ffffff0100000000125a41500002000000080100004c0100000100000000000000000000000000000000000000000000000000000000000000080000004600000001015a415000020000002800000044000000aabb000000000000000000000000000000000000000000003930000000000000000000000000000001000000d4ffffff0100000000000200000000000000000000000000000000000000000000000000000000000000070000000100000000000000000000000000000000000000000000000000000000000000080000002a00000001025a41500002000000180000002800000000000000020000003a30000000000000f0ffffff02000000000018ffffff0000000080ffffff000000000a000000000000000500000000000000000000000000000000000000000000000000000000000000c8ffffff01000000c8ffffff0100000008000000040000006d656d6f");
     assert_eq!(
-        hex(&blk.id().0),
+        hex(&blk.id()),
         "ddae8ce1976a006d7f45117f1cc0acacbc7f2232a85bc6d3545ad8c5dd07223b"
     );
 

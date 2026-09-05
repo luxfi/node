@@ -3,12 +3,19 @@
 package host
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
@@ -78,6 +85,70 @@ func LoadIdentity(dir string) (*Identity, error) {
 		return nil, fmt.Errorf("staking signer key: %w", err)
 	}
 	return id, nil
+}
+
+// EnsureIdentity loads an existing staking identity, or creates one if none exists.
+func EnsureIdentity(dir string) (*Identity, error) {
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return nil, fmt.Errorf("create staking dir: %w", err)
+	}
+	certPath := filepath.Join(dir, certFile)
+	keyPath := filepath.Join(dir, keyFile)
+	if _, err := os.Stat(certPath); errors.Is(err, os.ErrNotExist) {
+		priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			return nil, fmt.Errorf("generate staking key: %w", err)
+		}
+		template := x509.Certificate{
+			SerialNumber: big.NewInt(1),
+			Subject: pkix.Name{
+				CommonName: "Lux Validator",
+			},
+			NotBefore: time.Now().Add(-1 * time.Hour),
+			NotAfter:  time.Now().Add(10 * 365 * 24 * time.Hour),
+			KeyUsage:  x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		}
+		derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+		if err != nil {
+			return nil, fmt.Errorf("create staking certificate: %w", err)
+		}
+		certOut, err := os.Create(certPath)
+		if err != nil {
+			return nil, fmt.Errorf("create cert file: %w", err)
+		}
+		if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+			certOut.Close()
+			return nil, fmt.Errorf("encode cert: %w", err)
+		}
+		certOut.Close()
+
+		privBytes, err := x509.MarshalECPrivateKey(priv)
+		if err != nil {
+			return nil, fmt.Errorf("marshal ec key: %w", err)
+		}
+		keyOut, err := os.Create(keyPath)
+		if err != nil {
+			return nil, fmt.Errorf("create key file: %w", err)
+		}
+		if err := pem.Encode(keyOut, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privBytes}); err != nil {
+			keyOut.Close()
+			return nil, fmt.Errorf("encode key: %w", err)
+		}
+		keyOut.Close()
+	}
+
+	signerPath := filepath.Join(dir, signerFile)
+	if _, err := os.Stat(signerPath); errors.Is(err, os.ErrNotExist) {
+		signer, err := localsigner.New()
+		if err != nil {
+			return nil, fmt.Errorf("generate bls signer: %w", err)
+		}
+		if err := os.WriteFile(signerPath, signer.ToBytes(), 0600); err != nil {
+			return nil, fmt.Errorf("write signer key: %w", err)
+		}
+	}
+
+	return LoadIdentity(dir)
 }
 
 // identityFromPEM builds an Identity from certificate and key PEM.

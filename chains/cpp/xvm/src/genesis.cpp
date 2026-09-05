@@ -5,6 +5,8 @@
 
 #include "lux/xvm/zap.hpp"
 
+#include <algorithm>
+
 namespace lux::xvm::genesis {
 namespace {
 
@@ -148,6 +150,74 @@ Result<std::vector<std::shared_ptr<txs::Tx>>> as_txs(const Genesis& g) {
         out.push_back(*tx);
     }
     return out;
+}
+
+Result<Genesis> from_definitions(std::uint32_t network_id,
+                                 const std::map<std::string, AssetDefinition>& definitions) {
+    Genesis g;
+    g.assets.reserve(definitions.size());
+
+    for (const auto& [alias, def] : definitions) {
+        auto create = std::make_shared<txs::CreateAssetTx>();
+        create->base.network_id = network_id;
+        // The empty chain id, not this chain's: a genesis asset is defined
+        // before the chain carrying it has been given an id, and that id is a
+        // hash of a genesis that would then contain it.
+        create->base.blockchain_id = kEmptyId;
+        create->base.memo = def.memo;
+        create->name = def.name;
+        create->symbol = def.symbol;
+        create->denomination = def.denomination;
+
+        txs::InitialState initial;
+        // Index 0 is the secp256k1 fx: the only family a genesis definition can
+        // name, because holding and minting are all it can express.
+        initial.fx_index = 0;
+
+        for (const auto& holder : def.initial_state.fixed_cap) {
+            auto owner = address::parse_short(holder.address);
+            if (!owner)
+                return std::unexpected("problem parsing holder address: " + owner.error());
+            auto out = std::make_shared<fx::secp256k1fx::TransferOutput>();
+            out->amt = holder.amount;
+            out->out_owners.locktime = 0;
+            out->out_owners.threshold = 1;
+            out->out_owners.addrs = {*owner};
+            initial.outs.push_back(std::move(out));
+        }
+
+        for (const auto& owners : def.initial_state.variable_cap) {
+            auto out = std::make_shared<fx::secp256k1fx::MintOutput>();
+            out->out_owners.locktime = 0;
+            out->out_owners.threshold = owners.threshold;
+            for (const auto& minter : owners.minters) {
+                auto addr = address::parse_short(minter);
+                if (!addr)
+                    return std::unexpected("problem parsing minters address: " + addr.error());
+                out->out_owners.addrs.push_back(*addr);
+            }
+            out->out_owners.sort();
+            initial.outs.push_back(std::move(out));
+        }
+
+        if (!initial.outs.empty()) {
+            initial.sort();
+            create->states.push_back(std::move(initial));
+        }
+        std::sort(create->states.begin(), create->states.end(),
+                  [](const txs::InitialState& a, const txs::InitialState& b) {
+                      return a.compare(b) < 0;
+                  });
+
+        g.assets.push_back(Asset{alias, std::move(create)});
+    }
+
+    // Ordered by alias, which is the order the map already walks in — stated
+    // anyway, because the ordering is the buffer's contract and not an
+    // accident of the container it came out of.
+    std::sort(g.assets.begin(), g.assets.end(),
+              [](const Asset& a, const Asset& b) { return a.alias < b.alias; });
+    return g;
 }
 
 Result<Id> fee_asset_id(ByteView genesis_bytes) {

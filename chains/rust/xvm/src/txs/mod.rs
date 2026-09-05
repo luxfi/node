@@ -19,7 +19,7 @@ pub mod executor;
 use crate::error::{Error, Result};
 use crate::fx::{self, secp256k1, Cred, State};
 use crate::hash::sha256;
-use crate::ids::Id;
+use crate::ids::{self, Id};
 use crate::utxo::{Asset, BaseTxFields, TransferableInput, TransferableOutput, Utxo, UtxoId};
 use crate::wire::containers::{
     self, read_blob_list, read_utxo_ids, write_blob_list, write_utxo_ids, InSpec, OutSpec,
@@ -192,7 +192,7 @@ impl Operation {
             .collect();
         let (utxo_off, utxo_count) = write_utxo_ids(&mut b, &ids);
         let ob = b.start_object(SIZE_OP);
-        ob.set_bytes_fixed(&mut b, OFF_OP_ASSET, &self.asset.id.0);
+        ob.set_bytes_fixed(&mut b, OFF_OP_ASSET, &self.asset.id);
         ob.set_list(&mut b, OFF_OP_UTXO_IDS, utxo_off, utxo_count);
         ob.set_bytes(&mut b, OFF_OP_FX_OP, &fx_op);
         ob.finish_as_root(&mut b);
@@ -205,7 +205,7 @@ impl Operation {
         let op = fx::Op::from_envelope(obj.bytes(OFF_OP_FX_OP))?;
         Ok(Operation {
             asset: Asset {
-                id: Id::prefixed_bytes(obj.bytes_fixed(OFF_OP_ASSET, 32)),
+                id: ids::prefixed(obj.bytes_fixed(OFF_OP_ASSET, 32)),
             },
             utxo_ids: read_utxo_ids(&obj, OFF_OP_UTXO_IDS)
                 .into_iter()
@@ -496,7 +496,7 @@ fn serialize_import(t: &ImportTx) -> Vec<u8> {
     let ob = b.start_object(SIZE_IMPORT);
     ob.set_u8(&mut b, OFF_KIND, Kind::Import as u8);
     ob.set_bytes(&mut b, OFF_BASE_TX, &env);
-    ob.set_bytes_fixed(&mut b, OFF_IMPORT_SOURCE, &t.source_chain.0);
+    ob.set_bytes_fixed(&mut b, OFF_IMPORT_SOURCE, &t.source_chain);
     ob.set_list(&mut b, OFF_IMPORT_INS, ins_off, ins_len);
     ob.finish_as_root(&mut b);
     b.finish()
@@ -521,7 +521,7 @@ fn serialize_export(t: &ExportTx) -> Vec<u8> {
     let ob = b.start_object(SIZE_EXPORT);
     ob.set_u8(&mut b, OFF_KIND, Kind::Export as u8);
     ob.set_bytes(&mut b, OFF_BASE_TX, &env);
-    ob.set_bytes_fixed(&mut b, OFF_EXPORT_DEST, &t.destination_chain.0);
+    ob.set_bytes_fixed(&mut b, OFF_EXPORT_DEST, &t.destination_chain);
     ob.set_list(&mut b, OFF_EXPORT_OUTS, outs_off, outs_len);
     ob.finish_as_root(&mut b);
     b.finish()
@@ -562,7 +562,7 @@ pub fn parse_unsigned(unsigned_bytes: &[u8]) -> Result<Unsigned> {
             Ok(Unsigned::Operation(OperationTx { base, ops }))
         }
         Kind::Import => {
-            let source_chain = Id::prefixed_bytes(obj.bytes_fixed(OFF_IMPORT_SOURCE, 32));
+            let source_chain = ids::prefixed(obj.bytes_fixed(OFF_IMPORT_SOURCE, 32));
             let l = obj.list_stride(OFF_IMPORT_INS, containers::OBJ_PTR_STRIDE);
             let mut imported_ins = Vec::with_capacity(l.len());
             for i in 0..l.len() {
@@ -580,7 +580,7 @@ pub fn parse_unsigned(unsigned_bytes: &[u8]) -> Result<Unsigned> {
             }))
         }
         Kind::Export => {
-            let destination_chain = Id::prefixed_bytes(obj.bytes_fixed(OFF_EXPORT_DEST, 32));
+            let destination_chain = ids::prefixed(obj.bytes_fixed(OFF_EXPORT_DEST, 32));
             let l = obj.list_stride(OFF_EXPORT_OUTS, containers::OBJ_PTR_STRIDE);
             let mut exported_outs = Vec::with_capacity(l.len());
             for i in 0..l.len() {
@@ -622,7 +622,7 @@ impl Tx {
         let mut tx = Tx {
             unsigned,
             creds: Vec::new(),
-            tx_id: Id::default(),
+            tx_id: ids::EMPTY,
             bytes: Vec::new(),
             unsigned_bytes: Vec::new(),
         };
@@ -634,7 +634,7 @@ impl Tx {
         let unsigned_bytes = self.unsigned.bytes();
         let cred_envs: Vec<Vec<u8>> = self.creds.iter().map(|c| c.bytes()).collect();
         let signed = containers::new_signed_tx(&unsigned_bytes, &cred_envs);
-        self.tx_id = Id(sha256(&signed));
+        self.tx_id = sha256(&signed);
         self.bytes = signed;
         self.unsigned_bytes = unsigned_bytes;
     }
@@ -690,7 +690,7 @@ impl Tx {
         Ok(Tx {
             unsigned,
             creds,
-            tx_id: Id(sha256(signed_bytes)),
+            tx_id: sha256(signed_bytes),
             bytes: signed_bytes.to_vec(),
             unsigned_bytes,
         })
@@ -756,7 +756,7 @@ mod tests {
     use crate::ids::ShortId;
 
     fn asset(n: u8) -> Id {
-        Id::prefixed_bytes(&[n])
+        ids::prefixed(&[n])
     }
 
     fn owners() -> Owners {
@@ -1244,7 +1244,7 @@ mod tests {
     #[test]
     fn an_operation_with_an_empty_asset_is_refused() {
         let op = Operation {
-            asset: Asset { id: Id::default() },
+            asset: Asset { id: ids::EMPTY },
             utxo_ids: vec![],
             op: fx::Op::PropertyBurn(property::BurnOperation {
                 input: Input {

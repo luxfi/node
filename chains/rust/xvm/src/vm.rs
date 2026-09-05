@@ -293,30 +293,34 @@ fn to_host(e: ChainError) -> host::Error {
     }
 }
 
-/// A block, as the host sees one.
-struct HostBlock(Block);
-
-impl host::Block for HostBlock {
+/// A block, as consensus sees one.
+///
+/// The same block, not a wrapper around it. A chain's block and the thing the
+/// node certifies are one value seen two ways: the chain reads its
+/// transactions, the node reads its height and the two roots it commits to.
+/// Wrapping would have made a second type that has to be unwrapped at every
+/// boundary and kept in step with the first.
+impl host::Block for Block {
     fn id(&self) -> host::Id {
-        self.0.id().0
+        Block::id(self)
     }
     fn parent(&self) -> host::Id {
-        self.0.parent().0
+        Block::parent(self)
     }
     fn height(&self) -> u64 {
-        self.0.height()
+        Block::height(self)
     }
     fn timestamp(&self) -> u64 {
-        self.0.timestamp()
+        Block::timestamp(self)
     }
     fn bytes(&self) -> Vec<u8> {
-        self.0.bytes().to_vec()
+        Block::bytes(self).to_vec()
     }
     fn state_root(&self) -> host::Id {
-        self.0.merkle_root().0
+        self.merkle_root()
     }
     fn payload_root(&self) -> host::Id {
-        crate::block::root::payload_root(self.0.txs()).0
+        crate::block::root::payload_root(self.txs())
     }
 }
 
@@ -344,7 +348,7 @@ impl host::Vm for Xvm {
             inner.mempool.drop_with(id, why);
         }
         inner.known.insert(built.block.id(), built.block.clone());
-        Ok(Box::new(HostBlock(built.block)))
+        Ok(Box::new(built.block))
     }
 
     fn parse(&self, raw: &[u8]) -> Result<Box<dyn host::Block>, host::Error> {
@@ -357,20 +361,20 @@ impl host::Vm for Xvm {
             .expect("chain poisoned")
             .known
             .insert(blk.id(), blk.clone());
-        Ok(Box::new(HostBlock(blk)))
+        Ok(Box::new(blk))
     }
 
     fn get(&self, id: &host::Id) -> Result<Box<dyn host::Block>, host::Error> {
         let inner = self.inner.lock().expect("chain poisoned");
         inner
-            .block(&Id(*id))
-            .map(|b| Box::new(HostBlock(b)) as Box<dyn host::Block>)
+            .block(id)
+            .map(|b| Box::new(b) as Box<dyn host::Block>)
             .map_err(to_host)
     }
 
     fn verify(&self, id: &host::Id) -> Result<(), host::Error> {
         let mut inner = self.inner.lock().expect("chain poisoned");
-        let blk = inner.block(&Id(*id)).map_err(to_host)?;
+        let blk = inner.block(id).map_err(to_host)?;
         let backend = self.backend(inner.bootstrapped);
         inner.manager.verify(&backend, &blk).map_err(to_host)?;
         // A transaction that is in a verified block is not a candidate for
@@ -383,8 +387,8 @@ impl host::Vm for Xvm {
 
     fn accept(&self, id: &host::Id) -> Result<(), host::Error> {
         let mut inner = self.inner.lock().expect("chain poisoned");
-        let requests = inner.manager.accept(&Id(*id)).map_err(to_host)?;
-        inner.known.remove(&Id(*id));
+        let requests = inner.manager.accept(id).map_err(to_host)?;
+        inner.known.remove(id);
         if !requests.is_empty() {
             let sm = self
                 .shared_memory
@@ -397,8 +401,8 @@ impl host::Vm for Xvm {
 
     fn reject(&self, id: &host::Id) -> Result<(), host::Error> {
         let mut inner = self.inner.lock().expect("chain poisoned");
-        let txs = inner.manager.reject(&Id(*id)).map_err(to_host)?;
-        inner.known.remove(&Id(*id));
+        let txs = inner.manager.reject(id).map_err(to_host)?;
+        inner.known.remove(id);
         // The block did nothing, so its transactions may still be good. Each is
         // re-checked against the preferred state before it is offered again.
         let backend = self.backend(inner.bootstrapped);
@@ -416,7 +420,7 @@ impl host::Vm for Xvm {
 
     fn set_preference(&self, id: &host::Id) -> Result<(), host::Error> {
         let mut inner = self.inner.lock().expect("chain poisoned");
-        let blk_id = Id(*id);
+        let blk_id = *id;
         // Preferring a block nobody has is how a chain builds on nothing.
         inner.block(&blk_id).map_err(to_host)?;
         inner.manager.set_preference(blk_id);
@@ -429,16 +433,11 @@ impl host::Vm for Xvm {
             .expect("chain poisoned")
             .manager
             .last_accepted()
-            .0
     }
 
     fn block_id_at(&self, height: u64) -> Result<host::Id, host::Error> {
         let inner = self.inner.lock().expect("chain poisoned");
-        inner
-            .manager
-            .block_id_at_height(height)
-            .map(|i| i.0)
-            .map_err(to_host)
+        inner.manager.block_id_at_height(height).map_err(to_host)
     }
 
     fn call(
@@ -448,7 +447,7 @@ impl host::Vm for Xvm {
     ) -> Result<serde_json::Value, host::Error> {
         match method {
             // The chain's own name for itself.
-            "xvm.getBlockchainID" => Ok(serde_json::json!(hex(&self.genesis.chain_id.0))),
+            "xvm.getBlockchainID" => Ok(serde_json::json!(hex(&self.genesis.chain_id))),
 
             // Where the chain has got to.
             "xvm.getHeight" => {
@@ -465,10 +464,10 @@ impl host::Vm for Xvm {
                 let id = id_param(params, "utxoID")?;
                 let utxo = self.committed_utxo(&id).map_err(to_host)?;
                 Ok(serde_json::json!({
-                    "utxoID": hex(&utxo.input_id().0),
-                    "txID": hex(&utxo.utxo_id.tx_id.0),
+                    "utxoID": hex(&utxo.input_id()),
+                    "txID": hex(&utxo.utxo_id.tx_id),
                     "outputIndex": utxo.utxo_id.output_index,
-                    "assetID": hex(&utxo.asset_id().0),
+                    "assetID": hex(&utxo.asset_id()),
                     "amount": utxo.out.amount(),
                     "locktime": utxo.out.owners().locktime,
                     "threshold": utxo.out.owners().threshold,
@@ -488,7 +487,7 @@ impl host::Vm for Xvm {
                 let tx = Tx::parse(&raw).map_err(|e| host::Error::Malformed(e.to_string()))?;
                 let id = tx.id();
                 self.issue(tx).map_err(to_host)?;
-                Ok(serde_json::json!({ "txID": hex(&id.0) }))
+                Ok(serde_json::json!({ "txID": hex(&id) }))
             }
 
             "xvm.getPendingCount" => Ok(serde_json::json!(self.pending())),
@@ -526,7 +525,7 @@ fn bytes_param(params: &serde_json::Value, name: &str) -> Result<Vec<u8>, host::
 
 fn id_param(params: &serde_json::Value, name: &str) -> Result<Id, host::Error> {
     let raw = bytes_param(params, name)?;
-    Id::from_slice(&raw).ok_or_else(|| host::Error::BadRequest(format!("{name} is not 32 bytes")))
+    ids::from_slice(&raw).ok_or_else(|| host::Error::BadRequest(format!("{name} is not 32 bytes")))
 }
 
 #[cfg(test)]
@@ -543,7 +542,7 @@ mod tests {
     const NETWORK_ID: u32 = 10;
 
     fn chain_id() -> Id {
-        Id::prefixed_bytes(&[5])
+        ids::prefixed(&[5])
     }
     fn key(n: u8) -> [u8; 32] {
         let mut k = [0u8; 32];
@@ -557,7 +556,7 @@ mod tests {
     struct OneNet;
     impl Net for OneNet {
         fn network_of(&self, _: &Id) -> crate::Result<Id> {
-            Ok(Id::prefixed_bytes(&[0xAB]))
+            Ok(ids::prefixed(&[0xAB]))
         }
     }
     struct NoMemory;
@@ -606,7 +605,7 @@ mod tests {
             Genesis {
                 network_id: NETWORK_ID,
                 chain_id: chain_id(),
-                net_id: Id::prefixed_bytes(&[0xAB]),
+                net_id: ids::prefixed(&[0xAB]),
                 fee_asset_id: g.id(),
                 config: Config {
                     tx_fee: 0,
@@ -668,14 +667,14 @@ mod tests {
         let blk = vm.get(&last).unwrap();
         assert_eq!(blk.height(), 0);
         assert_eq!(blk.id(), last);
-        assert_eq!(blk.parent(), ids::EMPTY.0);
+        assert_eq!(blk.parent(), ids::EMPTY);
     }
 
     #[test]
     fn the_genesis_state_is_true_before_any_block_is_built() {
         let (vm, g, _) = a_chain(1000);
         // The transfer output the genesis transaction made is spendable.
-        let utxo = vm.committed_utxo(&g.id().prefix(&[1])).unwrap();
+        let utxo = vm.committed_utxo(&ids::prefix(&g.id(), &[1])).unwrap();
         assert_eq!(utxo.out.amount(), 1_000);
     }
 
@@ -702,8 +701,8 @@ mod tests {
         assert_eq!(vm.last_accepted(), id);
 
         // The spend happened.
-        assert!(vm.committed_utxo(&g.id().prefix(&[1])).is_err());
-        assert!(vm.committed_utxo(&tx.id().prefix(&[0])).is_ok());
+        assert!(vm.committed_utxo(&ids::prefix(&g.id(), &[1])).is_err());
+        assert!(vm.committed_utxo(&ids::prefix(&tx.id(), &[0])).is_ok());
     }
 
     #[test]
@@ -826,7 +825,7 @@ mod tests {
         // Spends an output nothing produced.
         let mut tx = spend_genesis(&g, 1_000, 2);
         if let Unsigned::Base(t) = &mut tx.unsigned {
-            t.base.ins[0].utxo_id = UtxoId::new(Id::prefixed_bytes(&[0xDD]), 0);
+            t.base.ins[0].utxo_id = UtxoId::new(ids::prefixed(&[0xDD]), 0);
         }
         let tx = {
             let mut t = Tx::new(tx.unsigned.clone());
@@ -872,7 +871,7 @@ mod tests {
         let params = serde_json::json!({});
         assert_eq!(
             vm.call("xvm.getBlockchainID", &params).unwrap(),
-            serde_json::json!(hex(&chain_id().0))
+            serde_json::json!(hex(&chain_id()))
         );
         assert_eq!(
             vm.call("xvm.getHeight", &params).unwrap(),
@@ -891,7 +890,7 @@ mod tests {
         let issued = vm
             .call("xvm.issueTx", &serde_json::json!({ "tx": hex(tx.bytes()) }))
             .unwrap();
-        assert_eq!(issued["txID"], serde_json::json!(hex(&tx.id().0)));
+        assert_eq!(issued["txID"], serde_json::json!(hex(&tx.id())));
         assert_eq!(
             vm.call("xvm.getPendingCount", &serde_json::json!({}))
                 .unwrap(),
@@ -903,7 +902,7 @@ mod tests {
         vm.accept(&blk.id()).unwrap();
 
         let got = vm
-            .call("xvm.getTx", &serde_json::json!({ "txID": hex(&tx.id().0) }))
+            .call("xvm.getTx", &serde_json::json!({ "txID": hex(&tx.id()) }))
             .unwrap();
         assert_eq!(got["tx"], serde_json::json!(hex(tx.bytes())));
     }
@@ -928,15 +927,15 @@ mod tests {
     #[test]
     fn an_unspent_output_can_be_read_over_the_call_surface() {
         let (vm, g, _) = a_chain(1000);
-        let utxo_id = g.id().prefix(&[1]);
+        let utxo_id = ids::prefix(&g.id(), &[1]);
         let got = vm
             .call(
                 "xvm.getUTXO",
-                &serde_json::json!({ "utxoID": hex(&utxo_id.0) }),
+                &serde_json::json!({ "utxoID": hex(&utxo_id) }),
             )
             .unwrap();
         assert_eq!(got["amount"], serde_json::json!(1_000));
-        assert_eq!(got["assetID"], serde_json::json!(hex(&g.id().0)));
+        assert_eq!(got["assetID"], serde_json::json!(hex(&g.id())));
         assert_eq!(got["outputIndex"], serde_json::json!(1));
     }
 

@@ -166,7 +166,8 @@ void vm_boots_from_genesis() {
     cfg.network_id = kNetworkID;
     cfg.chain_id = id(200);
     cfg.net_id = id(0x0A);
-    Vm vm(cfg, {executor::ParsedFx{id(1), std::make_shared<fx::Secp256k1Fx>()}});
+    store::Memory store;
+    Vm vm(cfg, {executor::ParsedFx{id(1), std::make_shared<fx::Secp256k1Fx>()}}, store);
 
     auto r = vm.initialize_from_genesis(view(go_bytes), 1749000000);
     check(r.has_value(), r ? "the VM boots from Go's genesis bytes"

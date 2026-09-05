@@ -85,6 +85,26 @@ class BlsKey {
 
     const lux::platformvm::signer::ProofOfPossession& pop() const { return pop_; }
 
+    // The 96-byte uncompressed key the validator set commits to.
+    std::vector<std::uint8_t> uncompressed() const {
+        return lux::platformvm::signer::uncompress_for_set(pop_.public_key).value();
+    }
+
+    // A vote: a signature over a warp message, under the SIGNATURE tag rather
+    // than the possession one. One key's signature is already an aggregate of
+    // one, which is what makes a single-validator quorum checkable.
+    lux::platformvm::signer::SignatureBytes sign(std::span<const std::uint8_t> msg) const {
+        blst_p2 hash{};
+        blst_hash_to_g2(&hash, msg.data(), msg.size(),
+                        reinterpret_cast<const byte*>(lux::platformvm::signer::kSigDst),
+                        lux::platformvm::signer::kSigDstLen, nullptr, 0);
+        blst_p2 sig{};
+        blst_sign_pk_in_g1(&sig, &hash, &sk_);
+        lux::platformvm::signer::SignatureBytes out{};
+        blst_p2_compress(out.data(), &sig);
+        return out;
+    }
+
   private:
     blst_scalar sk_{};
     lux::platformvm::signer::ProofOfPossession pop_{};

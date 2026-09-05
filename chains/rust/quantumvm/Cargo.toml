@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+
+[package]
+name = "lux-quantumvm"
+version = "0.1.0"
+edition = "2021"
+description = "The Lux Q-Chain in Rust: post-quantum state transitions and ML-DSA transactions over native ZAP"
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node2"
+publish = false
+
+[dependencies]
+sha2 = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+hex = "0.4"

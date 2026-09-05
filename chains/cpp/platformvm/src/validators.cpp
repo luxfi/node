@@ -74,15 +74,46 @@ Result<std::map<NodeId, Validator>> current_set(const state::Chain& chain, const
     // Then the L1 validators of the same network. They hold their own key
     // rather than inheriting one, and they are named by the registration that
     // created them rather than by a transaction that added them.
+    //
+    // An INACTIVE one enters under the empty node and with no key. It has run
+    // out of money: it still weighs on the set, because its stake is part of
+    // what a quorum has to beat, but it cannot be sampled and cannot sign. The
+    // two halves of that are the same statement — surfacing its node would let
+    // a quorum wait for a vote that can never come, and surfacing its key would
+    // let its weight count toward a quorum it never voted in. So the weight of
+    // every inactive validator of a network gathers under one keyless entry,
+    // which is exactly what a denominator is.
+    //
+    // Go: state.addL1ValidatorToValidatorManager — AddWeight when the node is
+    // already in the set, AddStaker when it is not, over effectiveNodeID and
+    // effectivePublicKeyBytes.
     for (const auto& v : chain.l1_validators(chain_id)) {
+        const NodeId node_id = v.effective_node_id();
+        const auto it = set.find(node_id);
+        if (it != set.end() && it->second.weight != 0) {
+            auto sum = add64(it->second.weight, v.weight);
+            if (!sum) return fail(Err::Overflow, "the validator set's weight overflows");
+            it->second.weight = sum.value();
+            continue;
+        }
         Validator out;
-        out.node_id = v.node_id;
+        out.node_id = node_id;
         out.weight = v.weight;
         out.tx_id = v.validation_id;
-        if (!v.public_key.empty()) out.public_key = v.public_key;
-        set.insert_or_assign(out.node_id, std::move(out));
+        const auto key = v.effective_public_key();
+        if (!key.empty()) out.public_key = key;
+        set.insert_or_assign(node_id, std::move(out));
     }
     return set;
+}
+
+Result<warp::CanonicalValidatorSet> canonical(const std::map<NodeId, Validator>& set) {
+    std::map<NodeId, std::pair<std::vector<std::uint8_t>, std::uint64_t>> by_node;
+    for (const auto& [node_id, v] : set)
+        by_node.emplace(node_id, std::make_pair(v.public_key ? *v.public_key
+                                                             : std::vector<std::uint8_t>{},
+                                                v.weight));
+    return warp::flatten(by_node);
 }
 
 Id set_root(const std::map<NodeId, Validator>& set) {

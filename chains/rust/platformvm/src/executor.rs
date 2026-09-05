@@ -26,12 +26,12 @@
 
 use std::collections::HashMap;
 
-use crate::components::{Output, Utxo};
+use crate::components::{Credential, Output, Owners, Utxo, UtxoId};
 use crate::flow;
-use crate::ids::{Id, NodeId, PRIMARY_NETWORK_ID};
+use crate::ids::{Id, NodeId, EMPTY, PRIMARY_NETWORK_ID};
 use crate::reward;
 use crate::state::{Error as StateError, Staker, State};
-use crate::txs::{bounded_by, Kind, Priority, Tx, Unsigned};
+use crate::txs::{bounded_by, Kind, NetworkValidator, Priority, Tx, Unsigned};
 
 /// How much stake a validator may have behind it relative to its own.
 ///
@@ -63,8 +63,14 @@ pub struct StakingPolicy {
 /// Everything the executor needs that is not state.
 #[derive(Clone, Debug)]
 pub struct Config {
+    /// Which network this is. A warp message names the network it was signed
+    /// for, and one signed for another network proves nothing here.
+    pub network_id: u32,
     /// The asset stake and fees are denominated in.
     pub native_asset: Id,
+    /// What an L1 validator pays, continuously, for the P-Chain's trouble in
+    /// tracking it — and how many of them the chain has room for at once.
+    pub validator_fee: crate::l1::FeeConfig,
     pub staking: StakingPolicy,
     pub reward: reward::Config,
     /// Every staking policy that has been in force, oldest first.
@@ -182,7 +188,7 @@ pub fn prefers_reward(
     // network, and that is the term its reachability is measured over.
     let primary = state.current_validator(&PRIMARY_NETWORK_ID, &node)?;
 
-    let required = required_uptime(config, staker.chain, primary.start_time)?;
+    let required = required_uptime(state, config, staker.chain, primary.start_time)?;
     let measured = uptime
         .fraction_since(&node, &staker.chain, primary.start_time)
         .ok_or(Error::UptimeUnknown)?;
@@ -191,19 +197,19 @@ pub fn prefers_reward(
 
 /// The fraction of its term a validator bonding at `bonded_at` must have been
 /// reachable for.
-fn required_uptime(config: &Config, chain: Id, bonded_at: u64) -> Result<f64, Error> {
-    if chain != PRIMARY_NETWORK_ID {
-        // A network states its own requirement in its transformation, and
-        // this port does not hold one. Named rather than guessed at: guessing
-        // would judge a network's validators on the primary network's terms.
-        return Err(Error::NetworkTermsNotHeld);
-    }
-    let millionths = match &config.staking_history {
-        Some(history) => history
-            .at(bonded_at as i64)
-            .map(|p| p.uptime_requirement)
-            .unwrap_or(config.staking.uptime_requirement),
-        None => config.staking.uptime_requirement,
+fn required_uptime(
+    state: &State,
+    config: &Config,
+    chain: Id,
+    bonded_at: u64,
+) -> Result<f64, Error> {
+    // A network states its own requirement in the transformation that made it
+    // staked, and that requirement is read as it was when the validator bonded
+    // — a transformation is written once, at genesis, and never rewritten.
+    let millionths = if chain == PRIMARY_NETWORK_ID {
+        policy_at(config, bonded_at).uptime_requirement
+    } else {
+        transformation_of(state, chain)?.uptime_requirement
     };
     Ok(millionths as f64 / crate::reward::PERCENT_DENOMINATOR as f64)
 }
@@ -265,22 +271,53 @@ pub enum Error {
     /// no role now that every staker enters immediately, and any historical
     /// one is already applied in genesis.
     TransformChainNotPermitted,
-    /// A network asking for a validator set of its own.
-    ///
-    /// A set of one's own is held in the L1-validator plane — registrations,
-    /// their fee balances, the expiry of a registration that was never paid
-    /// for — and this port does not carry that plane. Refused by name rather
-    /// than recorded as a network whose set silently has nobody in it. See
-    /// LLM.md.
-    OwnSetNotHeld,
-    /// A transaction that acts on a validator registered on an L1.
-    L1ValidatorPlaneNotHeld(Kind),
     /// A reward that names nothing.
     InvalidId,
     /// Nothing could say how reachable the validator had been.
     UptimeUnknown,
-    /// A network's own staking terms, which live in its transformation.
-    NetworkTermsNotHeld,
+    /// A network whose staking terms nobody ever stated. Its validators are
+    /// admitted through the L1 plane instead.
+    NoNetworkTerms,
+    /// A network that has no owner: it was never created here.
+    NoSuchNetwork,
+    /// The modification is not signed for by the owner it names.
+    NotAuthorized(flow::CredentialError),
+    /// A network that has converted or transformed answers to its own rules,
+    /// not to the P-Chain owner that made it.
+    NetworkIsImmutable,
+    /// A contract-managed set that names no contract to manage it.
+    ManagerNeedsAddress,
+    /// There is no room for another active L1 validator.
+    MaxActiveL1Validators,
+    /// The warp message this transaction carries is not one.
+    Warp(crate::warp::Error),
+    /// The payload inside the warp message is not what this transaction needs.
+    WarpPayload(crate::warpmsg::Error),
+    /// A registration message whose moment has passed.
+    WarpMessageExpired { expiry: u64, now: u64 },
+    /// A registration message issued so far ahead that remembering it until it
+    /// expired would be a way to fill the chain's memory.
+    WarpMessageNotYetAllowed { seconds: u64, limit: u64 },
+    /// A registration already issued once. The expiry set is the whole replay
+    /// defence.
+    WarpMessageAlreadyIssued(Id),
+    /// The message did not come from the chain and address the conversion
+    /// recorded, so whoever sent it does not speak for this L1.
+    WrongWarpSource,
+    /// A conversion this chain never recorded.
+    NoConversion(Id),
+    /// A weight message older than one already applied.
+    StaleNonce { given: u64, least: u64 },
+    /// The largest nonce is reserved for the change that removes a validator.
+    NonceReservedForRemoval,
+    /// Removing the last validator of a converted chain, which would leave a
+    /// chain nobody can ever speak for again.
+    RemovingLastValidator,
+    /// A validation id nothing is registered under.
+    NoSuchL1Validator(Id),
+    /// A record that cannot be read back. Refused rather than trusted, because
+    /// the alternative is minting from a corrupt row.
+    CorruptState(&'static str),
 }
 
 impl std::fmt::Display for Error {
@@ -338,27 +375,78 @@ impl std::fmt::Display for Error {
             Error::TransformChainNotPermitted => {
                 write!(f, "TransformChainTx is not permitted")
             }
-            Error::OwnSetNotHeld => {
-                write!(f, "a network's own validator set is not held by this port")
-            }
-            Error::L1ValidatorPlaneNotHeld(k) => write!(
-                f,
-                "{k:?} acts on an L1 validator, which this port does not hold"
-            ),
             Error::InvalidId => write!(f, "invalid ID"),
             Error::UptimeUnknown => write!(f, "nothing can say how reachable the validator was"),
-            Error::NetworkTermsNotHeld => {
-                write!(f, "a network's own staking terms are not held by this port")
+            Error::NoNetworkTerms => {
+                write!(f, "this network never stated staking terms of its own")
             }
+            Error::NoSuchNetwork => write!(f, "no such network"),
+            Error::NotAuthorized(e) => write!(f, "unauthorized modification: {e}"),
+            Error::NetworkIsImmutable => {
+                write!(f, "this network answers to its own rules now, not to its owner")
+            }
+            Error::ManagerNeedsAddress => {
+                write!(f, "a contract-managed set must name the contract that manages it")
+            }
+            Error::MaxActiveL1Validators => {
+                write!(f, "already at the max number of active validators")
+            }
+            Error::Warp(e) => write!(f, "{e}"),
+            Error::WarpPayload(e) => write!(f, "{e}"),
+            Error::WarpMessageExpired { expiry, now } => {
+                write!(f, "the warp message expired at {expiry} and it is now {now}")
+            }
+            Error::WarpMessageNotYetAllowed { seconds, limit } => write!(
+                f,
+                "the warp message is {seconds} seconds in the future but the limit is {limit}"
+            ),
+            Error::WarpMessageAlreadyIssued(id) => {
+                write!(f, "the warp message for {} was already issued", hex(id))
+            }
+            Error::WrongWarpSource => {
+                write!(f, "the warp message did not come from this L1's manager")
+            }
+            Error::NoConversion(id) => write!(f, "{} has no recorded conversion", hex(id)),
+            Error::StaleNonce { given, least } => {
+                write!(f, "nonce {given} must be at least {least}")
+            }
+            Error::NonceReservedForRemoval => {
+                write!(f, "the largest nonce may only remove a validator")
+            }
+            Error::RemovingLastValidator => {
+                write!(f, "attempting to remove the last L1 validator from a converted chain")
+            }
+            Error::NoSuchL1Validator(id) => {
+                write!(f, "no L1 validator is registered as {}", hex(id))
+            }
+            Error::CorruptState(what) => write!(f, "state corruption: {what}"),
         }
     }
 }
 
 impl std::error::Error for Error {}
 
+/// An id as it is written in a refusal. Short enough to read, long enough to
+/// find in a log.
+fn hex(id: &Id) -> String {
+    id.iter().map(|b| format!("{b:02x}")).collect()
+}
+
 impl From<crate::txs::Error> for Error {
     fn from(e: crate::txs::Error) -> Self {
         Error::Syntactic(e)
+    }
+}
+
+impl From<crate::warp::Error> for Error {
+    fn from(e: crate::warp::Error) -> Self {
+        Error::Warp(e)
+    }
+}
+
+impl From<crate::warpmsg::Error> for Error {
+    fn from(e: crate::warpmsg::Error) -> Self {
+        Error::WarpPayload(e)
     }
 }
 
@@ -431,11 +519,22 @@ pub fn execute_standard(
             Ok(())
         }
 
-        Unsigned::CreateChain { base, name, .. } => {
+        Unsigned::CreateChain {
+            base,
+            chain,
+            name,
+            chain_auth,
+            ..
+        } => {
             if !name.is_empty() && state.is_chain_name_taken(name) {
                 return Err(Error::ChainNameTaken);
             }
-            charge(state, tx, &base.ins, &base.outs, config, fees)?;
+            // A chain runs on a network, and only that network's owner may put
+            // one there. Without this check anyone could add a chain to
+            // anybody's network.
+            let base_creds =
+                verify_poa_chain_authorization(state, tx, chain, chain_auth)?.to_vec();
+            charge_creds(state, tx, &base.ins, &base.outs, &base_creds, 0, config, fees)?;
             state.consume_and_produce(tx.id(), &base.ins, &base.outs);
             state.add_blockchain(tx.id(), name);
             state.add_tx(tx.clone());
@@ -446,7 +545,7 @@ pub fn execute_standard(
             base,
             validator,
             chain,
-            ..
+            chain_auth,
         } => {
             let now = state.timestamp();
             let duration = validator.end.saturating_sub(now);
@@ -464,7 +563,12 @@ pub fn execute_standard(
                 // for a period inside the one it validates there. Otherwise a
                 // network could be secured by nodes with nothing at stake.
                 verify_primary_network_requirements(state, &validator.node_id, validator.end)?;
-                charge(state, tx, &base.ins, &base.outs, config, fees)?;
+                // And the network's owner must have admitted this one by name:
+                // that is what "permissioned" means, and without the check the
+                // set is open to anyone who can pay the fee.
+                let base_creds =
+                    verify_poa_chain_authorization(state, tx, chain, chain_auth)?.to_vec();
+                charge_creds(state, tx, &base.ins, &base.outs, &base_creds, 0, config, fees)?;
             }
             state.consume_and_produce(tx.id(), &base.ins, &base.outs);
             put_staker(state, tx, config)?;
@@ -498,7 +602,7 @@ pub fn execute_standard(
             // network but the primary there is nothing to judge against, and
             // judging against the primary network's terms would admit a
             // validator on somebody else's rules.
-            let rules = network_rules(config, *chain)?;
+            let rules = network_rules(state, config, *chain)?;
 
             if validator.weight < rules.min_validator_stake {
                 return Err(Error::WeightTooSmall);
@@ -551,7 +655,7 @@ pub fn execute_standard(
 
             let now = state.timestamp();
             let duration = validator.end.saturating_sub(now);
-            let rules = network_rules(config, *chain)?;
+            let rules = network_rules(state, config, *chain)?;
 
             if validator.weight < rules.min_delegator_stake {
                 return Err(Error::WeightTooSmall);
@@ -606,7 +710,7 @@ pub fn execute_standard(
             base,
             node_id,
             chain,
-            ..
+            chain_auth,
         } => {
             let (staker, is_current) = match state.current_validator(chain, node_id) {
                 Ok(v) => (v.clone(), true),
@@ -621,7 +725,10 @@ pub fn execute_standard(
                 return Err(Error::RemovePermissionlessValidator);
             }
             if config.bootstrapped {
-                charge(state, tx, &base.ins, &base.outs, config, fees)?;
+                // A validator admitted by name is removed by the same owner
+                // that named it, and by nobody else.
+                let base_creds = verify_chain_authorization(state, tx, chain, chain_auth)?.to_vec();
+                charge_creds(state, tx, &base.ins, &base.outs, &base_creds, 0, config, fees)?;
             }
             if is_current {
                 state.delete_current_validator(&staker);
@@ -633,69 +740,743 @@ pub fn execute_standard(
         }
 
         Unsigned::TransferChainOwnership {
-            base, chain, owner, ..
+            base,
+            chain,
+            chain_auth,
+            owner,
         } => {
-            charge(state, tx, &base.ins, &base.outs, config, fees)?;
+            // Handing a network on is the most consequential thing its owner
+            // can do, so it is the owner that has to sign for it.
+            let base_creds = verify_chain_authorization(state, tx, chain, chain_auth)?.to_vec();
+            charge_creds(state, tx, &base.ins, &base.outs, &base_creds, 0, config, fees)?;
             state.consume_and_produce(tx.id(), &base.ins, &base.outs);
             state.set_chain_owner(*chain, owner.clone());
             Ok(())
         }
 
-        Unsigned::IncreaseL1ValidatorBalance { .. } | Unsigned::DisableL1Validator { .. } => {
-            // Both act on an L1 validator's fee balance, which this port does
-            // not hold. Refused by name rather than applied to nothing.
-            Err(Error::WrongTxType(tx.unsigned.kind()))
+        Unsigned::IncreaseL1ValidatorBalance {
+            base,
+            validation_id,
+            balance,
+        } => {
+            // Anyone may top up an L1 validator's balance: nobody has to be
+            // authorised to pay someone else's fees.
+            charge_creds(
+                state,
+                tx,
+                &base.ins,
+                &base.outs,
+                &tx.creds,
+                *balance,
+                config,
+                fees,
+            )?;
+            let mut validator = state
+                .l1_validator(validation_id)
+                .map_err(|_| Error::NoSuchL1Validator(*validation_id))?
+                .clone();
+
+            // A top-up of an inactive validator activates it, and there is only
+            // so much room for active ones.
+            if validator.end_accumulated_fee == 0 {
+                if state.num_active_l1_validators() as u64 >= config.validator_fee.capacity {
+                    return Err(Error::MaxActiveL1Validators);
+                }
+                validator.end_accumulated_fee = state.accrued_fees();
+            }
+            validator.end_accumulated_fee = validator
+                .end_accumulated_fee
+                .checked_add(*balance)
+                .ok_or(Error::Overflow)?;
+
+            state.put_l1_validator(validator)?;
+            state.consume_and_produce(tx.id(), &base.ins, &base.outs);
+            Ok(())
+        }
+
+        Unsigned::DisableL1Validator {
+            base,
+            validation_id,
+            auth,
+        } => {
+            // Switching a validator off is the one L1 operation the P-Chain
+            // authorises itself, against the deactivation owner the
+            // registration named.
+            let validator = state
+                .l1_validator(validation_id)
+                .map_err(|_| Error::NoSuchL1Validator(*validation_id))?
+                .clone();
+            let owner = Owners::unmarshal(&validator.deactivation_owner)
+                .map_err(|_| Error::CorruptState("the deactivation owner is malformed"))?;
+            let base_creds = verify_authorization(tx, &owner, auth, state.timestamp())?.to_vec();
+            charge_creds(
+                state,
+                tx,
+                &base.ins,
+                &base.outs,
+                &base_creds,
+                0,
+                config,
+                fees,
+            )?;
+            state.consume_and_produce(tx.id(), &base.ins, &base.outs);
+
+            // Already off: nothing to refund and nothing to change.
+            if validator.end_accumulated_fee == 0 {
+                return Ok(());
+            }
+            refund_remaining_balance(state, config, tx.id(), base.outs.len(), &validator)?;
+            let mut off = validator;
+            off.end_accumulated_fee = 0;
+            state.put_l1_validator(off)?;
+            Ok(())
         }
 
         Unsigned::CreateNetwork {
             base,
             owner,
             security,
+            validators,
+            manager_chain_id,
+            manager_address,
             ..
         } => {
-            // A network that runs a set of its own has that set seeded here,
-            // in the L1-validator plane. This port does not hold that plane,
-            // so it refuses rather than recording a network whose set is
-            // silently empty — an empty set is a network nothing secures.
-            if security.sovereign() {
-                return Err(Error::OwnSetNotHeld);
-            }
-            charge(state, tx, &base.ins, &base.outs, config, fees)?;
-            state.consume_and_produce(tx.id(), &base.ins, &base.outs);
             // The network's id IS this transaction's id, which is what lets
             // every later transaction that names the network name it without
-            // anyone having chosen a name.
-            state.add_chain(tx.id(), owner.clone());
+            // anyone having chosen a name — and it is what the seeded set is
+            // keyed under.
+            let network_id = tx.id();
+
+            // Every activated validator's balance is charged on top of the base
+            // fee: it funds that validator's continuously-charged mark, so the
+            // backing LUX must be spent here or it would be minted.
+            let mut prepaid: u64 = 0;
+            if security.sovereign() {
+                for v in validators {
+                    prepaid = prepaid.checked_add(v.balance).ok_or(Error::Overflow)?;
+                }
+            }
+            charge_creds(
+                state,
+                tx,
+                &base.ins,
+                &base.outs,
+                &tx.creds,
+                prepaid,
+                config,
+                fees,
+            )?;
+            state.consume_and_produce(tx.id(), &base.ins, &base.outs);
+            state.add_chain(network_id, owner.clone());
+
+            // A network that runs a set of its own has that set seeded now.
+            // Chains themselves are added by CreateChain.
+            if security.sovereign() {
+                register_own_set(
+                    state,
+                    config,
+                    network_id,
+                    validators,
+                    security,
+                    *manager_chain_id,
+                    manager_address,
+                )?;
+            }
             Ok(())
         }
 
-        Unsigned::ConvertNetwork { .. } => {
-            // Promotion establishes a set of the network's own, which is the
-            // same plane CreateNetwork's sovereign path needs.
-            Err(Error::OwnSetNotHeld)
+        Unsigned::ConvertNetwork {
+            base,
+            network,
+            manager_chain_id,
+            manager_address,
+            validators,
+            auth,
+            security,
+            ..
+        } => {
+            // The existing network owner must authorise the promotion.
+            let base_creds =
+                verify_poa_chain_authorization(state, tx, network, auth)?.to_vec();
+
+            let mut prepaid: u64 = 0;
+            for v in validators {
+                prepaid = prepaid.checked_add(v.balance).ok_or(Error::Overflow)?;
+            }
+
+            // The set is established before the spend is checked, exactly as Go
+            // orders it: the capacity refusal is about the set, not the money.
+            register_own_set(
+                state,
+                config,
+                *network,
+                validators,
+                security,
+                *manager_chain_id,
+                manager_address,
+            )?;
+            charge_creds(
+                state,
+                tx,
+                &base.ins,
+                &base.outs,
+                &base_creds,
+                prepaid,
+                config,
+                fees,
+            )?;
+            state.consume_and_produce(tx.id(), &base.ins, &base.outs);
+            Ok(())
         }
 
         Unsigned::TransformChain { .. } => Err(Error::TransformChainNotPermitted),
 
-        Unsigned::RegisterL1Validator { .. } | Unsigned::SetL1ValidatorWeight { .. } => {
-            Err(Error::L1ValidatorPlaneNotHeld(tx.unsigned.kind()))
+        Unsigned::RegisterL1Validator {
+            base,
+            balance,
+            proof_of_possession,
+            message,
+        } => {
+            let now = state.timestamp();
+            charge_creds(
+                state,
+                tx,
+                &base.ins,
+                &base.outs,
+                &tx.creds,
+                *balance,
+                config,
+                fees,
+            )?;
+
+            let (warp_message, call) = open_warp_call(message)?;
+            let crate::warpmsg::Message::Register(msg) =
+                crate::warpmsg::parse_message(&call.payload)?
+            else {
+                return Err(Error::WarpPayload(crate::warpmsg::Error::WrongKind));
+            };
+            msg.verify()?;
+
+            verify_l1_conversion(
+                state,
+                msg.chain_id,
+                warp_message.unsigned.source_chain_id,
+                &call.source_address,
+            )?;
+
+            // The expiry bounds how long the chain has to remember this message
+            // in order to refuse a replay of it.
+            if msg.expiry <= now {
+                return Err(Error::WarpMessageExpired {
+                    expiry: msg.expiry,
+                    now,
+                });
+            }
+            let until = msg.expiry - now;
+            if until > REGISTER_EXPIRY_WINDOW {
+                return Err(Error::WarpMessageNotYetAllowed {
+                    seconds: until,
+                    limit: REGISTER_EXPIRY_WINDOW,
+                });
+            }
+
+            let validation_id = msg.validation_id();
+            let expiry = crate::l1::Expiry {
+                timestamp: msg.expiry,
+                validation_id,
+            };
+            // The whole replay defence: the chain remembers every registration
+            // it has seen until the moment that registration could no longer be
+            // issued.
+            if state.has_expiry(&expiry) {
+                return Err(Error::WarpMessageAlreadyIssued(validation_id));
+            }
+
+            // The message says which key; the transaction proves whoever sent
+            // it holds that key. Neither alone is enough.
+            crate::signer::Signer::ProofOfPossession {
+                public_key: msg.bls_public_key,
+                proof: *proof_of_possession,
+            }
+            .verify()
+            .map_err(|e| Error::Syntactic(crate::txs::Error::Signer(e)))?;
+
+            let mut node_id = [0u8; crate::ids::NODE_ID_LEN];
+            node_id.copy_from_slice(&msg.node_id);
+            let public_key = crate::signer::uncompress(&msg.bls_public_key)
+                .map_err(|e| Error::Syntactic(crate::txs::Error::Signer(e)))?;
+
+            let mut validator = crate::l1::Validator {
+                validation_id,
+                chain_id: msg.chain_id,
+                node_id: NodeId(node_id),
+                public_key,
+                remaining_balance_owner: msg.remaining_balance_owner.as_owners().marshal(),
+                deactivation_owner: msg.disable_owner.as_owners().marshal(),
+                start_time: now,
+                weight: msg.weight,
+                min_nonce: 0,
+                // A zero balance leaves it inactive.
+                end_accumulated_fee: 0,
+            };
+            if *balance != 0 {
+                if state.num_active_l1_validators() as u64 >= config.validator_fee.capacity {
+                    return Err(Error::MaxActiveL1Validators);
+                }
+                // The balance is stored as the accrued-fee mark it can pay up
+                // to, so deactivation is a comparison rather than a
+                // per-validator decrement.
+                validator.end_accumulated_fee = balance
+                    .checked_add(state.accrued_fees())
+                    .ok_or(Error::Overflow)?;
+            }
+
+            state.put_l1_validator(validator)?;
+            state.consume_and_produce(tx.id(), &base.ins, &base.outs);
+            state.put_expiry(expiry);
+            Ok(())
+        }
+
+        Unsigned::SetL1ValidatorWeight { base, message } => {
+            charge(state, tx, &base.ins, &base.outs, config, fees)?;
+
+            let (warp_message, call) = open_warp_call(message)?;
+            let crate::warpmsg::Message::Weight(msg) =
+                crate::warpmsg::parse_message(&call.payload)?
+            else {
+                return Err(Error::WarpPayload(crate::warpmsg::Error::WrongKind));
+            };
+            // The largest nonce is reserved for the change that removes a
+            // validator, so the increment below can never overflow for one that
+            // stays.
+            if msg.nonce == u64::MAX && msg.weight != 0 {
+                return Err(Error::NonceReservedForRemoval);
+            }
+
+            let mut validator = state
+                .l1_validator(&msg.validation_id)
+                .map_err(|_| Error::NoSuchL1Validator(msg.validation_id))?
+                .clone();
+
+            // The nonce is the whole replay defence for weight: an old message
+            // cannot be re-sent over a newer one.
+            if msg.nonce < validator.min_nonce {
+                return Err(Error::StaleNonce {
+                    given: msg.nonce,
+                    least: validator.min_nonce,
+                });
+            }
+
+            verify_l1_conversion(
+                state,
+                validator.chain_id,
+                warp_message.unsigned.source_chain_id,
+                &call.source_address,
+            )?;
+
+            if msg.weight == 0 {
+                // A chain with no validators is a chain nobody can ever speak
+                // for again, so the last one cannot be removed.
+                if state.weight_of_l1_validators(&validator.chain_id)? == validator.weight {
+                    return Err(Error::RemovingLastValidator);
+                }
+                if validator.end_accumulated_fee != 0 {
+                    refund_remaining_balance(
+                        state,
+                        config,
+                        tx.id(),
+                        base.outs.len(),
+                        &validator,
+                    )?;
+                }
+            }
+
+            validator.min_nonce = msg.nonce.wrapping_add(1);
+            validator.weight = msg.weight;
+            state.put_l1_validator(validator)?;
+            state.consume_and_produce(tx.id(), &base.ins, &base.outs);
+            Ok(())
         }
     }
 }
 
+/// How long a registration message may sit ahead of the clock. The chain
+/// remembers every registration until it expires in order to refuse a replay,
+/// so this bounds how much it has to remember. Go:
+/// `RegisterL1ValidatorTxExpiryWindow`.
+pub const REGISTER_EXPIRY_WINDOW: u64 = 24 * 60 * 60;
+
+/// The share of a source chain's weight a warp message must carry. Go:
+/// `WarpQuorumNumerator` / `WarpQuorumDenominator`.
+pub const WARP_QUORUM_NUMERATOR: u64 = 67;
+pub const WARP_QUORUM_DENOMINATOR: u64 = 100;
+
 /// The staking terms a network admits on.
 ///
-/// Go reads these out of the network's own transformation for every network
-/// but the primary. This port does not hold a transformation — the transaction
-/// that writes one is refused, as it is in Go — so there is only one network
-/// whose terms can be answered, and the rest are named rather than guessed at.
-/// Substituting the primary network's terms would judge a network's validators
-/// on rules nobody agreed to.
-fn network_rules(config: &Config, chain: Id) -> Result<&StakingPolicy, Error> {
-    if chain != PRIMARY_NETWORK_ID {
-        return Err(Error::NetworkTermsNotHeld);
+/// The primary network's are the compiled-in policy in force at the moment the
+/// joiner joins. Every other network states its own in the transformation that
+/// made it staked; a network that never stated any admits validators through
+/// the L1 plane instead, and is told so by name rather than judged on the
+/// primary network's rules — which nobody there agreed to.
+fn network_rules(state: &State, config: &Config, chain: Id) -> Result<StakingPolicy, Error> {
+    if chain == PRIMARY_NETWORK_ID {
+        return Ok(policy_at(config, state.timestamp()));
     }
-    Ok(&config.staking)
+    let terms = transformation_of(state, chain)?;
+    Ok(StakingPolicy {
+        min_validator_stake: terms.min_validator_stake,
+        max_validator_stake: terms.max_validator_stake,
+        min_delegator_stake: terms.min_delegator_stake,
+        min_stake_duration: terms.min_stake_duration as u64,
+        max_stake_duration: terms.max_stake_duration as u64,
+        min_delegation_fee: terms.min_delegation_fee,
+        uptime_requirement: terms.uptime_requirement,
+    })
+}
+
+/// What a network's own transformation says, as a value rather than as a
+/// transaction. Everything a joiner is judged against lives here.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Terms {
+    pub asset_id: Id,
+    pub min_validator_stake: u64,
+    pub max_validator_stake: u64,
+    pub min_delegator_stake: u64,
+    pub min_stake_duration: u32,
+    pub max_stake_duration: u32,
+    pub min_delegation_fee: u32,
+    pub max_validator_weight_factor: u8,
+    pub uptime_requirement: u32,
+    pub min_consumption_rate: u64,
+    pub max_consumption_rate: u64,
+    pub maximum_supply: u64,
+}
+
+/// Go: `GetTransformChainTx`. A network's terms, out of the transformation it
+/// stated them in.
+fn transformation_of(state: &State, chain: Id) -> Result<Terms, Error> {
+    let tx = state.transformation(&chain).map_err(|_| Error::NoNetworkTerms)?;
+    let Unsigned::TransformChain {
+        asset_id,
+        maximum_supply,
+        min_consumption_rate,
+        max_consumption_rate,
+        min_validator_stake,
+        max_validator_stake,
+        min_stake_duration,
+        max_stake_duration,
+        min_delegation_fee,
+        min_delegator_stake,
+        max_validator_weight_factor,
+        uptime_requirement,
+        ..
+    } = &tx.unsigned
+    else {
+        // The row is keyed by network and written only from genesis, so
+        // anything else there is a corrupt record rather than a wrong caller.
+        return Err(Error::CorruptState("a network's terms are not a transformation"));
+    };
+    Ok(Terms {
+        asset_id: *asset_id,
+        min_validator_stake: *min_validator_stake,
+        max_validator_stake: *max_validator_stake,
+        min_delegator_stake: *min_delegator_stake,
+        min_stake_duration: *min_stake_duration,
+        max_stake_duration: *max_stake_duration,
+        min_delegation_fee: *min_delegation_fee,
+        max_validator_weight_factor: *max_validator_weight_factor,
+        uptime_requirement: *uptime_requirement,
+        min_consumption_rate: *min_consumption_rate,
+        max_consumption_rate: *max_consumption_rate,
+        maximum_supply: *maximum_supply,
+    })
+}
+
+/// The compiled-in policy in force at `at`. A joiner accepts the terms in force
+/// at the moment it joins, so that instant is the chain's own clock.
+fn policy_at(config: &Config, at: u64) -> StakingPolicy {
+    let Some(history) = &config.staking_history else {
+        return config.staking;
+    };
+    let Some(governed) = history.at(at as i64) else {
+        return config.staking;
+    };
+    StakingPolicy {
+        min_validator_stake: governed.min_validator_stake,
+        max_validator_stake: governed.max_validator_stake,
+        // Deliberately not governed: it is the floor on who may delegate at
+        // all, and delegators are the one constituency that cannot defend
+        // itself by voting, because the vote belongs to the validator.
+        min_delegator_stake: config.staking.min_delegator_stake,
+        min_stake_duration: governed.min_stake_duration as u64,
+        max_stake_duration: governed.max_stake_duration as u64,
+        min_delegation_fee: governed.min_delegation_fee,
+        uptime_requirement: governed.uptime_requirement,
+    }
+}
+
+/// What a network pays its stakers. Go: `GetRewardsCalculator`. A network that
+/// never transformed mints on the primary network's schedule.
+fn rewards_for(state: &State, config: &Config, chain: Id) -> reward::Config {
+    match transformation_of(state, chain) {
+        Err(_) => config.reward,
+        Ok(terms) => reward::Config {
+            max_consumption_rate: terms.max_consumption_rate,
+            min_consumption_rate: terms.min_consumption_rate,
+            minting_period: config.reward.minting_period,
+            supply_cap: terms.maximum_supply,
+        },
+    }
+}
+
+/// Go: `verifyAuthorization`. The **last** credential authorises the
+/// modification; the rest authorise the spending.
+///
+/// The split matters twice over. A transaction that modifies something and
+/// spends something carries signatures for both, and running the spend check
+/// over the authorisation credential would either accept a spend nobody signed
+/// for or refuse one that was signed for correctly.
+fn verify_authorization<'a>(
+    tx: &'a Tx,
+    owner: &Owners,
+    auth: &[u32],
+    now: u64,
+) -> Result<&'a [Credential], Error> {
+    if tx.creds.is_empty() {
+        return Err(Error::WrongNumberOfCredentials);
+    }
+    let base_len = tx.creds.len() - 1;
+    flow::verify_permission(owner, auth, &tx.creds[base_len], &tx.sighash(), now)
+        .map_err(Error::NotAuthorized)?;
+    Ok(&tx.creds[..base_len])
+}
+
+/// Go: `verifyChainAuthorization`. The same, against the owner of a network.
+fn verify_chain_authorization<'a>(
+    state: &State,
+    tx: &'a Tx,
+    chain: &Id,
+    auth: &[u32],
+) -> Result<&'a [Credential], Error> {
+    let owner = state.chain_owner(chain).map_err(|_| Error::NoSuchNetwork)?.clone();
+    verify_authorization(tx, &owner, auth, state.timestamp())
+}
+
+/// Go: `verifyPoAChainAuthorization`. A network that has transformed or
+/// converted is immutable: its own rules govern it now, and the owner that made
+/// it no longer speaks for it.
+fn verify_poa_chain_authorization<'a>(
+    state: &State,
+    tx: &'a Tx,
+    chain: &Id,
+    auth: &[u32],
+) -> Result<&'a [Credential], Error> {
+    let creds = verify_chain_authorization(state, tx, chain, auth)?;
+    if state.transformation(chain).is_ok() || state.conversion(chain).is_ok() {
+        return Err(Error::NetworkIsImmutable);
+    }
+    Ok(creds)
+}
+
+/// Go: `registerOwnSet`. Seeds a network's own validator set and records the
+/// authority that may change it.
+///
+/// The one primitive behind both the ∅ → network constructor and the
+/// network → network promotion, so a sovereign set is established exactly one
+/// way. It only mutates state: the LUX backing every activated validator's
+/// balance is spent by the caller's flow check.
+fn register_own_set(
+    state: &mut State,
+    config: &Config,
+    network_id: Id,
+    validators: &[NetworkValidator],
+    security: &crate::security::Mode,
+    manager_chain_id: Id,
+    manager_address: &[u8],
+) -> Result<(), Error> {
+    // A contract-governed set must name its manager. `syntactic_verify` already
+    // enforces this; stating it here keeps the primitive self-contained.
+    if security.manager == crate::security::Manager::Contract
+        && (manager_chain_id == EMPTY || manager_address.is_empty())
+    {
+        return Err(Error::ManagerNeedsAddress);
+    }
+
+    let start_time = state.timestamp();
+    let accrued = state.accrued_fees();
+    let mut data = crate::warpmsg::ConversionData {
+        chain_id: network_id,
+        manager_chain_id,
+        manager_address: manager_address.to_vec(),
+        validators: Vec::with_capacity(validators.len()),
+    };
+
+    for (i, v) in validators.iter().enumerate() {
+        if v.node_id.len() != crate::ids::NODE_ID_LEN {
+            return Err(Error::Syntactic(crate::txs::Error::BadNodeIdLength(
+                v.node_id.len(),
+            )));
+        }
+        let mut node_id = [0u8; crate::ids::NODE_ID_LEN];
+        node_id.copy_from_slice(&v.node_id);
+
+        // The possession pairing was already run by `syntactic_verify` over
+        // these same bytes, so this is the decode alone. Still fail-closed: a
+        // key that does not parse is refused, because a validator stored
+        // keyless carries weight in the quorum denominator with no way for
+        // anyone to vote toward it.
+        let compressed = v.signer.public_key().ok_or(Error::Syntactic(
+            crate::txs::Error::Signer(crate::signer::Error::MalformedPublicKey),
+        ))?;
+        let public_key = crate::signer::uncompress(&compressed)
+            .map_err(|e| Error::Syntactic(crate::txs::Error::Signer(e)))?;
+
+        let mut record = crate::l1::Validator {
+            // The name is DERIVED — the network's id with the index appended —
+            // rather than assigned, so genesis validators need nothing agreed.
+            validation_id: append_index(&network_id, i as u32),
+            chain_id: network_id,
+            node_id: NodeId(node_id),
+            public_key,
+            remaining_balance_owner: v.remaining_balance_owner.as_owners().marshal(),
+            deactivation_owner: v.deactivation_owner.as_owners().marshal(),
+            start_time,
+            weight: v.weight,
+            min_nonce: 0,
+            // A zero balance leaves it inactive.
+            end_accumulated_fee: 0,
+        };
+
+        if v.balance != 0 {
+            // Activating a validator consumes active-set capacity and prepays
+            // its fee out of the accrued-fee clock.
+            if state.num_active_l1_validators() as u64 >= config.validator_fee.capacity {
+                return Err(Error::MaxActiveL1Validators);
+            }
+            record.end_accumulated_fee = v.balance.checked_add(accrued).ok_or(Error::Overflow)?;
+        }
+        state.put_l1_validator(record)?;
+
+        data.validators.push(crate::warpmsg::ConversionValidator {
+            node_id: v.node_id.clone(),
+            bls_public_key: compressed,
+            weight: v.weight,
+        });
+    }
+
+    // The conversion id is the hash of the set as it was established, and it is
+    // what every later message about this L1 refers to.
+    state.set_conversion(
+        network_id,
+        crate::state::Conversion {
+            conversion_id: data.conversion_id(),
+            chain_id: manager_chain_id,
+            address: manager_address.to_vec(),
+        },
+    );
+    Ok(())
+}
+
+/// Go: `ids.ID.Append`. A validation id derived from the network's id and the
+/// validator's position in the set it was born with.
+fn append_index(id: &Id, index: u32) -> Id {
+    let mut preimage = Vec::with_capacity(36);
+    preimage.extend_from_slice(id);
+    preimage.extend_from_slice(&index.to_be_bytes());
+    crate::ids::hash256(&preimage)
+}
+
+/// Go: `verifyL1Conversion`. The message must have come from the chain and the
+/// address the conversion recorded — otherwise anyone with a chain could speak
+/// for this L1.
+fn verify_l1_conversion(
+    state: &State,
+    chain_id: Id,
+    source_chain: Id,
+    source_address: &[u8],
+) -> Result<(), Error> {
+    let conversion = state
+        .conversion(&chain_id)
+        .map_err(|_| Error::NoConversion(chain_id))?;
+    if conversion.chain_id != source_chain || conversion.address != source_address {
+        return Err(Error::WrongWarpSource);
+    }
+    Ok(())
+}
+
+/// The three layers a warp-carrying transaction wraps its message in: the
+/// signed envelope, the addressed call that says who sent it, and the L1's own
+/// message.
+fn open_warp_call(raw: &[u8]) -> Result<(crate::warp::Message, crate::warpmsg::Call), Error> {
+    let message = crate::warp::Message::parse(raw)?;
+    match crate::warpmsg::parse_envelope(&message.unsigned.payload)? {
+        crate::warpmsg::Envelope::Call(call) => Ok((message, call)),
+        crate::warpmsg::Envelope::Hash(_) => Err(Error::WarpPayload(
+            crate::warpmsg::Error::WrongKind,
+        )),
+    }
+}
+
+/// What an L1 validator prepaid and did not spend, back to the owner the
+/// registration named, as the output after the transaction's own.
+fn refund_remaining_balance(
+    state: &mut State,
+    config: &Config,
+    tx_id: Id,
+    own_outputs: usize,
+    validator: &crate::l1::Validator,
+) -> Result<(), Error> {
+    let owner = Owners::unmarshal(&validator.remaining_balance_owner)
+        .map_err(|_| Error::CorruptState("the remaining-balance owner is malformed"))?;
+    let accrued = state.accrued_fees();
+    // Unreachable if the fee state is sound. Kept because the alternative to an
+    // impossible refusal here is minting LUX out of a corrupt record.
+    if validator.end_accumulated_fee <= accrued {
+        return Err(Error::CorruptState(
+            "the validator should already have been disabled",
+        ));
+    }
+    state.add_utxo(Utxo {
+        id: UtxoId {
+            tx_id,
+            output_index: own_outputs as u32,
+        },
+        output: Output {
+            asset: config.native_asset,
+            stake_lock: 0,
+            amount: validator.end_accumulated_fee - accrued,
+            owners: owner,
+        },
+    });
+    Ok(())
+}
+
+/// Check the aggregate proof on every warp message a transaction carries.
+///
+/// Go runs this as its own pass (`VerifyWarpMessages`) at the P-Chain height
+/// the block is being verified against, because the set that signed has to be
+/// the set as it stood then — which is what [`crate::validators::History`]
+/// answers. Only the two transactions that carry a message have one to check.
+pub fn verify_warp_messages(
+    tx: &Unsigned,
+    network_id: u32,
+    source_set: &crate::warp::Canonical,
+) -> Result<(), Error> {
+    let raw = match tx {
+        Unsigned::RegisterL1Validator { message, .. }
+        | Unsigned::SetL1ValidatorWeight { message, .. } => message,
+        _ => return Ok(()),
+    };
+    let message = crate::warp::Message::parse(raw)?;
+    crate::warp::verify(
+        &message.signature,
+        &message.unsigned,
+        network_id,
+        source_set,
+        WARP_QUORUM_NUMERATOR,
+        WARP_QUORUM_DENOMINATOR,
+    )
+    .map_err(Error::Warp)
 }
 
 /// Read the UTXOs an input names and check the arithmetic.
@@ -707,17 +1488,43 @@ fn charge(
     config: &Config,
     fees: &dyn Fees,
 ) -> Result<(), Error> {
+    charge_creds(state, tx, ins, outs, &tx.creds, 0, config, fees)
+}
+
+/// The same, with the credentials named explicitly and an amount burnt on top
+/// of the fee.
+///
+/// The credentials are named because a transaction that also authorises a
+/// modification carries one more credential than it has inputs, and the last of
+/// them is the authorisation rather than a spend. `extra` is what a transaction
+/// must burn beyond its fee — an L1 validator's prepaid balance, which is real
+/// money that must leave circulation or it would be minted.
+#[allow(clippy::too_many_arguments)]
+fn charge_creds(
+    state: &State,
+    tx: &Tx,
+    ins: &[crate::components::Input],
+    outs: &[Output],
+    creds: &[Credential],
+    extra: u64,
+    config: &Config,
+    fees: &dyn Fees,
+) -> Result<(), Error> {
     let mut utxos = Vec::with_capacity(ins.len());
     for input in ins {
         utxos.push(state.utxo(&input.utxo.input_id())?.clone());
     }
+    let fee = fees
+        .fee(&tx.unsigned)
+        .checked_add(extra)
+        .ok_or(Error::Overflow)?;
     let mut fee_map = HashMap::new();
-    fee_map.insert(config.native_asset, fees.fee(&tx.unsigned));
-    flow::verify_spend(&utxos, ins, outs, &tx.creds, &fee_map, state.timestamp())?;
+    fee_map.insert(config.native_asset, fee);
+    flow::verify_spend(&utxos, ins, outs, creds, &fee_map, state.timestamp())?;
     // The arithmetic says the value adds up; this says whose value it was.
     // Both, always, and in one place — an execution path that ran one without
     // the other would let anyone spend anyone's output.
-    flow::verify_credentials(&utxos, ins, &tx.creds, &tx.sighash(), state.timestamp())?;
+    flow::verify_credentials(&utxos, ins, creds, &tx.sighash(), state.timestamp())?;
     Ok(())
 }
 
@@ -1136,14 +1943,11 @@ pub fn advance_time_to(state: &mut State, new_time: u64, config: &Config) -> Res
         }
 
         let supply = state.current_supply(&old.chain)?;
-        // What a network mints is the network's own schedule, written in its
-        // transformation. Only the primary network's is compiled in, so a
-        // staker entering another network's set is refused rather than paid on
-        // the primary network's emission.
-        if old.chain != PRIMARY_NETWORK_ID {
-            return Err(Error::NetworkTermsNotHeld);
-        }
-        let calculator = reward::Calculator::new(config.reward);
+        // What a network mints is the network's own schedule, written in the
+        // transformation that made it staked. A network that never transformed
+        // has no schedule of its own and mints on the primary network's, which
+        // is what Go's `GetRewardsCalculator` answers.
+        let calculator = reward::Calculator::new(rewards_for(state, config, old.chain));
         promoted.potential_reward = calculator.calculate(
             std::time::Duration::from_secs(old.end_time.saturating_sub(old.start_time)),
             old.weight,
@@ -1202,7 +2006,14 @@ mod tests {
 
     fn config() -> Config {
         Config {
+            network_id: 1,
             native_asset: ASSET,
+            validator_fee: crate::l1::FeeConfig {
+                capacity: 20_000,
+                target: 10_000,
+                min_price: 512,
+                excess_conversion_constant: 1_246_488,
+            },
             staking: StakingPolicy {
                 min_validator_stake: 2 * MEGA,
                 max_validator_stake: 3_000 * MEGA,
@@ -2140,6 +2951,9 @@ mod tests {
     fn a_chain_name_may_not_be_taken_twice() {
         let now = 1000;
         let (mut state, input) = funded(now, 100);
+        // The network the chains go on, owned by the spender — the one who
+        // signs the authorisation credential below.
+        state.add_chain([6; 32], spend_owner());
         let mk = |input: Input, name: &str| {
             signed(
                 Unsigned::CreateChain {
@@ -2151,7 +2965,8 @@ mod tests {
                     genesis: vec![],
                     chain_auth: vec![0],
                 },
-                1,
+                // One credential per input, plus the network owner's.
+                2,
             )
         };
         let first = mk(input, "MyChain");
@@ -2405,10 +3220,10 @@ mod tests {
 
     /// A network's staking terms are that network's own.
     ///
-    /// Go reads them out of the network's transformation. This port does not
-    /// hold one, so it says so rather than judging a network's validators on
-    /// the primary network's terms — admitting somebody on rules nobody agreed
-    /// to is worse than admitting nobody.
+    /// They are read out of the transformation the network stated them in.
+    /// A network that never stated any admits validators through the L1 plane
+    /// instead, and is told so — judging its joiners on the primary network's
+    /// terms would admit somebody on rules nobody there agreed to.
     #[test]
     fn a_network_is_not_staked_on_the_primary_networks_terms() {
         let now = 1000;
@@ -2422,7 +3237,7 @@ mod tests {
         let tx = signed(unsigned, 1);
         assert_eq!(
             execute_standard(&mut state, &tx, &config(), &fees()),
-            Err(Error::NetworkTermsNotHeld)
+            Err(Error::NoNetworkTerms)
         );
     }
 

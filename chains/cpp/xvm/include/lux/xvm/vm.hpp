@@ -20,8 +20,10 @@
 #include "lux/xvm/executor.hpp"
 #include "lux/xvm/fx.hpp"
 #include "lux/xvm/genesis.hpp"
+#include "lux/xvm/mempool.hpp"
 #include "lux/xvm/root.hpp"
 #include "lux/xvm/state.hpp"
+#include "lux/xvm/store.hpp"
 #include "lux/xvm/txs.hpp"
 
 #include <map>
@@ -46,6 +48,13 @@ inline constexpr const char* kErrConflictingBlockTxs = "block contains conflicti
 inline constexpr const char* kErrConflictingParentTxs = "block contains conflicting transactions";
 inline constexpr const char* kErrIncorrectHeight = "block has incorrect height";
 inline constexpr const char* kErrBlockNotFound = "block not found";
+inline constexpr const char* kErrChainNotSynced = "chain not synced";
+inline constexpr const char* kErrNoTransactions = "no transactions";
+
+// The size a block is built up to. A transaction may weigh at most
+// mempool::kMaxTxSize, which is smaller than this, so the builder stops only
+// when the pool is empty or the block is within one transaction of full.
+inline constexpr std::size_t kTargetBlockSize = 128 * 1024;
 
 struct VmConfig {
     std::uint32_t network_id = 0;
@@ -79,6 +88,22 @@ public:
     bool verify() override;
     void accept() override;
 
+    // reject is the OTHER half of being decided, and it is not optional.
+    //
+    // Consensus chose a sibling; this block will never be accepted. Its
+    // transactions, though, were never refused — they lost a race, not a
+    // verification — so each one that still holds against the accepted state
+    // goes back into the mempool. A chain that dropped them instead would
+    // disagree with every other node about what is still pending and would
+    // propose a different block. Go: block/executor.Block.Reject.
+    //
+    // The node's seam (lux/node/vm.hpp) declares accept but not yet reject, so
+    // this is offered at the port's own surface: the transactions come back
+    // where the node can see them, through the pool the next build() draws
+    // from. When the seam grows `virtual void reject() = 0`, this is the
+    // override — the body does not change.
+    void reject();
+
     const std::string& error() const { return error_; }
     const std::shared_ptr<block::StandardBlock>& standard() const { return blk_; }
 
@@ -88,16 +113,27 @@ private:
     std::string error_;
 };
 
-class Vm final : public lux::node::VM, public state::Versions {
+class Vm final : public lux::node::VM, public state::Versions, public mempool::Verifier {
 public:
-    Vm(VmConfig config, std::vector<executor::ParsedFx> fxs);
+    // The store is where this chain's state rests, and it is a constructor
+    // argument rather than something the VM makes for itself: whether this node
+    // survives a restart is the host's decision, and the VM must not be able to
+    // quietly answer it with "no".
+    Vm(VmConfig config, std::vector<executor::ParsedFx> fxs, store::Store& store = state::State::default_store());
 
     // ---- lifecycle ----
 
-    // initialize installs the genesis transactions as the chain's initial state
+    // initialize brings the chain up.
+    //
+    // On a FIRST boot it installs the genesis transactions as the initial state
     // and seals a genesis block over them. A genesis tx is applied directly: it
     // has no inputs to authorize and no fee to pay, so there is nothing for the
     // verifiers to check that is not already true by construction.
+    //
+    // On EVERY LATER boot the store already holds that, and more: the state
+    // is read back and genesis is NOT re-installed. Which of the two happens is
+    // the store's answer, not a flag the caller passes — Go asks the same
+    // question the same way (state.IsInitialized).
     wire::Result<void> initialize(std::vector<std::shared_ptr<txs::Tx>> genesis_txs,
                                   std::uint64_t genesis_time);
 
@@ -125,11 +161,20 @@ public:
 
     // ---- the mempool ----
 
-    // issue verifies a transaction against the PREFERRED state and, if it holds,
-    // makes it eligible for the next block. A tx that fails here never enters a
-    // block, so the failure costs the chain nothing.
+    // issue offers a transaction to this node. It is the ONE door: the RPC and
+    // the gossip handler both come through here, and the admission policy is
+    // stated once, in mempool.hpp. Go: Network.IssueTxFromRPC.
     wire::Result<void> issue(std::shared_ptr<txs::Tx> tx);
-    std::size_t mempool_size() const { return mempool_.size(); }
+
+    // verify_tx is this node's own opinion of a transaction — syntax, then
+    // semantics and execution against the LAST ACCEPTED state. It is what the
+    // admission gate asks, and what reject asks before returning a transaction
+    // to the pool. Go: block/executor.manager.VerifyTx.
+    wire::Result<void> verify_tx(txs::Tx& tx) override;
+
+    std::size_t mempool_size() const { return pool_.len(); }
+    mempool::Pool& pool() { return pool_; }
+    mempool::Gossip& gossip() { return gossip_; }
 
     // ---- the seam ----
 
@@ -168,6 +213,7 @@ private:
 
     wire::Result<void> verify_block(const std::shared_ptr<block::StandardBlock>& blk);
     void accept_block(const Id& blk_id);
+    void reject_block(const Id& blk_id);
     wire::Result<void> verify_unique_inputs(const Id& blk_id, const std::set<Id>& inputs) const;
     wire::Result<std::shared_ptr<block::StandardBlock>> stateless_block(const Id& blk_id) const;
 
@@ -177,7 +223,8 @@ private:
     state::State state_;
 
     std::map<Id, Pending> pending_;
-    std::vector<std::shared_ptr<txs::Tx>> mempool_;
+    mempool::Pool pool_;
+    mempool::Gossip gossip_;
     std::map<std::string, Id> aliases_;
 
     Id last_accepted_{};

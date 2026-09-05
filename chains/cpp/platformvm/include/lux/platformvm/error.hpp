@@ -275,6 +275,14 @@ enum class Err {
     MempoolFull,               // mempool.ErrMempoolFull
     ConflictsWithOtherTx,      // mempool.ErrConflictsWithOtherTx
     CantIssueRewardValidatorTx, // mempool.ErrCantIssueRewardValidatorTx
+
+    // ── what the chain remembers across a restart
+    //
+    // The reference reaches its database through an interface that returns
+    // opaque errors; these name the two things that can actually go wrong when
+    // a chain reads back what it wrote, so a boot that fails says which.
+    StoreUnwritable,  // the store would not take a write, or would not make it durable
+    StoreCorrupt,     // what came back is not what this chain writes
 };
 
 std::string_view err_name(Err e);

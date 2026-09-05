@@ -1,5 +1,7 @@
 bin/
 build/
+chains/cpp/*/build/
+chains/cpp/*/*/build/
 /luxd
 *.o
 *.a

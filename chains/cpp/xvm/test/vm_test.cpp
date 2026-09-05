@@ -79,6 +79,7 @@ std::vector<executor::ParsedFx> the_fxs() {
 
 // Chain is a booted VM: genesis installed, bootstrapped, clock set.
 struct Chain {
+    store::Memory store;
     std::shared_ptr<txs::Tx> genesis;
     std::unique_ptr<Vm> vm;
     Id asset;
@@ -94,7 +95,7 @@ struct Chain {
         cfg.fee_asset_id = asset;
         cfg.tx_fee = tx_fee;
         cfg.create_asset_tx_fee = tx_fee;
-        vm = std::make_unique<Vm>(cfg, the_fxs());
+        vm = std::make_unique<Vm>(cfg, the_fxs(), store);
         auto r = vm->initialize({genesis}, kGenesisTime);
         check(r.has_value(), r ? "genesis installs" : "genesis installs: " + r.error());
         vm->set_bootstrapped(true);

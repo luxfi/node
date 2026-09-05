@@ -204,12 +204,23 @@ Result<Effects> standard_tx(const Backend& backend, const txs::Tx& tx, state::Di
 // outcomes, so the vote that follows only has to pick one.
 Status proposal_tx(const Backend& backend, const txs::Tx& tx, state::Diff& on_commit, state::Diff& on_abort);
 
+// Which network's validator set answers for a chain. The P-chain's own
+// blockchain answers for the primary network; every other chain answers for the
+// network its creating transaction named. Go: validators.manager.GetNetworkID.
+Result<Id> network_of_chain(const state::Chain& chain, const Id& platform_chain_id,
+                            const Id& chain_id);
+
+// What a warp message is checked against: the canonical set of the network that
+// owns the chain the message came FROM, as of the height being verified. A
+// chain the P-chain has never heard of has no set, and that is a refusal.
+using SourceSet = std::function<Result<warp::CanonicalValidatorSet>(const Id& source_chain)>;
+
 // Go: executor.VerifyWarpMessages. The signature on a transaction's warp
-// message must be by at least 67% of the SOURCE chain's weight — which is a
-// question about the P-chain's own state, so the caller resolves the set and
-// hands it in.
+// message must be by at least 67% of the SOURCE chain's weight. Which chain
+// that is comes out of the message, so the set is resolved per message rather
+// than handed in whole.
 Status verify_warp_messages(const txs::UnsignedTx& tx, std::uint32_t network_id,
-                            const warp::CanonicalValidatorSet& source_set);
+                            const SourceSet& source_set);
 
 // Go: state.PickFeeCalculator. The price is read off the chain's own excess, so
 // a caller cannot choose a cheaper one.

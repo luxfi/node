@@ -28,6 +28,7 @@
 #include "lux/platformvm/ids.hpp"
 #include "lux/platformvm/signer.hpp"
 #include "lux/platformvm/state.hpp"
+#include "lux/platformvm/warp.hpp"
 
 #include <cstdint>
 #include <map>
@@ -50,6 +51,12 @@ struct Validator {
 
 // The set validating `chain_id` right now, keyed by node.
 Result<std::map<NodeId, Validator>> current_set(const state::Chain& chain, const Id& chain_id);
+
+// The same set as a warp proof reads it: by KEY rather than by node, merged,
+// ordered, and with the weight of every entry — keyless ones included — in the
+// total. Go reaches this by handing the sampled set to warp.FlattenValidatorSet;
+// so does this, which is why there is one flattening rather than two.
+Result<warp::CanonicalValidatorSet> canonical(const std::map<NodeId, Validator>& set);
 
 // The 48-byte compressed key as its 96-byte uncompressed form. Go:
 // bls.PublicKeyToUncompressedBytes.

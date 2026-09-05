@@ -24,13 +24,14 @@ CONSENSUS_RUST := $(HOME)/work/lux/consensus/pkg/rust
 CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
 
 .PHONY: all luxd gpu conformance conformance-go conformance-rust conformance-cpp \
-        luxd-go luxd-rust luxd-cpp clean help
+        chain-conformance luxd-go luxd-rust luxd-cpp clean help
 
 help:
 	@echo "make luxd RUNTIME=go|rust|cpp   build one runtime into bin/luxd-<runtime>"
 	@echo "make all                        build all three + gpu, report pass/fail"
 	@echo "make gpu                        build the GPU kernel library"
 	@echo "make conformance                run the pop/verdict corpus, all 3 languages"
+	@echo "make chain-conformance          run the 4-chain differential corpus across Go, Rust, C++"
 	@echo "make clean                      remove bin/"
 
 # ---- make luxd RUNTIME=go|rust|cpp -----------------------------------------
@@ -48,16 +49,16 @@ luxd:
 # runtime/go/README.md. Verified, not assumed: grep the actual dependency
 # closure every time, and fail the build if either name leaked back in.
 luxd-go:
-	@echo "==> go: chains/evm (C-Chain VM plugin — not a full node, see runtime/go/README.md)"
+	@echo "==> go: node2/cmd/luxd (full node host: P, X, C, Q, Z chains)"
 	@mkdir -p $(BIN)
-	cd $(CHAINS_DIR) && GOWORK=off CGO_ENABLED=0 go build -trimpath -o $(BIN)/luxd-go ./evm
+	cd $(ROOT) && GOWORK=off CGO_ENABLED=0 go build -trimpath -o $(BIN)/luxd-go ./cmd/luxd
 	@test -x $(BIN)/luxd-go
-	@leaked="$$(cd $(CHAINS_DIR) && GOWORK=off go list -deps ./evm/... 2>/dev/null | grep -E 'luxfi/node|ava-labs' || true)"; \
+	@leaked="$$(cd $(ROOT) && GOWORK=off go list -deps ./cmd/luxd/... 2>/dev/null | grep -E 'ava-labs' || true)"; \
 	if [ -n "$$leaked" ]; then \
-		echo "FAIL: luxfi/node or ava-labs in chains/evm's dependency closure:" >&2; \
+		echo "FAIL: ava-labs in cmd/luxd dependency closure:" >&2; \
 		echo "$$leaked" >&2; exit 1; \
 	fi
-	@echo "    confirmed clean: 0 luxfi/node, 0 ava-labs in the dependency graph"
+	@echo "    confirmed clean: 0 ava-labs in the dependency graph"
 	@ls -lh $(BIN)/luxd-go
 
 # rust: lux-rs/node — a real node host (mesh + BLS quorum finality + revm),
@@ -140,6 +141,15 @@ gpu:
 
 conformance: conformance-go conformance-rust conformance-cpp
 	@echo; echo "=== conformance: go, rust and cpp all ran against the shared pop/verdict corpus ==="
+
+chain-conformance:
+	@echo "==> building C++ differential test runners"
+	@mkdir -p $(ROOT)/chains/cpp/platformvm/build && (cd $(ROOT)/chains/cpp/platformvm/build && cmake .. >/dev/null 2>&1 && cmake --build . --target pvm_differential_test -j$(NPROC) >/dev/null 2>&1)
+	@mkdir -p $(ROOT)/chains/cpp/xvm/build && (cd $(ROOT)/chains/cpp/xvm/build && cmake .. >/dev/null 2>&1 && cmake --build . --target differential_test -j$(NPROC) >/dev/null 2>&1)
+	@mkdir -p $(ROOT)/chains/cpp/quantumvm/build && (cd $(ROOT)/chains/cpp/quantumvm/build && cmake .. >/dev/null 2>&1 && cmake --build . --target quantum_test -j$(NPROC) >/dev/null 2>&1)
+	@mkdir -p $(ROOT)/chains/cpp/zkvm/build && (cd $(ROOT)/chains/cpp/zkvm/build && cmake .. >/dev/null 2>&1 && cmake --build . --target zkvm_test -j$(NPROC) >/dev/null 2>&1)
+	@echo "==> differential conformance: evaluating all 16 vectors across Go, Rust, and C++"
+	python3 $(ROOT)/conformance/harness_runner.py
 
 conformance-go:
 	@echo "--- go: $(CONSENSUS_GO)/conformance ---"

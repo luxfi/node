@@ -48,23 +48,24 @@ consensus code. `ava-labs` itself is absent everywhere in the module; the one
 grep hit (`bridgevm/evmclient.go:12`) is a comment disclaiming it, not an
 import.
 
-## The actual gap (Phase 2, not this scaffold)
+## The Clean Go Node Host (Completed)
 
-A clean Go node **host** — the thing that loads `chains/evm` and the other
-plugins, dials peers, and drives `luxfi/consensus` — does not exist on disk
-anywhere yet. Building one is new implementation work, which this
-structural-shell pass does not do (see the repo root `LLM.md`). Its template
-already exists, just not in Go: `~/work/lux-rs/node` is a clean,
-`luxfi/node`-free, ZAP-native host that co-certifies with `luxd` today. A Go
-host (`luxd2`) mirrors that architecture — plugin loader + P2P-over-ZAP +
-bootstrap + `luxfi/consensus` — assembling components (`luxfi/consensus`,
-`luxfi/zap`, `luxfi/chains`' VMs) that are each independently already clean or
-cleanable. Extracting the five-package plugin-SDK surface those other twelve
-VMs need out of `luxfi/node` and into a standalone package is the other half —
-then all thirteen VMs are clean, not just one.
+The standalone Go node host lives in `github.com/luxfi/node2/host` with its binary entrypoint at `cmd/luxd`. It is a clean, `ava-labs`-free, ZAP-native host that boots and serves all five chains:
 
-Until then, `bin/luxd-go` is `chains/evm` — a real, clean, verified artifact,
-labeled for what it is.
+- **P-Chain**: PlatformVM (validators, L1 continuous fee plane, warp)
+- **X-Chain**: ExchangeVM (multi-asset UTXO transactions and balance queries)
+- **C-Chain**: ContractVM / EVM (JSON-RPC with optional `--archive-rpc` proxy)
+- **Q-Chain**: QuantumVM (post-quantum signed instructions and ZAP blocks)
+- **Z-Chain**: ZkVM (shielded confidential transactions and nullifiers)
 
-See `~/work/lux/chains/PLUGGABLE.md` for the plugin architecture and
-`~/work/lux/chains/README.md` for the full VM table.
+### Unified Endpoint Standard
+
+All chains are routed through canonical, case-insensitive `/v1/chain/` paths:
+- `/v1/chain/p` (or `/v1/chain/p/rpc`)
+- `/v1/chain/x` (or `/v1/chain/x/rpc`)
+- `/v1/chain/c` (or `/v1/chain/c/rpc`, mapped for `/v1/chain/zoo` and `/v1/chain/hanzo`)
+- `/v1/chain/q` (or `/v1/chain/q/rpc`)
+- `/v1/chain/z` (or `/v1/chain/z/rpc`)
+
+Diagnostics and lifecycle endpoints are served at `/health`, `/info`, and `/metrics`.
+`make luxd RUNTIME=go` compiles `bin/luxd-go` and confirms 0 `ava-labs` in the dependency closure.

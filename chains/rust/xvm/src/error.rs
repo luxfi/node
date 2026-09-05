@@ -138,6 +138,29 @@ pub enum Error {
     /// An output whose owner model the state root has no canonical commitment
     /// for. Better a refusal than a root computed under an invented rule.
     UnsupportedOwnerModel,
+
+    // ---- admission ----
+    /// Offered twice.
+    DuplicateTx,
+    /// Bigger than a transaction may be: what it is, and the bar.
+    TxTooLarge(usize, usize),
+    /// No room: what it needs, and what is free.
+    MempoolFull(usize, usize),
+    /// It spends an output another waiting transaction already spends.
+    ConflictsWithOtherTx,
+    /// A classical signature on a chain whose terms require a post-quantum one.
+    ClassicalCredentialRefused,
+    /// A mempool that was never told its chain's terms. A wiring mistake, not
+    /// a runtime condition, so it fails loud rather than admitting.
+    NoSecurityProfile,
+    /// A byte that names no security profile.
+    UnknownSecurityProfile(u8),
+
+    // ---- storage ----
+    /// The chain's own record would not read or would not write. The string is
+    /// what the operating system said, kept as text so a refusal stays a value
+    /// that can be compared and carried across a thread.
+    Storage(String),
 }
 
 impl std::fmt::Display for Error {
@@ -288,6 +311,21 @@ impl std::fmt::Display for Error {
                 f,
                 "xvm execution_root: output owner model has no canonical owner_root"
             ),
+
+            DuplicateTx => write!(f, "duplicate tx"),
+            TxTooLarge(got, max) => write!(f, "tx too large: size ({got}) > max size ({max})"),
+            MempoolFull(got, free) => {
+                write!(f, "mempool is full: size ({got}) > available space ({free})")
+            }
+            ConflictsWithOtherTx => write!(f, "tx conflicts with other tx"),
+            ClassicalCredentialRefused => write!(
+                f,
+                "auth: classical secp256k1 credential refused under strict-PQ profile"
+            ),
+            NoSecurityProfile => write!(f, "auth: nil ChainSecurityProfile"),
+            UnknownSecurityProfile(v) => write!(f, "security: unknown profile 0x{v:02x}"),
+
+            Storage(why) => write!(f, "storage: {why}"),
         }
     }
 }

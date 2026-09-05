@@ -718,3 +718,173 @@ TEST(TheChainRefusesWhatItWillNotSpendOn) {
     blk->accept();
     REQUIRE_EQ_NUM(0, chain.mempool_size());
 }
+
+// ── the signature on a warp message
+//
+// A transaction that carries a warp message carries an ASSERTION ABOUT ANOTHER
+// CHAIN: that the L1's own validator set said this. Nothing else in the
+// transaction can establish that — the source chain and address only say who
+// claims to have said it, and anyone can claim. So the signature is the whole
+// admission control on the L1 validator set, and a chain that executes the
+// message without checking it lets anyone register a validator, or set any
+// validator's weight to zero and take it out of its own L1's set.
+//
+// Go checks these in block/executor before a block is executed at all. So does
+// this: the message is checked against the set that signed it, resolved from
+// the P-chain's own state at the last accepted height.
+namespace {
+
+const Id kL1 = id_of(0x40);
+
+pvmtest::BlsKey& l1_signer() {
+    static pvmtest::BlsKey k(31);
+    return k;
+}
+
+// A chain the P-chain created, so the P-chain can answer which network's set
+// speaks for it. Its id is its transaction's id, which is why it is built
+// rather than named.
+txs::Tx manager_chain_tx() {
+    static const txs::Tx tx = [] {
+        auto u = txs::CreateChainTx::create(envelope(10'000'000'000, {out_to_me(9'000'000'000)}), kL1,
+                                            "manager", id_of(0x30), {}, {}, {0});
+        return sign(u.value());
+    }();
+    return tx;
+}
+
+// A P-chain that knows about an L1: the network exists, it was converted, its
+// manager lives on a chain this P-chain created, and one validator with a real
+// BLS key carries all of its weight.
+vm::PlatformVM l1_chain(std::uint64_t validator_weight = 100) {
+    auto b = make_backend();
+    b.validator_fee_config.capacity = 16;
+    b.validator_fee_config.target = 8;
+    b.validator_fee_config.min_price = 1;
+    b.validator_fee_config.excess_conversion_constant = 100'000;
+    vm::PlatformVM chain(kPChain, std::move(b), genesis());
+    auto& s = chain.accepted();
+    s.add_network(kL1);
+    s.set_network_owner(kL1, mine());
+    const auto manager = manager_chain_tx();
+    s.add_tx(manager, status::Status::Committed);
+    s.add_chain(manager);
+    const std::string addr = "the-manager";
+    s.set_network_conversion(
+        kL1, state::NetToL1Conversion{manager.tx_id, {addr.begin(), addr.end()}, id_of(0x52)});
+
+    l1::Validator v;
+    v.validation_id = id_of(0x60);
+    v.chain_id = kL1;
+    v.node_id = node_of(0x70);
+    v.public_key = l1_signer().uncompressed();
+    v.weight = validator_weight;
+    v.end_accumulated_fee = 1;  // paid up: active, and therefore votable
+    (void)s.put_l1_validator(v);
+    return chain;
+}
+
+// The registration an L1's manager sends, wrapped the way a transaction carries
+// it: the L1's own message, inside an addressed call, inside an envelope the
+// caller decides whether to sign honestly.
+std::vector<std::uint8_t> from_the_manager(std::span<const std::uint8_t> l1_message, bool honestly) {
+    const std::string addr = "the-manager";
+    auto call = warpmsg::AddressedCall::build(std::vector<std::uint8_t>(addr.begin(), addr.end()),
+                                              std::vector<std::uint8_t>(l1_message.begin(),
+                                                                        l1_message.end()));
+    auto unsigned_message =
+        warp::UnsignedMessage::build(kNetworkId, manager_chain_tx().tx_id, call.value().bytes);
+    warp::BitSetSignature sig;
+    sig.signers = {0x01};  // the one validator of the L1
+    sig.signature = honestly ? l1_signer().sign(unsigned_message.value().bytes)
+                             : signer::SignatureBytes{};
+    return warp::Message::build(unsigned_message.value(), sig).value().bytes;
+}
+
+txs::Tx register_l1_tx(bool signed_honestly) {
+    static pvmtest::BlsKey joining(41);
+    auto msg = warpmsg::RegisterL1Validator::build(
+        kL1, node_of(0x91), joining.pop().public_key, kGenesisTime + 3600,
+        txs::PChainOwner{1, {key().address()}}, txs::PChainOwner{1, {key().address()}}, 50);
+    auto u = txs::RegisterL1ValidatorTx::create(
+        envelope(10'000'000'000, {out_to_me(9'000'000'000 - 1'000'000)}), 1'000'000'000,
+        joining.pop().proof, from_the_manager(msg.value().bytes, signed_honestly));
+    return sign(u.value());
+}
+
+// The block a peer sends, carrying whatever transaction it likes.
+std::shared_ptr<lux::node::Block> block_from_a_peer(vm::PlatformVM& chain, const txs::Tx& tx) {
+    Id parent{};
+    const auto last = chain.last_accepted();
+    std::memcpy(parent.b.data(), last.data(), kIdLen);
+    auto blk = block::StandardBlock::create(kGenesisTime, parent, 1, {tx});
+    if (!blk) return nullptr;
+    const auto bytes = blk.value()->bytes();
+    return chain.parse(std::vector<std::uint8_t>(bytes.begin(), bytes.end()));
+}
+
+}  // namespace
+
+TEST(AForgedWarpMessageIsRefused) {
+    auto chain = l1_chain();
+    auto blk = block_from_a_peer(chain, register_l1_tx(/*signed_honestly=*/false));
+    REQUIRE(blk != nullptr);
+    // Not "executed and then rejected" — never executed. The refusal names the
+    // signature, not the fee or the conversion, because nothing else ran.
+    REQUIRE(!blk->verify());
+    REQUIRE_ERR(chain.accepted().get_l1_validator(id_of(0x61)), Err::NotFound);
+    REQUIRE_EQ_NUM(0, chain.accepted().l1_validators(kL1).size() - 1);  // only the seeded one
+}
+
+TEST(AWarpMessageTheL1SignedIsAccepted) {
+    auto chain = l1_chain();
+    auto blk = block_from_a_peer(chain, register_l1_tx(/*signed_honestly=*/true));
+    REQUIRE(blk != nullptr);
+    REQUIRE(blk->verify());
+    blk->accept();
+    // Two now: the one that was seeded, and the one the message registered.
+    REQUIRE_EQ_NUM(2, chain.accepted().l1_validators(kL1).size());
+}
+
+// The same signature, against a set that no longer has the weight to carry it.
+// Two-thirds is not a formality: the L1 grows a second validator, the old
+// signature is still valid BYTES, and it is still refused.
+TEST(AWarpMessageBelowQuorumIsRefused) {
+    auto chain = l1_chain();
+    l1::Validator other;
+    other.validation_id = id_of(0x62);
+    other.chain_id = kL1;
+    other.node_id = node_of(0x71);
+    other.public_key = pvmtest::BlsKey(51).uncompressed();
+    other.weight = 1000;  // the signer is now far under two-thirds
+    other.end_accumulated_fee = 1;
+    REQUIRE_OK(chain.accepted().put_l1_validator(other));
+
+    auto blk = block_from_a_peer(chain, register_l1_tx(/*signed_honestly=*/true));
+    REQUIRE(blk != nullptr);
+    REQUIRE(!blk->verify());
+}
+
+// A message from a chain this P-chain never created has no set to check
+// against, and a missing set is a refusal rather than an empty one that
+// two-thirds of nothing trivially satisfies.
+TEST(AWarpMessageFromAnUnknownChainIsRefused) {
+    vm::PlatformVM chain(kPChain, make_backend(), genesis());  // no chains, no L1
+    auto blk = block_from_a_peer(chain, register_l1_tx(/*signed_honestly=*/true));
+    REQUIRE(blk != nullptr);
+    REQUIRE(!blk->verify());
+}
+
+// And the builder does not offer what its own verifier would refuse.
+TEST(TheBuilderWillNotOfferAForgedMessage) {
+    auto chain = l1_chain();
+    REQUIRE_OK(chain.submit(register_l1_tx(/*signed_honestly=*/false)));
+    REQUIRE_EQ_NUM(1, chain.mempool_size());
+    // The clock still moves, so there is a block — with the forgery left out of
+    // it. A builder that offered it would be asking its peers to accept what its
+    // own verifier refuses.
+    auto blk = chain.build();
+    REQUIRE(blk != nullptr);
+    REQUIRE(static_cast<vm::VmBlock*>(blk.get())->inner().decision_txs().empty());
+    REQUIRE(blk->verify());
+}

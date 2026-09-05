@@ -19,7 +19,7 @@ use std::collections::HashMap;
 
 use crate::error::{Error, Result};
 use crate::fx::{self, State};
-use crate::ids::Id;
+use crate::ids::{self, Id};
 use crate::wire::containers;
 
 /// The largest memo a transaction may carry.
@@ -60,7 +60,7 @@ impl UtxoId {
     /// way to construct two different (tx, index) pairs that collide without
     /// breaking SHA-256.
     pub fn input_id(&self) -> Id {
-        self.tx_id.prefix(&[self.output_index as u64])
+        ids::prefix(&self.tx_id, &[self.output_index as u64])
     }
 
     pub fn input_source(&self) -> (Id, u32) {
@@ -78,7 +78,7 @@ impl Ord for UtxoId {
     /// By transaction id, then by output index. The order inputs must be
     /// listed in.
     fn cmp(&self, other: &Self) -> Ordering {
-        match self.tx_id.0.cmp(&other.tx_id.0) {
+        match self.tx_id.cmp(&other.tx_id) {
             Ordering::Equal => self.output_index.cmp(&other.output_index),
             o => o,
         }
@@ -93,7 +93,7 @@ pub struct Asset {
 
 impl Asset {
     pub fn verify(&self) -> Result<()> {
-        if self.id.is_empty() {
+        if ids::is_empty(&self.id) {
             return Err(Error::EmptyAssetId);
         }
         Ok(())
@@ -133,7 +133,7 @@ impl TransferableOutput {
 /// The order outputs must be listed in: by asset, then by the inner output's
 /// wire bytes.
 pub fn sort_transferable_outputs(outs: &mut [TransferableOutput]) {
-    outs.sort_by(|a, b| match a.asset_id().0.cmp(&b.asset_id().0) {
+    outs.sort_by(|a, b| match a.asset_id().cmp(&b.asset_id()) {
         Ordering::Equal => a.inner_bytes().cmp(&b.inner_bytes()),
         o => o,
     });
@@ -141,7 +141,7 @@ pub fn sort_transferable_outputs(outs: &mut [TransferableOutput]) {
 
 pub fn is_sorted_transferable_outputs(outs: &[TransferableOutput]) -> bool {
     outs.windows(2)
-        .all(|w| match w[0].asset_id().0.cmp(&w[1].asset_id().0) {
+        .all(|w| match w[0].asset_id().cmp(&w[1].asset_id()) {
             Ordering::Less => true,
             Ordering::Greater => false,
             Ordering::Equal => w[0].inner_bytes() <= w[1].inner_bytes(),
@@ -346,7 +346,7 @@ mod tests {
     use crate::ids::ShortId;
 
     fn asset(n: u8) -> Id {
-        Id::prefixed_bytes(&[n])
+        ids::prefixed(&[n])
     }
 
     fn owners() -> Owners {
@@ -379,7 +379,7 @@ mod tests {
     #[test]
     fn a_utxo_id_is_the_hash_of_the_transaction_and_the_index() {
         let u = UtxoId::new(asset(9), 3);
-        assert_eq!(u.input_id(), asset(9).prefix(&[3]));
+        assert_eq!(u.input_id(), ids::prefix(&asset(9), &[3]));
         assert_ne!(u.input_id(), UtxoId::new(asset(9), 4).input_id());
     }
 
@@ -395,7 +395,7 @@ mod tests {
     #[test]
     fn an_empty_asset_id_is_not_an_asset() {
         assert_eq!(
-            Asset { id: Id::default() }.verify().unwrap_err(),
+            Asset { id: ids::EMPTY }.verify().unwrap_err(),
             Error::EmptyAssetId
         );
         assert!(Asset { id: asset(1) }.verify().is_ok());

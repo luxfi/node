@@ -150,6 +150,33 @@ Result<std::uint64_t> PlatformVM::height_of(const Id& id) const {
     return it->second->height();
 }
 
+Status PlatformVM::verify_tx_warp(const txs::UnsignedTx& tx) const {
+    // A node still catching up re-executes history the network already agreed
+    // on; it checks these signatures once it is caught up. Go gates the same
+    // call on the same flag, for the same reason.
+    if (!backend_.bootstrapped) return ok();
+
+    return executor::verify_warp_messages(
+        tx, backend_.runtime.network_id,
+        [this](const Id& source_chain) -> Result<warp::CanonicalValidatorSet> {
+            auto network = executor::network_of_chain(state_, backend_.runtime.chain_id, source_chain);
+            if (!network) return std::unexpected(network.error());
+            auto set = validator_set_at(network.value(), last_accepted_height_);
+            if (!set) return std::unexpected(set.error());
+            return validators::canonical(set.value());
+        });
+}
+
+Status PlatformVM::verify_block_warp(const block::Block& b) const {
+    for (const auto& tx : b.decision_txs())
+        if (auto st = verify_tx_warp(*tx.unsigned_tx); !st) return st;
+
+    if (b.kind() != block::Kind::Proposal) return ok();
+    auto tx = static_cast<const block::ProposalBlock&>(b).tx();
+    if (!tx) return std::unexpected(tx.error());
+    return verify_tx_warp(*tx.value().unsigned_tx);
+}
+
 Status PlatformVM::verify_block(const block::Block& b, Verified& out) {
     const Id parent_id = b.parent();
     const auto parent_height = height_of(parent_id);
@@ -157,6 +184,11 @@ Status PlatformVM::verify_block(const block::Block& b, Verified& out) {
     if (b.height() != parent_height.value() + 1)
         return fail(Err::InvalidState, "block height is " + std::to_string(b.height()) + ", expected " +
                                            std::to_string(parent_height.value() + 1));
+
+    // Before any of it executes. A block whose warp message was signed by
+    // nobody is not a block this node executes and then refuses; it is a block
+    // this node never runs.
+    if (auto st = verify_block_warp(b); !st) return st;
 
     out.blk = blocks_.count(b.id()) ? blocks_[b.id()] : nullptr;
     out.timestamp = b.timestamp();
@@ -451,6 +483,10 @@ std::shared_ptr<lux::node::Block> PlatformVM::build() {
         for (const auto& in : tx.input_ids())
             if (inputs.count(in) != 0) overlaps = true;
         if (overlaps) continue;
+        // A message this node cannot check is a message this node does not ask
+        // anyone else to accept. Go's builder runs the same check for the same
+        // reason: a block one offers is a block one's own verifier accepts.
+        if (!verify_tx_warp(*tx.unsigned_tx)) continue;
         state::Diff probe(&trial);
         if (!executor::standard_tx(backend, tx, probe)) continue;
         if (!probe.apply(trial)) continue;

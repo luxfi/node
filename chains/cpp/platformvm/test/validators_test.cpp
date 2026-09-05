@@ -13,7 +13,6 @@
 #include "lux/platformvm/validators.hpp"
 #include "signing.hpp"
 
-#include <algorithm>
 #include <functional>
 
 #ifdef LUX_PLATFORMVM_HAS_NODE_SET_ROOT
@@ -206,6 +205,10 @@ l1::Validator l1_of(const Id& validation, const Id& chain, std::uint8_t node, st
     return v;
 }
 
+std::vector<std::uint8_t> uncompressed(std::uint8_t seed) {
+    return validators::uncompress_public_key(pop(seed).public_key).value();
+}
+
 }  // namespace
 
 // The set at a past height is the set now with everything since undone. Both
@@ -342,4 +345,85 @@ TEST(AnL1ValidatorLeavesThePastAlone) {
     auto back = at_two;
     REQUIRE_OK(h.rewind(back, net, 2, 1));
     REQUIRE(back.empty());
+}
+
+// ── an L1 validator that has run out of money
+//
+// A weight of zero REMOVES an L1 validator; a balance of zero only switches it
+// OFF. An inactive validator is still in the set and still weighs on it, but it
+// is not participating: it is not being charged, and nothing obliges it to
+// answer. So it has no node and no key in the set consensus samples.
+//
+// Both halves matter and they are the same statement. Surfacing its NODE lets a
+// quorum wait for a vote that can never come. Surfacing its KEY is worse: the
+// canonical set a warp proof indexes is the set of validators that HAVE keys,
+// so an unfunded validator that kept its key would be a signer — and registering
+// weight one never pays for, then signing with it, is a quorum bought for
+// nothing. Its weight belongs in the denominator alone, which is exactly what a
+// keyless entry is.
+//
+// Go: state.addL1ValidatorToValidatorManager over effectiveNodeID and
+// effectivePublicKeyBytes.
+TEST(AnInactiveL1ValidatorIsWeightWithoutAVote) {
+    const Id net = id_of(0x40);
+    state::MemState s;
+    auto paid = l1_of(id_of(0x50), net, 0x11, 100, uncompressed(1));
+    auto broke = l1_of(id_of(0x51), net, 0x22, 900, uncompressed(2));
+    broke.end_accumulated_fee = 0;  // out of money: off, but still in the set
+    REQUIRE(!broke.is_active());
+    REQUIRE(!broke.is_deleted());
+    REQUIRE_OK(s.put_l1_validator(paid));
+    REQUIRE_OK(s.put_l1_validator(broke));
+
+    const auto set = validators::current_set(s, net);
+    REQUIRE_OK(set);
+    REQUIRE_EQ_NUM(2, set.value().size());
+
+    // The one that pays is there under its own name, with its key.
+    const auto live = set.value().find(node_of(0x11));
+    REQUIRE(live != set.value().end());
+    REQUIRE(live->second.public_key.has_value());
+    REQUIRE_U64(100u, live->second.weight);
+
+    // The one that does not is under the empty node, with no key at all.
+    REQUIRE(set.value().find(node_of(0x22)) == set.value().end());
+    const auto off = set.value().find(NodeId{});
+    REQUIRE(off != set.value().end());
+    REQUIRE(!off->second.public_key.has_value());
+    REQUIRE_U64(900u, off->second.weight);
+
+    // And in the set a warp proof indexes: one signer holding a tenth of the
+    // weight, so 900 of the 1000 can never be voted. Two-thirds of that set is
+    // unreachable — which is the correct answer, not a bug: nine-tenths of this
+    // L1's stake has stopped paying to participate.
+    const auto canonical = validators::canonical(set.value());
+    REQUIRE_OK(canonical);
+    REQUIRE_EQ_NUM(1, canonical.value().validators.size());
+    REQUIRE_U64(100u, canonical.value().validators.front().weight);
+    REQUIRE_U64(1000u, canonical.value().total_weight);
+    REQUIRE_ERR(warp::verify_weight(100, canonical.value().total_weight, 67, 100),
+                Err::InsufficientWeight);
+}
+
+// Two of them, both switched off, gather under the one keyless entry — their
+// weight adds rather than one replacing the other. A denominator that lost
+// entries would be a quorum bought at a discount.
+TEST(InactiveL1ValidatorsGatherTheirWeight) {
+    const Id net = id_of(0x40);
+    state::MemState s;
+    for (std::uint8_t i = 0; i < 3; ++i) {
+        auto v = l1_of(id_of(static_cast<std::uint8_t>(0x50 + i)), net,
+                       static_cast<std::uint8_t>(0x20 + i), 10, uncompressed(1));
+        v.end_accumulated_fee = 0;
+        REQUIRE_OK(s.put_l1_validator(v));
+    }
+    const auto set = validators::current_set(s, net);
+    REQUIRE_OK(set);
+    REQUIRE_EQ_NUM(1, set.value().size());
+    REQUIRE_U64(30u, set.value().at(NodeId{}).weight);
+
+    const auto canonical = validators::canonical(set.value());
+    REQUIRE_OK(canonical);
+    REQUIRE(canonical.value().validators.empty());  // nobody can sign
+    REQUIRE_U64(30u, canonical.value().total_weight);  // everybody counts
 }

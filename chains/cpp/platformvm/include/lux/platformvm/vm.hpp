@@ -191,6 +191,25 @@ class PlatformVM final : public lux::node::VM {
     Status verify_block(const block::Block& b, Verified& out);
     Status accept_block(const block::Block& b);
 
+    // Every warp message the block carries, checked against the set that
+    // actually signed it. EVERY transaction means every transaction: the
+    // decision transactions a block charges for, and — on a proposal block —
+    // the one the chain emitted about itself. A message is an assertion about
+    // another chain whoever put it in the block, so which of the two sets it
+    // arrived in cannot decide whether its signature is checked.
+    //
+    // The set is resolved at the LAST ACCEPTED height. Go takes that height
+    // from the consensus runtime's block context; this seam carries none, and
+    // the last accepted height is the newest one every node verifying this
+    // block already agrees on — so it is the one choice that is the same
+    // answer on every node.
+    Status verify_block_warp(const block::Block& b) const;
+
+    // One transaction's message, checked. The builder asks this of a candidate
+    // before it puts it in a block, so a block this node offers is a block this
+    // node's own verifier accepts.
+    Status verify_tx_warp(const txs::UnsignedTx& tx) const;
+
     // The state a child of `parent_id` is verified against: the accepted state
     // if the parent is the last accepted block, otherwise the parent's layer.
     state::Chain* state_after(const Id& parent_id);

@@ -726,13 +726,23 @@ TEST(WarpMessagesAreVerifiedAgainstTheSourceChain) {
 
     // An empty set: nothing has signed, and two-thirds of nothing is nothing, so
     // the weight check passes and the SIGNATURE is what refuses.
-    warp::CanonicalValidatorSet empty;
+    const ex::SourceSet empty = [](const Id&) -> Result<warp::CanonicalValidatorSet> {
+        return warp::CanonicalValidatorSet{};
+    };
     REQUIRE_ERR(ex::verify_warp_messages(*tx.unsigned_tx, kNetworkId, empty), Err::UnknownValidator);
 
-    // A transaction that carries no message has nothing to answer about.
+    // A chain the P-chain has never heard of has no set to check against, and
+    // that is a refusal rather than an empty set that trivially passes.
+    const ex::SourceSet unknown = [](const Id& c) -> Result<warp::CanonicalValidatorSet> {
+        return fail(Err::ChainNotFound, c.hex());
+    };
+    REQUIRE_ERR(ex::verify_warp_messages(*tx.unsigned_tx, kNetworkId, unknown), Err::ChainNotFound);
+
+    // A transaction that carries no message has nothing to answer about — and
+    // is never asked, so a resolver that refuses everything is not consulted.
     auto plain = txs::BaseTxUnsigned::create(envelope(10'000'000'000, {out_to_me(9'000'000'000)}));
     REQUIRE_OK(plain);
-    REQUIRE_OK(ex::verify_warp_messages(*plain.value(), kNetworkId, empty));
+    REQUIRE_OK(ex::verify_warp_messages(*plain.value(), kNetworkId, unknown));
 }
 
 // The clock charges every active L1 validator, and switches off exactly the
