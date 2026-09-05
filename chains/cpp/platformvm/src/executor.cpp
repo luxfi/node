@@ -461,7 +461,16 @@ class Standard final : public txs::Visitor {
 
     // The legacy scheduled-staker flow has no role under a chain that admits
     // stakers immediately. These are refused permanently rather than quietly.
-    Status add_validator_tx(const txs::AddValidatorTx&) override {
+    //
+    // The empty node id comes FIRST, and the order is the answer, not a
+    // formality: Go checks it before it reaches the refusal
+    // (standard_tx_executor.go AddValidatorTx — errEmptyNodeID, then
+    // verifyAddValidatorTx). Refusing the kind first swallows the emptiness and
+    // reports "not permitted" where the reference reports "nodeID cannot be
+    // empty" — two implementations giving a differently-classed answer to the
+    // same bytes, which is what the differential is for.
+    Status add_validator_tx(const txs::AddValidatorTx& t) override {
+        if (t.validator().node_id == kEmptyNodeId) return fail(Err::EmptyNodeID);
         return fail(Err::AddValidatorTxNotPermitted);
     }
     Status add_delegator_tx(const txs::AddDelegatorTx&) override {
