@@ -84,11 +84,11 @@ inline constexpr std::uint8_t kTagMeta = 'm';    //                   → the me
 // holding it all is a deliberate bound rather than an oversight.
 class State : public Chain {
 public:
-    static store::Store& default_store() {
-        static store::Memory mem;
-        return mem;
-    }
-    State() : store_(&default_store()) {}
+    // A State built with no store gets a Memory of its OWN. It used to share
+    // one static Memory with every other default-built State, which meant two
+    // chains in one process were one chain with two opinions — and a VM built
+    // without a store would have been reading another VM's UTXO set.
+    State() : own_(std::make_unique<store::Memory>()), store_(own_.get()) {}
     explicit State(store::Store& store) : store_(&store) {}
 
     // load rebuilds this state from the store. It is what a boot does, and it
@@ -122,6 +122,7 @@ public:
     std::size_t utxo_count() const { return utxos_.size(); }
 
 private:
+    std::unique_ptr<store::Memory> own_;
     store::Store* store_;
 
     std::map<Id, txs::UTXO> utxos_;

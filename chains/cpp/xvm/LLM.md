@@ -78,13 +78,13 @@ Each layer knows only the ones below it.
 | `fx` | secp256k1fx · nftfx · propertyfx: what authorizes a spend |
 | `txs` | the five transactions and the UTXO vocabulary |
 | `address` | bech32, so a genesis written by a person can name an owner |
-| `store` | the durable byte map, and the one point at which a write lasts |
+| `store` | the durable byte map, and the one point at which a write lasts — it is the NODE's now (`core/store.hpp`), shared with the P-chain |
 | `state` | the occupied set, and a diff over it |
 | `root` | the execution root a validator signs |
 | `executor` | syntax → semantics → apply |
 | `block` | position, commitment, transactions |
 | `genesis` | the assets the chain starts with |
-| `mempool` | what is pending, and the one gate that decides what may enter |
+| `mempool` | what is pending, and the one gate that decides what may enter — the pool underneath is the node's (`core/mempool.hpp`) |
 | `vm` | the seam |
 
 Three decisions are worth stating because they are where this port is
