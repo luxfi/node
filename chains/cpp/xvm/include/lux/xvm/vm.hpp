@@ -79,6 +79,13 @@ public:
     bool verify() override;
     void accept() override;
 
+    // The block lost. Its transactions were never refused — they lost a race —
+    // so each is asked again against the state that actually won and the ones
+    // that still hold go back to the mempool; the diff this block pinned is
+    // released. Dropping them instead would leave this node disagreeing with
+    // every other about what is still pending, and then building on that.
+    void reject() override;
+
     const std::string& error() const { return error_; }
     const std::shared_ptr<block::StandardBlock>& standard() const { return blk_; }
 
@@ -129,6 +136,10 @@ public:
     // makes it eligible for the next block. A tx that fails here never enters a
     // block, so the failure costs the chain nothing.
     wire::Result<void> issue(std::shared_ptr<txs::Tx> tx);
+
+    // Undo a block that consensus decided against: reissue what it held and
+    // free what it pinned. See VmBlock::reject.
+    void reject_block(const Id& blk_id);
     std::size_t mempool_size() const { return mempool_.size(); }
 
     // ---- the seam ----

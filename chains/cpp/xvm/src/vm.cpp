@@ -336,6 +336,24 @@ wire::Result<void> Vm::verify_block(const std::shared_ptr<block::StandardBlock>&
     return {};
 }
 
+void Vm::reject_block(const Id& blk_id) {
+    auto it = pending_.find(blk_id);
+    if (it == pending_.end()) {
+        last_error_ = kErrBlockNotFound;
+        return;
+    }
+    // Take the block out first: issue() verifies against the preferred state,
+    // and the diff this block pinned must be gone before that is asked.
+    auto blk = it->second.blk;
+    pending_.erase(it);
+
+    // Ask each transaction again. One that no longer holds against the state
+    // that won is simply dropped — it was not refused here, it was answered.
+    for (const auto& tx : blk->transactions) {
+        (void)issue(tx);
+    }
+}
+
 void Vm::accept_block(const Id& blk_id) {
     auto it = pending_.find(blk_id);
     if (it == pending_.end()) {
@@ -372,5 +390,7 @@ bool VmBlock::verify() {
 }
 
 void VmBlock::accept() { vm_->accept_block(blk_->block_id); }
+
+void VmBlock::reject() { vm_->reject_block(blk_->block_id); }
 
 }  // namespace lux::xvm

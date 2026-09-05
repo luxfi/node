@@ -72,6 +72,13 @@ class VmBlock final : public lux::node::Block {
     bool verify() override;
     void accept() override;
 
+    // The block lost. Its decision transactions were never refused — they lost
+    // a race — so they go back to the mempool for whatever the next build()
+    // draws from, and the verified state this block pinned is released.
+    // Dropping them instead would leave this node disagreeing with every other
+    // about what is still pending, and then building on that disagreement.
+    void reject() override;
+
     const block::Block& inner() const { return *blk_; }
     // Why the last verify() said no. Empty when it said yes.
     const std::string& refusal() const { return refusal_; }
@@ -190,6 +197,10 @@ class PlatformVM final : public lux::node::VM {
 
     Status verify_block(const block::Block& b, Verified& out);
     Status accept_block(const block::Block& b);
+
+    // Undo a block consensus decided against: reissue what it held and free
+    // what it pinned. See VmBlock::reject.
+    void reject_block(const block::Block& b);
 
     // The state a child of `parent_id` is verified against: the accepted state
     // if the parent is the last accepted block, otherwise the parent's layer.
