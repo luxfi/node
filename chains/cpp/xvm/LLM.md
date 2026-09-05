@@ -10,10 +10,12 @@ test files) — the behavioural source of truth. Where the two differ, the Go on
 is right and this is a bug.
 
 ```
-include/lux/xvm/   zap wire  ·  fx envelopes  ·  fx families  ·  txs  ·  state
-                   root  ·  executor  ·  block  ·  genesis  ·  vm
+include/lux/xvm/   zap wire  ·  fx envelopes  ·  fx families  ·  txs  ·  address
+                   store  ·  state  ·  root  ·  executor  ·  block  ·  genesis
+                   mempool  ·  vm
 src/               their implementations
-test/              eleven suites, 677 assertions, all green
+test/              fourteen suites, 934 assertions, all green (also under
+                   -fsanitize=address,undefined)
 ```
 
 ## The one thing that makes this a port and not a rewrite
@@ -34,7 +36,8 @@ diff /tmp/golden.hpp <this>/test/golden.hpp     # must be empty
 That generator is a **tool**, not a dependency: it runs against the Go checkout
 to produce a header. Nothing in the C++ build imports Go, and the library's
 whole dependency closure is `luxcpp/crypto` (sha256, ripemd160, keccak256,
-secp256k1) plus the two seam headers. Zero `luxfi/node`, zero ava-labs.
+secp256k1) plus the two seam headers — nothing from the Go node, and nothing
+from the lineage the Lux consensus spec replaced.
 
 The second cross-language proof is in `fx_test`: Go's fixture carries a fixed
 unsigned body `{0,1,2,3,4,5}`, a fixed 65-byte signature, and the address that
@@ -52,11 +55,14 @@ Each layer knows only the ones below it.
 | `wire` | the `(TypeKind, ShapeKind)` envelope that names an fx primitive |
 | `fx` | secp256k1fx · nftfx · propertyfx: what authorizes a spend |
 | `txs` | the five transactions and the UTXO vocabulary |
+| `address` | bech32, so a genesis written by a person can name an owner |
+| `store` | the durable byte map, and the one point at which a write lasts |
 | `state` | the occupied set, and a diff over it |
 | `root` | the execution root a validator signs |
 | `executor` | syntax → semantics → apply |
 | `block` | position, commitment, transactions |
 | `genesis` | the assets the chain starts with |
+| `mempool` | what is pending, and the one gate that decides what may enter |
 | `vm` | the seam |
 
 Three decisions are worth stating because they are where this port is
@@ -68,10 +74,14 @@ deliberately **simpler** than the Go it renders, without answering differently:
   (`tx_init.go`) fills in for its JSON API. This port has no such field: a
   second copy of an identity the value already carries is a field that is empty
   until someone remembers to populate it.
-- **State is in memory.** Durability belongs to the host that embeds this VM;
-  inventing a second database inside the VM would be a second answer to a
-  question the host already answers. The `Chain` / `Diff` split — and the
-  ascending enumeration order the execution root folds over — is ported exactly.
+- **The store is the host's to choose, and the chain must not be able to choose
+  "none".** `store::Store` is a byte-keyed map with ONE durability point,
+  `commit`; `Memory` never outlives the process and `File` does. It is a
+  constructor argument rather than something the VM makes for itself, because
+  whether this node survives a restart is the host's decision — but genesis and
+  every acceptance commit through it, so a chain given a durable store IS
+  durable. The `Chain` / `Diff` split, and the ascending enumeration order the
+  execution root folds over, are ported exactly.
 - **The clock is injected.** A test states the time rather than waiting for it.
 
 ## Execution is not optional
@@ -94,7 +104,7 @@ cross-language KAT in Go's `xvmroot_test.go`, digit for digit.
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
-ctest --test-dir build            # 11/11
+ctest --test-dir build            # 14/14, 934 assertions
 cmake -S . -B build-san -DXVM_SANITIZE=address,undefined && ...   # also green
 ```
 
@@ -119,11 +129,35 @@ Ported, with the Go tests ported alongside:
 - execution: what applying a transaction does to the UTXO set, and the atomic
   requests an import/export records (`executor_test`, 42)
 - the store and the diff, and enumeration order (`state_test`, 68)
+- durability: what a commit survives, and what an interrupted one does not
+  (`store_test`, 109)
+- bech32, against Go's own address strings (`address_test`, 42)
 - blocks and their identity (`block_test`, 25)
 - the execution root against the cross-language KAT (`root_test`, 12)
-- genesis, byte-identical to Go's, and a VM booted from Go's own buffer
-  (`genesis_test`, 33)
-- build → verify → accept through the seam (`vm_test`, 126)
+- genesis, byte-identical to Go's, a VM booted from Go's own buffer, and
+  `NewGenesis` from a definition map (`genesis_test`, 33)
+- the pool, the admission gate and the bloom filter (`mempool_test`, 62)
+- build → verify → accept → **reject**, and the chain coming back after the
+  process exits (`vm_test`, 170)
+
+Two of those are worth naming, because each is a place where a chain that
+merely answered questions correctly would still be wrong.
+
+**Reject.** A rejected block's transactions were never refused — they lost a
+race — so each one is asked again against the state that actually won, and the
+ones that still hold go back into the pool. A port that dropped them would hold
+a different pending set from every node that returned them and would propose a
+different block, which no transaction's bytes could ever reveal. Ported from
+`block/executor.Block.Reject`, including the thing it does NOT do: nothing is
+marked dropped. A drop reason is a cached refusal, and a transaction invalidated
+by a reorganisation is exactly the kind that can become valid again.
+
+**A restart.** Genesis and every acceptance commit to the store, and a boot
+reads the store before it installs anything — so the second boot of a chain does
+not re-install genesis over its own history, and an output spent before the
+restart cannot be spent after it. Which of the two happens is the store's
+answer, never a flag the caller passes; Go asks the same question the same way
+(`state.IsInitialized`).
 
 **Absent, deliberately** — each is a surface the VM seam does not ask for, and
 none is stubbed: the code simply is not there, so nothing can call it and get a
@@ -131,18 +165,55 @@ false answer.
 
 - the JSON/`ops` RPC surface (`service.go`, `ops.go`, `static_service.go`,
   `api_types.go`) and the pubsub filterer
-- the p2p gossip network and its mempool (`network/`, `txs/mempool`). The VM
-  admits transactions through the same two verifiers a block does, against the
-  preferred state; what is missing is gossip, eviction and the auth policy.
+- the p2p transport. The gossip SET is here — the pool, the admission gate and
+  the bloom filter a peer samples against, with the policy stated in
+  `mempool.hpp` — but nothing dials a peer. What the transport adds is who may
+  ASK: Go serves pull-gossip requests only to validators and throttles them,
+  which is a rule about requests, not about transactions, and belongs with the
+  transport.
 - the address→transaction indexer, health, metrics
-- `NewGenesis` from a definition map — that path parses bech32 address strings,
-  which is the address module's job, not the chain's. The genesis **wire** (the
-  half a node is handed) is ported and byte-checked.
 - `batch_verify.go`, a GPU batch-signature optimization whose Go version cannot
   change a verdict (it returns nil on every path)
-- `Block::Reject` — the seam has no reject method. Go returns a rejected
-  block's transactions to the mempool; with no gossip mempool here there is
-  nowhere to return them to.
+
+## The one thing this port cannot do by itself
+
+`VmBlock::reject` exists, is faithful and is tested — but the node's seam
+(`lux/node/vm.hpp`) declares `verify` and `accept` and no `reject`, so consensus
+in `lux-cpp/node` has no way to call it. The port is ready for it and the body
+does not change when the seam grows `virtual void reject() = 0`; until then the
+method is reachable only by naming `VmBlock`.
+
+That is a HOST decision, not this chain's: the seam is shared with the C-Chain,
+whose reject is the EVM's to write. It is written down here rather than papered
+over with a default no-op, because a no-op reject would be a fake that returns
+success — the chain would silently go on dropping a rejected block's
+transactions and the differential's `X_SEAM_BLOCK_REJECT` vector would report
+PRESENT while the divergence stayed.
+
+## Where this chain is checked against the other two
+
+`conformance/corpus/vectors.tsv` is one corpus, generated by the Go X-chain and
+handed to implementations that never see each other's answers. The evaluator
+that speaks for this chain — `test/conformance.cpp`, built as `xvm_conformance`
+— and the runner that compares the answers both belong to the differential
+(`conformance/`, the `chains` target at the repository root), not to this
+directory: a chain that scored itself would be marking its own paper.
+
+Run against this port, it agrees with Go on all fourteen X vectors, on every
+compared field — `parse`, `kind`, the id hash, `syntactic` and `exec`. One of
+those fourteen is not a transaction at all. `X_SEAM_BLOCK_REJECT` asks the
+compiler whether a block here can be rejected; against the code this replaces it
+answered ABSENT while Go answered PRESENT, which is the divergence written up
+above, caught by the only kind of check that could catch it.
+
+One gap is worth stating because agreement can hide it: on five of those vectors
+the `exec` field is compared by nobody. Go, Rust and C++ all answer `SKIPPED`
+("needs a funded UTXO set"), and the runner counts a skip as no answer at all —
+correctly, and it prints them under NOT COMPARED. X-chain execution is therefore
+covered by this port's own ported case tables (`executor_test`, `semantic_test`)
+and not yet by the cross-language differential. Closing it means the corpus
+carrying a funded ledger for the X vectors, which is a change to the corpus
+shared by all three evaluators rather than something this chain can do alone.
 
 ## Traps
 
