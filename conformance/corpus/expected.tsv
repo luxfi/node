@@ -1,0 +1,55 @@
+# What the Go chains said when they read the corpus back.
+# R	<id>	<parse>	<kind>	<hash>	<syntactic>	<exec>	<note>
+R	P_REWARD_VALIDATOR	ok	RewardValidator	00926dc2d2c811f9a2e3bbc9d6aecd1d5febf778f6629b53d6a614521e57a90e	OK	UNSUPPORTED	wrong transaction type
+R	P_BASE	ok	Base	b614b973bd564e1114df4ec72ce7bd74ed1e3f6cd4cb5ad5c350ffe1297c3b1e	OK	LEDGER	not found
+R	P_IMPORT	ok	Import	785e7aeca9f012428aefe6cb065010aeba8736a41b3232bf29868b328a7eb986	OK	LEDGER	not found
+R	P_EXPORT	ok	Export	1b8040ef0b2715ba4bfb8d6ad921873be019d27f46b3befe61ace7d379a36bf3	OK	LEDGER	not found
+R	P_CREATE_NETWORK_PERMISSIONED	ok	CreateNetwork	61cdfa8682203a04f25cb9e0fd2eed260de20cceac508ce2545456ebc90fde22	OK	LEDGER	not found
+R	P_CREATE_CHAIN	ok	CreateChain	9d1cd22904dafd8c247ceb6e415cf018d9b470d794609fbca1327efe61da86e3	OK	LEDGER	not found
+R	P_TRANSFER_CHAIN_OWNERSHIP	ok	TransferChainOwnership	de8bea0477fc7fbd41c7da38c0a541e8854aaba282f6b79229464327f624dbb7	OK	LEDGER	not found
+R	P_REMOVE_CHAIN_VALIDATOR	ok	RemoveChainValidator	bf3c6c768c9f1ec9a6fc64262250fb46fa01247b3e3e1957973b93229040dbb8	OK	LEDGER	NodeID-TYPjCiGbKiwP6r12cdkmVjySbQsH95zy isn't a current or pending validator of 3es43fFoysoasc5ee1gWnAvnsepyES5VAegEAowaeYEgYLt2L: not found
+R	P_TRANSFORM_CHAIN	ok	TransformChain	5bc29d117e8649c0010297fc6e9d2243410acd95d091437845ab11e277df3c2e	SYNTACTIC	SYNTACTIC	asset ID can't be LUX
+R	P_ADD_VALIDATOR	ok	AddValidator	3d28cc584728e8e4be4dd3c81ba219b920c9078be662431eab324a516a96c9d3	OK	UNSUPPORTED	AddValidatorTx is not permitted
+R	P_ADD_CHAIN_VALIDATOR	ok	AddChainValidator	908a049b24e06f0e6d12ed3bc72ed1ce78e2ca766f217500e2ed3b2cec5733de	OK	LEDGER	isn't a current or pending validator
+R	P_ADD_DELEGATOR	ok	AddDelegator	d8e5f0c97f26b0ad5c7a228b3a88459937bd6a598c2e73c5b5c65bc93f78f321	OK	UNSUPPORTED	AddDelegatorTx is not permitted
+R	P_ADD_PERMISSIONLESS_VALIDATOR	ok	AddPermissionlessValidator	32e833245452179a4346b37f5047f60ecada64f7157cd30aae053a0faa6494e0	SYNTACTIC	SYNTACTIC	invalid signer: hasKey=true != isPrimaryNetwork=false
+R	P_ADD_PERMISSIONLESS_DELEGATOR	ok	AddPermissionlessDelegator	f98c4283f9ea835b3183723f858bbc258d842091b3a1582cd51f4c55201893ca	OK	LEDGER	not found
+R	P_REGISTER_L1_VALIDATOR	ok	RegisterL1Validator	af7048e329687a68cedf4896da4282d90575fb6cbdb9b38f00aa1c25b2324121	OK	LEDGER	not found
+R	P_SET_L1_VALIDATOR_WEIGHT	ok	SetL1ValidatorWeight	1804ba80c7eaf8e79acdeac8ffce1e2583bb95b09e877c63a8ed0a7d700b9c87	OK	LEDGER	not found
+R	P_INCREASE_L1_VALIDATOR_BALANCE	ok	IncreaseL1ValidatorBalance	321c9036da78dee348fa639d81060f4ece7d28c1b445b8b81f6eb2f38332020e	OK	LEDGER	not found
+R	P_DISABLE_L1_VALIDATOR	ok	DisableL1Validator	45a63d4a654d287e9cfc9c296b433a7335986812e64d1245735820ca3d2d4814	OK	LEDGER	could not load L1 validator: not found
+R	P_CONVERT_NETWORK	ok	ConvertNetwork	b8f410660fdf09c11dd87e2f8a31948204fc0bddbb56c52df3e693652e452bb1	OK	LEDGER	not found
+R	P_CREATE_NETWORK_SOVEREIGN	ok	CreateNetwork	58d5cbaf79c9580e869c636441d275e0e761a0bcb516e20a37dd12e2caf3b8e5	OK	LEDGER	not found
+R	P_BLOCK_STANDARD	ok	StandardBlock	dce15ebc681efad27e3bc309e8da8586988342e8bdb25f32a25cc46ed5bb4584	OK	LEDGER	height=5 parent=01010101 txs=1
+R	P_BLOCK_PROPOSAL	ok	ProposalBlock	a16a263e427bf2af43fc09e39e5ee0149566072e41ee7c4bc22722f86803becd	OK	LEDGER	height=6 parent=01010101 txs=0
+R	P_BLOCK_COMMIT	ok	CommitBlock	43cf17c3d97eb11d1f3ea80c3b935c7e42d5ba3f5dfc7e52139f1a2408f72342	OK	LEDGER	height=7 parent=01010101 txs=0
+R	P_BLOCK_ABORT	ok	AbortBlock	0e6ec612fb121ab0823bed11733ebc3337673a4c8485f3ccb66b151509b980fc	OK	LEDGER	height=8 parent=01010101 txs=0
+R	P_EDGE_ZERO_OUTPUT	ok	Base	2cea3608b5c5955be01c4195a564306bea19de6f59bd76db7d58352dceaff893	SYNTACTIC	SYNTACTIC	output failed verification: output has no value
+R	P_EDGE_OUTPUT_OVERFLOW	ok	Base	8cfa8ae665dbb0af58c189b03ccdc5919e4105f5d310c0e5e2e6ae4b35f31776	OK	LEDGER	not found
+R	P_EDGE_INPUT_OVERFLOW	ok	Base	47b700a04ba8165265e7a0cd754d208fd16863b284c3a7db8350f381a3913bfc	OK	LEDGER	not found
+R	P_EDGE_UNSORTED_OUTPUTS	ok	Base	3abd0b8fdd12a3287debfd3a21e7b89d01f4c7b137826e5adccc2606a72a74fa	SYNTACTIC	SYNTACTIC	outputs not sorted
+R	P_EDGE_DUPLICATE_INPUT	ok	Base	2a17a83744dd6ae4232e0e19a3fd42a1627551167e8a47061e12910717759e92	SYNTACTIC	SYNTACTIC	inputs not sorted and unique
+R	P_EDGE_EMPTY_NODE_ID	ok	AddValidator	fa7ff7ade74d29f04c793cbf5153f92a7ec70f4363e98cf13e8347a1f1f3754b	OK	SYNTACTIC	validator nodeID cannot be empty
+R	P_EDGE_ZERO_WEIGHT	ok	AddValidator	28f4609a46e742cbd7de8fd65ecd144196e36b68e0c27577df45b1f8b338adfd	SYNTACTIC	SYNTACTIC	failed to verify validator or rewards owner: weight of this validator is too low
+R	P_EDGE_BACKWARDS_PERIOD	ok	AddValidator	346a0c04e8872972b60e1e16e631e87c3640a2aff29ac6cd495363e670c10864	OK	UNSUPPORTED	AddValidatorTx is not permitted
+R	P_EDGE_WRONG_NETWORK	ok	Base	9997139ea723c3998426b2b17d613fc3c495fa92b276e8e0713aea84069c795b	SYNTACTIC	SYNTACTIC	metadata failed verification: tx has wrong network ID
+R	P_EDGE_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_EDGE_EMPTY	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_EDGE_ONE_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_EDGE_CORRUPT_TAIL	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: txs: credential signature range is outside the signature array: credential 0 claims signatures [0, 1) of 0
+R	P_EDGE_TRAILING_BYTES	ok	Base	699e00c24e620022355b813ac507b68287f7c5d5021f38c7c04263f402cb8c3e	OK	LEDGER	not found
+R	X_BASE	ok	Base	267ab512214792d1ebb90647344c13a2660d742ac590c4cd13ffbd27fd20ad02	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
+R	X_CREATE_ASSET	ok	CreateAsset	ef099cb0be116bde734039512d7568e90b6d6e7a992a63d38c85a29962809cae	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
+R	X_OPERATION	ok	Operation	8475c4eeb4e7a865164a74431ecfbbfd4a127b993d19ac712a5766f7b1468b08	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
+R	X_IMPORT	ok	Import	aa44da3020f01390a32f4d6fec7501b63199010f24ec74a41e0505915dd634b5	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
+R	X_EXPORT	ok	Export	694cc5db33ddbdf607dc4e45e4d985170e778004ccf9b6337ab01adb11fa4592	LEDGER	LEDGER	insufficient funds
+R	X_BLOCK_STANDARD	ok	StandardBlock	50be520b14db55027a29842e35a7b63cf5b3b96a0792204a00387fe2dcb0a94c	OK	LEDGER	height=1 parent=0a0a0a0a txs=1
+R	X_BLOCK_EMPTY	ok	StandardBlock	bc53712ecbecca169f6c81fd2e10967b6252e224332eb6e9b12861be22a4ce93	OK	LEDGER	height=1 parent=0a0a0a0a txs=0
+R	X_EDGE_ZERO_OUTPUT	ok	Base	4047233c0e5338bbf53e889cbb7b911fc3c29db26fa6a8ec76e30bb8323a19a2	SYNTACTIC	SYNTACTIC	output has no value
+R	X_EDGE_OUTPUT_OVERFLOW	ok	Base	ffab811e2042b9ca318518f887f2f6db0c01bbd1e61908ade7885cc592765090	OVERFLOW	OVERFLOW	overflow
+R	X_EDGE_WRONG_NETWORK	ok	Base	90baf8d22feb413213660109bae58fb977905171cbe1cd3375fad2a059d68e90	SYNTACTIC	SYNTACTIC	tx has wrong network ID
+R	X_EDGE_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_EDGE_EMPTY	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: wire: envelope shorter than 2-byte discriminator prefix
+R	X_EDGE_CORRUPT_TAIL	ok	Base	f8a5de6070a3cfdd0b59cd2c474b67e423a5f1f7d041e1d838eaeb145157d4e8	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
+R	X_SEAM_BLOCK_REJECT	ok	Block.Reject	-	-	PRESENT	xvm block/executor Block.Reject re-offers each still-valid tx to the mempool
+R	P_SEAM_BLOCK_REJECT	ok	Block.Reject	-	-	PRESENT	platformvm block/executor Block.Reject frees the block and drops its state
