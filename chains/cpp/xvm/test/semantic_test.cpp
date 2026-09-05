@@ -346,6 +346,29 @@ void export_tx_cases() {
         expect(rig, "not allowed input feature extension", *tx, executor::kErrIncompatibleFx);
     }
     {
+        // The other half of the same gate: what an export SENDS is checked
+        // against the asset's declared fxs too. Without inputs there is nothing
+        // to spend and nothing to sign, so the exported output is the only thing
+        // the verifier can be refusing — which is what makes this case distinct
+        // from the input one above rather than a second spelling of it.
+        Rig rig;
+        rig.seed_asset(the_asset(false));
+        auto utx = build(peer_chain_id());
+        utx->base.ins.clear();
+        auto tx = sign(utx, {});
+        expect(rig, "not allowed output feature extension", *tx, executor::kErrIncompatibleFx);
+    }
+    {
+        // …and it passes when the asset DOES declare the fx, so the refusal above
+        // is the declaration and not the empty input list.
+        Rig rig;
+        rig.seed_asset(the_asset(true));
+        auto utx = build(peer_chain_id());
+        utx->base.ins.clear();
+        auto tx = sign(utx, {});
+        expect(rig, "an exported output of an asset that declares the fx", *tx, "");
+    }
+    {
         Rig rig;
         rig.seed_utxo(asset_id(), 12345);
         rig.seed_asset(the_asset(true));
@@ -452,6 +475,29 @@ void import_tx_cases() {
         rig.seed_asset(the_asset(false));
         auto tx = sign(build(peer_chain_id()), {0});
         expect(rig, "not allowed input feature extension", *tx, executor::kErrIncompatibleFx);
+    }
+    {
+        // An import may also PAY OUT on this chain, and what it pays out is
+        // checked against the asset's declared fxs like any other output. The
+        // imported input is left in place — an ImportTx with none is refused
+        // syntactically — so the only thing failing here is the output.
+        Rig rig;
+        put(rig, 12345, 0);
+        rig.seed_asset(the_asset(false));
+        auto utx = build(peer_chain_id());
+        utx->base.outs.push_back(txs::TransferableOutput{asset_id(), tout(12345)});
+        auto tx = sign(utx, {0});
+        expect(rig, "not allowed output feature extension", *tx, executor::kErrIncompatibleFx);
+    }
+    {
+        // The same import, against an asset that declares the fx, is fine.
+        Rig rig;
+        put(rig, 12345, 0);
+        rig.seed_asset(the_asset(true));
+        auto utx = build(peer_chain_id());
+        utx->base.outs.push_back(txs::TransferableOutput{asset_id(), tout(12345)});
+        auto tx = sign(utx, {0});
+        expect(rig, "an imported payout of an asset that declares the fx", *tx, "");
     }
     {
         Rig rig;
