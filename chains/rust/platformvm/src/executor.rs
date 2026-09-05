@@ -3450,6 +3450,125 @@ mod tests {
         );
     }
 
+    // ── the authorisation paths, each with a real stranger's signature
+    //
+    // Every credential this chain checks goes through `flow::verify_permission`,
+    // and every "nobody authorised this" test forges the LAST credential with a
+    // stranger's real secp256k1 signature rather than removing it — so each
+    // exercises a genuine recovery that names the wrong address, which is the
+    // failure the original missing-recoverer bug could not have produced.
+
+    #[test]
+    fn handing_a_network_on_needs_the_owner_that_holds_it() {
+        // The most consequential thing a network's owner can do, so it is the
+        // owner that has to sign for it.
+        let now = 1000;
+        let chain = [6u8; 32];
+        let (mut state, input) = funded(now, 100);
+        state.add_chain(chain, spend_owner());
+
+        let tx = signed(
+            Unsigned::TransferChainOwnership {
+                base: envelope(vec![input], vec![]),
+                chain,
+                chain_auth: vec![0],
+                owner: owner(9),
+            },
+            2,
+        );
+        assert_eq!(
+            execute_standard(&mut state, &forge_last_credential(&tx), &config(), &fees(), &NoImports),
+            Err(Error::NotAuthorized(flow::CredentialError::WrongSigner))
+        );
+        assert_eq!(state.chain_owner(&chain), Ok(&spend_owner()), "and it did not move");
+
+        assert_eq!(
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
+            Ok(())
+        );
+        assert_eq!(state.chain_owner(&chain), Ok(&owner(9)));
+    }
+
+    #[test]
+    fn removing_a_named_validator_needs_the_owner_that_named_it() {
+        // A validator admitted by name is removed by the same owner that named
+        // it, and by nobody else.
+        let now = 1000;
+        let chain = [6u8; 32];
+        let (mut state, input) = funded(now, 100);
+        state.add_chain(chain, spend_owner());
+        state
+            .put_current_validator(crate::state::Staker {
+                tx_id: [7; 32],
+                node_id: NodeId([5; 20]),
+                public_key: None,
+                chain,
+                weight: 10 * MEGA,
+                start_time: now,
+                end_time: now + YEAR,
+                potential_reward: 0,
+                next_time: now + YEAR,
+                priority: Priority::ChainPermissionedValidatorCurrent,
+            })
+            .unwrap();
+
+        let tx = signed(
+            Unsigned::RemoveChainValidator {
+                base: envelope(vec![input], vec![]),
+                node_id: NodeId([5; 20]),
+                chain,
+                chain_auth: vec![0],
+            },
+            2,
+        );
+        assert_eq!(
+            execute_standard(&mut state, &forge_last_credential(&tx), &config(), &fees(), &NoImports),
+            Err(Error::NotAuthorized(flow::CredentialError::WrongSigner))
+        );
+        assert!(
+            state.current_validator(&chain, &NodeId([5; 20])).is_ok(),
+            "and it is still validating"
+        );
+
+        assert_eq!(
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
+            Ok(())
+        );
+        assert!(state.current_validator(&chain, &NodeId([5; 20])).is_err());
+    }
+
+    #[test]
+    fn making_a_chain_on_a_network_needs_that_networks_owner() {
+        let now = 1000;
+        let network = [6u8; 32];
+        let (mut state, input) = funded(now, 100);
+        state.add_chain(network, spend_owner());
+
+        let tx = signed(
+            Unsigned::CreateChain {
+                base: envelope(vec![input], vec![]),
+                chain: network,
+                name: "a chain".into(),
+                vm_id: [8; 32],
+                fx_ids: Vec::new(),
+                genesis: vec![1, 2, 3],
+                chain_auth: vec![0],
+            },
+            2,
+        );
+        assert_eq!(
+            execute_standard(&mut state, &forge_last_credential(&tx), &config(), &fees(), &NoImports),
+            Err(Error::NotAuthorized(flow::CredentialError::WrongSigner))
+        );
+        assert!(state.blockchains().is_empty(), "and no chain was made");
+
+        assert_eq!(
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
+            Ok(())
+        );
+        assert_eq!(state.blockchains(), &[tx.id()]);
+    }
+
     // ── imports
     //
     // An import spends value made on another chain, so the P-chain cannot check
