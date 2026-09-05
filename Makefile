@@ -24,7 +24,8 @@ CONSENSUS_RUST := $(HOME)/work/lux/consensus/pkg/rust
 CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
 
 .PHONY: chains-build all luxd gpu conformance conformance-go conformance-rust conformance-cpp \
-        chains chains-corpus luxd-go luxd-rust luxd-cpp clean help
+        chains chains-corpus precompiles precompiles-build precompiles-corpus \
+        luxd-go luxd-rust luxd-cpp clean help
 
 help:
 	@echo "make luxd RUNTIME=go|rust|cpp   build one runtime into bin/luxd-<runtime>"
@@ -33,6 +34,8 @@ help:
 	@echo "make conformance                run the pop/verdict corpus, all 3 languages"
 	@echo "make chains                     run the P/X chain differential, all 3 languages"
 	@echo "make chains-corpus              regenerate the corpus from the Go reference"
+	@echo "make precompiles                run the precompile differential"
+	@echo "make precompiles-corpus         regenerate the precompile corpus"
 	@echo "make clean                      remove bin/"
 
 # ---- make luxd RUNTIME=go|rust|cpp -----------------------------------------
@@ -210,6 +213,33 @@ chains-build:
 	@for f in $(CONF_GEN) $(PVM_RUST) $(XVM_RUST) $(PVM_CPP) $(XVM_CPP); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
 	done
+
+# ---- make precompiles: the cross-language precompile differential -----------
+#
+# The same runner, a different subject. See conformance/PRECOMPILE.md.
+
+PREC        := $(CONF)/precompile
+PREC_GO     := $(PREC)/precompile
+PREC_VECS   := $(CONF)/corpus/precompile_vectors.tsv
+PREC_WANT   := $(CONF)/corpus/precompile_expected.tsv
+
+precompiles: precompiles-build
+	@echo
+	cd $(ROOT) && GOWORK=off go run ./conformance/runner \
+		-subject precompile \
+		-fields status,gas,output \
+		-vectors $(PREC_VECS) \
+		-expected $(PREC_WANT) \
+		-eval "go=$(PREC_GO) eval"
+
+precompiles-build:
+	@echo "==> precompile differential: building the Go reference"
+	cd $(PREC) && GOWORK=off go build -o precompile .
+	@test -x $(PREC_GO) || { echo "FAIL: no evaluator at $(PREC_GO)" >&2; exit 1; }
+
+# Rebuild the precompile corpus from the Go reference.
+precompiles-corpus:
+	cd $(PREC) && GOWORK=off go run . emit ../corpus
 
 # Rebuild the corpus from the Go reference. Its output is committed, so a
 # corpus that moves shows up as a diff rather than as a silent new normal.
