@@ -96,6 +96,13 @@ public:
     node::Id last_accepted() const override { return state_->last_accepted(); }
     std::uint64_t last_accepted_height() const override { return state_->last_accepted_height(); }
 
+    // The highest height this node itself decided. These chains advance only
+    // through accept(), and none of them can be handed history — there is no
+    // import path that moves the tip without a certificate under it — so the
+    // decided frontier IS the accepted tip. A chain that grows one must stop
+    // answering with this and start answering with what it certified.
+    std::uint64_t frontier() const override { return last_accepted_height(); }
+
     // issue adds a transaction to the pool the next build draws from. It does
     // NOT admit anything: admission happens when a block carrying it executes.
     void issue(Tx tx);

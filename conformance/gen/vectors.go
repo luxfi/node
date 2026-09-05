@@ -204,6 +204,7 @@ func buildCorpus() []Vector {
 	v = append(v, xTx...)
 	v = append(v, xBlk...)
 	v = append(v, xEdges()...)
+	v = append(v, identityVectors()...)
 	v = append(v, qVectors()...)
 	v = append(v, zVectors()...)
 	v = append(v, fVectors()...)
