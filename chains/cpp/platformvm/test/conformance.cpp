@@ -106,8 +106,8 @@ ex::Backend backend() {
 // A chain that holds nothing, at the corpus's genesis time. Every vector meets
 // the same empty ledger — the one starting state all three implementations can
 // stand up without three state builders to compare.
-state::MemState empty_chain() {
-    state::MemState s;
+state::State empty_chain() {
+    state::State s;
     s.set_timestamp(1000);
     return s;
 }
@@ -305,7 +305,7 @@ static Row eval_tx(const std::string& id, const std::string& wire) {
     }
     r.syntactic = kOk;
 
-    state::MemState chain = empty_chain();
+    state::State chain = empty_chain();
     state::Diff layer(&chain);
     ex::Backend b = backend();
     auto effects = ex::standard_tx(b, tx, layer);
