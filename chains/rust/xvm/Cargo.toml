@@ -8,6 +8,25 @@ repository = "https://github.com/luxfi/node2"
 publish = false
 
 [dependencies]
+# The host. `host::Vm` and `host::Block` are the node's OWN trait definitions,
+# not a copy of them: a chain that restated the seam would compile against a
+# shape the node never sees, and the day the node changed a method the chain
+# would still build. A path dependency because `lux-node` is not published —
+# the same reason the node itself reaches `lux-evm` and `lux-pq` by path.
+lux-node = { path = "../../../../../lux-rs/node" }
+
+# Named, not used: `lux-node` reaches `libluxcrypto` through this crate, and
+# only a DIRECT dependent is handed the `links` metadata that says where that
+# library was resolved. Naming it here is what lets `build.rs` repeat the one
+# answer instead of searching for a second one, so this crate's test binaries —
+# which run the node — can load. `lux-node` names it for the same reason.
+lux-pq = { path = "../../../../../lux-rs/sdk/lux-pq" }
+
+# `Id` — `lux_consensus::finality::Id`, `[u8; 32]`. Named from the crate the
+# host names it from, so a block this chain builds is named the same way the
+# node that certifies it names it, with nothing in between to translate.
+lux-consensus = "1.23.0"
+
 # The three hashes the chain is defined over, and nothing else does them.
 # A tx id is SHA-256 of its signed bytes; an address is RIPEMD-160 of the
 # SHA-256 of a public key; every state-root leaf is Ethereum Keccak-256.
@@ -30,3 +49,8 @@ serde_json = "1"
 [dev-dependencies]
 # Golden vectors are hex, because that is how the Go generator prints them.
 hex = "0.4"
+
+# Publishing a validator, in `tests/node.rs`: the committee the node's engine
+# reads is a BLS key and a proof of possession over it, so standing one up
+# means holding the same curve the node verifies under.
+blst = "0.3"

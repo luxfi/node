@@ -20,6 +20,7 @@
 
 use std::collections::BTreeSet;
 
+use crate::db::Batch;
 use crate::error::{Error, Result};
 use crate::fx::{self, Family, FxContext};
 use crate::ids::Id;
@@ -38,10 +39,10 @@ const MAX_DENOMINATION: u8 = 32;
 /// It is on the chain, it was accepted before the rule that would refuse it,
 /// and history does not get to be re-decided. The value is the id itself, so
 /// this exempts exactly one transaction and nothing that resembles it.
-pub const EXEMPT_OPERATION_TX: Id = Id([
+pub const EXEMPT_OPERATION_TX: Id = [
     0x2f, 0x21, 0xd5, 0x74, 0x88, 0x89, 0x2c, 0x35, 0xa3, 0x39, 0xd1, 0xbf, 0x09, 0x6f, 0x8f, 0x33,
     0xe0, 0xe6, 0x01, 0x51, 0xc3, 0xf4, 0x2a, 0x99, 0x23, 0x73, 0x5b, 0x79, 0xbf, 0x4b, 0x2e, 0x68,
-]);
+];
 
 /// What the chain charges.
 #[derive(Clone, Copy, Debug)]
@@ -70,11 +71,25 @@ pub trait SharedMemory: Send + Sync {
     /// The encoded UTXOs the peer chain put there under these keys.
     fn get(&self, peer_chain: &Id, keys: &[Vec<u8>]) -> Result<Vec<Vec<u8>>>;
 
-    /// Hand over what an accepted block asked of the other chains, all of it or
-    /// none. A block is accepted once, so this runs once — and it runs with the
-    /// same batch that commits the block's own state, which is what makes an
-    /// import on one chain and the export on the other one event.
-    fn apply(&self, requests: &[(Id, AtomicRequests)]) -> Result<()>;
+    /// Hand over what an accepted block asked of the other chains, together
+    /// with `batch` — everything that block did to THIS chain — in one write.
+    ///
+    /// The two halves are not two writes. `batch` arrives here staged and
+    /// unwritten precisely so that an implementation can put the shared area's
+    /// changes and the block's own state down together: either both are on the
+    /// device or neither is. Writing them separately is the bug this parameter
+    /// exists to make unrepresentable — a block accepted whose import was never
+    /// taken from the peer credits value twice, and one whose export was never
+    /// handed over loses it.
+    ///
+    /// This is Go's `SharedMemory.Apply(requests, batch)`, where `batch` is the
+    /// staged `CommitBatch` and `WriteAll` puts both down in one atomic write.
+    ///
+    /// `batch` is the only remaining record of what the block did to this
+    /// chain, so an implementation that does not write it loses the block. A
+    /// block that asked nothing of another chain never arrives here at all: its
+    /// store writes its own batch, which is the same one write.
+    fn apply(&self, requests: &[(Id, AtomicRequests)], batch: &Batch) -> Result<()>;
 }
 
 /// Everything the two verification passes need that is not the transaction.
@@ -287,7 +302,7 @@ pub fn verify_semantic(backend: &Backend<'_>, state: &dyn ReadOnlyChain, tx: &Tx
             let keys: Vec<Vec<u8>> = t
                 .imported_ins
                 .iter()
-                .map(|i| i.input_id().0.to_vec())
+                .map(|i| i.input_id().to_vec())
                 .collect();
             let sm = backend.shared_memory.ok_or(Error::NotFound)?;
             let raw = sm.get(&t.source_chain, &keys)?;
@@ -496,7 +511,7 @@ pub fn execute(state: &mut dyn Chain, tx: &Tx) -> Result<Effects> {
             for in_ in &t.imported_ins {
                 let utxo_id = in_.input_id();
                 effects.inputs.insert(utxo_id);
-                removes.push(utxo_id.0.to_vec());
+                removes.push(utxo_id.to_vec());
             }
             effects.atomic_requests.push((
                 t.source_chain,
@@ -518,7 +533,7 @@ pub fn execute(state: &mut dyn Chain, tx: &Tx) -> Result<Effects> {
                 index += 1;
                 // The same encoding on shared memory and on disk.
                 let bytes = utxo.wire_bytes();
-                let key = utxo.input_id().0.to_vec();
+                let key = utxo.input_id().to_vec();
                 puts.push(AtomicElement {
                     key,
                     value: bytes,
@@ -546,6 +561,7 @@ mod tests {
     };
     use crate::fx::{property, Cred, Credential, Input, Owners, State};
     use crate::hash::sha256;
+    use crate::ids;
     use crate::ids::ShortId;
     use crate::state::Store;
     use crate::txs::{
@@ -557,7 +573,7 @@ mod tests {
     const OTHER_KEY: [u8; 32] = [12u8; 32];
 
     fn asset(n: u8) -> Id {
-        Id::prefixed_bytes(&[n])
+        ids::prefixed(&[n])
     }
 
     fn chain() -> Id {
@@ -584,7 +600,14 @@ mod tests {
         fn get(&self, _: &Id, _: &[Vec<u8>]) -> Result<Vec<Vec<u8>>> {
             Ok(Vec::new())
         }
-        fn apply(&self, _: &[(Id, AtomicRequests)]) -> Result<()> {
+        fn apply(&self, _: &[(Id, AtomicRequests)], batch: &Batch) -> Result<()> {
+            // These tests verify and execute; no block is accepted through
+            // them, so nothing arrives here holding one. If something did,
+            // returning without writing `batch` would lose it.
+            assert!(
+                batch.is_empty(),
+                "a block reached a shared area that does not write"
+            );
             Ok(())
         }
     }
@@ -1332,7 +1355,7 @@ mod tests {
         assert_eq!(effects.atomic_requests.len(), 1);
         let (peer, reqs) = &effects.atomic_requests[0];
         assert_eq!(*peer, asset(9));
-        assert_eq!(reqs.removes, vec![imported.input_id().0.to_vec()]);
+        assert_eq!(reqs.removes, vec![imported.input_id().to_vec()]);
         assert!(reqs.puts.is_empty());
     }
 
@@ -1368,7 +1391,7 @@ mod tests {
                 owners: owners(),
             }),
         };
-        assert_eq!(put.key, want.input_id().0.to_vec());
+        assert_eq!(put.key, want.input_id().to_vec());
         // The other chain reads exactly these bytes back.
         assert_eq!(Utxo::from_wire(&put.value).unwrap(), want);
         assert_eq!(put.traits, vec![me().0.to_vec()]);
@@ -1380,11 +1403,11 @@ mod tests {
     fn the_exempt_operation_transaction_is_the_one_id_and_no_other() {
         // The value is the id, so nothing that merely resembles it is waived.
         assert_eq!(
-            hex::encode(EXEMPT_OPERATION_TX.0),
+            hex::encode(EXEMPT_OPERATION_TX),
             "2f21d57488892c35a339d1bf096f8f33e0e60151c3f42a9923735b79bf4b2e68"
         );
         let mut near = EXEMPT_OPERATION_TX;
-        near.0[31] ^= 1;
+        near[31] ^= 1;
         assert_ne!(near, EXEMPT_OPERATION_TX);
     }
 

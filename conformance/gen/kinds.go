@@ -12,7 +12,6 @@ import (
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	xblock "github.com/luxfi/node/vms/xvm/block"
-	xconfig "github.com/luxfi/node/vms/xvm/config"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	xtxs "github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
@@ -120,30 +119,10 @@ var xParser = func() xblock.Parser {
 
 // xSyntactic is the X-chain's own syntactic verifier, given the one chain
 // identity the corpus is built for. It is the node's type, not a copy of it.
+//
+// The backend is `xBackend()`, the same one the semantic pass and the executor
+// read, so a vector cannot be judged under one wiring and executed under
+// another.
 func xSyntacticVerifier(tx *xtxs.Tx) *executor.SyntacticVerifier {
-	return &executor.SyntacticVerifier{
-		Backend: &executor.Backend{
-			Runtime: xrt(),
-			// The three feature extensions the X-chain runs, in their
-			// canonical order, and the index that says which family lives
-			// where. Without them the verifier cannot resolve a mint output
-			// and answers "unknown feature extension" — which would be the
-			// evaluator's missing wiring reported as the chain's verdict.
-			Fxs: []*fxs.ParsedFx{
-				{ID: id(1), Fx: &secp256k1fx.Fx{}},
-				{ID: id(2), Fx: &nftfx.Fx{}},
-				{ID: id(3), Fx: &propertyfx.Fx{}},
-			},
-			FxIndex: xFxIndex(),
-			// The corpus's X vectors are built fee-neutral — inputs equal
-			// outputs — so the differential measures the chain's rules and not
-			// three fee schedules. A non-zero schedule here would reject every
-			// vector before any rule was reached.
-			Config:       &xconfig.Config{},
-			FeeAssetID:   id(50),
-			XChainID:     id(2),
-			Bootstrapped: true,
-		},
-		Tx: tx,
-	}
+	return &executor.SyntacticVerifier{Backend: xBackend(), Tx: tx}
 }

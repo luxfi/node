@@ -46,8 +46,8 @@ pub fn block_execution_root(
     let leaf_txs = tx_leaves(blk_txs);
     let utxos = post_block_utxo_leaves(post_state)?;
     let assets: Vec<AssetLeaf> = Vec::new();
-    let (e, _, _, _) = root::execution_root(&parent_root.0, &utxos, &assets, &leaf_txs, height);
-    Ok(Id(e))
+    let (e, _, _, _) = root::execution_root(&parent_root, &utxos, &assets, &leaf_txs, height);
+    Ok(e)
 }
 
 /// The occupied UTXO set, in ascending id order, as leaves.
@@ -75,8 +75,8 @@ fn utxo_leaf(utxo: &Utxo) -> Result<UtxoLeaf> {
         return Err(Error::UnsupportedOwnerModel);
     }
     Ok(UtxoLeaf {
-        utxo_id: utxo.input_id().0,
-        asset_id: utxo.asset_id().0,
+        utxo_id: utxo.input_id(),
+        asset_id: utxo.asset_id(),
         amount_lo: utxo.out.amount(),
         amount_hi: 0,
         owner_root: root::owner_root(owners.threshold, &owners.addresses()),
@@ -94,7 +94,7 @@ fn utxo_leaf(utxo: &Utxo) -> Result<UtxoLeaf> {
 /// two different blocks could satisfy, so the two roots are stated separately
 /// and both are derived from the block alone.
 pub fn payload_root(blk_txs: &[Tx]) -> Id {
-    Id(root::tx_root(&tx_leaves(blk_txs)))
+    root::tx_root(&tx_leaves(blk_txs))
 }
 
 /// The block's transactions as leaves, in block order.
@@ -105,7 +105,7 @@ fn tx_leaves(blk_txs: &[Tx]) -> Vec<TxLeaf> {
     blk_txs
         .iter()
         .map(|tx| TxLeaf {
-            tx_id: tx.id().0,
+            tx_id: tx.id(),
             status: STATUS_ACCEPTED,
             ..TxLeaf::default()
         })
@@ -117,15 +117,16 @@ mod tests {
     use super::*;
     use crate::fx::secp256k1::TransferOutput;
     use crate::fx::{Owners, State};
+    use crate::ids;
     use crate::ids::ShortId;
     use crate::state::{Chain, Store};
     use crate::utxo::{Asset, UtxoId};
 
     fn a_utxo(n: u8) -> Utxo {
         Utxo {
-            utxo_id: UtxoId::new(Id::prefixed_bytes(&[n]), 0),
+            utxo_id: UtxoId::new(ids::prefixed(&[n]), 0),
             asset: Asset {
-                id: Id::prefixed_bytes(&[1]),
+                id: ids::prefixed(&[1]),
             },
             out: State::Transfer(TransferOutput {
                 amt: 100 + n as u64,
@@ -137,10 +138,10 @@ mod tests {
     #[test]
     fn an_empty_chain_folds_to_the_compose_of_three_empty_families() {
         let s = Store::new();
-        let got = block_execution_root(Id::prefixed_bytes(&[0xEE]), &[], &s, 7).unwrap();
+        let got = block_execution_root(ids::prefixed(&[0xEE]), &[], &s, 7).unwrap();
         let e = root::empty();
-        let want = root::compose(&Id::prefixed_bytes(&[0xEE]).0, &e, &e, &e, 7);
-        assert_eq!(got.0, want);
+        let want = root::compose(&ids::prefixed(&[0xEE]), &e, &e, &e, 7);
+        assert_eq!(got, want);
     }
 
     #[test]
@@ -157,7 +158,7 @@ mod tests {
         let s = Store::new();
         let a = block_execution_root(EMPTY, &[], &s, 1).unwrap();
         let b = block_execution_root(EMPTY, &[], &s, 2).unwrap();
-        let c = block_execution_root(Id::prefixed_bytes(&[1]), &[], &s, 1).unwrap();
+        let c = block_execution_root(ids::prefixed(&[1]), &[], &s, 1).unwrap();
         assert_ne!(a, b);
         assert_ne!(a, c);
     }

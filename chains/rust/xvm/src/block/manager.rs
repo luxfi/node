@@ -30,7 +30,9 @@ use crate::block::Block;
 use crate::error::{Error, Result};
 use crate::ids::{Id, EMPTY};
 use crate::state::{Chain, ChainRef, Diff, ReadOnlyChain, Versions};
-use crate::txs::executor::{execute, verify_semantic, verify_syntactic, AtomicRequests, Backend};
+use crate::txs::executor::{
+    execute, verify_semantic, verify_syntactic, AtomicRequests, Backend, SharedMemory,
+};
 use crate::txs::Tx;
 
 /// How far into the future a block's timestamp may be, in seconds.
@@ -216,18 +218,73 @@ impl Manager {
         Ok(())
     }
 
-    /// Commit a verified block, and say what it asked of the other chains.
+    /// Commit a verified block, and what it asked of the other chains, in one
+    /// write.
     ///
-    /// The caller applies those requests; this returns them rather than
-    /// reaching for a shared area itself, because whether a chain has one is
-    /// the host's business.
-    pub fn accept(&mut self, blk_id: &Id) -> Result<Vec<(Id, AtomicRequests)>> {
+    /// The block's own state and the changes it makes to the area this chain
+    /// shares with another are ONE event, and this is where that is enforced.
+    /// A block that imports has already created the imported output in this
+    /// chain's state; the matching removal from the shared area is what stops
+    /// the peer chain from handing the same output over again. If the two were
+    /// two writes, a failure or a stopped process between them would leave the
+    /// output credited here and still waiting there — value created out of
+    /// nothing. An export inverted is value destroyed. So the state is staged
+    /// rather than written, and the shared area writes both halves together.
+    ///
+    /// Go does exactly this: `Block.Accept` calls `CommitBatch` and hands the
+    /// staged batch to `SharedMemory.Apply`, which combines it with the shared
+    /// area's own batch and writes them with one `WriteAll`.
+    ///
+    /// A block that asks nothing of another chain has only one half, and the
+    /// store writes it — one write either way.
+    ///
+    /// An error from here is terminal for the chain, as it is in Go: nothing
+    /// reached the device, but this process is holding a state the device does
+    /// not have, and the honest next step is to stop and come back from what is
+    /// written down. What must never happen — and now cannot — is carrying on
+    /// with half the event stored.
+    pub fn accept(
+        &mut self,
+        blk_id: &Id,
+        shared_memory: Option<&dyn SharedMemory>,
+    ) -> Result<Vec<(Id, AtomicRequests)>> {
+        let crosses = !self
+            .processing
+            .get(blk_id)
+            .ok_or(Error::BlockNotFound)?
+            .atomic_requests
+            .is_empty();
+        // Asked before anything moves. A chain with no shared area cannot
+        // accept a block that moves value through one, and finding that out
+        // after the state had been changed would leave the chain holding half
+        // an event.
+        if crosses && shared_memory.is_none() {
+            return Err(Error::NoSharedMemory);
+        }
+
         let p = self.processing.remove(blk_id).ok_or(Error::BlockNotFound)?;
         {
             let diff = p.on_accept.lock().expect("chain layer poisoned");
             let mut store = self.store.lock().expect("chain layer poisoned");
             diff.apply(&mut *store);
             store.add_block(p.block.clone());
+            // Where the chain now stands, in the store rather than only in this
+            // manager: a manager reads these back at start-up, so a chain that
+            // recorded the block but not its position would restart one block
+            // behind the state it holds. Go writes the same two in the same
+            // place, `SetLastAccepted` and `SetTimestamp` on the accept path.
+            store.set_last_accepted(*blk_id);
+            store.set_timestamp(p.block.timestamp());
+            // And onto the device. Everything this block did goes in one batch
+            // with the position it moved the chain to — and, when the block
+            // moved value across a chain boundary, with that movement too — so
+            // a restart never sees a block applied at a height the chain has
+            // not reached, a position pointing at a block that is not there, or
+            // an import credited whose source was never spent.
+            match shared_memory {
+                Some(sm) if crosses => sm.apply(&p.atomic_requests, &store.commit_batch()?)?,
+                _ => store.commit()?,
+            }
         }
         self.last_accepted = *blk_id;
         Ok(p.atomic_requests)
@@ -283,7 +340,7 @@ impl Manager {
 
     /// Install the first block. The chain has to start somewhere, and it is not
     /// a block anybody verified — there is no parent to verify it against.
-    pub fn set_genesis(&mut self, genesis: Block) {
+    pub fn set_genesis(&mut self, genesis: Block) -> Result<()> {
         let id = genesis.id();
         let time = genesis.timestamp();
         {
@@ -291,9 +348,15 @@ impl Manager {
             store.add_block(genesis);
             store.set_last_accepted(id);
             store.set_timestamp(time);
+            // Block zero and the state its transactions produced go down
+            // together, in one batch with the position they put the chain at.
+            // A chain that wrote genesis in pieces could come back holding half
+            // of it, which is a chain nobody agrees with.
+            store.commit()?;
         }
         self.last_accepted = id;
         self.preferred = id;
+        Ok(())
     }
 }
 
@@ -325,8 +388,10 @@ pub fn genesis_parent_root() -> Id {
 mod tests {
     use super::*;
     use crate::block::root::block_execution_root;
+    use crate::db::{Batch, Db};
     use crate::fx::secp256k1::{address_of, TransferInput, TransferOutput};
     use crate::fx::{self, Input, Owners, State};
+    use crate::ids;
     use crate::ids::ShortId;
     use crate::state::Store;
     use crate::txs::executor::{Config, Net, SharedMemory};
@@ -338,10 +403,10 @@ mod tests {
     const NETWORK_ID: u32 = 10;
 
     fn chain_id() -> Id {
-        Id::prefixed_bytes(&[5])
+        ids::prefixed(&[5])
     }
     fn asset() -> Id {
-        Id::prefixed_bytes(&[1])
+        ids::prefixed(&[1])
     }
     fn key(n: u8) -> [u8; 32] {
         let mut k = [0u8; 32];
@@ -363,8 +428,130 @@ mod tests {
         fn get(&self, _: &Id, _: &[Vec<u8>]) -> Result<Vec<Vec<u8>>> {
             Ok(Vec::new())
         }
-        fn apply(&self, _: &[(Id, AtomicRequests)]) -> Result<()> {
+        fn apply(&self, _: &[(Id, AtomicRequests)], batch: &Batch) -> Result<()> {
+            // Nothing in these tests crosses a chain boundary onto a device, so
+            // nothing arrives here holding a block. If something did, returning
+            // without writing `batch` would lose it.
+            assert!(
+                batch.is_empty(),
+                "a block reached a shared area that does not write"
+            );
             Ok(())
+        }
+    }
+
+    /// A shared area on the same device as the chain: it writes what the block
+    /// asked of the peer and what the block did to this chain in ONE write, the
+    /// way the real one must.
+    ///
+    /// The peer's side is kept under a prefix of its own so that a test can ask
+    /// whether the movement happened, and it is written in the same batch as
+    /// the block, so it cannot have happened without the block or the block
+    /// without it.
+    struct Peer {
+        db: Arc<dyn Db>,
+    }
+
+    /// The key a request lands under, so a test can look for it.
+    fn peer_key(chain: &Id, k: &[u8]) -> Vec<u8> {
+        let mut out = b"peer".to_vec();
+        out.extend_from_slice(chain);
+        out.extend_from_slice(k);
+        out
+    }
+
+    impl SharedMemory for Peer {
+        fn get(&self, _: &Id, _: &[Vec<u8>]) -> Result<Vec<Vec<u8>>> {
+            Ok(Vec::new())
+        }
+
+        fn apply(&self, requests: &[(Id, AtomicRequests)], batch: &Batch) -> Result<()> {
+            let mut one = batch.clone();
+            for (chain, reqs) in requests {
+                for put in &reqs.puts {
+                    one.put(peer_key(chain, &put.key), put.value.clone());
+                }
+                for k in &reqs.removes {
+                    one.delete(peer_key(chain, k));
+                }
+            }
+            self.db.write(&one)
+        }
+    }
+
+    /// A device that counts how many times it was written to.
+    ///
+    /// Atomicity is not a property of what ends up stored — two writes leave
+    /// the same bytes behind as one, once both have happened. It is a property
+    /// of how many chances there are to stop in between. So the test counts.
+    struct Counting {
+        inner: crate::db::Memory,
+        writes: std::sync::atomic::AtomicUsize,
+    }
+
+    impl Counting {
+        fn new() -> Counting {
+            Counting {
+                inner: crate::db::Memory::new(),
+                writes: std::sync::atomic::AtomicUsize::new(0),
+            }
+        }
+        fn writes(&self) -> usize {
+            self.writes.load(std::sync::atomic::Ordering::SeqCst)
+        }
+    }
+
+    impl Db for Counting {
+        fn get(&self, k: &[u8]) -> Option<Vec<u8>> {
+            self.inner.get(k)
+        }
+        fn range(&self, prefix: &[u8]) -> Vec<(Vec<u8>, Vec<u8>)> {
+            self.inner.range(prefix)
+        }
+        fn write(&self, batch: &Batch) -> Result<()> {
+            self.writes
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            self.inner.write(batch)
+        }
+        fn len(&self) -> usize {
+            self.inner.len()
+        }
+    }
+
+    /// A shared area over any device, writing both halves as one batch.
+    struct PeerOn {
+        db: Arc<dyn Db>,
+    }
+
+    impl SharedMemory for PeerOn {
+        fn get(&self, _: &Id, _: &[Vec<u8>]) -> Result<Vec<Vec<u8>>> {
+            Ok(Vec::new())
+        }
+        fn apply(&self, requests: &[(Id, AtomicRequests)], batch: &Batch) -> Result<()> {
+            let mut one = batch.clone();
+            for (chain, reqs) in requests {
+                for put in &reqs.puts {
+                    one.put(peer_key(chain, &put.key), put.value.clone());
+                }
+                for k in &reqs.removes {
+                    one.delete(peer_key(chain, k));
+                }
+            }
+            self.db.write(&one)
+        }
+    }
+
+    /// A shared area that refuses, and writes nothing when it does.
+    ///
+    /// A peer chain that is unreachable, a device that is full: the movement
+    /// did not happen. Neither, then, may the block.
+    struct Refusing;
+    impl SharedMemory for Refusing {
+        fn get(&self, _: &Id, _: &[Vec<u8>]) -> Result<Vec<Vec<u8>>> {
+            Ok(Vec::new())
+        }
+        fn apply(&self, _: &[(Id, AtomicRequests)], _: &Batch) -> Result<()> {
+            Err(Error::Storage("the peer chain is not reachable".into()))
         }
     }
 
@@ -374,7 +561,7 @@ mod tests {
                 network_id: NETWORK_ID,
                 chain_id: chain_id(),
             },
-            net_id: Id::prefixed_bytes(&[0xAB]),
+            net_id: ids::prefixed(&[0xAB]),
             config: Config {
                 tx_fee: 0,
                 create_asset_tx_fee: 0,
@@ -392,7 +579,7 @@ mod tests {
     /// A UTXO worth `amt`, owned by key `n`, produced by transaction `src`.
     fn funded(src: u8, amt: u64, n: u8) -> Utxo {
         Utxo {
-            utxo_id: UtxoId::new(Id::prefixed_bytes(&[src]), 0),
+            utxo_id: UtxoId::new(ids::prefixed(&[src]), 0),
             asset: Asset { id: asset() },
             out: State::Transfer(TransferOutput {
                 amt,
@@ -415,7 +602,7 @@ mod tests {
                     }),
                 }],
                 ins: vec![TransferableInput {
-                    utxo_id: UtxoId::new(Id::prefixed_bytes(&[src]), 0),
+                    utxo_id: UtxoId::new(ids::prefixed(&[src]), 0),
                     asset: Asset { id: asset() },
                     input: fx::FxIn::Transfer(TransferInput {
                         amt,
@@ -483,7 +670,8 @@ mod tests {
 
     fn genesis(mgr: &mut Manager) -> Block {
         let g = Block::new(EMPTY, 0, 0, EMPTY, vec![]).unwrap();
-        mgr.set_genesis(g.clone());
+        mgr.set_genesis(g.clone())
+            .expect("a fresh manager takes its genesis");
         g
     }
 
@@ -499,7 +687,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store.clone());
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
 
@@ -512,16 +700,16 @@ mod tests {
         assert!(store
             .lock()
             .unwrap()
-            .get_utxo(&tx.id().prefix(&[0]))
+            .get_utxo(&ids::prefix(&tx.id(), &[0]))
             .is_err());
 
-        mgr.accept(&blk.id()).unwrap();
+        mgr.accept(&blk.id(), None).unwrap();
         assert_eq!(mgr.last_accepted(), blk.id());
         assert!(!mgr.is_processing(&blk.id()));
         let s = store.lock().unwrap();
         // The input is gone and the output is there.
         assert!(s.get_utxo(&funded(9, 100, 1).input_id()).is_err());
-        assert!(s.get_utxo(&tx.id().prefix(&[0])).is_ok());
+        assert!(s.get_utxo(&ids::prefix(&tx.id(), &[0])).is_ok());
         assert_eq!(s.get_last_accepted(), blk.id());
     }
 
@@ -530,7 +718,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = seal(&mgr, &g, vec![spend(9, 100, 1)], 100);
@@ -543,7 +731,7 @@ mod tests {
         let store = with_asset_and_funds(&[]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = Block::new(g.id(), 1, 10, EMPTY, vec![]).unwrap();
@@ -555,7 +743,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = seal(&mgr, &g, vec![spend(9, 100, 1)], 1000 + SYNC_BOUND + 1);
@@ -567,7 +755,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = seal(&mgr, &g, vec![spend(9, 100, 1)], 1000 + SYNC_BOUND);
@@ -579,7 +767,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let good = seal(&mgr, &g, vec![spend(9, 100, 1)], 100);
@@ -592,11 +780,11 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let blk = Block::new(
-            Id::prefixed_bytes(&[0xDE, 0xAD]),
+            ids::prefixed(&[0xDE, 0xAD]),
             1,
             100,
             EMPTY,
@@ -611,8 +799,9 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1), (8, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = Block::new(EMPTY, 0, 500, EMPTY, vec![]).unwrap();
-        mgr.set_genesis(g.clone());
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        mgr.set_genesis(g.clone())
+            .expect("a fresh manager takes its genesis");
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         // Sealed at a time before the genesis time.
@@ -628,7 +817,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let good = seal(&mgr, &g, vec![spend(9, 100, 1)], 100);
@@ -636,7 +825,7 @@ mod tests {
             g.id(),
             1,
             100,
-            Id::prefixed_bytes(&[0xBA, 0xD0]),
+            ids::prefixed(&[0xBA, 0xD0]),
             good.txs().to_vec(),
         )
         .unwrap();
@@ -648,7 +837,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         // The second transaction spends a UTXO the first one already removed,
@@ -663,7 +852,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store.clone());
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let tx = spend(9, 100, 1);
@@ -687,7 +876,7 @@ mod tests {
     fn accepting_a_block_nobody_verified_is_refused() {
         let mut mgr = started();
         assert_eq!(
-            mgr.accept(&Id::prefixed_bytes(&[7])),
+            mgr.accept(&ids::prefixed(&[7]), None),
             Err(Error::BlockNotFound)
         );
     }
@@ -697,7 +886,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1), (8, 100, 1)]);
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
 
@@ -726,14 +915,14 @@ mod tests {
         let mut mgr = Manager::new(store);
         let g = genesis(&mut mgr);
         assert!(mgr.state_after(&g.id()).is_some());
-        assert!(mgr.state_after(&Id::prefixed_bytes(&[0xFF])).is_none());
+        assert!(mgr.state_after(&ids::prefixed(&[0xFF])).is_none());
     }
 
     #[test]
     fn unique_inputs_are_only_checked_against_blocks_still_being_decided() {
         let mgr = started();
         let mut inputs = BTreeSet::new();
-        inputs.insert(Id::prefixed_bytes(&[1]));
+        inputs.insert(ids::prefixed(&[1]));
         // Nothing is processing, so nothing conflicts.
         mgr.verify_unique_inputs(&EMPTY, &inputs).unwrap();
         // An empty claim is always fine.
@@ -745,7 +934,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store);
         genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let mut b = backend(&net, &sm, 1000);
         b.bootstrapped = false;
@@ -760,7 +949,7 @@ mod tests {
         let store = with_asset_and_funds(&[(9, 100, 1)]);
         let mut mgr = Manager::new(store.clone());
         genesis(&mut mgr);
-        let net = OneNet(Id::prefixed_bytes(&[0xAB]));
+        let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 1000);
         let tx = spend(9, 100, 1);
@@ -773,10 +962,244 @@ mod tests {
             .is_ok());
     }
 
+    // ------------------------------------- the block and what it moved out --
+    //
+    // A block that exports has spent an output HERE and handed its value to the
+    // shared area for another chain to pick up. Those are one event. Written as
+    // two, an interruption between them either destroys the value — spent here,
+    // never handed over — or duplicates it — handed over, never spent. The
+    // tests below hold a real device and read it back, so a second write would
+    // be visible as a device holding one half.
+
+    /// A funded store on a device, with the asset its transactions need.
+    fn on_device(db: Arc<dyn Db>, funds: &[(u8, u64, u8)]) -> ChainRef {
+        let mut store = Store::on(db).expect("an empty device gives an empty store");
+        let create = Tx::new(Unsigned::CreateAsset(crate::txs::CreateAssetTx {
+            base: BaseTxFields {
+                network_id: NETWORK_ID,
+                blockchain_id: chain_id(),
+                outs: vec![],
+                ins: vec![],
+                memo: vec![],
+            },
+            name: "Asset".into(),
+            symbol: "AST".into(),
+            denomination: 0,
+            states: vec![crate::txs::InitialState {
+                fx_index: 0,
+                outs: vec![State::Mint(crate::fx::secp256k1::MintOutput {
+                    owners: Owners::new(1, vec![addr(1)]),
+                })],
+            }],
+        }));
+        store.add_tx_at(asset(), create);
+        for (src, amt, n) in funds {
+            store.add_utxo(funded(*src, *amt, *n));
+        }
+        // Genesis is written by `set_genesis`; the fixture's own writes go down
+        // with it, so the device starts whole.
+        store.shared()
+    }
+
+    /// Spend `funded(src, amt, n)` out to `peer`, which is what makes the block
+    /// ask something of another chain.
+    fn export(src: u8, amt: u64, n: u8, peer: Id) -> Tx {
+        let mut tx = Tx::new(Unsigned::Export(crate::txs::ExportTx {
+            base: BaseTxFields {
+                network_id: NETWORK_ID,
+                blockchain_id: chain_id(),
+                outs: vec![],
+                ins: vec![TransferableInput {
+                    utxo_id: UtxoId::new(ids::prefixed(&[src]), 0),
+                    asset: Asset { id: asset() },
+                    input: fx::FxIn::Transfer(TransferInput {
+                        amt,
+                        input: Input {
+                            sig_indices: vec![0],
+                        },
+                    }),
+                }],
+                memo: vec![],
+            },
+            destination_chain: peer,
+            exported_outs: vec![TransferableOutput {
+                asset: Asset { id: asset() },
+                out: State::Transfer(TransferOutput {
+                    amt,
+                    owners: Owners::new(1, vec![addr(n)]),
+                }),
+            }],
+        }));
+        tx.sign(fx::Family::Secp256k1, &[vec![key(n)]]).unwrap();
+        tx
+    }
+
+    /// The chain, the block that exports, and the device all three share.
+    fn exporting_chain(db: &Arc<dyn Db>, peer: Id) -> (Manager, ChainRef, Block, Tx, Id) {
+        let store = on_device(db.clone(), &[(9, 100, 1)]);
+        let mut mgr = Manager::new(store.clone());
+        let g = genesis(&mut mgr);
+        let net = OneNet(ids::prefixed(&[0xAB]));
+        let sm = NoMemory;
+        let b = backend(&net, &sm, 1000);
+
+        let tx = export(9, 100, 1, peer);
+        let blk = seal(&mgr, &g, vec![tx.clone()], 100);
+        mgr.verify(&b, &blk).expect("the export verifies");
+        let spent = funded(9, 100, 1).input_id();
+        (mgr, store, blk, tx, spent)
+    }
+
+    #[test]
+    fn a_block_and_the_value_it_moved_out_reach_the_device_together() {
+        let db: Arc<dyn Db> = Arc::new(crate::db::Memory::new());
+        let peer = ids::prefixed(&[0xEE]);
+        let (mut mgr, _store, blk, tx, spent) = exporting_chain(&db, peer);
+
+        let sm = Peer { db: db.clone() };
+        mgr.accept(&blk.id(), Some(&sm)).expect("it accepts");
+
+        // The device holds the block.
+        let back = Store::on(db.clone()).expect("the device reads back");
+        assert_eq!(
+            back.get_last_accepted(),
+            blk.id(),
+            "the block is on the device"
+        );
+        assert!(
+            back.get_utxo(&spent).is_err(),
+            "and the output it spent is gone from the device"
+        );
+
+        // And the same device holds what the peer chain was handed. One write:
+        // there is no state of this device in which one is present and the
+        // other is not.
+        let exported = crate::utxo::Utxo {
+            utxo_id: UtxoId::new(tx.id(), 0),
+            asset: Asset { id: asset() },
+            out: State::Transfer(TransferOutput {
+                amt: 100,
+                owners: Owners::new(1, vec![addr(1)]),
+            }),
+        };
+        assert_eq!(
+            db.get(&peer_key(&peer, &exported.input_id())),
+            Some(exported.wire_bytes()),
+            "the peer chain was handed the exported output"
+        );
+    }
+
+    #[test]
+    fn a_block_and_what_it_moved_are_one_write_and_not_two() {
+        let db = Arc::new(Counting::new());
+        let peer = ids::prefixed(&[0xEE]);
+        let (mut mgr, _store, blk, tx, _spent) =
+            exporting_chain(&(db.clone() as Arc<dyn Db>), peer);
+
+        let before = db.writes();
+        let sm = PeerOn {
+            db: db.clone() as Arc<dyn Db>,
+        };
+        mgr.accept(&blk.id(), Some(&sm)).expect("it accepts");
+
+        // The whole finding, stated as a number. Two writes is two moments the
+        // device can be found between them: the block accepted here and its
+        // value never handed to the peer, or handed and never spent. There is
+        // no such moment when there is one write.
+        assert_eq!(
+            db.writes() - before,
+            1,
+            "accepting a block that moves value must touch the device exactly once"
+        );
+
+        // And that one write carried both halves.
+        let back = Store::on(db.clone() as Arc<dyn Db>).expect("the device reads back");
+        assert_eq!(back.get_last_accepted(), blk.id());
+        assert!(db
+            .get(&peer_key(&peer, &UtxoId::new(tx.id(), 0).input_id()))
+            .is_some());
+    }
+
+    #[test]
+    fn a_shared_area_that_refuses_leaves_the_block_off_the_device() {
+        let db: Arc<dyn Db> = Arc::new(crate::db::Memory::new());
+        let peer = ids::prefixed(&[0xEE]);
+        let (mut mgr, _store, blk, _tx, spent) = exporting_chain(&db, peer);
+        let at_genesis = mgr.last_accepted();
+
+        assert_eq!(
+            mgr.accept(&blk.id(), Some(&Refusing)),
+            Err(Error::Storage("the peer chain is not reachable".into())),
+            "the refusal is the caller's answer"
+        );
+
+        // This is the whole finding. The block's own state must not be on the
+        // device, because the movement it was half of did not happen. A chain
+        // that wrote its half first would come back here holding a block whose
+        // exported value nobody was ever handed.
+        let back = Store::on(db.clone()).expect("the device reads back");
+        assert_eq!(
+            back.get_last_accepted(),
+            at_genesis,
+            "the device is still at the block before"
+        );
+        assert!(
+            back.get_block(&blk.id()).is_err(),
+            "the refused block is not on the device"
+        );
+        assert!(
+            back.get_utxo(&spent).is_ok(),
+            "and the output it would have spent is still there"
+        );
+    }
+
+    #[test]
+    fn a_chain_with_no_shared_area_refuses_a_block_that_needs_one() {
+        let db: Arc<dyn Db> = Arc::new(crate::db::Memory::new());
+        let peer = ids::prefixed(&[0xEE]);
+        let (mut mgr, _store, blk, _tx, spent) = exporting_chain(&db, peer);
+        let at_genesis = mgr.last_accepted();
+
+        assert_eq!(
+            mgr.accept(&blk.id(), None),
+            Err(Error::NoSharedMemory),
+            "there is nowhere to move the value through"
+        );
+
+        // Refused before anything moved: the block is still there to be
+        // decided, and the device is untouched.
+        assert!(
+            mgr.is_processing(&blk.id()),
+            "the block is still being decided"
+        );
+        assert_eq!(mgr.last_accepted(), at_genesis);
+        let back = Store::on(db).expect("the device reads back");
+        assert_eq!(back.get_last_accepted(), at_genesis);
+        assert!(back.get_utxo(&spent).is_ok());
+    }
+
+    #[test]
+    fn a_block_that_asks_nothing_of_another_chain_needs_no_shared_area() {
+        let db: Arc<dyn Db> = Arc::new(crate::db::Memory::new());
+        let store = on_device(db.clone(), &[(9, 100, 1)]);
+        let mut mgr = Manager::new(store);
+        let g = genesis(&mut mgr);
+        let net = OneNet(ids::prefixed(&[0xAB]));
+        let sm = NoMemory;
+        let b = backend(&net, &sm, 1000);
+
+        let blk = seal(&mgr, &g, vec![spend(9, 100, 1)], 100);
+        mgr.verify(&b, &blk).unwrap();
+        mgr.accept(&blk.id(), None).expect("nothing crosses");
+
+        let back = Store::on(db).expect("the device reads back");
+        assert_eq!(back.get_last_accepted(), blk.id());
+    }
+
     #[test]
     fn cross_chain_asks_for_one_chain_merge_into_one_entry() {
         let mut into = vec![(
-            Id::prefixed_bytes(&[1]),
+            ids::prefixed(&[1]),
             AtomicRequests {
                 puts: vec![],
                 removes: vec![vec![1]],
@@ -786,14 +1209,14 @@ mod tests {
             &mut into,
             vec![
                 (
-                    Id::prefixed_bytes(&[1]),
+                    ids::prefixed(&[1]),
                     AtomicRequests {
                         puts: vec![],
                         removes: vec![vec![2]],
                     },
                 ),
                 (
-                    Id::prefixed_bytes(&[2]),
+                    ids::prefixed(&[2]),
                     AtomicRequests {
                         puts: vec![],
                         removes: vec![vec![3]],

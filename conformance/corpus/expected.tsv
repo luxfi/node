@@ -38,10 +38,10 @@ R	P_EDGE_EMPTY	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer 
 R	P_EDGE_ONE_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
 R	P_EDGE_CORRUPT_TAIL	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: txs: credential signature range is outside the signature array: credential 0 claims signatures [0, 1) of 0
 R	P_EDGE_TRAILING_BYTES	ok	Base	699e00c24e620022355b813ac507b68287f7c5d5021f38c7c04263f402cb8c3e	OK	LEDGER	not found
-R	X_BASE	ok	Base	267ab512214792d1ebb90647344c13a2660d742ac590c4cd13ffbd27fd20ad02	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
-R	X_CREATE_ASSET	ok	CreateAsset	ef099cb0be116bde734039512d7568e90b6d6e7a992a63d38c85a29962809cae	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
-R	X_OPERATION	ok	Operation	8475c4eeb4e7a865164a74431ecfbbfd4a127b993d19ac712a5766f7b1468b08	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
-R	X_IMPORT	ok	Import	aa44da3020f01390a32f4d6fec7501b63199010f24ec74a41e0505915dd634b5	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
+R	X_BASE	ok	Base	267ab512214792d1ebb90647344c13a2660d742ac590c4cd13ffbd27fd20ad02	OK	LEDGER	not found
+R	X_CREATE_ASSET	ok	CreateAsset	ef099cb0be116bde734039512d7568e90b6d6e7a992a63d38c85a29962809cae	OK	LEDGER	not found
+R	X_OPERATION	ok	Operation	8475c4eeb4e7a865164a74431ecfbbfd4a127b993d19ac712a5766f7b1468b08	OK	LEDGER	not found
+R	X_IMPORT	ok	Import	aa44da3020f01390a32f4d6fec7501b63199010f24ec74a41e0505915dd634b5	OK	LEDGER	not found
 R	X_EXPORT	ok	Export	694cc5db33ddbdf607dc4e45e4d985170e778004ccf9b6337ab01adb11fa4592	LEDGER	LEDGER	insufficient funds
 R	X_BLOCK_STANDARD	ok	StandardBlock	50be520b14db55027a29842e35a7b63cf5b3b96a0792204a00387fe2dcb0a94c	OK	LEDGER	height=1 parent=0a0a0a0a txs=1
 R	X_BLOCK_EMPTY	ok	StandardBlock	bc53712ecbecca169f6c81fd2e10967b6252e224332eb6e9b12861be22a4ce93	OK	LEDGER	height=1 parent=0a0a0a0a txs=0
@@ -50,6 +50,6 @@ R	X_EDGE_OUTPUT_OVERFLOW	ok	Base	ffab811e2042b9ca318518f887f2f6db0c01bbd1e61908a
 R	X_EDGE_WRONG_NETWORK	ok	Base	90baf8d22feb413213660109bae58fb977905171cbe1cd3375fad2a059d68e90	SYNTACTIC	SYNTACTIC	tx has wrong network ID
 R	X_EDGE_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
 R	X_EDGE_EMPTY	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: wire: envelope shorter than 2-byte discriminator prefix
-R	X_EDGE_CORRUPT_TAIL	ok	Base	f8a5de6070a3cfdd0b59cd2c474b67e423a5f1f7d041e1d838eaeb145157d4e8	OK	SKIPPED	semantic verification not evaluated: needs a funded UTXO set
+R	X_EDGE_CORRUPT_TAIL	ok	Base	f8a5de6070a3cfdd0b59cd2c474b67e423a5f1f7d041e1d838eaeb145157d4e8	OK	LEDGER	not found
 R	X_SEAM_BLOCK_REJECT	ok	Block.Reject	-	-	PRESENT	xvm block/executor Block.Reject re-offers each still-valid tx to the mempool
 R	P_SEAM_BLOCK_REJECT	ok	Block.Reject	-	-	PRESENT	platformvm block/executor Block.Reject frees the block and drops its state
