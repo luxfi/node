@@ -27,7 +27,11 @@ import (
 )
 
 // The fields that are compared, in the order they appear on a result line.
-var compared = []string{"parse", "kind", "id", "syntactic", "exec"}
+// Which fields those are is not knowledge this program has: the caller names
+// them with -fields, because the caller is what chose the evaluators, and a
+// runner that knew the chain's five field names would have to learn the next
+// differential's as well.
+var compared []string
 
 // notEvaluated marks a field an implementation declined to answer. It is never
 // a pass: it is counted, reported, and excluded from comparison, because
@@ -38,7 +42,7 @@ const notEvaluated = "SKIPPED"
 const absent = "" // the implementation printed no row for this vector at all
 
 type result struct {
-	fields [5]string
+	fields []string
 	note   string
 }
 
@@ -52,10 +56,22 @@ func main() {
 	var vectors string
 	var evalFlags stringList
 	flag.StringVar(&vectors, "vectors", "conformance/corpus/vectors.tsv", "the corpus")
+	fields := flag.String("fields", "", "comma-separated names of the compared fields, in result-line order")
+	subject := flag.String("subject", "", "what is being compared, for the banner")
 	flag.Var(&evalFlags, "eval", "name=command to run (repeatable); the corpus path is appended")
 	expected := flag.String("expected", "", "the recorded reference answers, compared as one more implementation")
 	verbose := flag.Bool("v", false, "print every row, not only the disagreements")
 	flag.Parse()
+
+	for _, f := range strings.Split(*fields, ",") {
+		if f = strings.TrimSpace(f); f != "" {
+			compared = append(compared, f)
+		}
+	}
+	if len(compared) == 0 {
+		fmt.Fprintln(os.Stderr, "-fields names the columns to compare; without it nothing is compared")
+		os.Exit(2)
+	}
 
 	if len(evalFlags) < 2 {
 		fmt.Fprintln(os.Stderr, "a differential needs at least two implementations to differ")
@@ -108,7 +124,7 @@ func main() {
 		evals = append(evals, e)
 	}
 
-	report(ids, evals, *verbose)
+	report(*subject, ids, evals, *verbose)
 }
 
 func (e *evaluator) run() error {
@@ -126,15 +142,16 @@ func (e *evaluator) run() error {
 			continue
 		}
 		f := strings.Split(line, "\t")
-		if len(f) != 8 || f[0] != "R" {
-			return fmt.Errorf("not a result line: %q", line)
+		if len(f) != resultWidth() || f[0] != "R" {
+			return fmt.Errorf("not a result line, want %d columns for %s, got %d: %q",
+				resultWidth(), strings.Join(compared, "/"), len(f), line)
 		}
 		if _, dup := e.rows[f[1]]; dup {
 			return fmt.Errorf("%s answered %s twice", e.name, f[1])
 		}
 		e.rows[f[1]] = result{
-			fields: [5]string{f[2], f[3], f[4], f[5], f[6]},
-			note:   f[7],
+			fields: append([]string(nil), f[2:2+len(compared)]...),
+			note:   f[len(f)-1],
 		}
 	}
 	return s.Err()
@@ -155,12 +172,13 @@ func (e *evaluator) load(path string) error {
 			continue
 		}
 		fs := strings.Split(line, "\t")
-		if len(fs) != 8 || fs[0] != "R" {
-			return fmt.Errorf("%s: not a result line: %q", path, line)
+		if len(fs) != resultWidth() || fs[0] != "R" {
+			return fmt.Errorf("%s: not a result line, want %d columns, got %d: %q",
+				path, resultWidth(), len(fs), line)
 		}
 		e.rows[fs[1]] = result{
-			fields: [5]string{fs[2], fs[3], fs[4], fs[5], fs[6]},
-			note:   fs[7],
+			fields: append([]string(nil), fs[2:2+len(compared)]...),
+			note:   fs[len(fs)-1],
 		}
 	}
 	return s.Err()
@@ -182,9 +200,11 @@ func readVectorIDs(path string) ([]string, error) {
 			continue
 		}
 		f := strings.Split(line, "\t")
-		if len(f) != 5 || f[0] != "V" {
+		if len(f) < 2 || f[0] != "V" {
 			return nil, fmt.Errorf("not a vector line: %q", line)
 		}
+		// Everything after the id is the evaluators' business, not this
+		// program's: it hands the file over whole and never reads the payload.
 		ids = append(ids, f[1])
 	}
 	return ids, s.Err()
@@ -198,13 +218,16 @@ type disagreement struct {
 	an, bn string // their notes
 }
 
-func report(ids []string, evals []*evaluator, verbose bool) {
+// A result line is R, the vector id, one value per compared field, and a note.
+func resultWidth() int { return len(compared) + 3 }
+
+func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 	names := make([]string, len(evals))
 	for i, e := range evals {
 		names[i] = e.name
 	}
-	fmt.Printf("chain differential: %d vectors, %d implementations (%s)\n\n",
-		len(ids), len(evals), strings.Join(names, ", "))
+	fmt.Printf("%s differential: %d vectors, %d implementations (%s)\n\n",
+		subject, len(ids), len(evals), strings.Join(names, ", "))
 
 	var bad []disagreement
 	uncovered := map[string][]string{} // vector -> fields nobody could compare
@@ -307,7 +330,7 @@ func printRow(id string, evals []*evaluator) {
 			fmt.Printf(" %s=%-12s", e.name, "-absent-")
 			continue
 		}
-		fmt.Printf(" %s=%-12s", e.name, r.fields[4])
+		fmt.Printf(" %s=%-12s", e.name, r.fields[len(r.fields)-1])
 	}
 	fmt.Println()
 }
