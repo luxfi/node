@@ -29,11 +29,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     ./cmd/luxd
 
 # Stage 2: Distroless Static Non-Root
-FROM gcr.io/distroless/static:nonroot
+ARG BASE_IMAGE=hanzoai/distroless:static
+FROM ${BASE_IMAGE}
 
 LABEL org.opencontainers.image.title="luxd" \
-      org.opencontainers.image.description="Lux Node Daemon - Pure Distroless" \
-      org.opencontainers.image.vendor="Lux Industries, Inc." \
+      org.opencontainers.image.description="Lux Node Daemon - Hanzo Distroless" \
+      org.opencontainers.image.vendor="Hanzo AI & Lux Industries, Inc." \
       org.opencontainers.image.licenses="BSD-3-Clause-Eco"
 
 WORKDIR /data
