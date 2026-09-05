@@ -109,11 +109,10 @@ private:
 
 class Vm final : public lux::node::VM, public state::Versions, public mempool::Verifier {
 public:
-    // The store is where this chain's state rests, and it is a constructor
-    // argument rather than something the VM makes for itself: whether this node
-    // survives a restart is the host's decision, and the VM must not be able to
-    // quietly answer it with "no".
-    Vm(VmConfig config, std::vector<executor::ParsedFx> fxs, store::Store& store = state::State::default_store());
+    // The store is where this chain's state rests, and it is REQUIRED: whether
+    // this node survives a restart is the host's decision, and a VM that
+    // defaulted the argument could quietly answer it with "no".
+    Vm(VmConfig config, std::vector<executor::ParsedFx> fxs, store::Store& store);
 
     // ---- lifecycle ----
 
