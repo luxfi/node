@@ -1,39 +1,164 @@
 # conformance
 
-`make conformance` runs the existing pop/verdict conformance corpus against
-all three consensus implementations — Go, Rust, C++ — and reports each
-honestly: PASS with the real check count, or `skipped` with the reason, never
-a false green.
+Two harnesses live here, and they check different things.
 
-## What this is, and what it is not
+- **`make conformance`** — the **consensus-layer** corpus: what a validator
+  signs, what a certificate looks like on the wire, what the finality predicate
+  decides. It already existed, and all three implementations already pass it.
+- **`make chains`** — the **chain-layer** differential, which is new: one
+  corpus of P-chain and X-chain bytes, handed to the Go, Rust and C++
+  implementations of both chains, with every answer compared against every
+  other answer.
 
-This is **consensus-layer** conformance: the corpus at
-`~/work/lux/consensus/conformance` states what a validator signs, what a
-certificate looks like on the wire, and what the finality predicate decides —
-generated from the Go definitions and checked byte-for-byte against Rust and
-C++. It is real, it already exists, and all three sides already pass it (tag
-`v1.36.91`).
+Until `make chains` existed, every port checked itself against Go in isolation,
+each one deciding for itself which cases to check. That is how a P-chain fork
+survived: `chains/cpp/platformvm` executes the sovereign-L1 plane and
+`chains/rust/platformvm` refuses it by name, and no test anywhere put those two
+answers next to each other.
 
-It is not **node-level** conformance — three live `bin/luxd-*` daemons handed
-the same blocks and votes over real sockets, checked for agreement. That
-harness does not exist yet; wiring it is Phase 2, once `runtime/go` has an
-actual node host to point at (see `runtime/go/README.md`). Building it now,
-against a Go side that is a VM plugin rather than a node, would not test what
-its name claims.
+## The shape
 
-## What each target runs
+```
+conformance/gen        the Go generator and the Go evaluator (its own module)
+conformance/corpus     vectors.tsv — the bytes; expected.tsv — Go's answers
+conformance/runner     compares answers; understands no chain
 
-- `make conformance-go` — `go test ./conformance/...` in
-  `~/work/lux/consensus`. This is the corpus's own source of truth: every
-  case is read live from `CanonicalVoteMessage`, `QuorumCert.MarshalBinary`,
-  `config.TwoThirdsStakeFloor`, the finality ladder, etc. — never restated —
-  so an edit to a rule moves the corpus and this fails at the source.
-- `make conformance-rust` — five integration test binaries in
-  `~/work/lux/consensus/pkg/rust`: `conformance`, `cert_conformance`,
-  `fpc_conformance`, `pop_conformance`, `verdict_conformance`. The last two
-  are the pop-proof and verdict vectors the brief names by name
-  (`tests/vectors/pop.json`).
-- `make conformance-cpp` — the two binaries `~/work/lux-cpp/consensus/build`
-  already builds, `conformance_test` and `pop_conformance_test`, rebuilt
-  in place and run directly. `skipped` (not a false pass) if that build
-  directory is not configured.
+chains/rust/platformvm/src/bin/conformance.rs   the Rust P-chain's answers
+chains/rust/xvm/src/bin/conformance.rs          the Rust X-chain's answers
+chains/cpp/platformvm/test/conformance.cpp      the C++ P-chain's answers
+chains/cpp/xvm/test/conformance.cpp             the C++ X-chain's answers
+```
+
+**One corpus.** Every vector's bytes come out of a Go constructor —
+`txs.New*Tx`, `block.New*Block` — and are signed the way the Go node signs.
+Nothing writes a byte by hand except the deliberately damaged vectors, which
+are damaged copies of well-formed ones and say so. A corpus written by a third
+party would be a fourth opinion about the wire, and there would be nothing to
+say which of the four was the chain.
+
+**One line format, three readers.** Both files are tab-separated, for one
+reason: the C++ evaluator must read the same file the Go and Rust ones read,
+without a JSON library entering a chain's dependency graph.
+
+```
+V  <id>  <chain>  <op>  <wire-hex>
+R  <id>  <parse>  <kind>  <hash>  <syntactic>  <exec>  <note>
+```
+
+`op` is `tx`, `block` or `seam`. The first five fields after the id are
+compared; the note is not — it carries each implementation's own words, so a
+disagreement can be read without opening three debuggers.
+
+**The runner understands nothing.** It runs programs and compares strings. A
+runner that understood the rules would be a fourth implementation, and the day
+it was wrong it would hide a disagreement instead of reporting one.
+
+## What is compared
+
+| field | what it is |
+| --- | --- |
+| `parse` | did these bytes read back as a transaction or a block |
+| `kind` | which of the nineteen P-chain kinds, or five X-chain kinds, it is |
+| `hash` | the transaction id or block id — `sha256` of the very bytes given |
+| `syntactic` | the well-formedness verdict, as a class |
+| `exec` | the execution verdict, as a class |
+
+### The verdict vocabulary
+
+`OK · MALFORMED · SYNTACTIC · OVERFLOW · LEDGER · AUTH · WARP · UNSUPPORTED`
+
+Each implementation maps its own error type into exactly one of these before
+printing, because "failed to fetch UTXO", `MissingUtxo` and `kUtxoNotFound` are
+three spellings of one answer, and comparing the spellings would report a
+disagreement that is not one. The mapping is the same word table in the same
+order in all three evaluators, and the raw words survive in the note beside the
+class — a mapping that flattened a real difference is visible to anyone reading
+the row.
+
+`LEDGER` is deliberately coarse. Execution is judged against a chain that holds
+nothing: no UTXO, no validator, no network. That is a state all three
+implementations stand up identically, and using a funded one would mean
+building three state builders and then comparing those instead of comparing
+three chains. On an empty chain a missing UTXO and a missing validator are both
+just "the chain does not hold this", and splitting them would report which
+lookup each implementation happened to reach first as if it were a difference
+of opinion.
+
+What an empty chain still separates — and the whole reason it is enough — is
+`UNSUPPORTED`: a refusal that never looked at the chain at all, because the
+implementation does not run that kind of transaction. A chain that refuses a
+kind by name answers `UNSUPPORTED` where a chain that tries to execute it
+answers `LEDGER`. That difference is the shape of a fork.
+
+### `SKIPPED` is never a pass
+
+A field an implementation declines to answer prints `SKIPPED`, and the runner
+excludes it from comparison and lists it under **NOT COMPARED**. A field no two
+implementations answered was not checked by anything here, and the run says so
+above the result rather than counting it as agreement.
+
+Today that is the X-chain's `exec` field on four vectors: the X-chain's
+semantic pass needs a funded UTXO set and a shared-memory peer, and neither is
+stood up. Wiring it is the next thing this harness needs.
+
+### Seam vectors
+
+Two vectors carry no bytes. They ask each implementation whether its
+block-decision seam has a `reject`, and each answers **from its own compiler** —
+a method expression in Go and Rust, a `requires` in C++. Nothing about that
+answer is typed by hand, and it fixes itself the day the method appears.
+
+A chain that cannot reject a block cannot hand back what that block was
+carrying, so the two sides disagree about what is still pending. That is not
+visible in any transaction's bytes, so no wire vector could ever catch it.
+
+## Running it
+
+```
+make chains           build all four evaluators, run the differential
+make chains-corpus    regenerate the corpus from the Go reference
+```
+
+The corpus is committed, so a reference that changed its mind shows up as a
+diff. `expected.tsv` — the Go chains' answers at generation time — also joins
+the run as one more voice, under the name `corpus`, so drift in Go itself is a
+disagreement rather than a silent new normal.
+
+Every evaluator is built before the run and a build that fails stops the
+target. A differential that quietly lost one of its voices would report
+agreement among whoever was left.
+
+## The one place `luxfi/node` is allowed
+
+`conformance/gen` depends on it. That is the whole point of a reference. It is
+a separate Go module for exactly that reason, so it cannot reach node2's own
+dependency graph — which `make luxd` still greps and still fails on.
+
+## What it found on `main`
+
+Thirteen vectors disagree. The two the harness was built to catch:
+
+**The P-chain fork.** On `RegisterL1Validator`, `SetL1ValidatorWeight`,
+`IncreaseL1ValidatorBalance`, `DisableL1Validator`, `ConvertNetwork` and the
+sovereign form of `CreateNetwork`, Go and C++ execute — reaching the ledger and
+failing only for want of state — and Rust answers `UNSUPPORTED`, refusing each
+by name. That is the sovereign-L1 birth path every downstream L1 depends on.
+`AddPermissionlessDelegator` diverges the same way, through
+`NetworkTermsNotHeld`.
+
+**The X-chain reject.** `X_SEAM_BLOCK_REJECT`: Go and Rust have a reject, C++
+does not — and `P_SEAM_BLOCK_REJECT` shows the same hole on the P-chain. The
+root of both is the C++ host seam itself: `lux::node::Block` declares `verify`
+and `accept` and no `reject`, so neither C++ chain can be told a block lost.
+
+Three more it found that were not on anyone's list:
+
+- **`P_EDGE_WRONG_NETWORK`** — a transaction addressed to network 2 passes the
+  Rust P-chain's syntactic check, which Go and C++ both refuse with "wrong
+  network ID". A transaction that is well-formed on two networks is one
+  signature that spends on both.
+- **`P_EDGE_EMPTY_NODE_ID`** — C++ refuses `AddValidator` by kind before it
+  looks at the validator; Go and Rust report the empty node id. The transaction
+  is refused either way, for two different reasons, which is a rule that will
+  one day accept for the wrong reason.
+- **`P_IMPORT`** — Rust refuses `Import` outright where Go and C++ execute it.
