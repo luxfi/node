@@ -131,6 +131,23 @@ prebuilt C++ binaries `conformance_test` and `pop_conformance_test`. A
 runtime whose harness is not configured prints `skipped` and says why — a
 skip is never reported as a pass.
 
+`make chains` and `make precompiles` are the other two differentials, and they
+are the same machine with different subjects: one corpus, three
+implementations, a runner that understands nothing and compares strings. The
+runner is shared — it is told which columns to compare, because a runner that
+knew the chain's five field names would have to learn the next differential's
+as well — and it fails a run in which any implementation printed no row at
+all, since with four voices three answering is still a comparison, it agrees,
+and the fourth's silence would read as a pass.
+
+`make precompiles` is described in `conformance/PRECOMPILE.md`. Two things it
+establishes about Go before the other two runtimes are even asked: at
+`0x…0100` the stock table charges 6900 and the Lux `secp256r1` module charges
+3450, and the module is what answers, because `LuxPrecompileOverrider` is
+consulted before the standard table; and address zero is not unclaimed — the
+dead-address module (LP-0150) is registered there and reads chain state, so it
+cannot be answered for without a chain.
+
 This is **consensus-layer** conformance, not **node-level** — three live
 `bin/luxd-*` daemons handed the same blocks over real sockets and checked
 for agreement is a different, larger harness that does not exist yet, and
@@ -148,6 +165,8 @@ make gpu                  # lux-gpu/gpu kernel library
 make conformance          # the pop/verdict corpus, all three languages
 make chains               # the P/X chain differential, all three languages
 make chains-corpus        # regenerate that corpus from the Go reference
+make precompiles          # the EVM precompile differential, all three languages
+make precompiles-corpus   # regenerate that corpus from the Go reference
 ```
 
 Every sub-build's exit code is checked explicitly — `cargo` and `ctest` have
