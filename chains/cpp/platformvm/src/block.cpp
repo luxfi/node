@@ -36,7 +36,7 @@ Result<std::pair<std::pair<std::int64_t, std::int64_t>, std::vector<std::uint8_t
         lb.add_u32(static_cast<std::uint32_t>(raw.size()));
         blob.insert(blob.end(), raw.begin(), raw.end());
     }
-    return std::make_pair(std::make_pair(lb.offset(), lb.count()), std::move(blob));
+    return std::make_pair(lb.finish(), std::move(blob));
 }
 
 std::int64_t size_of(Kind k) {

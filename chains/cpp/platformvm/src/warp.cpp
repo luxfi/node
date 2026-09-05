@@ -9,7 +9,7 @@
 
 #include "lux/platformvm/safemath.hpp"
 #include "lux/platformvm/sha256.hpp"
-#include "lux/platformvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <algorithm>
 #include <cstring>

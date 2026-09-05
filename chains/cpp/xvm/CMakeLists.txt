@@ -9,8 +9,8 @@
 #   luxcpp/crypto        sha256, ripemd160, keccak256, secp256k1 (recover+sign)
 #   lux-cpp/consensus    the Id type the seam speaks (header-only here)
 #   lux-cpp/node         include/lux/node/vm.hpp — the VM seam itself
+#   zap-proto/cpp        the ZAP protocol SDK (published, pinned in zap.cmake)
 #   ─────────────────────────── NEW in xvm ────────────────────────────
-#   zap        the zero-copy structural codec (header-only)
 #   wire       the (TypeKind, ShapeKind) fx envelopes
 #   fx         the fx primitives and the three fx families
 #   txs        the five transactions and the UTXO vocabulary
@@ -35,6 +35,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(XVM_SANITIZE "" CACHE STRING "Sanitizer for xvm's own code (e.g. address,undefined)")
+
+# The wire this chain speaks comes from the published SDK, not from here.
+include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
 
 # find_checkout(VAR MARKER candidate...) — first candidate holding MARKER wins.
 # The marker is a FILE, not a directory name, because names are ambiguous here:
@@ -117,7 +120,7 @@ target_include_directories(xvm PUBLIC
   ${_node}/include
   ${_consensus}/include
 )
-target_link_libraries(xvm PUBLIC xvm_crypto)
+target_link_libraries(xvm PUBLIC xvm_crypto zap::zap)
 target_compile_options(xvm PRIVATE -Wall -Wextra)
 
 # ── tests ────────────────────────────────────────────────────────────────────
