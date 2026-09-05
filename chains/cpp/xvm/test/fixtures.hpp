@@ -2,15 +2,33 @@
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
 // fixtures.hpp — the deterministic values the golden vectors were generated
-// from. They are defined ONCE here and in test/golden/golden_gen.go, and the two must
+// from. They are defined ONCE here and in test/golden_gen.go, and the two must
 // agree; that is the point of making them trivially derivable from one byte.
 
 #pragma once
 
 #include "lux/xvm/fx.hpp"
+#include "lux/xvm/state.hpp"
+#include "lux/xvm/store.hpp"
 #include "lux/xvm/txs.hpp"
 
 namespace lux::xvm::test {
+
+namespace detail {
+// A base only so the store is constructed before the state that references it;
+// members would be too late.
+struct OwnStore {
+    store::Memory store;
+};
+}  // namespace detail
+
+// MemoryState is a State with its own store beside it — what a test uses when
+// what it is testing is the state rather than where the state rests. Durability
+// has its own suite (store_test), and the VM's restart has its own case.
+struct MemoryState : private detail::OwnStore, public state::State {
+    MemoryState() : detail::OwnStore(), state::State(store) {}
+    store::Memory& backing() { return store; }
+};
 
 inline ShortId addr(std::uint8_t n) {
     ShortId a{};
