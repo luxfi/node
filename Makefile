@@ -220,6 +220,7 @@ chains-build:
 
 PREC        := $(CONF)/precompile
 PREC_GO     := $(PREC)/precompile
+PREC_RUST   := $(ROOT)/chains/rust/evm/target/release/conformance
 PREC_VECS   := $(CONF)/corpus/precompile_vectors.tsv
 PREC_WANT   := $(CONF)/corpus/precompile_expected.tsv
 
@@ -230,12 +231,16 @@ precompiles: precompiles-build
 		-fields status,gas,output \
 		-vectors $(PREC_VECS) \
 		-expected $(PREC_WANT) \
-		-eval "go=$(PREC_GO) eval"
+		-eval "go=$(PREC_GO) eval" \
+		-eval "rust=$(PREC_RUST)"
 
 precompiles-build:
-	@echo "==> precompile differential: building the Go reference"
+	@echo "==> precompile differential: building two evaluators"
 	cd $(PREC) && GOWORK=off go build -o precompile .
-	@test -x $(PREC_GO) || { echo "FAIL: no evaluator at $(PREC_GO)" >&2; exit 1; }
+	cd $(ROOT)/chains/rust/evm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	@for f in $(PREC_GO) $(PREC_RUST); do \
+		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
+	done
 
 # Rebuild the precompile corpus from the Go reference.
 precompiles-corpus:
