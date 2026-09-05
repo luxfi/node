@@ -58,6 +58,8 @@ const NONE: &str = "-";
 /// differently on the wire would be a disagreement invented by the harness.
 const OK: &str = "OK";
 const FAILED: &str = "FAILED";
+/// What the runner reads as "this implementation declined to answer".
+const SKIPPED: &str = "SKIPPED";
 const OOG: &str = "OOG";
 const ABSENT: &str = "ABSENT";
 
@@ -132,10 +134,18 @@ impl Vector {
 /// A Row answers a Vector. Gas is what was charged; on `OOG` and `ABSENT` it is
 /// zero and the output is empty, because there is no charge to report and a
 /// number nobody agrees to means the column stops comparing.
+///
+/// On a refusal it is `None`, which prints as SKIPPED. revm computes a
+/// precompile's price inside the function that does its work, so a call that
+/// returned an error recorded no charge and this program cannot recover one.
+/// Go and the C++ tree both separate price from work and do report it. Zero
+/// would be an answer, and a wrong one — the call was not free — so this says
+/// it does not know, which the runner counts and prints and never scores as
+/// agreement.
 struct Row {
     id: String,
     status: &'static str,
-    gas: u64,
+    gas: Option<u64>,
     output: Bytes,
     note: String,
 }
@@ -148,10 +158,14 @@ impl std::fmt::Display for Row {
             hex(&self.output)
         };
         let note = self.note.replace(['\t', '\n'], " ");
+        let gas = match self.gas {
+            Some(g) => g.to_string(),
+            None => SKIPPED.to_string(),
+        };
         write!(
             f,
             "R\t{}\t{}\t{}\t{}\t{}",
-            self.id, self.status, self.gas, out, note
+            self.id, self.status, gas, out, note
         )
     }
 }
@@ -167,7 +181,7 @@ fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vec
         Ok(None) => Row {
             id: v.id.clone(),
             status: ABSENT,
-            gas: 0,
+            gas: Some(0),
             output: Bytes::new(),
             note: "no precompile at this address".into(),
         },
@@ -179,7 +193,7 @@ fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vec
         Err(e) => Row {
             id: v.id.clone(),
             status: FAILED,
-            gas: 0,
+            gas: None,
             output: Bytes::new(),
             note: format!("revm:{who}: fatal: {e}"),
         },
@@ -199,14 +213,14 @@ fn verdict<CTX: ContextTr>(
         InstructionResult::Return => Row {
             id,
             status: OK,
-            gas: charged,
+            gas: Some(charged),
             output: r.output,
             note: format!("revm:{who}"),
         },
         InstructionResult::PrecompileOOG => Row {
             id,
             status: OOG,
-            gas: 0,
+            gas: Some(0),
             output: Bytes::new(),
             note: format!("revm:{who}: out of gas"),
         },
@@ -220,7 +234,7 @@ fn verdict<CTX: ContextTr>(
             Row {
                 id,
                 status: FAILED,
-                gas: charged,
+                gas: None,
                 output: Bytes::new(),
                 note: format!("revm:{who}: {why}"),
             }
