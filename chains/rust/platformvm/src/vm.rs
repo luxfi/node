@@ -612,6 +612,7 @@ impl Vm for PlatformVm {
             }
 
             block::Kind::Proposal => {
+                inner.verify_warp(&blk)?;
                 let mut state = inner
                     .parent_state(&parent)
                     .ok_or_else(|| Error::Invalid("parent has not been verified".into()))?;
@@ -645,6 +646,7 @@ impl Vm for PlatformVm {
             }
 
             block::Kind::Standard => {
+                inner.verify_warp(&blk)?;
                 let mut state = inner
                     .parent_state(&parent)
                     .ok_or_else(|| Error::Invalid("parent has not been verified".into()))?;
@@ -833,6 +835,49 @@ impl Vm for PlatformVm {
 }
 
 impl Inner {
+    /// Check the aggregate proof on every warp message a block carries.
+    ///
+    /// This is the only thing binding a message to the chain it claims to come
+    /// from. The source chain and the sender's address are read out of the
+    /// message itself, so anyone can write any pair there; what they cannot
+    /// write is a quorum of that chain's validators over the bytes. Without
+    /// this, `verify_l1_conversion` would be checking a claim against itself
+    /// and anybody could re-weight or de-register any L1's validators.
+    ///
+    /// The set that signed has to be the set as it stood when the message was
+    /// made, which is the set at the height this block is verified against —
+    /// the last accepted one. Go arranges the same thing: it runs this as its
+    /// own pass, over the block's decision transactions and, on a proposal
+    /// block, the transaction the chain emitted about itself, at the P-chain
+    /// height carried in the block's context.
+    ///
+    /// Every transaction means every transaction: a warp message is an
+    /// assertion about another chain no matter who put it in the block, so
+    /// which of the two sets it arrived in cannot decide whether its signature
+    /// is checked.
+    fn verify_warp(&self, blk: &block::Block) -> Result<(), Error> {
+        let carried = blk
+            .decision_txs()
+            .iter()
+            .chain(blk.proposal_tx())
+            .map(|tx| &tx.unsigned);
+        for unsigned in carried {
+            let Some(raw) = warp_message_of(unsigned) else {
+                continue;
+            };
+            let message = crate::warp::Message::parse(raw)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+            let source = message.unsigned.source_chain_id;
+            let set = validators::current_set(&self.state, &source)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+            let canonical =
+                validators::canonical(&set).map_err(|e| Error::Invalid(e.to_string()))?;
+            executor::verify_warp_messages(unsigned, self.config.network_id, &canonical)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+        }
+        Ok(())
+    }
+
     fn height_of(&self, id: &Id) -> Result<u64, Error> {
         self.blocks
             .get(id)
@@ -857,6 +902,17 @@ fn chain_param(params: &serde_json::Value) -> Result<Id, Error> {
     let mut id = [0u8; 32];
     id.copy_from_slice(&bytes);
     Ok(id)
+}
+
+/// The warp message a transaction carries, if it carries one. Named here so a
+/// kind that starts carrying one has to be added in exactly one place — the
+/// executor's own reader is the other half of the same question.
+fn warp_message_of(unsigned: &Unsigned) -> Option<&[u8]> {
+    match unsigned {
+        Unsigned::RegisterL1Validator { message, .. }
+        | Unsigned::SetL1ValidatorWeight { message, .. } => Some(message),
+        _ => None,
+    }
 }
 
 /// A set as the RPC hands it back. The key is the uncompressed one the set
@@ -1260,6 +1316,279 @@ mod tests {
             ),
             Err(Error::Malformed(_))
         ));
+    }
+
+    /// A block carrying one warp-bearing transaction, built by hand so the
+    /// message can be anything.
+    fn a_block_carrying(vm: &PlatformVm, message: Vec<u8>) -> block::Block {
+        let sk = blst::min_pk::SecretKey::key_gen(&[3u8; 32], &[]).unwrap();
+        let proof = match Signer::prove(&sk) {
+            Signer::ProofOfPossession { proof, .. } => proof,
+            Signer::Empty => unreachable!("a proven signer carries a proof"),
+        };
+        let unsigned = Unsigned::RegisterL1Validator {
+            base: Envelope {
+                network_id: 1,
+                blockchain_id: [3; 32],
+                outs: Vec::new(),
+                ins: Vec::new(),
+                memo: Vec::new(),
+            },
+            balance: 0,
+            proof_of_possession: proof,
+            message,
+        };
+        let tx = Tx::new(unsigned, Vec::new());
+        block::Block::standard(vm.last_accepted(), 1, 1000, vec![tx])
+    }
+
+    /// The chain a warp message in these tests claims to come from.
+    const SOURCE: Id = [0x5cu8; 32];
+
+    /// A chain whose state already holds two validators of [`SOURCE`], each
+    /// with a real BLS key. That set is what a warp proof from there is
+    /// measured against.
+    fn vm_with_a_source_set(now: u64) -> (PlatformVm, Vec<blst::min_pk::SecretKey>) {
+        let keys: Vec<blst::min_pk::SecretKey> = [11u8, 12]
+            .iter()
+            .map(|seed| blst::min_pk::SecretKey::key_gen(&[*seed; 32], &[]).unwrap())
+            .collect();
+        let mut state = genesis(now);
+        for (i, sk) in keys.iter().enumerate() {
+            state
+                .put_l1_validator(crate::l1::Validator {
+                    validation_id: [(0x40 + i) as u8; 32],
+                    chain_id: SOURCE,
+                    node_id: NodeId([(0x50 + i) as u8; 20]),
+                    public_key: crate::signer::uncompress(&sk.sk_to_pk().compress()).unwrap(),
+                    remaining_balance_owner: Vec::new(),
+                    deactivation_owner: Vec::new(),
+                    start_time: now,
+                    weight: 100,
+                    min_nonce: 0,
+                    end_accumulated_fee: 1_000_000,
+                })
+                .unwrap();
+        }
+        (
+            PlatformVm::new(
+                config(),
+                Box::new(FlatFees::default()),
+                Box::new(AlwaysUp),
+                Box::new(executor::NoImports),
+                state,
+            ),
+            keys,
+        )
+    }
+
+    /// A warp envelope from [`SOURCE`], signed by whichever of the source set's
+    /// validators `signing` names, in the canonical order the bit vector
+    /// indexes — ascending by uncompressed key, which is the order
+    /// `warp::flatten` puts them in.
+    fn a_message_from_the_source(
+        vm: &PlatformVm,
+        keys: &[blst::min_pk::SecretKey],
+        signing: &[usize],
+    ) -> Vec<u8> {
+        // A registration naming the same key `a_block_carrying` proves
+        // possession of, so the transaction is coherent all the way down and
+        // the only thing left to refuse it is the ledger.
+        let registering = blst::min_pk::SecretKey::key_gen(&[3u8; 32], &[]).unwrap();
+        let owner = crate::txs::PChainOwner {
+            threshold: 1,
+            addresses: vec![ShortId([6; 20])],
+        };
+        let payload = crate::warpmsg::Register::build(
+            [0x77; 32],
+            &NodeId([9; 20]),
+            &registering.sk_to_pk().compress(),
+            2000,
+            &owner,
+            &owner,
+            42,
+        )
+        .bytes;
+        let call = crate::warpmsg::Call::build(&[0x5au8; 20], &payload);
+        let unsigned = crate::warp::Unsigned::build(1, SOURCE, &call.bytes);
+
+        // The canonical order, taken from the chain's own flattening rather
+        // than assumed — the bit vector indexes THAT order, and guessing it
+        // would make this test agree with itself instead of with the chain.
+        let set = validators::current_set(&vm.state(), &SOURCE).unwrap();
+        let canonical = validators::canonical(&set).unwrap();
+        let position = |sk: &blst::min_pk::SecretKey| {
+            let compressed = sk.sk_to_pk().compress();
+            canonical
+                .validators
+                .iter()
+                .position(|v| v.public_key == compressed)
+                .expect("the key is in the source set")
+        };
+
+        let mut bits = vec![0u8; canonical.validators.len().div_ceil(8).max(1)];
+        let mut sigs = Vec::new();
+        for i in signing {
+            let at = position(&keys[*i]);
+            let byte = bits.len() - 1 - at / 8;
+            bits[byte] |= 1 << (at % 8);
+            sigs.push(crate::signer::sign(&keys[*i], &unsigned.bytes));
+        }
+        // Go refuses a bit vector with unnecessary leading zero bytes.
+        while bits.first() == Some(&0) {
+            bits.remove(0);
+        }
+        let signature = if sigs.is_empty() {
+            [0u8; crate::signer::SIGNATURE_LEN]
+        } else {
+            crate::signer::aggregate_signatures(&sigs).unwrap()
+        };
+
+        crate::warp::Message::build(
+            &unsigned,
+            &crate::warp::BitSet {
+                signers: bits,
+                signature,
+            },
+        )
+        .bytes
+    }
+
+    #[test]
+    fn a_warp_message_too_few_of_the_source_set_signed_is_refused() {
+        // The quorum rule itself, against a real set: one of two equal
+        // validators is half the weight, and the bar is 67%.
+        let now = 1000;
+        let (vm, keys) = vm_with_a_source_set(now);
+        vm.set_clock(now);
+
+        let raw = a_message_from_the_source(&vm, &keys, &[0]);
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        let refused = vm.verify(&parsed.id()).expect_err("half is not a quorum");
+        assert!(
+            format!("{refused}").contains("weight"),
+            "refused for the wrong reason: {refused}"
+        );
+    }
+
+    #[test]
+    fn a_warp_message_the_source_set_really_signed_gets_through_the_check() {
+        // The other half: the door opens for a real quorum. What stops the
+        // transaction after that is the ledger — this chain holds no
+        // registration by that name — which is the point: the proof was
+        // accepted and execution was reached.
+        let now = 1000;
+        let (vm, keys) = vm_with_a_source_set(now);
+        vm.set_clock(now);
+
+        let raw = a_message_from_the_source(&vm, &keys, &[0, 1]);
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        let refused = vm.verify(&parsed.id()).expect_err("no such registration here");
+        let said = format!("{refused}");
+        assert!(
+            !said.contains("weight") && !said.contains("signature") && !said.contains("warp"),
+            "the proof should have been accepted, but: {said}"
+        );
+    }
+
+    #[test]
+    fn a_warp_message_signed_over_other_bytes_is_refused() {
+        // An aggregate lifted off one message onto another. The signature is
+        // real and the signers are the whole set; it just is not over these
+        // bytes.
+        let now = 1000;
+        let (vm, keys) = vm_with_a_source_set(now);
+        vm.set_clock(now);
+
+        let mut raw = a_message_from_the_source(&vm, &keys, &[0, 1]);
+        // Move the message's payload without touching the proof: the last byte
+        // of the buffer is inside the addressed call.
+        let last = raw.len() - 1;
+        raw[last] ^= 0xff;
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        assert!(
+            vm.verify(&parsed.id()).is_err(),
+            "a proof over other bytes proves nothing about these"
+        );
+    }
+
+    #[test]
+    fn a_warp_message_no_quorum_signed_does_not_reach_execution() {
+        // The only thing binding a warp message to the chain it claims to come
+        // from. The source chain and the sender's address are written INSIDE
+        // the message, so anyone can put any pair there; what nobody can write
+        // is a quorum of that chain's validators over the bytes. Without this
+        // check the conversion check would be comparing a claim with itself,
+        // and anyone could re-weight or de-register any L1's validators.
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+
+        let payload = crate::warpmsg::Weight::build([7; 32], 0, 99).bytes;
+        let call = crate::warpmsg::Call::build(&[0x5au8; 20], &payload);
+        let unsigned = crate::warp::Unsigned::build(1, [0x5cu8; 32], &call.bytes);
+        let nobody = crate::warp::BitSet {
+            signers: Vec::new(),
+            signature: [0u8; crate::signer::SIGNATURE_LEN],
+        };
+        let raw = crate::warp::Message::build(&unsigned, &nobody).bytes;
+
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        let refused = vm.verify(&parsed.id()).expect_err("nobody signed it");
+        // Named, so this cannot pass because the block was refused for some
+        // other reason it happens to also deserve.
+        // With a source chain this node knows nothing about, the set is empty
+        // and the weight rule passes vacuously — 0 of 0 — so the refusal lands
+        // on the aggregate, which cannot be built from no keys. That is Go's
+        // shape too: `VerifyWeight(0, 0)` returns nil there and
+        // `AggregatePublicKeys` of nothing is the error. Either way the
+        // message never reaches execution, which is the claim.
+        assert!(
+            format!("{refused}").contains("warp"),
+            "refused for the wrong reason: {refused}"
+        );
+    }
+
+    #[test]
+    fn a_warp_message_addressed_to_another_network_is_refused() {
+        // The network id is inside the signed bytes, so a message made for the
+        // test network cannot be replayed here even if its signers overlap.
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+
+        let payload = crate::warpmsg::Weight::build([7; 32], 0, 99).bytes;
+        let call = crate::warpmsg::Call::build(&[0x5au8; 20], &payload);
+        let elsewhere = crate::warp::Unsigned::build(2, [0x5cu8; 32], &call.bytes);
+        let nobody = crate::warp::BitSet {
+            signers: Vec::new(),
+            signature: [0u8; crate::signer::SIGNATURE_LEN],
+        };
+        let raw = crate::warp::Message::build(&elsewhere, &nobody).bytes;
+
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        let refused = vm.verify(&parsed.id()).expect_err("it is for another network");
+        assert!(
+            format!("{refused}").contains("network"),
+            "refused for the wrong reason: {refused}"
+        );
+    }
+
+    #[test]
+    fn a_block_carrying_no_warp_message_is_not_held_up_by_the_check() {
+        // The check is over the messages a block carries, and a block that
+        // carries none passes it without an opinion.
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        assert_eq!(vm.verify(&blk.id()), Ok(()));
     }
 
     #[test]

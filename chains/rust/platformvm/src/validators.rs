@@ -295,6 +295,30 @@ pub fn current_set(state: &State, chain: &Id) -> Result<BTreeMap<NodeId, Validat
         .collect())
 }
 
+/// The same set as a warp proof reads it: by key rather than by node, merged,
+/// ordered, and with the weight of every entry — keyless ones included — in the
+/// total.
+///
+/// Go reaches this by handing the sampled set to `warp.FlattenValidatorSet`; so
+/// does this, which is why there is one flattening rather than two. A keyless
+/// entry still counts toward the total because its stake is part of what a
+/// quorum has to beat even though it cannot sign — dropping it from the
+/// denominator would let a smaller set of signers look like a quorum.
+pub fn canonical(
+    set: &BTreeMap<NodeId, Validator>,
+) -> Result<crate::warp::Canonical, crate::warp::Error> {
+    let by_node: BTreeMap<NodeId, (Vec<u8>, u64)> = set
+        .iter()
+        .map(|(node, v)| {
+            (
+                *node,
+                (v.public_key.clone().unwrap_or_default(), v.weight),
+            )
+        })
+        .collect();
+    crate::warp::flatten(&by_node)
+}
+
 /// The canonical commitment to a set.
 ///
 /// `sha256` over, per validator ascending by raw node id, `node ‖ weight(8, big
