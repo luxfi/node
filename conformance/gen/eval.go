@@ -53,6 +53,9 @@ func xrt() *runtime.Runtime {
 // The four chains added here each answer their own ops — a D vector asks for
 // an asset id, not for a transaction — so each takes the whole vector.
 func evaluate(v Vector) Result {
+	if v.Op == "identity" {
+		return evalIdentity(v)
+	}
 	switch v.Chain {
 	case "Q":
 		return evalQ(v)
