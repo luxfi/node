@@ -34,6 +34,7 @@
 //! - [`executor`] — what a transaction does to that belief.
 //! - [`block`] — the four things a block can be.
 //! - [`uptime`] — how much of its term a validator was reachable for.
+//! - [`validators`] — who validates, now and at any height already passed.
 //! - [`vm`] — the chain, as the node holds it.
 
 pub mod block;
@@ -52,6 +53,7 @@ pub mod stakingparams;
 pub mod state;
 pub mod txs;
 pub mod uptime;
+pub mod validators;
 pub mod vm;
 pub mod warp;
 pub mod warpmsg;
