@@ -129,6 +129,74 @@ void size_and_space_are_bounded() {
     check(p.len() == 0, "the pool is empty again");
 }
 
+// The two bounds themselves, and the reason each gives. Byte accounting alone
+// says nothing about whether either bound is ENFORCED, and Go asks for both
+// through the gate (network_test.go's "tx too big" and "mempool full" cases), so
+// they are asked through the gate here too: a caller must not be able to reach
+// past the chain's opinion into an unbounded pool.
+void the_two_bounds_are_enforced() {
+    {
+        // A transaction larger than a transaction may be. The memo is the one
+        // field a caller can make arbitrarily long, and Pool::add weighs the
+        // WIRE bytes rather than trusting a declared length.
+        mempool::Pool p;
+        Verdict v;
+        mempool::Gossip g(p, v);
+
+        auto big = tx_spending(1, 10, mempool::kMaxTxSize + 1024);
+        check(big->size() > mempool::kMaxTxSize, "the transaction is over the per-tx bound");
+        auto r = g.add(big);
+        check(!r, "an oversize transaction is refused");
+        check(!r && r.error().find(mempool::kErrTxTooLarge) != std::string::npos,
+              "…as too large");
+        check(p.len() == 0, "…and never enters the pool");
+        check(p.bytes_available() == mempool::kMaxPoolSize, "…so it costs no space");
+        check(v.asked == 1,
+              "the chain was still asked first — size is the pool's rule, not the chain's");
+
+        // One byte under the bound is admitted, so the refusal above is the bound
+        // and not some other thing about a large memo.
+        auto fits = tx_spending(2, 20, mempool::kMaxTxSize - 4096);
+        check(fits->size() <= mempool::kMaxTxSize, "a transaction just under the bound");
+        check(g.add(fits).has_value(), "…is admitted");
+    }
+    {
+        // A pool with no room left. Filling it takes the whole 64 MiB, which is
+        // the point: the bound is on the SUM, so nothing short of reaching it
+        // proves the sum is what is being checked.
+        mempool::Pool p;
+        Verdict v;
+        mempool::Gossip g(p, v);
+
+        std::size_t admitted = 0;
+        std::shared_ptr<txs::Tx> refused;
+        std::string reason;
+        for (std::uint8_t i = 1; i < 200; ++i) {
+            auto tx = tx_spending(i, 1000 + i, mempool::kMaxTxSize - 4096);
+            auto r = g.add(tx);
+            if (r) {
+                ++admitted;
+                continue;
+            }
+            refused = tx;
+            reason = r.error();
+            break;
+        }
+        check(refused != nullptr, "the pool eventually fills");
+        check(reason.find(mempool::kErrPoolFull) != std::string::npos,
+              "…and the transaction that would overflow it is refused as full");
+        check(p.bytes_available() < refused->size(),
+              "…because what is left is smaller than that transaction");
+        check(p.len() == admitted, "…and the pool still holds exactly what it admitted");
+
+        // A full pool says nothing about the transaction, so the refusal is NOT
+        // remembered as a drop reason: the same transaction offered after a block
+        // drained the pool has to get a fresh look.
+        check(p.drop_reason(refused->id()).empty(),
+              "…and 'full' is not remembered against the transaction");
+    }
+}
+
 void removing_takes_the_conflicts_too() {
     mempool::Pool p;
     auto a = tx_spending(1, 10);   // pooled
@@ -330,6 +398,7 @@ int main() {
     a_duplicate_is_refused();
     a_conflict_is_refused();
     size_and_space_are_bounded();
+    the_two_bounds_are_enforced();
     removing_takes_the_conflicts_too();
     a_drop_reason_is_remembered_but_not_always();
     the_reason_cache_forgets_the_oldest();
