@@ -124,6 +124,11 @@ const MIN_BYTES: usize = 1;
 /// How far the hash is rotated between probes.
 const ROTATION: u32 = 17;
 
+/// A malformed filter, in the crate's one refusal type.
+fn bad(why: &str) -> Error {
+    Error::Storage(why.to_string())
+}
+
 // ------------------------------------------------------------- the filter --
 
 /// Where a fresh salt and fresh seeds come from.
@@ -187,13 +192,13 @@ impl Filter {
     /// filter is reconstructed here, and the only way a vector can compare.
     pub fn with(salt: Id, seeds: Vec<u64>, bytes: usize) -> Result<Filter> {
         if seeds.len() < MIN_PROBES {
-            return Err(Error::Storage("bloom: too few hashes".into()));
+            return Err(bad("bloom: too few hashes"));
         }
         if seeds.len() > MAX_PROBES {
-            return Err(Error::Storage("bloom: too many hashes".into()));
+            return Err(bad("bloom: too many hashes"));
         }
         if bytes < MIN_BYTES {
-            return Err(Error::Storage("bloom: too few entries".into()));
+            return Err(bad("bloom: too few entries"));
         }
         Ok(Filter {
             salt,
@@ -210,13 +215,13 @@ impl Filter {
     fn rebuild(&mut self, elements: usize, entropy: &dyn Entropy) -> Result<()> {
         let (probes, bytes) = optimal(elements, self.false_positive);
         if probes < MIN_PROBES {
-            return Err(Error::Storage("bloom: too few hashes".into()));
+            return Err(bad("bloom: too few hashes"));
         }
         if probes > MAX_PROBES {
-            return Err(Error::Storage("bloom: too many hashes".into()));
+            return Err(bad("bloom: too many hashes"));
         }
         if bytes < MIN_BYTES {
-            return Err(Error::Storage("bloom: too few entries".into()));
+            return Err(bad("bloom: too few entries"));
         }
         let mut raw = vec![0u8; 32 + probes * 8];
         entropy.fill(&mut raw);
@@ -282,6 +287,50 @@ impl Filter {
         }
         out.extend_from_slice(&self.bits);
         (out, self.salt)
+    }
+
+    /// A peer's filter, from the bytes it sent and the salt it sent beside
+    /// them. The inverse of [`Filter::marshal`], and Go's `bloom.Parse`.
+    ///
+    /// The bounds are checked here rather than trusted, because these bytes
+    /// come from a stranger: a probe count of zero would read no bits and
+    /// answer "yes" to everything, and one of two hundred would make this node
+    /// hash two hundred times per lookup on request. A filter this node cannot
+    /// read is a refusal, not an empty filter — an empty one answers "no" to
+    /// everything, which would tell this node the peer holds nothing and send
+    /// it the whole pool.
+    ///
+    /// What comes back is read-only in the sense that matters: it answers
+    /// [`Filter::has`], and adding to it would be describing a peer's set with
+    /// this node's transactions.
+    pub fn parse(raw: &[u8], salt: Id) -> Result<Filter> {
+        let probes = *raw.first().ok_or_else(|| bad("bloom: empty filter"))? as usize;
+        if probes < MIN_PROBES {
+            return Err(bad("bloom: too few hashes"));
+        }
+        if probes > MAX_PROBES {
+            return Err(bad("bloom: too many hashes"));
+        }
+        let at = 1 + probes * 8;
+        if raw.len() < at + MIN_BYTES {
+            return Err(bad("bloom: too few entries"));
+        }
+        let seeds = (0..probes)
+            .map(|i| {
+                let s = 1 + i * 8;
+                u64::from_be_bytes(raw[s..s + 8].try_into().expect("eight bytes"))
+            })
+            .collect();
+        Ok(Filter {
+            salt,
+            seeds,
+            bits: raw[at..].to_vec(),
+            count: 0,
+            max_count: usize::MAX,
+            min_elements: 0,
+            false_positive: 0.0,
+            reset_false_positive: 0.0,
+        })
     }
 
     pub fn salt(&self) -> Id {
@@ -364,32 +413,17 @@ pub fn estimate_count(probes: usize, bytes: usize, bound: f64) -> usize {
 
 // -------------------------------------------------------------- the set --
 
-/// Whether a transaction is worth holding, decided against the state this node
-/// currently prefers.
-///
-/// Separate from the mempool because it needs the chain, and separate from the
-/// chain because the pool must be usable — and testable — without one.
-pub trait Verify: Send + Sync {
-    fn verify(&self, tx: &Tx) -> Result<()>;
-}
-
 /// The mempool as the gossip layer sees it: a set with a filter over it.
 pub struct Gossip {
     pool: Mempool,
     filter: Filter,
-    verify: Arc<dyn Verify>,
     entropy: Arc<dyn Entropy>,
     /// Transactions accepted here and not yet handed to the network.
     outbound: Vec<Id>,
 }
 
 impl Gossip {
-    pub fn new(
-        pool: Mempool,
-        config: &Config,
-        verify: Arc<dyn Verify>,
-        entropy: Arc<dyn Entropy>,
-    ) -> Result<Gossip> {
+    pub fn new(pool: Mempool, config: &Config, entropy: Arc<dyn Entropy>) -> Result<Gossip> {
         let filter = Filter::new(
             config.filter_elements,
             config.filter_false_positive,
@@ -399,7 +433,6 @@ impl Gossip {
         Ok(Gossip {
             pool,
             filter,
-            verify,
             entropy,
             outbound: Vec::new(),
         })
@@ -417,11 +450,20 @@ impl Gossip {
         &self.filter
     }
 
-    /// A transaction a peer pushed, or one a pull answered with.
+    /// A transaction a peer pushed, one a pull answered with, or one a wallet
+    /// handed this node directly. All three are the same offer.
     ///
     /// Returning `Ok(())` here is what tells the p2p layer to pass it on, so
     /// every refusal below is also a decision not to spend the network on it.
-    pub fn add(&mut self, tx: Tx) -> Result<()> {
+    ///
+    /// `verify` is the chain's own verification against the state this node
+    /// prefers, and it is a parameter rather than something this set holds. The
+    /// chain owns the set; a set that held a way to call back into the chain
+    /// would be the chain holding itself, and the answer to "is this
+    /// transaction good" would have two places to live. It is passed in, and
+    /// runs exactly where Go runs it — after the two cheap refusals above it
+    /// and before the pool's own admission below.
+    pub fn add(&mut self, tx: Tx, verify: impl FnOnce(&Tx) -> Result<()>) -> Result<()> {
         let id = tx.id();
         if self.pool.has(&id) {
             return Err(Error::DuplicateTx);
@@ -430,7 +472,7 @@ impl Gossip {
             // Judged already. The same answer, without paying for it again.
             return Err(why.clone());
         }
-        if let Err(why) = self.verify.verify(&tx) {
+        if let Err(why) = verify(&tx) {
             self.pool.mark_dropped(id, why.clone());
             return Err(why);
         }
@@ -554,26 +596,22 @@ mod tests {
         }))
     }
 
-    struct Everything;
-    impl Verify for Everything {
-        fn verify(&self, _: &Tx) -> Result<()> {
-            Ok(())
-        }
+    /// A chain that finds every transaction good.
+    fn anything(_: &Tx) -> Result<()> {
+        Ok(())
     }
 
-    struct Nothing;
-    impl Verify for Nothing {
-        fn verify(&self, _: &Tx) -> Result<()> {
-            Err(Error::WrongSig)
-        }
+    /// A chain that finds none good.
+    fn nothing(_: &Tx) -> Result<()> {
+        Err(Error::WrongSig)
     }
 
     fn entropy() -> Arc<dyn Entropy> {
         Arc::new(Fixed(vec![0xA5, 0x5A, 0x3C, 0xC3, 0x11, 0x22, 0x33, 0x44]))
     }
 
-    fn a_set(verify: Arc<dyn Verify>) -> Gossip {
-        Gossip::new(Mempool::new(), &Config::default(), verify, entropy()).unwrap()
+    fn a_set() -> Gossip {
+        Gossip::new(Mempool::new(), &Config::default(), entropy()).unwrap()
     }
 
     // ---- the filter ----
@@ -615,6 +653,42 @@ mod tests {
     }
 
     #[test]
+    fn a_peers_filter_reads_back_as_the_filter_that_was_sent() {
+        let mut mine = Filter::new(64, 0.01, 0.05, entropy().as_ref()).unwrap();
+        let held: Vec<Id> = (0u8..32).map(|n| ids::prefixed(&[n, 9])).collect();
+        for id in &held {
+            mine.add(id);
+        }
+        let (raw, salt) = mine.marshal();
+        let theirs = Filter::parse(&raw, salt).expect("a peer reads what was sent");
+        for id in &held {
+            assert!(theirs.has(id), "no false negatives across the wire either");
+        }
+        // And it marshals back to the same bytes: nothing was lost in reading.
+        let (again, again_salt) = theirs.marshal();
+        assert_eq!(again, raw);
+        assert_eq!(again_salt, salt);
+    }
+
+    #[test]
+    fn a_filter_a_stranger_sent_is_refused_rather_than_read_as_empty() {
+        // A filter this node cannot read must be a refusal. Reading it as an
+        // empty filter would say the peer holds nothing, and this node would
+        // answer by sending it everything.
+        assert!(Filter::parse(&[], [0u8; 32]).is_err(), "no probe count");
+        assert!(Filter::parse(&[0, 1], [0u8; 32]).is_err(), "zero probes");
+        let mut too_many = vec![17u8];
+        too_many.extend_from_slice(&[0u8; 17 * 8 + 1]);
+        assert!(Filter::parse(&too_many, [0u8; 32]).is_err(), "17 probes");
+        // A probe count the body cannot back: the seeds run off the end.
+        assert!(Filter::parse(&[2, 0, 0, 0], [0u8; 32]).is_err());
+        // Seeds exactly, and not one byte of filter to look in.
+        assert!(Filter::parse(&[1, 0, 0, 0, 0, 0, 0, 0, 0], [0u8; 32]).is_err());
+        // One byte of filter is enough to be a filter.
+        assert!(Filter::parse(&[1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0u8; 32]).is_ok());
+    }
+
+    #[test]
     fn a_filter_must_have_between_one_and_sixteen_probes_and_a_byte_to_write_in() {
         assert!(Filter::with([0u8; 32], vec![], 4).is_err());
         assert!(Filter::with([0u8; 32], vec![1; 17], 4).is_err());
@@ -650,7 +724,6 @@ mod tests {
                 filter_elements: 1,
                 ..Config::default()
             },
-            Arc::new(Everything),
             entropy(),
         )
         .unwrap();
@@ -658,7 +731,7 @@ mod tests {
         for n in 1u8..40 {
             let tx = a_tx(n, 0, &[n]);
             ids_seen.push(tx.id());
-            set.add(tx).unwrap();
+            set.add(tx, anything).unwrap();
         }
         // However often it was rebuilt, every held transaction is still in it.
         for id in &ids_seen {
@@ -670,9 +743,9 @@ mod tests {
 
     #[test]
     fn a_transaction_a_peer_pushed_is_verified_before_it_is_held() {
-        let mut set = a_set(Arc::new(Nothing));
+        let mut set = a_set();
         let tx = a_tx(1, 0, b"a");
-        assert_eq!(set.add(tx.clone()).unwrap_err(), Error::WrongSig);
+        assert_eq!(set.add(tx.clone(), nothing).unwrap_err(), Error::WrongSig);
         assert!(!set.has(&tx.id()));
         // And the reason is remembered, so the next peer costs nothing.
         assert_eq!(set.pool().drop_reason(&tx.id()), Some(&Error::WrongSig));
@@ -680,42 +753,38 @@ mod tests {
 
     #[test]
     fn a_transaction_already_judged_is_answered_from_memory() {
-        struct Counting(std::sync::atomic::AtomicUsize);
-        impl Verify for Counting {
-            fn verify(&self, _: &Tx) -> Result<()> {
-                self.0.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                Err(Error::WrongSig)
-            }
-        }
-        let counter = Arc::new(Counting(std::sync::atomic::AtomicUsize::new(0)));
-        let mut set = a_set(counter.clone());
+        let asked = std::cell::Cell::new(0usize);
+        let count = |_: &Tx| {
+            asked.set(asked.get() + 1);
+            Err(Error::WrongSig)
+        };
+        let mut set = a_set();
         let tx = a_tx(1, 0, b"a");
-        assert!(set.add(tx.clone()).is_err());
-        assert!(set.add(tx).is_err());
-        assert_eq!(
-            counter.0.load(std::sync::atomic::Ordering::Relaxed),
-            1,
-            "the second offer never reached the verifier"
-        );
+        assert!(set.add(tx.clone(), count).is_err());
+        assert!(set.add(tx, count).is_err());
+        assert_eq!(asked.get(), 1, "the second offer never reached the chain");
     }
 
     #[test]
     fn a_transaction_already_held_is_a_duplicate_and_not_re_verified() {
-        let mut set = a_set(Arc::new(Everything));
+        let mut set = a_set();
         let tx = a_tx(1, 0, b"a");
-        set.add(tx.clone()).unwrap();
-        assert_eq!(set.add(tx.clone()).unwrap_err(), Error::DuplicateTx);
+        set.add(tx.clone(), anything).unwrap();
+        assert_eq!(
+            set.add(tx.clone(), anything).unwrap_err(),
+            Error::DuplicateTx
+        );
         assert!(set.has(&tx.id()));
         assert!(set.filter().has(&tx.id()));
     }
 
     #[test]
     fn a_transaction_the_pool_refuses_is_remembered_as_refused() {
-        let mut set = a_set(Arc::new(Everything));
-        set.add(a_tx(1, 0, b"first")).unwrap();
+        let mut set = a_set();
+        set.add(a_tx(1, 0, b"first"), anything).unwrap();
         let conflicting = a_tx(1, 0, b"second");
         assert_eq!(
-            set.add(conflicting.clone()).unwrap_err(),
+            set.add(conflicting.clone(), anything).unwrap_err(),
             Error::ConflictsWithOtherTx
         );
         assert_eq!(
@@ -728,13 +797,12 @@ mod tests {
     fn a_strict_chain_refuses_a_classical_transaction_at_the_gossip_door() {
         let mut pool = Mempool::new();
         pool.hold_to(crate::security::strict_pq(), None);
-        let mut set =
-            Gossip::new(pool, &Config::default(), Arc::new(Everything), entropy()).unwrap();
+        let mut set = Gossip::new(pool, &Config::default(), entropy()).unwrap();
         let mut tx = a_tx(1, 0, b"a");
         tx.sign(crate::fx::Family::Secp256k1, &[vec![[7u8; 32]]])
             .unwrap();
         assert_eq!(
-            set.add(tx.clone()).unwrap_err(),
+            set.add(tx.clone(), anything).unwrap_err(),
             Error::ClassicalCredentialRefused
         );
         assert!(!set.has(&tx.id()), "and it is not gossiped on");
@@ -742,11 +810,11 @@ mod tests {
 
     #[test]
     fn what_is_accepted_is_queued_to_be_told_to_the_network() {
-        let mut set = a_set(Arc::new(Everything));
+        let mut set = a_set();
         let a = a_tx(1, 0, b"a");
         let b = a_tx(2, 0, b"b");
-        set.add(a.clone()).unwrap();
-        set.add(b.clone()).unwrap();
+        set.add(a.clone(), anything).unwrap();
+        set.add(b.clone(), anything).unwrap();
         assert_eq!(set.outbound(), 2);
         let pushed = set.take_outbound(Config::default().target_gossip_size);
         assert_eq!(pushed, vec![a.bytes().to_vec(), b.bytes().to_vec()]);
@@ -755,11 +823,11 @@ mod tests {
 
     #[test]
     fn a_push_is_bounded_by_bytes_and_the_rest_waits() {
-        let mut set = a_set(Arc::new(Everything));
+        let mut set = a_set();
         let a = a_tx(1, 0, b"a");
         let b = a_tx(2, 0, b"b");
-        set.add(a.clone()).unwrap();
-        set.add(b.clone()).unwrap();
+        set.add(a.clone(), anything).unwrap();
+        set.add(b.clone(), anything).unwrap();
         // Room for the first only; the second is kept rather than dropped.
         let pushed = set.take_outbound(a.size());
         assert_eq!(pushed, vec![a.bytes().to_vec()]);
@@ -775,9 +843,9 @@ mod tests {
     fn one_transaction_larger_than_a_whole_push_still_goes() {
         // Otherwise it would wait forever, and a transaction nobody can gossip
         // is a transaction nobody can mine.
-        let mut set = a_set(Arc::new(Everything));
+        let mut set = a_set();
         let a = a_tx(1, 0, b"a");
-        set.add(a.clone()).unwrap();
+        set.add(a.clone(), anything).unwrap();
         assert_eq!(set.take_outbound(1), vec![a.bytes().to_vec()]);
     }
 
