@@ -140,11 +140,15 @@ func evalXTx(v Vector) Result {
 		return r
 	}
 	r.Syntactic = VOK
-	// The X-chain's semantic pass needs a funded UTXO set and a shared-memory
-	// peer; neither is stood up here, so this layer is reported as not
-	// evaluated rather than as a pass. See conformance/README.md.
-	r.Exec = VSkipped
-	r.Note = "semantic verification not evaluated: needs a funded UTXO set"
+
+	// Judged against a chain that holds nothing, exactly as the P-chain's
+	// vectors are and for the same reason: a funded state would have to be
+	// built three times and the differential would be measuring three state
+	// builders. What survives the empty chain is the verdict CLASS, and every
+	// X vector that reaches here names an input the chain does not have — so
+	// the three implementations have to agree that they looked it up and that
+	// its absence is a LEDGER refusal rather than an authorisation one.
+	r.Exec, r.Note = execXTx(tx)
 	return r
 }
 

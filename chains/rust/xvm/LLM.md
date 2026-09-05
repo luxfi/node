@@ -172,9 +172,17 @@ Not ported, and none of it is ledger behaviour:
 
 ## Known, and not hidden
 
-The X vectors' `exec` field is not compared in the differential. Every
-evaluator — Go's, this one, and C++'s — reports semantic verification as not
-evaluated, because none of them stands up a funded UTXO set for the corpus.
-Closing it means the Go generator standing one up too, so the two answers have
-something to be compared against; until then the field honestly reads as
-skipped rather than as a pass.
+The X vectors' `exec` field IS compared, by Go and by this port. Both run the
+semantic pass and then the executor over a chain that holds nothing — the same
+arrangement the P-chain's vectors have always been judged under, and for the
+same reason: a funded state would have to be built three times and the
+differential would then be measuring three state builders rather than three
+chains. What survives an empty chain is the verdict CLASS, which is the shape a
+fork has. All five vectors answer `LEDGER` on both sides, and a chain that
+skipped the semantic pass and answered `OK` fails the run.
+
+It reads as `SKIPPED` in C++ still. One voice on a field is not a comparison,
+so the runner lists it — and until Go and this port both answered, that is what
+the field was: a chain that never checked whether a transaction was allowed
+passed the differential green. Giving the C++ evaluator the same two passes on
+its own empty chain closes the last voice.

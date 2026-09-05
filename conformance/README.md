@@ -97,9 +97,15 @@ excludes it from comparison and lists it under **NOT COMPARED**. A field no two
 implementations answered was not checked by anything here, and the run says so
 above the result rather than counting it as agreement.
 
-Today that is the X-chain's `exec` field on four vectors: the X-chain's
-semantic pass needs a funded UTXO set and a shared-memory peer, and neither is
-stood up. Wiring it is the next thing this harness needs.
+Today that is the X-chain's `exec` field in C++ alone. Go and Rust both run
+the X-chain's semantic pass and then its executor over an empty chain — the
+same arrangement the P-chain's vectors are judged under, for the reason above —
+so the field IS compared, and a Rust chain that skipped the semantic pass and
+answered `OK` where Go answers `LEDGER` fails the run on all five vectors.
+Until this was wired, that same broken chain passed: one voice on a field is
+not a comparison, and the harness said so under NOT COMPARED rather than
+pretending. The C++ evaluator still declines; giving it the same two passes on
+its own empty chain is what closes the last voice.
 
 ### Seam vectors
 
