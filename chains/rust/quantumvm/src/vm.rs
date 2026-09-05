@@ -1116,6 +1116,78 @@ mod tests {
         assert!(matches!(vm.build(), Err(Error::ClockBehindTip { .. })));
     }
 
+    /// The signature check runs on a block this node did NOT build, over the
+    /// transactions the PARSER produced.
+    ///
+    /// This is the failure that has bitten this estate before: a check bound to
+    /// a field the parser skipped, or handed a verifier nothing supplied, runs
+    /// on locally built blocks and never on received ones — which is every
+    /// block but one, for every block. Here the forged block is serialized,
+    /// parsed back by a second node, and refused by that node's verify.
+    #[test]
+    fn a_received_block_with_a_forged_stamp_is_refused_by_the_node_that_received_it() {
+        let vm = vm();
+        vm.admit(stamped(&vm, 1)).unwrap();
+        let honest = vm.build().unwrap();
+
+        let mut forged = (*honest.txs[0]).clone();
+        forged.stamp.as_mut().unwrap().signature[0] ^= 0xFF;
+        let bad = Block::new(
+            honest.timestamp,
+            honest.height,
+            honest.parent,
+            chain(),
+            1,
+            vec![Arc::new(forged)],
+        );
+
+        let peer = Qvm::new(Config::default(), Init::memory("node-1", chain(), 1)).unwrap();
+        peer.clock.set(vm.clock.now());
+        let parsed = peer.parse(bad.bytes()).unwrap();
+        assert!(
+            matches!(peer.verify(&parsed.id()), Err(Error::BlockSignature(_))),
+            "a block whose stamps do not check out was verified"
+        );
+
+        // The honest one, over the same path, does verify — so the refusal
+        // above is the signature and not the path.
+        let good = peer.parse(honest.bytes()).unwrap();
+        peer.verify(&good.id()).unwrap();
+    }
+
+    /// And the check is a CONFIGURED switch, not an accident of the code path:
+    /// with stamps off it does not run, and the config is the only thing that
+    /// says so.
+    #[test]
+    fn the_stamp_check_runs_unless_the_config_says_otherwise() {
+        let vm = vm();
+        vm.admit(stamped(&vm, 1)).unwrap();
+        let honest = vm.build().unwrap();
+        let mut forged = (*honest.txs[0]).clone();
+        forged.stamp.as_mut().unwrap().signature[0] ^= 0xFF;
+        let bad = Block::new(
+            honest.timestamp,
+            honest.height,
+            honest.parent,
+            chain(),
+            1,
+            vec![Arc::new(forged)],
+        );
+
+        let off = Qvm::new(
+            Config {
+                quantum_stamp_enabled: false,
+                ..Config::default()
+            },
+            Init::memory("node-2", chain(), 1),
+        )
+        .unwrap();
+        off.clock.set(vm.clock.now());
+        let parsed = off.parse(bad.bytes()).unwrap();
+        off.verify(&parsed.id()).unwrap();
+        assert!(!off.config.quantum_stamp_enabled);
+    }
+
     #[test]
     fn a_block_off_the_wire_is_verified_the_same_way_one_built_here_is() {
         let vm = vm();
