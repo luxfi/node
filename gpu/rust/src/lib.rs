@@ -21,13 +21,13 @@
 //!
 //! `LUX_GPU` picks the policy, once, at first use:
 //!
-//! - `off`    — CPU only; nothing is opened.
-//! - `on`     — use the plugin for batch work when a library is installed.
-//!              This is the default, and it degrades to `off` on its own when
-//!              nothing is installed.
+//! - `off` — CPU only; nothing is opened.
+//! - `on` — use the plugin for batch work when a library is installed. This is
+//!   the default, and it degrades to `off` on its own when nothing is
+//!   installed.
 //! - `verify` — compute BOTH and abort on the first byte that differs. This is
-//!              what a differential run sets; it is the mode that turns "we
-//!              believe they agree" into "we checked".
+//!   what a differential run sets; it is the mode that turns "we believe they
+//!   agree" into "we checked".
 //!
 //! `LUX_GPU_LIB` names the library path when it is not on the loader's path.
 //!
@@ -103,7 +103,9 @@ pub fn keccak256(parts: &[&[u8]]) -> Hash256 {
 pub fn keccak256_batch(inputs: &[&[u8]]) -> Vec<Hash256> {
     match policy() {
         Policy::Off => cpu::keccak256_batch(inputs),
-        Policy::On => plugin::keccak256_batch(inputs).unwrap_or_else(|| cpu::keccak256_batch(inputs)),
+        Policy::On => {
+            plugin::keccak256_batch(inputs).unwrap_or_else(|| cpu::keccak256_batch(inputs))
+        }
         Policy::Verify => {
             let want = cpu::keccak256_batch(inputs);
             if let Some(got) = plugin::keccak256_batch(inputs) {
@@ -293,7 +295,9 @@ mod tests {
     #[test]
     fn the_batched_fold_equals_the_scalar_fold_at_every_size() {
         for n in 0..40usize {
-            let leaves: Vec<Hash256> = (0..n).map(|i| cpu::sha256(&(i as u64).to_le_bytes())).collect();
+            let leaves: Vec<Hash256> = (0..n)
+                .map(|i| cpu::sha256(&(i as u64).to_le_bytes()))
+                .collect();
             assert_eq!(merkle_root(&leaves), scalar_fold(&leaves), "n={n}");
         }
     }

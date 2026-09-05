@@ -60,7 +60,8 @@ fn keccak256_batch_is_the_same_answer_on_both_backends() {
         assert_eq!(got.len(), want.len(), "batch={batch}");
         for i in 0..want.len() {
             assert_eq!(
-                got[i], want[i],
+                got[i],
+                want[i],
                 "batch={batch} element={i} len={}",
                 ins[i].len()
             );
@@ -71,13 +72,20 @@ fn keccak256_batch_is_the_same_answer_on_both_backends() {
 #[test]
 fn a_batch_of_nothing_but_empty_inputs_still_agrees() {
     if !plugin_present() {
-        eprintln!("skipped: no kernel library installed (backend={})", backend());
+        eprintln!(
+            "skipped: no kernel library installed (backend={})",
+            backend()
+        );
         return;
     }
     let empty: Vec<u8> = Vec::new();
     for batch in [1usize, 8, 100] {
         let ins: Vec<&[u8]> = (0..batch).map(|_| empty.as_slice()).collect();
-        assert_eq!(keccak256_batch(&ins), cpu::keccak256_batch(&ins), "batch={batch}");
+        assert_eq!(
+            keccak256_batch(&ins),
+            cpu::keccak256_batch(&ins),
+            "batch={batch}"
+        );
     }
 }
 

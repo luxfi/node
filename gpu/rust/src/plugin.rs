@@ -178,13 +178,9 @@ pub fn keccak256_batch(inputs: &[&[u8]]) -> Option<Vec<crate::Hash256>> {
     if rc != LUX_OK {
         return None;
     }
-    Some(
-        out.chunks_exact(32)
-            .map(|c| {
-                let mut d = [0u8; 32];
-                d.copy_from_slice(c);
-                d
-            })
-            .collect(),
-    )
+    let mut digests = vec![[0u8; 32]; inputs.len()];
+    for (i, d) in digests.iter_mut().enumerate() {
+        d.copy_from_slice(&out[i * 32..(i + 1) * 32]);
+    }
+    Some(digests)
 }

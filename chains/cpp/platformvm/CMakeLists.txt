@@ -107,7 +107,7 @@ endforeach()
 # kernel library. It used to be compiled here and again in xvm, and the P-chain
 # carried a third SHA-256 of its own in a header; a primitive with three builds
 # has three places to drift.
-set(LUXCPP_CRYPTO_DIR "${CRYPTO_DIR}" CACHE PATH "" FORCE)
+set(LUXCPP_CRYPTO_DIR "${CRYPTO_DIR}")
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../gpu/cpp ${CMAKE_CURRENT_BINARY_DIR}/lux_gpu)
 
 if(NOT TARGET blst)
