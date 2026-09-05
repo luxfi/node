@@ -178,8 +178,10 @@ int main(int argc, char** argv) {
     // makes. Its absence is a failure rather than a chain quietly stood up on
     // something else.
     std::string genesis;
+    int genesis_count = 0;
     for (const auto& v : vectors) {
         if (v.chain == "F" && v.op == "genesis") {
+            ++genesis_count;
             std::vector<std::uint8_t> b;
             if (!conf::unhex(v.wire, b)) {
                 std::fprintf(stderr, "fhevm_conformance: the genesis vector is not hex\n");
@@ -187,6 +189,15 @@ int main(int argc, char** argv) {
             }
             genesis.assign(b.begin(), b.end());
         }
+    }
+    // Exactly one, or none of the answers below mean anything: a second
+    // genesis is a second answer to the question of which chain these
+    // transactions are being judged on, and last-one-wins would pick it
+    // silently.
+    if (genesis_count > 1) {
+        std::fprintf(stderr, "fhevm_conformance: the corpus names %d F genesis vectors\n",
+                     genesis_count);
+        return 1;
     }
     bool has_f = false;
     for (const auto& v : vectors) has_f = has_f || v.chain == "F";
