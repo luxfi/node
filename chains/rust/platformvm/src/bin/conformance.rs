@@ -129,12 +129,29 @@ fn hex(b: &[u8]) -> String {
     b.iter().map(|x| format!("{x:02x}")).collect()
 }
 
-/// The chain the corpus is built for: network 1, the fee and stake asset is
-/// the id whose every byte is 9. The Go and C++ evaluators are given the same
-/// three numbers, so a rule that reads them reads one set of values.
+/// The chain the corpus is built for: network 1, chain id the id whose every
+/// byte is 3, the fee and stake asset the id whose every byte is 9. The Go and
+/// C++ evaluators are given the same three numbers, so a rule that reads them
+/// reads one set of values.
+///
+/// The network and the chain are part of that identity and not decoration: a
+/// transaction names the network and the chain it was signed for, and one
+/// naming another of either is refused before it is executed. An evaluator that
+/// did not know which chain it was would have nothing to compare them against.
 fn config() -> Config {
     Config {
+        network_id: 1,
+        blockchain_id: [3u8; 32],
         native_asset: [9u8; 32],
+        // Go's `builder.LocalValidatorFeeConfig`, field for field — what the
+        // reference charges an L1 validator for the P-Chain's trouble in
+        // tracking it, and how many it has room for at once.
+        validator_fee: lux_platformvm::l1::FeeConfig {
+            capacity: 20_000,
+            target: 10_000,
+            min_price: 512,
+            excess_conversion_constant: 1_587,
+        },
         staking: StakingPolicy {
             min_validator_stake: 1,
             max_validator_stake: 1 << 60,
@@ -189,7 +206,7 @@ fn eval_tx(id: &str, wire: &str) -> Row {
     r.kind = kind_name(tx.unsigned.kind()).into();
     r.hash = hex(&tx.id());
 
-    if let Err(e) = tx.syntactic_verify(config().native_asset) {
+    if let Err(e) = tx.syntactic_verify(config().chain()) {
         let class = classify_txs(&e);
         r.note = format!("{e}");
         r.syntactic = class.clone();
@@ -200,7 +217,12 @@ fn eval_tx(id: &str, wire: &str) -> Row {
 
     let mut state = empty_chain();
     let fees = FlatFees::default();
-    match executor::execute_standard(&mut state, &tx, &config(), &fees as &dyn Fees) {
+    // A node with no shared half. Every import finds nothing rather than being
+    // refused outright — which is the answer Go gives from an empty shared
+    // memory, and is what the corpus's empty ledger means for the other two
+    // evaluators as well.
+    let atomic = executor::NoImports;
+    match executor::execute_standard(&mut state, &tx, &config(), &fees as &dyn Fees, &atomic) {
         Ok(()) => {
             r.exec = OK.into();
             r.note = "executed on the empty chain".into();
@@ -302,10 +324,7 @@ fn block_kind_name(k: block::Kind) -> &'static str {
 /// message, the same way the Go and C++ evaluators classify theirs.
 fn classify_exec(e: &executor::Error) -> String {
     match e {
-        executor::Error::L1ValidatorPlaneNotHeld(_)
-        | executor::Error::OwnSetNotHeld
-        | executor::Error::NetworkTermsNotHeld
-        | executor::Error::WrongTxType(_)
+        executor::Error::WrongTxType(_)
         | executor::Error::TransformChainNotPermitted
         | executor::Error::AddValidatorNotPermitted
         | executor::Error::AddDelegatorNotPermitted => UNSUPPORTED.to_string(),
@@ -314,7 +333,23 @@ fn classify_exec(e: &executor::Error) -> String {
         executor::Error::Credential(_) => AUTH.to_string(),
         // The chain does not hold what the transaction names. On the empty
         // chain every vector meets, that is the ordinary answer.
-        executor::Error::State(_) | executor::Error::Flow(_) => LEDGER.to_string(),
+        //
+        // The four named absences belong here for the same reason `State` does,
+        // and are matched the same way. They read as sentences rather than as
+        // "not found" — "this network never stated staking terms of its own",
+        // "no L1 validator is registered as …" — and the shared word table,
+        // which looks for the reference's words, therefore does not see them.
+        // It called them SYNTACTIC: a transaction refused for its shape, where
+        // Go and C++ both said the chain simply does not hold the thing. That
+        // is the wrong class, not a wrong wording, so it is fixed at the
+        // variant. Rewording the chain's errors to suit a word table would put
+        // the harness in charge of what the chain says.
+        executor::Error::State(_)
+        | executor::Error::Flow(_)
+        | executor::Error::NoNetworkTerms
+        | executor::Error::NoSuchNetwork
+        | executor::Error::NoConversion(_)
+        | executor::Error::NoSuchL1Validator(_) => LEDGER.to_string(),
         _ => classify_words(&format!("{e}")),
     }
 }
