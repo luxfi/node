@@ -367,6 +367,22 @@ func fVectors() []Vector {
 	// take the gap and then never build.
 	gap := fRegister(9, 0x21)
 
+	// A registration whose CIPHERTEXT was swapped after the payer signed it.
+	// The handle in Subject still names the ciphertext that was signed for;
+	// the payload now describes a different one.
+	//
+	// This is the attack the F-chain's signing preimage exists to stop, and it
+	// is not the same as a corrupted signature. Subject is bound into the
+	// content the payer signs, and syntactic_verify requires it to equal what
+	// the payload derives, so the swap has to break one of the two: either the
+	// handle no longer matches the ciphertext, or the signature no longer
+	// matches the content. It must never be accepted with the substituted
+	// ciphertext under the original owner's authority.
+	swapped := fRegister(1, 0x21)
+	swapped.Payload = fPayload(fhevm.RegisterPayload{
+		Digest: [32]byte(zBytes(0x99, 32)), Type: 1, Level: 3, Size: 4096,
+	})
+
 	v = append(v,
 		vec("F_TX_UNKNOWN_TYPE", "F", "tx", badType.Bytes()),
 		vec("F_TX_ZERO_NONCE", "F", "tx", zeroNonce.Bytes()),
@@ -381,6 +397,8 @@ func fVectors() []Vector {
 		vec("F_TX_FULFILL_NO_RESULT", "F", "tx", noResult.Bytes()),
 		vec("F_TX_EMPTY_COMMITTEE", "F", "tx", emptyCommittee.Bytes()),
 		vec("F_TX_UNKNOWN_PAYLOAD_FIELD", "F", "tx", unknownField.Bytes()),
+
+		vec("F_TX_TAMPERED_CIPHERTEXT", "F", "tx", swapped.Bytes()),
 
 		vec("F_TX_UNSIGNED", "F", "tx", unsigned.Bytes()),
 		vec("F_TX_TAMPERED_SIGNATURE", "F", "tx", tampered.Bytes()),

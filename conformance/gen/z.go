@@ -204,6 +204,25 @@ func zVectors() []Vector {
 	classical := zTransfer(0x1a)
 	classical.Proof = zProof("groth16", 0x63)
 
+	// A well-formed transfer whose proof has had one byte changed after the
+	// fact. Two things must follow, and they are different things.
+	//
+	// It must be REFUSED — a proof is the only thing standing between a
+	// shielded chain and minting from nothing, so a chain that accepted a
+	// proof it did not verify would accept this one.
+	//
+	// And it must have a DIFFERENT ID from the transaction it was made from.
+	// The Z-chain's transaction id is a hash over everything the transaction
+	// means, the proof included, precisely because the proof cache is keyed on
+	// it: an implementation that left the proof out of the id would give this
+	// transaction the untampered one's id, and the cache would answer "already
+	// verified" before anything bound the proof to what it spends. That is why
+	// this vector sits beside Z_BLOCK_TRANSFER rather than replacing it — the
+	// pair is the check, and one id is the failure.
+	tampered := zTransfer(0x10)
+	tampered.Proof = zProof("stark", 0x60)
+	tampered.Proof.ProofData[0] ^= 0xFF
+
 	good := zBlockWire(parent, 1, 1000, one, root.of(one))
 
 	// The same block with bytes appended past the frame's declared size. The
@@ -253,6 +272,7 @@ func zVectors() []Vector {
 			zBlockWire(parent, 2, 1000, []*zkvm.Transaction{expired},
 				root.of([]*zkvm.Transaction{expired}))),
 		vec("Z_TX_CLASSICAL_PROOF", "Z", "block", zOne(parent, root, classical)),
+		vec("Z_TX_TAMPERED_PROOF", "Z", "block", zOne(parent, root, tampered)),
 
 		vec("Z_BLOCK_TRAILING_BYTES", "Z", "block", trailing),
 		vec("Z_BLOCK_TRUNCATED", "Z", "block", good[:len(good)/2]),
