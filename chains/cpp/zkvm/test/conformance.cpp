@@ -70,6 +70,33 @@ VmConfig zconfig() {
     return c;
 }
 
+// block_alone says whether a refusal was decided from the block's own bytes —
+// its height, its clock, its transactions — with nothing asked of the chain.
+// That is the line the corpus draws between the `syntactic` field and the
+// `exec` one, and the two fields are cut out of a SINGLE verdict rather than
+// produced by two different passes, because two passes are two questions.
+//
+// The reasons are the chain's OWN constants, not a list of the same words
+// written out again here. A table restated beside the code it describes drifts
+// from it silently, and an evaluator whose table had drifted would report its
+// own staleness as a chain's disagreement.
+bool block_alone(const std::string& msg) {
+    const auto says = [&](const char* w) { return msg.find(w) != std::string::npos; };
+
+    // "invalid block height" and "invalid block timestamp" both open with
+    // "invalid block", and BOTH needed the parent to notice — so neither is
+    // decided by the block alone, and the prefix must not claim them.
+    if (says(kErrInvalidHeight) || says(kErrInvalidTimestamp)) return false;
+
+    for (const char* w : {kErrInvalidBlock, kErrFutureBlock, kErrDuplicateNullifier,
+                          kErrInvalidTxType, kErrNoInputs, kErrNoOutputs, kErrMissingProof,
+                          kErrNoExpiry, kErrExpired, kErrInvalidTransfer, kErrInvalidShield,
+                          kErrInvalidUnshield}) {
+        if (says(w)) return true;
+    }
+    return false;
+}
+
 Genesis zgenesis() {
     Genesis g;
     g.timestamp = kGenesisTime;
@@ -152,31 +179,39 @@ conf::Row eval_block(const std::string& id, const std::string& wire) {
     const Id blk_id = blk->id();
     r.hash = conf::hex(blk_id.data(), blk_id.size());
 
-    // The shape check, per transaction, from the port's own method. It is the
-    // Z-chain's analogue of a syntactic pass: everything about a transaction
-    // that can be decided without asking the chain anything.
-    for (const auto& tx : blk->txs) {
-        if (auto v = tx.validate_basic(); !v) {
-            r.syntactic = conf::classify(v.error());
-            r.exec = r.syntactic;
-            r.note = v.error();
-            return r;
-        }
-    }
-    r.syntactic = conf::kOk;
-
-    // check is this node's whole verdict on the block: the transaction cap, the
-    // clock, the block-level spent set, the one admission predicate over every
-    // transaction — which is where the strict-PQ profile gate fires — and the
-    // state root.
-    if (auto v = blk->check(); !v) {
-        r.exec = conf::classify(v.error());
-        r.note = v.error();
+    // check is this node's whole verdict on the block: height and parent, the
+    // transaction cap, the clock, the block-level spent set, the one admission
+    // predicate over every transaction — which is where the strict-PQ profile
+    // gate fires — the parent-relative rules, and the state root.
+    //
+    // ONE call, and the two fields are cut out of its answer. The pass this
+    // used to run in front of it — validate_basic, per transaction — asked a
+    // DIFFERENT question from the one the corpus asks, and answered "the block
+    // is fine" for four vectors the reference refuses on the block's own bytes:
+    // a genesis carrying a parent, a timestamp past the skew bound, one note
+    // spent twice inside a block, and a transaction the block's own height has
+    // passed. None of those is about a transaction in isolation, so no per-
+    // transaction pass could ever see them.
+    auto v = blk->check();
+    if (v) {
+        r.syntactic = conf::kOk;
+        r.exec = conf::kOk;
+        r.note = "height=" + std::to_string(blk->block_height) +
+                 " txs=" + std::to_string(blk->txs.size());
         return r;
     }
-    r.exec = conf::kOk;
-    r.note = "height=" + std::to_string(blk->block_height) +
-             " txs=" + std::to_string(blk->txs.size());
+
+    const std::string cls = conf::classify(v.error());
+    if (block_alone(v.error())) {
+        r.syntactic = cls;
+        r.exec = cls;
+    } else {
+        // A refusal the chain had to be asked for — the accepted spent set, the
+        // parent, the tip — says nothing against the block's own bytes.
+        r.syntactic = conf::kOk;
+        r.exec = cls;
+    }
+    r.note = v.error();
     return r;
 }
 
