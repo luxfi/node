@@ -42,8 +42,11 @@
 pub mod block;
 pub mod error;
 pub mod fx;
+pub mod gossip;
 pub mod hash;
 pub mod ids;
+pub mod mempool;
+pub mod security;
 pub mod state;
 pub mod txs;
 pub mod utxo;
