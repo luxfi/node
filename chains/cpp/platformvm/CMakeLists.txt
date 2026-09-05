@@ -48,11 +48,10 @@ set(_up "${CMAKE_CURRENT_SOURCE_DIR}/../../..")
 find_checkout(_luxcpp "blst/bindings/blst.h"
   "${_up}/../../luxcpp" "${_up}/../luxcpp" "${_up}/.." "$ENV{HOME}/work/luxcpp")
 find_checkout(_node "include/lux/node/vm.hpp"
-  "${_up}/../../lux-cpp/node" "${_up}/../lux-cpp/node" "${_up}/../node"
-  "$ENV{HOME}/work/lux/node2")
+  "${_up}/../../lux-cpp/node" "${_up}/../lux-cpp/node" "${_up}/../node" "$ENV{HOME}/work/lux-cpp/node")
 find_checkout(_consensus "include/lux/consensus/quorum_cert_engine.hpp"
   "${_up}/../../lux-cpp/consensus" "${_up}/../../luxcpp/consensus" "${_up}/../lux-cpp/consensus"
-  "${_up}/../consensus" "$ENV{HOME}/work/luxcpp/consensus")
+  "${_up}/../consensus" "$ENV{HOME}/work/lux-cpp/consensus")
 
 set(LUXCPP_ROOT   "${_luxcpp}"    CACHE PATH "luxcpp checkout root (blst)")
 set(NODE_DIR      "${_node}"      CACHE PATH "lux-cpp/node checkout (the VM seam)")

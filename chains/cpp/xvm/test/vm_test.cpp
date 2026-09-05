@@ -160,6 +160,39 @@ void genesis_and_identity() {
     check(asset_tx.has_value(), "the asset's own definition is in the chain");
 }
 
+// ================= the other half of a decision =================
+
+// A block that loses gives back what it was holding. The transactions were
+// never refused — they lost a race — so a node that drops them disagrees with
+// every other node about what is still pending, and then builds on that.
+void reject_returns_the_transactions() {
+    std::printf("\n  -- rejecting --\n");
+    Chain c;
+
+    auto tx = c.spend(0, 100);
+    check(c.vm->issue(tx).has_value(), "the tx is issued");
+    check(c.vm->mempool_size() == 1, "…and waits in the mempool");
+
+    auto blk = c.vm->build();
+    if (blk == nullptr) {
+        check(false, "build: " + c.vm->last_error());
+        return;
+    }
+    check(c.vm->mempool_size() == 0, "building took it out of the mempool");
+
+    blk->reject();
+    check(c.vm->mempool_size() == 1,
+          "rejecting the block put the transaction back");
+
+    // And the block is gone: what it pinned is released, so the next build
+    // draws from the state that actually won.
+    auto again = c.vm->build();
+    check(again != nullptr, "a block can be built again from the returned tx");
+    if (again != nullptr) {
+        check(again->height() == 1, "…at the same height the loser held");
+    }
+}
+
 // ================= the mempool gate =================
 
 void issue_gate() {
@@ -597,5 +630,6 @@ int main() {
     accept_unverified();
     seam_answers();
     through_the_seam_only();
+    reject_returns_the_transactions();
     return report("vm");
 }
