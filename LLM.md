@@ -295,9 +295,11 @@ Three things about it are load-bearing:
 
 **Each evaluator times itself.** Timing the child from outside would measure
 five process starts, five corpus reads and five output writes as if they were
-chain work, and the Go binary links a 27 MB reference whose start alone is
-longer than the whole C++ run. So the clock starts after the corpus is read and
-stops before the first verdict is printed.
+chain work. Measured: Go spends 43.6 ms on all of that, four times the C++
+X-chain evaluator's entire process and more than the C++ P-chain's, so a
+process-level benchmark would have reported it as Go being slow at the chain.
+The clock starts after the corpus is read and stops before the first verdict is
+printed.
 
 **The verdicts are kept, not dropped.** Each round writes into a vector that is
 printed afterwards, in all three languages, so no round can be optimised away —
