@@ -152,9 +152,17 @@ refuses **by name** with its own error, rather than succeeding against nothing.
   it permanently too (`errTransformChainTxNotPermitted`). A network's terms are
   therefore whatever it was born with, and a network born without them refuses
   by name rather than borrowing the primary network's.
-- **Dynamic fees.** `FlatFees` is Go's static schedule. The gas-metered
-  alternative — complexity times weights times a price that moves with demand —
-  is not ported. `gas` holds the arithmetic; nothing calls it.
+- **Dynamic transaction fees.** This is a divergence, not just a gap, and it is
+  worth stating as one. `FlatFees` is Go's static schedule and it is what this
+  chain charges. Go's live chain charges by gas instead — `PickFeeCalculator`
+  returns the dynamic calculator on every verify and every build, and calls the
+  static schedule "unreachable" — so the two answer different amounts for the
+  same transaction. Fixing it means another `executor::Fees` implementation
+  over Go's per-kind complexity tables, checked against Go vector by vector;
+  the seam is already the right shape for it and `executor::Fees` says so.
+  The `gas` module holds the price curve, which *is* called — `l1` prices the
+  LP-77 continuous validator fee with it, and `warp` uses its wide integer.
+  It is `pub(crate)` and denies dead code, so nothing can sit in it unused.
 - **Persisting a node's measurements.** `uptime::Tracker` is ported whole,
   with Go's whole test suite, and `uptime::Ledger` keeps its measurements in
   memory. A node that wants them to survive a restart writes its own
