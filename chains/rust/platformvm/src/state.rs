@@ -29,6 +29,7 @@ use std::collections::{BTreeSet, HashMap};
 
 use crate::components::{Owners, Utxo, UtxoId};
 use crate::ids::{Id, NodeId};
+use crate::l1::{Expiry, Validator as L1Validator};
 use crate::txs::{Priority, Tx};
 
 /// A validator or delegator, as the set holds it.
@@ -154,6 +155,10 @@ pub enum Error {
     AlreadyExists,
     /// Arithmetic that would leave the supply wrong.
     Overflow,
+    /// A write to an L1 validator that changed something fixed for the life of
+    /// its validation id. That is not an update to the validator; it is a
+    /// different validator wearing its name.
+    ImmutableFieldChanged,
 }
 
 impl std::fmt::Display for Error {
@@ -162,6 +167,9 @@ impl std::fmt::Display for Error {
             Error::NotFound => write!(f, "not found"),
             Error::AlreadyExists => write!(f, "already exists"),
             Error::Overflow => write!(f, "overflow"),
+            Error::ImmutableFieldChanged => {
+                write!(f, "a field fixed for the life of this validation id changed")
+            }
         }
     }
 }
@@ -195,6 +203,33 @@ pub struct State {
     delegatee_rewards: HashMap<(Id, NodeId), u64>,
     /// The outputs a reward transaction made, so they can be shown later.
     reward_utxos: HashMap<Id, Vec<Utxo>>,
+    /// What every L1 validator has paid for so far. The mark an active
+    /// validator's balance is measured against; it only ever rises.
+    accrued_fees: u64,
+    /// How far above target the number of active L1 validators has been
+    /// running. The price of being one follows it.
+    l1_excess: u64,
+    /// Every L1 validator, by the registration that named it.
+    l1_validators: HashMap<Id, L1Validator>,
+    /// Registration messages that may still be issued, and the moment after
+    /// which they may not. Ordered, so the clock drops a prefix.
+    expiries: BTreeSet<Expiry>,
+    /// What a network became when it went sovereign: the set it converted with,
+    /// and the authority allowed to change that set.
+    conversions: HashMap<Id, Conversion>,
+    /// The transformation a network stated its own staking terms in.
+    transformations: HashMap<Id, Tx>,
+}
+
+/// What a network became once it was promoted: the id of the set it converted
+/// with, and the chain and address whose warp messages may change that set.
+///
+/// Go: `state.NetToL1Conversion`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Conversion {
+    pub conversion_id: Id,
+    pub chain_id: Id,
+    pub address: Vec<u8>,
 }
 
 impl State {
@@ -304,6 +339,195 @@ impl State {
 
     pub fn chains(&self) -> impl Iterator<Item = &Id> {
         self.chains.iter()
+    }
+
+    pub fn has_chain(&self, chain: &Id) -> bool {
+        self.chains.contains(chain)
+    }
+
+    /// What a network became when it went sovereign.
+    pub fn conversion(&self, chain: &Id) -> Result<&Conversion, Error> {
+        self.conversions.get(chain).ok_or(Error::NotFound)
+    }
+
+    pub fn set_conversion(&mut self, chain: Id, conversion: Conversion) {
+        self.conversions.insert(chain, conversion);
+    }
+
+    /// The transformation a network stated its own staking terms in.
+    ///
+    /// Go writes this from genesis only: `TransformChainTx` is permanently
+    /// refused on the live path, so a network's terms are either what it was
+    /// born with or nothing.
+    pub fn transformation(&self, chain: &Id) -> Result<&Tx, Error> {
+        self.transformations.get(chain).ok_or(Error::NotFound)
+    }
+
+    pub fn add_transformation(&mut self, chain: Id, tx: Tx) {
+        self.transformations.insert(chain, tx);
+    }
+
+    // ---- the L1-validator plane ----
+
+    /// The mark every active L1 validator's balance is measured against. It
+    /// only ever rises, which is what lets a balance be stored as an absolute
+    /// number rather than decremented on every tick.
+    pub fn accrued_fees(&self) -> u64 {
+        self.accrued_fees
+    }
+
+    pub fn set_accrued_fees(&mut self, fees: u64) {
+        self.accrued_fees = fees;
+    }
+
+    /// How far above target the number of active L1 validators has run.
+    pub fn l1_excess(&self) -> u64 {
+        self.l1_excess
+    }
+
+    pub fn set_l1_excess(&mut self, excess: u64) {
+        self.l1_excess = excess;
+    }
+
+    pub fn l1_validator(&self, validation_id: &Id) -> Result<&L1Validator, Error> {
+        self.l1_validators
+            .get(validation_id)
+            .filter(|v| !v.is_deleted())
+            .ok_or(Error::NotFound)
+    }
+
+    /// Write an L1 validator, or forget it when its weight has gone to zero.
+    ///
+    /// A weight of zero is a removal rather than a validator worth nothing, so
+    /// storing one would leave a name that can be topped up back into the set.
+    /// Go: `state.PutL1Validator`, whose one refusal is a write that changes a
+    /// field fixed for the life of a validation id.
+    pub fn put_l1_validator(&mut self, validator: L1Validator) -> Result<(), Error> {
+        if let Some(existing) = self.l1_validators.get(&validator.validation_id) {
+            if !existing.immutable_fields_unmodified(&validator) {
+                return Err(Error::ImmutableFieldChanged);
+            }
+        }
+        if validator.is_deleted() {
+            self.l1_validators.remove(&validator.validation_id);
+            return Ok(());
+        }
+        self.l1_validators
+            .insert(validator.validation_id, validator);
+        Ok(())
+    }
+
+    /// Whether a node already validates a network through the L1 plane. A node
+    /// admitted twice would count its weight twice.
+    pub fn has_l1_validator(&self, chain: &Id, node: &NodeId) -> bool {
+        self.l1_validators
+            .values()
+            .any(|v| v.chain_id == *chain && v.node_id == *node && !v.is_deleted())
+    }
+
+    /// Every L1 validator of one network, active and inactive alike, in name
+    /// order. An inactive one holds weight it cannot vote with, which is
+    /// exactly why the set has to name it: weight nobody can vote with still
+    /// sits in the denominator of every quorum.
+    pub fn l1_validators(&self, chain: &Id) -> Vec<&L1Validator> {
+        let mut out: Vec<&L1Validator> = self
+            .l1_validators
+            .values()
+            .filter(|v| v.chain_id == *chain && !v.is_deleted())
+            .collect();
+        out.sort_by_key(|v| v.validation_id);
+        out
+    }
+
+    /// Every L1 validator of every network, in name order. The whole plane at
+    /// once, for the readers that build a set across all of them.
+    pub fn all_l1_validators(&self) -> Vec<&L1Validator> {
+        let mut out: Vec<&L1Validator> = self.l1_validators.values().collect();
+        out.sort_by_key(|v| v.validation_id);
+        out
+    }
+
+    /// Active validators in the order their money runs out, which is the order
+    /// advancing the clock deactivates them in.
+    pub fn active_l1_validators(&self) -> Vec<&L1Validator> {
+        let mut out: Vec<&L1Validator> = self
+            .l1_validators
+            .values()
+            .filter(|v| v.is_active())
+            .collect();
+        out.sort();
+        out
+    }
+
+    pub fn num_active_l1_validators(&self) -> usize {
+        self.l1_validators.values().filter(|v| v.is_active()).count()
+    }
+
+    /// What a network's own set weighs. Used to refuse the removal of the last
+    /// validator: a chain with none is a chain nobody can ever speak for again.
+    pub fn weight_of_l1_validators(&self, chain: &Id) -> Result<u64, Error> {
+        let mut total: u64 = 0;
+        for v in self.l1_validators(chain) {
+            total = total.checked_add(v.weight).ok_or(Error::Overflow)?;
+        }
+        Ok(total)
+    }
+
+    pub fn has_expiry(&self, expiry: &Expiry) -> bool {
+        self.expiries.contains(expiry)
+    }
+
+    pub fn put_expiry(&mut self, expiry: Expiry) {
+        self.expiries.insert(expiry);
+    }
+
+    pub fn delete_expiry(&mut self, expiry: &Expiry) {
+        self.expiries.remove(expiry);
+    }
+
+    /// In time order, so advancing the clock drops exactly the prefix that has
+    /// passed.
+    pub fn expiries(&self) -> impl Iterator<Item = &Expiry> {
+        self.expiries.iter()
+    }
+
+    /// Every unspent output, by the name it is stored under.
+    pub fn utxos(&self) -> impl Iterator<Item = (&Id, &Utxo)> {
+        self.utxos.iter()
+    }
+
+    /// Every transaction the chain has kept.
+    pub fn txs(&self) -> impl Iterator<Item = (&Id, &Tx)> {
+        self.txs.iter()
+    }
+
+    /// The blockchain names already taken, lowercased.
+    pub fn chain_names(&self) -> impl Iterator<Item = &String> {
+        self.chain_names.iter()
+    }
+
+    /// Take a name without creating the blockchain that took it. Only a
+    /// restart uses this: the name and the blockchain are separate rows, and a
+    /// restored chain has to end up with both.
+    pub fn take_chain_name(&mut self, name: &str) {
+        if !name.is_empty() {
+            self.chain_names.insert(name.to_lowercase());
+        }
+    }
+
+    /// Every network that went sovereign, and what it converted with.
+    pub fn conversions(&self) -> impl Iterator<Item = (&Id, &Conversion)> {
+        self.conversions.iter()
+    }
+
+    /// Every network's own staking terms, as the transformation stating them.
+    pub fn transformations(&self) -> impl Iterator<Item = (&Id, &Tx)> {
+        self.transformations.iter()
+    }
+
+    /// What each validator has earned from its delegators and not been paid.
+    pub fn delegatee_rewards(&self) -> impl Iterator<Item = (&(Id, NodeId), &u64)> {
+        self.delegatee_rewards.iter()
     }
 
     pub fn add_blockchain(&mut self, tx_id: Id, name: &str) {

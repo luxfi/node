@@ -4,10 +4,11 @@
 //!
 //! The node holds several chains at once and does the same five things to each
 //! of them: build, parse, verify, accept, reject. That is the seam, and it is
-//! stated here exactly as `lux-rs/node`'s `src/vm.rs` states it — same
-//! methods, same `Id` (`lux_consensus::finality::Id`), same errors — so the
-//! host's trait is satisfied by naming this type, with nothing in between to
-//! translate.
+//! **not declared here**: [`Vm`], [`Block`], [`Status`] and [`Error`] are
+//! `lux-rs/node`'s own `src/vm.rs`, named through it. A port that restated the
+//! trait would compile against a trait of the same shape and satisfy nothing —
+//! the host's chain map takes the host's `dyn Vm`, and two declarations can
+//! drift while both still build.
 //!
 //! Verify and accept are separate on purpose, and the gap between them is
 //! where a chain keeps the world it would leave behind if a block won. A
@@ -20,85 +21,21 @@
 //! block after it.
 
 use std::collections::HashMap;
-use std::fmt;
 use std::sync::Mutex;
 
-pub use lux_consensus::finality::Id;
+// The seam, from the host that owns it. `Id` is `lux_consensus::finality::Id`
+// either way — the node re-exports the same type this crate's `ids` names —
+// so a block built here is named the way the node that certifies it names it.
+pub use lux_node::vm::{Block, Error, Id, Status, Vm};
 
 use crate::block;
 use crate::executor::{self, Config, Fees};
 use crate::ids::{hash256, EMPTY, PRIMARY_NETWORK_ID};
 use crate::state::State;
 use crate::txs::{Tx, Unsigned};
-
-/// Where a block stands. The numbers are the ones that cross the wire.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum Status {
-    Unknown = 0,
-    Processing = 1,
-    Rejected = 2,
-    Accepted = 3,
-}
-
-/// What a chain can refuse for.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Error {
-    NotFound,
-    Malformed(String),
-    Invalid(String),
-    /// Nothing to build.
-    Empty,
-    NoMethod(String),
-    BadRequest(String),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::NotFound => write!(f, "not found"),
-            Error::Malformed(why) => write!(f, "malformed: {why}"),
-            Error::Invalid(why) => write!(f, "invalid: {why}"),
-            Error::Empty => write!(f, "nothing to build"),
-            Error::NoMethod(m) => write!(f, "the method {m} does not exist"),
-            Error::BadRequest(why) => write!(f, "{why}"),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
-/// One block, as consensus sees it.
-pub trait Block: Send + Sync {
-    fn id(&self) -> Id;
-    fn parent(&self) -> Id;
-    fn height(&self) -> u64;
-    fn timestamp(&self) -> u64;
-    fn bytes(&self) -> Vec<u8>;
-    /// The root of the state this block leaves behind.
-    fn state_root(&self) -> Id;
-    /// The root of what this block carries.
-    fn payload_root(&self) -> Id;
-}
-
-/// A chain.
-pub trait Vm: Send + Sync {
-    fn name(&self) -> &'static str;
-    fn version(&self) -> String;
-    fn build(&self) -> Result<Box<dyn Block>, Error>;
-    fn parse(&self, raw: &[u8]) -> Result<Box<dyn Block>, Error>;
-    fn get(&self, id: &Id) -> Result<Box<dyn Block>, Error>;
-    fn verify(&self, id: &Id) -> Result<(), Error>;
-    fn accept(&self, id: &Id) -> Result<(), Error>;
-    fn reject(&self, id: &Id) -> Result<(), Error>;
-    fn set_preference(&self, id: &Id) -> Result<(), Error>;
-    fn last_accepted(&self) -> Id;
-    fn block_id_at(&self, height: u64) -> Result<Id, Error>;
-    fn health(&self) -> Result<(), Error> {
-        Ok(())
-    }
-    fn call(&self, method: &str, params: &serde_json::Value) -> Result<serde_json::Value, Error>;
-}
+use crate::persist;
+use crate::store;
+use crate::validators;
 
 /// A block plus the roots consensus signs over.
 #[derive(Clone, Debug)]
@@ -166,6 +103,9 @@ struct Inner {
     /// How reachable each validator has been. The chain cannot measure it —
     /// see [`executor::Uptime`] — so the node that runs the chain answers.
     uptime: Box<dyn executor::Uptime>,
+    /// What another chain has handed to this one. The other half of an import,
+    /// which this chain cannot see by itself — see [`executor::Atomic`].
+    atomic: Box<dyn executor::Atomic>,
     /// The state as of the last accepted block.
     state: State,
     /// Every block this chain knows, accepted or not.
@@ -173,6 +113,18 @@ struct Inner {
     /// What each verified block would leave behind.
     verified: HashMap<Id, Verified>,
     accepted_by_height: HashMap<u64, Id>,
+    /// The root each accepted block left behind. Kept because it cannot be
+    /// recomputed once the state has moved past it, and a block that answered
+    /// a zero root would be claiming to have committed to nothing.
+    accepted_roots: HashMap<Id, Id>,
+    /// What every accepted height changed about the validator sets. This is
+    /// what lets a signature made at a past height be checked at all: the set
+    /// then is the set now with everything since undone.
+    history: validators::History,
+    /// Where the accepted state is written down. A chain given nowhere to
+    /// write still runs, and says so by holding nothing here rather than by
+    /// writing into something that forgets.
+    store: Option<Box<dyn store::Store>>,
     last_accepted: Id,
     last_accepted_height: u64,
     preference: Id,
@@ -202,6 +154,7 @@ impl PlatformVm {
         config: Config,
         fees: Box<dyn Fees + Send + Sync>,
         uptime: Box<dyn executor::Uptime>,
+        atomic: Box<dyn executor::Atomic>,
         genesis_state: State,
     ) -> PlatformVm {
         let timestamp = genesis_state.timestamp();
@@ -212,16 +165,19 @@ impl PlatformVm {
         blocks.insert(id, genesis);
         let mut accepted_by_height = HashMap::new();
         accepted_by_height.insert(0, id);
-        let _ = state_root;
         PlatformVm {
             inner: Mutex::new(Inner {
                 config,
                 fees,
                 uptime,
+                atomic,
                 state: genesis_state,
                 blocks,
                 verified: HashMap::new(),
                 accepted_by_height,
+                accepted_roots: HashMap::from([(id, state_root)]),
+                history: validators::History::new(),
+                store: None,
                 last_accepted: id,
                 last_accepted_height: 0,
                 preference: id,
@@ -246,11 +202,13 @@ impl PlatformVm {
         config: Config,
         fees: Box<dyn Fees + Send + Sync>,
         uptime: Box<dyn executor::Uptime>,
+        atomic: Box<dyn executor::Atomic>,
         genesis_bytes: &[u8],
     ) -> Result<PlatformVm, crate::genesis::Error> {
         let published = crate::genesis::Genesis::parse(genesis_bytes)?;
         let rewards = crate::reward::Calculator::new(config.reward);
         let state = published.state(&rewards)?;
+        let state_root = root_of(&state);
         let genesis = block::Block::commit(published.id(), 0, GENESIS_TIME);
         let id = genesis.id();
         let mut blocks = HashMap::new();
@@ -263,10 +221,14 @@ impl PlatformVm {
                 config,
                 fees,
                 uptime,
+                atomic,
                 state,
                 blocks,
                 verified: HashMap::new(),
                 accepted_by_height,
+                accepted_roots: HashMap::from([(id, state_root)]),
+                history: validators::History::new(),
+                store: None,
                 last_accepted: id,
                 last_accepted_height: 0,
                 preference: id,
@@ -276,10 +238,94 @@ impl PlatformVm {
         })
     }
 
+    /// Start a chain that writes itself down — resuming what is written if
+    /// anything is.
+    ///
+    /// One call rather than two, because "start" and "resume" are the same
+    /// question asked of the store: a chain handed somewhere to write either
+    /// comes back as what is there or writes its own birth. Two entry points
+    /// would be two answers to which chain this is, and the wrong one is a
+    /// node that silently rejoins at height zero.
+    ///
+    /// What comes back is checked, not trusted: a block filed under a name
+    /// that is not the hash of its bytes, a staker whose priority names
+    /// nothing, an L1 validator whose fixed fields moved — each is refused,
+    /// because a node that starts from a state it cannot justify votes on one.
+    pub fn open(
+        config: Config,
+        fees: Box<dyn Fees + Send + Sync>,
+        uptime: Box<dyn executor::Uptime>,
+        atomic: Box<dyn executor::Atomic>,
+        genesis_bytes: &[u8],
+        mut store: Box<dyn store::Store>,
+    ) -> Result<PlatformVm, Error> {
+        let (stored, by_height, roots, tip) =
+            persist::restore_blocks(store.as_ref()).map_err(|e| Error::Malformed(e.to_string()))?;
+
+        let Some((last_accepted, last_accepted_height)) = tip else {
+            // Nothing written: this is the chain's birth, and the birth is
+            // written down before anything is built on it.
+            let vm = PlatformVm::from_genesis(config, fees, uptime, atomic, genesis_bytes)
+                .map_err(|e| Error::Malformed(e.to_string()))?;
+            {
+                let mut inner = vm.inner.lock().unwrap();
+                let genesis: Vec<(Id, u64, block::Block, Id)> = inner
+                    .blocks
+                    .iter()
+                    .map(|(id, b)| {
+                        (*id, b.height(), b.clone(), inner.accepted_roots[id])
+                    })
+                    .collect();
+                persist::flush(
+                    store.as_mut(),
+                    &State::new(),
+                    &inner.state,
+                    &validators::History::new(),
+                    &inner.history,
+                    &genesis,
+                    (inner.last_accepted, inner.last_accepted_height),
+                )
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+                inner.store = Some(store);
+            }
+            return Ok(vm);
+        };
+
+        let state = persist::restore(store.as_ref()).map_err(|e| Error::Malformed(e.to_string()))?;
+        let history =
+            persist::restore_history(store.as_ref()).map_err(|e| Error::Malformed(e.to_string()))?;
+        if !stored.contains_key(&last_accepted) {
+            return Err(Error::Malformed(
+                "the stored tip names a block that is not stored".into(),
+            ));
+        }
+        let now = state.timestamp();
+        Ok(PlatformVm {
+            inner: Mutex::new(Inner {
+                config,
+                fees,
+                uptime,
+                atomic,
+                state,
+                blocks: stored.into_iter().collect(),
+                verified: HashMap::new(),
+                accepted_by_height: by_height.into_iter().collect(),
+                accepted_roots: roots.into_iter().collect(),
+                history,
+                store: Some(store),
+                last_accepted,
+                last_accepted_height,
+                preference: last_accepted,
+                mempool: Vec::new(),
+                now,
+            }),
+        })
+    }
+
     /// Hand the chain a transaction to include.
     pub fn submit(&self, tx: Tx) -> Result<(), Error> {
         let mut inner = self.inner.lock().unwrap();
-        tx.syntactic_verify(inner.config.native_asset)
+        tx.syntactic_verify(inner.config.chain())
             .map_err(|e| Error::Invalid(e.to_string()))?;
         inner.mempool.push(tx);
         Ok(())
@@ -293,6 +339,37 @@ impl PlatformVm {
     /// The state as of the last accepted block.
     pub fn state(&self) -> State {
         self.inner.lock().unwrap().state.clone()
+    }
+
+    /// Who validated `chain` at `height`, keyed by node.
+    ///
+    /// This is what a node needs to check a signature made in the past: the
+    /// answer is the set now with every recorded change since `height` undone.
+    /// A height this chain has not accepted is refused rather than
+    /// extrapolated — Go's `makeValidatorSet` refuses it too, with
+    /// `errUnfinalizedHeight`.
+    pub fn validator_set_at(
+        &self,
+        chain: &Id,
+        height: u64,
+    ) -> Result<std::collections::BTreeMap<crate::ids::NodeId, validators::Validator>, Error> {
+        let inner = self.inner.lock().unwrap();
+        let mut set = validators::current_set(&inner.state, chain)
+            .map_err(|e| Error::Invalid(e.to_string()))?;
+        inner
+            .history
+            .rewind(&mut set, chain, inner.last_accepted_height, height)
+            .map_err(|e| Error::BadRequest(e.to_string()))?;
+        Ok(set)
+    }
+
+    /// The set validating `chain` as of the last accepted block.
+    pub fn validator_set(
+        &self,
+        chain: &Id,
+    ) -> Result<std::collections::BTreeMap<crate::ids::NodeId, validators::Validator>, Error> {
+        let inner = self.inner.lock().unwrap();
+        validators::current_set(&inner.state, chain).map_err(|e| Error::Invalid(e.to_string()))
     }
 }
 
@@ -373,10 +450,15 @@ impl Inner {
     }
 
     fn wrap(&self, blk: block::Block) -> PChainBlock {
+        let id = blk.id();
         let state_root = self
             .verified
-            .get(&blk.id())
+            .get(&id)
             .map(|v| v.state_root)
+            // A block that was accepted before this process started is not in
+            // the verified set, and its root is the one that was written down
+            // when it was accepted.
+            .or_else(|| self.accepted_roots.get(&id).copied())
             .unwrap_or(EMPTY);
         PChainBlock {
             payload_root: payload_root_of(&blk),
@@ -530,6 +612,7 @@ impl Vm for PlatformVm {
             }
 
             block::Kind::Proposal => {
+                inner.verify_warp(&blk)?;
                 let mut state = inner
                     .parent_state(&parent)
                     .ok_or_else(|| Error::Invalid("parent has not been verified".into()))?;
@@ -563,6 +646,7 @@ impl Vm for PlatformVm {
             }
 
             block::Kind::Standard => {
+                inner.verify_warp(&blk)?;
                 let mut state = inner
                     .parent_state(&parent)
                     .ok_or_else(|| Error::Invalid("parent has not been verified".into()))?;
@@ -575,7 +659,13 @@ impl Vm for PlatformVm {
                     .map_err(|e| Error::Invalid(e.to_string()))?;
 
                 for tx in blk.decision_txs() {
-                    executor::execute_standard(&mut state, tx, &inner.config, inner.fees.as_ref())
+                    executor::execute_standard(
+                        &mut state,
+                        tx,
+                        &inner.config,
+                        inner.fees.as_ref(),
+                        inner.atomic.as_ref(),
+                    )
                         .map_err(|e| Error::Invalid(e.to_string()))?;
                 }
 
@@ -602,13 +692,48 @@ impl Vm for PlatformVm {
     fn accept(&self, id: &Id) -> Result<(), Error> {
         let mut inner = self.inner.lock().unwrap();
         let v = inner.verified.get(id).cloned().ok_or(Error::NotFound)?;
+        // What is about to be replaced. The difference between these and what
+        // follows is both what the validator-set record holds and what is
+        // written to the store, so it is taken once.
+        let was = inner.state.clone();
+        let history_was = inner.history.clone();
         if v.on_abort.is_none() {
+            // Record what this height did to the validator sets BEFORE the new
+            // state replaces the old one, because the record is the difference
+            // between the two and one of them is about to be gone.
+            //
+            // A proposal block leaves two states behind and commits neither;
+            // its height changes nothing, and the option block that follows is
+            // the height that does.
+            let changed = validators::changes(&inner.state, &v.on_commit)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+            inner
+                .history
+                .record(v.block.height(), &changed)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
             inner.state = v.on_commit;
         }
         inner.last_accepted = *id;
         inner.last_accepted_height = v.block.height();
         inner.accepted_by_height.insert(v.block.height(), *id);
+        inner.accepted_roots.insert(*id, v.state_root);
         inner.preference = *id;
+
+        // Written down as one thing, so a machine that stops here comes back
+        // at this height or at the one before it, and never between them.
+        if let Some(mut store) = inner.store.take() {
+            let written = persist::flush(
+                store.as_mut(),
+                &was,
+                &inner.state,
+                &history_was,
+                &inner.history,
+                &[(*id, v.block.height(), v.block.clone(), v.state_root)],
+                (*id, v.block.height()),
+            );
+            inner.store = Some(store);
+            written.map_err(|e| Error::Invalid(e.to_string()))?;
+        }
 
         // Every sibling of the accepted block is now unreachable.
         let parent = v.block.parent();
@@ -678,19 +803,31 @@ impl Vm for PlatformVm {
             }
             "platform.getCurrentValidators" => {
                 let chain = chain_param(params)?;
-                let validators: Vec<serde_json::Value> = inner
-                    .state
-                    .validator_set(&chain)
-                    .into_iter()
-                    .map(|(node, weight, key)| {
-                        serde_json::json!({
-                            "nodeID": hex(&node.0),
-                            "weight": weight,
-                            "publicKey": key.map(|k| hex(&k)),
-                        })
-                    })
-                    .collect();
-                Ok(serde_json::json!({ "validators": validators }))
+                let set = validators::current_set(&inner.state, &chain)
+                    .map_err(|e| Error::Invalid(e.to_string()))?;
+                Ok(serde_json::json!({ "validators": as_json(&set) }))
+            }
+            // Who validated then, so a signature made then can be checked now.
+            "platform.getValidatorsAt" => {
+                let chain = chain_param(params)?;
+                let height = params
+                    .get("height")
+                    .and_then(|h| h.as_u64())
+                    .ok_or_else(|| Error::BadRequest("height must be a number".into()))?;
+                let mut set = validators::current_set(&inner.state, &chain)
+                    .map_err(|e| Error::Invalid(e.to_string()))?;
+                inner
+                    .history
+                    .rewind(&mut set, &chain, inner.last_accepted_height, height)
+                    .map_err(|e| Error::BadRequest(e.to_string()))?;
+                Ok(serde_json::json!({
+                    "height": height,
+                    "validators": as_json(&set),
+                    // The commitment the set at that height is named by, so a
+                    // caller can check it against what a certificate claimed
+                    // rather than comparing lists by eye.
+                    "setRoot": hex(&validators::set_root(&set)),
+                }))
             }
             other => Err(Error::NoMethod(other.to_string())),
         }
@@ -698,6 +835,49 @@ impl Vm for PlatformVm {
 }
 
 impl Inner {
+    /// Check the aggregate proof on every warp message a block carries.
+    ///
+    /// This is the only thing binding a message to the chain it claims to come
+    /// from. The source chain and the sender's address are read out of the
+    /// message itself, so anyone can write any pair there; what they cannot
+    /// write is a quorum of that chain's validators over the bytes. Without
+    /// this, `verify_l1_conversion` would be checking a claim against itself
+    /// and anybody could re-weight or de-register any L1's validators.
+    ///
+    /// The set that signed has to be the set as it stood when the message was
+    /// made, which is the set at the height this block is verified against —
+    /// the last accepted one. Go arranges the same thing: it runs this as its
+    /// own pass, over the block's decision transactions and, on a proposal
+    /// block, the transaction the chain emitted about itself, at the P-chain
+    /// height carried in the block's context.
+    ///
+    /// Every transaction means every transaction: a warp message is an
+    /// assertion about another chain no matter who put it in the block, so
+    /// which of the two sets it arrived in cannot decide whether its signature
+    /// is checked.
+    fn verify_warp(&self, blk: &block::Block) -> Result<(), Error> {
+        let carried = blk
+            .decision_txs()
+            .iter()
+            .chain(blk.proposal_tx())
+            .map(|tx| &tx.unsigned);
+        for unsigned in carried {
+            let Some(raw) = warp_message_of(unsigned) else {
+                continue;
+            };
+            let message = crate::warp::Message::parse(raw)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+            let source = message.unsigned.source_chain_id;
+            let set = validators::current_set(&self.state, &source)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+            let canonical =
+                validators::canonical(&set).map_err(|e| Error::Invalid(e.to_string()))?;
+            executor::verify_warp_messages(unsigned, self.config.network_id, &canonical)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+        }
+        Ok(())
+    }
+
     fn height_of(&self, id: &Id) -> Result<u64, Error> {
         self.blocks
             .get(id)
@@ -722,6 +902,36 @@ fn chain_param(params: &serde_json::Value) -> Result<Id, Error> {
     let mut id = [0u8; 32];
     id.copy_from_slice(&bytes);
     Ok(id)
+}
+
+/// The warp message a transaction carries, if it carries one. Named here so a
+/// kind that starts carrying one has to be added in exactly one place — the
+/// executor's own reader is the other half of the same question.
+fn warp_message_of(unsigned: &Unsigned) -> Option<&[u8]> {
+    match unsigned {
+        Unsigned::RegisterL1Validator { message, .. }
+        | Unsigned::SetL1ValidatorWeight { message, .. } => Some(message),
+        _ => None,
+    }
+}
+
+/// A set as the RPC hands it back. The key is the uncompressed one the set
+/// commitment hashes, because that is the key a caller has to check a
+/// signature against; handing back the compressed form would be handing back
+/// something no aggregate verifies under.
+fn as_json(
+    set: &std::collections::BTreeMap<crate::ids::NodeId, validators::Validator>,
+) -> Vec<serde_json::Value> {
+    set.values()
+        .map(|v| {
+            serde_json::json!({
+                "nodeID": hex(&v.node_id.0),
+                "weight": v.weight,
+                "publicKey": v.public_key.as_deref().map(hex),
+                "txID": hex(&v.tx_id),
+            })
+        })
+        .collect()
 }
 
 fn hex(bytes: &[u8]) -> String {
@@ -750,6 +960,7 @@ mod tests {
     use crate::ids::{NodeId, ShortId};
     use crate::reward;
     use crate::signer::Signer;
+    use crate::store::Store;
     use crate::txs::{Envelope, Validator};
 
     const ASSET: Id = [9u8; 32];
@@ -759,7 +970,15 @@ mod tests {
 
     fn config() -> Config {
         Config {
+            network_id: 1,
+            blockchain_id: [3; 32],
             native_asset: ASSET,
+            validator_fee: crate::l1::FeeConfig {
+                capacity: 20_000,
+                target: 10_000,
+                min_price: 512,
+                excess_conversion_constant: 1_246_488,
+            },
             staking: StakingPolicy {
                 min_validator_stake: 2 * MEGA,
                 max_validator_stake: 3_000 * MEGA,
@@ -847,6 +1066,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             genesis(now),
         )
     }
@@ -957,6 +1177,486 @@ mod tests {
         assert_eq!(vm.block_id_at(1).unwrap(), blk.id());
     }
 
+    /// The bytes a network is published as, holding exactly the one output
+    /// `a_validator_tx` spends. Enough for a chain to be born from and then to
+    /// change.
+    fn a_published_network(now: u64) -> Vec<u8> {
+        use crate::genesis::{Allocation, Genesis};
+        Genesis {
+            utxos: vec![Allocation {
+                utxo: Utxo {
+                    id: UtxoId {
+                        tx_id: [1; 32],
+                        output_index: 0,
+                    },
+                    output: Output {
+                        asset: ASSET,
+                        stake_lock: 0,
+                        amount: 10 * MEGA,
+                        owners: spend_owner(),
+                    },
+                },
+                message: Vec::new(),
+            }],
+            validators: Vec::new(),
+            chains: Vec::new(),
+            timestamp: now,
+            initial_supply: 400 * 1_000_000 * 1_000_000,
+            message: "a network".to_string(),
+        }
+        .to_bytes()
+    }
+
+    #[test]
+    fn a_chain_comes_back_as_the_chain_it_was() {
+        // The whole reason the state is written down. A node that restarts and
+        // remembers nothing has to be TOLD what it decided by the peers whose
+        // claims it exists to check.
+        let now = 1000;
+        let path = {
+            let mut p = std::env::temp_dir();
+            p.push(format!("lux-pvm-restart-{}", std::process::id()));
+            let _ = std::fs::remove_file(&p);
+            p
+        };
+        let published = a_published_network(now);
+
+        let (tip, height, root, set_at_zero) = {
+            let vm = PlatformVm::open(
+                config(),
+                Box::new(FlatFees::default()),
+                Box::new(AlwaysUp),
+                Box::new(executor::NoImports),
+                &published,
+                Box::new(store::File::open(&path).unwrap()),
+            )
+            .expect("a chain writes its own birth");
+            vm.set_clock(now);
+            vm.submit(a_validator_tx(now)).unwrap();
+            let blk = vm.build().unwrap();
+            vm.verify(&blk.id()).unwrap();
+            vm.accept(&blk.id()).unwrap();
+            (
+                vm.last_accepted(),
+                blk.height(),
+                vm.get(&blk.id()).unwrap().state_root(),
+                vm.validator_set_at(&PRIMARY_NETWORK_ID, 0).unwrap(),
+            )
+        };
+
+        let back = PlatformVm::open(
+            config(),
+            Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
+            &published,
+            Box::new(store::File::open(&path).unwrap()),
+        )
+        .expect("what was written is a chain");
+
+        assert_eq!(back.last_accepted(), tip, "the same tip");
+        assert_eq!(back.block_id_at(height), Ok(tip));
+        assert_eq!(back.block_id_at(0), Ok(back.get(&tip).unwrap().parent()));
+        // The same state, checked by the digest a certificate is over rather
+        // than by a list of fields somebody remembered.
+        assert_eq!(back.get(&tip).unwrap().state_root(), root);
+        // The set now, and the set at a height decided before the restart.
+        assert_eq!(
+            back.validator_set(&PRIMARY_NETWORK_ID).unwrap()[&NodeId([5; 20])].weight,
+            10 * MEGA
+        );
+        assert_eq!(back.validator_set_at(&PRIMARY_NETWORK_ID, 0).unwrap(), set_at_zero);
+        assert!(set_at_zero.is_empty());
+
+        // And it goes on from there rather than starting again.
+        assert!(matches!(
+            back.validator_set_at(&PRIMARY_NETWORK_ID, height + 1),
+            Err(Error::BadRequest(_))
+        ));
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn a_chain_given_nowhere_to_write_still_runs() {
+        // A memory store has no durability to offer and does not claim any.
+        let now = 1000;
+        let published = a_published_network(now);
+        let vm = PlatformVm::open(
+            config(),
+            Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
+            &published,
+            Box::new(store::Memory::new()),
+        )
+        .unwrap();
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+        vm.accept(&blk.id()).unwrap();
+        assert_eq!(vm.validator_set(&PRIMARY_NETWORK_ID).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn a_stored_tip_naming_a_block_that_is_not_there_does_not_start_a_chain() {
+        let mut s = store::Memory::new();
+        let mut tip = [7u8; 32].to_vec();
+        tip.extend_from_slice(&3u64.to_le_bytes());
+        s.put(b"P", &tip);
+        s.commit().unwrap();
+        assert!(matches!(
+            PlatformVm::open(
+                config(),
+                Box::new(FlatFees::default()),
+                Box::new(AlwaysUp),
+                Box::new(executor::NoImports),
+                &a_published_network(1000),
+                Box::new(s),
+            ),
+            Err(Error::Malformed(_))
+        ));
+    }
+
+    /// A block carrying one warp-bearing transaction, built by hand so the
+    /// message can be anything.
+    fn a_block_carrying(vm: &PlatformVm, message: Vec<u8>) -> block::Block {
+        let sk = blst::min_pk::SecretKey::key_gen(&[3u8; 32], &[]).unwrap();
+        let proof = match Signer::prove(&sk) {
+            Signer::ProofOfPossession { proof, .. } => proof,
+            Signer::Empty => unreachable!("a proven signer carries a proof"),
+        };
+        let unsigned = Unsigned::RegisterL1Validator {
+            base: Envelope {
+                network_id: 1,
+                blockchain_id: [3; 32],
+                outs: Vec::new(),
+                ins: Vec::new(),
+                memo: Vec::new(),
+            },
+            balance: 0,
+            proof_of_possession: proof,
+            message,
+        };
+        let tx = Tx::new(unsigned, Vec::new());
+        block::Block::standard(vm.last_accepted(), 1, 1000, vec![tx])
+    }
+
+    /// The chain a warp message in these tests claims to come from.
+    const SOURCE: Id = [0x5cu8; 32];
+
+    /// A chain whose state already holds two validators of [`SOURCE`], each
+    /// with a real BLS key. That set is what a warp proof from there is
+    /// measured against.
+    fn vm_with_a_source_set(now: u64) -> (PlatformVm, Vec<blst::min_pk::SecretKey>) {
+        let keys: Vec<blst::min_pk::SecretKey> = [11u8, 12]
+            .iter()
+            .map(|seed| blst::min_pk::SecretKey::key_gen(&[*seed; 32], &[]).unwrap())
+            .collect();
+        let mut state = genesis(now);
+        for (i, sk) in keys.iter().enumerate() {
+            state
+                .put_l1_validator(crate::l1::Validator {
+                    validation_id: [(0x40 + i) as u8; 32],
+                    chain_id: SOURCE,
+                    node_id: NodeId([(0x50 + i) as u8; 20]),
+                    public_key: crate::signer::uncompress(&sk.sk_to_pk().compress()).unwrap(),
+                    remaining_balance_owner: Vec::new(),
+                    deactivation_owner: Vec::new(),
+                    start_time: now,
+                    weight: 100,
+                    min_nonce: 0,
+                    end_accumulated_fee: 1_000_000,
+                })
+                .unwrap();
+        }
+        (
+            PlatformVm::new(
+                config(),
+                Box::new(FlatFees::default()),
+                Box::new(AlwaysUp),
+                Box::new(executor::NoImports),
+                state,
+            ),
+            keys,
+        )
+    }
+
+    /// A warp envelope from [`SOURCE`], signed by whichever of the source set's
+    /// validators `signing` names, in the canonical order the bit vector
+    /// indexes — ascending by uncompressed key, which is the order
+    /// `warp::flatten` puts them in.
+    fn a_message_from_the_source(
+        vm: &PlatformVm,
+        keys: &[blst::min_pk::SecretKey],
+        signing: &[usize],
+    ) -> Vec<u8> {
+        // A registration naming the same key `a_block_carrying` proves
+        // possession of, so the transaction is coherent all the way down and
+        // the only thing left to refuse it is the ledger.
+        let registering = blst::min_pk::SecretKey::key_gen(&[3u8; 32], &[]).unwrap();
+        let owner = crate::txs::PChainOwner {
+            threshold: 1,
+            addresses: vec![ShortId([6; 20])],
+        };
+        let payload = crate::warpmsg::Register::build(
+            [0x77; 32],
+            &NodeId([9; 20]),
+            &registering.sk_to_pk().compress(),
+            2000,
+            &owner,
+            &owner,
+            42,
+        )
+        .bytes;
+        let call = crate::warpmsg::Call::build(&[0x5au8; 20], &payload);
+        let unsigned = crate::warp::Unsigned::build(1, SOURCE, &call.bytes);
+
+        // The canonical order, taken from the chain's own flattening rather
+        // than assumed — the bit vector indexes THAT order, and guessing it
+        // would make this test agree with itself instead of with the chain.
+        let set = validators::current_set(&vm.state(), &SOURCE).unwrap();
+        let canonical = validators::canonical(&set).unwrap();
+        let position = |sk: &blst::min_pk::SecretKey| {
+            let compressed = sk.sk_to_pk().compress();
+            canonical
+                .validators
+                .iter()
+                .position(|v| v.public_key == compressed)
+                .expect("the key is in the source set")
+        };
+
+        let mut bits = vec![0u8; canonical.validators.len().div_ceil(8).max(1)];
+        let mut sigs = Vec::new();
+        for i in signing {
+            let at = position(&keys[*i]);
+            let byte = bits.len() - 1 - at / 8;
+            bits[byte] |= 1 << (at % 8);
+            sigs.push(crate::signer::sign(&keys[*i], &unsigned.bytes));
+        }
+        // Go refuses a bit vector with unnecessary leading zero bytes.
+        while bits.first() == Some(&0) {
+            bits.remove(0);
+        }
+        let signature = if sigs.is_empty() {
+            [0u8; crate::signer::SIGNATURE_LEN]
+        } else {
+            crate::signer::aggregate_signatures(&sigs).unwrap()
+        };
+
+        crate::warp::Message::build(
+            &unsigned,
+            &crate::warp::BitSet {
+                signers: bits,
+                signature,
+            },
+        )
+        .bytes
+    }
+
+    #[test]
+    fn a_warp_message_too_few_of_the_source_set_signed_is_refused() {
+        // The quorum rule itself, against a real set: one of two equal
+        // validators is half the weight, and the bar is 67%.
+        let now = 1000;
+        let (vm, keys) = vm_with_a_source_set(now);
+        vm.set_clock(now);
+
+        let raw = a_message_from_the_source(&vm, &keys, &[0]);
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        let refused = vm.verify(&parsed.id()).expect_err("half is not a quorum");
+        assert!(
+            format!("{refused}").contains("weight"),
+            "refused for the wrong reason: {refused}"
+        );
+    }
+
+    #[test]
+    fn a_warp_message_the_source_set_really_signed_gets_through_the_check() {
+        // The other half: the door opens for a real quorum. What stops the
+        // transaction after that is the ledger — this chain holds no
+        // registration by that name — which is the point: the proof was
+        // accepted and execution was reached.
+        let now = 1000;
+        let (vm, keys) = vm_with_a_source_set(now);
+        vm.set_clock(now);
+
+        let raw = a_message_from_the_source(&vm, &keys, &[0, 1]);
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        let refused = vm.verify(&parsed.id()).expect_err("no such registration here");
+        let said = format!("{refused}");
+        assert!(
+            !said.contains("weight") && !said.contains("signature") && !said.contains("warp"),
+            "the proof should have been accepted, but: {said}"
+        );
+    }
+
+    #[test]
+    fn a_warp_message_signed_over_other_bytes_is_refused() {
+        // An aggregate lifted off one message onto another. The signature is
+        // real and the signers are the whole set; it just is not over these
+        // bytes.
+        let now = 1000;
+        let (vm, keys) = vm_with_a_source_set(now);
+        vm.set_clock(now);
+
+        let mut raw = a_message_from_the_source(&vm, &keys, &[0, 1]);
+        // Move the message's payload without touching the proof: the last byte
+        // of the buffer is inside the addressed call.
+        let last = raw.len() - 1;
+        raw[last] ^= 0xff;
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        assert!(
+            vm.verify(&parsed.id()).is_err(),
+            "a proof over other bytes proves nothing about these"
+        );
+    }
+
+    #[test]
+    fn a_warp_message_no_quorum_signed_does_not_reach_execution() {
+        // The only thing binding a warp message to the chain it claims to come
+        // from. The source chain and the sender's address are written INSIDE
+        // the message, so anyone can put any pair there; what nobody can write
+        // is a quorum of that chain's validators over the bytes. Without this
+        // check the conversion check would be comparing a claim with itself,
+        // and anyone could re-weight or de-register any L1's validators.
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+
+        let payload = crate::warpmsg::Weight::build([7; 32], 0, 99).bytes;
+        let call = crate::warpmsg::Call::build(&[0x5au8; 20], &payload);
+        let unsigned = crate::warp::Unsigned::build(1, [0x5cu8; 32], &call.bytes);
+        let nobody = crate::warp::BitSet {
+            signers: Vec::new(),
+            signature: [0u8; crate::signer::SIGNATURE_LEN],
+        };
+        let raw = crate::warp::Message::build(&unsigned, &nobody).bytes;
+
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        let refused = vm.verify(&parsed.id()).expect_err("nobody signed it");
+        // Named, so this cannot pass because the block was refused for some
+        // other reason it happens to also deserve.
+        // With a source chain this node knows nothing about, the set is empty
+        // and the weight rule passes vacuously — 0 of 0 — so the refusal lands
+        // on the aggregate, which cannot be built from no keys. That is Go's
+        // shape too: `VerifyWeight(0, 0)` returns nil there and
+        // `AggregatePublicKeys` of nothing is the error. Either way the
+        // message never reaches execution, which is the claim.
+        assert!(
+            format!("{refused}").contains("warp"),
+            "refused for the wrong reason: {refused}"
+        );
+    }
+
+    #[test]
+    fn a_warp_message_addressed_to_another_network_is_refused() {
+        // The network id is inside the signed bytes, so a message made for the
+        // test network cannot be replayed here even if its signers overlap.
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+
+        let payload = crate::warpmsg::Weight::build([7; 32], 0, 99).bytes;
+        let call = crate::warpmsg::Call::build(&[0x5au8; 20], &payload);
+        let elsewhere = crate::warp::Unsigned::build(2, [0x5cu8; 32], &call.bytes);
+        let nobody = crate::warp::BitSet {
+            signers: Vec::new(),
+            signature: [0u8; crate::signer::SIGNATURE_LEN],
+        };
+        let raw = crate::warp::Message::build(&elsewhere, &nobody).bytes;
+
+        let blk = a_block_carrying(&vm, raw);
+        let parsed = vm.parse(blk.bytes()).expect("the block reads back");
+        let refused = vm.verify(&parsed.id()).expect_err("it is for another network");
+        assert!(
+            format!("{refused}").contains("network"),
+            "refused for the wrong reason: {refused}"
+        );
+    }
+
+    #[test]
+    fn a_block_carrying_no_warp_message_is_not_held_up_by_the_check() {
+        // The check is over the messages a block carries, and a block that
+        // carries none passes it without an opinion.
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        assert_eq!(vm.verify(&blk.id()), Ok(()));
+    }
+
+    #[test]
+    fn a_past_height_still_names_the_set_that_validated_then() {
+        // The point of the record. A chain that has admitted a validator must
+        // still be able to say who was in the set BEFORE it did, or a
+        // signature made then can never be checked.
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+
+        assert!(vm.validator_set(&PRIMARY_NETWORK_ID).unwrap().is_empty());
+
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+        vm.accept(&blk.id()).unwrap();
+
+        let now_set = vm.validator_set_at(&PRIMARY_NETWORK_ID, 1).unwrap();
+        assert_eq!(now_set.len(), 1);
+        let held = &now_set[&NodeId([5; 20])];
+        assert_eq!(held.weight, 10 * MEGA);
+        // The uncompressed key — the one the set commitment hashes.
+        assert_eq!(held.public_key.as_ref().map(|k| k.len()), Some(96));
+
+        // And at the height before it, nobody.
+        assert!(vm.validator_set_at(&PRIMARY_NETWORK_ID, 0).unwrap().is_empty());
+
+        // A height this chain has not reached has no set, rather than the
+        // current one under a false name.
+        assert!(matches!(
+            vm.validator_set_at(&PRIMARY_NETWORK_ID, 2),
+            Err(Error::BadRequest(_))
+        ));
+    }
+
+    #[test]
+    fn the_set_at_a_height_is_answered_over_the_wire_with_its_root() {
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+        vm.accept(&blk.id()).unwrap();
+
+        let at_one = vm
+            .call(
+                "platform.getValidatorsAt",
+                &serde_json::json!({ "height": 1 }),
+            )
+            .unwrap();
+        assert_eq!(at_one["validators"].as_array().unwrap().len(), 1);
+
+        let at_zero = vm
+            .call(
+                "platform.getValidatorsAt",
+                &serde_json::json!({ "height": 0 }),
+            )
+            .unwrap();
+        assert!(at_zero["validators"].as_array().unwrap().is_empty());
+        // An empty set commits to the zero id rather than to sha256("").
+        assert_eq!(at_zero["setRoot"], hex(&crate::ids::EMPTY));
+
+        // The root is over the set, so the two heights do not share one.
+        assert_ne!(at_one["setRoot"], at_zero["setRoot"]);
+    }
+
     #[test]
     fn verifying_twice_is_the_same_as_verifying_once() {
         // The engine calls verify more than once for one block.
@@ -1017,6 +1717,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             genesis(now),
         )
     }
@@ -1201,6 +1902,25 @@ mod tests {
     }
 
     #[test]
+    fn the_seam_is_the_hosts_own_declaration() {
+        // Named through its full path rather than through this module's
+        // re-export, so a restated trait of the same shape would not satisfy
+        // it. This is what "the node registers this chain" means: the host's
+        // map holds `Box<dyn lux_node::vm::Vm>`, and only the host's trait
+        // coerces into it.
+        let held: Box<dyn lux_node::vm::Vm> = Box::new(vm(1000));
+        assert_eq!(held.name(), "P");
+
+        let block: Box<dyn lux_node::vm::Block> = held.get(&held.last_accepted()).unwrap();
+        assert_eq!(block.height(), 0);
+
+        // And the id is one type, not two that happen to be the same bytes.
+        let _: lux_node::vm::Id = block.id();
+        let _: lux_consensus::finality::Id = block.id();
+        let _: crate::ids::Id = block.id();
+    }
+
+    #[test]
     fn a_status_is_the_number_the_wire_carries() {
         assert_eq!(Status::Unknown as u8, 0);
         assert_eq!(Status::Processing as u8, 1);
@@ -1283,6 +2003,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             &bytes,
         )
         .expect("the bytes are a genesis");
@@ -1293,6 +2014,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             &bytes,
         )
         .expect("the bytes are a genesis");
@@ -1326,6 +2048,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             b"not a genesis"
         )
         .is_err());
@@ -1338,6 +2061,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             uptime,
+            Box::new(executor::NoImports),
             genesis(now),
         )
     }
@@ -1459,6 +2183,7 @@ mod tests {
             governed,
             Box::new(FlatFees::default()),
             Box::new(Reachable(0.85)),
+            Box::new(executor::NoImports),
             genesis(now),
         );
         let answer = answer_to_the_reward(&vm, bonded_at);
