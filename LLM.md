@@ -274,7 +274,7 @@ three that were not on anyone's list, the sharpest being that a transaction
 addressed to another network passed the Rust P-chain's syntactic check.
 
 All thirteen are closed. The three chains and the corpus now agree on every
-compared field of all 53 vectors, and no field goes uncompared. `make chains`
+compared field of all 208 vectors, and no field goes uncompared. `make chains`
 exits zero, and it is the only thing that says so — the ports' own suites pass
 either way, which is how a fork lived here for as long as it did.
 
@@ -289,3 +289,42 @@ Nothing that ships imports either one and `make luxd`'s grep is scoped to the
 runtime it builds, so no artifact carries the dependency — but the module is
 not clean by inspection, and the honest fix is to give them their own module
 the way `conformance/gen` has one.
+
+## The chain benchmark (`make bench`)
+
+Three implementations of the same node and nothing comparing their speed: Go
+carries 48 benchmark functions in `luxfi/node`, the Rust chains have no
+`benches/` at all, and the C++ chains have none of their own. Any claim that one
+is faster than another was unsupported.
+
+The differential already hands all three the same 208 vectors and makes each one
+parse and verify them, which is a fair identical workload. `make bench` times
+it. Every evaluator takes an optional repeat count after the corpus path, walks
+the whole corpus that many times, and prints its own elapsed time to stderr as
+`B <impl> <vectors> <repeats> <seconds>`. `conformance/bench` runs them and
+prints the table. Without a count nothing changes and `make chains` is untouched.
+
+Three things about it are load-bearing:
+
+**Each evaluator times itself.** Timing the child from outside would measure
+five process starts, five corpus reads and five output writes as if they were
+chain work. Measured: Go spends 43.6 ms on all of that, four times the C++
+X-chain evaluator's entire process and more than the C++ P-chain's, so a
+process-level benchmark would have reported it as Go being slow at the chain.
+The clock starts after the corpus is read and stops before the first verdict is
+printed.
+
+**The verdicts are kept, not dropped.** Each round writes into a vector that is
+printed afterwards, in all three languages, so no round can be optimised away —
+and the printed rows are byte-identical whether the count is 1 or 200.
+
+**A single timing is not a measurement.** The evaluators are run five times, the
+runs interleaved, and the table carries the fastest, the median, the slowest and
+the spread. `µs/vector` comes from the fastest run: everything else on the
+machine can add time to a run and nothing can subtract it, so the fastest is the
+least contaminated and the spread says how contaminated the rest were.
+
+What it says, and the honest caveats, are in `conformance/README.md` under
+**Timing it** — the sharpest being that `chains/cpp/xvm` answers `SKIPPED` for
+`exec` and is therefore the fastest thing in the table because it is the only
+one that stops after the syntactic pass.
