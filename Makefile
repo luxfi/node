@@ -23,14 +23,16 @@ CONSENSUS_GO   := $(HOME)/work/lux/consensus
 CONSENSUS_RUST := $(HOME)/work/lux/consensus/pkg/rust
 CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
 
-.PHONY: all luxd gpu conformance conformance-go conformance-rust conformance-cpp \
-        luxd-go luxd-rust luxd-cpp clean help
+.PHONY: chains-build all luxd gpu conformance conformance-go conformance-rust conformance-cpp \
+        chains chains-corpus luxd-go luxd-rust luxd-cpp clean help
 
 help:
 	@echo "make luxd RUNTIME=go|rust|cpp   build one runtime into bin/luxd-<runtime>"
 	@echo "make all                        build all three + gpu, report pass/fail"
 	@echo "make gpu                        build the GPU kernel library"
 	@echo "make conformance                run the pop/verdict corpus, all 3 languages"
+	@echo "make chains                     run the P/X chain differential, all 3 languages"
+	@echo "make chains-corpus              regenerate the corpus from the Go reference"
 	@echo "make clean                      remove bin/"
 
 # ---- make luxd RUNTIME=go|rust|cpp -----------------------------------------
@@ -160,6 +162,57 @@ conformance-cpp:
 	else \
 		echo "skipped: $(CONSENSUS_CPP)/build is not configured"; \
 	fi
+
+# ---- make chains: the cross-language chain differential ----------------------
+#
+# ONE corpus, generated from the Go P-chain and X-chain, handed to three
+# implementations of each chain. Every field two of them answer differently
+# fails the target and names the pair. See conformance/README.md.
+#
+# The generator is a separate Go module because it — and only it — depends on
+# luxfi/node. That dependency is the whole point of a reference, and keeping it
+# in its own module is what keeps it out of this one's graph.
+
+CONF        := $(ROOT)/conformance
+CONF_GEN    := $(CONF)/gen/gen
+CONF_VECS   := $(CONF)/corpus/vectors.tsv
+CONF_WANT   := $(CONF)/corpus/expected.tsv
+PVM_RUST    := $(ROOT)/chains/rust/platformvm/target/release/conformance
+XVM_RUST    := $(ROOT)/chains/rust/xvm/target/release/conformance
+PVM_CPP     := $(ROOT)/chains/cpp/platformvm/build/pvm_conformance
+XVM_CPP     := $(ROOT)/chains/cpp/xvm/build/xvm_conformance
+
+chains: chains-build
+	@echo
+	cd $(ROOT) && GOWORK=off go run ./conformance/runner \
+		-vectors $(CONF_VECS) \
+		-expected $(CONF_WANT) \
+		-eval "go=$(CONF_GEN) eval" \
+		-eval "rust=$(PVM_RUST)" \
+		-eval "rust=$(XVM_RUST)" \
+		-eval "cpp=$(PVM_CPP)" \
+		-eval "cpp=$(XVM_CPP)"
+
+# Every evaluator is built before the run, and a build that fails stops the
+# target. A differential that quietly lost one of its voices would report
+# agreement among whoever was left.
+chains-build:
+	@echo "==> chain differential: building four evaluators"
+	cd $(CONF)/gen && GOWORK=off go build -o gen .
+	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(ROOT)/chains/cpp/platformvm/build --target pvm_conformance -j$(NPROC)
+	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(ROOT)/chains/cpp/xvm/build --target xvm_conformance -j$(NPROC)
+	@for f in $(CONF_GEN) $(PVM_RUST) $(XVM_RUST) $(PVM_CPP) $(XVM_CPP); do \
+		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
+	done
+
+# Rebuild the corpus from the Go reference. Its output is committed, so a
+# corpus that moves shows up as a diff rather than as a silent new normal.
+chains-corpus:
+	cd $(CONF)/gen && GOWORK=off go run . emit ../corpus
 
 # ---- clean -------------------------------------------------------------------
 
