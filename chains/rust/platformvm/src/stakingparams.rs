@@ -980,6 +980,91 @@ mod tests {
         assert_eq!(before, after);
     }
 
+    /// Go's `config.TestGovernedAdmissionThresholdsAreLive`.
+    ///
+    /// The other direction from [`a_history_binds_only_the_future`]: a vote
+    /// that OPENS the network is visible to admission the instant it
+    /// activates, with nothing grandfathered. `uptime_requirement` is the one
+    /// governed field read at reward time, so it is the only one that must
+    /// look backwards; every other field is read when someone joins, and a
+    /// joiner is choosing to accept the rules in force now.
+    #[test]
+    fn an_admission_threshold_is_live_the_moment_it_activates() {
+        const OPENED_AT: i64 = 1_785_000_000;
+
+        let opened = Params {
+            min_validator_stake: 100 * LUX, // 2,000 LUX -> 100 LUX
+            ..MAINNET_GENESIS
+        };
+
+        // The proposal must itself be admissible under the constitution —
+        // opening up is free, but it still has to land inside the envelope.
+        assert_eq!(
+            accept(
+                &MAINNET_GENESIS,
+                &opened,
+                &MAINNET_BOUNDS,
+                &MAINNET_RATE,
+                MAINNET_RATE.min_interval,
+            ),
+            Ok(())
+        );
+
+        let h = History(vec![
+            Entry {
+                activation: 0,
+                params: MAINNET_GENESIS,
+            },
+            Entry {
+                activation: OPENED_AT,
+                params: opened,
+            },
+        ]);
+        assert_eq!(h.valid(), Ok(()));
+        assert_eq!(
+            h.at(OPENED_AT - 1).unwrap().min_validator_stake,
+            2_000 * LUX
+        );
+        assert_eq!(h.at(OPENED_AT).unwrap().min_validator_stake, 100 * LUX);
+    }
+
+    /// Go's `config.TestUngovernedNodeIsUnchanged`, the half that lives here:
+    /// a node carrying no staking history has nothing to resolve, so it must
+    /// fall back to the policy it was compiled with.
+    ///
+    /// The other half — that the fallback really is the compiled policy, at any
+    /// instant — is asserted through the live reward gate in
+    /// [`crate::vm`]'s `an_ungoverned_node_is_judged_on_its_compiled_policy`.
+    #[test]
+    fn an_ungoverned_history_binds_nothing() {
+        let ungoverned = History(vec![]);
+        assert_eq!(ungoverned.valid(), Err(Error::EmptyHistory));
+        for t in [i64::MIN, -1, 0, 1_785_000_000, 1 << 40, i64::MAX] {
+            assert_eq!(
+                ungoverned.at(t),
+                None,
+                "an empty history must govern nothing at {t}"
+            );
+        }
+        assert_eq!(ungoverned.current(), None);
+    }
+
+    /// Go's `config.TestDurationRoundTripDoesNotTruncate`.
+    ///
+    /// Go's config carries `time.Duration` and the governed value carries
+    /// seconds, so it guards the one lossy conversion between them. Here the
+    /// policy carries seconds and there is no conversion at all — so what is
+    /// left to pin is the values themselves, which is the half of Go's
+    /// assertion that says what the numbers are: two weeks and a year.
+    #[test]
+    fn the_terms_are_two_weeks_and_a_year() {
+        assert_eq!(MAINNET_GENESIS.min_stake_duration, 14 * 24 * 60 * 60);
+        assert_eq!(MAINNET_GENESIS.max_stake_duration, 365 * 24 * 60 * 60);
+        // And no vote can extend the term past the minting period, because a
+        // longer bond has no defined emission.
+        assert_eq!(MAINNET_BOUNDS.hi.max_stake_duration, 365 * 24 * 60 * 60);
+    }
+
     /// One unit for the node. The thresholds are stated in LUX and must resolve
     /// through the same constant everything else uses — six decimals.
     #[test]

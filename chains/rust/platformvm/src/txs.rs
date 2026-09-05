@@ -3071,6 +3071,118 @@ mod tests {
         assert_eq!(back.unsigned, tx.unsigned);
     }
 
+    /// Go: `TestRoundTrip_BaseTx_MultisigStakeable`, with its values.
+    ///
+    /// The plain vectors elsewhere in this port all use one address, a
+    /// threshold of one and no lock, so the three fields that make an owner an
+    /// owner — a locktime, a threshold above one, and more addresses than the
+    /// threshold — are never carried anywhere. Nor is a stakeable lock, on
+    /// either side of the spend. Those are the fields a multisig treasury and
+    /// every locked genesis allocation are made of: if the threshold came back
+    /// as one, a single signature would spend what two were required for.
+    #[test]
+    fn a_multisig_stakeable_base_transaction_round_trips() {
+        let asset = [0xAAu8; 32];
+        let (a0, a1, a2) = (ShortId([1; 20]), ShortId([2; 20]), ShortId([3; 20]));
+
+        let base = Envelope {
+            network_id: 96369,
+            blockchain_id: [0xBB; 32],
+            outs: vec![
+                // Threshold 2 of 3, and nobody may spend it before time 7.
+                Output {
+                    asset,
+                    stake_lock: 0,
+                    amount: 1_000_000,
+                    owners: Owners {
+                        locktime: 7,
+                        threshold: 2,
+                        addrs: vec![a0, a1, a2],
+                    },
+                },
+                // A stakeable lock, which is a second envelope rather than a
+                // field — so it is the one that would be lost silently.
+                Output {
+                    asset,
+                    stake_lock: 999,
+                    amount: 42,
+                    owners: Owners {
+                        locktime: 0,
+                        threshold: 1,
+                        addrs: vec![a0],
+                    },
+                },
+            ],
+            ins: vec![Input {
+                utxo: UtxoId {
+                    tx_id: [0xCC; 32],
+                    output_index: 1,
+                },
+                asset,
+                stake_lock: 999,
+                amount: 1_000_042,
+                sig_indices: vec![0, 1],
+            }],
+            memo: b"native-zap".to_vec(),
+        };
+
+        let unsigned = Unsigned::Base(base.clone());
+        let tx = Tx::new(unsigned, Vec::new());
+        let back = Tx::parse(tx.bytes()).expect("it reads back");
+
+        let Unsigned::Base(got) = &back.unsigned else {
+            panic!("a base transaction came back as something else");
+        };
+        assert_eq!(got.network_id, base.network_id);
+        assert_eq!(got.blockchain_id, base.blockchain_id);
+        assert_eq!(got.outs, base.outs, "multisig + stakeable outputs");
+        assert_eq!(got.ins, base.ins, "the stakeable input");
+        assert_eq!(got.memo, base.memo);
+
+        // Field by field, so a failure names what was lost rather than saying
+        // two structs differ.
+        assert_eq!(got.outs[0].owners.locktime, 7);
+        assert_eq!(got.outs[0].owners.threshold, 2);
+        assert_eq!(got.outs[0].owners.addrs, vec![a0, a1, a2]);
+        assert_eq!(got.outs[1].stake_lock, 999);
+        assert_eq!(got.ins[0].stake_lock, 999);
+        assert_eq!(got.ins[0].sig_indices, vec![0, 1]);
+
+        // The unsigned bytes are still a genuine prefix of the signed form.
+        let unsigned_bytes = back.unsigned.to_bytes();
+        assert_eq!(&tx.bytes()[..unsigned_bytes.len()], &unsigned_bytes[..]);
+
+        // The memo rides the wire so old bytes still parse, and is refused on
+        // its way in — carrying one is not a way to change a transaction's id
+        // without changing what it does.
+        assert_eq!(
+            back.syntactic_verify(asset),
+            Err(Error::MemoCarried(b"native-zap".len()))
+        );
+    }
+
+    /// Go: `TestRewardValidatorTxVerifies`.
+    ///
+    /// The reward transaction carries no spending envelope at all — no inputs,
+    /// no outputs, no credential — so it is the one kind whose syntactic check
+    /// has nothing to look at but the staker it names. A builder that produced
+    /// one that failed to verify would stall every stake exit on the chain,
+    /// permanently and across restarts, because the block containing it is
+    /// rebuilt from the same state every time.
+    #[test]
+    fn a_reward_transaction_verifies_on_its_own_terms() {
+        let staker_tx_id: Id = [7; 32];
+        let tx = Tx::new(Unsigned::RewardValidator { staker_tx_id }, Vec::new());
+
+        assert_eq!(tx.syntactic_verify([9; 32]), Ok(()));
+
+        let Unsigned::RewardValidator { staker_tx_id: got } = &tx.unsigned else {
+            panic!("the builder made something other than a reward transaction");
+        };
+        assert_eq!(*got, staker_tx_id);
+        assert_eq!(tx.unsigned.kind(), Kind::RewardValidator);
+    }
+
     #[test]
     fn a_transaction_is_named_by_the_hash_of_the_bytes_that_travel() {
         let tx = Tx::new(Unsigned::Base(envelope()), Vec::new());
