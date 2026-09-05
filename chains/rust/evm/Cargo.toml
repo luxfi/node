@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+
+[package]
+name = "lux-evm-conformance"
+version = "0.1.0"
+edition = "2021"
+description = "The Rust EVM's answers to the precompile corpus"
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node2"
+publish = false
+
+[dependencies]
+# The implementation under test. A path dependency for the same reason the
+# chains reach the node by path: the evaluator has to answer for the code this
+# checkout would run, and a version number between them would be a way for the
+# differential to report on something else.
+lux-evm = { path = "../../../../../lux-rs/evm" }
+
+# The types the seam is stated in — `CallInputs` going in, `InterpreterResult`
+# coming out. Named at the same major version `lux-evm` names, so there is one
+# revm in the graph and the `InterpreterResult` this program reads is the one
+# `lux_evm::Precompiles` produced.
+revm = "36"
+
+[[bin]]
+name = "conformance"
+path = "src/bin/conformance.rs"
