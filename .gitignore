@@ -1,4 +1,9 @@
-bin/
+# The Makefile's artifact directory, at the repo root only. Unanchored, this
+# also matched `chains/rust/*/src/bin/` — which is Rust SOURCE, and where the
+# chain differential's Rust evaluators live. A build rule that silently
+# dropped one of the differential's voices is the failure the differential
+# exists to prevent.
+/bin/
 build/
 /luxd
 *.o
