@@ -3,9 +3,9 @@
 `node2` is a structural shell, not a fourth implementation. It imports the
 three existing Lux node runtimes — Go, Rust, C++ — behind one `Makefile` and
 runs the one conformance corpus that already holds across all three. Nothing
-under `runtime/` or `gpu/` is a copy or a fork; each is a README naming an
-absolute path on this machine and the exact invocation that builds it. Delete
-`node2` and every one of those repos is exactly as it was.
+under `runtime/` is a copy or a fork; each is a README naming an absolute path
+on this machine and the exact invocation that builds it. Delete `node2` and
+every one of those repos is exactly as it was.
 
 One thing under `chains/` is not a README. `chains/rust/xvm` is the X-Chain
 itself, in Rust, ported from `~/work/lux/node/vms/xvm` against the VM seam of
@@ -26,7 +26,7 @@ retiring it is the outcome this repo works toward, not a precondition of it.
 ```
 runtime/{go,rust,cpp}   thin shim READMEs — what gets built, from where, how
 chains/{go,rust,cpp}    the P/X/C/Q/Z chain suite — rust/xvm is real, the rest READMEs
-gpu/                    thin shim to the GPU kernel library
+gpu/                    the primitive seam — a complete CPU backend, an optional kernel plugin
 conformance/            wires the existing pop/verdict corpus per language
 bin/                    build output — luxd-go, luxd-rust, luxd-cpp (gitignored)
 Makefile                the one build entry point
@@ -116,6 +116,33 @@ and `node2` does not touch or fix the other session's checkout to make it go
 away. If `make luxd RUNTIME=cpp` fails, retry before assuming the shim itself
 is broken; if it persists, `git status` in `~/work/lux-cpp/node` first.
 
+## The primitive seam (`gpu/`)
+
+`gpu/` is not a shim. It is the one place a chain asks for a hash or a
+signature check, in all three languages, and the one place the choice between
+computing the answer and handing it to an installed kernel library is made.
+
+Kernels are private and none of their source is here; what crosses into this
+public tree is four symbol names, `dlopen`'d at run time. The CPU backend is
+COMPLETE and is the definition of every primitive — a node with nothing
+installed is a whole node, and `make luxd RUNTIME=go` builds exactly that
+(`CGO_ENABLED=0` has no way to open a shared library, so it never has a
+plugin). The plugin is a strict positive overlay: absent, declining, or
+erroring, the CPU answers.
+
+One knob, `LUX_GPU` ∈ `off | on | verify`, plus `LUX_GPU_LIB` for the path.
+`verify` computes both answers and stops on the first differing byte;
+`make gpu-differential` runs every seam twice, once with no library visible and
+once under `verify`.
+
+Only `keccak256_batch` — and the RFC 6962 fold built on it — has two paths
+today. `sha256` and `ripemd160` have no op in the plugin ABI at all, and its
+`ecrecover` answers a different question (an Ethereum address, where a Lux
+address is `ripemd160(sha256(compressed key))`). `gpu/README.md` has the table,
+what the differential actually measured on this machine, and the one
+cross-language disagreement about secp256k1 recovery ids that consolidating
+the primitives turned up.
+
 ## Conformance
 
 `~/work/lux/consensus/conformance` (tag `v1.36.91`) is the finality standard
@@ -145,6 +172,7 @@ make luxd RUNTIME=rust    # bin/luxd-rust  — lux-rs/node (full host)
 make luxd RUNTIME=cpp     # bin/luxd-cpp   — lux-cpp/node (full host)
 make all                  # all three + gpu; reports each; nonzero exit unless 3/3
 make gpu                  # lux-gpu/gpu kernel library
+make gpu-differential     # CPU alone, then CPU against the plugin, all three
 make conformance          # the pop/verdict corpus, all three languages
 make chains               # the P/X chain differential, all three languages
 make chains-corpus        # regenerate that corpus from the Go reference
