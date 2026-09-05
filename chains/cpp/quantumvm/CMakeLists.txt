@@ -188,9 +188,18 @@ if(QUANTUMVM_BUILD_TESTS)
     add_test(NAME qvm_${_t} COMMAND qvm_${_t}_test)
   endforeach()
 
-  # The differential evaluator the conformance harness runs: it reads the shared
-  # corpus and prints one RESULT line per Q vector, so Go, Rust and C++ are
-  # compared on the same bytes rather than on each language's own fixtures.
+  # The differential evaluator `make chains` runs: it reads the shared corpus
+  # and PRINTS this chain's answers for every Q vector, and says nothing about
+  # whether they are right — deciding that needs every implementation's answer,
+  # which is the runner's job.
+  #
+  # Not a test, and built unconditionally below rather than under this block, so
+  # a chain that stopped answering is a build failure rather than a silently
+  # missing voice.
+
+  # The OLDER evaluator, against the frozen JSON corpus. It is still here
+  # because chains/rust reads that file too; when Rust moves to vectors.tsv both
+  # it and the JSON go, and there is one corpus again.
   #
   # It is registered as a TEST as well, because the corpus carries Go's expected
   # id for every vector: an id this implementation derives differently is a
@@ -209,3 +218,16 @@ if(QUANTUMVM_BUILD_TESTS)
     set_tests_properties(qvm_differential PROPERTIES ENVIRONMENT "NODE2_CORPUS_PATH=${QVM_CORPUS}")
   endif()
 endif()
+
+# ── the differential evaluator ───────────────────────────────────────────────
+#
+# Outside the tests block: a differential that quietly lost one of its voices
+# would report agreement among whoever was left, so this is built whether or
+# not tests are.
+add_executable(qvm_conformance test/conformance.cpp)
+target_link_libraries(qvm_conformance PRIVATE lux_quantumvm)
+# The corpus format, the verdict words and the error-word table are shared with
+# every other C++ evaluator, because a table that differed between two of them
+# reported its own difference as a chain's.
+target_include_directories(qvm_conformance PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../conformance/include)
+target_compile_options(qvm_conformance PRIVATE -Wall -Wextra)
