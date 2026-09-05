@@ -5,9 +5,11 @@
 //
 // Two verbs:
 //
-//	gen emit <dir>       build the corpus from the Go chains and write
-//	                     <dir>/vectors.tsv and <dir>/expected.tsv
-//	gen eval <vectors>   read a corpus and print this implementation's verdicts
+//	gen emit <dir>              build the corpus from the Go chains and write
+//	                            <dir>/vectors.tsv and <dir>/expected.tsv
+//	gen eval <vectors> [reps]   read a corpus and print this implementation's
+//	                            verdicts; with a repeat count, do the same work
+//	                            that many times and time it
 //
 // `emit` writes expected.tsv by running `eval` over the vectors it just built,
 // so the recorded expectations are not a second opinion typed beside the
@@ -24,7 +26,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -46,7 +50,7 @@ func main() {
 		if len(os.Args) > 2 {
 			path = os.Args[2]
 		}
-		if err := eval(path); err != nil {
+		if err := eval(path, repeatsArg(3)); err != nil {
 			fmt.Fprintln(os.Stderr, "eval:", err)
 			os.Exit(1)
 		}
@@ -55,8 +59,22 @@ func main() {
 	}
 }
 
+// repeatsArg reads the optional repeat count at os.Args[i]. Absent, it is 0:
+// evaluate the corpus once and say nothing about how long it took, which is
+// what the differential asks for and what it has always got.
+func repeatsArg(i int) int {
+	if len(os.Args) <= i {
+		return 0
+	}
+	n, err := strconv.Atoi(os.Args[i])
+	if err != nil || n < 1 {
+		usage()
+	}
+	return n
+}
+
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: gen emit <corpus-dir> | gen eval <vectors.tsv>")
+	fmt.Fprintln(os.Stderr, "usage: gen emit <corpus-dir> | gen eval <vectors.tsv> [repeats]")
 	os.Exit(2)
 }
 
@@ -93,7 +111,20 @@ func emit(dir string) error {
 	return nil
 }
 
-func eval(path string) error {
+// eval prints this implementation's verdict for every vector in the corpus.
+//
+// A repeat count asks for the same work to be done that many times and for the
+// elapsed time of THAT WORK to be reported: the corpus is read before the
+// clock starts and the verdicts are printed after it stops, so what the clock
+// covers is parsing, verification and execution and nothing else. The verdicts
+// are kept rather than dropped, so a round cannot be optimised away, and they
+// are printed once however many rounds ran — the runner's input does not change
+// because someone asked for a time.
+//
+// The timing line goes to stderr, where the runner does not read:
+//
+//	B <impl> <vectors> <repeats> <seconds>
+func eval(path string, repeats int) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return err
@@ -105,10 +136,28 @@ func eval(path string) error {
 		return err
 	}
 
+	rounds := repeats
+	if rounds == 0 {
+		rounds = 1
+	}
+	out := make([]Result, len(vectors))
+	start := time.Now()
+	for r := 0; r < rounds; r++ {
+		for i := range vectors {
+			out[i] = evaluate(vectors[i])
+		}
+	}
+	elapsed := time.Since(start)
+
 	w := bufio.NewWriter(os.Stdout)
-	defer w.Flush()
-	for _, v := range vectors {
-		fmt.Fprintln(w, evaluate(v).String())
+	for i := range out {
+		fmt.Fprintln(w, out[i].String())
+	}
+	if err := w.Flush(); err != nil {
+		return err
+	}
+	if repeats > 0 {
+		fmt.Fprintf(os.Stderr, "B\tgo\t%d\t%d\t%.6f\n", len(vectors), repeats, elapsed.Seconds())
 	}
 	return nil
 }
