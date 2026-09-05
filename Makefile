@@ -33,7 +33,7 @@ CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
 
 .PHONY: chains-build all luxd gpu conformance conformance-go conformance-rust conformance-cpp \
         chains chains-corpus bench precompiles precompiles-build precompiles-corpus \
-        luxd-go luxd-rust luxd-cpp clean help
+        dex dex-test luxd-go luxd-rust luxd-cpp clean help
 
 help:
 	@echo "make luxd RUNTIME=go|rust|cpp   build one runtime into bin/luxd-<runtime>"
@@ -45,6 +45,8 @@ help:
 	@echo "make bench                      time the differential's work in all 3 languages"
 	@echo "make precompiles                run the precompile differential"
 	@echo "make precompiles-corpus         regenerate the precompile corpus"
+	@echo "make dex                        run the AMM/order-book differential against running nodes"
+	@echo "make dex-test                   the parts of that harness checkable without a chain"
 	@echo "make clean                      remove bin/"
 
 # ---- make luxd RUNTIME=go|rust|cpp -----------------------------------------
@@ -301,3 +303,15 @@ chains-corpus:
 
 clean:
 	rm -rf $(BIN)
+
+# ---- make dex: the AMM and order-book differential ---------------------------
+#
+# One market deployed to all three C-chains, driven through one script, with the
+# resulting book compared. Needs three running nodes; `make dex-test` needs
+# none. See conformance/dex/README.md.
+
+dex:
+	cd $(ROOT)/conformance/dex && GOWORK=off go run . $(DEXFLAGS)
+
+dex-test:
+	cd $(ROOT)/conformance/dex && GOWORK=off go test -count=1 ./...
