@@ -90,19 +90,13 @@ public:
 
     // reject is the OTHER half of being decided, and it is not optional.
     //
-    // Consensus chose a sibling; this block will never be accepted. Its
-    // transactions, though, were never refused — they lost a race, not a
-    // verification — so each one that still holds against the accepted state
-    // goes back into the mempool. A chain that dropped them instead would
-    // disagree with every other node about what is still pending and would
-    // propose a different block. Go: block/executor.Block.Reject.
-    //
-    // The node's seam (lux/node/vm.hpp) declares accept but not yet reject, so
-    // this is offered at the port's own surface: the transactions come back
-    // where the node can see them, through the pool the next build() draws
-    // from. When the seam grows `virtual void reject() = 0`, this is the
-    // override — the body does not change.
-    void reject();
+    // This block will never be accepted. Its transactions, though, were never
+    // refused — they lost a race, not a verification — so each one that still
+    // holds against the accepted state goes back into the mempool. A chain that
+    // dropped them instead would disagree with every other node about what is
+    // still pending and would propose a different block. Go:
+    // block/executor.Block.Reject.
+    void reject() override;
 
     const std::string& error() const { return error_; }
     const std::shared_ptr<block::StandardBlock>& standard() const { return blk_; }
