@@ -23,3 +23,4 @@ target/
 
 # The chain differential's Go evaluator, built by `make chains`.
 /conformance/gen/gen
+/conformance/precompile/precompile
