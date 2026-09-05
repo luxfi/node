@@ -118,6 +118,39 @@ A chain that cannot reject a block cannot hand back what that block was
 carrying, so the two sides disagree about what is still pending. That is not
 visible in any transaction's bytes, so no wire vector could ever catch it.
 
+### Derived wire damage
+
+Every vector carrying a complete encoding — the twenty P-chain transaction
+kinds, the four P-chain blocks, the five X-chain transactions and the two
+X-chain blocks — is carried again cut short at three points and run long at
+two, so length handling is checked once per kind rather than once for the
+P-chain's `BaseTx`. The three cuts are a quarter in, half way in, and one byte
+short of complete; the two extensions leave one and four unread bytes after
+the structure. They are derived from the vector they damage and named after
+it: `P_BASE_TRUNC_HALF`, `P_BASE_TRAIL_1`.
+
+Truncation asks whether a decoder notices it has run out of buffer or reads
+past the end of one. Trailing bytes ask the opposite and sharper question:
+whether a decoder that has finished reading a structure cares that the buffer
+has not ended. The two behaviours are indistinguishable on well-formed bytes,
+which is why every kind needs both.
+
+What the three implementations agree on today, and what they are now held to:
+
+- Every truncation is refused, on both chains and all thirty-one kinds.
+- The P-chain's block decoder refuses trailing bytes and names them —
+  `trailing bytes after zap message`.
+- The X-chain's block decoder and every transaction decoder on both chains
+  accept them. `RewardValidator` is the one transaction that does not, and it
+  is not refusing the remainder: it carries no credentials, and the appended
+  bytes are read as a credential list that then runs out of buffer.
+- Where trailing bytes are accepted, all three compute the id over the buffer
+  they were given. `sha256` of the padded bytes is the id, so one transaction
+  has as many ids as there are ways to pad it. `P_BASE` and `P_BASE_TRAIL_4`
+  are the same transaction under two ids; the second is the vector that was
+  hand-written as `P_EDGE_TRAILING_BYTES`, and the derivation reproduces its
+  bytes exactly.
+
 ## Running it
 
 ```
@@ -144,7 +177,7 @@ dependency graph — which `make luxd` still greps and still fails on.
 
 Thirteen vectors disagreed when the harness was written. All thirteen are
 closed: the three chains and the corpus now agree on every compared field of
-all 53 vectors, and the NOT COMPARED list is empty. What follows is the record
+all 208 vectors, and the NOT COMPARED list is empty. What follows is the record
 of what it caught, because a differential that reported nothing would be
 indistinguishable from one nobody had run.
 
