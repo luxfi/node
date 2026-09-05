@@ -57,6 +57,14 @@ no charge to report and a number nobody agrees to means the column stops
 comparing. On `FAILED` the charge stands: a precompile that read the input and
 refused it did the work of reading it.
 
+An implementation that cannot know the charge writes `SKIPPED` rather than a
+number. revm computes a precompile's price inside the function that does its
+work, so a call that returned an error recorded no charge and none can be
+recovered; Go and the C++ tree separate price from work and do report it.
+Zero would be an answer and a wrong one, since the call was not free. The
+runner counts a `SKIPPED` field, prints it under NOT COMPARED, and never
+scores it as agreement.
+
 The note is not compared. An error string is a fact about a codebase, not
 about a precompile, so it travels where it explains without being weighed.
 
