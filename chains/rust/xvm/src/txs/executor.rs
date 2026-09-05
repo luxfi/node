@@ -20,6 +20,7 @@
 
 use std::collections::BTreeSet;
 
+use crate::db::Batch;
 use crate::error::{Error, Result};
 use crate::fx::{self, Family, FxContext};
 use crate::ids::Id;
@@ -70,11 +71,25 @@ pub trait SharedMemory: Send + Sync {
     /// The encoded UTXOs the peer chain put there under these keys.
     fn get(&self, peer_chain: &Id, keys: &[Vec<u8>]) -> Result<Vec<Vec<u8>>>;
 
-    /// Hand over what an accepted block asked of the other chains, all of it or
-    /// none. A block is accepted once, so this runs once — and it runs with the
-    /// same batch that commits the block's own state, which is what makes an
-    /// import on one chain and the export on the other one event.
-    fn apply(&self, requests: &[(Id, AtomicRequests)]) -> Result<()>;
+    /// Hand over what an accepted block asked of the other chains, together
+    /// with `batch` — everything that block did to THIS chain — in one write.
+    ///
+    /// The two halves are not two writes. `batch` arrives here staged and
+    /// unwritten precisely so that an implementation can put the shared area's
+    /// changes and the block's own state down together: either both are on the
+    /// device or neither is. Writing them separately is the bug this parameter
+    /// exists to make unrepresentable — a block accepted whose import was never
+    /// taken from the peer credits value twice, and one whose export was never
+    /// handed over loses it.
+    ///
+    /// This is Go's `SharedMemory.Apply(requests, batch)`, where `batch` is the
+    /// staged `CommitBatch` and `WriteAll` puts both down in one atomic write.
+    ///
+    /// `batch` is the only remaining record of what the block did to this
+    /// chain, so an implementation that does not write it loses the block. A
+    /// block that asked nothing of another chain never arrives here at all: its
+    /// store writes its own batch, which is the same one write.
+    fn apply(&self, requests: &[(Id, AtomicRequests)], batch: &Batch) -> Result<()>;
 }
 
 /// Everything the two verification passes need that is not the transaction.
@@ -585,7 +600,14 @@ mod tests {
         fn get(&self, _: &Id, _: &[Vec<u8>]) -> Result<Vec<Vec<u8>>> {
             Ok(Vec::new())
         }
-        fn apply(&self, _: &[(Id, AtomicRequests)]) -> Result<()> {
+        fn apply(&self, _: &[(Id, AtomicRequests)], batch: &Batch) -> Result<()> {
+            // These tests verify and execute; no block is accepted through
+            // them, so nothing arrives here holding one. If something did,
+            // returning without writing `batch` would lose it.
+            assert!(
+                batch.is_empty(),
+                "a block reached a shared area that does not write"
+            );
             Ok(())
         }
     }
