@@ -238,6 +238,44 @@ trusts a green Makefile over a red sub-build.
   here. Flagged in case "-Eco" was meant to invoke the restrictive variant
   specifically.
 
+## ZAP, and where it lives
+
+ZAP is a bidirectional binary protocol with pipelining: both peers on a
+connection initiate, and requests pipeline — many in flight, answers back in
+whatever order the peer finishes them. It is not a codec, and treating it as
+one is how this repo got into trouble.
+
+Both C++ chains used to carry their own copy of the wire —
+`chains/cpp/xvm/include/lux/xvm/zap.hpp` (557 lines) and
+`chains/cpp/platformvm/include/lux/platformvm/zap.hpp` (517 lines) — and the
+two copies had drifted from each other and from the reference. Two chains in
+one binary disagreeing about frames is a fork surface inside one process.
+
+They are gone. Both chains now speak the published SDK, `zap::zap` from
+github.com/zap-proto/cpp, pinned in `chains/cpp/zap.cmake` and reached as a
+package — never a path into a checkout, never vendored. An installed package
+wins over the fetch, so `-DCMAKE_PREFIX_PATH=<install>` keeps an offline build
+offline.
+
+What the drift actually was, since it is the reason the rule exists:
+
+- `set_bytes` must hold its payload until `finish()`. Both hand-written copies
+  wrote it on the spot, which puts the payload BEFORE a list started on the
+  same builder afterwards; the reference puts it after. Same fields, different
+  bytes. Neither copy matched the reference, and no fixture here covered it —
+  the SDK's `tail_then_list` case does, against bytes `zap-proto/go` printed.
+- `set_bytes` must extend the object to cover the field it writes. platformvm
+  did; xvm did not, and a field past the declared payload size wrote off the
+  reserved region.
+- `finish_with_flags` and a choosable header version: platformvm had both, xvm
+  neither — so xvm could not have emitted a routed RPC envelope at all.
+- Out-of-line list elements: xvm could read them, platformvm could only write
+  them. One half of a pair each.
+
+The wire-format suite that used to sit in `chains/cpp/platformvm/test/` moved
+to the SDK with the implementation, case for case. A wire rule belongs in one
+place, and its test belongs beside it.
+
 ## The chain differential (`make chains`)
 
 `make conformance` is the **consensus** layer. `make chains` is the **chain**
