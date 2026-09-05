@@ -41,6 +41,7 @@
 
 #pragma once
 
+#include "lux/core/mempool.hpp"
 #include "lux/xvm/id.hpp"
 #include "lux/xvm/txs.hpp"
 
@@ -61,77 +62,30 @@ namespace lux::xvm::mempool {
 template <class T>
 using Result = wire::Result<T>;
 
-// The maximum a single transaction may weigh, and the maximum the whole pool
-// may. Go raised the tx bound to 2 MiB for large genesis configurations.
-inline constexpr std::size_t kMaxTxSize = 2 * 1024 * 1024;
-inline constexpr std::size_t kMaxPoolSize = 64 * 1024 * 1024;
-// How many drop reasons are remembered. A reason that falls out of the cache
-// lets the tx be offered again, which is the point: a tx dropped because the
-// chain moved on deserves another look, and one dropped because it is garbage
-// costs one verification to reject again.
-inline constexpr std::size_t kDroppedCacheSize = 64;
+// ================= the pool =================
+//
+// The pool itself is the node's (lux/core/mempool.hpp) and knows nothing about
+// a chain: it refuses a duplicate, one too large, one there is no room for, and
+// one that rivals something already waiting. Nothing below re-implements any of
+// that; what is here is the X-Chain's vocabulary for those four answers and the
+// gossip layer above them.
+
+using core::mempool::kDroppedRemembered;
+using core::mempool::kMaxPoolSize;
+using core::mempool::kMaxTxSize;
+using core::mempool::Refusal;
+
+using Pool = core::mempool::Pool<std::shared_ptr<txs::Tx>>;
+using Dropped = core::mempool::Dropped<std::string>;
 
 inline constexpr const char* kErrDuplicateTx = "duplicate tx";
 inline constexpr const char* kErrTxTooLarge = "tx too large";
 inline constexpr const char* kErrPoolFull = "mempool is full";
 inline constexpr const char* kErrConflictsWithOtherTx = "tx conflicts with other tx";
 
-// ================= the pool =================
-
-// Pool holds the transactions this node would put in its next block, oldest
-// first. Order is insertion order and it is load-bearing: the builder takes the
-// oldest first, so two nodes that received the same transactions in the same
-// order build the same block.
-class Pool {
-public:
-    using TxPtr = std::shared_ptr<txs::Tx>;
-
-    // add is STRUCTURAL admission only — it cannot tell a valid tx from an
-    // invalid one and does not pretend to. Go: mempool.Add.
-    Result<void> add(TxPtr tx);
-
-    // get returns nullptr when the tx is not pooled. Go: Mempool.Get.
-    TxPtr get(const Id& tx_id) const;
-
-    // remove drops these transactions AND anything that conflicts with them:
-    // once a tx is in a block, every pooled tx that spends one of its inputs is
-    // dead, and leaving it in would have the builder try it every round.
-    void remove(const std::vector<TxPtr>& txs);
-    void remove(const TxPtr& tx) { remove(std::vector<TxPtr>{tx}); }
-
-    // peek returns the OLDEST pooled tx, or nullptr. Go: Mempool.Peek.
-    TxPtr peek() const;
-
-    // each walks the pool oldest first until `f` returns false.
-    void each(const std::function<bool(const TxPtr&)>& f) const;
-
-    // mark_dropped remembers why a tx was refused, so the same tx offered again
-    // is refused for free. A pooled tx is never marked (it was not dropped), and
-    // "pool is full" is never remembered (it says nothing about the tx).
-    void mark_dropped(const Id& tx_id, const std::string& reason);
-    // drop_reason returns "" when nothing is remembered.
-    std::string drop_reason(const Id& tx_id) const;
-
-    std::size_t len() const { return index_.size(); }
-    std::size_t bytes_available() const { return bytes_available_; }
-
-private:
-    using Order = std::list<TxPtr>;
-
-    void erase_at(const Id& tx_id, Order::iterator it);
-
-    Order order_;
-    std::map<Id, Order::iterator> index_;
-    // The two halves of one relation: which inputs a pooled tx consumes, and
-    // which pooled tx consumes an input. Go keeps it as a SetMap; the reverse
-    // index is what makes the conflict test a lookup rather than a scan.
-    std::map<Id, std::set<Id>> consumed_;
-    std::map<Id, Id> consumer_;
-    std::size_t bytes_available_ = kMaxPoolSize;
-
-    std::list<Id> dropped_order_;
-    std::map<Id, std::pair<std::string, std::list<Id>::iterator>> dropped_;
-};
+// refused turns the pool's four refusals into this chain's words, which is what
+// a caller and a peer are told.
+std::string refused(Refusal r, const Id& tx_id);
 
 // ================= the bloom filter =================
 
@@ -244,12 +198,35 @@ public:
 
     Pool& pool() { return *pool_; }
     const Pool& pool() const { return *pool_; }
+
+    // Why a transaction was refused, or "" if nothing is remembered.
+    std::string drop_reason(const Id& tx_id) const {
+        return dropped_.why(tx_id).value_or(std::string{});
+    }
+
+    // mark_dropped records why a transaction is not here — the builder's own
+    // execution refused it, or the gate did. A transaction the pool is HOLDING
+    // is never marked, whatever anyone says about it: it is waiting, and that
+    // is the fact.
+    void mark_dropped(const Id& tx_id, const std::string& why) { remember(tx_id, why); }
     const Bloom& bloom() const { return bloom_; }
 
 private:
+    // A transaction that is HELD is not a transaction that was refused,
+    // whatever anyone says about it: the pool has it, and that is the fact.
+    void remember(const Id& tx_id, const std::string& why) {
+        if (pool_->has(tx_id)) return;
+        dropped_.mark(tx_id, why);
+    }
+
     Pool* pool_;
     Verifier* verifier_;
     Bloom bloom_;
+    // Why a transaction is NOT in the pool. It lives with the gate rather than
+    // with the pool because the reasons are the CHAIN's — "the pool is full" is
+    // one of four things a pool can say, and everything else a submitter is
+    // told came from an execution the pool knows nothing about.
+    Dropped dropped_;
 };
 
 // ---- what a transaction looks like on the gossip wire ----

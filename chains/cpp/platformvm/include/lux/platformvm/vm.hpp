@@ -118,7 +118,11 @@ class PlatformVM final : public lux::node::VM {
     // would overfill the pool, one that rivals something already waiting, and
     // the chain's own reward transaction, which nobody submits. Whether it
     // EXECUTES is decided when a block carrying it is built.
-    Status submit(const txs::Tx& tx) { return mempool_.add(tx); }
+    // ONE door. The submitter's path and the path that puts a rejected block's
+    // transactions back both come through here, so the chain's rule about who
+    // may submit cannot be reached around.
+    Status submit(const txs::Tx& tx) { return mempool::admit(mempool_, dropped_, tx); }
+    std::optional<Error> refusal(const Id& tx_id) const { return dropped_.why(tx_id); }
     std::size_t mempool_size() const { return mempool_.size(); }
     const mempool::Pool& mempool() const { return mempool_; }
 
@@ -220,6 +224,7 @@ class PlatformVM final : public lux::node::VM {
     std::map<Id, std::shared_ptr<block::Block>> blocks_;
     std::map<Id, Verified> verified_;
     mempool::Pool mempool_;
+    mempool::Dropped dropped_;
     Id last_accepted_{};
     std::uint64_t last_accepted_height_ = 0;
     validators::History history_;

@@ -845,9 +845,9 @@ void reject_mixed() {
     // invalidated by a reorganisation is exactly the kind that can become valid
     // again — caching a refusal for it would refuse what Go admits. Go's Reject
     // logs both failures and remembers neither.
-    check(c.vm->pool().drop_reason(doomed->id()).empty(),
+    check(c.vm->gossip().drop_reason(doomed->id()).empty(),
           "an invalidated tx is let go, not remembered as dropped");
-    check(c.vm->pool().drop_reason(survivor->id()).empty(),
+    check(c.vm->gossip().drop_reason(survivor->id()).empty(),
           "and neither is one that came back");
 
     // THE POINT: what this node proposes next. A chain that had dropped the
@@ -985,7 +985,7 @@ void losing_block() {
     blk->reject();
     check(c.vm->mempool_size() == 1, "rejecting the block hands the transaction back");
     check(c.vm->pool().get(tx->id()) != nullptr, "…the same transaction, by id");
-    check(c.vm->pool().drop_reason(tx->id()).empty(),
+    check(c.vm->gossip().drop_reason(tx->id()).empty(),
           "…not remembered as dropped: it lost a race, it was not refused");
     check(c.vm->get_state(blk->id()) == nullptr,
           "…and the pinned state is released, so nothing can be built on it");

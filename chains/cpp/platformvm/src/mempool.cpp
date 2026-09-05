@@ -1,136 +1,85 @@
 // Copyright (C) 2026, Lux Industries, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
-// mempool.cpp — what is waiting to go into a block.
+// mempool.cpp — the P-chain's door onto the node's one pool.
 //
 // Rendered from Go vms/txs/mempool/mempool.go and
-// vms/platformvm/txs/mempool/mempool.go.
+// vms/platformvm/txs/mempool/mempool.go. The pool's own part of that — order,
+// the conflict index, the byte budget, the bounded refusal cache — moved to
+// lux/core/mempool.hpp, where the X-chain reaches the same one.
 
 #include "lux/platformvm/mempool.hpp"
 
-#include <algorithm>
-
 namespace lux::platformvm::mempool {
 
-Status Pool::add(const txs::Tx& tx) {
-    if (tx.unsigned_tx == nullptr) return fail(Err::InvalidState, "a transaction with nothing in it");
+Error refused(Refusal r, const Id& tx_id) {
+    switch (r) {
+        case Refusal::Duplicate:
+            return Error{Err::DuplicateTx, hex(tx_id)};
+        case Refusal::TooLarge:
+            return Error{Err::TxTooLarge,
+                         hex(tx_id) + " is over " + std::to_string(kMaxTxSize) + " bytes"};
+        case Refusal::Full:
+            return Error{Err::MempoolFull, hex(tx_id) + " does not fit"};
+        case Refusal::Conflict:
+            return Error{Err::ConflictsWithOtherTx, hex(tx_id)};
+    }
+    return Error{Err::InvalidState, hex(tx_id)};
+}
+
+Status admit(Pool& pool, Dropped& dropped, const txs::Tx& tx) {
+    auto refuse = [&](const Error& why) -> Status {
+        // A full pool says nothing about the transaction, only about the moment
+        // it arrived, so it is not held against it.
+        //
+        // Nor is a refusal recorded against a transaction the pool is HOLDING:
+        // it is waiting, and that is the fact. This is what a duplicate is —
+        // the caller is told, and nothing is written down about a transaction
+        // that is already here.
+        if (why.code != Err::MempoolFull && !pool.has(tx.tx_id)) dropped.mark(tx.tx_id, why);
+        return std::unexpected(why);
+    };
+
+    if (tx.unsigned_tx == nullptr)
+        return refuse(Error{Err::InvalidState, "a transaction with nothing in it"});
 
     // The chain's own transaction. Nobody submits it: the builder produces it
     // from state, so one arriving from outside is either a mistake or an
     // attempt to choose the chain's own business.
     if (tx.unsigned_tx->kind() == txs::Kind::RewardValidator)
-        return fail(Err::CantIssueRewardValidatorTx, hex(tx.tx_id));
+        return refuse(Error{Err::CantIssueRewardValidatorTx, hex(tx.tx_id)});
 
-    if (by_id_.count(tx.tx_id) != 0) return fail(Err::DuplicateTx, hex(tx.tx_id));
+    if (auto r = pool.add(tx); !r) return refuse(refused(r.error(), tx.tx_id));
 
-    const std::size_t size = tx.bytes.size();
-    if (size > kMaxTxSize)
-        return fail(Err::TxTooLarge, hex(tx.tx_id) + " is " + std::to_string(size) + " bytes, over " +
-                                         std::to_string(kMaxTxSize));
-    if (size > available_)
-        return fail(Err::MempoolFull, hex(tx.tx_id) + " is " + std::to_string(size) +
-                                          " bytes, and there is room for " + std::to_string(available_));
-
-    // Two transactions spending one output cannot both be accepted, so holding
-    // both is holding one of them for nothing.
-    const auto inputs = tx.unsigned_tx->input_ids();
-    for (const auto& in : inputs)
-        if (consumed_.count(in) != 0) return fail(Err::ConflictsWithOtherTx, hex(tx.tx_id));
-
-    auto at = order_.insert(order_.end(), tx.tx_id);
-    by_id_.emplace(tx.tx_id, Held{tx, at, inputs});
-    for (const auto& in : inputs) consumed_.emplace(in, tx.tx_id);
-    available_ -= size;
-
-    // A transaction that is here is not a transaction that was refused.
-    if (dropped_.erase(tx.tx_id) != 0)
-        dropped_order_.erase(std::find(dropped_order_.begin(), dropped_order_.end(), tx.tx_id));
+    // A transaction that is HERE is not a transaction that was refused.
+    dropped.forget(tx.tx_id);
     return ok();
 }
 
-std::optional<txs::Tx> Pool::get(const Id& tx_id) const {
-    const auto it = by_id_.find(tx_id);
-    if (it == by_id_.end()) return std::nullopt;
-    return it->second.tx;
-}
-
-std::optional<txs::Tx> Pool::peek() const {
-    if (order_.empty()) return std::nullopt;
-    return by_id_.at(order_.front()).tx;
-}
-
-std::vector<txs::Tx> Pool::peek(std::size_t n) const {
-    std::vector<txs::Tx> out;
-    out.reserve(std::min(n, by_id_.size()));
-    for (const auto& id : order_) {
-        if (out.size() >= n) break;
-        out.push_back(by_id_.at(id).tx);
-    }
-    return out;
-}
-
-void Pool::erase(const Id& tx_id) {
-    const auto it = by_id_.find(tx_id);
-    if (it == by_id_.end()) return;
-    for (const auto& in : it->second.inputs) consumed_.erase(in);
-    available_ += it->second.tx.bytes.size();
-    order_.erase(it->second.at);
-    by_id_.erase(it);
-}
-
-void Pool::remove(const std::vector<txs::Tx>& gone) {
-    for (const auto& tx : gone) {
-        if (by_id_.count(tx.tx_id) != 0) {
-            erase(tx.tx_id);
-            continue;
-        }
-        // Not here itself, so take out whatever was waiting to spend the same
-        // outputs: it can never be accepted now.
-        if (tx.unsigned_tx == nullptr) continue;
-        std::vector<Id> rivals;
-        for (const auto& in : tx.unsigned_tx->input_ids()) {
-            const auto it = consumed_.find(in);
-            if (it != consumed_.end()) rivals.push_back(it->second);
-        }
-        for (const auto& id : rivals) erase(id);
-    }
-}
-
-void Pool::mark_dropped(const Id& tx_id, const Error& reason) {
-    // A full pool says nothing about the transaction, only about the moment it
-    // arrived.
-    if (reason.code == Err::MempoolFull) return;
-    // And a transaction that is waiting is not dropped, whatever anyone says
-    // about it: the pool holds it, and that is the fact.
-    if (by_id_.count(tx_id) != 0) return;
-    if (dropped_.find(tx_id) == dropped_.end()) {
-        dropped_order_.push_back(tx_id);
-        if (dropped_order_.size() > kDroppedRemembered) {
-            dropped_.erase(dropped_order_.front());
-            dropped_order_.pop_front();
-        }
-    }
-    dropped_[tx_id] = reason;
-}
-
-std::optional<Error> Pool::drop_reason(const Id& tx_id) const {
-    const auto it = dropped_.find(tx_id);
-    if (it == dropped_.end()) return std::nullopt;
-    return it->second;
-}
-
-std::vector<Id> Pool::drop_expired_stakers(std::uint64_t min_start_time) {
-    std::vector<Id> dropped;
-    for (const auto& id : order_) {
-        const auto& held = by_id_.at(id);
-        auto view = txs::staker_of(*held.tx.unsigned_tx);
+std::vector<Id> drop_expired_stakers(Pool& pool, std::uint64_t min_start_time) {
+    std::vector<Id> expired;
+    pool.each([&](const txs::Tx& tx) {
+        if (tx.unsigned_tx == nullptr) return true;
+        auto staker = txs::staker_of(*tx.unsigned_tx);
         // A transaction that admits no staker has no start to be past, and one
         // whose staker cannot even be read is somebody else's refusal to make.
-        if (!view || !view.value()) continue;
-        if (view.value()->start < min_start_time) dropped.push_back(id);
-    }
-    for (const auto& id : dropped) erase(id);
-    return dropped;
+        if (!staker || !staker.value()) return true;
+        if (staker.value()->start < min_start_time) expired.push_back(tx.tx_id);
+        return true;
+    });
+    for (const auto& id : expired) pool.erase(id);
+    return expired;
+}
+
+std::vector<txs::Tx> oldest(const Pool& pool, std::size_t n) {
+    std::vector<txs::Tx> out;
+    out.reserve(n < pool.size() ? n : pool.size());
+    pool.each([&](const txs::Tx& tx) {
+        if (out.size() >= n) return false;
+        out.push_back(tx);
+        return true;
+    });
+    return out;
 }
 
 }  // namespace lux::platformvm::mempool
