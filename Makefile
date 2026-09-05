@@ -32,7 +32,7 @@ CONSENSUS_RUST := $(HOME)/work/lux/consensus/pkg/rust
 CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
 
 .PHONY: chains-build all luxd gpu conformance conformance-go conformance-rust conformance-cpp \
-        chains chains-corpus precompiles precompiles-build precompiles-corpus \
+        chains chains-corpus bench precompiles precompiles-build precompiles-corpus \
         luxd-go luxd-rust luxd-cpp clean help
 
 help:
@@ -42,6 +42,7 @@ help:
 	@echo "make conformance                run the pop/verdict corpus, all 3 languages"
 	@echo "make chains                     run the P/X chain differential, all 3 languages"
 	@echo "make chains-corpus              regenerate the corpus from the Go reference"
+	@echo "make bench                      time the differential's work in all 3 languages"
 	@echo "make precompiles                run the precompile differential"
 	@echo "make precompiles-corpus         regenerate the precompile corpus"
 	@echo "make clean                      remove bin/"
@@ -265,6 +266,26 @@ chains-build:
 	@for f in $(CONF_GEN) $(PVM_RUST) $(XVM_RUST) $(CPP_EVALS); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
 	done
+
+# ---- make bench: how long that same work takes in each language --------------
+#
+# The same evaluators, the same corpus, the same answers — asked for 200 times
+# over and timed. Each evaluator times its OWN work and prints one line; nothing
+# out here times a process. Five runs, because a single timing is not a
+# measurement, and the spread of the five is printed beside the median.
+# See conformance/README.md.
+
+bench: chains-build
+	@echo
+	cd $(ROOT) && GOWORK=off go run ./conformance/bench \
+		-vectors $(CONF_VECS) \
+		-repeats 200 \
+		-runs 5 \
+		-eval "go=$(CONF_GEN) eval" \
+		-eval "rust=$(PVM_RUST)" \
+		-eval "rust=$(XVM_RUST)" \
+		-eval "cpp=$(PVM_CPP)" \
+		-eval "cpp=$(XVM_CPP)"
 
 # ---- make precompiles: the cross-language precompile differential -----------
 #
