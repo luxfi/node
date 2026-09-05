@@ -151,15 +151,26 @@ EIP-2537, which still had separate multiply precompiles. The final EIP dropped
 them, so every BLS12-381 address from `0x0c` up is shifted by one slot:
 `0x0d` is a G1 multi-exponentiation to the Lux module and a G2 addition to
 geth, revm and cevm — different curve groups, not different gas. 243 of the
-252 Go-versus-C++ disagreements name a `bls12381` module. All seven keys are
-enabled in the canonical C-Chain upgrade at a timestamp in December 2025, so a
-Rust or C++ node forks that chain the first time a contract calls `0x0c`
-through `0x11`.
+252 Go-versus-C++ disagreements name a `bls12381` module.
 
-Two smaller ones. At `0x…0100` the stock table charges 6900 and the Lux
-`secp256r1` module charges 3450, and the module is what answers, because
-`LuxPrecompileOverrider` is consulted before the standard table — latent,
-since that key is enabled nowhere. And address zero is not unclaimed: the
+All seven keys are enabled on **mainnet**, in
+`lux/genesis/configs/mainnet/upgrade.json` at a timestamp in December 2025, and
+on testnet and devnet, and at zero on local and localnet. And nothing else can
+serve those addresses there: mainnet's `cchain.json` stops at Cancun, geth's
+stock BLS table starts at Prague, so the Lux modules are the sole occupants.
+That makes it a fork at either revision a port could be run at, for a different
+reason each time. Held at Cancun, matching the chain, cevm gates those
+addresses on Prague and serves nothing where Go serves seven. Held at Osaka, as
+this corpus asks, it serves the final layout where Go serves the draft. There
+is no revision at which a port can express the layout the C-Chain runs, which
+is the gap itself and not an artifact of how the question was put.
+
+Two smaller ones. At `0x…0100` the Lux `secp256r1` module would charge 3450
+where the stock table charges 6900, and the module would win because
+`LuxPrecompileOverrider` is consulted first — but its key is enabled on no
+network, and stock p256verify is Osaka-only on a chain at Cancun, so nothing
+serves that address anywhere today. It becomes a fork the moment either side is
+switched on, and they cannot both be. And address zero is not unclaimed: the
 dead-address module (LP-0150) is registered there and reads chain state, so it
 cannot be answered for without a chain.
 
