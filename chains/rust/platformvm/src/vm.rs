@@ -1385,17 +1385,325 @@ mod tests {
     /// This is the reward gate, and it is why a reward is a proposal: this
     /// node answers from what it saw, another node answers from what it saw,
     /// and the stake-weighted vote settles which answer the chain takes.
+    ///
+    /// Go: `TestMainnetStakeIsRefundedOnAbort`. "Nothing was minted" is only
+    /// half the story, and on its own it is the half that reads as a
+    /// catastrophe: the other half is that the PRINCIPAL comes back. Reward
+    /// forfeiture is the only economic penalty the P-Chain has — there is no
+    /// stake slashing anywhere in it — so the amount an uptime failure puts at
+    /// risk is one year's emission, not the bond.
     #[test]
     fn a_validator_that_was_not_reachable_is_not_paid() {
         let now = 1000;
         let vm = vm_seeing(now, Box::new(NeverUp));
+        let staker_tx = a_validator_tx(now);
         let answer = answer_to_the_reward(&vm, now);
         vm.verify(&answer.id()).unwrap();
         vm.accept(&answer.id()).unwrap();
 
-        // Retired either way — the stake comes back — but nothing was minted.
+        // Retired, and nothing was minted.
         assert!(vm.state().validator_set(&PRIMARY_NETWORK_ID).is_empty());
         assert_eq!(vm.state().reward_utxos_by_tx().count(), 0);
+
+        // And the stake itself came back, in full, to the owner the staking
+        // transaction named. This is the bound on the blast radius.
+        let returned = vm
+            .state()
+            .utxo(
+                &UtxoId {
+                    tx_id: staker_tx.id(),
+                    output_index: 0,
+                }
+                .input_id(),
+            )
+            .expect("the stake is returned on an abort as well as on a commit")
+            .clone();
+        assert_eq!(returned.output.amount, 10 * MEGA);
+        assert_eq!(returned.output.owners.addrs, vec![ShortId([2; 20])]);
+    }
+
+    /// The size of that blast radius, in the numbers mainnet is carrying.
+    ///
+    /// Go states these in `uptime_forfeiture_mainnet_test.go`, read off
+    /// mainnet (96369): five validators, each bonded with a weight of
+    /// 500,000,000,000,000,000 base units, carrying 165,583,347,962,466,973 of
+    /// potential reward between them. What an uptime abort forfeits is the
+    /// second number; the first is refunded either way.
+    #[test]
+    fn what_an_uptime_abort_forfeits_is_a_years_emission_not_the_bond() {
+        const STAKE_PER_VALIDATOR: u64 = 500_000_000_000_000_000;
+        const VALIDATORS: u64 = 5;
+        const POTENTIAL_REWARD_TOTAL: u64 = 165_583_347_962_466_973;
+
+        let total_stake = STAKE_PER_VALIDATOR * VALIDATORS;
+        assert_eq!(total_stake, 2_500_000_000_000_000_000);
+
+        // ~6.6% of the bonded stake — a year's emission at the mainnet rates,
+        // not the principal.
+        let ratio = POTENTIAL_REWARD_TOTAL as f64 / total_stake as f64;
+        assert!(
+            (ratio - 0.0662).abs() < 0.001,
+            "rewards are {ratio} of the bonded stake, expected ~0.0662"
+        );
+    }
+
+    /// Go: `config.TestUngovernedNodeIsUnchanged`, driven through the live
+    /// reward gate.
+    ///
+    /// A node that carries no staking history must resolve exactly the policy
+    /// it was compiled with, at every instant — so shipping the governed
+    /// lookup changes nothing on any live network until stake votes. The
+    /// compiled requirement here is 80%; a validator that was 85% reachable is
+    /// paid, and the answer must not depend on when it bonded.
+    #[test]
+    fn an_ungoverned_node_is_judged_on_its_compiled_policy() {
+        struct Reachable(f64);
+        impl executor::Uptime for Reachable {
+            fn fraction_since(&self, _: &NodeId, _: &Id, _: u64) -> Option<f64> {
+                Some(self.0)
+            }
+        }
+
+        let ungoverned = config();
+        assert!(
+            ungoverned.staking_history.is_none(),
+            "this is what an ungoverned node looks like"
+        );
+        assert_eq!(ungoverned.staking.uptime_requirement, 800_000);
+
+        // Two nodes bonding at instants a governed chain would treat
+        // differently. An ungoverned one must treat them the same.
+        for bonded_at in [1_000u64, 1_785_000_000] {
+            for (reachable, paid) in [(0.85, 1usize), (0.75, 0usize)] {
+                let vm = PlatformVm::new(
+                    ungoverned.clone(),
+                    Box::new(FlatFees::default()),
+                    Box::new(Reachable(reachable)),
+                    genesis(bonded_at),
+                );
+                let answer = answer_to_the_reward(&vm, bonded_at);
+                vm.verify(&answer.id()).unwrap();
+                vm.accept(&answer.id()).unwrap();
+                assert_eq!(
+                    vm.state().reward_utxos_by_tx().count(),
+                    paid,
+                    "bonded at {bonded_at}, {reachable} reachable, compiled bar 80%"
+                );
+            }
+        }
+    }
+
+    /// Go: `block/builder.TestPermissionedValidatorIsNeverRewarded`.
+    ///
+    /// A permissioned chain validator put up no stake, so it has no reward to
+    /// collect and never leaves the set through one. Naming it as the staker
+    /// to pay would mint a reward nobody staked for.
+    #[test]
+    fn a_permissioned_chain_validator_is_never_rewarded() {
+        use crate::state::Staker;
+        use crate::txs::Priority;
+
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+
+        // A permissioned chain validator whose term has already ended: the one
+        // the packing loop would reach for first if it did not check.
+        {
+            let mut inner = vm.inner.lock().unwrap();
+            inner
+                .state
+                .put_current_validator(Staker {
+                    tx_id: [0xEE; 32],
+                    node_id: NodeId([8; 20]),
+                    public_key: None,
+                    chain: [0xAA; 32],
+                    weight: 1,
+                    start_time: 0,
+                    end_time: now,
+                    potential_reward: 0,
+                    next_time: now,
+                    priority: Priority::ChainPermissionedValidatorCurrent,
+                })
+                .unwrap();
+            inner.state.set_timestamp(now);
+        }
+
+        // It is the next staker to leave, and it is still not paid: there is
+        // nothing to build, rather than a reward proposal naming it.
+        assert!(vm
+            .state()
+            .next_current_staker()
+            .is_some_and(|s| s.priority.is_permissioned_validator()));
+        assert_eq!(
+            vm.build().err(),
+            Some(Error::Empty),
+            "a reward proposal was built for a validator that staked nothing"
+        );
+    }
+
+    /// Go: `block/executor.TestGetState` — which state a block is verified
+    /// against, in all four cases the map can be in.
+    #[test]
+    fn the_state_a_block_is_verified_against() {
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let standard = vm.build().unwrap();
+        vm.verify(&standard.id()).unwrap();
+
+        let inner = vm.inner.lock().unwrap();
+
+        // The last accepted block is answered from the chain's own state.
+        let last = inner.last_accepted;
+        assert_eq!(
+            inner.parent_state(&last).map(|s| s.timestamp()),
+            Some(inner.state.timestamp())
+        );
+
+        // A verified block that leaves ONE state is answered with it.
+        assert!(inner.parent_state(&standard.id()).is_some());
+
+        // A block nobody has verified and that is not the last accepted has no
+        // state to be built on — the map is not consulted for a guess.
+        assert!(inner.parent_state(&[0x5A; 32]).is_none());
+        drop(inner);
+
+        // A verified PROPOSAL block leaves two states, and neither is "the"
+        // state: only a commit or an abort may sit on it, and they say which.
+        let end = now + YEAR;
+        vm.accept(&standard.id()).unwrap();
+        vm.set_clock(end);
+        {
+            let mut inner = vm.inner.lock().unwrap();
+            inner.state.set_timestamp(end);
+        }
+        let proposal = vm.build().unwrap();
+        vm.verify(&proposal.id()).unwrap();
+        let inner = vm.inner.lock().unwrap();
+        assert!(
+            inner.verified[&proposal.id()].on_abort.is_some(),
+            "a reward proposal leaves both futures"
+        );
+        assert!(
+            inner.parent_state(&proposal.id()).is_none(),
+            "a proposal block was handed out as though it left one state"
+        );
+    }
+
+    /// Go: `block/executor.TestBackendGetBlock`.
+    #[test]
+    fn a_block_is_found_by_the_name_it_was_given() {
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let built = vm.build().unwrap();
+
+        // Built here: found, and it is the same block.
+        let got = vm.get(&built.id()).expect("a block this node built");
+        assert_eq!(got.id(), built.id());
+        assert_eq!(got.height(), built.height());
+        assert_eq!(got.bytes(), built.bytes());
+
+        // Never seen: not found, rather than an empty block.
+        assert_eq!(vm.get(&[0x5A; 32]).err(), Some(Error::NotFound));
+
+        // Arrived off the wire: found from that point on, under the name the
+        // bytes give it.
+        let elsewhere = PlatformVm::new(
+            config(),
+            Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
+            genesis(now),
+        );
+        assert_eq!(elsewhere.get(&built.id()).err(), Some(Error::NotFound));
+        let parsed = elsewhere.parse(&built.bytes()).expect("it reads");
+        assert_eq!(parsed.id(), built.id());
+        assert_eq!(elsewhere.get(&built.id()).unwrap().id(), built.id());
+    }
+
+    /// Go: `block/executor.TestGetTimestamp`.
+    ///
+    /// The timestamp a block is verified against is the one its parent left,
+    /// not the wall clock — otherwise two nodes verifying the same block at
+    /// different moments would reach different states.
+    #[test]
+    fn the_timestamp_a_block_is_verified_against() {
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+
+        let inner = vm.inner.lock().unwrap();
+        let last = inner.last_accepted;
+        assert_eq!(
+            inner.parent_state(&last).unwrap().timestamp(),
+            now,
+            "the last accepted block is at the chain's own time"
+        );
+        assert_eq!(
+            inner.parent_state(&blk.id()).unwrap().timestamp(),
+            blk.timestamp(),
+            "a verified block is at the time it states"
+        );
+        drop(inner);
+
+        // The wall clock moving does not move it.
+        vm.set_clock(now + 10 * DAY);
+        let inner = vm.inner.lock().unwrap();
+        assert_eq!(
+            inner.parent_state(&blk.id()).unwrap().timestamp(),
+            blk.timestamp()
+        );
+    }
+
+    /// Go: `block/executor.TestVerifiedHeightsConcurrentAccessIsSafe`.
+    ///
+    /// The node starts a goroutine per inbound message, so two blocks can be in
+    /// verification at once. In Go the state a block leaves lived behind a lock
+    /// that guarded the MAP and not the struct it handed out, and two threads
+    /// reading and writing that bare map abort the process outright — a hard
+    /// abort, not a panic, so nothing can recover and a restart lands back in
+    /// the same race.
+    ///
+    /// Here the whole chain is behind one lock and the seam takes `&self`, so
+    /// the arrangement that made that possible cannot be built: the compile-time
+    /// half of this test is that `PlatformVm` is `Sync` at all.
+    #[test]
+    fn verifying_from_many_threads_at_once_is_safe() {
+        fn assert_shareable<T: Send + Sync>() {}
+        assert_shareable::<PlatformVm>();
+
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        let id = blk.id();
+
+        std::thread::scope(|s| {
+            for _ in 0..64 {
+                s.spawn(|| assert_eq!(vm.verify(&id), Ok(())));
+                s.spawn(|| assert_eq!(vm.get(&id).map(|b| b.id()), Ok(id)));
+                s.spawn(|| {
+                    let _ = vm.last_accepted();
+                });
+            }
+        });
+
+        // Sixty-four verifications of one block leave exactly one held state,
+        // and the chain still accepts it.
+        {
+            let inner = vm.inner.lock().unwrap();
+            assert_eq!(inner.verified.len(), 1);
+        }
+        vm.accept(&id).unwrap();
+        assert_eq!(vm.last_accepted(), id);
+        assert_eq!(vm.state().validator_set(&PRIMARY_NETWORK_ID).len(), 1);
     }
 
     /// "Cannot say" is answered by paying.

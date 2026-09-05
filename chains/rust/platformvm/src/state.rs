@@ -710,14 +710,47 @@ mod tests {
         assert!(!s.is_chain_name_taken("other"));
     }
 
+    /// Go: `TestValidatorDelegateeRewards`.
+    ///
+    /// The record is keyed by the PAIR — a network and a node — and both halves
+    /// of the key have to matter. A lookup that ignored the network would pay
+    /// one validator what it earned on another, and a lookup that ignored the
+    /// node would pay it what somebody else earned.
     #[test]
     fn a_validator_accrues_the_fees_its_delegators_paid_it() {
         let mut s = State::new();
         let node = NodeId([5; 20]);
+        let other_node = NodeId([6; 20]);
         let chain = crate::ids::PRIMARY_NETWORK_ID;
+        let other_chain: crate::ids::Id = [7; 32];
+
+        // Nothing earned yet.
         assert_eq!(s.delegatee_reward(&chain, &node), 0);
-        s.set_delegatee_reward(chain, node, 42);
-        assert_eq!(s.delegatee_reward(&chain, &node), 42);
+
+        s.set_delegatee_reward(chain, node, 100_000);
+        assert_eq!(s.delegatee_reward(&chain, &node), 100_000);
+
+        // A second set replaces rather than adds: Go's SetDelegateeReward
+        // writes the new total, it does not accrue.
+        s.set_delegatee_reward(chain, node, 200_000);
+        assert_eq!(s.delegatee_reward(&chain, &node), 200_000);
+
+        // Neither the other node on this network...
+        assert_eq!(s.delegatee_reward(&chain, &other_node), 0);
+        // ...nor the same node on another network has earned anything.
+        assert_eq!(s.delegatee_reward(&other_chain, &node), 0);
+
+        // And each pair keeps its own number.
+        s.set_delegatee_reward(other_chain, node, 7);
+        s.set_delegatee_reward(chain, other_node, 9);
+        assert_eq!(s.delegatee_reward(&chain, &node), 200_000);
+        assert_eq!(s.delegatee_reward(&other_chain, &node), 7);
+        assert_eq!(s.delegatee_reward(&chain, &other_node), 9);
+
+        // A validator's accrued fees run to the whole supply; the field must
+        // carry it without wrapping.
+        s.set_delegatee_reward(chain, node, u64::MAX);
+        assert_eq!(s.delegatee_reward(&chain, &node), u64::MAX);
     }
 
     /// Go: `TestStakerDiffIterator`, with the same set and the same expected

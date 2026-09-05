@@ -381,6 +381,54 @@ mod tests {
         }
     }
 
+    /// Go's `TestBlockReachesItsOwnVisitorArm`.
+    ///
+    /// A block is executed by whichever arm it reaches, so the arm it reaches
+    /// IS its meaning, and nothing downstream re-checks the kind. A standard
+    /// block that arrived at the commit arm would be accepted as an empty
+    /// decision and every transaction it carries dropped from state while the
+    /// block itself stayed final. Go dispatches through a visitor; here the
+    /// dispatch is a match on [`Kind`], and the question is the same one: as
+    /// built, and again after a trip through the wire, does exactly the right
+    /// arm fire?
+    #[test]
+    fn every_block_is_executed_as_the_kind_it_is() {
+        // The dispatch every executor writes, with the arms named so that two
+        // firing, or none, is as visible as the wrong one firing.
+        fn arms(blk: &Block) -> Vec<&'static str> {
+            let mut reached = Vec::new();
+            match blk.kind() {
+                Kind::Abort => reached.push("abort"),
+                Kind::Commit => reached.push("commit"),
+                Kind::Proposal => reached.push("proposal"),
+                Kind::Standard => reached.push("standard"),
+            }
+            reached
+        }
+
+        let parent = [1u8; 32];
+        let cases: [(&str, Block); 4] = [
+            ("abort", Block::abort(parent, 1, 0)),
+            ("commit", Block::commit(parent, 1, 0)),
+            ("standard", Block::standard(parent, 1, 0, vec![a_tx(1)])),
+            ("proposal", Block::proposal(parent, 1, 0, a_proposal())),
+        ];
+
+        for (kind, blk) in cases {
+            assert_eq!(
+                arms(&blk),
+                vec![kind],
+                "the block was executed as the wrong kind of block"
+            );
+            let parsed = Block::parse(blk.bytes()).expect("parse");
+            assert_eq!(
+                arms(&parsed),
+                vec![kind],
+                "the block changed meaning on its way through the wire"
+            );
+        }
+    }
+
     #[test]
     fn a_block_is_named_by_the_hash_of_its_bytes() {
         let blk = Block::standard([1; 32], 5, 1000, vec![a_tx(1)]);
