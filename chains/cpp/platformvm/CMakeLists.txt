@@ -101,18 +101,14 @@ foreach(_p "${CRYPTO_DIR}/secp256k1/cpp/ecrecover.cpp" "${CRYPTO_DIR}/ripemd160/
   endif()
 endforeach()
 
-if(NOT TARGET lux_pvm_crypto)
-  add_library(lux_pvm_crypto STATIC
-    "${CRYPTO_DIR}/secp256k1/cpp/ecrecover.cpp"
-    "${CRYPTO_DIR}/secp256k1/cpp/batch_inv.cpp"
-    "${CRYPTO_DIR}/secp256k1/cpp/ecdsa.cpp"
-    "${CRYPTO_DIR}/ripemd160/cpp/ripemd160.cpp"
-    "${CRYPTO_DIR}/keccak/cpp/keccak.cpp")
-  target_include_directories(lux_pvm_crypto PUBLIC
-    "${CRYPTO_DIR}/include" "${CRYPTO_DIR}/secp256k1/cpp" "${CRYPTO_DIR}/ripemd160/cpp"
-    "${CRYPTO_DIR}/keccak/cpp")
-  target_compile_options(lux_pvm_crypto PRIVATE -O2)
-endif()
+# The primitive seam. The first-party crypto checked for just above is compiled
+# once, there, behind the one interface a chain asks a primitive through — and
+# behind the runtime choice between computing it and handing it to an installed
+# kernel library. It used to be compiled here and again in xvm, and the P-chain
+# carried a third SHA-256 of its own in a header; a primitive with three builds
+# has three places to drift.
+set(LUXCPP_CRYPTO_DIR "${CRYPTO_DIR}" CACHE PATH "" FORCE)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../gpu/cpp ${CMAKE_CURRENT_BINARY_DIR}/lux_gpu)
 
 if(NOT TARGET blst)
   add_library(blst STATIC "${BLST_DIR}/src/server.c" "${BLST_DIR}/build/assembly.S")
@@ -143,7 +139,7 @@ add_library(lux_platformvm STATIC
   src/adopt.cpp
   src/mempool.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
-target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto)
+target_link_libraries(lux_platformvm PUBLIC blst lux_gpu)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
 # __int128, a compiler extension every target this ships on has.
 target_compile_options(lux_platformvm PRIVATE -Wall -Wextra)
@@ -171,8 +167,11 @@ endif()
 # failure the commitment exists to prevent.
 if(NOT TARGET lux_node_validators AND EXISTS "${NODE_DIR}/src/validators.cpp"
    AND EXISTS "${CRYPTO_DIR}/sha256/cpp/sha256.cpp")
-  add_library(lux_node_validators STATIC
-    "${NODE_DIR}/src/validators.cpp" "${CRYPTO_DIR}/sha256/cpp/sha256.cpp")
+  # SHA-256 comes from the seam, not from a second compile of the same file:
+  # two objects for one hash in one link is a duplicate symbol at best and two
+  # answers at worst.
+  add_library(lux_node_validators STATIC "${NODE_DIR}/src/validators.cpp")
+  target_link_libraries(lux_node_validators PUBLIC lux_gpu)
   target_include_directories(lux_node_validators PUBLIC
     "${NODE_DIR}/include" "${CONSENSUS_DIR}/include" "${CRYPTO_DIR}")
   target_compile_options(lux_node_validators PRIVATE -O2)

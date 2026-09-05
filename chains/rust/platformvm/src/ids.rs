@@ -54,13 +54,7 @@ impl ShortId {
 
 /// `sha256` — what names a transaction and what names a block.
 pub fn hash256(bytes: &[u8]) -> Id {
-    use sha2::{Digest, Sha256};
-    let mut h = Sha256::new();
-    h.update(bytes);
-    let out = h.finalize();
-    let mut id = [0u8; 32];
-    id.copy_from_slice(&out);
-    id
+    lux_gpu::sha256(bytes)
 }
 
 #[cfg(test)]
