@@ -231,7 +231,22 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 
 	var bad []disagreement
 	uncovered := map[string][]string{} // vector -> fields nobody could compare
+	silent := map[string][]string{}    // implementation -> vectors it never answered
 	answered := map[string]int{}
+
+	// An implementation that prints no row for a vector has not passed it. The
+	// field comparison cannot see that on its own: three of four answering is
+	// still a comparison, and it agrees, and the fourth's silence reads as
+	// success. Every implementation is asked for every vector, and one that
+	// skips a chain it does not serve is expected to be paired with the
+	// evaluator that does, under the same name.
+	for _, e := range evals {
+		for _, id := range ids {
+			if _, ok := e.rows[id]; !ok {
+				silent[e.name] = append(silent[e.name], id)
+			}
+		}
+	}
 
 	for _, id := range ids {
 		rowDisagrees := false
@@ -289,12 +304,31 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 		fmt.Println()
 	}
 
-	if len(bad) == 0 {
+	if len(silent) > 0 {
+		fmt.Println("NOT ANSWERED — an implementation printed no row at all:")
+		keys := make([]string, 0, len(silent))
+		for k := range silent {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			fmt.Printf("  %-6s %d of %d: %s\n", k, len(silent[k]), len(ids), strings.Join(clip(silent[k], 6), " "))
+		}
+		fmt.Println()
+	}
+
+	if len(bad) == 0 && len(silent) == 0 {
 		fmt.Printf("AGREED on every compared field of %d vectors.\n", len(ids))
 		fmt.Println()
 		fmt.Println("Read that with the NOT COMPARED list above: a field no two")
 		fmt.Println("implementations answered was not checked by anything here.")
 		return
+	}
+
+	if len(bad) == 0 {
+		fmt.Printf("Every compared field of %d vectors agreed, but the run fails:\n", len(ids))
+		fmt.Println("silence is not agreement.")
+		os.Exit(1)
 	}
 
 	fmt.Printf("DISAGREEMENTS: %d\n\n", len(bad))
@@ -333,6 +367,14 @@ func printRow(id string, evals []*evaluator) {
 		fmt.Printf(" %s=%-12s", e.name, r.fields[len(r.fields)-1])
 	}
 	fmt.Println()
+}
+
+// clip shortens a list for printing, saying how much it left out.
+func clip(v []string, n int) []string {
+	if len(v) <= n {
+		return v
+	}
+	return append(append([]string{}, v[:n]...), fmt.Sprintf("... and %d more", len(v)-n))
 }
 
 func trim(s string) string {
