@@ -3,7 +3,9 @@
 
 #include "lux/xvm/fx.hpp"
 
-#include "lux/crypto/secp256k1.h"
+// Recovery is a primitive, and a primitive comes from one place — see
+// gpu/README.md. It has no device path today and says so there.
+#include "lux/gpu/gpu.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -33,16 +35,9 @@ std::vector<ShortId> to_short_ids(const std::vector<ShortId>& v) { return v; }
 // The COMPRESSED form is what the address commits to, so recovery's
 // uncompressed X||Y is compressed here rather than hashed as-is.
 Result<ShortId> recover_address(const Id& hash, const Signature& sig) {
-    std::uint8_t uncompressed[64];
-    const std::uint8_t v = sig[64];
-    if (v >= 4) return std::unexpected("invalid signature recovery id");
-    secp256k1_status st = secp256k1_ecrecover(hash.data(), sig.data(), sig.data() + 32,
-                                              std::uint8_t(v & 1), uncompressed);
-    if (st != SECP256K1_OK) return std::unexpected("recovery failed");
-    std::array<std::uint8_t, 33> compressed{};
-    compressed[0] = std::uint8_t(0x02 | (uncompressed[63] & 1));
-    std::memcpy(compressed.data() + 1, uncompressed, 32);
-    return pubkey_to_address(view(compressed));
+    const auto compressed = lux::gpu::recover(hash, sig);
+    if (!compressed) return std::unexpected("recovery failed");
+    return pubkey_to_address(view(*compressed));
 }
 
 }  // namespace

@@ -388,13 +388,7 @@ pub fn verify_credentials(
 /// This is what makes an output spendable at all: the address in the output is
 /// derived from a key nobody transmitted, so the signature has to produce it.
 pub fn recover_public_key(hash: &[u8; 32], sig: &[u8; SIGNATURE_LEN]) -> Result<Vec<u8>> {
-    use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
-
-    let recid = RecoveryId::from_byte(sig[64]).ok_or(Error::UnrecoverableSignature)?;
-    let signature = Signature::from_slice(&sig[..64]).map_err(|_| Error::UnrecoverableSignature)?;
-    let vk = VerifyingKey::recover_from_prehash(hash, &signature, recid)
-        .map_err(|_| Error::UnrecoverableSignature)?;
-    Ok(vk.to_encoded_point(true).as_bytes().to_vec())
+    lux_gpu::recover(hash, sig).ok_or(Error::UnrecoverableSignature)
 }
 
 /// Sign a 32-byte hash, producing the 65-byte recoverable form.

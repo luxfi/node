@@ -19,17 +19,10 @@
 //! credit the wrong owner.
 
 use crate::ids::{Id, ShortId};
-use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
-use ripemd::Ripemd160;
-use sha2::{Digest, Sha256};
 
 /// The address a compressed public key spends under.
 pub fn address(compressed_key: &[u8]) -> ShortId {
-    let sha = Sha256::digest(compressed_key);
-    let ripe = Ripemd160::digest(sha);
-    let mut out = [0u8; 20];
-    out.copy_from_slice(&ripe);
-    ShortId(out)
+    ShortId(lux_gpu::pubkey_bytes_to_address(compressed_key))
 }
 
 /// The address that signed `sighash`, or nothing when the bytes are not a
@@ -42,10 +35,7 @@ pub fn address(compressed_key: &[u8]) -> ShortId {
 /// bytes. It is not a way to spend someone's output: it changes the
 /// transaction's id, because the id is the hash of the bytes that travel.
 pub fn recover(sighash: &Id, sig: &[u8; 65]) -> Option<ShortId> {
-    let signature = Signature::from_slice(&sig[..64]).ok()?;
-    let recovery = RecoveryId::from_byte(sig[64])?;
-    let key = VerifyingKey::recover_from_prehash(&sighash[..], &signature, recovery).ok()?;
-    Some(address(key.to_encoded_point(true).as_bytes()))
+    Some(address(&lux_gpu::recover(sighash, sig)?))
 }
 
 /// Sign a hash the way a wallet does, into the 65 bytes the wire carries.
@@ -68,6 +58,11 @@ pub(crate) fn sign(key: &k256::ecdsa::SigningKey, sighash: &Id) -> [u8; 65] {
 mod tests {
     use super::*;
     use k256::ecdsa::SigningKey;
+    // Deliberately NOT the seam: this module's job is to check that what the
+    // seam returns is the hash chain the P-Chain is defined over, and a check
+    // written with the thing it is checking checks nothing.
+    use ripemd::Ripemd160;
+    use sha2::{Digest, Sha256};
 
     fn key(seed: u8) -> SigningKey {
         SigningKey::from_bytes(&[seed; 32].into()).expect("a key")

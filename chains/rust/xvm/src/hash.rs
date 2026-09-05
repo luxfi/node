@@ -16,84 +16,17 @@
 //! last node is promoted UNCHANGED rather than paired with itself, which is what
 //! keeps two different leaf sets from folding to one root. The tags separate the
 //! three input domains, so a leaf preimage can never be read as a node's.
+//!
+//! None of it is written here. All five primitives and the fold live in
+//! `lux-gpu`, which is where a chain asks for a primitive and where the choice
+//! between computing it and handing it to an installed kernel library is made.
+//! A hash with two implementations is a chain with two answers, so this module
+//! is the chain's NAMES for them and nothing more.
 
-use ripemd::Ripemd160;
-use sha2::{Digest, Sha256};
-use sha3::Keccak256;
-
-/// A 256-bit digest.
-pub type Hash256 = [u8; 32];
-/// A 160-bit digest — the width of an address.
-pub type Hash160 = [u8; 20];
-
-/// SHA-256.
-pub fn sha256(buf: &[u8]) -> Hash256 {
-    let mut h = Sha256::new();
-    h.update(buf);
-    h.finalize().into()
-}
-
-/// RIPEMD-160.
-pub fn ripemd160(buf: &[u8]) -> Hash160 {
-    let mut h = Ripemd160::new();
-    h.update(buf);
-    h.finalize().into()
-}
-
-/// The address of a public key: RIPEMD-160 of its SHA-256.
-pub fn pubkey_bytes_to_address(key: &[u8]) -> Hash160 {
-    ripemd160(&sha256(key))
-}
-
-/// Ethereum Keccak-256 over the concatenation of the parts.
-pub fn keccak256(parts: &[&[u8]]) -> Hash256 {
-    let mut h = Keccak256::new();
-    for p in parts {
-        h.update(p);
-    }
-    h.finalize().into()
-}
-
-/// `keccak256(0x00 ‖ d)` — a tagged leaf.
-pub fn leaf_hash(d: &Hash256) -> Hash256 {
-    keccak256(&[&[0x00], &d[..]])
-}
-
-/// `keccak256(0x01 ‖ L ‖ R)` — a tagged internal node.
-pub fn node_hash(left: &Hash256, right: &Hash256) -> Hash256 {
-    keccak256(&[&[0x01], &left[..], &right[..]])
-}
-
-/// `keccak256("")` — the root of nothing.
-pub fn empty_root() -> Hash256 {
-    keccak256(&[])
-}
-
-/// The tagged binary Merkle root over element digests already compacted to the
-/// occupied set, in ascending order.
-///
-/// `leaves` is not modified.
-pub fn merkle_root(leaves: &[Hash256]) -> Hash256 {
-    if leaves.is_empty() {
-        return empty_root();
-    }
-    let mut level: Vec<Hash256> = leaves.iter().map(leaf_hash).collect();
-    while level.len() > 1 {
-        let cnt = level.len();
-        let parents = cnt.div_ceil(2);
-        let pairs = cnt / 2;
-        let mut next = vec![[0u8; 32]; parents];
-        for j in 0..pairs {
-            next[j] = node_hash(&level[2 * j], &level[2 * j + 1]);
-        }
-        if cnt & 1 == 1 {
-            // Lone right node: promoted unchanged, never doubled.
-            next[parents - 1] = level[cnt - 1];
-        }
-        level = next;
-    }
-    level[0]
-}
+pub use lux_gpu::{
+    empty_root, keccak256, leaf_hash, merkle_root, node_hash, pubkey_bytes_to_address, ripemd160,
+    sha256, Hash160, Hash256,
+};
 
 #[cfg(test)]
 mod tests {

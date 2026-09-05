@@ -82,21 +82,12 @@ if(NOT _node OR NOT _consensus)
 endif()
 message(STATUS "xvm: VM seam at ${_node}, Id from ${_consensus}")
 
-# ── the reused crypto, compiled in place (no vendoring, no submodule) ────────
-add_library(xvm_crypto STATIC
-  ${_crypto}/sha256/cpp/sha256.cpp
-  ${_crypto}/ripemd160/cpp/ripemd160.cpp
-  ${_crypto}/keccak/cpp/keccak.cpp
-  ${_crypto}/secp256k1/cpp/ecrecover.cpp
-  ${_crypto}/secp256k1/cpp/batch_inv.cpp
-  ${_crypto}/secp256k1/cpp/ecdsa.cpp
-)
-target_include_directories(xvm_crypto PUBLIC
-  ${_crypto}/include
-  ${_crypto}/sha256/cpp
-  ${_crypto}/ripemd160/cpp
-  ${_crypto}/secp256k1/cpp
-)
+# ── the primitive seam ───────────────────────────────────────────────────────
+# The reused crypto is compiled once, there, behind the one interface a chain
+# asks a primitive through — and behind the runtime choice between computing it
+# and handing it to an installed kernel library. It used to be compiled here and
+# again in platformvm; a primitive with two builds has two places to drift.
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../gpu/cpp ${CMAKE_CURRENT_BINARY_DIR}/lux_gpu)
 
 # ── xvm itself ───────────────────────────────────────────────────────────────
 add_library(xvm STATIC
@@ -116,7 +107,7 @@ target_include_directories(xvm PUBLIC
   ${_node}/include
   ${_consensus}/include
 )
-target_link_libraries(xvm PUBLIC xvm_crypto)
+target_link_libraries(xvm PUBLIC lux_gpu)
 target_compile_options(xvm PRIVATE -Wall -Wextra)
 
 # ── tests ────────────────────────────────────────────────────────────────────

@@ -46,19 +46,35 @@ TEST(Sha256StandardVectors) {
 }
 
 // The block boundary at 55/56/63/64 bytes is where a length-padding
-// implementation goes wrong; walk it.
+// implementation goes wrong; walk it. NIST's million-'a' vector is the long
+// case, and every length either side of a 64-byte block is the short one.
 TEST(Sha256BlockBoundaries) {
     const std::string a(1000000, 'a');
     REQUIRE(hex(sha256(str(a))) == "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
 
-    // Streaming in odd chunks must equal hashing at once.
-    for (std::size_t chunk : {1u, 7u, 55u, 56u, 63u, 64u, 65u, 127u}) {
-        Sha256 h;
-        for (std::size_t i = 0; i < a.size(); i += chunk) {
-            const std::size_t n = std::min(chunk, a.size() - i);
-            h.update({reinterpret_cast<const std::uint8_t*>(a.data()) + i, n});
-        }
-        REQUIRE(hex(h.finish()) == "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
+    // Every length either side of a 64-byte block and of the 56-byte padding
+    // boundary, against digests produced OUTSIDE this tree (GNU coreutils
+    // sha256sum over the same inputs). A hash checked only against itself is
+    // not checked.
+    struct Case {
+        std::size_t n;
+        const char* want;
+    };
+    static const Case cases[] = {
+        {1, "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"},
+        {55, "9f4390f8d30c2dd92ec9f095b65e2b9ae9b0a925a5258e241c9f1e910f734318"},
+        {56, "b35439a4ac6f0948b6d6f9e3c6af0f5f590ce20f1bde7090ef7970686ec6738a"},
+        {63, "7d3e74a05d7db15bce4ad9ec0658ea98e3f06eeecf16b4c6fff2da457ddc2f34"},
+        {64, "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb"},
+        {65, "635361c48bb9eab14198e76ea8ab7f1a41685d6ad62aa9146d301d4f17eb0ae0"},
+        {119, "31eba51c313a5c08226adf18d4a359cfdfd8d2e816b13f4af952f7ea6584dcfb"},
+        {120, "2f3d335432c70b580af0e8e1b3674a7c020d683aa5f73aaaedfdc55af904c21c"},
+        {127, "c57e9278af78fa3cab38667bef4ce29d783787a2f731d4e12200270f0c32320a"},
+        {128, "6836cf13bac400e9105071cd6af47084dfacad4e5e302c94bfed24e013afb73e"},
+    };
+    for (const auto& c : cases) {
+        const std::string s(c.n, 'a');
+        REQUIRE(hex(sha256(str(s))) == std::string(c.want));
     }
 }
 
