@@ -66,6 +66,10 @@ pub struct Config {
     /// Which network this is. A warp message names the network it was signed
     /// for, and one signed for another network proves nothing here.
     pub network_id: u32,
+    /// This chain's own id. A transaction addressed to another chain of the
+    /// same network is refused for the same reason one addressed to another
+    /// network is: it was signed for somewhere else.
+    pub blockchain_id: Id,
     /// The asset stake and fees are denominated in.
     pub native_asset: Id,
     /// What an L1 validator pays, continuously, for the P-Chain's trouble in
@@ -151,6 +155,39 @@ pub trait Uptime: Send + Sync {
     /// The fraction of the time since `since` that `node` was reachable on
     /// `chain`, between 0 and 1, or nothing when it cannot be said.
     fn fraction_since(&self, node: &NodeId, chain: &Id, since: u64) -> Option<f64>;
+}
+
+/// What another chain has already handed to this one.
+///
+/// Go: `atomic.SharedMemory`. An import spends an output that was made
+/// somewhere else, so the P-chain cannot check it alone — only the shared half
+/// both chains write to can say the export happened. The node holds that half
+/// and the chain asks it, which is why this is a seam and not something state
+/// holds: an import of something nobody exported has nothing to find.
+///
+/// Removing what an import consumed from the shared half is the node's, on
+/// accept, reading the accepted block. Go arranges the same split: its executor
+/// returns `AtomicRequests` and the node applies them when the block is
+/// accepted, because an import that vanished from the shared half while its
+/// block was still undecided would be money nobody could spend.
+pub trait Atomic: Send + Sync {
+    /// The outputs `ids` name on `source`, in the order they were asked for. A
+    /// name the shared half does not hold answers `None`.
+    fn imported(&self, source: &Id, ids: &[UtxoId]) -> Vec<Option<Utxo>>;
+}
+
+/// A node with no shared half: every import finds nothing.
+///
+/// Not a stub standing in for the real thing — it is the honest answer for a
+/// node that is not connected to another chain, and it is the answer Go gives
+/// from an empty shared memory. Every import against it is refused for want of
+/// what it names, never accepted against nothing.
+pub struct NoImports;
+
+impl Atomic for NoImports {
+    fn imported(&self, _source: &Id, ids: &[UtxoId]) -> Vec<Option<Utxo>> {
+        vec![None; ids.len()]
+    }
 }
 
 /// Whether this node would pay the staker the transaction retires.
@@ -477,8 +514,9 @@ pub fn execute_standard(
     tx: &Tx,
     config: &Config,
     fees: &dyn Fees,
+    atomic: &dyn Atomic,
 ) -> Result<(), Error> {
-    tx.syntactic_verify(config.native_asset)?;
+    tx.syntactic_verify(config.chain())?;
 
     match &tx.unsigned {
         // A proposal transaction in a standard block is not a transaction
@@ -499,13 +537,36 @@ pub fn execute_standard(
             Ok(())
         }
 
-        Unsigned::Import { base, imported, .. } => {
-            // The imported outputs are proved by the chain they came from;
-            // this port does not carry that proof, so an import is refused
-            // rather than trusted. See LLM.md.
-            let _ = imported;
-            let _ = base;
-            Err(Error::WrongTxType(Kind::Import))
+        Unsigned::Import {
+            base,
+            source_chain,
+            imported,
+        } => {
+            // What the source chain exported, from the half both chains write
+            // to. A name it does not hold is refused here rather than trusted:
+            // an import is a spend of value made somewhere else, and this is
+            // the only place that can say the export happened.
+            let names: Vec<UtxoId> = imported.iter().map(|i| i.utxo).collect();
+            let found = atomic.imported(source_chain, &names);
+            let mut utxos = utxos_of(state, &base.ins)?;
+            for utxo in found {
+                utxos.push(utxo.ok_or(Error::State(StateError::NotFound))?);
+            }
+
+            // One spend, over this chain's inputs and the imported ones
+            // together: they buy the same outputs and pay the same fee, so
+            // checking them apart would let either half fund the other.
+            let mut ins = base.ins.clone();
+            ins.extend_from_slice(imported);
+            charge_utxos(
+                state, tx, &utxos, &ins, &base.outs, &tx.creds, 0, config, fees,
+            )?;
+
+            // Only this chain's inputs are consumed here. The imported ones
+            // are removed from the shared half by the node when the block is
+            // accepted — see [`Atomic`].
+            state.consume_and_produce(tx.id(), &base.ins, &base.outs);
+            Ok(())
         }
 
         Unsigned::Export { base, exported, .. } => {
@@ -1229,6 +1290,19 @@ fn rewards_for(state: &State, config: &Config, chain: Id) -> reward::Config {
     }
 }
 
+impl Config {
+    /// The chain a transaction has to be addressed to, out of the chain's own
+    /// configuration. One place, so the syntactic pass and the executor cannot
+    /// disagree about which chain this is.
+    pub fn chain(&self) -> crate::txs::Chain {
+        crate::txs::Chain {
+            network_id: self.network_id,
+            blockchain_id: self.blockchain_id,
+            native_asset: self.native_asset,
+        }
+    }
+}
+
 /// Go: `verifyAuthorization`. The **last** credential authorises the
 /// modification; the rest authorise the spending.
 ///
@@ -1510,21 +1584,48 @@ fn charge_creds(
     config: &Config,
     fees: &dyn Fees,
 ) -> Result<(), Error> {
+    let utxos = utxos_of(state, ins)?;
+    charge_utxos(state, tx, &utxos, ins, outs, creds, extra, config, fees)
+}
+
+/// The outputs a set of inputs names, from this chain.
+fn utxos_of(state: &State, ins: &[crate::components::Input]) -> Result<Vec<Utxo>, Error> {
     let mut utxos = Vec::with_capacity(ins.len());
     for input in ins {
         utxos.push(state.utxo(&input.utxo.input_id())?.clone());
     }
+    Ok(utxos)
+}
+
+/// The charge itself, over outputs already in hand.
+///
+/// Separated from the fetch because an import's outputs come from the shared
+/// half rather than from this chain, and the arithmetic and the signatures must
+/// be the same either way — two spend checks would be two answers to whether
+/// value was created.
+#[allow(clippy::too_many_arguments)]
+fn charge_utxos(
+    state: &State,
+    tx: &Tx,
+    utxos: &[Utxo],
+    ins: &[crate::components::Input],
+    outs: &[Output],
+    creds: &[Credential],
+    extra: u64,
+    config: &Config,
+    fees: &dyn Fees,
+) -> Result<(), Error> {
     let fee = fees
         .fee(&tx.unsigned)
         .checked_add(extra)
         .ok_or(Error::Overflow)?;
     let mut fee_map = HashMap::new();
     fee_map.insert(config.native_asset, fee);
-    flow::verify_spend(&utxos, ins, outs, creds, &fee_map, state.timestamp())?;
+    flow::verify_spend(utxos, ins, outs, creds, &fee_map, state.timestamp())?;
     // The arithmetic says the value adds up; this says whose value it was.
     // Both, always, and in one place — an execution path that ran one without
     // the other would let anyone spend anyone's output.
-    flow::verify_credentials(&utxos, ins, creds, &tx.sighash(), state.timestamp())?;
+    flow::verify_credentials(utxos, ins, creds, &tx.sighash(), state.timestamp())?;
     Ok(())
 }
 
@@ -2007,6 +2108,7 @@ mod tests {
     fn config() -> Config {
         Config {
             network_id: 1,
+            blockchain_id: [3; 32],
             native_asset: ASSET,
             validator_fee: crate::l1::FeeConfig {
                 capacity: 20_000,
@@ -2194,7 +2296,7 @@ mod tests {
         let tx = signed(add_validator(5, 10 * MEGA, now + YEAR, input, 0), 1);
 
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Ok(())
         );
 
@@ -2213,7 +2315,7 @@ mod tests {
         let (mut state, input) = funded(now, 10 * MEGA);
         let before = state.current_supply(&PRIMARY_NETWORK_ID).unwrap();
         let tx = signed(add_validator(5, 10 * MEGA, now + YEAR, input, 0), 1);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
 
         let v = state
             .current_validator(&PRIMARY_NETWORK_ID, &NodeId([5; 20]))
@@ -2229,7 +2331,7 @@ mod tests {
         let now = 1000;
         let (mut state, input) = funded(now, 10 * MEGA);
         let tx = signed(add_validator(5, 10 * MEGA, now + YEAR, input, 0), 1);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
 
         // A second transaction from a second output, same node.
         let id = UtxoId {
@@ -2257,7 +2359,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &second, &config(), &fees()),
+            execute_standard(&mut state, &second, &config(), &fees(), &NoImports),
             Err(Error::DuplicateValidator)
         );
     }
@@ -2268,7 +2370,7 @@ mod tests {
         let (mut state, input) = funded(now, MEGA);
         let tx = signed(add_validator(5, MEGA, now + YEAR, input, 0), 1);
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::WeightTooSmall)
         );
     }
@@ -2280,7 +2382,7 @@ mod tests {
         let (mut state, input) = funded(now, big);
         let tx = signed(add_validator(5, big, now + YEAR, input, 0), 1);
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::WeightTooLarge)
         );
     }
@@ -2291,13 +2393,13 @@ mod tests {
         let (mut state, input) = funded(now, 10 * MEGA);
         let short = signed(add_validator(5, 10 * MEGA, now + DAY, input.clone(), 0), 1);
         assert_eq!(
-            execute_standard(&mut state, &short, &config(), &fees()),
+            execute_standard(&mut state, &short, &config(), &fees(), &NoImports),
             Err(Error::StakeTooShort)
         );
 
         let long = signed(add_validator(5, 10 * MEGA, now + 2 * YEAR, input, 0), 1);
         assert_eq!(
-            execute_standard(&mut state, &long, &config(), &fees()),
+            execute_standard(&mut state, &long, &config(), &fees(), &NoImports),
             Err(Error::StakeTooLong)
         );
     }
@@ -2314,7 +2416,7 @@ mod tests {
             *delegation_shares = 19_999;
         }
         assert_eq!(
-            execute_standard(&mut state, &signed(u, 1), &config(), &fees()),
+            execute_standard(&mut state, &signed(u, 1), &config(), &fees(), &NoImports),
             Err(Error::InsufficientDelegationFee)
         );
     }
@@ -2328,7 +2430,7 @@ mod tests {
         // Declare and stake 10 MEGA but also keep 10 MEGA as change.
         let tx = signed(add_validator(5, 10 * MEGA, now + YEAR, input, 10 * MEGA), 1);
         assert!(matches!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::Flow(flow::Error::InsufficientUnlockedFunds { .. }))
         ));
     }
@@ -2352,7 +2454,7 @@ mod tests {
             delegation_shares: 20_000,
         };
         assert_eq!(
-            execute_standard(&mut state, &signed(v, 1), &config(), &fees()),
+            execute_standard(&mut state, &signed(v, 1), &config(), &fees(), &NoImports),
             Err(Error::AddValidatorNotPermitted)
         );
 
@@ -2368,7 +2470,7 @@ mod tests {
             rewards_owner: owner(3),
         };
         assert_eq!(
-            execute_standard(&mut state, &signed(d, 1), &config(), &fees()),
+            execute_standard(&mut state, &signed(d, 1), &config(), &fees(), &NoImports),
             Err(Error::AddDelegatorNotPermitted)
         );
     }
@@ -2390,7 +2492,7 @@ mod tests {
             delegation_shares: 20_000,
         };
         assert_eq!(
-            execute_standard(&mut state, &signed(v, 1), &config(), &fees()),
+            execute_standard(&mut state, &signed(v, 1), &config(), &fees(), &NoImports),
             Err(Error::EmptyNodeId)
         );
     }
@@ -2405,7 +2507,7 @@ mod tests {
             0,
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::WrongTxType(Kind::RewardValidator))
         );
     }
@@ -2415,7 +2517,7 @@ mod tests {
     fn with_validator(now: u64, weight: u64, end: u64) -> (State, Tx) {
         let (mut state, input) = funded(now, weight);
         let tx = signed(add_validator(5, weight, end, input, 0), 1);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
         (state, tx)
     }
 
@@ -2464,7 +2566,7 @@ mod tests {
         let input = fund_more(&mut state, 2, MEGA);
         let tx = signed(delegate(5, MEGA, now + YEAR, input), 1);
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Ok(())
         );
         assert_eq!(
@@ -2484,7 +2586,7 @@ mod tests {
         let input = fund_more(&mut state, 2, MEGA);
         let tx = signed(delegate(5, MEGA, now + 60 * DAY, input), 1);
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::PeriodMismatch)
         );
     }
@@ -2495,7 +2597,7 @@ mod tests {
         let (mut state, input) = funded(now, MEGA);
         let tx = signed(delegate(7, MEGA, now + YEAR, input), 1);
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::NotValidator)
         );
     }
@@ -2510,14 +2612,14 @@ mod tests {
         let a = fund_more(&mut state, 2, 40 * MEGA);
         let ok = signed(delegate(5, 40 * MEGA, now + YEAR, a), 1);
         assert_eq!(
-            execute_standard(&mut state, &ok, &config(), &fees()),
+            execute_standard(&mut state, &ok, &config(), &fees(), &NoImports),
             Ok(())
         );
 
         let b = fund_more(&mut state, 3, MEGA);
         let over = signed(delegate(5, MEGA, now + YEAR, b), 1);
         assert_eq!(
-            execute_standard(&mut state, &over, &config(), &fees()),
+            execute_standard(&mut state, &over, &config(), &fees(), &NoImports),
             Err(Error::OverDelegated)
         );
     }
@@ -2529,7 +2631,7 @@ mod tests {
         let input = fund_more(&mut state, 2, 1);
         let tx = signed(delegate(5, 1, now + YEAR, input), 1);
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::WeightTooSmall)
         );
     }
@@ -2702,7 +2804,7 @@ mod tests {
         let start = 1000;
         let (mut state, input) = funded(start, 10 * MEGA);
         let tx = signed(add_validator(5, 10 * MEGA, now, input, 0), 1);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
 
         // Pin the reward so the test asserts a number rather than a formula.
         let mut v = state
@@ -2876,7 +2978,7 @@ mod tests {
         let (mut state, validator_tx) = with_validator(now, 10 * MEGA, now + YEAR);
         let input = fund_more(&mut state, 2, MEGA);
         let delegator_tx = signed(delegate(5, MEGA, now + YEAR, input), 1);
-        execute_standard(&mut state, &delegator_tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &delegator_tx, &config(), &fees(), &NoImports).unwrap();
         state.add_tx(delegator_tx.clone());
 
         // Pin the delegator's reward and put the clock at its end.
@@ -2927,7 +3029,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Ok(())
         );
         assert!(state.utxo(&spent.input_id()).is_err());
@@ -2959,7 +3061,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::State(StateError::NotFound))
         );
     }
@@ -2988,14 +3090,14 @@ mod tests {
         };
         let first = mk(input, "MyChain");
         assert_eq!(
-            execute_standard(&mut state, &first, &config(), &fees()),
+            execute_standard(&mut state, &first, &config(), &fees(), &NoImports),
             Ok(())
         );
 
         let second_input = fund_more(&mut state, 2, 100);
         let second = mk(second_input, "mychain");
         assert_eq!(
-            execute_standard(&mut state, &second, &config(), &fees()),
+            execute_standard(&mut state, &second, &config(), &fees(), &NoImports),
             Err(Error::ChainNameTaken)
         );
     }
@@ -3035,7 +3137,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::RemovePermissionlessValidator)
         );
     }
@@ -3057,7 +3159,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::Syntactic(
                 crate::txs::Error::RemovePrimaryNetworkValidator
             ))
@@ -3079,7 +3181,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::NotValidator)
         );
     }
@@ -3104,7 +3206,7 @@ mod tests {
             }],
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::Credential(flow::CredentialError::WrongSigner))
         );
     }
@@ -3124,7 +3226,7 @@ mod tests {
             }],
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::Credential(flow::CredentialError::WrongSigner))
         );
     }
@@ -3139,7 +3241,7 @@ mod tests {
             vec![Credential::default()],
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::Credential(
                 flow::CredentialError::WrongNumberOfSignatures {
                     given: 0,
@@ -3194,7 +3296,7 @@ mod tests {
         let input = fund_more(&mut state, 4, 6 * MEGA);
         let over = signed(delegate(5, 6 * MEGA, now + YEAR, input), 1);
         assert_eq!(
-            execute_standard(&mut state, &over, &config(), &fees()),
+            execute_standard(&mut state, &over, &config(), &fees(), &NoImports),
             Err(Error::OverDelegated)
         );
 
@@ -3202,7 +3304,7 @@ mod tests {
         let input = fund_more(&mut state, 5, 5 * MEGA);
         let ok = signed(delegate(5, 5 * MEGA, now + YEAR, input), 1);
         assert_eq!(
-            execute_standard(&mut state, &ok, &config(), &fees()),
+            execute_standard(&mut state, &ok, &config(), &fees(), &NoImports),
             Ok(())
         );
     }
@@ -3226,11 +3328,11 @@ mod tests {
             }
         }
         // Well formed: the stake is one asset and it adds to the weight.
-        assert_eq!(unsigned.syntactic_verify(config().native_asset), Ok(()));
+        assert_eq!(unsigned.syntactic_verify(config().chain()), Ok(()));
 
         let tx = signed(unsigned, 1);
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::WrongStakedAsset)
         );
     }
@@ -3253,7 +3355,7 @@ mod tests {
         }
         let tx = signed(unsigned, 1);
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::NoNetworkTerms)
         );
     }
@@ -3274,6 +3376,173 @@ mod tests {
             execute_proposal(&tx, &mut state, &mut on_abort),
             Err(Error::InvalidId)
         );
+    }
+
+    // ── imports
+    //
+    // An import spends value made on another chain, so the P-chain cannot check
+    // it alone. These exercise both halves of that: what happens when the
+    // shared half holds the export, and what happens when it does not.
+
+    /// A shared half holding exactly what was handed over.
+    struct Handed(Vec<(UtxoId, Utxo)>);
+
+    impl Atomic for Handed {
+        fn imported(&self, _source: &Id, ids: &[UtxoId]) -> Vec<Option<Utxo>> {
+            ids.iter()
+                .map(|id| {
+                    self.0
+                        .iter()
+                        .find(|(held, _)| held == id)
+                        .map(|(_, u)| u.clone())
+                })
+                .collect()
+        }
+    }
+
+    fn an_export_from(chain: Id, amount: u64) -> (Input, Utxo) {
+        let id = UtxoId {
+            tx_id: chain,
+            output_index: 0,
+        };
+        (
+            Input {
+                utxo: id,
+                asset: ASSET,
+                stake_lock: 0,
+                amount,
+                sig_indices: vec![0],
+            },
+            Utxo {
+                id,
+                output: funds(amount),
+            },
+        )
+    }
+
+    #[test]
+    fn an_import_spends_what_the_other_chain_handed_over() {
+        let now = 1000;
+        let source = [0x11u8; 32];
+        let mut state = State::new();
+        state.set_timestamp(now);
+        let (input, utxo) = an_export_from(source, 500);
+
+        let tx = signed(
+            Unsigned::Import {
+                base: envelope(vec![], vec![funds_out(499)]),
+                source_chain: source,
+                imported: vec![input.clone()],
+            },
+            1,
+        );
+        assert_eq!(
+            execute_standard(
+                &mut state,
+                &tx,
+                &config(),
+                &fees(),
+                &Handed(vec![(input.utxo, utxo)])
+            ),
+            Ok(())
+        );
+        // The output it made is here. The one it consumed was never here: the
+        // node removes that from the shared half when the block is accepted.
+        assert!(state
+            .utxo(
+                &UtxoId {
+                    tx_id: tx.id(),
+                    output_index: 0
+                }
+                .input_id()
+            )
+            .is_ok());
+    }
+
+    #[test]
+    fn an_import_of_something_nobody_exported_is_refused() {
+        // The whole point of asking the shared half. Without it this chain
+        // would be minting: the input names value that was never made.
+        let now = 1000;
+        let source = [0x11u8; 32];
+        let mut state = State::new();
+        state.set_timestamp(now);
+        let (input, _) = an_export_from(source, 500);
+
+        let tx = signed(
+            Unsigned::Import {
+                base: envelope(vec![], vec![funds_out(499)]),
+                source_chain: source,
+                imported: vec![input],
+            },
+            1,
+        );
+        assert_eq!(
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
+            Err(Error::State(StateError::NotFound))
+        );
+    }
+
+    #[test]
+    fn an_import_nobody_signed_for_is_refused() {
+        // The imported inputs go through the same credential check as any
+        // other spend — the value was made elsewhere, but whose it is still
+        // has to be answered here.
+        let now = 1000;
+        let source = [0x11u8; 32];
+        let mut state = State::new();
+        state.set_timestamp(now);
+        let (input, utxo) = an_export_from(source, 500);
+
+        let tx = signed(
+            Unsigned::Import {
+                base: envelope(vec![], vec![funds_out(499)]),
+                source_chain: source,
+                imported: vec![input.clone()],
+            },
+            1,
+        );
+        assert_eq!(
+            execute_standard(
+                &mut state,
+                &forge_last_credential(&tx),
+                &config(),
+                &fees(),
+                &Handed(vec![(input.utxo, utxo)])
+            ),
+            Err(Error::Credential(flow::CredentialError::WrongSigner))
+        );
+    }
+
+    #[test]
+    fn an_import_may_not_take_out_more_than_was_handed_over() {
+        // One spend over both halves: the imported value and this chain's
+        // inputs buy the same outputs and pay the same fee, so checking them
+        // apart would let either half fund the other.
+        let now = 1000;
+        let source = [0x11u8; 32];
+        let mut state = State::new();
+        state.set_timestamp(now);
+        let (input, utxo) = an_export_from(source, 500);
+
+        let tx = signed(
+            Unsigned::Import {
+                base: envelope(vec![], vec![funds_out(600)]),
+                source_chain: source,
+                imported: vec![input.clone()],
+            },
+            1,
+        );
+        assert!(matches!(
+            execute_standard(
+                &mut state,
+                &tx,
+                &config(),
+                &fees(),
+                &Handed(vec![(input.utxo, utxo)])
+            ),
+            Err(Error::Flow(_))
+        ));
     }
 
     // ── the sovereign-L1 plane
@@ -3390,7 +3659,7 @@ mod tests {
             vec![network_validator(1, 100, 500), network_validator(2, 50, 0)],
             10_000,
         );
-        assert_eq!(execute_standard(&mut state, &tx, &config(), &fees()), Ok(()));
+        assert_eq!(execute_standard(&mut state, &tx, &config(), &fees(), &NoImports), Ok(()));
 
         // Both validators are in the network's own set, named by ids derived
         // from the network's — nothing had to be agreed for them to have names.
@@ -3427,7 +3696,7 @@ mod tests {
         let (mut state, tx) = converted(now, network, vec![network_validator(1, 100, 0)], 10_000);
         let forged = forge_last_credential(&tx);
         assert_eq!(
-            execute_standard(&mut state, &forged, &config(), &fees()),
+            execute_standard(&mut state, &forged, &config(), &fees(), &NoImports),
             Err(Error::NotAuthorized(flow::CredentialError::WrongSigner))
         );
         assert!(state.conversion(&network).is_err(), "and nothing was promoted");
@@ -3441,11 +3710,11 @@ mod tests {
         let now = 1000;
         let network = [0x77u8; 32];
         let (mut state, tx) = converted(now, network, vec![network_validator(1, 100, 0)], 10_000);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
 
         let (_, again) = converted(now, network, vec![network_validator(3, 100, 0)], 10_000);
         assert_eq!(
-            execute_standard(&mut state, &again, &config(), &fees()),
+            execute_standard(&mut state, &again, &config(), &fees(), &NoImports),
             Err(Error::NetworkIsImmutable)
         );
     }
@@ -3454,7 +3723,7 @@ mod tests {
     /// spend.
     fn an_l1(now: u64, network: Id, funds: u64) -> (State, Input) {
         let (mut state, tx) = converted(now, network, vec![network_validator(1, 100, 500)], funds);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
         let change = funds - 500 - 1;
         let id = UtxoId {
             tx_id: tx.id(),
@@ -3517,7 +3786,7 @@ mod tests {
         let (mut state, input) = an_l1(now, network, 10_000);
         let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
 
-        assert_eq!(execute_standard(&mut state, &tx, &config(), &fees()), Ok(()));
+        assert_eq!(execute_standard(&mut state, &tx, &config(), &fees(), &NoImports), Ok(()));
         let held = state.l1_validator(&msg.validation_id()).unwrap();
         assert_eq!(held.chain_id, network);
         assert_eq!(held.node_id, NodeId([9; 20]));
@@ -3538,7 +3807,7 @@ mod tests {
         let network = [0x77u8; 32];
         let (mut state, input) = an_l1(now, network, 10_000);
         let (msg, tx) = register_tx(now, network, 9, 42, 0, input);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
 
         let replay = Input {
             utxo: UtxoId {
@@ -3552,7 +3821,7 @@ mod tests {
         };
         let (_, again) = register_tx(now, network, 9, 42, 0, replay);
         assert_eq!(
-            execute_standard(&mut state, &again, &config(), &fees()),
+            execute_standard(&mut state, &again, &config(), &fees(), &NoImports),
             Err(Error::WarpMessageAlreadyIssued(msg.validation_id()))
         );
     }
@@ -3583,7 +3852,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::WrongWarpSource)
         );
     }
@@ -3612,7 +3881,7 @@ mod tests {
             1,
         );
         assert!(matches!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::Syntactic(crate::txs::Error::Signer(_)))
         ));
     }
@@ -3627,7 +3896,7 @@ mod tests {
         let (_, tx) = register_tx(now, network, 9, 42, 300, input);
         let forged = forge_last_credential(&tx);
         assert_eq!(
-            execute_standard(&mut state, &forged, &config(), &fees()),
+            execute_standard(&mut state, &forged, &config(), &fees(), &NoImports),
             Err(Error::Credential(flow::CredentialError::WrongSigner))
         );
     }
@@ -3661,7 +3930,7 @@ mod tests {
             1,
         );
         assert!(matches!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::WarpMessageNotYetAllowed { .. })
         ));
     }
@@ -3674,7 +3943,7 @@ mod tests {
         // Registered with no balance: in the set, weighing on it, unable to
         // vote.
         let (msg, tx) = register_tx(now, network, 9, 42, 0, input);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
         let id = msg.validation_id();
         assert!(!state.l1_validator(&id).unwrap().is_active());
 
@@ -3699,7 +3968,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &top_up, &config(), &fees()),
+            execute_standard(&mut state, &top_up, &config(), &fees(), &NoImports),
             Ok(())
         );
         let held = state.l1_validator(&id).unwrap();
@@ -3722,7 +3991,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::NoSuchL1Validator([0xab; 32]))
         );
     }
@@ -3744,7 +4013,7 @@ mod tests {
         let network = [0x77u8; 32];
         let (mut state, input) = an_l1(now, network, 10_000);
         let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
         let id = msg.validation_id();
 
         let change = signed(
@@ -3767,7 +4036,7 @@ mod tests {
             1,
         );
         assert_eq!(
-            execute_standard(&mut state, &change, &config(), &fees()),
+            execute_standard(&mut state, &change, &config(), &fees(), &NoImports),
             Ok(())
         );
         let held = state.l1_validator(&id).unwrap();
@@ -3783,7 +4052,7 @@ mod tests {
         let network = [0x77u8; 32];
         let (mut state, input) = an_l1(now, network, 10_000);
         let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
         let id = msg.validation_id();
 
         let spend = |tx_id: Id, amount: u64| Input {
@@ -3797,12 +4066,12 @@ mod tests {
             sig_indices: vec![0],
         };
         let first = weight_tx(id, 5, 99, spend(tx.id(), 10_000 - 500 - 1 - 300 - 1), 8_000);
-        execute_standard(&mut state, &first, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &first, &config(), &fees(), &NoImports).unwrap();
         assert_eq!(state.l1_validator(&id).unwrap().min_nonce, 6);
 
         let stale = weight_tx(id, 5, 1, spend(first.id(), 8_000), 7_000);
         assert_eq!(
-            execute_standard(&mut state, &stale, &config(), &fees()),
+            execute_standard(&mut state, &stale, &config(), &fees(), &NoImports),
             Err(Error::StaleNonce { given: 5, least: 6 })
         );
     }
@@ -3817,7 +4086,7 @@ mod tests {
         let only = state.l1_validators(&network)[0].validation_id;
         let tx = weight_tx(only, 0, 0, input, 9_000);
         assert_eq!(
-            execute_standard(&mut state, &tx, &config(), &fees()),
+            execute_standard(&mut state, &tx, &config(), &fees(), &NoImports),
             Err(Error::RemovingLastValidator)
         );
     }
@@ -3828,7 +4097,7 @@ mod tests {
         let network = [0x77u8; 32];
         let (mut state, input) = an_l1(now, network, 10_000);
         let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
         let id = msg.validation_id();
 
         let removal = weight_tx(
@@ -3848,7 +4117,7 @@ mod tests {
             8_000,
         );
         assert_eq!(
-            execute_standard(&mut state, &removal, &config(), &fees()),
+            execute_standard(&mut state, &removal, &config(), &fees(), &NoImports),
             Ok(())
         );
         // Gone from the set...
@@ -3876,7 +4145,7 @@ mod tests {
         let network = [0x77u8; 32];
         let (mut state, input) = an_l1(now, network, 10_000);
         let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
-        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
         let id = msg.validation_id();
 
         let disable = signed(
@@ -3902,13 +4171,13 @@ mod tests {
 
         // Signed by someone who is not the deactivation owner: refused.
         assert_eq!(
-            execute_standard(&mut state, &forge_last_credential(&disable), &config(), &fees()),
+            execute_standard(&mut state, &forge_last_credential(&disable), &config(), &fees(), &NoImports),
             Err(Error::NotAuthorized(flow::CredentialError::WrongSigner))
         );
         assert!(state.l1_validator(&id).unwrap().is_active(), "and it is still on");
 
         assert_eq!(
-            execute_standard(&mut state, &disable, &config(), &fees()),
+            execute_standard(&mut state, &disable, &config(), &fees(), &NoImports),
             Ok(())
         );
         let held = state.l1_validator(&id).unwrap();
