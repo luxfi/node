@@ -197,6 +197,8 @@ class PlatformVM final : public lux::node::VM {
 
     Status verify_block(const block::Block& b, Verified& out);
     Status accept_block(const block::Block& b);
+    // Undo a block consensus decided against: reissue what it held and free
+    // what it pinned. See VmBlock::reject.
     Status reject_block(const block::Block& b);
 
     // The state a child of `parent_id` is verified against: the accepted state
