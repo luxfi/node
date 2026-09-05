@@ -123,6 +123,7 @@ target_compile_options(xvm PRIVATE -Wall -Wextra)
 # ── tests ────────────────────────────────────────────────────────────────────
 #   wire        the bytes, against the Go X-Chain's own (golden.hpp)
 #   root        the execution root, against the cross-language KAT
+#   projection  chain state -> leaves, and the fold at every edge
 #   txs         the tx vocabulary: verify, sort, round-trip
 #   fx          the three fx families' spend and operation gates
 #   syntactic   every syntactic rejection, ported case for case
@@ -135,8 +136,8 @@ target_compile_options(xvm PRIVATE -Wall -Wextra)
 #   mempool     the admission gate, the pool, and the bloom filter
 #   vm          build → verify → accept → REJECT over the node's seam
 enable_testing()
-set(XVM_TESTS wire root syntactic txs fx executor address store state block genesis mempool
-              semantic vm)
+set(XVM_TESTS wire root projection syntactic txs fx executor address store state block genesis
+              mempool semantic vm)
 foreach(_t ${XVM_TESTS})
   add_executable(${_t}_test test/${_t}_test.cpp)
   target_link_libraries(${_t}_test PRIVATE xvm)
