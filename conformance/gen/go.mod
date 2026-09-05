@@ -2,10 +2,6 @@ module github.com/luxfi/node2/conformance/gen
 
 go 1.26.5
 
-replace github.com/luxfi/node => /home/z/work/lux/node
-
-replace github.com/luxfi/chains => /home/z/work/lux/chains
-
 require (
 	github.com/luxfi/address v1.1.1
 	github.com/luxfi/constants v1.6.4
@@ -14,7 +10,7 @@ require (
 	github.com/luxfi/ids v1.3.4
 	github.com/luxfi/log v1.4.3
 	github.com/luxfi/metric v1.10.1
-	github.com/luxfi/node v1.36.15
+	github.com/luxfi/node v1.36.184
 	github.com/luxfi/runtime v1.3.1
 	github.com/luxfi/timer v1.1.1
 	github.com/luxfi/utils v1.3.1
