@@ -53,3 +53,158 @@ R	X_EDGE_EMPTY	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: wire:
 R	X_EDGE_CORRUPT_TAIL	ok	Base	f8a5de6070a3cfdd0b59cd2c474b67e423a5f1f7d041e1d838eaeb145157d4e8	OK	LEDGER	not found
 R	X_SEAM_BLOCK_REJECT	ok	Block.Reject	-	-	PRESENT	xvm block/executor Block.Reject re-offers each still-valid tx to the mempool
 R	P_SEAM_BLOCK_REJECT	ok	Block.Reject	-	-	PRESENT	platformvm block/executor Block.Reject frees the block and drops its state
+R	P_REWARD_VALIDATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_REWARD_VALIDATOR_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_REWARD_VALIDATOR_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_REWARD_VALIDATOR_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_REWARD_VALIDATOR_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_BASE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_BASE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_BASE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_BASE_TRAIL_1	ok	Base	afd53fc04b9249bfc0b5230f9e89865b78a79dae8dabd441bda30a54069d76c7	OK	LEDGER	not found
+R	P_BASE_TRAIL_4	ok	Base	699e00c24e620022355b813ac507b68287f7c5d5021f38c7c04263f402cb8c3e	OK	LEDGER	not found
+R	P_IMPORT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_IMPORT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_IMPORT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_IMPORT_TRAIL_1	ok	Import	4a3a9350a8e9af6812e78e7f3b0b458cd5413574c40aaaf154413770c736469f	OK	LEDGER	not found
+R	P_IMPORT_TRAIL_4	ok	Import	1fabd1de62848df118dc8dc41fcb99a8509bc00d3146ce07f85da390dd43c993	OK	LEDGER	not found
+R	P_EXPORT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_EXPORT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_EXPORT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_EXPORT_TRAIL_1	ok	Export	5e7c56cff862fafe8cb8486f289167c704f5521a2b24c3b02b567ad05e939067	OK	LEDGER	not found
+R	P_EXPORT_TRAIL_4	ok	Export	560729303e29cea3d5c01850359d7db1f35f4574c49d1a074713c80c663abd8f	OK	LEDGER	not found
+R	P_CREATE_NETWORK_PERMISSIONED_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_CREATE_NETWORK_PERMISSIONED_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_CREATE_NETWORK_PERMISSIONED_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_CREATE_NETWORK_PERMISSIONED_TRAIL_1	ok	CreateNetwork	a2d0e2028af8da279ad233fc2409f95cdfe4f357b78bb2912b726d9aec4e6dad	OK	LEDGER	not found
+R	P_CREATE_NETWORK_PERMISSIONED_TRAIL_4	ok	CreateNetwork	f6efcd7e01530a9ec968b4ee875f0a3899581b70294da98453238f1e18405eda	OK	LEDGER	not found
+R	P_CREATE_CHAIN_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_CREATE_CHAIN_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_CREATE_CHAIN_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_CREATE_CHAIN_TRAIL_1	ok	CreateChain	a8700cdc9a831fbf5b4aabf0eb5ac018b1b921b5313d375056d9b9f16d854817	OK	LEDGER	not found
+R	P_CREATE_CHAIN_TRAIL_4	ok	CreateChain	d0edc57962f7688d45ce7db58314e8e0e8f35a488617153c2a9d3d14ee3ca879	OK	LEDGER	not found
+R	P_TRANSFER_CHAIN_OWNERSHIP_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_TRANSFER_CHAIN_OWNERSHIP_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_TRANSFER_CHAIN_OWNERSHIP_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_TRANSFER_CHAIN_OWNERSHIP_TRAIL_1	ok	TransferChainOwnership	fc43fa2d9535fff02fff2671ea3af698e475b22946ce66f4c56deeaf65c13bad	OK	LEDGER	not found
+R	P_TRANSFER_CHAIN_OWNERSHIP_TRAIL_4	ok	TransferChainOwnership	9f731d3b163cfd4f9e0ae7f5a5d6680fdd7fb7c82072b6aac2ffe9f75795a9c4	OK	LEDGER	not found
+R	P_REMOVE_CHAIN_VALIDATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_REMOVE_CHAIN_VALIDATOR_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_REMOVE_CHAIN_VALIDATOR_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_REMOVE_CHAIN_VALIDATOR_TRAIL_1	ok	RemoveChainValidator	db2a8f37fd14b9f44a9c159796bae65320ee6979779508eba621ac2c913949fb	OK	LEDGER	NodeID-TYPjCiGbKiwP6r12cdkmVjySbQsH95zy isn't a current or pending validator of 3es43fFoysoasc5ee1gWnAvnsepyES5VAegEAowaeYEgYLt2L: not found
+R	P_REMOVE_CHAIN_VALIDATOR_TRAIL_4	ok	RemoveChainValidator	fe0e5f66a993c87eee6fed22a1d8068f254fd926dafef2262338012d1f4f0269	OK	LEDGER	NodeID-TYPjCiGbKiwP6r12cdkmVjySbQsH95zy isn't a current or pending validator of 3es43fFoysoasc5ee1gWnAvnsepyES5VAegEAowaeYEgYLt2L: not found
+R	P_TRANSFORM_CHAIN_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_TRANSFORM_CHAIN_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_TRANSFORM_CHAIN_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_TRANSFORM_CHAIN_TRAIL_1	ok	TransformChain	0dd581600eb2d3fa6165b4cf2ac2675007029827d620179e03e8cdbe7de620cb	SYNTACTIC	SYNTACTIC	asset ID can't be LUX
+R	P_TRANSFORM_CHAIN_TRAIL_4	ok	TransformChain	c7e43d38848a17be946e156357b872fd2b32d8f53027b3921c7eebc5bc08d2f0	SYNTACTIC	SYNTACTIC	asset ID can't be LUX
+R	P_ADD_VALIDATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_VALIDATOR_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_VALIDATOR_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_ADD_VALIDATOR_TRAIL_1	ok	AddValidator	0a4ac4b12b8bf95ff99c14d42a1088afe89f2e67573048af2c1985f02c42e875	OK	UNSUPPORTED	AddValidatorTx is not permitted
+R	P_ADD_VALIDATOR_TRAIL_4	ok	AddValidator	e149c51b2b41015724be7becdfd6dab2d730632bf3e7c033ff15c1dd64963090	OK	UNSUPPORTED	AddValidatorTx is not permitted
+R	P_ADD_CHAIN_VALIDATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_CHAIN_VALIDATOR_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_CHAIN_VALIDATOR_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_ADD_CHAIN_VALIDATOR_TRAIL_1	ok	AddChainValidator	c5819b312ac78f31ba0e14ff32762b480a47b57473a6a22d2f6a800b77305ffc	OK	LEDGER	isn't a current or pending validator
+R	P_ADD_CHAIN_VALIDATOR_TRAIL_4	ok	AddChainValidator	a3079ad803694de98edb409e5873343a662d8cb7eddfe32e988c53d91a64ee6d	OK	LEDGER	isn't a current or pending validator
+R	P_ADD_DELEGATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_DELEGATOR_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_DELEGATOR_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_ADD_DELEGATOR_TRAIL_1	ok	AddDelegator	8c82a3d32641a38b20de0e013d40d42b5940f74f368f4f2307b3af27184c2a47	OK	UNSUPPORTED	AddDelegatorTx is not permitted
+R	P_ADD_DELEGATOR_TRAIL_4	ok	AddDelegator	e03e0ba18d5fc0ba7bd812071b32492d1715a974c42dcd12f2a8e53522b0c7f5	OK	UNSUPPORTED	AddDelegatorTx is not permitted
+R	P_ADD_PERMISSIONLESS_VALIDATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_PERMISSIONLESS_VALIDATOR_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_PERMISSIONLESS_VALIDATOR_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_ADD_PERMISSIONLESS_VALIDATOR_TRAIL_1	ok	AddPermissionlessValidator	7883e11caef544eed8b79780b3b34efd21b024e7d691a28f5c86aed56f418573	SYNTACTIC	SYNTACTIC	invalid signer: hasKey=true != isPrimaryNetwork=false
+R	P_ADD_PERMISSIONLESS_VALIDATOR_TRAIL_4	ok	AddPermissionlessValidator	94e25283859036024a05404836eaca74f841aabf0a3dd3876bfb8d01dddd2445	SYNTACTIC	SYNTACTIC	invalid signer: hasKey=true != isPrimaryNetwork=false
+R	P_ADD_PERMISSIONLESS_DELEGATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_PERMISSIONLESS_DELEGATOR_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_ADD_PERMISSIONLESS_DELEGATOR_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_ADD_PERMISSIONLESS_DELEGATOR_TRAIL_1	ok	AddPermissionlessDelegator	8f5c0d92cf28cc0c810266c14b464a85eac1326268614b1490f10159ce1a07f1	OK	LEDGER	not found
+R	P_ADD_PERMISSIONLESS_DELEGATOR_TRAIL_4	ok	AddPermissionlessDelegator	7521408e5f833a54e6a390abcad6fd9e10fb337cfe55a7d6edca25e74e08f6ff	OK	LEDGER	not found
+R	P_REGISTER_L1_VALIDATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_REGISTER_L1_VALIDATOR_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_REGISTER_L1_VALIDATOR_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_REGISTER_L1_VALIDATOR_TRAIL_1	ok	RegisterL1Validator	37bef07ae277768f6d83bb888906f2f90a5a4e2c7d4a59e38b14732a72af7048	OK	LEDGER	not found
+R	P_REGISTER_L1_VALIDATOR_TRAIL_4	ok	RegisterL1Validator	54102163ab745a41ace422934e429a15486b92d7593d4b83e3a5914a8fa5a94c	OK	LEDGER	not found
+R	P_SET_L1_VALIDATOR_WEIGHT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_SET_L1_VALIDATOR_WEIGHT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_SET_L1_VALIDATOR_WEIGHT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_SET_L1_VALIDATOR_WEIGHT_TRAIL_1	ok	SetL1ValidatorWeight	0b1cf03130954de2c40f23bf6de59537e004d577e904ca2715d0b00342416ee6	OK	LEDGER	not found
+R	P_SET_L1_VALIDATOR_WEIGHT_TRAIL_4	ok	SetL1ValidatorWeight	e81a227ec7068aa11928db03f163f366a080bd83a66c85daecb1fcd48d5783ff	OK	LEDGER	not found
+R	P_INCREASE_L1_VALIDATOR_BALANCE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_INCREASE_L1_VALIDATOR_BALANCE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_INCREASE_L1_VALIDATOR_BALANCE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_INCREASE_L1_VALIDATOR_BALANCE_TRAIL_1	ok	IncreaseL1ValidatorBalance	90ee390f4f6b96bdf3698489e7675f6644d76fc9b7c495178db7d024fb4e9471	OK	LEDGER	not found
+R	P_INCREASE_L1_VALIDATOR_BALANCE_TRAIL_4	ok	IncreaseL1ValidatorBalance	d1eb21020986012a855b82a3a516e62605a1788e1fdbc2f064cd55d62dec3a69	OK	LEDGER	not found
+R	P_DISABLE_L1_VALIDATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_DISABLE_L1_VALIDATOR_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_DISABLE_L1_VALIDATOR_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_DISABLE_L1_VALIDATOR_TRAIL_1	ok	DisableL1Validator	94be30d989a98b5231e7857cf41bb7f1633e03dcbc7f417399772fc34ad691ca	OK	LEDGER	could not load L1 validator: not found
+R	P_DISABLE_L1_VALIDATOR_TRAIL_4	ok	DisableL1Validator	3bc8d121f37fa702ff77aa5cc8681b73c79f82875cd64fe3e024a81db0eee8db	OK	LEDGER	could not load L1 validator: not found
+R	P_CONVERT_NETWORK_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_CONVERT_NETWORK_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_CONVERT_NETWORK_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_CONVERT_NETWORK_TRAIL_1	ok	ConvertNetwork	008e6ce8a98f34e602cb72da1b48f20824ae7b4ae787cc247e6215c92c0bd6ef	OK	LEDGER	not found
+R	P_CONVERT_NETWORK_TRAIL_4	ok	ConvertNetwork	b5a7e75766fd3a9807f28cc474aa6ce6ef177db07adf320ad37fb64c9205bdfd	OK	LEDGER	not found
+R	P_CREATE_NETWORK_SOVEREIGN_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_CREATE_NETWORK_SOVEREIGN_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
+R	P_CREATE_NETWORK_SOVEREIGN_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse credentials: zap: buffer too small
+R	P_CREATE_NETWORK_SOVEREIGN_TRAIL_1	ok	CreateNetwork	515697940b65ca1824672fbdfebfdc5339bd1bf50304914de8dcb0711beda181	OK	LEDGER	not found
+R	P_CREATE_NETWORK_SOVEREIGN_TRAIL_4	ok	CreateNetwork	3502f66326ef3a2693b921d88059ee7e197a372b3617769b13581a282a898d9c	OK	LEDGER	not found
+R	P_BLOCK_STANDARD_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_STANDARD_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_STANDARD_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_STANDARD_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	block: trailing bytes after zap message
+R	P_BLOCK_STANDARD_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	block: trailing bytes after zap message
+R	P_BLOCK_PROPOSAL_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_PROPOSAL_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_PROPOSAL_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_PROPOSAL_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	block: trailing bytes after zap message
+R	P_BLOCK_PROPOSAL_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	block: trailing bytes after zap message
+R	P_BLOCK_COMMIT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_COMMIT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_COMMIT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_COMMIT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	block: trailing bytes after zap message
+R	P_BLOCK_COMMIT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	block: trailing bytes after zap message
+R	P_BLOCK_ABORT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_ABORT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_ABORT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	P_BLOCK_ABORT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	block: trailing bytes after zap message
+R	P_BLOCK_ABORT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	block: trailing bytes after zap message
+R	X_BASE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_BASE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_BASE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_BASE_TRAIL_1	ok	Base	1052a4fb583b5c75080123b2fd7fab63d394d741795333610dfbd71577bdbf12	OK	LEDGER	not found
+R	X_BASE_TRAIL_4	ok	Base	a62dbe96f7d94145fe2bec0c98173208c06bb30c7a9eae0788d9bf3a9ece6a49	OK	LEDGER	not found
+R	X_CREATE_ASSET_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_CREATE_ASSET_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_CREATE_ASSET_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_CREATE_ASSET_TRAIL_1	ok	CreateAsset	a6f137ec2af9dfaf1130807e870a6fce923e42af47696a2b000debefa3efbea1	OK	LEDGER	not found
+R	X_CREATE_ASSET_TRAIL_4	ok	CreateAsset	eedd83e6bfeaf9f5581753526da0398f45b6e2b61e72e82fbd9300ff25c3121c	OK	LEDGER	not found
+R	X_OPERATION_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_OPERATION_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_OPERATION_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_OPERATION_TRAIL_1	ok	Operation	070cc9d6699b653b5a52e2b96bf66e82efae941f62b332652a40e02d3fb92158	OK	LEDGER	not found
+R	X_OPERATION_TRAIL_4	ok	Operation	084cf562deb9193d279f4fa957ea9e43bda74a12e46f81a3ba48076c4c7b04a7	OK	LEDGER	not found
+R	X_IMPORT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_IMPORT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_IMPORT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_IMPORT_TRAIL_1	ok	Import	039ccc3b05c5c0b904d3e32ffb70a33ec4f100d589f16d73119ff4786d63af97	OK	LEDGER	not found
+R	X_IMPORT_TRAIL_4	ok	Import	59c23475cbd5c5aa9f7284d574a0bec36a2947c3623ed05f5a24048062178016	OK	LEDGER	not found
+R	X_EXPORT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_EXPORT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_EXPORT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
+R	X_EXPORT_TRAIL_1	ok	Export	3484ee0a6bcb3c00b4b858cc34cc655740db74c65ee5933571adb77c6d0ce7e7	LEDGER	LEDGER	insufficient funds
+R	X_EXPORT_TRAIL_4	ok	Export	44c6890b5a2136d746e82445a4572c9ad17b7bbf27055f58e917f16857802f72	LEDGER	LEDGER	insufficient funds
+R	X_BLOCK_STANDARD_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	X_BLOCK_STANDARD_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	X_BLOCK_STANDARD_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	X_BLOCK_STANDARD_TRAIL_1	ok	StandardBlock	4aa28050545d2ef905a3323075323f1470521dd2a7a9d9d03c41e26938d82d99	OK	LEDGER	height=1 parent=0a0a0a0a txs=1
+R	X_BLOCK_STANDARD_TRAIL_4	ok	StandardBlock	9cbd7c3e2c6d23af9f20667885fdcec2e526e10d31dce90026069a146cde49e5	OK	LEDGER	height=1 parent=0a0a0a0a txs=1
+R	X_BLOCK_EMPTY_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	X_BLOCK_EMPTY_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	X_BLOCK_EMPTY_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
+R	X_BLOCK_EMPTY_TRAIL_1	ok	StandardBlock	9b2ce0e2cfaf518b3191225d6ad2036b090670d6b2710460e807573ce660d810	OK	LEDGER	height=1 parent=0a0a0a0a txs=0
+R	X_BLOCK_EMPTY_TRAIL_4	ok	StandardBlock	0e007f909ee6fb4114c07ed2e39134863b85a303d72250f5a78a69368340cd69	OK	LEDGER	height=1 parent=0a0a0a0a txs=0
