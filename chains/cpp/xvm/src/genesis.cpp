@@ -3,7 +3,7 @@
 
 #include "lux/xvm/genesis.hpp"
 
-#include "lux/xvm/zap.hpp"
+#include "lux/core/zap.hpp"
 
 #include <algorithm>
 
