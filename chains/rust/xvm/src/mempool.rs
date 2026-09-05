@@ -386,7 +386,7 @@ mod tests {
     #[test]
     fn a_transaction_larger_than_the_bar_is_refused() {
         let mut m = Mempool::new();
-        let big = tx_spending(1, 0, &vec![0u8; 8]);
+        let big = tx_spending(1, 0, &[0u8; 8]);
         let size = big.size();
         // Say the bar is what this transaction exceeds, by shrinking the room
         // rather than building a two-mebibyte transaction: the two checks are
@@ -428,7 +428,7 @@ mod tests {
         let before = m.available();
         m.add(tx.clone()).unwrap();
         assert_eq!(m.available(), before - tx.size());
-        m.remove(&[tx.clone()]);
+        m.remove(std::slice::from_ref(&tx));
         assert_eq!(m.len(), 0);
         assert_eq!(m.available(), before);
         // And the output it wanted is free again.

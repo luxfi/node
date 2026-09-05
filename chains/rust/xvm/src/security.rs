@@ -166,7 +166,10 @@ impl Exempt for Listed {
 /// so all three are classical. This is a function of the family rather than a
 /// flag on the credential, because the family is what the wire carries.
 pub fn classical(cred: &Cred) -> bool {
-    matches!(cred.family, Family::Secp256k1 | Family::Nft | Family::Property)
+    matches!(
+        cred.family,
+        Family::Secp256k1 | Family::Nft | Family::Property
+    )
 }
 
 /// The gate. `Ok(())` exactly when this credential set may enter the mempool.

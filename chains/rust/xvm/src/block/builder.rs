@@ -269,7 +269,8 @@ mod tests {
     fn started(funds: &[(Id, u64, u8)]) -> (Manager, Block) {
         let mut mgr = Manager::new(with_asset_and_funds(funds));
         let g = Block::new(EMPTY, 0, 0, EMPTY, vec![]).unwrap();
-        mgr.set_genesis(g.clone());
+        mgr.set_genesis(g.clone())
+            .expect("a fresh manager takes its genesis");
         (mgr, g)
     }
 
@@ -355,7 +356,8 @@ mod tests {
         let src = ids::prefixed(&[9]);
         let mut mgr = Manager::new(with_asset_and_funds(&[(src, 100, 1)]));
         let g = Block::new(EMPTY, 0, 500, EMPTY, vec![]).unwrap();
-        mgr.set_genesis(g);
+        mgr.set_genesis(g)
+            .expect("a fresh manager takes its genesis");
         let net = OneNet(ids::prefixed(&[0xAB]));
         let sm = NoMemory;
         let b = backend(&net, &sm, 100);
