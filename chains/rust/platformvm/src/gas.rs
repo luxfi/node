@@ -1,21 +1,32 @@
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 
-//! What consumption costs, and how the price answers demand.
+//! How a price answers demand.
 //!
-//! Ported from Go `vms/components/gas` (`gas.go`, `state.go`), the LP-103
-//! mechanism. The price is `min_price · e^(excess / K)`, approximated by the
-//! EIP-4844 fake-exponential series, so a chain running above its target gets
-//! dearer smoothly rather than in steps and nobody has to be asked.
+//! Ported from Go `vms/components/gas` (`gas.go`), the LP-103 mechanism. The
+//! price is `min_price · e^(excess / K)`, approximated by the EIP-4844
+//! fake-exponential series, so a chain running above its target gets dearer
+//! smoothly rather than in steps and nobody has to be asked.
 //!
-//! The P-Chain uses this twice for different things. The transaction fee is one
-//! (not ported — see LLM.md). The other is the LP-77 continuous fee an L1
-//! validator pays for the P-Chain's trouble in tracking it, in [`crate::l1`],
-//! and that one *is* here, because without a price there is no way to say when
-//! a validator has stopped paying.
+//! Go prices two different things with this, and only one of them is priced
+//! here. The one that is, is the LP-77 continuous fee an L1 validator pays for
+//! the P-Chain's trouble in tracking it, in [`crate::l1`] — without a price
+//! there is no way to say when a validator has stopped paying. The one that is
+//! not is the *transaction* fee: this chain charges
+//! [`crate::executor::FlatFees`], and Go charges by gas. That is a real
+//! divergence in what a transaction costs, and it is written down at the seam
+//! it happens at, on [`crate::executor::Fees`], rather than here.
+//!
+//! Go's transaction-side gas meter — `gas.State`, capacity and excess moved by
+//! `AdvanceTime` and `ConsumeGas` — is therefore not in this module. It was,
+//! unreachable, which read as though the P-Chain metered gas when nothing ever
+//! called it. Everything left here is reached: the module is `pub(crate)` and
+//! denies dead code, so an unused item is a build error and this cannot quietly
+//! become untrue again.
 //!
 //! The arithmetic saturates rather than wrapping. These are clock quantities,
-//! not money: a capacity that would overflow is simply the largest capacity
-//! there is, and an unpayable price is unpayable rather than free.
+//! not money: an unpayable price is unpayable rather than free.
+
+#![deny(dead_code)]
 
 /// Gas, and the price of it. Two names for a `u64` because multiplying one by
 /// the other is money and multiplying two of either is nothing.
@@ -37,43 +48,6 @@ pub fn sub_per_second(g: Gas, per_second: Gas, seconds: u64) -> Gas {
         // A product that overflows is larger than anything `g` can be, so the
         // whole of `g` is removed. Go returns 0 here for the same reason.
         None => 0,
-    }
-}
-
-/// The chain's fee position: what it may still spend, and how far above target
-/// it has been running.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct State {
-    pub capacity: Gas,
-    pub excess: Gas,
-}
-
-impl State {
-    /// Go: `State.AdvanceTime`. Capacity grows toward its ceiling and excess
-    /// falls toward zero, both at a fixed rate per second.
-    pub fn advance_time(
-        &self,
-        max_capacity: Gas,
-        max_per_second: Gas,
-        target_per_second: Gas,
-        duration: u64,
-    ) -> State {
-        State {
-            capacity: add_per_second(self.capacity, max_per_second, duration).min(max_capacity),
-            excess: sub_per_second(self.excess, target_per_second, duration),
-        }
-    }
-
-    /// Go: `State.ConsumeGas`. Spending costs capacity and raises the excess,
-    /// which raises the price. Asking for more than the chain has is refused;
-    /// an excess that would overflow saturates, because it is a signal and not
-    /// a balance.
-    pub fn consume(&self, gas: Gas) -> Option<State> {
-        let capacity = self.capacity.checked_sub(gas)?;
-        Some(State {
-            capacity,
-            excess: self.excess.saturating_add(gas),
-        })
     }
 }
 
@@ -229,41 +203,6 @@ mod tests {
         assert_eq!(sub_per_second(11, 2, 3), 5);
         assert_eq!(sub_per_second(1, 2, 3), 0);
         assert_eq!(sub_per_second(u64::MAX, u64::MAX, u64::MAX), 0);
-    }
-
-    #[test]
-    fn advancing_the_clock_fills_capacity_to_its_ceiling_and_drains_excess() {
-        let s = State {
-            capacity: 10,
-            excess: 100,
-        };
-        let out = s.advance_time(50, 30, 40, 2);
-        assert_eq!(out.capacity, 50, "capacity is capped, not overrun");
-        assert_eq!(out.excess, 20);
-        // Draining below zero is zero, not a wrap.
-        assert_eq!(s.advance_time(50, 0, 1_000, 1).excess, 0);
-    }
-
-    #[test]
-    fn consuming_more_than_the_chain_holds_is_refused() {
-        let s = State {
-            capacity: 10,
-            excess: 0,
-        };
-        assert_eq!(
-            s.consume(4),
-            Some(State {
-                capacity: 6,
-                excess: 4
-            })
-        );
-        assert_eq!(s.consume(11), None);
-        // The excess saturates; only the capacity is a balance.
-        let hot = State {
-            capacity: 10,
-            excess: u64::MAX,
-        };
-        assert_eq!(hot.consume(1).unwrap().excess, u64::MAX);
     }
 
     #[test]
