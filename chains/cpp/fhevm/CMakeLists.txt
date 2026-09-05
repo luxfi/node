@@ -168,9 +168,23 @@ foreach(_t ${FHEVM_TESTS})
   add_test(NAME ${_t} COMMAND ${_t}_test)
 endforeach()
 
+# ── the differential evaluator ───────────────────────────────────────────────
+#
+# Not a test: it reads the shared corpus and PRINTS this chain's answers, and
+# `make chains` compares them against the Go F-chain's. Built unconditionally,
+# so a chain that stopped answering is a build failure rather than a silently
+# missing voice.
+add_executable(fhevm_conformance test/conformance.cpp)
+target_link_libraries(fhevm_conformance PRIVATE fhevm)
+# The corpus format, the verdict words and the error-word table are shared with
+# every other C++ evaluator, because a table that differed between two of them
+# reported its own difference as a chain's.
+target_include_directories(fhevm_conformance PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../conformance/include)
+target_compile_options(fhevm_conformance PRIVATE -Wall -Wextra)
+
 if(FHEVM_SANITIZE)
   set(_san -fsanitize=${FHEVM_SANITIZE} -fno-omit-frame-pointer)
-  set(_targets fhevm)
+  set(_targets fhevm fhevm_conformance)
   foreach(_t ${FHEVM_TESTS})
     list(APPEND _targets ${_t}_test)
   endforeach()

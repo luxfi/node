@@ -266,8 +266,19 @@ func fVectors() []Vector {
 	handle := fHandle([32]byte(zBytes(0x21, 32)), fScheme)
 	permit := [32]byte(zBytes(0x22, 32))
 
-	// The six operations a confidential value's life is made of.
+	// The genesis this chain is born from, carried as a vector.
+	//
+	// It is an INPUT every implementation needs and no transaction contains:
+	// the funded payer, the committee, the threshold and the network key all
+	// come from it, and a chain given a different one refuses transactions for
+	// reasons that have nothing to do with their bytes. Carrying it means no
+	// evaluator has to reconstruct it — and the answer, the id the chain's own
+	// genesis block takes, says whether two implementations applied it the
+	// same way.
 	v := []Vector{
+		vec("F_GENESIS", "F", "genesis", fGenesis()),
+
+		// The six operations a confidential value's life is made of.
 		vec("F_REGISTER", "F", "tx", fRegister(1, 0x21).Bytes()),
 		vec("F_GRANT", "F", "tx", fGrant(1, handle, fhe.PermitOpDecrypt).Bytes()),
 		vec("F_REVOKE", "F", "tx", fRevoke(1, permit).Bytes()),
@@ -430,7 +441,12 @@ func fAssert(v []Vector) {
 // Fresh per vector, and deliberately: admission remembers the nonce it took and
 // the effect it claimed, so a shared chain would answer a vector differently
 // depending on which vectors were read before it.
-func fvm() (*fhevm.VM, error) {
+// fvm stands a chain up on the corpus's own genesis, which is the one the F
+// vectors are judged on. fvmFrom takes the bytes so the genesis vector and the
+// transaction vectors cannot drift onto two different chains.
+func fvm() (*fhevm.VM, error) { return fvmFrom(fGenesis()) }
+
+func fvmFrom(genesis []byte) (*fhevm.VM, error) {
 	vm := &fhevm.VM{}
 	err := vm.Initialize(context.Background(), luxvm.Init{
 		Runtime: &runtime.Runtime{
@@ -441,7 +457,7 @@ func fvm() (*fhevm.VM, error) {
 		},
 		DB:      memdb.New(),
 		Log:     log.Noop(),
-		Genesis: fGenesis(),
+		Genesis: genesis,
 	})
 	if err != nil {
 		return nil, err
@@ -456,6 +472,9 @@ func evalF(v Vector) Result {
 		r.Parse = VInternal
 		r.Note = "corpus wire is not hex"
 		return r
+	}
+	if v.Op == "genesis" {
+		return evalFGenesis(r, b)
 	}
 
 	tx, err := fhevm.ParseTransaction(b)
@@ -515,4 +534,36 @@ func fKindName(t uint8) string {
 	default:
 		return "unknown"
 	}
+}
+
+// evalFGenesis stands the chain up on the corpus's own genesis bytes and
+// answers with the id its genesis block took.
+//
+// The genesis is not a transaction, so nothing about it is syntactic; what is
+// compared is whether two implementations handed the same configuration reach
+// the same first block. They can fail to: the F-chain's block id is hashed
+// from the chain id, the parent, the height, the timestamp and the
+// transactions, and every one of those but the chain id comes from this file.
+func evalFGenesis(r Result, genesis []byte) Result {
+	r.Parse = "ok"
+	r.Kind = "Genesis"
+	vm, err := fvmFrom(genesis)
+	if err != nil {
+		r.Syntactic = VInternal
+		r.Exec = VInternal
+		r.Note = "the reference VM did not start: " + trim(err.Error())
+		return r
+	}
+	last, err := vm.LastAccepted(context.Background())
+	if err != nil {
+		r.Syntactic = VInternal
+		r.Exec = VInternal
+		r.Note = "the chain has no last-accepted block: " + trim(err.Error())
+		return r
+	}
+	r.Hash = hex.EncodeToString(last[:])
+	r.Syntactic = VOK
+	r.Exec = VOK
+	r.Note = "the chain the F vectors are judged on"
+	return r
 }
