@@ -183,13 +183,26 @@ conformance-cpp:
 
 # ---- make chains: the cross-language chain differential ----------------------
 #
-# ONE corpus, generated from the Go P-chain and X-chain, handed to three
-# implementations of each chain. Every field two of them answer differently
+# ONE corpus, generated from the Go chains themselves, handed to every
+# implementation of each chain. Every field two of them answer differently
 # fails the target and names the pair. See conformance/README.md.
 #
+# SIX chains: P and X from luxfi/node, and Q, Z, D and F from luxfi/chains.
+# The four were added because they had no vector at all, which is the shape the
+# P-chain's L1 fork hid in — a chain nothing is pointed at agrees with itself.
+#
+# The Rust column answers P and X. It does NOT answer Q, Z, D or F, and the
+# runner says so under NOT ANSWERED and fails: silence is not agreement, and a
+# target that went green while a whole column said nothing about four chains
+# would be reporting the agreement of whoever was left. Those four evaluators
+# are chains/rust's to write; the corpus and the runner are ready for them, and
+# each slots in as one more -eval line under the name `rust`.
+#
 # The generator is a separate Go module because it — and only it — depends on
-# luxfi/node. That dependency is the whole point of a reference, and keeping it
-# in its own module is what keeps it out of this one's graph.
+# luxfi/node and luxfi/chains. That dependency is the whole point of a
+# reference, and keeping it in its own module is what keeps it out of this
+# one's graph. Both are PUBLISHED versions with no replace directive, so the
+# corpus regenerates on any machine rather than on one.
 
 CONF        := $(ROOT)/conformance
 CONF_GEN    := $(CONF)/gen/gen
@@ -199,6 +212,11 @@ PVM_RUST    := $(ROOT)/chains/rust/platformvm/target/release/conformance
 XVM_RUST    := $(ROOT)/chains/rust/xvm/target/release/conformance
 PVM_CPP     := $(ROOT)/chains/cpp/platformvm/build/pvm_conformance
 XVM_CPP     := $(ROOT)/chains/cpp/xvm/build/xvm_conformance
+QVM_CPP     := $(ROOT)/chains/cpp/quantumvm/build/qvm_conformance
+ZVM_CPP     := $(ROOT)/chains/cpp/zkvm/build/zkvm_conformance
+DVM_CPP     := $(ROOT)/chains/cpp/dexvm/build/dexvm_conformance
+FVM_CPP     := $(ROOT)/chains/cpp/fhevm/build/fhevm_conformance
+CPP_EVALS   := $(PVM_CPP) $(XVM_CPP) $(QVM_CPP) $(ZVM_CPP) $(DVM_CPP) $(FVM_CPP)
 
 chains: chains-build
 	@echo
@@ -211,13 +229,17 @@ chains: chains-build
 		-eval "rust=$(PVM_RUST)" \
 		-eval "rust=$(XVM_RUST)" \
 		-eval "cpp=$(PVM_CPP)" \
-		-eval "cpp=$(XVM_CPP)"
+		-eval "cpp=$(XVM_CPP)" \
+		-eval "cpp=$(QVM_CPP)" \
+		-eval "cpp=$(ZVM_CPP)" \
+		-eval "cpp=$(DVM_CPP)" \
+		-eval "cpp=$(FVM_CPP)"
 
 # Every evaluator is built before the run, and a build that fails stops the
 # target. A differential that quietly lost one of its voices would report
 # agreement among whoever was left.
 chains-build:
-	@echo "==> chain differential: building four evaluators"
+	@echo "==> chain differential: building nine evaluators"
 	cd $(CONF)/gen && GOWORK=off go build -o gen .
 	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
@@ -225,7 +247,15 @@ chains-build:
 	cmake --build $(ROOT)/chains/cpp/platformvm/build --target pvm_conformance -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(ROOT)/chains/cpp/xvm/build --target xvm_conformance -j$(NPROC)
-	@for f in $(CONF_GEN) $(PVM_RUST) $(XVM_RUST) $(PVM_CPP) $(XVM_CPP); do \
+	cmake -S $(ROOT)/chains/cpp/quantumvm -B $(ROOT)/chains/cpp/quantumvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(ROOT)/chains/cpp/quantumvm/build --target qvm_conformance -j$(NPROC)
+	cmake -S $(ROOT)/chains/cpp/zkvm -B $(ROOT)/chains/cpp/zkvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(ROOT)/chains/cpp/zkvm/build --target zkvm_conformance -j$(NPROC)
+	cmake -S $(ROOT)/chains/cpp/dexvm -B $(ROOT)/chains/cpp/dexvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(ROOT)/chains/cpp/dexvm/build --target dexvm_conformance -j$(NPROC)
+	cmake -S $(ROOT)/chains/cpp/fhevm -B $(ROOT)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(ROOT)/chains/cpp/fhevm/build --target fhevm_conformance -j$(NPROC)
+	@for f in $(CONF_GEN) $(PVM_RUST) $(XVM_RUST) $(CPP_EVALS); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
 	done
 
