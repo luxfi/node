@@ -99,6 +99,7 @@ R	Z_BLOCK_TRAILING_BYTES	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing b
 R	Z_BLOCK_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
 R	Z_BLOCK_EMPTY_WIRE	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
 R	Z_BLOCK_ONE_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_GENESIS	ok	Genesis	67de330c19ffcc6b46eaf213575b4bbc28536518580a491af3eaf3227625723c	OK	OK	the chain the F vectors are judged on
 R	F_REGISTER	ok	RegisterCiphertext	b35098252eaee2c232aa238da59b9686d49610df88a3413c0d4e96586319a2bf	OK	OK	admitted by the funded chain
 R	F_GRANT	ok	GrantPermit	1a18d1d9ad23143350c06c3f907d29effc102735ec17c481b52ffde4a22035c1	OK	LEDGER	fhevm: ciphertext not found
 R	F_REVOKE	ok	RevokePermit	c52b646aadea448cd086f1f51edba7028a522edfc6a8e9d162c4db6b4c6faa46	OK	LEDGER	fhevm: permit not found
