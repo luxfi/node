@@ -40,17 +40,28 @@
 //! be two ids for one thing.
 
 pub mod block;
+pub mod db;
 pub mod error;
 pub mod fx;
+pub mod gossip;
 pub mod hash;
-pub mod host;
 pub mod ids;
+pub mod mempool;
+pub mod security;
 pub mod state;
 pub mod txs;
 pub mod utxo;
 pub mod vm;
 pub mod wire;
 pub mod zap;
+
+/// The node's seam, from the node.
+///
+/// `lux-rs/node` defines `Vm` and `Block` in its own `src/vm.rs` and holds
+/// every chain it runs as `Arc<dyn Vm>`. This crate names THAT trait — it does
+/// not restate it. A restatement would compile against a shape the node never
+/// sees, and would keep compiling on the day the node changed a method.
+pub use lux_node::vm as host;
 
 pub use error::{Error, Result};
 pub use ids::{Id, ShortId};

@@ -20,6 +20,3 @@ CLAUDE.md
 
 # Rust build output.
 target/
-
-# The chain differential's Go evaluator, built by `make chains`.
-/conformance/gen/gen
