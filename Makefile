@@ -238,23 +238,30 @@ chains: chains-build
 # Every evaluator is built before the run, and a build that fails stops the
 # target. A differential that quietly lost one of its voices would report
 # agreement among whoever was left.
+#
+# The C++ chains are built WHOLE — the default target, not just the evaluator.
+# The evaluators alone were not enough: an evaluator that only parses bytes
+# never constructs a VM, so when the node's seam grew `frontier()` and no port
+# had it, every C++ chain's test suite stopped compiling and this target stayed
+# green. A gate that builds less than what it measures is how the thing it was
+# built to catch gets past it. It costs a few minutes on a cold tree.
 chains-build:
 	@echo "==> chain differential: building nine evaluators"
 	cd $(CONF)/gen && GOWORK=off go build -o gen .
 	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release
-	cmake --build $(ROOT)/chains/cpp/platformvm/build --target pvm_conformance -j$(NPROC)
+	cmake --build $(ROOT)/chains/cpp/platformvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release
-	cmake --build $(ROOT)/chains/cpp/xvm/build --target xvm_conformance -j$(NPROC)
+	cmake --build $(ROOT)/chains/cpp/xvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/quantumvm -B $(ROOT)/chains/cpp/quantumvm/build -DCMAKE_BUILD_TYPE=Release
-	cmake --build $(ROOT)/chains/cpp/quantumvm/build --target qvm_conformance -j$(NPROC)
+	cmake --build $(ROOT)/chains/cpp/quantumvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/zkvm -B $(ROOT)/chains/cpp/zkvm/build -DCMAKE_BUILD_TYPE=Release
-	cmake --build $(ROOT)/chains/cpp/zkvm/build --target zkvm_conformance -j$(NPROC)
+	cmake --build $(ROOT)/chains/cpp/zkvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/dexvm -B $(ROOT)/chains/cpp/dexvm/build -DCMAKE_BUILD_TYPE=Release
-	cmake --build $(ROOT)/chains/cpp/dexvm/build --target dexvm_conformance -j$(NPROC)
+	cmake --build $(ROOT)/chains/cpp/dexvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/fhevm -B $(ROOT)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release
-	cmake --build $(ROOT)/chains/cpp/fhevm/build --target fhevm_conformance -j$(NPROC)
+	cmake --build $(ROOT)/chains/cpp/fhevm/build -j$(NPROC)
 	@for f in $(CONF_GEN) $(PVM_RUST) $(XVM_RUST) $(CPP_EVALS); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
 	done
