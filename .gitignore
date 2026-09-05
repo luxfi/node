@@ -1,4 +1,8 @@
-bin/
+# The build output directory this Makefile writes into, at the root — not any
+# directory called `bin` anywhere in the tree. Unanchored, this pattern also
+# swallowed `chains/rust/*/src/bin/`, which is where Cargo keeps a crate's
+# programs: source, tracked, and nothing to do with a build.
+/bin/
 build/
 /luxd
 *.o
