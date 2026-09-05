@@ -77,7 +77,7 @@ func main() {
 		bins = append(bins, &binary{impl: impl, cmd: strings.Fields(command)})
 	}
 
-	fmt.Printf("chain differential benchmark: %d evaluators, %d repeats of the corpus per run, %d runs\n\n",
+	fmt.Printf("chain differential benchmark — evaluators: %d · repeats of the corpus per run: %d · runs: %d\n\n",
 		len(bins), *repeats, *runs)
 
 	for run := 0; run < *runs; run++ {
