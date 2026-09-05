@@ -46,7 +46,7 @@ Reused, not vendored: `luxcpp/pqclean` + `luxcpp/crypto/mldsa` (FIPS 204),
       (ulimit -s $s; ./build/san/json_test >/dev/null 2>&1; echo "$s -> $?")
     done
 
-Fourteen suites, ~1150 assertions. `differential` is the load-bearing one: every
+Fourteen suites, 1194 assertions. `differential` is the load-bearing one: every
 constant in `test/golden.hpp` came out of the GO F-Chain, and that suite
 reproduces each in C++ — the wire bytes, the ids, the effects, the gas for every
 (operation, scheme, payload-length) triple, the four persisted records, the
