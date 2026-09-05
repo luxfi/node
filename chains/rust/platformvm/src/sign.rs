@@ -36,14 +36,31 @@ pub fn address(compressed_key: &[u8]) -> ShortId {
 /// signature over it.
 ///
 /// The recovery id must be one of the four the curve defines; anything else is
-/// not a signature at all. A signature whose `s` was negated and whose
-/// recovery id was flipped recovers the same key — that is ECDSA, and Go has
-/// it too, so the two implementations accept and refuse exactly the same
-/// bytes. It is not a way to spend someone's output: it changes the
-/// transaction's id, because the id is the hash of the bytes that travel.
+/// not a signature at all. Beyond that this asks only what the curve answers,
+/// because that is all Go asks: `luxfi/crypto/secp256k1.RecoverPubkey` checks
+/// the length and `v < 4` and recovers. Its low-`s` refusal lives in
+/// `VerifySignature`, which the credential path never calls — `secp256k1fx`
+/// recovers an address and compares it to the output's owner, and nothing in
+/// between looks at `s`.
+///
+/// So a signature whose `s` was negated and whose recovery id had its parity
+/// flipped is one Go spends under, and it must be one we spend under. It names
+/// the same key: negating `s` and negating the point `R` cancel, which is
+/// ECDSA. `k256` refuses a high `s` in verification, so the two lines below put
+/// such a signature back in the form `k256` will read before asking it. The
+/// answer is the same address either way, which is the point — malleating is
+/// not a way to take someone's output, it only changes the transaction's id,
+/// because the id is the hash of the bytes that travel.
 pub fn recover(sighash: &Id, sig: &[u8; 65]) -> Option<ShortId> {
     let signature = Signature::from_slice(&sig[..64]).ok()?;
     let recovery = RecoveryId::from_byte(sig[64])?;
+    let (signature, recovery) = match signature.normalize_s() {
+        Some(low) => (
+            low,
+            RecoveryId::new(!recovery.is_y_odd(), recovery.is_x_reduced()),
+        ),
+        None => (signature, recovery),
+    };
     let key = VerifyingKey::recover_from_prehash(&sighash[..], &signature, recovery).ok()?;
     Some(address(key.to_encoded_point(true).as_bytes()))
 }
@@ -99,6 +116,102 @@ mod tests {
         let b = recover(&sighash, &sign(&key(0x22), &sighash));
         assert!(a.is_some() && b.is_some());
         assert_ne!(a, b);
+    }
+
+    /// Sixteen bytes of hex into the bytes they spell.
+    fn unhex(s: &str) -> Vec<u8> {
+        (0..s.len() / 2)
+            .map(|i| u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).expect("hex"))
+            .collect()
+    }
+
+    /// The bytes Go answers with, recorded from Go.
+    ///
+    /// Produced by `luxfi/crypto@v1.20.5` — `secp256k1.ToPrivateKey([0x11; 32])`,
+    /// `SignHash([7; 32])`, then `RecoverPublicKeyFromHash` and
+    /// `hash.PubkeyBytesToAddress`, which is the credential path
+    /// `luxfi/utxo/secp256k1fx.Fx.VerifyCredentials` walks. The same values come
+    /// out of both Go builds — cgo over `libsecp256k1`, and `CGO_ENABLED=0` over
+    /// decred — so they are the network's answer and not one build's.
+    const GO_KEY_SEED: u8 = 0x11;
+    const GO_SIGHASH: Id = [7; 32];
+    const GO_SIG: &str = "111f20b9521ba1924ecfb91595426246b152cc1187e83f798cbd61f95f2c4cb107da8d209539506429d1ecd4033b2c207b89267f7dd8674421737193cd84f1dc00";
+    /// The same signature with `s` negated and the recovery id's parity bit
+    /// flipped. Go recovers the same key from it, because that is what the
+    /// curve does, and Go looks no further.
+    const GO_MALLEATED: &str = "111f20b9521ba1924ecfb91595426246b152cc1187e83f798cbd61f95f2c4cb1f82572df6ac6af9bd62e132bfcc4d3de3f25b667317038f79e5eecf902b14f6501";
+    const GO_ADDRESS: &str = "fc7250a211deddc70ee5a2738de5f07817351cef";
+
+    fn go_sig(hex: &str) -> [u8; 65] {
+        let mut out = [0u8; 65];
+        out.copy_from_slice(&unhex(hex));
+        out
+    }
+
+    fn go_address() -> ShortId {
+        let mut out = [0u8; 20];
+        out.copy_from_slice(&unhex(GO_ADDRESS));
+        ShortId(out)
+    }
+
+    /// Signing here writes the bytes Go signs, and reading them names the
+    /// address Go names.
+    #[test]
+    fn the_canonical_signature_is_byte_for_byte_gos() {
+        let ours = sign(&key(GO_KEY_SEED), &GO_SIGHASH);
+        assert_eq!(
+            ours.to_vec(),
+            unhex(GO_SIG),
+            "the deterministic signature diverged from Go's"
+        );
+        assert_eq!(recover(&GO_SIGHASH, &ours), Some(go_address()));
+    }
+
+    /// The finding. A malleated signature is one Go spends under, so refusing
+    /// it here would be two networks: one node's valid transaction is another
+    /// node's invalid one, and the chain forks on a credential.
+    ///
+    /// `s` is negated and the recovery id's parity bit flipped — the same key
+    /// comes back out, which is ECDSA, and Go's recover does no low-`s` check
+    /// to stop it (`RecoverPubkey` checks only the length and `v < 4`; the
+    /// low-`s` refusal lives in `VerifySignature`, which this path never
+    /// calls).
+    #[test]
+    fn a_malleated_signature_names_the_address_go_names() {
+        let malleated = go_sig(GO_MALLEATED);
+        let canonical = go_sig(GO_SIG);
+        // The premise: these really are two different signatures.
+        assert_ne!(malleated, canonical);
+        // And really the malleated form — high `s`, flipped parity.
+        assert_eq!(malleated[..32], canonical[..32], "r is untouched");
+        assert_ne!(malleated[32..64], canonical[32..64], "s is negated");
+        assert_eq!(malleated[64], canonical[64] ^ 1, "parity is flipped");
+
+        assert_eq!(
+            recover(&GO_SIGHASH, &malleated),
+            Some(go_address()),
+            "Go spends under this signature and we refused it"
+        );
+    }
+
+    /// Malleating is not a way to take someone's output: the same address
+    /// comes back, so the flow check still asks the same owner.
+    #[test]
+    fn malleating_does_not_move_the_output_to_someone_else() {
+        assert_eq!(
+            recover(&GO_SIGHASH, &go_sig(GO_MALLEATED)),
+            recover(&GO_SIGHASH, &go_sig(GO_SIG))
+        );
+    }
+
+    /// Negating `s` without flipping the recovery id is a different point, and
+    /// so a different key — one nobody holds. Go answers some address here
+    /// too, just not the signer's, and the flow check refuses it there.
+    #[test]
+    fn negating_s_alone_names_someone_else() {
+        let mut half = go_sig(GO_MALLEATED);
+        half[64] ^= 1; // put the parity back
+        assert_ne!(recover(&GO_SIGHASH, &half), Some(go_address()));
     }
 
     #[test]
