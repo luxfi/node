@@ -61,8 +61,10 @@ One environment variable, read once, at first use.
 | `recover` (secp256k1) | yes | **present but not applicable.** `lux_gpu_ecrecover_batch` answers a different question: it returns an Ethereum address, `keccak(Q.x‖Q.y)[12:]`. A Lux address is `ripemd160(sha256(compressed Q))`, and the recovered key never leaves that call, so its answer cannot be turned into this one's |
 | BLS proof of possession | yes (blst / `blst` crate) | **none exists.** The ABI has a raw `op_bls12_381_pairing`, not a verify that knows the `BLS_POP_…` domain tag; composing one here would mean writing hash-to-curve twice |
 
-No operation is known to diverge. See "What was measured" below for exactly what
-that claim rests on.
+No operation diverges between the CPU and the plugin — "What was measured" below
+says exactly what that claim rests on, and what it does not. A cross-LANGUAGE
+divergence is a different thing, and consolidating the primitives turned one up;
+it is the last section.
 
 ## The three homes
 
