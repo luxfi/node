@@ -1,0 +1,82 @@
+[
+  {
+    "id": "Q_BASE_TX",
+    "chain": "Q",
+    "name": "QuantumVM Base Transaction",
+    "description": "The signature preimage: what a Q-Chain transaction IS, and what its id is the hash of",
+    "category": "tx_wire",
+    "wire_hex": "5a415000020000001000000043000000e8030000000000006400000000000000080000001b0000007175616e74756d2d696e737472756374696f6e2d7061796c6f6164",
+    "expected_action": "verify",
+    "is_l1_fork_gate": false,
+    "go_expectation": {
+      "valid": true,
+      "tx_type": "QuantumBaseTx",
+      "status": "ACCEPTED",
+      "tx_id": "26DCaQ56VyQfmWEpZKmYXjzMGVZrCYSs7XFQvV7DQuYbc2v8tz",
+      "tx_id_hex": "8f86dca5f8117440ff0a3ebe24b3a5810811a990ef5369822a9838707d7a3873"
+    }
+  },
+  {
+    "id": "Q_TX_ENVELOPE",
+    "chain": "Q",
+    "name": "QuantumVM Transaction Envelope",
+    "description": "The preimage plus the ML-DSA signature over it — what rides in a block",
+    "category": "tx_wire",
+    "wire_hex": "5a4150000200000010000000830000003000000043000000000000000000000000001a3deb03b2a10000000000000000000000000000000000000000000000005a415000020000001000000043000000e8030000000000006400000000000000080000001b0000007175616e74756d2d696e737472756374696f6e2d7061796c6f6164",
+    "expected_action": "verify_envelope",
+    "is_l1_fork_gate": false,
+    "go_expectation": {
+      "valid": true,
+      "tx_type": "QuantumBaseTx",
+      "status": "ACCEPTED",
+      "tx_id": "26DCaQ56VyQfmWEpZKmYXjzMGVZrCYSs7XFQvV7DQuYbc2v8tz",
+      "tx_id_hex": "8f86dca5f8117440ff0a3ebe24b3a5810811a990ef5369822a9838707d7a3873"
+    }
+  },
+  {
+    "id": "Q_BLOCK",
+    "chain": "Q",
+    "name": "QuantumVM Canonical Block",
+    "description": "A block over one transaction, encoded as the Go chain encodes one",
+    "category": "block_wire",
+    "wire_hex": "5a4150000200000018000000030100008300000000000000e803000000000000010000000000000001010101010101010101010101010101010101010101010101010101010101011e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e0100000000000000a0ffffff0100000008000000830000005a4150000200000010000000830000003000000043000000000000000000000000001a3deb03b2a10000000000000000000000000000000000000000000000005a415000020000001000000043000000e8030000000000006400000000000000080000001b0000007175616e74756d2d696e737472756374696f6e2d7061796c6f6164",
+    "expected_action": "block_accept",
+    "is_l1_fork_gate": false,
+    "go_expectation": {
+      "valid": true,
+      "status": "ACCEPTED",
+      "block_id": "2thq7BJZUJF3PQMQgMmeFoELS7xnSPFvGBvDr3DbWNN4e9eivL",
+      "block_id_hex": "f918a3f093723ed8619cfa0f63324525c907d05e13435e430d7cbbe103da382d"
+    }
+  },
+  {
+    "id": "Q_BLOCK_PADDED",
+    "chain": "Q",
+    "name": "QuantumVM Block With Padding",
+    "description": "The same block with a byte past its content and the declared size grown to cover it — one block under two ids",
+    "category": "block_wire",
+    "wire_hex": "5a4150000200000018000000040100008300000000000000e803000000000000010000000000000001010101010101010101010101010101010101010101010101010101010101011e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e0100000000000000a0ffffff0100000008000000830000005a4150000200000010000000830000003000000043000000000000000000000000001a3deb03b2a10000000000000000000000000000000000000000000000005a415000020000001000000043000000e8030000000000006400000000000000080000001b0000007175616e74756d2d696e737472756374696f6e2d7061796c6f616400",
+    "expected_action": "block_reject",
+    "is_l1_fork_gate": false,
+    "go_expectation": {
+      "valid": false,
+      "status": "REJECTED",
+      "reason": "quantumvm: block wire is not the canonical encoding of its content"
+    }
+  },
+  {
+    "id": "Q_BLOCK_BODY_IN_BLOB",
+    "chain": "Q",
+    "name": "QuantumVM Block Carrying A Preimage",
+    "description": "A block whose transaction blob holds the signature preimage where the envelope belongs",
+    "category": "block_wire",
+    "wire_hex": "5a4150000200000018000000c30000004300000000000000e803000000000000010000000000000001010101010101010101010101010101010101010101010101010101010101011e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e0100000000000000a0ffffff0100000008000000430000005a415000020000001000000043000000e8030000000000006400000000000000080000001b0000007175616e74756d2d696e737472756374696f6e2d7061796c6f6164",
+    "expected_action": "block_reject",
+    "is_l1_fork_gate": false,
+    "go_expectation": {
+      "valid": false,
+      "status": "REJECTED",
+      "reason": "quantumvm: transaction 0: zap: buffer too small"
+    }
+  }
+]
