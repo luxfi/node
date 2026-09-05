@@ -88,12 +88,18 @@ refused at the header.
 
 ## The seam
 
-`PlatformVm` has one inherent method per method of `lux-rs/node`'s `Vm` trait,
-with the same names, the same `Id` (`lux_consensus::finality::Id`) and the same
-error shape, so the host satisfies its trait by naming this type. The trait is
-not re-declared here: a second declaration would be a second seam, and the two
-could drift. `vm::Vm` and `vm::Block` in this crate state the same shape for
-this crate's own use.
+`PlatformVm` implements `lux-rs/node`'s own `Vm` — `lux_node::vm::Vm`, reached
+through a path dependency on that crate and re-exported from `vm` for
+convenience. Nothing of the seam is declared here. A restated trait of the same
+shape compiles and satisfies nothing, because the node's chain map holds
+`Box<dyn lux_node::vm::Vm>` and only the host's own trait coerces into it;
+`the_seam_is_the_hosts_own_declaration` builds that box by its full path so the
+claim is checked rather than asserted. `Id` is `lux_consensus::finality::Id` on
+both sides of the join, so there is one id type in a node's chain map.
+
+The dependency runs chain → node, not node → chain: a chain naming the seam it
+plugs into cannot also be named by it. Registration therefore belongs to
+whatever holds both, which is this repo.
 
 `PlatformVm::from_genesis` is the whole birth of a network in one call: hand it
 the bytes a network was published as and it holds the first block, the first

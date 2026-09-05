@@ -15,6 +15,14 @@ publish = false
 # a chain here plug into `lux-rs/node`'s `Vm` with no conversion at the join.
 lux-consensus = "1.23.0"
 
+# The seam itself. `lux-rs/node` states `Vm` and `Block` once, in `src/vm.rs`,
+# and this chain names that declaration rather than restating it: a second
+# declaration of the same trait is a second seam, and the two can drift while
+# both compile. A path dependency because the node and the chains it runs move
+# together and a version number between them would be a way to disagree about
+# what a block is.
+lux-node = { path = "../../../../../lux-rs/node" }
+
 # SHA-256. A tx id is `sha256(signed bytes)` and a block id is `sha256(bytes)`;
 # a second implementation of that would be a second answer to "which block".
 sha2 = "0.10"
