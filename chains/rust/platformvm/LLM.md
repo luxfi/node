@@ -12,7 +12,7 @@ and signed for by whoever owns it. None exists to make entry selective.
 
 ```
 cd chains/rust/platformvm
-PATH=~/.cargo/bin:$PATH cargo test          # 410 tests
+PATH=~/.cargo/bin:$PATH cargo test          # 416 tests
 PATH=~/.cargo/bin:$PATH cargo clippy --all-targets
 ```
 
@@ -148,14 +148,6 @@ vectors for it.
 Nothing here is a stub. Where a thing is not held, the path that would need it
 refuses **by name** with its own error, rather than succeeding against nothing.
 
-- **Warp aggregate verification, on the execution path.** The signed envelope
-  and the addressed call are opened and read, and the message's source chain
-  and address are checked against the conversion the L1 recorded. The aggregate
-  BLS proof over the source chain's validator set is `verify_warp_messages`,
-  which Go likewise runs as its own pass at the height the block is verified
-  against — the set that signed has to be the set as it stood then, which is
-  what `validators::History` now answers. Wiring that pass into the block
-  executor is the remaining half.
 - **`TransformChainTx`.** Refused — which is *fidelity*, not a gap: Go refuses
   it permanently too (`errTransformChainTxNotPermitted`). A network's terms are
   therefore whatever it was born with, and a network born without them refuses
@@ -216,6 +208,15 @@ node implements, because both are things the chain cannot know by itself.
   and refuses a mismatch before it looks at anything else, because a
   transaction that is well formed on two networks is one signature that spends
   on both.
+- **A warp message is only bound to its source by the aggregate.** The source
+  chain and the sender's address are written *inside* the message, so anyone
+  can put any pair there; what nobody can write is a quorum of that chain's
+  validators over the bytes. `Vm::verify` checks that first, over every
+  transaction a block carries — the decision ones and, on a proposal block, the
+  one the chain emitted about itself — because a warp message is an assertion
+  about another chain no matter who put it in the block. Without it
+  `verify_l1_conversion` would be comparing a claim with itself, and anyone
+  could re-weight or de-register any L1's validators.
 - **The set at a past height is not the set now.** A signature made at height
   H is checked long after H. `validators::History` records what each accepted
   height changed and rewinds; `PlatformVm::validator_set_at` answers, and
