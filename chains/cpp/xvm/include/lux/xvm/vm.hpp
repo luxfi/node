@@ -193,6 +193,14 @@ public:
     lux::node::Id last_accepted() const override { return last_accepted_; }
     std::uint64_t last_accepted_height() const override;
 
+    // The highest height THIS node decided. Every height this chain holds
+    // arrived through accept(), because there is no path that moves the tip
+    // without one: the chain reads its store on boot and otherwise advances
+    // only when a block is accepted. So the frontier is the tip, and it stops
+    // being the tip the day an import lands — at which point the import moves
+    // this and accept() alone must not.
+    std::uint64_t frontier() const override { return last_accepted_height(); }
+
     // ---- what the port exposes beyond the seam ----
 
     state::State& chain_state() { return state_; }
