@@ -3,26 +3,20 @@
 
 #include "lux/xvm/id.hpp"
 
-#include "ripemd160.hpp"
-#include "sha256.hpp"
+// Every primitive the chain is defined over comes from here, and from nowhere
+// else. A hash with two implementations is a chain with two answers. This is
+// also where the choice between computing one and handing it to an installed
+// kernel library is made — see gpu/README.md.
+#include "lux/gpu/gpu.hpp"
 
 #include <cstdio>
 
 namespace lux::xvm {
 
-Id sha256(ByteView data) {
-    Id out{};
-    cevm::crypto::sha256(reinterpret_cast<std::byte*>(out.data()),
-                         reinterpret_cast<const std::byte*>(data.data()), data.size());
-    return out;
-}
+Id sha256(ByteView data) { return lux::gpu::sha256(data); }
 
 ShortId pubkey_to_address(ByteView compressed_pubkey) {
-    const Id h = sha256(compressed_pubkey);
-    ShortId out{};
-    cevm::crypto::ripemd160(reinterpret_cast<std::byte*>(out.data()),
-                            reinterpret_cast<const std::byte*>(h.data()), h.size());
-    return out;
+    return lux::gpu::pubkey_to_address(compressed_pubkey);
 }
 
 Id id_prefix(const Id& id, std::uint64_t prefix) {

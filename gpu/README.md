@@ -1,36 +1,154 @@
-# gpu
+# gpu — the one place a Lux chain asks for a primitive
 
-A thin shim. No source lives here — `make gpu` builds `lux-gpu/gpu`'s existing
-`build/` directory in place; `make all` builds it too (GPU is on by default,
-not opt-in).
+A chain needs a hash and a signature check. This directory is where it asks for
+one, in all three languages, and where the choice between computing the answer
+and handing the question to an installed kernel library is made — once, in one
+place, with one rule.
 
-## Path correction
+## The boundary
 
-The brief names `~/work/lux-gpu/gpu`; that path does not exist on this
-machine. The actual checkout of that repository (verified by `git remote -v`
-→ `git@github.com:lux-gpu/gpu.git`) lives at `~/work/luxcpp/gpu`. This shim
-points there. (A second, narrower repo, `lux-gpu/lux-gpu` at
-`~/work/luxcpp/lux-gpu`, builds only a static core library linked into
-`lux-accel` — not this one, and not what the brief describes as "kernels".)
+**Kernels are private and no kernel source is here.** They live in their own
+repository (`lux-gpu/gpu`, checked out on this machine at `~/work/luxcpp/gpu`).
+What crosses the line into this public tree is a C ABI: four symbol names.
 
-## What it is
-
-The core GPU acceleration library: a stable plugin ABI
-(`include/lux/gpu/backend_plugin.h`), a dynamic loader, and a CPU fallback
-backend built in. Backend plugins (Metal, CUDA, WebGPU) are separate repos
-loaded at runtime — this repo alone gives a CPU-correct build with the loader
-compiled in, which is what `make gpu` builds. It already carries real kernel
-libraries beyond the loader — `libluxgpu_bls12_381_host.a`,
-`libluxgpu_dilithium_host.a` — the post-quantum host-side primitives the
-`lux-pq` crate (`runtime/rust`) and `libluxcrypto` (`runtime/go`, `runtime/cpp`)
-both verify under.
-
-## Build
-
-```sh
-cmake -B ~/work/luxcpp/gpu/build ~/work/luxcpp/gpu
-cmake --build ~/work/luxcpp/gpu/build -j"$(nproc)"
+```
+lux_gpu_create()             -> LuxGPU*
+lux_gpu_destroy(LuxGPU*)
+lux_gpu_backend_name(LuxGPU*) -> const char*
+lux_gpu_keccak256_batch(LuxGPU*, const uint8_t* inputs, uint8_t* out,
+                        const size_t* input_lens, size_t n) -> LuxError
 ```
 
-Already configured on this machine — the above is an incremental rebuild, not
-a from-scratch one.
+Nothing is linked at build time. The library is `dlopen`'d, so a build machine
+that has never heard of it produces the same binary as one that has, and a
+binary that never finds it is a whole node.
+
+## The rule
+
+**The CPU backend is complete.** Every primitive has a CPU body, always
+compiled, and it is the DEFINITION: the plugin does not get to have its own
+opinion. Two backends that disagree about a hash disagree about a block, so a
+plugin answer is either byte-identical to the CPU answer or a bug.
+
+The plugin is a **strict positive overlay**. It may only ever be faster. When it
+is absent, when it declines a batch, or when it errors, the CPU answers — a
+device's bad day never propagates into consensus.
+
+## The knob
+
+One environment variable, read once, at first use.
+
+| `LUX_GPU` | |
+|---|---|
+| `off` | CPU only. Nothing is opened. |
+| `on` | Plugin for batch work when a library is installed. **Default**, and it degrades to `off` on its own when nothing is installed. |
+| `verify` | Compute **both** and stop on the first byte that differs. |
+
+`LUX_GPU_LIB` names the library path when it is not on the loader's path.
+
+`LUX_GPU=verify` is how "we believe they agree" becomes "we checked". It is what
+`make gpu-differential` sets.
+
+## What actually has two paths
+
+| operation | CPU | plugin |
+|---|---|---|
+| `keccak256_batch` | yes, the definition | yes — `lux_gpu_keccak256_batch` |
+| `merkle_root` (RFC 6962 fold) | yes | yes, through the batch: a level of the tree is a batch of independent hashes, which is the only shape a device can help with |
+| `keccak256` (one input) | yes | **no, deliberately.** One hash is not a batch; a dispatch costs more than the answer |
+| `sha256` | yes | **none exists.** The plugin ABI's hash surface is keccak256, SHA3-256, SHAKE256, BLAKE3 and Poseidon2. SHA3-256 is not SHA-256 |
+| `ripemd160` | yes | **none exists** |
+| `recover` (secp256k1) | yes | **present but not applicable.** `lux_gpu_ecrecover_batch` answers a different question: it returns an Ethereum address, `keccak(Q.x‖Q.y)[12:]`. A Lux address is `ripemd160(sha256(compressed Q))`, and the recovered key never leaves that call, so its answer cannot be turned into this one's |
+| BLS proof of possession | yes (blst / `blst` crate) | **none exists.** The ABI has a raw `op_bls12_381_pairing`, not a verify that knows the `BLS_POP_…` domain tag; composing one here would mean writing hash-to-curve twice |
+
+No operation is known to diverge. See "What was measured" below for exactly what
+that claim rests on.
+
+## The three homes
+
+```
+gpu/gpu.go, plugin_cgo.go, plugin_nocgo.go   Go     package github.com/luxfi/node2/gpu
+gpu/rust/                                    Rust   crate lux-gpu
+gpu/cpp/                                     C++    CMake target lux_gpu
+```
+
+Each is the same shape: a `cpu` half that is always there, a plugin half behind
+`dlopen`, one `LUX_GPU` policy, and one `Backend()` that names which is
+answering. In Go the plugin half is `//go:build cgo` — a `CGO_ENABLED=0` build
+has no way to open a shared library, so it never has one. That is not a missing
+feature; it is the build `make luxd RUNTIME=go` produces, and it is complete.
+
+The C++ target also compiles the reused `luxcpp/crypto` bodies its CPU half
+delegates to. Those used to be compiled twice, once into `xvm` and once into
+`platformvm`, and the P-chain carried a third SHA-256 of its own in a header —
+three builds of one hash in one tree, and three places for the chains to drift.
+
+## Who goes through it
+
+Every chain, for every primitive it is defined over.
+
+```
+chains/rust/xvm/src/hash.rs              names the seam's primitives, defines none
+chains/rust/xvm/src/fx/secp256k1.rs      recover_public_key
+chains/rust/platformvm/src/ids.rs        hash256
+chains/rust/platformvm/src/sign.rs       address, recover
+chains/cpp/xvm/src/id.cpp                sha256, pubkey_to_address
+chains/cpp/xvm/src/root.cpp              keccak, the tags, the fold
+chains/cpp/xvm/src/fx.cpp                recover_address
+chains/cpp/platformvm/include/.../sha256.hpp   sha256
+chains/cpp/platformvm/src/fx.cpp         address_of_compressed_key, recover_address
+```
+
+Signing is deliberately outside: a chain verifies signatures and never makes
+them, so `k256`'s `SigningKey` stays in the chains' test and tooling halves. The
+seam exists to make VERIFICATION agree across backends.
+
+## What was measured
+
+Run `make gpu-differential`. It builds all three seams and runs each one's tests
+twice — once with no library visible, once with `LUX_GPU=verify` against an
+installed one — and every input is asked of both backends and compared byte for
+byte.
+
+On the machine this was written on:
+
+- **`plugin:cpu`, not `plugin:cuda`.** `lux_backend_available` reports 1 for the
+  plugin's own SIMD CPU backend and 0 for Metal, CUDA and Dawn. The only device
+  backend built here, `libluxgpu_backend_webgpu.so`, does not load: it needs
+  `libwgpu_native.so`, which is not on this machine. So the differential proves
+  the **dispatch and the ABI** agree with the CPU definition, on every batch
+  shape tried; it does **not** exercise a device kernel, because there is no
+  device backend installed to exercise. `Backend()` reports the plugin's own
+  name for exactly this reason — a host that says `plugin:cpu` is telling you it
+  found the library and no device.
+- Every seam's test carries a **negative control** on the `verify` comparison
+  itself: it is handed a deliberately flipped byte and must refuse. A comparison
+  nothing has ever seen fail is a comparison nobody has checked can fail.
+
+## One divergence, found by consolidating
+
+Recovery ids 2 and 3. Go accepts all four (`luxfi/crypto/secp256k1`
+`checkSignature` refuses only `v >= 4`) and recovers correctly for each; Rust's
+`k256` does the same. Ids 2 and 3 mean `R.x = r + n`, and the first-party C++
+curve refuses `r >= n` at parse time, so it has no path to them.
+
+Before this seam the two C++ chains disagreed about that, with each other and
+with Go:
+
+- `chains/cpp/xvm` **accepted** them, by masking `v & 1` — which recovers the key
+  of id 0 or 1, a key the signer never had. A C++ node would have admitted a
+  transaction Go and Rust both refuse.
+- `chains/cpp/platformvm` **refused** them.
+
+Both now refuse, which is the fail-closed half and matches Go on every input a
+wallet can produce (an honest signature lands on id 2 or 3 with probability
+about 2⁻¹²⁸). It does not match Go on a hand-built one. That residue is a real
+cross-language disagreement about a transaction, it belongs to whoever owns the
+P/X differential, and closing it properly means teaching the C++ curve the
+`r + n` case.
+
+## Building the kernel library
+
+`make gpu` builds `lux-gpu/gpu`'s `luxgpu_core_static` target in place. It is
+not needed to build or run a node; it is needed to have something for
+`LUX_GPU_LIB` to point at.
