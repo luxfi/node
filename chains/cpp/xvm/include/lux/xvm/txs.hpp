@@ -85,7 +85,7 @@ struct UTXOID {
 
     // input_id is the unique id of the UTXO being spent: sha256 of the output
     // index as a big-endian prefix over the tx id.
-    Id input_id() const { return id_prefix(tx_id, std::uint64_t(output_index)); }
+    Id input_id() const { return prefix_id(tx_id, std::uint64_t(output_index)); }
     int compare(const UTXOID& other) const;
     bool operator==(const UTXOID& o) const {
         return tx_id == o.tx_id && output_index == o.output_index;

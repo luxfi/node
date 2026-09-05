@@ -23,7 +23,7 @@
 #include "lux/xvm/mempool.hpp"
 #include "lux/xvm/root.hpp"
 #include "lux/xvm/state.hpp"
-#include "lux/xvm/store.hpp"
+#include "lux/core/store.hpp"
 #include "lux/xvm/txs.hpp"
 
 #include <map>

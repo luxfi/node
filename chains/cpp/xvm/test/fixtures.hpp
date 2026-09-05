@@ -9,10 +9,14 @@
 
 #include "lux/xvm/fx.hpp"
 #include "lux/xvm/state.hpp"
-#include "lux/xvm/store.hpp"
+#include "lux/core/store.hpp"
 #include "lux/xvm/txs.hpp"
 
 namespace lux::xvm::test {
+
+// The harness — check, check_eq, hex_of, from_hex — is the node's, in core.
+using namespace lux::core::test;
+
 
 namespace detail {
 // A base only so the store is constructed before the state that references it;

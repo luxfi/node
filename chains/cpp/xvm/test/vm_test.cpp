@@ -15,7 +15,7 @@
 // spendable outputs, so every later transaction spends value that a transaction
 // created — there is no back door that mints UTXOs into the set.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 #include "keys.hpp"
 
@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {

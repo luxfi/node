@@ -16,7 +16,7 @@
 // wants. Here the chain is real and seeded to the same shape — the same
 // question, asked of a real store, which is strictly harder to fake.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 #include "keys.hpp"
 
@@ -25,6 +25,7 @@
 #include "lux/xvm/txs.hpp"
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {

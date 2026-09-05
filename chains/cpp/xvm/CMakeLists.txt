@@ -80,10 +80,15 @@ if(NOT _node OR NOT _consensus)
 endif()
 message(STATUS "xvm: VM seam at ${_node}, Id from ${_consensus}")
 
-# ── the reused crypto, compiled in place (no vendoring, no submodule) ────────
+# ── core: the names, the codec and the store, shared with every other chain ──
+#
+# It carries sha256 and ripemd160, which is why they are not below: a binary
+# compiles each hash once, or it has two of them.
+set(LUXCPP_CRYPTO_DIR "${_crypto}" CACHE PATH "luxcpp/crypto checkout")
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core ${CMAKE_CURRENT_BINARY_DIR}/core)
+
+# ── the reused crypto this chain needs on top of core's hashes ───────────────
 add_library(xvm_crypto STATIC
-  ${_crypto}/sha256/cpp/sha256.cpp
-  ${_crypto}/ripemd160/cpp/ripemd160.cpp
   ${_crypto}/keccak/cpp/keccak.cpp
   ${_crypto}/secp256k1/cpp/ecrecover.cpp
   ${_crypto}/secp256k1/cpp/batch_inv.cpp
@@ -91,19 +96,17 @@ add_library(xvm_crypto STATIC
 )
 target_include_directories(xvm_crypto PUBLIC
   ${_crypto}/include
-  ${_crypto}/sha256/cpp
-  ${_crypto}/ripemd160/cpp
+  ${_crypto}/keccak/cpp
   ${_crypto}/secp256k1/cpp
 )
+target_link_libraries(xvm_crypto PUBLIC lux_core)
 
 # ── xvm itself ───────────────────────────────────────────────────────────────
 add_library(xvm STATIC
-  src/id.cpp
   src/address.cpp
   src/wire.cpp
   src/fx.cpp
   src/txs.cpp
-  src/store.cpp
   src/state.cpp
   src/root.cpp
   src/executor.cpp
@@ -117,7 +120,7 @@ target_include_directories(xvm PUBLIC
   ${_node}/include
   ${_consensus}/include
 )
-target_link_libraries(xvm PUBLIC xvm_crypto)
+target_link_libraries(xvm PUBLIC xvm_crypto lux_core)
 target_compile_options(xvm PRIVATE -Wall -Wextra)
 
 # ── tests ────────────────────────────────────────────────────────────────────
@@ -129,13 +132,12 @@ target_compile_options(xvm PRIVATE -Wall -Wextra)
 #   semantic    the chain's own agreement, incl. import/export
 #   executor    what applying a tx does to the UTXO set
 #   address     bech32, against Go's own strings
-#   store       the durable log, and what survives a restart
 #   state       the diff, and what acceptance means
 #   block       block bytes, ids, and parsing
 #   mempool     the admission gate, the pool, and the bloom filter
 #   vm          build → verify → accept → REJECT over the node's seam
 enable_testing()
-set(XVM_TESTS wire root syntactic txs fx executor address store state block genesis mempool
+set(XVM_TESTS wire root syntactic txs fx executor address state block genesis mempool
               semantic vm)
 foreach(_t ${XVM_TESTS})
   add_executable(${_t}_test test/${_t}_test.cpp)

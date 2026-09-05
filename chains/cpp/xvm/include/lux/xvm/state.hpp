@@ -22,13 +22,18 @@
 
 #include "lux/xvm/block.hpp"
 #include "lux/xvm/id.hpp"
-#include "lux/xvm/store.hpp"
+#include "lux/core/store.hpp"
 #include "lux/xvm/txs.hpp"
 
 #include <map>
 #include <memory>
 #include <optional>
 #include <vector>
+
+namespace lux::xvm {
+// The store belongs to the node too: one durable map, shared with every chain.
+namespace store = lux::core::store;
+}  // namespace lux::xvm
 
 namespace lux::xvm::state {
 

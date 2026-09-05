@@ -10,12 +10,12 @@
 // and a C++ node that computed anything else could not be in a quorum with any
 // of them.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 
 #include "lux/xvm/root.hpp"
 
 using namespace lux::xvm;
-using namespace lux::xvm::test;
+using namespace lux::core::test;
 
 namespace {
 

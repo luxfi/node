@@ -16,7 +16,7 @@
 // agree. Ascending UTXOID, deletions applied, overlay shadowing the parent —
 // every one of those is a consensus rule wearing the clothes of an iterator.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 #include "keys.hpp"
 
@@ -27,6 +27,7 @@
 #include <algorithm>
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {

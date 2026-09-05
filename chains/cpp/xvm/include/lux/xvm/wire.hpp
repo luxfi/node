@@ -17,11 +17,17 @@
 #pragma once
 
 #include "lux/xvm/id.hpp"
-#include "lux/xvm/zap.hpp"
+#include "lux/core/zap.hpp"
 
 #include <expected>
 #include <string>
 #include <vector>
+
+namespace lux::xvm {
+// ZAP belongs to the node, not to this chain: `zap::` below is lux/core/zap.hpp
+// and there is no other one to reach.
+namespace zap = lux::core::zap;
+}  // namespace lux::xvm
 
 namespace lux::xvm::wire {
 

@@ -1,11 +1,15 @@
 // Copyright (C) 2026, Lux Industries Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
-// zap.hpp — ZAP, the zero-copy structural codec, and the ONLY serialization the
-// X-Chain uses. Ported field-for-field from the Go definition (luxfi/zap
-// builder.go + zap.go), because the wire is a contract: an X-Chain tx built here
-// must hash to the same TxID as one built in Go, or the two implementations are
-// two chains.
+// zap.hpp — ZAP, the zero-copy structural codec, and the ONLY serialization in
+// this node. Ported field-for-field from the Go definition (luxfi/zap
+// builder.go + zap.go), because the wire is a contract: a transaction built
+// here must hash to the same id as one built in Go, or the two implementations
+// are two chains.
+//
+// It lives here, above any one chain, for the same reason: two chains in one
+// binary carrying two codecs is two answers to "what is this frame", which is a
+// fork surface inside a single process. There is one answer.
 //
 //   header 16B: Magic "ZAP\0" | Version u16 | Flags u16 | RootOffset u32 | Size u32
 //   body:       8-byte-aligned objects, lists and byte runs; every pointer is
@@ -26,7 +30,7 @@
 #include <string_view>
 #include <vector>
 
-namespace lux::xvm::zap {
+namespace lux::core::zap {
 
 inline constexpr int kHeaderSize = 16;
 inline constexpr int kAlignment = 8;
@@ -554,4 +558,4 @@ private:
     std::size_t size_ = 0;
 };
 
-}  // namespace lux::xvm::zap
+}  // namespace lux::core::zap
