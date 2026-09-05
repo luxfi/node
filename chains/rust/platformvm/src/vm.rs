@@ -4,10 +4,11 @@
 //!
 //! The node holds several chains at once and does the same five things to each
 //! of them: build, parse, verify, accept, reject. That is the seam, and it is
-//! stated here exactly as `lux-rs/node`'s `src/vm.rs` states it — same
-//! methods, same `Id` (`lux_consensus::finality::Id`), same errors — so the
-//! host's trait is satisfied by naming this type, with nothing in between to
-//! translate.
+//! **not declared here**: [`Vm`], [`Block`], [`Status`] and [`Error`] are
+//! `lux-rs/node`'s own `src/vm.rs`, named through it. A port that restated the
+//! trait would compile against a trait of the same shape and satisfy nothing —
+//! the host's chain map takes the host's `dyn Vm`, and two declarations can
+//! drift while both still build.
 //!
 //! Verify and accept are separate on purpose, and the gap between them is
 //! where a chain keeps the world it would leave behind if a block won. A
@@ -20,85 +21,18 @@
 //! block after it.
 
 use std::collections::HashMap;
-use std::fmt;
 use std::sync::Mutex;
 
-pub use lux_consensus::finality::Id;
+// The seam, from the host that owns it. `Id` is `lux_consensus::finality::Id`
+// either way — the node re-exports the same type this crate's `ids` names —
+// so a block built here is named the way the node that certifies it names it.
+pub use lux_node::vm::{Block, Error, Id, Status, Vm};
 
 use crate::block;
 use crate::executor::{self, Config, Fees};
 use crate::ids::{hash256, EMPTY, PRIMARY_NETWORK_ID};
 use crate::state::State;
 use crate::txs::{Tx, Unsigned};
-
-/// Where a block stands. The numbers are the ones that cross the wire.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum Status {
-    Unknown = 0,
-    Processing = 1,
-    Rejected = 2,
-    Accepted = 3,
-}
-
-/// What a chain can refuse for.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Error {
-    NotFound,
-    Malformed(String),
-    Invalid(String),
-    /// Nothing to build.
-    Empty,
-    NoMethod(String),
-    BadRequest(String),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::NotFound => write!(f, "not found"),
-            Error::Malformed(why) => write!(f, "malformed: {why}"),
-            Error::Invalid(why) => write!(f, "invalid: {why}"),
-            Error::Empty => write!(f, "nothing to build"),
-            Error::NoMethod(m) => write!(f, "the method {m} does not exist"),
-            Error::BadRequest(why) => write!(f, "{why}"),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
-/// One block, as consensus sees it.
-pub trait Block: Send + Sync {
-    fn id(&self) -> Id;
-    fn parent(&self) -> Id;
-    fn height(&self) -> u64;
-    fn timestamp(&self) -> u64;
-    fn bytes(&self) -> Vec<u8>;
-    /// The root of the state this block leaves behind.
-    fn state_root(&self) -> Id;
-    /// The root of what this block carries.
-    fn payload_root(&self) -> Id;
-}
-
-/// A chain.
-pub trait Vm: Send + Sync {
-    fn name(&self) -> &'static str;
-    fn version(&self) -> String;
-    fn build(&self) -> Result<Box<dyn Block>, Error>;
-    fn parse(&self, raw: &[u8]) -> Result<Box<dyn Block>, Error>;
-    fn get(&self, id: &Id) -> Result<Box<dyn Block>, Error>;
-    fn verify(&self, id: &Id) -> Result<(), Error>;
-    fn accept(&self, id: &Id) -> Result<(), Error>;
-    fn reject(&self, id: &Id) -> Result<(), Error>;
-    fn set_preference(&self, id: &Id) -> Result<(), Error>;
-    fn last_accepted(&self) -> Id;
-    fn block_id_at(&self, height: u64) -> Result<Id, Error>;
-    fn health(&self) -> Result<(), Error> {
-        Ok(())
-    }
-    fn call(&self, method: &str, params: &serde_json::Value) -> Result<serde_json::Value, Error>;
-}
 
 /// A block plus the roots consensus signs over.
 #[derive(Clone, Debug)]
@@ -1205,6 +1139,25 @@ mod tests {
         takes(&[&vm]);
         fn holds(_: Box<dyn Block>) {}
         let _ = holds as fn(Box<dyn Block>);
+    }
+
+    #[test]
+    fn the_seam_is_the_hosts_own_declaration() {
+        // Named through its full path rather than through this module's
+        // re-export, so a restated trait of the same shape would not satisfy
+        // it. This is what "the node registers this chain" means: the host's
+        // map holds `Box<dyn lux_node::vm::Vm>`, and only the host's trait
+        // coerces into it.
+        let held: Box<dyn lux_node::vm::Vm> = Box::new(vm(1000));
+        assert_eq!(held.name(), "P");
+
+        let block: Box<dyn lux_node::vm::Block> = held.get(&held.last_accepted()).unwrap();
+        assert_eq!(block.height(), 0);
+
+        // And the id is one type, not two that happen to be the same bytes.
+        let _: lux_node::vm::Id = block.id();
+        let _: lux_consensus::finality::Id = block.id();
+        let _: crate::ids::Id = block.id();
     }
 
     #[test]
