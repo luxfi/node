@@ -535,6 +535,10 @@ mod tests {
     /// changes belong in a release operators adopt, never in a vote.
     #[test]
     fn the_guard_is_what_the_fix_would_be() {
+        // Written out rather than as `saturating_sub`, because it is quoting
+        // the remedy Go states in its own words: the point is what the fix
+        // WOULD be, so it reads as the change somebody would make.
+        #[allow(clippy::manual_saturating_arithmetic, clippy::implicit_saturating_sub)]
         let guarded = |cap: u64, supply: u64| if supply >= cap { 0 } else { cap - supply };
         assert_eq!(
             guarded(mainnet_reward_config().supply_cap, MAINNET_CURRENT_SUPPLY),

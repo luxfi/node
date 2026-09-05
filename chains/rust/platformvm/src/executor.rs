@@ -598,10 +598,10 @@ pub fn execute_standard(
             let now = state.timestamp();
             let duration = validator.end.saturating_sub(now);
             // The terms are the network's own, and a network states them in
-            // its transformation. This port does not hold one, so for any
-            // network but the primary there is nothing to judge against, and
-            // judging against the primary network's terms would admit a
-            // validator on somebody else's rules.
+            // the transformation that made it staked. Judging a joiner against
+            // the primary network's terms instead would admit it on rules
+            // nobody there agreed to, so a network that stated none refuses by
+            // name rather than borrowing somebody else's.
             let rules = network_rules(state, config, *chain)?;
 
             if validator.weight < rules.min_validator_stake {
@@ -1997,7 +1997,7 @@ mod tests {
     use crate::components::{Credential, Input, Owners, Utxo, UtxoId};
     use crate::ids::ShortId;
     use crate::signer::Signer;
-    use crate::txs::{Envelope, Validator};
+    use crate::txs::{Envelope, NetworkValidator, PChainOwner, Validator};
 
     const ASSET: Id = [9u8; 32];
     const DAY: u64 = 24 * 60 * 60;
@@ -2118,6 +2118,23 @@ mod tests {
             ins,
             memo: Vec::new(),
         }
+    }
+
+    /// The same transaction with its LAST credential made by a stranger.
+    ///
+    /// The last credential is the one an authorisation is checked against, and
+    /// the others are the spend's; forging it is how every "nobody authorised
+    /// this" test below is written, so each of them exercises a real recovery
+    /// rather than a missing signature.
+    fn forge_last_credential(tx: &Tx) -> Tx {
+        let stranger = k256::ecdsa::SigningKey::from_bytes(&[0x22u8; 32].into()).unwrap();
+        let sighash = tx.sighash();
+        let mut creds = tx.creds.clone();
+        let last = creds.len() - 1;
+        creds[last] = Credential {
+            sigs: vec![crate::sign::sign(&stranger, &sighash)],
+        };
+        Tx::new(tx.unsigned.clone(), creds)
     }
 
     /// A transaction with one real signature per input, made by the spender.
@@ -3258,4 +3275,658 @@ mod tests {
             Err(Error::InvalidId)
         );
     }
+
+    // ── the sovereign-L1 plane
+    //
+    // A network is promoted with a set of its own, and from then on that set is
+    // changed by messages its own manager signs rather than by the P-Chain
+    // owner that made it. This is the birth path every downstream L1 depends
+    // on, so each step is exercised end to end: the promotion, a registration,
+    // a top-up, a weight change, a removal, and switching one off.
+
+    /// The owner every authorisation in these tests is checked against — the
+    /// same key `signed()` signs with, so an authorisation that is checked at
+    /// all passes, and one that is checked against a stranger does not.
+    fn spendable_l1_owner() -> PChainOwner {
+        PChainOwner {
+            threshold: 1,
+            addresses: spend_owner().addrs.clone(),
+        }
+    }
+
+    fn network_validator(node: u8, weight: u64, balance: u64) -> NetworkValidator {
+        NetworkValidator {
+            node_id: vec![node; crate::ids::NODE_ID_LEN],
+            weight,
+            balance,
+            signer: Signer::prove(&bls(node)),
+            remaining_balance_owner: spendable_l1_owner(),
+            deactivation_owner: spendable_l1_owner(),
+        }
+    }
+
+    fn contract_managed() -> crate::security::Mode {
+        crate::security::Mode {
+            restake_parent: false,
+            admission: crate::security::Admission::Gated,
+            threshold: 0,
+            manager: crate::security::Manager::Contract,
+        }
+    }
+
+    /// The chain and address an L1's manager speaks from.
+    const MANAGER_CHAIN: Id = [0x5c; 32];
+    const MANAGER_ADDRESS: [u8; 20] = [0x5a; 20];
+
+    /// An empty aggregate. `execute_standard` does not check the aggregate --
+    /// Go runs that as its own pass (`VerifyWarpMessages`) against the set as
+    /// it stood at the block's height, which is `verify_warp_messages` here --
+    /// so these tests carry the envelope's shape and check the executor's own
+    /// refusals. The aggregate has its own tests in `warp`.
+    fn unsigned_by_nobody() -> crate::warp::BitSet {
+        crate::warp::BitSet {
+            signers: Vec::new(),
+            signature: [0u8; crate::signer::SIGNATURE_LEN],
+        }
+    }
+
+    /// A message from the L1's manager, wrapped in the two layers the executor
+    /// unwraps: the addressed call that says who sent it, and the signed
+    /// envelope that says which chain it crossed from.
+    fn from_the_manager(payload: &[u8]) -> Vec<u8> {
+        let call = crate::warpmsg::Call::build(&MANAGER_ADDRESS, payload);
+        let unsigned = crate::warp::Unsigned::build(1, MANAGER_CHAIN, &call.bytes);
+        crate::warp::Message::build(&unsigned, &unsigned_by_nobody()).bytes
+    }
+
+    /// A network promoted to run its own set, with `validators` in it.
+    ///
+    /// This is `ConvertNetwork` executed for real, not a state fixture: every
+    /// test below starts from a promotion that actually happened.
+    fn converted(
+        now: u64,
+        network: Id,
+        validators: Vec<NetworkValidator>,
+        funds: u64,
+    ) -> (State, Tx) {
+        let (mut state, input) = funded(now, funds);
+        state.add_chain(network, spend_owner());
+        let prepaid: u64 = validators.iter().map(|v| v.balance).sum();
+        let change = funds - prepaid - 1;
+        let tx = signed(
+            Unsigned::ConvertNetwork {
+                base: envelope(vec![input], vec![funds_out(change)]),
+                network,
+                parent: PRIMARY_NETWORK_ID,
+                manager_chain_id: MANAGER_CHAIN,
+                manager_address: MANAGER_ADDRESS.to_vec(),
+                validators,
+                auth: vec![0],
+                security: contract_managed(),
+            },
+            2,
+        );
+        (state, tx)
+    }
+
+    /// An output back to the spender, so a transaction's change is spendable
+    /// again by the same key.
+    fn funds_out(amount: u64) -> Output {
+        Output {
+            asset: ASSET,
+            stake_lock: 0,
+            amount,
+            owners: spend_owner(),
+        }
+    }
+
+    #[test]
+    fn a_network_is_promoted_to_run_a_set_of_its_own() {
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, tx) = converted(
+            now,
+            network,
+            vec![network_validator(1, 100, 500), network_validator(2, 50, 0)],
+            10_000,
+        );
+        assert_eq!(execute_standard(&mut state, &tx, &config(), &fees()), Ok(()));
+
+        // Both validators are in the network's own set, named by ids derived
+        // from the network's — nothing had to be agreed for them to have names.
+        let set = state.l1_validators(&network);
+        assert_eq!(set.len(), 2);
+        assert_eq!(set[0].chain_id, network);
+        let by_node: std::collections::HashMap<NodeId, &crate::l1::Validator> =
+            set.iter().map(|v| (v.node_id, *v)).collect();
+
+        // The one that prepaid is active and can be sampled; the one that did
+        // not is in the set, weighs on it, and cannot vote.
+        let paid = by_node[&NodeId([1; 20])];
+        assert!(paid.is_active());
+        assert_eq!(paid.weight, 100);
+        assert_eq!(paid.end_accumulated_fee, 500);
+        let unpaid = by_node[&NodeId([2; 20])];
+        assert!(!unpaid.is_active());
+        assert_eq!(unpaid.weight, 50);
+        assert_eq!(unpaid.effective_node_id(), NodeId::EMPTY);
+
+        // And the authority that may change the set from here on is recorded.
+        let conversion = state.conversion(&network).unwrap();
+        assert_eq!(conversion.chain_id, MANAGER_CHAIN);
+        assert_eq!(conversion.address, MANAGER_ADDRESS.to_vec());
+        assert_ne!(conversion.conversion_id, EMPTY);
+    }
+
+    #[test]
+    fn a_promotion_nobody_authorised_is_refused() {
+        // The credential path for ConvertNetwork: the network's existing owner
+        // signs, or the promotion does not happen.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, tx) = converted(now, network, vec![network_validator(1, 100, 0)], 10_000);
+        let forged = forge_last_credential(&tx);
+        assert_eq!(
+            execute_standard(&mut state, &forged, &config(), &fees()),
+            Err(Error::NotAuthorized(flow::CredentialError::WrongSigner))
+        );
+        assert!(state.conversion(&network).is_err(), "and nothing was promoted");
+    }
+
+    #[test]
+    fn a_network_that_has_already_gone_sovereign_is_not_promoted_again() {
+        // Go: `verifyPoAChainAuthorization`. Once a network runs its own set,
+        // its own rules govern it and the owner that made it no longer speaks
+        // for it.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, tx) = converted(now, network, vec![network_validator(1, 100, 0)], 10_000);
+        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+
+        let (_, again) = converted(now, network, vec![network_validator(3, 100, 0)], 10_000);
+        assert_eq!(
+            execute_standard(&mut state, &again, &config(), &fees()),
+            Err(Error::NetworkIsImmutable)
+        );
+    }
+
+    /// A network already promoted, with one active validator, and an input to
+    /// spend.
+    fn an_l1(now: u64, network: Id, funds: u64) -> (State, Input) {
+        let (mut state, tx) = converted(now, network, vec![network_validator(1, 100, 500)], funds);
+        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        let change = funds - 500 - 1;
+        let id = UtxoId {
+            tx_id: tx.id(),
+            output_index: 0,
+        };
+        (
+            state,
+            Input {
+                utxo: id,
+                asset: ASSET,
+                stake_lock: 0,
+                amount: change,
+                sig_indices: vec![0],
+            },
+        )
+    }
+
+    fn a_registration(now: u64, network: Id, node: u8, weight: u64) -> crate::warpmsg::Register {
+        crate::warpmsg::Register::build(
+            network,
+            &NodeId([node; 20]),
+            &Signer::prove(&bls(node)).public_key().unwrap(),
+            now + 60,
+            &spendable_l1_owner(),
+            &spendable_l1_owner(),
+            weight,
+        )
+    }
+
+    fn register_tx(
+        now: u64,
+        network: Id,
+        node: u8,
+        weight: u64,
+        balance: u64,
+        input: Input,
+    ) -> (crate::warpmsg::Register, Tx) {
+        let msg = a_registration(now, network, node, weight);
+        let change = input.amount - balance - 1;
+        let proof = match Signer::prove(&bls(node)) {
+            Signer::ProofOfPossession { proof, .. } => proof,
+            Signer::Empty => unreachable!("a proven signer carries a proof"),
+        };
+        let tx = signed(
+            Unsigned::RegisterL1Validator {
+                base: envelope(vec![input], vec![funds_out(change)]),
+                balance,
+                proof_of_possession: proof,
+                message: from_the_manager(&msg.bytes),
+            },
+            1,
+        );
+        (msg, tx)
+    }
+
+    #[test]
+    fn an_l1_admits_a_validator_its_manager_registered() {
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
+
+        assert_eq!(execute_standard(&mut state, &tx, &config(), &fees()), Ok(()));
+        let held = state.l1_validator(&msg.validation_id()).unwrap();
+        assert_eq!(held.chain_id, network);
+        assert_eq!(held.node_id, NodeId([9; 20]));
+        assert_eq!(held.weight, 42);
+        assert_eq!(held.start_time, now);
+        // The balance is stored as the accrued-fee mark it can pay up to.
+        assert_eq!(held.end_accumulated_fee, 300);
+        assert!(held.is_active());
+        // The key it will sign with is the uncompressed one.
+        assert_eq!(held.public_key.len(), 96);
+    }
+
+    #[test]
+    fn the_same_registration_is_not_issued_twice() {
+        // The whole replay defence: the chain remembers a registration until
+        // the moment it could no longer be issued.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let (msg, tx) = register_tx(now, network, 9, 42, 0, input);
+        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+
+        let replay = Input {
+            utxo: UtxoId {
+                tx_id: tx.id(),
+                output_index: 0,
+            },
+            asset: ASSET,
+            stake_lock: 0,
+            amount: 10_000 - 500 - 1 - 1,
+            sig_indices: vec![0],
+        };
+        let (_, again) = register_tx(now, network, 9, 42, 0, replay);
+        assert_eq!(
+            execute_standard(&mut state, &again, &config(), &fees()),
+            Err(Error::WarpMessageAlreadyIssued(msg.validation_id()))
+        );
+    }
+
+    #[test]
+    fn a_registration_from_a_chain_that_does_not_manage_this_l1_is_refused() {
+        // Otherwise anyone with a chain of their own could speak for this one.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let msg = a_registration(now, network, 9, 42);
+        let call = crate::warpmsg::Call::build(&[0xffu8; 20], &msg.bytes);
+        let unsigned = crate::warp::Unsigned::build(1, MANAGER_CHAIN, &call.bytes);
+        let tx = signed(
+            Unsigned::RegisterL1Validator {
+                base: envelope(vec![input], vec![funds_out(9_000)]),
+                balance: 0,
+                proof_of_possession: match Signer::prove(&bls(9)) {
+                    Signer::ProofOfPossession { proof, .. } => proof,
+                    Signer::Empty => unreachable!(),
+                },
+                message: crate::warp::Message::build(
+                    &unsigned,
+                    &unsigned_by_nobody(),
+                )
+                .bytes,
+            },
+            1,
+        );
+        assert_eq!(
+            execute_standard(&mut state, &tx, &config(), &fees()),
+            Err(Error::WrongWarpSource)
+        );
+    }
+
+    #[test]
+    fn a_registration_of_a_key_the_sender_cannot_prove_is_refused() {
+        // The message says which key; the transaction proves whoever sent it
+        // holds that key. Neither alone is enough — a registration that needed
+        // only the message would let anyone enrol somebody else's key and
+        // collect the weight against it.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let msg = a_registration(now, network, 9, 42);
+        let someone_elses = match Signer::prove(&bls(4)) {
+            Signer::ProofOfPossession { proof, .. } => proof,
+            Signer::Empty => unreachable!(),
+        };
+        let tx = signed(
+            Unsigned::RegisterL1Validator {
+                base: envelope(vec![input], vec![funds_out(9_000)]),
+                balance: 0,
+                proof_of_possession: someone_elses,
+                message: from_the_manager(&msg.bytes),
+            },
+            1,
+        );
+        assert!(matches!(
+            execute_standard(&mut state, &tx, &config(), &fees()),
+            Err(Error::Syntactic(crate::txs::Error::Signer(_)))
+        ));
+    }
+
+    #[test]
+    fn a_registration_nobody_paid_for_is_refused() {
+        // The credential path for RegisterL1Validator: the balance and the fee
+        // are spent from somewhere, and that spend is signed for.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let (_, tx) = register_tx(now, network, 9, 42, 300, input);
+        let forged = forge_last_credential(&tx);
+        assert_eq!(
+            execute_standard(&mut state, &forged, &config(), &fees()),
+            Err(Error::Credential(flow::CredentialError::WrongSigner))
+        );
+    }
+
+    #[test]
+    fn a_registration_that_could_be_issued_tomorrow_is_refused() {
+        // The chain has to remember a registration until it expires, so how
+        // far ahead one may be dated is how much it has to remember.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let msg = crate::warpmsg::Register::build(
+            network,
+            &NodeId([9; 20]),
+            &Signer::prove(&bls(9)).public_key().unwrap(),
+            now + REGISTER_EXPIRY_WINDOW + 1,
+            &spendable_l1_owner(),
+            &spendable_l1_owner(),
+            42,
+        );
+        let tx = signed(
+            Unsigned::RegisterL1Validator {
+                base: envelope(vec![input], vec![funds_out(9_000)]),
+                balance: 0,
+                proof_of_possession: match Signer::prove(&bls(9)) {
+                    Signer::ProofOfPossession { proof, .. } => proof,
+                    Signer::Empty => unreachable!(),
+                },
+                message: from_the_manager(&msg.bytes),
+            },
+            1,
+        );
+        assert!(matches!(
+            execute_standard(&mut state, &tx, &config(), &fees()),
+            Err(Error::WarpMessageNotYetAllowed { .. })
+        ));
+    }
+
+    #[test]
+    fn topping_up_an_inactive_validator_puts_it_back_in_the_set() {
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        // Registered with no balance: in the set, weighing on it, unable to
+        // vote.
+        let (msg, tx) = register_tx(now, network, 9, 42, 0, input);
+        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        let id = msg.validation_id();
+        assert!(!state.l1_validator(&id).unwrap().is_active());
+
+        let top_up = signed(
+            Unsigned::IncreaseL1ValidatorBalance {
+                base: envelope(
+                    vec![Input {
+                        utxo: UtxoId {
+                            tx_id: tx.id(),
+                            output_index: 0,
+                        },
+                        asset: ASSET,
+                        stake_lock: 0,
+                        amount: 10_000 - 500 - 1 - 1,
+                        sig_indices: vec![0],
+                    }],
+                    vec![funds_out(8_000)],
+                ),
+                validation_id: id,
+                balance: 700,
+            },
+            1,
+        );
+        assert_eq!(
+            execute_standard(&mut state, &top_up, &config(), &fees()),
+            Ok(())
+        );
+        let held = state.l1_validator(&id).unwrap();
+        assert!(held.is_active());
+        assert_eq!(held.end_accumulated_fee, 700);
+        assert_eq!(held.effective_node_id(), NodeId([9; 20]));
+    }
+
+    #[test]
+    fn a_top_up_of_a_validator_that_does_not_exist_is_refused() {
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let tx = signed(
+            Unsigned::IncreaseL1ValidatorBalance {
+                base: envelope(vec![input], vec![funds_out(9_000)]),
+                validation_id: [0xab; 32],
+                balance: 100,
+            },
+            1,
+        );
+        assert_eq!(
+            execute_standard(&mut state, &tx, &config(), &fees()),
+            Err(Error::NoSuchL1Validator([0xab; 32]))
+        );
+    }
+
+    fn weight_tx(validation_id: Id, nonce: u64, weight: u64, input: Input, change: u64) -> Tx {
+        let msg = crate::warpmsg::Weight::build(validation_id, nonce, weight);
+        signed(
+            Unsigned::SetL1ValidatorWeight {
+                base: envelope(vec![input], vec![funds_out(change)]),
+                message: from_the_manager(&msg.bytes),
+            },
+            1,
+        )
+    }
+
+    #[test]
+    fn an_l1_restates_one_of_its_validators_weights() {
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
+        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        let id = msg.validation_id();
+
+        let change = signed(
+            Unsigned::SetL1ValidatorWeight {
+                base: envelope(
+                    vec![Input {
+                        utxo: UtxoId {
+                            tx_id: tx.id(),
+                            output_index: 0,
+                        },
+                        asset: ASSET,
+                        stake_lock: 0,
+                        amount: 10_000 - 500 - 1 - 300 - 1,
+                        sig_indices: vec![0],
+                    }],
+                    vec![funds_out(8_000)],
+                ),
+                message: from_the_manager(&crate::warpmsg::Weight::build(id, 0, 99).bytes),
+            },
+            1,
+        );
+        assert_eq!(
+            execute_standard(&mut state, &change, &config(), &fees()),
+            Ok(())
+        );
+        let held = state.l1_validator(&id).unwrap();
+        assert_eq!(held.weight, 99);
+        // The nonce is the replay defence: the next message must carry a
+        // larger one.
+        assert_eq!(held.min_nonce, 1);
+    }
+
+    #[test]
+    fn a_weight_message_replayed_over_a_newer_one_is_refused() {
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
+        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        let id = msg.validation_id();
+
+        let spend = |tx_id: Id, amount: u64| Input {
+            utxo: UtxoId {
+                tx_id,
+                output_index: 0,
+            },
+            asset: ASSET,
+            stake_lock: 0,
+            amount,
+            sig_indices: vec![0],
+        };
+        let first = weight_tx(id, 5, 99, spend(tx.id(), 10_000 - 500 - 1 - 300 - 1), 8_000);
+        execute_standard(&mut state, &first, &config(), &fees()).unwrap();
+        assert_eq!(state.l1_validator(&id).unwrap().min_nonce, 6);
+
+        let stale = weight_tx(id, 5, 1, spend(first.id(), 8_000), 7_000);
+        assert_eq!(
+            execute_standard(&mut state, &stale, &config(), &fees()),
+            Err(Error::StaleNonce { given: 5, least: 6 })
+        );
+    }
+
+    #[test]
+    fn the_last_validator_of_an_l1_may_not_be_removed() {
+        // A chain with no validators is a chain nobody can ever speak for
+        // again.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let only = state.l1_validators(&network)[0].validation_id;
+        let tx = weight_tx(only, 0, 0, input, 9_000);
+        assert_eq!(
+            execute_standard(&mut state, &tx, &config(), &fees()),
+            Err(Error::RemovingLastValidator)
+        );
+    }
+
+    #[test]
+    fn removing_a_validator_gives_its_unspent_balance_back() {
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
+        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        let id = msg.validation_id();
+
+        let removal = weight_tx(
+            id,
+            0,
+            0,
+            Input {
+                utxo: UtxoId {
+                    tx_id: tx.id(),
+                    output_index: 0,
+                },
+                asset: ASSET,
+                stake_lock: 0,
+                amount: 10_000 - 500 - 1 - 300 - 1,
+                sig_indices: vec![0],
+            },
+            8_000,
+        );
+        assert_eq!(
+            execute_standard(&mut state, &removal, &config(), &fees()),
+            Ok(())
+        );
+        // Gone from the set...
+        assert!(state.l1_validator(&id).is_err());
+        // ...and what it prepaid and did not spend came back, as the output
+        // after the transaction's own.
+        let refund = state
+            .utxo(
+                &UtxoId {
+                    tx_id: removal.id(),
+                    output_index: 1,
+                }
+                .input_id(),
+            )
+            .expect("the refund");
+        assert_eq!(refund.output.amount, 300);
+        assert_eq!(refund.output.owners, spend_owner());
+    }
+
+    #[test]
+    fn switching_a_validator_off_needs_the_owner_that_may_switch_it_off() {
+        // The one L1 operation the P-Chain authorises itself, against the
+        // deactivation owner the registration named.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let (msg, tx) = register_tx(now, network, 9, 42, 300, input);
+        execute_standard(&mut state, &tx, &config(), &fees()).unwrap();
+        let id = msg.validation_id();
+
+        let disable = signed(
+            Unsigned::DisableL1Validator {
+                base: envelope(
+                    vec![Input {
+                        utxo: UtxoId {
+                            tx_id: tx.id(),
+                            output_index: 0,
+                        },
+                        asset: ASSET,
+                        stake_lock: 0,
+                        amount: 10_000 - 500 - 1 - 300 - 1,
+                        sig_indices: vec![0],
+                    }],
+                    vec![funds_out(8_000)],
+                ),
+                validation_id: id,
+                auth: vec![0],
+            },
+            2,
+        );
+
+        // Signed by someone who is not the deactivation owner: refused.
+        assert_eq!(
+            execute_standard(&mut state, &forge_last_credential(&disable), &config(), &fees()),
+            Err(Error::NotAuthorized(flow::CredentialError::WrongSigner))
+        );
+        assert!(state.l1_validator(&id).unwrap().is_active(), "and it is still on");
+
+        assert_eq!(
+            execute_standard(&mut state, &disable, &config(), &fees()),
+            Ok(())
+        );
+        let held = state.l1_validator(&id).unwrap();
+        // Off, but still in the set and still weighing on it.
+        assert!(!held.is_active());
+        assert_eq!(held.weight, 42);
+        assert_eq!(held.effective_node_id(), NodeId::EMPTY);
+        // And its unspent balance came back.
+        let refund = state
+            .utxo(
+                &UtxoId {
+                    tx_id: disable.id(),
+                    output_index: 1,
+                }
+                .input_id(),
+            )
+            .expect("the refund");
+        assert_eq!(refund.output.amount, 300);
+    }
+
 }
