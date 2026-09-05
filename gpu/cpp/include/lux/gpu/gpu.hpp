@@ -88,16 +88,21 @@ Address pubkey_to_address(Bytes compressed_key);
 // Recover the 33-byte compressed public key that signed `hash` from the 65
 // bytes r || s || v, or nothing when those bytes are not a signature over it.
 //
-// KNOWN DIVERGENCE, recovery ids 2 and 3. Go accepts all four ids and Rust's
-// k256 does too; the first-party C++ curve cannot, because ids 2 and 3 mean
-// R.x = r + n and it refuses r >= n at parse time. This returns nothing for
-// them. A wallet never produces one — an honest signature lands on id 2 or 3
-// with probability about 2^-128 — but a HAND-BUILT one can carry v = 2, so the
-// three languages do not agree about such a transaction and that is a fork
-// waiting for someone to build it. Refusing is the fail-closed half of the
-// disagreement: it was previously ACCEPTED here by masking v & 1, which
-// recovered the key of id 0 or 1 and let a C++ node admit a transaction Go and
-// Rust both refuse.
+// Recovery ids 2 and 3. Go accepts all four (luxfi/crypto/secp256k1
+// checkSignature refuses only v >= 4) and Rust's k256 does too. They mean
+// R.x = r + n, and the first-party C++ curve refuses r >= n at parse time, so
+// it cannot do them and says so.
+//
+// For any r where r + n is not a valid x coordinate — which is every r a wallet
+// will ever produce — Go and Rust ALSO return no key, so all three agree. The
+// three only part on a deliberately built r where r + n is on the curve, and
+// there this refuses what Go accepts, never the other way round.
+//
+// That direction is the point. chains/cpp/xvm used to mask v & 1 instead, which
+// turned v = 2 into v = 0 and recovered the key of a DIFFERENT id — so taking
+// any valid signature and moving its recovery byte from 0 to 2 produced a
+// transaction a C++ node accepted and Go and Rust both refused. That is a fork
+// anyone could build in one byte, and refusing closes it.
 std::optional<CompressedKey> recover(const Digest& hash, const Signature& sig);
 
 // ---- the RFC 6962 tagged binary Merkle fold --------------------------------

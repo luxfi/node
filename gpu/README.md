@@ -125,7 +125,7 @@ On the machine this was written on:
   itself: it is handed a deliberately flipped byte and must refuse. A comparison
   nothing has ever seen fail is a comparison nobody has checked can fail.
 
-## One divergence, found by consolidating
+## A one-byte fork, closed by consolidating
 
 Recovery ids 2 and 3. Go accepts all four (`luxfi/crypto/secp256k1`
 `checkSignature` refuses only `v >= 4`) and recovers correctly for each; Rust's
@@ -135,17 +135,28 @@ curve refuses `r >= n` at parse time, so it has no path to them.
 Before this seam the two C++ chains disagreed about that, with each other and
 with Go:
 
-- `chains/cpp/xvm` **accepted** them, by masking `v & 1` — which recovers the key
-  of id 0 or 1, a key the signer never had. A C++ node would have admitted a
-  transaction Go and Rust both refuse.
-- `chains/cpp/platformvm` **refused** them.
+- `chains/cpp/xvm` **accepted** them, by masking `v & 1`. That turns `v = 2` into
+  `v = 0` and recovers the key of a *different* id — so **take any valid
+  signature and move its recovery byte from 0 to 2**, and a C++ node accepted a
+  transaction Go and Rust both refuse. A fork anyone could build in one byte.
+- `chains/cpp/platformvm` **refused** them, which matched Go for every such
+  input.
 
-Both now refuse, which is the fail-closed half and matches Go on every input a
-wallet can produce (an honest signature lands on id 2 or 3 with probability
-about 2⁻¹²⁸). It does not match Go on a hand-built one. That residue is a real
-cross-language disagreement about a transaction, it belongs to whoever owns the
-P/X differential, and closing it properly means teaching the C++ curve the
-`r + n` case.
+Both refuse now, and that closes the exploitable direction. Measured on the KAT
+in `gpu/cpp/test/gpu_test.cpp` and `gpu/rust/tests/differential.rs` — the same
+signature asked of both seams:
+
+| `v` | Go / Rust | C++ before | C++ now |
+|---|---|---|---|
+| 0 | the signer's key | the signer's key | the signer's key |
+| 1 | the other candidate | the other candidate | the other candidate |
+| 2, 3 | no key (`r + n` is not on the curve) | **the id-0/1 key** | no key |
+| ≥ 4 | no key | no key | no key |
+
+The residue is one case: a deliberately built `r` where `r + n` *is* a valid x
+coordinate. There Go recovers a key and C++ still refuses — C++ refusing what Go
+accepts, never the reverse. It belongs to whoever owns the P/X differential, and
+closing it properly means teaching the C++ curve the `r + n` case.
 
 ## Building the kernel library
 

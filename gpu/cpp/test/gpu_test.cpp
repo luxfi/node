@@ -192,6 +192,55 @@ void a_signature_that_is_not_one_recovers_nothing() {
     check(!recover(h, sig).has_value(), "recovery id 4 recovers nothing");
 }
 
+// A real signature, and the same bytes with the recovery id moved to 2.
+//
+// The vector was produced by k256 — the curve the Rust chains recover with —
+// over hash = 0x07 repeated, key = 0x11 repeated.
+constexpr const char* kKatHash = "0707070707070707070707070707070707070707070707070707070707070707";
+constexpr const char* kKatSig =
+    "111f20b9521ba1924ecfb91595426246b152cc1187e83f798cbd61f95f2c4cb1"
+    "07da8d209539506429d1ecd4033b2c207b89267f7dd8674421737193cd84f1dc"
+    "00";
+constexpr const char* kKatKey = "034f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa";
+
+std::vector<std::uint8_t> unhex(const char* s) {
+    std::vector<std::uint8_t> v;
+    for (const char* p = s; *p && p[1]; p += 2) {
+        auto d = [](char c) { return c <= '9' ? c - '0' : (c | 32) - 'a' + 10; };
+        v.push_back(std::uint8_t(d(p[0]) * 16 + d(p[1])));
+    }
+    return v;
+}
+
+void the_recovery_ids_this_curve_cannot_do_are_refused_not_faked() {
+    Digest h{};
+    const auto hb = unhex(kKatHash);
+    std::copy(hb.begin(), hb.end(), h.begin());
+    Signature sig{};
+    const auto sb = unhex(kKatSig);
+    std::copy(sb.begin(), sb.end(), sig.begin());
+
+    // Recovery id 0, which this curve can do: the key comes back.
+    const auto want = unhex(kKatKey);
+    const auto got = recover(h, sig);
+    check(got.has_value(), "the KAT signature recovers");
+    if (got) {
+        check(std::equal(got->begin(), got->end(), want.begin()), "the KAT recovers ITS key");
+    }
+
+    // The SAME r and s with the recovery id moved to 2, which means R.x = r + n
+    // — a point this curve refuses at parse time. Go accepts ids 0..3 and
+    // recovers a DIFFERENT key for 2 (which then fails to match any owner);
+    // masking v & 1 here, as chains/cpp/xvm used to, recovered the id-0 key
+    // instead and let a C++ node admit a transaction Go and Rust both refuse.
+    // Refusing is the fail-closed half of that disagreement — see gpu.hpp.
+    Signature moved = sig;
+    moved[64] = 2;
+    check(!recover(h, moved).has_value(), "recovery id 2 is refused, not masked to 0");
+    moved[64] = 3;
+    check(!recover(h, moved).has_value(), "recovery id 3 is refused, not masked to 1");
+}
+
 // ---- the comparison LUX_GPU=verify makes ------------------------------------
 
 void the_verify_comparison_can_fail() {
@@ -248,6 +297,7 @@ int main() {
     a_single_leaf_root_is_the_tagged_leaf_itself();
     an_odd_level_promotes_the_last_node_unchanged();
     a_signature_that_is_not_one_recovers_nothing();
+    the_recovery_ids_this_curve_cannot_do_are_refused_not_faked();
     the_verify_comparison_can_fail();
     both_backends_give_the_same_answer();
 

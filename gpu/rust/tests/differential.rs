@@ -139,3 +139,49 @@ fn scalar_root(leaves: &[Hash256]) -> Hash256 {
     }
     level[0]
 }
+
+/// The recovery ids, pinned — and the cross-language edge named in
+/// `gpu/cpp/include/lux/gpu/gpu.hpp`.
+///
+/// The vector is k256's own: hash = 0x07 repeated, key = 0x11 repeated. Go
+/// (`luxfi/crypto/secp256k1`) refuses only `v >= 4` and recovers all four ids;
+/// so does this. The first-party C++ curve cannot do 2 or 3 at all and refuses
+/// them, which for THIS signature is the same answer — both say "no key",
+/// because `r + n` is not a valid x coordinate here. The two only part on a
+/// deliberately built `r` where it is, and there C++ refuses what Go accepts,
+/// never the other way round.
+#[test]
+fn the_recovery_ids_are_the_ones_go_accepts() {
+    let hash: Hash256 = [7u8; 32];
+    let mut sig = [0u8; 65];
+    let s = "111f20b9521ba1924ecfb91595426246b152cc1187e83f798cbd61f95f2c4cb1\
+             07da8d209539506429d1ecd4033b2c207b89267f7dd8674421737193cd84f1dc00";
+    let s: String = s.chars().filter(|c| !c.is_whitespace()).collect();
+    for (i, b) in sig.iter_mut().enumerate() {
+        *b = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).unwrap();
+    }
+
+    sig[64] = 0;
+    assert_eq!(
+        lux_gpu::recover(&hash, &sig).map(hex),
+        Some("034f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa".to_string()),
+        "id 0 recovers the key that signed"
+    );
+    sig[64] = 1;
+    assert!(
+        lux_gpu::recover(&hash, &sig).is_some(),
+        "id 1 recovers the other candidate, as Go does"
+    );
+    // r + n is not a valid x coordinate for this r, so both curves say no key.
+    sig[64] = 2;
+    assert!(lux_gpu::recover(&hash, &sig).is_none(), "id 2");
+    sig[64] = 3;
+    assert!(lux_gpu::recover(&hash, &sig).is_none(), "id 3");
+    // Four ids exist; a fifth is not a signature at all.
+    sig[64] = 4;
+    assert!(lux_gpu::recover(&hash, &sig).is_none(), "id 4");
+}
+
+fn hex(b: Vec<u8>) -> String {
+    b.iter().map(|x| format!("{x:02x}")).collect()
+}
