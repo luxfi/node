@@ -51,6 +51,9 @@ R	X_EDGE_WRONG_NETWORK	ok	Base	90baf8d22feb413213660109bae58fb977905171cbe1cd337
 R	X_EDGE_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
 R	X_EDGE_EMPTY	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: wire: envelope shorter than 2-byte discriminator prefix
 R	X_EDGE_CORRUPT_TAIL	ok	Base	f8a5de6070a3cfdd0b59cd2c474b67e423a5f1f7d041e1d838eaeb145157d4e8	OK	LEDGER	not found
+R	Q_CHAIN_IDENTITY	ok	ChainIdentity	1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e	network=1	OK	the identity this evaluator derives ids under
+R	Z_CHAIN_IDENTITY	ok	ChainIdentity	2828282828282828282828282828282828282828282828282828282828282828	network=1	OK	the identity this evaluator derives ids under
+R	F_CHAIN_IDENTITY	ok	ChainIdentity	3232323232323232323232323232323232323232323232323232323232323232	network=1	OK	the identity this evaluator derives ids under
 R	Q_GENESIS	ok	QuantumBlock	ab8796ffa73ee71477f8f9ae85ccf47e77c81e2cfc2fdacc8ef1e9801fccab52	SYNTACTIC	SYNTACTIC	quantumvm: invalid block height
 R	Q_BLOCK	ok	QuantumBlock	8bc66e885245d2b3e491108d5bf76bc9c5c36f03f9a786085940065e99f3f4ba	OK	AUTH	quantumvm: block transaction signatures failed verification: signature 0 verification failed: quantum stamp expired
 R	Q_BLOCK_ORPHAN	ok	QuantumBlock	67ec8725bbfa89ca0cec45bb26c2bc2d21546ee70f5aab3b908286d087e2a049	OK	LEDGER	quantumvm: parent block not found: SeLqn3UAUoRymWmwW7axrzJK7JfNaBR2cHCryA6cFscgkny8
@@ -71,27 +74,27 @@ R	Q_BLOCK_TXCOUNT_ABSURD	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block
 R	Q_BLOCK_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
 R	Q_BLOCK_EMPTY_WIRE	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
 R	Q_BLOCK_ONE_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
-R	Z_GENESIS	ok	ShieldedBlock	9c227870184f9269e1c720c2df8256dea664debf56f8eec76acab03c4bea755d	OK	LEDGER	invalid state root
-R	Z_BLOCK_EMPTY	ok	ShieldedBlock	bc4f760d9248b429374b18ecfa7f8f9a4934dd1a23c2ab0c0122a389bcd58718	OK	OK	verified against the seeded chain
-R	Z_BLOCK_TRANSFER	ok	ShieldedBlock	d58aa660bf553e75ac5c743b56b1635debf7d3e722a1e452a0efab54c3dcf397	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
-R	Z_BLOCK_SHIELD	ok	ShieldedBlock	18e4dc0d73c58ed4b803133aea37ebcc0c638cc0c170452389cb4fc3c0187fdc	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
-R	Z_BLOCK_UNSHIELD	ok	ShieldedBlock	532093100c5caadf53165db318ea6d9acde498384c5bf8a6e2ebdf62c23dc729	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
-R	Z_BLOCK_MINT	ok	ShieldedBlock	d2cd39439e506a95de61e61d88ede2230e38290de056f566f8aba67b2f3e2c17	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
-R	Z_BLOCK_BURN	ok	ShieldedBlock	277f8e33cf947d4e32170e4333ca6b0021e0a23023a234291d75caf334cbe1dd	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
-R	Z_BLOCK_ORPHAN	ok	ShieldedBlock	cb2f838e377668daee9cb84cb7a0f4ef41d3a9f1d37275379044671ffae0ff7e	OK	LEDGER	chain: no such block: SeLqn3UAUoRymWmwW7axrzJK7JfNaBR2cHCryA6cFscgkny8
-R	Z_BLOCK_HEIGHT_SKIP	ok	ShieldedBlock	f53e2c4544509825db2e4710773731ba4a8d87111f7a0958543d6dcb94417bbd	OK	SYNTACTIC	invalid block height
-R	Z_BLOCK_TIME_BEFORE_PARENT	ok	ShieldedBlock	a3de5df2bc9474f418b93c6f43839f5304addd51063cf6949861bdaa4536c947	OK	SYNTACTIC	invalid block timestamp
-R	Z_BLOCK_TIME_AHEAD	ok	ShieldedBlock	8b002e1c893c12dc8804c8e4ca491b33c4f90bceb94cf73011e37a66179785db	SYNTACTIC	SYNTACTIC	block timestamp too far in future
-R	Z_BLOCK_GENESIS_WITH_PARENT	ok	ShieldedBlock	fc58e7739e53e9ef39224b40a93cef89d6dfedc017de556b8ceaba15b3467071	SYNTACTIC	SYNTACTIC	invalid block
-R	Z_BLOCK_WRONG_STATE_ROOT	ok	ShieldedBlock	036e4a9f89b7a66c634c18e25bf3c6c6e9516c4e77283dc15c413468084ae2f8	OK	LEDGER	invalid state root
-R	Z_BLOCK_DUPLICATE_NULLIFIER	ok	ShieldedBlock	77d4887fa3f673b7f0af1b43813e46a925b25140de847c9da297421cd5a5a52a	SYNTACTIC	SYNTACTIC	nullifier spent twice in one block
-R	Z_TX_NO_INPUTS	ok	ShieldedBlock	2a62baa48f23c8f9f7ee78dfe3739fdfa3fa08086e2a4b99feb6c5e0c595327f	SYNTACTIC	SYNTACTIC	transaction has no inputs
-R	Z_TX_NO_OUTPUTS	ok	ShieldedBlock	e208ab992faf5582e06136a33f7df2656ae91b4bf92e42107c83adb0ecd0953a	SYNTACTIC	SYNTACTIC	transaction has no outputs
-R	Z_TX_NO_PROOF	ok	ShieldedBlock	69b9063764f2bb8f937919acfdc723524ae8516d2bdb5525b98348eb0e84b367	SYNTACTIC	SYNTACTIC	transaction missing proof
-R	Z_TX_NO_EXPIRY	ok	ShieldedBlock	1cd330a2604414b9a7303ce68469b39723e918f368656bf3ca0b2771407919d2	SYNTACTIC	SYNTACTIC	transaction names no expiry height
-R	Z_TX_UNKNOWN_TYPE	ok	ShieldedBlock	319e35211830075cf8e0b2d551c5d64e0cb04ba7b1ec7dc0a7dd91546f23709d	SYNTACTIC	SYNTACTIC	invalid transaction type
-R	Z_TX_EXPIRED	ok	ShieldedBlock	f7e30b941e40f3e64590915e066d8c4a3752ec814380053353778e0eef358fa5	SYNTACTIC	SYNTACTIC	transaction has expired
-R	Z_TX_CLASSICAL_PROOF	ok	ShieldedBlock	acd6017eab1337f83a1df85e914896ba419d6295d4919053406c566fee23bb59	OK	UNSUPPORTED	proof verification failed: zkvm: classical proof system forbidden on strict-PQ chain — only STARK/FRI accepted
+R	Z_GENESIS	ok	Empty	9c227870184f9269e1c720c2df8256dea664debf56f8eec76acab03c4bea755d	OK	LEDGER	invalid state root
+R	Z_BLOCK_EMPTY	ok	Empty	bc4f760d9248b429374b18ecfa7f8f9a4934dd1a23c2ab0c0122a389bcd58718	OK	OK	verified against the seeded chain
+R	Z_BLOCK_TRANSFER	ok	Transfer	d58aa660bf553e75ac5c743b56b1635debf7d3e722a1e452a0efab54c3dcf397	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_SHIELD	ok	Shield	18e4dc0d73c58ed4b803133aea37ebcc0c638cc0c170452389cb4fc3c0187fdc	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_UNSHIELD	ok	Unshield	532093100c5caadf53165db318ea6d9acde498384c5bf8a6e2ebdf62c23dc729	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_MINT	ok	Mint	d2cd39439e506a95de61e61d88ede2230e38290de056f566f8aba67b2f3e2c17	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_BURN	ok	Burn	277f8e33cf947d4e32170e4333ca6b0021e0a23023a234291d75caf334cbe1dd	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_ORPHAN	ok	Empty	cb2f838e377668daee9cb84cb7a0f4ef41d3a9f1d37275379044671ffae0ff7e	OK	LEDGER	chain: no such block: SeLqn3UAUoRymWmwW7axrzJK7JfNaBR2cHCryA6cFscgkny8
+R	Z_BLOCK_HEIGHT_SKIP	ok	Empty	f53e2c4544509825db2e4710773731ba4a8d87111f7a0958543d6dcb94417bbd	OK	SYNTACTIC	invalid block height
+R	Z_BLOCK_TIME_BEFORE_PARENT	ok	Empty	a3de5df2bc9474f418b93c6f43839f5304addd51063cf6949861bdaa4536c947	OK	SYNTACTIC	invalid block timestamp
+R	Z_BLOCK_TIME_AHEAD	ok	Empty	8b002e1c893c12dc8804c8e4ca491b33c4f90bceb94cf73011e37a66179785db	SYNTACTIC	SYNTACTIC	block timestamp too far in future
+R	Z_BLOCK_GENESIS_WITH_PARENT	ok	Empty	fc58e7739e53e9ef39224b40a93cef89d6dfedc017de556b8ceaba15b3467071	SYNTACTIC	SYNTACTIC	invalid block
+R	Z_BLOCK_WRONG_STATE_ROOT	ok	Empty	036e4a9f89b7a66c634c18e25bf3c6c6e9516c4e77283dc15c413468084ae2f8	OK	LEDGER	invalid state root
+R	Z_BLOCK_DUPLICATE_NULLIFIER	ok	Transferx2	77d4887fa3f673b7f0af1b43813e46a925b25140de847c9da297421cd5a5a52a	SYNTACTIC	SYNTACTIC	nullifier spent twice in one block
+R	Z_TX_NO_INPUTS	ok	Transfer	2a62baa48f23c8f9f7ee78dfe3739fdfa3fa08086e2a4b99feb6c5e0c595327f	SYNTACTIC	SYNTACTIC	transaction has no inputs
+R	Z_TX_NO_OUTPUTS	ok	Transfer	e208ab992faf5582e06136a33f7df2656ae91b4bf92e42107c83adb0ecd0953a	SYNTACTIC	SYNTACTIC	transaction has no outputs
+R	Z_TX_NO_PROOF	ok	Transfer	69b9063764f2bb8f937919acfdc723524ae8516d2bdb5525b98348eb0e84b367	SYNTACTIC	SYNTACTIC	transaction missing proof
+R	Z_TX_NO_EXPIRY	ok	Transfer	1cd330a2604414b9a7303ce68469b39723e918f368656bf3ca0b2771407919d2	SYNTACTIC	SYNTACTIC	transaction names no expiry height
+R	Z_TX_UNKNOWN_TYPE	ok	unknown	319e35211830075cf8e0b2d551c5d64e0cb04ba7b1ec7dc0a7dd91546f23709d	SYNTACTIC	SYNTACTIC	invalid transaction type
+R	Z_TX_EXPIRED	ok	Transfer	f7e30b941e40f3e64590915e066d8c4a3752ec814380053353778e0eef358fa5	SYNTACTIC	SYNTACTIC	transaction has expired
+R	Z_TX_CLASSICAL_PROOF	ok	Transfer	acd6017eab1337f83a1df85e914896ba419d6295d4919053406c566fee23bb59	OK	UNSUPPORTED	proof verification failed: zkvm: classical proof system forbidden on strict-PQ chain — only STARK/FRI accepted
 R	Z_BLOCK_TRAILING_BYTES	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
 R	Z_BLOCK_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
 R	Z_BLOCK_EMPTY_WIRE	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small

@@ -162,6 +162,10 @@ endforeach()
 # missing voice.
 add_executable(zkvm_conformance test/conformance.cpp)
 target_link_libraries(zkvm_conformance PRIVATE zkvm)
+# The corpus format, the verdict words and the error-word table are shared with
+# every other C++ evaluator, because a table that differed between two of them
+# reported its own difference as a chain's.
+target_include_directories(zkvm_conformance PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../conformance/include)
 target_compile_options(zkvm_conformance PRIVATE -Wall -Wextra)
 
 if(ZKVM_SANITIZE)

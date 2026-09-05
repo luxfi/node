@@ -3,49 +3,37 @@
 //
 // conformance.cpp — the C++ Z-chain's answers to the shared corpus.
 //
-// One of the evaluators — Go here, and C++ in this file — that read the same
+// One of the evaluators — Go, Rust and C++ — that read the same
 // conformance/corpus/vectors.tsv and print the same seven fields per vector.
 // The runner compares the sets of lines; this program never sees another
 // implementation's answer and has nothing to agree with.
 //
-// Every vector meets a chain stood up fresh over an in-memory store, holding no
-// spent note, no output and no accepted block, on the Z-chain's DEFAULT profile
-// — which is the strict-PQ one. That is the arrangement the Go evaluator uses,
-// and it is what makes the profile gate comparable: a chain that verified a
-// classical proof here would be one a CRQC could mint shielded value on, and
-// the row would say so.
+// Every vector meets a chain stood up fresh over an in-memory store, seeded
+// with the corpus's genesis and holding no spent note, no output and no
+// accepted block beyond it, on the Z-chain's DEFAULT profile — which is the
+// strict-PQ one. That is the arrangement the Go evaluator uses, and it is what
+// makes the profile gate comparable: a chain that verified a classical proof
+// here would be one a CRQC could mint shielded value on, and the row would
+// say so.
 //
 // Usage: zkvm_conformance <vectors.tsv>
+
+#include "lux/conformance/corpus.hpp"
 
 #include "lux/zkvm/block.hpp"
 #include "lux/zkvm/store.hpp"
 #include "lux/zkvm/txs.hpp"
 #include "lux/zkvm/vm.hpp"
 
-#include <cctype>
 #include <cstdio>
-#include <fstream>
-#include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
 
 using namespace lux::zkvm;
+namespace conf = lux::conformance;
 
 namespace {
-
-constexpr const char* kNone = "-";
-
-// The verdict vocabulary, shared with the Go evaluator.
-constexpr const char* kOk = "OK";
-constexpr const char* kMalformed = "MALFORMED";
-constexpr const char* kSyntactic = "SYNTACTIC";
-constexpr const char* kOverflow = "OVERFLOW";
-constexpr const char* kLedger = "LEDGER";
-constexpr const char* kAuth = "AUTH";
-constexpr const char* kWarp = "WARP";
-constexpr const char* kUnsupported = "UNSUPPORTED";
-constexpr const char* kInternal = "INTERNAL";
 
 Id id_of(std::uint8_t b) {
     Id v{};
@@ -53,63 +41,39 @@ Id id_of(std::uint8_t b) {
     return v;
 }
 
-// The chain the Z vectors are built for. A block id opens with
-// sha256(ChainID ‖ NetworkID), which is not on the wire, so these two numbers
-// are part of the corpus's contract: the Go evaluator is given the same.
+// The chain the Z vectors are built for, and the genesis it is born with.
 //
+// A Z block id opens with sha256(ChainID ‖ NetworkID), and NEITHER number is on
+// the wire, so both are corpus contract rather than anything a vector carries.
+// The corpus states them in conformance/gen/identity.go and asks for them back
+// in Z_CHAIN_IDENTITY, because an evaluator that picks its own derives a
+// different id for every well-formed vector on the chain — which is what a hash
+// fork looks like, and which is exactly what these two numbers being 4 here and
+// 40 there produced on the first run: twenty-five id disagreements, none of
+// them a chain's fault.
+//
+// The genesis timestamp is contract for the same reason. The genesis block's id
+// is hashed from it, and every vector names that block as its parent, so a
+// chain born at a different second holds none of them.
+constexpr std::uint8_t kChainByte = 40;
+constexpr std::uint32_t kNetworkID = 1;
+constexpr std::int64_t kGenesisTime = 1000;
+
 // The proof profile is the CONSTRUCTED DEFAULT — strict-PQ, no verifying keys —
 // stated by leaving VmConfig::z alone rather than by setting it here, so a
 // change to the chain's default profile moves this evaluator with it.
 VmConfig zconfig() {
     VmConfig c;
-    c.chain_id = id_of(4);
-    c.network_id = 1;
+    c.chain_id = id_of(kChainByte);
+    c.network_id = kNetworkID;
     c.alias = "Z";
     return c;
 }
 
-std::string hex(const std::uint8_t* b, std::size_t n) {
-    static const char* d = "0123456789abcdef";
-    std::string out;
-    out.reserve(n * 2);
-    for (std::size_t i = 0; i < n; ++i) {
-        out.push_back(d[b[i] >> 4]);
-        out.push_back(d[b[i] & 0xF]);
-    }
-    return out;
-}
-
-bool unhex(const std::string& s, std::vector<std::uint8_t>& out) {
-    if (s == kNone) return true;
-    if (s.size() % 2 != 0) return false;
-    auto nib = [](char c) -> int {
-        if (c >= '0' && c <= '9') return c - '0';
-        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
-        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-        return -1;
-    };
-    out.reserve(s.size() / 2);
-    for (std::size_t i = 0; i < s.size(); i += 2) {
-        const int hi = nib(s[i]), lo = nib(s[i + 1]);
-        if (hi < 0 || lo < 0) return false;
-        out.push_back(static_cast<std::uint8_t>((hi << 4) | lo));
-    }
-    return true;
-}
-
-struct Row {
-    std::string id, parse = kNone, kind = kNone, hash = kNone, syntactic = kNone, exec = kNone,
-                note;
-};
-
-void print(const Row& r) {
-    std::string note = r.note;
-    for (auto& c : note)
-        if (c == '\t' || c == '\n') c = ' ';
-    if (note.size() > 160) note.resize(160);
-    if (note.empty()) note = kNone;
-    std::printf("R\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", r.id.c_str(), r.parse.c_str(), r.kind.c_str(),
-                r.hash.c_str(), r.syntactic.c_str(), r.exec.c_str(), note.c_str());
+Genesis zgenesis() {
+    Genesis g;
+    g.timestamp = kGenesisTime;
+    return g;
 }
 
 const char* tx_kind_name(TxType t) {
@@ -123,10 +87,12 @@ const char* tx_kind_name(TxType t) {
     return "unknown";
 }
 
-// A block of one kind repeated is named once with its count, so a
-// hundred-transaction vector does not print a hundred names; a mixed block
-// spells every one out, because which types a block mixes is the thing the
-// field is there to compare.
+// What to call the thing that came off the wire.
+//
+// The Z-chain has one block type, so the name that carries information is what
+// the block CONTAINS: a block of one kind repeated is named once with its
+// count, and a mixed block spells every one out, because which types a block
+// mixes is the thing the field is there to compare.
 std::string kind_name(const std::vector<Transaction>& txs) {
     if (txs.empty()) return "Empty";
     const std::string first = tx_kind_name(txs[0].type);
@@ -145,46 +111,19 @@ std::string kind_name(const std::vector<Transaction>& txs) {
     return joined;
 }
 
-// The same word table the Go evaluator uses, in the same order. The C++
-// Z-chain raises its refusals as the Go sentinel's own words, so the table
-// reads the reference's phrasing by construction.
-std::string lower(std::string s) {
-    for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    return s;
-}
-
-std::string classify(const std::string& raw) {
-    const std::string s = lower(raw);
-    auto has = [&](const char* w) { return s.find(w) != std::string::npos; };
-    if (has("overflow") || has("underflow")) return kOverflow;
-    if (has("wrong transaction type") || has("wrong tx type") || has("not permitted") ||
-        has("not held") || has("unsupported") || has("forbidden"))
-        return kUnsupported;
-    if (has("credential") || has("signature") || has("unauthorized") || has("not authorised") ||
-        has("not authorized"))
-        return kAuth;
-    if (has("warp")) return kWarp;
-    if (has("utxo") || has("funds") || has("insufficient") || has("burn") || has("consumed") ||
-        has("produced") || has("flow") || has("fee") || has("not found") || has("doesn't exist") ||
-        has("does not exist") || has("isn't a current") || has("not validator") ||
-        has("no such") || has("could not load") || has("shared memory"))
-        return kLedger;
-    return kSyntactic;
-}
-
-Row eval_block(const std::string& id, const std::string& wire) {
-    Row r;
+conf::Row eval_block(const std::string& id, const std::string& wire) {
+    conf::Row r;
     r.id = id;
     std::vector<std::uint8_t> bytes;
-    if (!unhex(wire, bytes)) {
-        r.parse = kInternal;
+    if (!conf::unhex(wire, bytes)) {
+        r.parse = conf::kInternal;
         r.note = "corpus wire is not hex";
         return r;
     }
 
     // Fresh chain per vector: each block is judged on its own against a chain
-    // that has accepted nothing, so no vector can be answered differently
-    // because of one that ran before it.
+    // that has accepted nothing past genesis, so no vector can be answered
+    // differently because of one that ran before it.
     store::Memory base;
     Vm vm(zconfig(), base);
     // The clock is the WALL clock here, deliberately, because the Go evaluator
@@ -193,17 +132,17 @@ Row eval_block(const std::string& id, const std::string& wire) {
     // would then disagree over which clock was read rather than over any rule.
     // Every vector's timestamp is either far in the past or past 2100, so both
     // read the same verdict off whatever clock they have.
-    if (auto init = vm.initialize(Genesis{}); !init) {
-        r.parse = kInternal;
+    if (auto init = vm.initialize(zgenesis()); !init) {
+        r.parse = conf::kInternal;
         r.note = "cannot stand up a Z-chain: " + init.error();
         return r;
     }
 
     auto parsed = vm.parse_block(bytes);
     if (!parsed) {
-        r.parse = kMalformed;
-        r.syntactic = kMalformed;
-        r.exec = kMalformed;
+        r.parse = conf::kMalformed;
+        r.syntactic = conf::kMalformed;
+        r.exec = conf::kMalformed;
         r.note = parsed.error();
         return r;
     }
@@ -211,31 +150,31 @@ Row eval_block(const std::string& id, const std::string& wire) {
     r.parse = "ok";
     r.kind = kind_name(blk->txs);
     const Id blk_id = blk->id();
-    r.hash = hex(blk_id.data(), blk_id.size());
+    r.hash = conf::hex(blk_id.data(), blk_id.size());
 
     // The shape check, per transaction, from the port's own method. It is the
     // Z-chain's analogue of a syntactic pass: everything about a transaction
     // that can be decided without asking the chain anything.
     for (const auto& tx : blk->txs) {
         if (auto v = tx.validate_basic(); !v) {
-            r.syntactic = classify(v.error());
+            r.syntactic = conf::classify(v.error());
             r.exec = r.syntactic;
             r.note = v.error();
             return r;
         }
     }
-    r.syntactic = kOk;
+    r.syntactic = conf::kOk;
 
     // check is this node's whole verdict on the block: the transaction cap, the
     // clock, the block-level spent set, the one admission predicate over every
     // transaction — which is where the strict-PQ profile gate fires — and the
     // state root.
     if (auto v = blk->check(); !v) {
-        r.exec = classify(v.error());
+        r.exec = conf::classify(v.error());
         r.note = v.error();
         return r;
     }
-    r.exec = kOk;
+    r.exec = conf::kOk;
     r.note = "height=" + std::to_string(blk->block_height) +
              " txs=" + std::to_string(blk->txs.size());
     return r;
@@ -261,8 +200,8 @@ Row eval_block(const std::string& id, const std::string& wire) {
 template <class B>
 constexpr bool can_be_rejected = requires(B& b) { b.reject(); };
 
-Row eval_seam(const std::string& id) {
-    Row r;
+conf::Row eval_seam(const std::string& id) {
+    conf::Row r;
     r.id = id;
     r.parse = "ok";
     r.kind = "Block.Reject";
@@ -288,42 +227,23 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "usage: zkvm_conformance <vectors.tsv>\n");
         return 2;
     }
-    std::ifstream in(argv[1]);
-    if (!in) {
-        std::fprintf(stderr, "zkvm_conformance: cannot read %s\n", argv[1]);
-        return 1;
-    }
+    std::vector<conf::Vector> vectors;
+    if (!conf::read(argv[1], "zkvm_conformance", vectors)) return 1;
 
-    std::string line;
-    while (std::getline(in, line)) {
-        if (line.empty() || line[0] == '#') continue;
-        // Split on every tab, keeping a trailing empty column.
-        std::vector<std::string> f;
-        std::size_t start = 0;
-        for (;;) {
-            const std::size_t tab = line.find('\t', start);
-            if (tab == std::string::npos) {
-                f.push_back(line.substr(start));
-                break;
-            }
-            f.push_back(line.substr(start, tab - start));
-            start = tab + 1;
-        }
-        if (f.size() != 5 || f[0] != "V") {
-            std::fprintf(stderr, "zkvm_conformance: not a vector line: %s\n", line.c_str());
-            return 1;
-        }
+    for (const auto& v : vectors) {
         // This evaluator is the Z-chain; the other chains' vectors are theirs
         // to answer.
-        if (f[2] != "Z") continue;
+        if (v.chain != "Z") continue;
 
-        if (f[3] == "block") {
-            print(eval_block(f[1], f[4]));
-        } else if (f[3] == "seam") {
-            print(eval_seam(f[1]));
+        if (v.op == "block") {
+            conf::print(eval_block(v.id, v.wire));
+        } else if (v.op == "seam") {
+            conf::print(eval_seam(v.id));
+        } else if (v.op == "identity") {
+            conf::print(conf::identity(v.id, kChainByte, kNetworkID));
         } else {
-            std::fprintf(stderr, "zkvm_conformance: unknown op %s on %s\n", f[3].c_str(),
-                         f[1].c_str());
+            std::fprintf(stderr, "zkvm_conformance: unknown op %s on %s\n", v.op.c_str(),
+                         v.id.c_str());
             return 1;
         }
     }

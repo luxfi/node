@@ -40,6 +40,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/runtime"
 	luxvm "github.com/luxfi/vm"
+	vmchain "github.com/luxfi/vm/chain"
 )
 
 // The chain every Z vector belongs to, and the genesis it is born with. Both
@@ -411,6 +412,60 @@ func zBlockAlone(msg string) bool {
 	return false
 }
 
+// zKindName says what came off the wire.
+//
+// The Z-chain has ONE block type, so naming the block names nothing: the field
+// would carry the same word on every row and compare a constant against itself.
+// What a Z block actually is, is what it CARRIES — and which transaction types
+// a buffer decoded to is exactly the thing the implementations have to agree
+// about before any verdict about them means anything.
+//
+// A block of one kind repeated is named once with its count; a mixed block
+// spells every one out, because which types a block mixes is what the field is
+// there to compare.
+func zKindName(b vmchain.Block) string {
+	zb, ok := b.(*zkvm.Block)
+	if !ok {
+		return "unknown"
+	}
+	if len(zb.Txs) == 0 {
+		return "Empty"
+	}
+	first := zTxKindName(zb.Txs[0].Type)
+	uniform := true
+	joined := first
+	for _, tx := range zb.Txs[1:] {
+		n := zTxKindName(tx.Type)
+		if n != first {
+			uniform = false
+		}
+		joined += "+" + n
+	}
+	if !uniform {
+		return joined
+	}
+	if len(zb.Txs) == 1 {
+		return first
+	}
+	return fmt.Sprintf("%sx%d", first, len(zb.Txs))
+}
+
+func zTxKindName(t zkvm.TransactionType) string {
+	switch t {
+	case zkvm.TransactionTypeTransfer:
+		return "Transfer"
+	case zkvm.TransactionTypeMint:
+		return "Mint"
+	case zkvm.TransactionTypeBurn:
+		return "Burn"
+	case zkvm.TransactionTypeShield:
+		return "Shield"
+	case zkvm.TransactionTypeUnshield:
+		return "Unshield"
+	}
+	return "unknown"
+}
+
 func evalZ(v Vector) Result {
 	r := Result{ID: v.ID, Kind: none, Hash: none, Syntactic: none, Exec: none}
 	b, ok := wireOf(v)
@@ -435,7 +490,7 @@ func evalZ(v Vector) Result {
 		return r
 	}
 	r.Parse = "ok"
-	r.Kind = "ShieldedBlock"
+	r.Kind = zKindName(blk)
 	blockID := blk.ID()
 	r.Hash = hex.EncodeToString(blockID[:])
 
