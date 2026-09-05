@@ -11,9 +11,15 @@
 //! pending transactions is a node's job, not a ledger's: the manager decides
 //! what is true and the pool decides what to try next. A transaction that a
 //! block rejected comes back to it to be re-offered, and one that a block
-//! accepted is gone. It is [`crate::mempool::Mempool`] — the one pool, with the
-//! conflict set and the admission terms — rather than a second, simpler one
-//! kept here, because two pools would be two answers to "may this in".
+//! accepted is gone.
+//!
+//! There is ONE pool, and the chain reaches it through [`crate::gossip::Gossip`]
+//! — the same set, with the filter this node advertises and the queue of what
+//! it has yet to pass on. A wallet's transaction and a peer's arrive at the
+//! same door, in the same order, judged by the same rules: already held,
+//! already refused, does it verify, does it fit, does it conflict, is it
+//! allowed. Two doors would be two answers, and the second one would be the
+//! one nobody tested.
 
 use std::sync::{Arc, Mutex};
 
@@ -21,6 +27,7 @@ use crate::block::builder;
 use crate::block::manager::Manager;
 use crate::block::Block;
 use crate::error::Error as ChainError;
+use crate::gossip::{self, Gossip};
 use crate::host;
 use crate::ids::Id;
 use crate::mempool::Mempool;
@@ -93,7 +100,8 @@ pub struct Genesis {
 /// Everything the chain holds, behind one lock.
 struct Inner {
     manager: Manager,
-    mempool: Mempool,
+    /// The one pool, and what this node tells peers about it.
+    gossip: Gossip,
     bootstrapped: bool,
     /// Blocks the chain has seen but not decided: what [`Vm::build`] produced
     /// and what [`Vm::parse`] read off the wire.
@@ -136,10 +144,11 @@ impl Xvm {
     pub fn new(
         genesis: Genesis,
         clock: Arc<dyn Clock>,
+        entropy: Arc<dyn gossip::Entropy>,
         net: Option<Arc<dyn Net>>,
         shared_memory: Option<Arc<dyn SharedMemory>>,
     ) -> crate::Result<Xvm> {
-        Xvm::start(genesis, clock, net, shared_memory, Store::new())
+        Xvm::start(genesis, clock, entropy, net, shared_memory, Store::new())
     }
 
     /// Start a chain on a database, from its genesis or from where it was left.
@@ -157,13 +166,14 @@ impl Xvm {
     pub fn open(
         genesis: Genesis,
         clock: Arc<dyn Clock>,
+        entropy: Arc<dyn gossip::Entropy>,
         net: Option<Arc<dyn Net>>,
         shared_memory: Option<Arc<dyn SharedMemory>>,
         db: Arc<dyn crate::db::Db>,
     ) -> crate::Result<Xvm> {
         let store = Store::on(db)?;
         if !store.is_initialized() {
-            return Xvm::start(genesis, clock, net, shared_memory, store);
+            return Xvm::start(genesis, clock, entropy, net, shared_memory, store);
         }
 
         // The chain has run. The genesis block it ran under is block zero, and
@@ -198,7 +208,7 @@ impl Xvm {
         Ok(Xvm {
             inner: Mutex::new(Inner {
                 manager,
-                mempool: Mempool::new(),
+                gossip: Gossip::new(Mempool::new(), &gossip::Config::default(), entropy)?,
                 bootstrapped: false,
                 known: std::collections::HashMap::new(),
             }),
@@ -214,6 +224,7 @@ impl Xvm {
     fn start(
         genesis: Genesis,
         clock: Arc<dyn Clock>,
+        entropy: Arc<dyn gossip::Entropy>,
         net: Option<Arc<dyn Net>>,
         shared_memory: Option<Arc<dyn SharedMemory>>,
         mut store: Store,
@@ -235,7 +246,7 @@ impl Xvm {
         Ok(Xvm {
             inner: Mutex::new(Inner {
                 manager,
-                mempool: Mempool::default(),
+                gossip: Gossip::new(Mempool::new(), &gossip::Config::default(), entropy)?,
                 bootstrapped: false,
                 known: std::collections::HashMap::new(),
             }),
@@ -272,7 +283,8 @@ impl Xvm {
         self.inner
             .lock()
             .expect("chain poisoned")
-            .mempool
+            .gossip
+            .pool_mut()
             .hold_to(profile, exempt);
     }
 
@@ -281,31 +293,63 @@ impl Xvm {
         self.inner
             .lock()
             .expect("chain poisoned")
-            .mempool
+            .gossip
+            .pool_mut()
             .profile()
             .cloned()
     }
 
-    /// Offer a transaction. It is verified against the preferred state before
-    /// it is held, so the mempool never carries something that cannot go in a
-    /// block on this branch, and the pool's own admission — size, room,
-    /// conflicts, security terms — decides whether it is kept.
+    /// Offer a transaction — from a wallet, from a peer's push, or as a pull's
+    /// answer. One door, and these are not three kinds of offer.
     ///
-    /// A refusal is remembered, so the same transaction offered again by a peer
-    /// is answered from memory rather than executed a second time.
+    /// The order is Go's, cheapest first: already held, already refused for a
+    /// reason this node still remembers, then verification against the state
+    /// this node prefers, then the pool's own admission — size, room,
+    /// conflicts, and the chain's security terms. Every refusal before the
+    /// verification costs a lookup, which is what keeps a flood of junk from
+    /// being a way to make this node work for free.
+    ///
+    /// Returning `Ok(())` also means it is worth passing on, so it joins what
+    /// this node has to gossip and what it advertises holding.
     pub fn issue(&self, tx: Tx) -> crate::Result<()> {
-        let mut inner = self.inner.lock().expect("chain poisoned");
+        let inner = &mut *self.inner.lock().expect("chain poisoned");
         let backend = self.backend(inner.bootstrapped);
-        let id = tx.id();
-        if let Err(why) = inner.manager.verify_tx(&backend, &tx) {
-            inner.mempool.mark_dropped(id, why.clone());
-            return Err(why);
-        }
-        if let Err(why) = inner.mempool.add(tx) {
-            inner.mempool.mark_dropped(id, why.clone());
-            return Err(why);
-        }
-        Ok(())
+        // The chain's own verification, passed to the pool rather than held by
+        // it: the manager decides whether a transaction is good, here as it
+        // does for a block, and there is no second copy of that judgement.
+        let manager = &inner.manager;
+        inner.gossip.add(tx, |t| manager.verify_tx(&backend, t))
+    }
+
+    /// Whether this node holds it — exactly, not probabilistically. What a
+    /// peer's `Has` asks.
+    pub fn holds(&self, id: &Id) -> bool {
+        self.inner.lock().expect("chain poisoned").gossip.has(id)
+    }
+
+    /// What to tell peers this node already knows: the filter, and the salt it
+    /// was built under.
+    pub fn advertise(&self) -> (Vec<u8>, Id) {
+        self.inner
+            .lock()
+            .expect("chain poisoned")
+            .gossip
+            .marshal_filter()
+    }
+
+    /// Transactions to push, oldest first, up to `target` bytes — each as the
+    /// canonical bytes a peer parses back.
+    pub fn take_outbound(&self, target: usize) -> Vec<Vec<u8>> {
+        self.inner
+            .lock()
+            .expect("chain poisoned")
+            .gossip
+            .take_outbound(target)
+    }
+
+    /// How many are waiting to be pushed.
+    pub fn outbound(&self) -> usize {
+        self.inner.lock().expect("chain poisoned").gossip.outbound()
     }
 
     /// Why a transaction was refused, if this node still remembers.
@@ -313,14 +357,20 @@ impl Xvm {
         self.inner
             .lock()
             .expect("chain poisoned")
-            .mempool
+            .gossip
+            .pool()
             .drop_reason(id)
             .cloned()
     }
 
     /// How many transactions are waiting.
     pub fn pending(&self) -> usize {
-        self.inner.lock().expect("chain poisoned").mempool.len()
+        self.inner
+            .lock()
+            .expect("chain poisoned")
+            .gossip
+            .pool()
+            .len()
     }
 
     /// The committed state, for a caller that wants to read what is settled.
@@ -419,16 +469,16 @@ impl host::Vm for Xvm {
         let mut inner = self.inner.lock().expect("chain poisoned");
         let backend = self.backend(inner.bootstrapped);
         let now = self.clock.now();
-        let candidates = inner.mempool.candidates();
+        let candidates = inner.gossip.pool_mut().candidates();
         let built = builder::build(&inner.manager, &backend, now, &candidates).map_err(to_host)?;
         // What went in is no longer pending, and neither is anything that
         // wanted the same outputs. What could not go in is not coming back on
         // this branch, and the reason is remembered.
         let taken = built.block.txs().to_vec();
-        inner.mempool.remove(&taken);
+        inner.gossip.pool_mut().remove(&taken);
         for (id, why) in built.dropped {
-            inner.mempool.remove_id(&id);
-            inner.mempool.mark_dropped(id, why);
+            inner.gossip.pool_mut().remove_id(&id);
+            inner.gossip.pool_mut().mark_dropped(id, why);
         }
         inner.known.insert(built.block.id(), built.block.clone());
         Ok(Box::new(built.block))
@@ -464,7 +514,7 @@ impl host::Vm for Xvm {
         // another one on this branch — and neither is one that wanted the same
         // outputs, whether or not this node was holding it.
         let taken = blk.txs().to_vec();
-        inner.mempool.remove(&taken);
+        inner.gossip.pool_mut().remove(&taken);
         Ok(())
     }
 
@@ -499,10 +549,10 @@ impl host::Vm for Xvm {
         // rejected block carried does not re-enter on weaker terms than one a
         // peer sends: the security gate runs on it again.
         for tx in good {
-            let id = tx.id();
-            if let Err(why) = inner.mempool.add(tx) {
-                inner.mempool.mark_dropped(id, why);
-            }
+            // Through the one door, so what comes back is admitted on the same
+            // terms as what a peer sends — and lands in what this node
+            // advertises and passes on, which a direct pool insert would skip.
+            let _ = inner.gossip.add_unverified(tx);
         }
         Ok(())
     }
@@ -630,6 +680,13 @@ mod tests {
 
     const NETWORK_ID: u32 = 10;
 
+    /// A fixed entropy source. The salt only has to be unpredictable to a
+    /// stranger; a test that could not say what it is could not check the
+    /// filter against Go's bytes at all.
+    fn a_salt() -> Arc<dyn crate::gossip::Entropy> {
+        Arc::new(crate::gossip::Fixed(vec![0x5A, 0xA5, 0x11, 0x22]))
+    }
+
     fn chain_id() -> Id {
         ids::prefixed(&[5])
     }
@@ -704,6 +761,7 @@ mod tests {
                 timestamp: now,
             },
             clock.clone(),
+            a_salt(),
             Some(Arc::new(OneNet)),
             Some(Arc::new(NoMemory)),
         )
@@ -730,6 +788,7 @@ mod tests {
                 timestamp: 1000,
             },
             Arc::new(FixedClock::new(now)),
+            a_salt(),
             Some(Arc::new(OneNet)),
             Some(Arc::new(NoMemory)),
             db,
@@ -924,6 +983,7 @@ mod tests {
                 timestamp: 1000,
             },
             Arc::new(FixedClock::new(1000)),
+            a_salt(),
             Some(Arc::new(OneNet)),
             Some(Arc::new(NoMemory)),
             db,
@@ -961,6 +1021,69 @@ mod tests {
         assert_eq!(again.last_accepted(), want);
         assert_eq!(again.get(&want).unwrap().height(), 1);
         std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn what_is_held_is_advertised_and_queued_to_be_passed_on() {
+        let (vm, g, _) = a_chain(1000);
+        let tx = spend_genesis(&g, 1_000, 2);
+        let id = tx.id();
+        assert!(!vm.holds(&id));
+        vm.issue(tx.clone()).unwrap();
+
+        // Held, exactly.
+        assert!(vm.holds(&id));
+        assert!(!vm.holds(&ids::prefixed(&[0xEE])));
+
+        // Advertised: the filter a peer is sent has it, and the filter is
+        // reconstructible from the bytes that travel.
+        let (raw, salt) = vm.advertise();
+        let peers = crate::gossip::Filter::parse(&raw, salt)
+            .expect("a peer rebuilds the filter from what travelled");
+        assert!(peers.has(&id), "the peer's copy holds what this node holds");
+
+        // And queued to be pushed, as the same bytes a peer parses back.
+        assert_eq!(vm.outbound(), 1);
+        let out = vm.take_outbound(1 << 20);
+        assert_eq!(out.len(), 1);
+        assert_eq!(crate::gossip::unmarshal(&out[0]).unwrap().id(), id);
+        assert_eq!(vm.outbound(), 0, "pushed once, not forever");
+
+        // A block takes it, and then this node no longer holds it.
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+        vm.accept(&blk.id()).unwrap();
+        assert!(!vm.holds(&id));
+    }
+
+    #[test]
+    fn a_peers_transaction_and_a_wallets_reach_one_pool_by_one_rule() {
+        // The claim the single door is for: whichever way a transaction
+        // arrives, the same refusals apply in the same order.
+        let (vm, g, _) = a_chain(1000);
+        let first = spend_genesis(&g, 1_000, 2);
+        let conflicting = spend_genesis(&g, 1_000, 3);
+
+        vm.issue(first.clone()).unwrap();
+        // Offered again — held already.
+        assert_eq!(vm.issue(first).unwrap_err(), ChainError::DuplicateTx);
+        // A different transaction spending the same output — refused, and
+        // remembered.
+        assert_eq!(
+            vm.issue(conflicting.clone()).unwrap_err(),
+            ChainError::ConflictsWithOtherTx
+        );
+        // Offered a second time, the answer comes from memory: the chain is
+        // not asked to verify it again.
+        assert_eq!(
+            vm.issue(conflicting.clone()).unwrap_err(),
+            ChainError::ConflictsWithOtherTx
+        );
+        assert_eq!(
+            vm.refusal(&conflicting.id()),
+            Some(ChainError::ConflictsWithOtherTx)
+        );
+        assert_eq!(vm.pending(), 1);
     }
 
     #[test]
