@@ -7,7 +7,7 @@ the state they leave behind. Ported from the Go reference at
 VM seam of `~/work/lux-rs/node` (`src/vm.rs`) — which this crate imports rather
 than restates.
 
-17,222 lines across 29 files. 313 tests, all green. No stubs.
+17,222 lines across 29 files. 314 tests, all green. No stubs.
 
 ## Build
 
@@ -83,8 +83,20 @@ keep in step.
 post-quantum in its signatures and classical in its mempool is classical.
 `Xvm::hold_to` is Go's `SetAuthPolicy`, and under the strict profile with no
 exemption list this chain admits nothing — every fx family it runs spends with a
-secp256k1 signature. That refusal is the correct answer rather than a gap, and
-Go's own X-chain test asserts it.
+secp256k1 signature. That refusal is the correct answer rather than a gap.
+
+This is the one place the port is deliberately stricter than the reference, and
+it is pinned by a test that says so. Go asks the question as a type assertion,
+`c.(*secp256k1fx.Credential)`; `nftfx.Credential` and `propertyfx.Credential`
+each EMBED that type rather than being it, so the assertion fails and Go admits
+both under the strict profile — admitting a secp256k1 signature, recovered by
+the same curve, which is exactly what the profile exists to refuse. Go's own
+X-chain test (`vm_security_profile_test.go`) only ever offers a bare
+`secp256k1fx.Credential`, so the case is untested there rather than decided
+there. Being stricter cannot split the chain: this gate runs at admission and
+nowhere in block verification, so a node holding this rule builds from fewer
+transactions and still accepts every block a Go node produces. The disagreement
+is about what a node will relay, which is policy, not about what is true.
 
 **Nothing reaches the disk until a block is accepted.** `Manager::accept` puts
 the block, everything its transactions changed, and the position it moved the
