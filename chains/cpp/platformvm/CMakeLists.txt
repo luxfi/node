@@ -145,7 +145,8 @@ add_library(lux_platformvm STATIC
   src/genesis.cpp
   src/staking.cpp
   src/adopt.cpp
-  src/mempool.cpp)
+  src/mempool.cpp
+  src/persist.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
 target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto lux_core)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
@@ -198,6 +199,14 @@ if(PLATFORMVM_BUILD_TESTS)
     target_compile_options(pvm_${_t}_test PRIVATE -Wall -Wextra)
     add_test(NAME pvm_${_t} COMMAND pvm_${_t}_test)
   endforeach()
+
+  # The durability proof stands apart from the ported suite: it needs argv,
+  # because the process that writes the state is this same binary re-EXECed and
+  # then killed where it stands. See the source.
+  add_executable(pvm_durability_test test/durability_test.cpp)
+  target_link_libraries(pvm_durability_test PRIVATE lux_platformvm)
+  target_compile_options(pvm_durability_test PRIVATE -Wall -Wextra)
+  add_test(NAME pvm_durability COMMAND pvm_durability_test)
 endif()
 
 # The C++ P-chain's evaluator for the cross-language chain differential. It is

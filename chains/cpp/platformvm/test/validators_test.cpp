@@ -62,7 +62,7 @@ state::Staker validator_of(std::uint8_t n, const Id& chain, std::uint64_t weight
 // Only validators carry weight in the set a vote is sampled from; a delegator's
 // stake sits under its validator rather than being an entry of its own.
 TEST(CurrentSetHoldsValidatorsOnly) {
-    state::MemState s;
+    state::State s;
     REQUIRE_OK(s.put_current_validator(validator_of(1, kPrimaryNetworkId, 100, pop(1).public_key)));
     REQUIRE_OK(s.put_current_validator(validator_of(2, kPrimaryNetworkId, 200, pop(2).public_key)));
 
@@ -82,7 +82,7 @@ TEST(CurrentSetHoldsValidatorsOnly) {
 // The key is UNCOMPRESSED in the set: a proof of possession signs the 48-byte
 // compressed form, and the commitment hashes the 96-byte one.
 TEST(TheSetCarriesTheUncompressedKey) {
-    state::MemState s;
+    state::State s;
     REQUIRE_OK(s.put_current_validator(validator_of(1, kPrimaryNetworkId, 100, pop(1).public_key)));
 
     auto set = validators::current_set(s, kPrimaryNetworkId);
@@ -105,7 +105,7 @@ TEST(TheSetCarriesTheUncompressedKey) {
 // denominator with no way for anyone to vote toward it.
 TEST(AChainValidatorInheritsItsPrimaryKey) {
     const Id net = id_of(0x50);
-    state::MemState s;
+    state::State s;
     REQUIRE_OK(s.put_current_validator(validator_of(1, kPrimaryNetworkId, 100, pop(1).public_key)));
     REQUIRE_OK(s.put_current_validator(validator_of(1, net, 7, std::nullopt,
                                                     txs::Priority::ChainPermissionedValidatorCurrent)));
@@ -123,7 +123,7 @@ TEST(AChainValidatorInheritsItsPrimaryKey) {
 
     // A validator of a network with no primary-network entry to inherit from is
     // a refusal, not a keyless entry.
-    state::MemState orphan;
+    state::State orphan;
     REQUIRE_OK(orphan.put_current_validator(validator_of(9, net, 7, std::nullopt,
                                                           txs::Priority::ChainPermissionedValidatorCurrent)));
     REQUIRE_ERR(validators::current_set(orphan, net), Err::NotValidator);
@@ -140,7 +140,7 @@ TEST(TheSetRootIsTheNodes) {
 #ifndef LUX_PLATFORMVM_HAS_NODE_SET_ROOT
     SKIP("the node checkout's own validator_set_root was not found to check against");
 #else
-    state::MemState s;
+    state::State s;
     REQUIRE_OK(s.put_current_validator(validator_of(3, kPrimaryNetworkId, 300, pop(3).public_key)));
     REQUIRE_OK(s.put_current_validator(validator_of(1, kPrimaryNetworkId, 100, pop(1).public_key)));
     REQUIRE_OK(s.put_current_validator(validator_of(2, kPrimaryNetworkId, 200, pop(2).public_key)));
@@ -184,7 +184,7 @@ namespace {
 // One accepted height: what the layer changed is recorded, then applied. The
 // order is the chain's own — a change can only be described against the state
 // it lands on.
-Status settle(state::MemState& base, validators::History& h, std::uint64_t height,
+Status settle(state::State& base, validators::History& h, std::uint64_t height,
               const std::function<void(state::Diff&)>& layer) {
     state::Diff d(&base);
     layer(d);
@@ -212,7 +212,7 @@ l1::Validator l1_of(const Id& validation, const Id& chain, std::uint8_t node, st
 // directions of change have to be undone — a validator that left comes back,
 // one that joined goes away — and each has to come back with what it had.
 TEST(TheSetIsRebuiltAtAPastHeight) {
-    state::MemState s;
+    state::State s;
     s.load_current_validator(validator_of(1, kPrimaryNetworkId, 100, pop(1).public_key));
     s.load_current_validator(validator_of(2, kPrimaryNetworkId, 200, pop(2).public_key));
     validators::History h;
@@ -258,7 +258,7 @@ TEST(TheSetIsRebuiltAtAPastHeight) {
 // the network being asked about and nothing else.
 TEST(APastHeightIsPerNetwork) {
     const Id net = id_of(0x40);
-    state::MemState s;
+    state::State s;
     s.load_current_validator(validator_of(1, kPrimaryNetworkId, 100, pop(1).public_key));
     s.load_current_validator(validator_of(1, net, 100, std::nullopt,
                                           txs::Priority::ChainPermissionedValidatorCurrent));
@@ -296,7 +296,7 @@ TEST(AnL1ValidatorKeepsTheNameItHad) {
     const Id first = id_of(0x50);
     const Id second = id_of(0x60);
 
-    state::MemState s;
+    state::State s;
     REQUIRE_OK(s.put_l1_validator(l1_of(first, net, 0x11, 100, key)));
     validators::History h;
 
@@ -329,7 +329,7 @@ TEST(AnL1ValidatorKeepsTheNameItHad) {
 TEST(AnL1ValidatorLeavesThePastAlone) {
     const Id net = id_of(0x40);
     const auto key = validators::uncompress_public_key(pop(2).public_key).value();
-    state::MemState s;
+    state::State s;
     validators::History h;
 
     REQUIRE_OK(settle(s, h, 2, [&](state::Diff& d) {

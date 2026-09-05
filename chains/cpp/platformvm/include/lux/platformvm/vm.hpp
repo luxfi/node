@@ -158,8 +158,8 @@ class PlatformVM final : public lux::node::VM {
     const validators::History& history() const { return history_; }
 
     // The accepted state — what the chain remembers.
-    const state::MemState& accepted() const { return state_; }
-    state::MemState& accepted() { return state_; }
+    const state::State& accepted() const { return state_; }
+    state::State& accepted() { return state_; }
 
     executor::Backend& backend() { return backend_; }
     const executor::Backend& backend() const { return backend_; }
@@ -216,7 +216,7 @@ class PlatformVM final : public lux::node::VM {
 
     Id chain_id_{};
     executor::Backend backend_;
-    state::MemState state_;
+    state::State state_;
     std::map<Id, std::shared_ptr<block::Block>> blocks_;
     std::map<Id, Verified> verified_;
     mempool::Pool mempool_;

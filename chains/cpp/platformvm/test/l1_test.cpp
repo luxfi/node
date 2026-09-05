@@ -75,8 +75,8 @@ ex::Backend backend() {
 }
 
 // A chain that has already converted, so it has an address that may speak for it.
-state::MemState converted(std::uint64_t funds = 10'000'000'000) {
-    state::MemState s;
+state::State converted(std::uint64_t funds = 10'000'000'000) {
+    state::State s;
     s.set_timestamp(kChainTime);
     s.set_current_supply(kPrimaryNetworkId, 0);
     s.add_network(kL1);
@@ -229,7 +229,7 @@ TEST(TheExpiryKey) {
 // Go: state.PutL1Validator — the three invariants that keep a validation id
 // naming one validator.
 TEST(TheL1ValidatorSet) {
-    state::MemState s;
+    state::State s;
     l1::Validator v;
     v.validation_id = id_of(1);
     v.chain_id = kL1;
@@ -288,7 +288,7 @@ TEST(TheL1ValidatorSet) {
 
 // The layer's L1 view, and that applying it lands the same set.
 TEST(L1ValidatorsThroughALayer) {
-    state::MemState base;
+    state::State base;
     l1::Validator v;
     v.validation_id = id_of(1);
     v.chain_id = kL1;
@@ -417,7 +417,7 @@ TEST(RegisterL1Validator) {
             Err::WrongWarpSourceAddress);
     }
     {  // a network that never converted has nobody who may speak for it
-        state::MemState s;
+        state::State s;
         s.set_timestamp(kChainTime);
         UTXO u;
         u.utxo = UtxoId{id_of(0xA0), 0};
@@ -491,7 +491,7 @@ TEST(RegisterL1Validator) {
 TEST(SetL1ValidatorWeight) {
     const auto b = backend();
 
-    auto with_two = [&](state::MemState& s) {
+    auto with_two = [&](state::State& s) {
         for (std::uint8_t i = 0; i < 2; ++i) {
             l1::Validator v;
             v.validation_id = id_of(static_cast<std::uint8_t>(0xE0 + i));
@@ -582,7 +582,7 @@ TEST(SetL1ValidatorWeight) {
 TEST(IncreaseL1ValidatorBalance) {
     const auto b = backend();
 
-    auto seed = [&](state::MemState& s, std::uint64_t end_fee) {
+    auto seed = [&](state::State& s, std::uint64_t end_fee) {
         l1::Validator v;
         v.validation_id = id_of(0xE0);
         v.chain_id = kL1;
@@ -649,7 +649,7 @@ TEST(IncreaseL1ValidatorBalance) {
 TEST(DisableL1Validator) {
     const auto b = backend();
 
-    auto seed = [&](state::MemState& s, const OutputOwners& deactivation) {
+    auto seed = [&](state::State& s, const OutputOwners& deactivation) {
         l1::Validator v;
         v.validation_id = id_of(0xE0);
         v.chain_id = kL1;
@@ -745,7 +745,7 @@ TEST(TheClockChargesL1Validators) {
     b.validator_fee_config.min_price = 1;
     b.validator_fee_config.excess_conversion_constant = 100;
 
-    state::MemState s;
+    state::State s;
     s.set_timestamp(kChainTime);
     s.set_current_supply(kPrimaryNetworkId, 0);
 
@@ -818,7 +818,7 @@ TEST(ANetworkIsBornSovereign) {
     const std::string mgr = "0xmanager";
     const security::Mode sovereign{false, security::Admission::Open, 1000, security::Manager::Contract};
 
-    state::MemState s;
+    state::State s;
     s.set_timestamp(kChainTime);
     s.set_accrued_fees(500);
     UTXO u;
@@ -883,7 +883,7 @@ TEST(ANetworkIsBornSovereign) {
 
     // A network that is NOT sovereign gets no set and no authority: it leans on
     // its parent's validators instead.
-    state::MemState plain_state;
+    state::State plain_state;
     plain_state.set_timestamp(kChainTime);
     plain_state.add_utxo(u);
     state::Diff plain_layer(&plain_state);
@@ -907,7 +907,7 @@ TEST(ANetworkIsPromoted) {
     const std::string mgr = "0xmanager";
     const security::Mode sovereign{false, security::Admission::Open, 1000, security::Manager::Contract};
 
-    state::MemState s;
+    state::State s;
     s.set_timestamp(kChainTime);
     s.add_network(kL1);
     s.set_network_owner(kL1, mine());
@@ -945,7 +945,11 @@ TEST(ANetworkIsPromoted) {
     }
     {  // and a network that has ALREADY converted is immutable: its own rules
        // govern it now, not the P-chain owner
-        state::MemState already = s;
+        // A layer, not a copy of the state: a State is where a chain rests —
+        // it owns a store — and recording a change over it is what a Diff is
+        // for. Two layers deep, because the conversion must already be there
+        // when the transaction under test is verified.
+        state::Diff already(&s);
         already.set_network_conversion(kL1, state::NetToL1Conversion{kManagerChain, {}, id_of(1)});
         state::Diff layer(&already);
         REQUIRE_ERR(ex::standard_tx(b, build(kL1), layer), Err::NotAuthorized);
