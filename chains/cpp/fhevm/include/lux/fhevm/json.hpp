@@ -52,6 +52,21 @@ struct Value {
     std::vector<Value> array;
     std::vector<std::pair<std::string, Value>> members;
 
+    Value() = default;
+    Value(const Value&) = default;
+    Value(Value&&) noexcept = default;
+    Value& operator=(const Value&) = default;
+    Value& operator=(Value&&) noexcept = default;
+
+    // A DESTRUCTOR, because the compiler's would recurse. A vector of Values
+    // destroys each of them and each destroys its own vector, so a tree the
+    // parser built without touching the stack came apart down it — measured, at
+    // Go's own depth cap, in a Debug build under a 2 MB stack, which is an
+    // ordinary size for a thread that is not main. A destructor cannot refuse
+    // anything either; it can only abort. So this one drains iteratively and
+    // the depth a payload reaches costs heap and nothing else.
+    ~Value();
+
     bool null() const { return kind == Kind::Null; }
 };
 

@@ -35,8 +35,16 @@ Reused, not vendored: `luxcpp/pqclean` + `luxcpp/crypto/mldsa` (FIPS 204),
     cmake -B build -S . && cmake --build build -j && (cd build && ctest)
 
     # ASan + UBSan, which the suite is clean under:
-    cmake -B build -S . -DFHEVM_SANITIZE=address,undefined -DCMAKE_BUILD_TYPE=Debug
-    cmake --build build -j && (cd build && ctest)
+    cmake -B build/san -S . -DFHEVM_SANITIZE=address,undefined -DCMAKE_BUILD_TYPE=Debug
+    cmake --build build/san -j && (cd build/san && ctest)
+
+    # And the one measurement a green suite does not make: the JSON path at
+    # Go's full depth cap, on a stack the size a thread gets rather than the
+    # size main gets. It passes at every size down to 256 KB; before parse and
+    # teardown were made flat it died below 4 MB.
+    for s in 8192 4096 2048 1024 512 256; do
+      (ulimit -s $s; ./build/san/json_test >/dev/null 2>&1; echo "$s -> $?")
+    done
 
 Fourteen suites, ~1150 assertions. `differential` is the load-bearing one: every
 constant in `test/golden.hpp` came out of the GO F-Chain, and that suite
@@ -61,6 +69,21 @@ that would catch any of these rules coming back:
     F_JSON_BASE64_NEWLINE           base64 ignores \r and \n
     F_JSON_NULL_*                   null is the zero struct, per operation
     F_JSON_EMPTY/WORDED_NULL_GRANTEE  the two words an address takes as zero
+
+The corpus is the committed gate, and it carries the cases that were FOUND. What
+found them was a throwaway differential over the decode discipline itself: a Go
+program emitting one line per document — the bytes, and the verdict
+`Decode`+`DisallowUnknownFields`+`More` reaches — and a C++ program required to
+reach the same verdict on every line. Over 269,730 documents for the register
+form (every one- and two-token document from a 49-token alphabet of closers,
+commas, folded names, boundary numbers and cut-short escapes, plus random longer
+ones and random raw bytes) and 165,348 for the revoke form (which compares the
+decoded STRING byte for byte, so escapes, surrogate pairs and every ill-formed
+UTF-8 sequence Go rewrites to U+FFFD are in scope): zero disagreements, and the
+same zero under ASan. That search is not in the tree — it is a net, not a gate,
+and keeping it would mean maintaining a second differential beside the corpus —
+but it is a hundred lines to rebuild against `conformance/gen`'s module if the
+decoder is ever touched again, and it is what the `F_JSON_*` vectors came out of.
 
 Regenerate the goldens by copying `test/golden_gen_test.go` into
 `~/work/lux/chains/fhevm` as `cppgolden_test.go` and running
@@ -102,13 +125,16 @@ naming one field the LATER one wins whichever way each matched, because Go
 resolves each key on its own and then writes it; preferring the exact match read
 a different value out of the same bytes.
 
-**A decoder that recurses is a decoder the payer controls.** The parser is
-iterative and so is the teardown. Capping the open containers at Go's 10,000 was
-not enough on its own: at that depth a Debug build with the sanitizers on still
+**A decoder that recurses is a decoder the payer controls.** Both the parser and
+`~Value` are iterative, and it took both. Capping the open containers at Go's
+10,000 was not enough: at that depth a Debug build with the sanitizers on still
 walked off the stack, so the same 128 KiB of brackets was a refusal on one build
 and fatal on another — a consensus property decided by the compiler's frame size.
+Making the parser flat moved the fatality to the teardown, where it was worse: a
+destructor cannot refuse anything, only abort, and it died below a 4 MB stack.
+Now the depth a payload reaches costs heap and the whole path holds at 256 KB.
 The cap stays at Go's number, because that is which documents the two agree to
-refuse; the flatness is what makes the answer the same everywhere.
+refuse — it was never the safety argument.
 
 **Verification is the whole of the auth surface.** `auth.hpp` offers no signing
 and no key generation: a payer signs offline with a key F never sees, and a

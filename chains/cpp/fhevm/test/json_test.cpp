@@ -105,12 +105,14 @@ void grammar() {
 // 10001 fail on depth — so the cap here is that number and not a safety
 // margin. A different cap would refuse a document Go admits.
 //
-// WHETHER THE PARSER SURVIVES is not the cap's job at all. A payload is 128 KiB
+// WHETHER THE PATH SURVIVES is not the cap's job at all. A payload is 128 KiB
 // the payer chooses, and while the parser recursed once per container this test
 // passed in Release and died in a sanitized Debug build AT GO'S OWN CAP — the
 // same input refused on one build and fatal on the other, a consensus property
-// decided by the compiler's frame size. So parse and release are both flat now,
-// and running this file under -fsanitize=address is what says so.
+// decided by the compiler's frame size. Making the parser flat then moved the
+// fatality to ~Value, which recursed on the way out and died below a 4 MB stack.
+// Both are flat now. Running this file under -fsanitize=address is what says so,
+// and running it under `ulimit -s 256` is what says how much room is left.
 void nesting_is_bounded_where_go_bounds_it() {
     auto nested = [](int n) {
         return std::string(std::size_t(n), '[') + std::string(std::size_t(n), ']');
@@ -140,6 +142,15 @@ void nesting_is_bounded_where_go_bounds_it() {
           "a deep document that fails late is refused");
     check(json::parse(nested(10000), &v, &consumed, &err),
           "and the deepest one Go allows still parses afterwards");
+
+    // That tree is destroyed when this function returns, and THAT is the half a
+    // green assertion cannot show: the check above passed while the teardown
+    // was still recursive. What shows it is the stack this file survives on.
+    {
+        json::Value deep;
+        check(json::parse(nested(10000), &deep, &consumed, &err),
+              "a tree at the cap is built and dropped inside one scope");
+    }
 }
 
 void unknown_fields_are_refused() {

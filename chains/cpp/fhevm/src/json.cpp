@@ -320,29 +320,6 @@ bool parse_value(std::string_view in, std::size_t* i, Value* out, std::string* e
     }
 }
 
-// release frees a parsed value WITHOUT recursion.
-//
-// The parser no longer recurses, but ~Value still would: a vector of Values
-// destroys each of them, and each destroys its own vector, 10,000 deep. That is
-// the same stack the parse just stopped using, reached on the way out — and a
-// destructor cannot fail, so it would abort rather than refuse. The nodes are
-// therefore moved into a flat worklist and dropped one at a time.
-void release(Value& v) {
-    std::vector<Value> pending;
-    auto take = [&pending](Value& node) {
-        for (auto& child : node.array) pending.push_back(std::move(child));
-        node.array.clear();
-        for (auto& [_, child] : node.members) pending.push_back(std::move(child));
-        node.members.clear();
-    };
-    take(v);
-    while (!pending.empty()) {
-        Value node = std::move(pending.back());
-        pending.pop_back();
-        take(node);
-    }
-}
-
 // fold_name is Go's foldName: a member name reduced to the form in which
 // encoding/json compares it, so `{"DIGEST":…}` names the same field as
 // `{"digest":…}`.
@@ -396,12 +373,32 @@ bool integer_literal(std::string_view s) {
 
 }  // namespace
 
+// ~Value drains the tree into a flat worklist rather than letting one
+// destructor call the next. Every node is emptied BEFORE it is destroyed, so
+// the destructor that runs when it goes out of scope returns at the guard.
+Value::~Value() {
+    if (array.empty() && members.empty()) return;
+    std::vector<Value> pending;
+    auto take = [&pending](Value& node) {
+        for (auto& child : node.array) pending.push_back(std::move(child));
+        node.array.clear();
+        for (auto& [name, child] : node.members) pending.push_back(std::move(child));
+        node.members.clear();
+    };
+    take(*this);
+    while (!pending.empty()) {
+        Value node = std::move(pending.back());
+        pending.pop_back();
+        take(node);
+    }
+}
+
 bool parse(std::string_view in, Value* out, std::size_t* consumed, std::string* err) {
     std::size_t i = 0;
     if (!parse_value(in, &i, out, err)) {
-        // A refused document may still have built most of a deep tree, and it
-        // has to be taken apart the same way it was built.
-        release(*out);
+        // A refused document may still have built most of a tree, and a caller
+        // must not be able to read half of one. Assignment drops it, which is
+        // flat because ~Value is.
         *out = Value{};
         return false;
     }
