@@ -22,7 +22,7 @@ namespace {
 // not depend on the values being random.
 Id id_of(std::uint8_t b) {
     Id v{};
-    v.b[0] = b;
+    v[0] = b;
     return v;
 }
 NodeId node_of(std::uint8_t b) {

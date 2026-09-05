@@ -26,7 +26,7 @@ namespace {
 
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 NodeId node_of(std::uint8_t b) {
@@ -162,7 +162,7 @@ TEST(TheSetRootIsTheNodes) {
 
     const lux::node::Id want = lux::node::validator_set_root(members);
     const Id got = validators::set_root(set.value());
-    REQUIRE(std::equal(want.begin(), want.end(), got.b.begin()));
+    REQUIRE(std::equal(want.begin(), want.end(), got.begin()));
 
     // And it is sensitive to what it commits to: one more unit of weight is a
     // different set.

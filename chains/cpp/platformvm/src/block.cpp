@@ -67,7 +67,7 @@ Result<std::vector<std::uint8_t>> build(Kind k, const Id& parent, std::uint64_t 
 
     auto ob = b.start_object(size_of(k));
     ob.set_u8(kOffKind, static_cast<std::uint8_t>(k));
-    ob.set_bytes_fixed(kOffParent, parent.span());
+    ob.set_bytes_fixed(kOffParent, view(parent));
     ob.set_u64(kOffHeight, height);
     ob.set_u64(kOffTime, ts);
     if (has_tx_list) {
@@ -115,7 +115,7 @@ Status Block::set_bytes(std::vector<std::uint8_t> b) {
     // zap::Message truncates to the declared size, so a buffer with a tail wraps
     // the same message under a different id. Refuse it.
     if (msg->size() != b.size()) return fail(Err::BlockExtraSpace);
-    id_ = id_from_hash(sha256(b));
+    id_ = sha256(b);
     buf_ = std::move(b);
     return ok();
 }
@@ -126,7 +126,7 @@ zap::Object Block::root() const {
 }
 
 Id Block::parent() const {
-    return Id::from(root().bytes_fixed(kOffParent, kIdLen));
+    return id_from(root().bytes_fixed(kOffParent, kIdLen));
 }
 std::uint64_t Block::height() const { return root().u64(kOffHeight); }
 std::uint64_t Block::timestamp() const { return root().u64(kOffTime); }

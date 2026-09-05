@@ -19,23 +19,23 @@ Status Pool::add(const txs::Tx& tx) {
     // from state, so one arriving from outside is either a mistake or an
     // attempt to choose the chain's own business.
     if (tx.unsigned_tx->kind() == txs::Kind::RewardValidator)
-        return fail(Err::CantIssueRewardValidatorTx, tx.tx_id.hex());
+        return fail(Err::CantIssueRewardValidatorTx, hex(tx.tx_id));
 
-    if (by_id_.count(tx.tx_id) != 0) return fail(Err::DuplicateTx, tx.tx_id.hex());
+    if (by_id_.count(tx.tx_id) != 0) return fail(Err::DuplicateTx, hex(tx.tx_id));
 
     const std::size_t size = tx.bytes.size();
     if (size > kMaxTxSize)
-        return fail(Err::TxTooLarge, tx.tx_id.hex() + " is " + std::to_string(size) + " bytes, over " +
+        return fail(Err::TxTooLarge, hex(tx.tx_id) + " is " + std::to_string(size) + " bytes, over " +
                                          std::to_string(kMaxTxSize));
     if (size > available_)
-        return fail(Err::MempoolFull, tx.tx_id.hex() + " is " + std::to_string(size) +
+        return fail(Err::MempoolFull, hex(tx.tx_id) + " is " + std::to_string(size) +
                                           " bytes, and there is room for " + std::to_string(available_));
 
     // Two transactions spending one output cannot both be accepted, so holding
     // both is holding one of them for nothing.
     const auto inputs = tx.unsigned_tx->input_ids();
     for (const auto& in : inputs)
-        if (consumed_.count(in) != 0) return fail(Err::ConflictsWithOtherTx, tx.tx_id.hex());
+        if (consumed_.count(in) != 0) return fail(Err::ConflictsWithOtherTx, hex(tx.tx_id));
 
     auto at = order_.insert(order_.end(), tx.tx_id);
     by_id_.emplace(tx.tx_id, Held{tx, at, inputs});

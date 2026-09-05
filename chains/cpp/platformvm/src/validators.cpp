@@ -10,7 +10,6 @@
 #include "lux/platformvm/validators.hpp"
 
 #include "lux/platformvm/safemath.hpp"
-#include "lux/platformvm/sha256.hpp"
 
 #include <blst.h>
 
@@ -28,7 +27,7 @@ void put_be64(std::vector<std::uint8_t>& out, std::uint64_t v) {
 Result<std::optional<signer::PublicKeyBytes>> inherited_key(const state::Chain& chain,
                                                             const NodeId& node_id) {
     auto primary = chain.get_current_validator(kPrimaryNetworkId, node_id);
-    if (!primary) return fail(Err::NotValidator, node_id.hex() + " is not a primary network validator");
+    if (!primary) return fail(Err::NotValidator, hex(node_id) + " is not a primary network validator");
     return primary.value().public_key;
 }
 
@@ -101,7 +100,7 @@ Id set_root(const std::map<NodeId, Validator>& set) {
         put_be64(preimage, v.public_key ? v.public_key->size() : 0);
         if (v.public_key) preimage.insert(preimage.end(), v.public_key->begin(), v.public_key->end());
     }
-    return id_from_hash(sha256(preimage));
+    return sha256(preimage);
 }
 
 // ── the set at a height that has already passed
@@ -125,7 +124,7 @@ Result<std::optional<signer::PublicKeyBytes>> key_being_written(const state::Dif
         if (node != chain->second.end() && node->second.validator)
             return node->second.validator->public_key;
     }
-    return fail(Err::NotValidator, node_id.hex() + " is not a primary network validator");
+    return fail(Err::NotValidator, hex(node_id) + " is not a primary network validator");
 }
 
 }  // namespace

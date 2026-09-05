@@ -91,6 +91,31 @@ void append_hashes_the_counter_last() {
           "and the two orders are different names, which is the point of having both");
 }
 
+// The hash itself, against the standard's own vectors (FIPS 180-4 / NIST
+// CAVP). Every name above is derived with it, so it is checked against
+// something outside this tree rather than against itself. The million-'a'
+// vector walks the length padding across many block boundaries, which is where
+// a hash implementation goes wrong.
+void the_hash_is_sha256() {
+    auto of = [](const std::string& s) {
+        return hex(sha256(ByteView(reinterpret_cast<const std::uint8_t*>(s.data()), s.size())));
+    };
+    check_eq(of(""), std::string("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+             "the empty string");
+    check_eq(of("abc"), std::string("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"),
+             "abc");
+    check_eq(of("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),
+             std::string("248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"),
+             "the 56-byte vector, one block plus padding");
+    check_eq(of("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno"
+                "ijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"),
+             std::string("cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1"),
+             "the 112-byte vector");
+    check_eq(of(std::string(1000000, 'a')),
+             std::string("cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0"),
+             "a million 'a', which walks the block boundary many times");
+}
+
 void an_address_is_ripemd_of_the_hash() {
     // The all-zero 33-byte key: a fixed input, so the digest below is the one
     // this pair of hashes produces and not a value copied from the code.
@@ -108,6 +133,7 @@ int main() {
     the_names_are_their_bytes();
     a_node_id_orders_like_its_bytes();
     hex_is_bare_lowercase();
+    the_hash_is_sha256();
     prefix_hashes_the_counter_first();
     append_hashes_the_counter_last();
     an_address_is_ripemd_of_the_hash();
