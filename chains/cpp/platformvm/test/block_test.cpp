@@ -21,24 +21,13 @@ namespace {
 
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 ShortId short_of(std::uint8_t b) {
     ShortId v{};
-    for (std::size_t i = 0; i < kShortIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kShortIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
-}
-
-std::string hex(std::span<const std::uint8_t> v) {
-    static const char* d = "0123456789abcdef";
-    std::string s;
-    s.reserve(2 * v.size());
-    for (auto b : v) {
-        s.push_back(d[b >> 4]);
-        s.push_back(d[b & 0xf]);
-    }
-    return s;
 }
 
 // The same envelope goldgen used, so the txs inside these blocks are the very
@@ -89,7 +78,7 @@ TEST(AbortBlockWire) {
     auto b = blk::AbortBlock::create(kTs, id_of(0x20), 7);
     REQUIRE_OK(b);
     REQUIRE_EQ(std::string(pvmgold::abort_block), hex(b.value()->bytes()));
-    REQUIRE_EQ(std::string(pvmgold::abort_block_id), b.value()->id().hex());
+    REQUIRE_EQ(std::string(pvmgold::abort_block_id), hex(b.value()->id()));
     REQUIRE_EQ(id_of(0x20), b.value()->parent());
     REQUIRE_U64(7u, b.value()->height());
     REQUIRE_U64(kTs, b.value()->timestamp());
@@ -103,7 +92,7 @@ TEST(CommitBlockWire) {
     auto b = blk::CommitBlock::create(kTs, id_of(0x20), 7);
     REQUIRE_OK(b);
     REQUIRE_EQ(std::string(pvmgold::commit_block), hex(b.value()->bytes()));
-    REQUIRE_EQ(std::string(pvmgold::commit_block_id), b.value()->id().hex());
+    REQUIRE_EQ(std::string(pvmgold::commit_block_id), hex(b.value()->id()));
 
     auto a = blk::AbortBlock::create(kTs, id_of(0x20), 7);
     REQUIRE_OK(a);
@@ -116,7 +105,7 @@ TEST(StandardBlockWire) {
     auto b = blk::StandardBlock::create(kTs, id_of(0x20), 8, decisions);
     REQUIRE_OK(b);
     REQUIRE_EQ(std::string(pvmgold::standard_block), hex(b.value()->bytes()));
-    REQUIRE_EQ(std::string(pvmgold::standard_block_id), b.value()->id().hex());
+    REQUIRE_EQ(std::string(pvmgold::standard_block_id), hex(b.value()->id()));
 
     const auto back = b.value()->decision_txs();
     REQUIRE_EQ_NUM(2, back.size());
@@ -140,7 +129,7 @@ TEST(ProposalBlockWire) {
     auto b = blk::ProposalBlock::create(kTs, id_of(0x20), 10, proposal, decisions);
     REQUIRE_OK(b);
     REQUIRE_EQ(std::string(pvmgold::proposal_block), hex(b.value()->bytes()));
-    REQUIRE_EQ(std::string(pvmgold::proposal_block_id), b.value()->id().hex());
+    REQUIRE_EQ(std::string(pvmgold::proposal_block_id), hex(b.value()->id()));
 
     auto tx = b.value()->tx();
     REQUIRE_OK(tx);

@@ -7,7 +7,6 @@
 
 #include "lux/platformvm/warpmsg.hpp"
 
-#include "lux/platformvm/sha256.hpp"
 #include "lux/platformvm/zap.hpp"
 
 #include <cstring>
@@ -83,7 +82,7 @@ std::pair<std::int64_t, std::int64_t> write_owner_addrs(zap::Builder& b,
                                                         const std::vector<ShortId>& addrs) {
     if (addrs.empty()) return {0, 0};
     auto lb = b.start_list(kAddrStride);
-    for (const auto& a : addrs) lb.add_bytes(a.span());
+    for (const auto& a : addrs) lb.add_bytes(view(a));
     // add_bytes counts BYTES, so the element count is the caller's to supply.
     return {lb.offset(), static_cast<std::int64_t>(addrs.size())};
 }
@@ -93,7 +92,7 @@ PChainOwner read_owner(const zap::Object& root, std::int64_t threshold_off, std:
     o.threshold = root.u32(threshold_off);
     const auto list = root.list_stride(addrs_off, kAddrStride);
     for (int i = 0; i < list.size(); ++i)
-        o.addresses.push_back(ShortId::from(list.object(i, kAddrStride).bytes_fixed(0, kAddrStride)));
+        o.addresses.push_back(short_id_from(list.object(i, kAddrStride).bytes_fixed(0, kAddrStride)));
     return o;
 }
 
@@ -105,7 +104,7 @@ Result<Hash> Hash::build(const Id& hash) {
     zap::Builder b(zap::kHeaderSize + kHashSize);
     auto ob = b.start_object(kHashSize);
     ob.set_u8(kOffPKind, static_cast<std::uint8_t>(PKind::Hash));
-    ob.set_bytes_fixed(kHashOffHash, hash.span());
+    ob.set_bytes_fixed(kHashOffHash, view(hash));
     ob.finish_as_root();
     Hash h;
     h.hash = hash;
@@ -135,7 +134,7 @@ Result<Envelope> parse_envelope(std::span<const std::uint8_t> b) {
     switch (static_cast<PKind>(root.u8(kOffPKind))) {
         case PKind::Hash: {
             Hash h;
-            h.hash = Id::from(root.bytes_fixed(kHashOffHash, kIdLen));
+            h.hash = id_from(root.bytes_fixed(kHashOffHash, kIdLen));
             h.bytes.assign(b.begin(), b.end());
             return Envelope{std::move(h)};
         }
@@ -170,11 +169,11 @@ Result<RegisterL1Validator> RegisterL1Validator::build(const Id& chain_id, const
     const auto [dis_off, dis_count] = write_owner_addrs(b, disable_owner.addresses);
     auto ob = b.start_object(kRvSize);
     ob.set_u8(kOffMKind, static_cast<std::uint8_t>(MKind::RegisterL1Validator));
-    ob.set_bytes_fixed(kRvOffChainId, chain_id.span());
+    ob.set_bytes_fixed(kRvOffChainId, view(chain_id));
     ob.set_bytes_fixed(kRvOffBlsKey, {key.data(), key.size()});
     ob.set_u64(kRvOffExpiry, expiry);
     ob.set_u64(kRvOffWeight, weight);
-    ob.set_bytes(kRvOffNodeId, node_id.span());
+    ob.set_bytes(kRvOffNodeId, view(node_id));
     ob.set_u32(kRvOffRemThreshold, remaining_balance_owner.threshold);
     ob.set_list(kRvOffRemAddrs, rem_off, rem_count);
     ob.set_u32(kRvOffDisThreshold, disable_owner.threshold);
@@ -209,13 +208,13 @@ Status RegisterL1Validator::verify() const {
     return ok();
 }
 
-Id RegisterL1Validator::validation_id() const { return id_from_hash(sha256(bytes)); }
+Id RegisterL1Validator::validation_id() const { return sha256(bytes); }
 
 Result<L1ValidatorRegistration> L1ValidatorRegistration::build(const Id& validation_id, bool registered) {
     zap::Builder b(zap::kHeaderSize + kRegSize);
     auto ob = b.start_object(kRegSize);
     ob.set_u8(kOffMKind, static_cast<std::uint8_t>(MKind::L1ValidatorRegistration));
-    ob.set_bytes_fixed(kRegOffValidationId, validation_id.span());
+    ob.set_bytes_fixed(kRegOffValidationId, view(validation_id));
     ob.set_bool(kRegOffRegistered, registered);
     ob.finish_as_root();
     L1ValidatorRegistration m;
@@ -230,7 +229,7 @@ Result<L1ValidatorWeight> L1ValidatorWeight::build(const Id& validation_id, std:
     zap::Builder b(zap::kHeaderSize + kVwSize);
     auto ob = b.start_object(kVwSize);
     ob.set_u8(kOffMKind, static_cast<std::uint8_t>(MKind::L1ValidatorWeight));
-    ob.set_bytes_fixed(kVwOffValidationId, validation_id.span());
+    ob.set_bytes_fixed(kVwOffValidationId, view(validation_id));
     ob.set_u64(kVwOffNonce, nonce);
     ob.set_u64(kVwOffWeight, weight);
     ob.finish_as_root();
@@ -246,7 +245,7 @@ Result<ChainToL1Conversion> ChainToL1Conversion::build(const Id& id) {
     zap::Builder b(zap::kHeaderSize + kConvSize);
     auto ob = b.start_object(kConvSize);
     ob.set_u8(kOffMKind, static_cast<std::uint8_t>(MKind::ChainToL1Conversion));
-    ob.set_bytes_fixed(kConvOffId, id.span());
+    ob.set_bytes_fixed(kConvOffId, view(id));
     ob.finish_as_root();
     ChainToL1Conversion m;
     m.id = id;
@@ -279,8 +278,8 @@ Result<std::vector<std::uint8_t>> ConversionData::encode() const {
     }
 
     auto ob = b.start_object(kCdSize);
-    ob.set_bytes_fixed(kCdOffChainId, chain_id.span());
-    ob.set_bytes_fixed(kCdOffManagerId, manager_chain_id.span());
+    ob.set_bytes_fixed(kCdOffChainId, view(chain_id));
+    ob.set_bytes_fixed(kCdOffManagerId, view(manager_chain_id));
     ob.set_bytes(kCdOffManagerAddr, manager_address);
     ob.set_list(kCdOffValidators, vdr_off, vdr_count);
     ob.set_bytes(kCdOffNodeIdPool, node_id_pool);
@@ -291,7 +290,7 @@ Result<std::vector<std::uint8_t>> ConversionData::encode() const {
 Result<Id> ConversionData::conversion_id() const {
     auto bytes = encode();
     if (!bytes) return std::unexpected(bytes.error());
-    return id_from_hash(sha256(bytes.value()));
+    return sha256(bytes.value());
 }
 
 Result<Message> parse_message(std::span<const std::uint8_t> b) {
@@ -301,13 +300,13 @@ Result<Message> parse_message(std::span<const std::uint8_t> b) {
     switch (static_cast<MKind>(root.u8(kOffMKind))) {
         case MKind::ChainToL1Conversion: {
             ChainToL1Conversion m;
-            m.id = Id::from(root.bytes_fixed(kConvOffId, kIdLen));
+            m.id = id_from(root.bytes_fixed(kConvOffId, kIdLen));
             m.bytes.assign(b.begin(), b.end());
             return Message{std::move(m)};
         }
         case MKind::RegisterL1Validator: {
             RegisterL1Validator m;
-            m.chain_id = Id::from(root.bytes_fixed(kRvOffChainId, kIdLen));
+            m.chain_id = id_from(root.bytes_fixed(kRvOffChainId, kIdLen));
             const auto node = root.bytes(kRvOffNodeId);
             m.node_id.assign(node.begin(), node.end());
             const auto key = root.bytes_fixed(kRvOffBlsKey, signer::kPublicKeyLen);
@@ -322,14 +321,14 @@ Result<Message> parse_message(std::span<const std::uint8_t> b) {
         }
         case MKind::L1ValidatorRegistration: {
             L1ValidatorRegistration m;
-            m.validation_id = Id::from(root.bytes_fixed(kRegOffValidationId, kIdLen));
+            m.validation_id = id_from(root.bytes_fixed(kRegOffValidationId, kIdLen));
             m.registered = root.boolean(kRegOffRegistered);
             m.bytes.assign(b.begin(), b.end());
             return Message{std::move(m)};
         }
         case MKind::L1ValidatorWeight: {
             L1ValidatorWeight m;
-            m.validation_id = Id::from(root.bytes_fixed(kVwOffValidationId, kIdLen));
+            m.validation_id = id_from(root.bytes_fixed(kVwOffValidationId, kIdLen));
             m.nonce = root.u64(kVwOffNonce);
             m.weight = root.u64(kVwOffWeight);
             m.bytes.assign(b.begin(), b.end());

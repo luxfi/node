@@ -464,7 +464,7 @@ Result<std::pair<txs::Tx, status::Status>> MemState::get_tx(const Id& tx_id) con
 Status MemState::put_l1_validator(const l1::Validator& v) {
     const auto existing = l1_validators_.find(v.validation_id);
     if (existing != l1_validators_.end() && !existing->second.immutable_fields_unmodified(v))
-        return fail(Err::MutatedL1Validator, "a constant field of " + v.validation_id.hex() + " changed");
+        return fail(Err::MutatedL1Validator, "a constant field of " + hex(v.validation_id) + " changed");
 
     if (v.is_deleted()) {
         l1_validators_.erase(v.validation_id);
@@ -477,7 +477,7 @@ Status MemState::put_l1_validator(const l1::Validator& v) {
         if (id == v.validation_id) continue;
         if (other.chain_id == v.chain_id && other.node_id == v.node_id)
             return fail(Err::DuplicateL1Validator,
-                        v.node_id.hex() + " already validates " + v.chain_id.hex());
+                        hex(v.node_id) + " already validates " + hex(v.chain_id));
     }
 
     // And the chain's total must stay a number.
@@ -669,7 +669,7 @@ bool Diff::has_l1_validator(const Id& chain_id, const NodeId& node_id) const {
 Status Diff::put_l1_validator(const l1::Validator& v) {
     if (auto existing = get_l1_validator(v.validation_id);
         existing && !existing.value().immutable_fields_unmodified(v))
-        return fail(Err::MutatedL1Validator, "a constant field of " + v.validation_id.hex() + " changed");
+        return fail(Err::MutatedL1Validator, "a constant field of " + hex(v.validation_id) + " changed");
     l1_validators_[v.validation_id] = v;
     return ok();
 }
@@ -947,12 +947,12 @@ struct Fold {
         u64(o.locktime);
         u32(o.threshold);
         u64(o.addrs.size());
-        for (const auto& a : o.addrs) b.insert(b.end(), a.b.begin(), a.b.end());
+        for (const auto& a : o.addrs) b.insert(b.end(), a.begin(), a.end());
     }
     void staker(const Staker& s) {
-        b.insert(b.end(), s.tx_id.b.begin(), s.tx_id.b.end());
+        b.insert(b.end(), s.tx_id.begin(), s.tx_id.end());
         b.insert(b.end(), s.node_id.b.begin(), s.node_id.b.end());
-        b.insert(b.end(), s.chain_id.b.begin(), s.chain_id.b.end());
+        b.insert(b.end(), s.chain_id.begin(), s.chain_id.end());
         u8(s.public_key ? 1 : 0);
         if (s.public_key) b.insert(b.end(), s.public_key->begin(), s.public_key->end());
         u64(s.weight);
@@ -977,7 +977,7 @@ Id state_root(const Chain& chain) {
     const auto nets = chain.networks();
     f.u64(nets.size());
     for (const auto& n : nets) {
-        f.b.insert(f.b.end(), n.b.begin(), n.b.end());
+        f.b.insert(f.b.end(), n.begin(), n.end());
         if (const auto o = chain.network_owner(n); o) {
             f.u8(1);
             f.owners(o.value());
@@ -1013,8 +1013,8 @@ Id state_root(const Chain& chain) {
     const auto l1s = chain.active_l1_validators();
     f.u64(l1s.size());
     for (const auto& v : l1s) {
-        f.b.insert(f.b.end(), v.validation_id.b.begin(), v.validation_id.b.end());
-        f.b.insert(f.b.end(), v.chain_id.b.begin(), v.chain_id.b.end());
+        f.b.insert(f.b.end(), v.validation_id.begin(), v.validation_id.end());
+        f.b.insert(f.b.end(), v.chain_id.begin(), v.chain_id.end());
         f.b.insert(f.b.end(), v.node_id.b.begin(), v.node_id.b.end());
         f.bytes(v.public_key);
         f.bytes(v.remaining_balance_owner);
@@ -1028,20 +1028,20 @@ Id state_root(const Chain& chain) {
     f.u64(exp.size());
     for (const auto& e : exp) {
         f.u64(e.timestamp);
-        f.b.insert(f.b.end(), e.validation_id.b.begin(), e.validation_id.b.end());
+        f.b.insert(f.b.end(), e.validation_id.begin(), e.validation_id.end());
     }
 
     const auto utxos = chain.utxos();
     f.u64(utxos.size());
     for (const auto& u : utxos) {
         const Id id = u.id();
-        f.b.insert(f.b.end(), id.b.begin(), id.b.end());
-        f.b.insert(f.b.end(), u.asset.b.begin(), u.asset.b.end());
+        f.b.insert(f.b.end(), id.begin(), id.end());
+        f.b.insert(f.b.end(), u.asset.begin(), u.asset.end());
         f.u64(u.stake_lock);
         f.u64(u.out.amt);
         f.owners(u.out.owners);
     }
-    return id_from_hash(sha256(f.b));
+    return sha256(f.b);
 }
 
 }  // namespace lux::platformvm::state

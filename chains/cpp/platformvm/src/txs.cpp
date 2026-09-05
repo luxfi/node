@@ -61,7 +61,7 @@ int NetworkValidator::compare(const NetworkValidator& o) const {
 Status NetworkValidator::verify() const {
     if (weight == 0) return fail(Err::ZeroWeight);
     if (node_id.size() != kNodeIdLen) return fail(Err::InvalidNodeIDLength);
-    if (NodeId::from(node_id) == kEmptyNodeId) return fail(Err::EmptyNodeID);
+    if (node_id_from(node_id) == kEmptyNodeId) return fail(Err::EmptyNodeID);
     if (auto s = pop.verify(); !s) return s;
     if (auto s = remaining_balance_owner.verify(); !s) return s;
     return deactivation_owner.verify();
@@ -221,7 +221,7 @@ Result<std::shared_ptr<CreateNetworkTx>> CreateNetworkTx::create(
     std::int64_t val_addr_off = 0, val_addr_count = 0;
     if (!addr_pool.empty()) {
         auto alb = b.start_list(wire::kAddrStride);
-        for (const auto& a : addr_pool) alb.add_bytes(a.span());
+        for (const auto& a : addr_pool) alb.add_bytes(view(a));
         val_addr_off = alb.offset();
         val_addr_count = static_cast<std::int64_t>(addr_pool.size());
     }
@@ -302,7 +302,7 @@ Result<std::shared_ptr<ConvertNetworkTx>> ConvertNetworkTx::create(
     std::int64_t val_addr_off = 0, val_addr_count = 0;
     if (!addr_pool.empty()) {
         auto alb = b.start_list(wire::kAddrStride);
-        for (const auto& a : addr_pool) alb.add_bytes(a.span());
+        for (const auto& a : addr_pool) alb.add_bytes(view(a));
         val_addr_off = alb.offset();
         val_addr_count = static_cast<std::int64_t>(addr_pool.size());
     }
@@ -411,7 +411,7 @@ Status CreateChainTx::syntactic_verify(const Runtime& rt) const {
     const auto fx = fx_ids();
     if (chain_id() == kPrimaryNetworkId) return fail(Err::CantValidatePrimaryNetwork);
     if (name.size() > kMaxNameLen) return fail(Err::NameTooLong);
-    if (vm_id().empty()) return fail(Err::InvalidVMID);
+    if (vm_id() == kEmptyId) return fail(Err::InvalidVMID);
     for (std::size_t i = 0; i + 1 < fx.size(); ++i)
         if (!(fx[i] < fx[i + 1])) return fail(Err::FxIDsNotSortedAndUnique);
     if (genesis_data().size() > kMaxGenesisLen) return fail(Err::GenesisTooLong);
@@ -543,7 +543,7 @@ Auth TransformChainTx::chain_auth() const { return wire::read_auth(root(), kOffC
 
 Status TransformChainTx::syntactic_verify(const Runtime& rt) const {
     if (chain() == kPrimaryNetworkId) return fail(Err::CantTransformPrimaryNetwork);
-    if (asset_id().empty()) return fail(Err::TransformEmptyAssetID);
+    if (asset_id() == kEmptyId) return fail(Err::TransformEmptyAssetID);
     if (asset_id() == rt.utxo_asset_id) return fail(Err::AssetIDCantBeLUX);
     if (initial_supply() == 0) return fail(Err::InitialSupplyZero);
     if (initial_supply() > maximum_supply()) return fail(Err::InitialSupplyGreaterThanMaxSupply);
@@ -1001,7 +1001,7 @@ std::shared_ptr<RewardValidatorTx> RewardValidatorTx::create(const Id& tx_id) {
     zap::Builder b(zap::kHeaderSize + 16 + kSize);
     auto ob = b.start_object(kSize);
     ob.set_u8(kOffKind, static_cast<std::uint8_t>(Kind::RewardValidator));
-    ob.set_bytes_fixed(kOffTxId, tx_id.span());
+    ob.set_bytes_fixed(kOffTxId, view(tx_id));
     ob.finish_as_root();
     return wrap(finish(b));
 }

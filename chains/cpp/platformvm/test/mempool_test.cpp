@@ -19,7 +19,7 @@ namespace {
 
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 NodeId node_of(std::uint8_t b) {
@@ -29,7 +29,7 @@ NodeId node_of(std::uint8_t b) {
 }
 ShortId short_of(std::uint8_t b) {
     ShortId v{};
-    for (std::size_t i = 0; i < kShortIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kShortIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 
@@ -194,8 +194,8 @@ TEST(APoolRemembersWhyItRefused) {
     std::vector<Id> ids;
     for (std::size_t i = 0; i < mempool::kDroppedRemembered + 1; ++i) {
         Id id{};
-        id.b[0] = static_cast<std::uint8_t>(i);
-        id.b[1] = 0xEE;
+        id[0] = static_cast<std::uint8_t>(i);
+        id[1] = 0xEE;
         small.mark_dropped(id, reason);
         ids.push_back(id);
     }

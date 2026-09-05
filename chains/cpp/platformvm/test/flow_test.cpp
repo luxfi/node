@@ -21,12 +21,12 @@ namespace {
 
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 ShortId short_of(std::uint8_t b) {
     ShortId v{};
-    for (std::size_t i = 0; i < kShortIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kShortIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 
@@ -41,16 +41,6 @@ std::vector<std::uint8_t> unhex(const char* s) {
     for (std::size_t i = 0; s[i] != 0 && s[i + 1] != 0; i += 2)
         out.push_back(static_cast<std::uint8_t>(nib(s[i]) * 16 + nib(s[i + 1])));
     return out;
-}
-
-std::string hex(std::span<const std::uint8_t> v) {
-    static const char* d = "0123456789abcdef";
-    std::string s;
-    for (auto b : v) {
-        s.push_back(d[b >> 4]);
-        s.push_back(d[b & 0xf]);
-    }
-    return s;
 }
 
 txs::Credential cred_of(const std::vector<std::uint8_t>& sig) {
@@ -96,13 +86,13 @@ TransferableOutput out_of(std::uint64_t amt, std::uint64_t stake_lock, const Out
 TEST(RecoverAddressMatchesTheReference) {
     const auto compressed = unhex(pvmgold::signer_pubkey_compressed);
     const auto addr = fx::address_of_compressed_key(compressed);
-    REQUIRE_EQ(std::string(pvmgold::signer_addr), addr.hex());
+    REQUIRE_EQ(std::string(pvmgold::signer_addr), hex(addr));
 
     const auto unsigned_bytes = unhex(pvmgold::spend_tx_unsigned);
     const auto sig = unhex(pvmgold::spend_tx_sig0);
     auto recovered = fx::recover_address(sha256(unsigned_bytes), sig);
     REQUIRE_OK(recovered);
-    REQUIRE_EQ(std::string(pvmgold::signer_addr), recovered.value().hex());
+    REQUIRE_EQ(std::string(pvmgold::signer_addr), hex(recovered.value()));
 }
 
 // A signature over a DIFFERENT message recovers a different address, so it is
@@ -114,7 +104,7 @@ TEST(WrongMessageIsRefused) {
     // Recovery still succeeds (any well-formed signature recovers SOME key), and
     // that is exactly why the ADDRESS comparison is the check.
     REQUIRE_OK(recovered);
-    REQUIRE(recovered.value().hex() != std::string(pvmgold::signer_addr));
+    REQUIRE(hex(recovered.value()) != std::string(pvmgold::signer_addr));
 }
 
 // Go: Fx.VerifyCredentials — the four shape refusals, then the real check.
@@ -124,7 +114,7 @@ TEST(VerifyCredentials) {
     ShortId signer{};
     {
         const auto b = unhex(pvmgold::signer_addr);
-        for (std::size_t i = 0; i < kShortIdLen; ++i) signer.b[i] = b[i];
+        for (std::size_t i = 0; i < kShortIdLen; ++i) signer[i] = b[i];
     }
     const OutputOwners owners{0, 1, {signer}};
     const fx::Fx f(true);
@@ -166,7 +156,7 @@ TEST(VerifyTransferAmountsMustMatch) {
     ShortId signer{};
     {
         const auto b = unhex(pvmgold::signer_addr);
-        for (std::size_t i = 0; i < kShortIdLen; ++i) signer.b[i] = b[i];
+        for (std::size_t i = 0; i < kShortIdLen; ++i) signer[i] = b[i];
     }
     const OutputOwners owners{0, 1, {signer}};
     const fx::Fx f(true);
@@ -187,7 +177,7 @@ TEST(VerifySpendUTXOs) {
     ShortId signer{};
     {
         const auto b = unhex(pvmgold::signer_addr);
-        for (std::size_t i = 0; i < kShortIdLen; ++i) signer.b[i] = b[i];
+        for (std::size_t i = 0; i < kShortIdLen; ++i) signer[i] = b[i];
     }
     const OutputOwners mine{0, 1, {signer}};
     const OutputOwners theirs{0, 1, {short_of(0x30)}};
@@ -230,7 +220,7 @@ TEST(LockedFundsStayLocked) {
     ShortId signer{};
     {
         const auto b = unhex(pvmgold::signer_addr);
-        for (std::size_t i = 0; i < kShortIdLen; ++i) signer.b[i] = b[i];
+        for (std::size_t i = 0; i < kShortIdLen; ++i) signer[i] = b[i];
     }
     const OutputOwners mine{0, 1, {signer}};
     const fx::Fx f(true);
@@ -277,7 +267,7 @@ TEST(UnlockedFundsMayBackALock) {
     ShortId signer{};
     {
         const auto b = unhex(pvmgold::signer_addr);
-        for (std::size_t i = 0; i < kShortIdLen; ++i) signer.b[i] = b[i];
+        for (std::size_t i = 0; i < kShortIdLen; ++i) signer[i] = b[i];
     }
     const OutputOwners mine{0, 1, {signer}};
     const fx::Fx f(true);

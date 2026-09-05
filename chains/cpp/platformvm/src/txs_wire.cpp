@@ -33,16 +33,16 @@ void put_u64(std::uint8_t* p, std::uint64_t v) { zap::store_u64(p, v); }
 }  // namespace
 
 Id read_id(const zap::Object& o, std::int64_t off) {
-    return Id::from(o.bytes_fixed(off, static_cast<std::int64_t>(kIdLen)));
+    return id_from(o.bytes_fixed(off, static_cast<std::int64_t>(kIdLen)));
 }
 
 NodeId read_node_id(const zap::Object& o, std::int64_t off) {
-    return NodeId::from(o.bytes_fixed(off, static_cast<std::int64_t>(kNodeIdLen)));
+    return node_id_from(o.bytes_fixed(off, static_cast<std::int64_t>(kNodeIdLen)));
 }
 
-void set_id(zap::ObjectBuilder& ob, std::int64_t off, const Id& id) { ob.set_bytes_fixed(off, id.span()); }
+void set_id(zap::ObjectBuilder& ob, std::int64_t off, const Id& id) { ob.set_bytes_fixed(off, view(id)); }
 void set_node_id(zap::ObjectBuilder& ob, std::int64_t off, const NodeId& id) {
-    ob.set_bytes_fixed(off, id.span());
+    ob.set_bytes_fixed(off, view(id));
 }
 
 std::vector<ShortId> slice_addrs(const zap::List& arr, std::uint32_t start, std::uint32_t count) {
@@ -51,7 +51,7 @@ std::vector<ShortId> slice_addrs(const zap::List& arr, std::uint32_t start, std:
     std::vector<ShortId> out(count);
     for (std::uint32_t i = 0; i < count; ++i) {
         const auto o = arr.object(static_cast<int>(start + i), kAddrStride);
-        for (int j = 0; j < kAddrStride; ++j) out[i].b[j] = o.u8(j);
+        for (int j = 0; j < kAddrStride; ++j) out[i][j] = o.u8(j);
     }
     return out;
 }
@@ -71,7 +71,7 @@ OutListPtrs write_outputs(zap::Builder& b, const std::vector<TransferableOutput>
     auto lb = b.start_list(kOutStride);
     for (const auto& o : outs) {
         std::uint8_t e[kOutStride] = {};
-        std::memcpy(e + kOutAssetId, o.asset.b.data(), kIdLen);
+        std::memcpy(e + kOutAssetId, o.asset.data(), kIdLen);
         put_u64(e + kOutStakeLock, o.stake_lock);
         put_u64(e + kOutAmount, o.out.amt);
         put_u32(e + kOutThreshold, o.out.owners.threshold);
@@ -86,7 +86,7 @@ OutListPtrs write_outputs(zap::Builder& b, const std::vector<TransferableOutput>
     p.list_count = static_cast<std::int64_t>(outs.size());
     if (!addrs.empty()) {
         auto alb = b.start_list(kAddrStride);
-        for (const auto& a : addrs) alb.add_bytes(a.span());
+        for (const auto& a : addrs) alb.add_bytes(view(a));
         p.addr_off = alb.offset();
         p.addr_count = static_cast<std::int64_t>(addrs.size());
     }
@@ -100,9 +100,9 @@ InListPtrs write_inputs(zap::Builder& b, const std::vector<TransferableInput>& i
     auto lb = b.start_list(kInStride);
     for (const auto& in : ins) {
         std::uint8_t e[kInStride] = {};
-        std::memcpy(e + kInTxId, in.utxo.tx_id.b.data(), kIdLen);
+        std::memcpy(e + kInTxId, in.utxo.tx_id.data(), kIdLen);
         put_u32(e + kInOutputIndex, in.utxo.output_index);
-        std::memcpy(e + kInAssetId, in.asset.b.data(), kIdLen);
+        std::memcpy(e + kInAssetId, in.asset.data(), kIdLen);
         put_u64(e + kInStakeLock, in.stake_lock);
         put_u64(e + kInAmount, in.in.amt);
         put_u32(e + kInSigStart, static_cast<std::uint32_t>(sigs.size()));
@@ -139,7 +139,7 @@ SpendPtrs write_spending(zap::Builder& b, const BaseTx& base) {
 void set_envelope(zap::ObjectBuilder& ob, std::uint8_t kind, const BaseTx& base, const SpendPtrs& p) {
     ob.set_u8(kOffKind, kind);
     ob.set_u32(kOffNetworkId, base.network_id);
-    ob.set_bytes_fixed(kOffBlockchainId, base.blockchain_id.span());
+    ob.set_bytes_fixed(kOffBlockchainId, view(base.blockchain_id));
     ob.set_list(kOffOuts, p.outs_off, p.outs_count);
     ob.set_list(kOffOwnerAddrs, p.addr_off, p.addr_count);
     ob.set_list(kOffIns, p.ins_off, p.ins_count);
@@ -195,7 +195,7 @@ OwnerPtrs write_owner(zap::Builder& b, const Owner& o) {
     p.locktime = o.locktime;
     if (!o.addrs.empty()) {
         auto lb = b.start_list(kAddrStride);
-        for (const auto& a : o.addrs) lb.add_bytes(a.span());
+        for (const auto& a : o.addrs) lb.add_bytes(view(a));
         p.addr_off = lb.offset();
         p.addr_count = static_cast<std::int64_t>(o.addrs.size());
     }
@@ -280,7 +280,7 @@ IdListPtrs write_id_list(zap::Builder& b, const std::vector<Id>& list) {
     IdListPtrs p;
     if (list.empty()) return p;
     auto lb = b.start_list(static_cast<std::int64_t>(kIdLen));
-    for (const auto& id : list) lb.add_bytes(id.span());
+    for (const auto& id : list) lb.add_bytes(view(id));
     p.off = lb.offset();
     p.count = static_cast<std::int64_t>(list.size());
     return p;

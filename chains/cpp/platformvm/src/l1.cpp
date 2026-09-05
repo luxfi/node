@@ -21,7 +21,7 @@ std::vector<std::uint8_t> ExpiryEntry::marshal() const {
     // walks these in key order and the executor needs them in time order; making
     // those the same order is the whole point of the endianness here.
     for (int i = 0; i < 8; ++i) out[i] = static_cast<std::uint8_t>(timestamp >> (56 - 8 * i));
-    std::memcpy(out.data() + 8, validation_id.b.data(), kIdLen);
+    std::memcpy(out.data() + 8, validation_id.data(), kIdLen);
     return out;
 }
 
@@ -31,7 +31,7 @@ Result<ExpiryEntry> ExpiryEntry::unmarshal(std::span<const std::uint8_t> b) {
     ExpiryEntry e;
     for (int i = 0; i < 8; ++i)
         e.timestamp = (e.timestamp << 8) | static_cast<std::uint64_t>(b[static_cast<std::size_t>(i)]);
-    e.validation_id = Id::from(b.subspan(8, kIdLen));
+    e.validation_id = id_from(b.subspan(8, kIdLen));
     return e;
 }
 

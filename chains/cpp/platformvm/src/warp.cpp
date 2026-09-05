@@ -8,7 +8,6 @@
 #include "lux/platformvm/warp.hpp"
 
 #include "lux/platformvm/safemath.hpp"
-#include "lux/platformvm/sha256.hpp"
 #include "lux/platformvm/zap.hpp"
 
 #include <algorithm>
@@ -84,7 +83,7 @@ Result<UnsignedMessage> UnsignedMessage::build(std::uint32_t network_id, const I
     zap::Builder b(zap::kHeaderSize + kUmSize + payload.size() + 16);
     auto ob = b.start_object(kUmSize);
     ob.set_u32(kUmOffNetworkId, network_id);
-    ob.set_bytes_fixed(kUmOffSource, source_chain_id.span());
+    ob.set_bytes_fixed(kUmOffSource, view(source_chain_id));
     ob.set_bytes(kUmOffPayload, payload);
     ob.finish_as_root();
 
@@ -93,7 +92,7 @@ Result<UnsignedMessage> UnsignedMessage::build(std::uint32_t network_id, const I
     m.source_chain_id = source_chain_id;
     m.payload.assign(payload.begin(), payload.end());
     m.bytes = b.finish();
-    m.id = id_from_hash(sha256(m.bytes));
+    m.id = sha256(m.bytes);
     return m;
 }
 
@@ -103,11 +102,11 @@ Result<UnsignedMessage> UnsignedMessage::parse(std::span<const std::uint8_t> b) 
     const auto root = zm->root();
     UnsignedMessage m;
     m.network_id = root.u32(kUmOffNetworkId);
-    m.source_chain_id = Id::from(root.bytes_fixed(kUmOffSource, kIdLen));
+    m.source_chain_id = id_from(root.bytes_fixed(kUmOffSource, kIdLen));
     const auto payload = root.bytes(kUmOffPayload);
     m.payload.assign(payload.begin(), payload.end());
     m.bytes.assign(b.begin(), b.end());
-    m.id = id_from_hash(sha256(m.bytes));
+    m.id = sha256(m.bytes);
     return m;
 }
 
