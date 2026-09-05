@@ -25,7 +25,7 @@ retiring it is the outcome this repo works toward, not a precondition of it.
 
 ```
 runtime/{go,rust,cpp}   thin shim READMEs — what gets built, from where, how
-chains/{go,rust,cpp}    the P/X/C/Q/Z chain suite — rust/xvm is real, the rest READMEs
+chains/{go,rust,cpp}    the chain suite — cpp runs six chains, rust two, go a README
 gpu/                    thin shim to the GPU kernel library
 conformance/            wires the existing pop/verdict corpus per language
 bin/                    build output — luxd-go, luxd-rust, luxd-cpp (gitignored)
@@ -139,6 +139,19 @@ knew the chain's five field names would have to learn the next differential's
 as well — and it fails a run in which any implementation printed no row at
 all, since with four voices three answering is still a comparison, it agrees,
 and the fourth's silence would read as a pass.
+
+**`make chains` fails too, and for a different reason.** It covers six chains
+now — P and X from `luxfi/node`, and Q, Z, D and F from `luxfi/chains`, which
+had no vector at all until they were added, which is the same shape the
+P-chain fork hid in. The C++ column answers all six and agrees with Go on 417
+of the 421 vectors on the four new ones (Q 81/81, D 35/35, F 168/168, Z
+133/137). The Rust column answers P and X and says nothing about the other
+four, so the runner lists 421 vectors under NOT ANSWERED and exits non-zero.
+Those four Rust evaluators are the outstanding work; the corpus, the runner
+and the result format are the ones already in use, and each slots in as one
+more `-eval "rust=…"` line. `conformance/README.md` has the detail, including
+the four Z rows that do disagree and why they are the corpus's fault rather
+than either chain's.
 
 `make precompiles` is described in `conformance/PRECOMPILE.md`. **It fails, and
 what it found is the reason it exists.**
