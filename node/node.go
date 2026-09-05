@@ -1252,6 +1252,7 @@ func (n *Node) initAPIServer() error {
 		n.Config.HTTPAllowedOrigins,
 		n.Config.ShutdownTimeout,
 		n.ID,
+		n.Config.NetworkID,
 		n.Config.TraceConfig.ExporterConfig.Type != trace.Disabled,
 		n.tracer,
 		apiRegisterer,
@@ -1971,7 +1972,7 @@ func (n *Node) mountOps(app *zip.App, base string) error {
 // Give chains aliases as specified by the genesis information
 func (n *Node) initChainAliases(genesisBytes []byte) error {
 	n.Log.Info("initializing chain aliases")
-	_, chainAliases, err := builder.Aliases(genesisBytes)
+	_, chainAliases, err := builder.Aliases(genesisBytes, n.Config.NetworkID)
 	if err != nil {
 		return err
 	}
@@ -1998,7 +1999,7 @@ func (n *Node) initChainAliases(genesisBytes []byte) error {
 // APIs aliases as specified by the genesis information
 func (n *Node) initAPIAliases(genesisBytes []byte) error {
 	n.Log.Info("initializing API aliases")
-	apiAliases, _, err := builder.Aliases(genesisBytes)
+	apiAliases, _, err := builder.Aliases(genesisBytes, n.Config.NetworkID)
 	if err != nil {
 		return err
 	}

@@ -24,6 +24,7 @@ var (
 	errUnknownBaseURL  = errors.New("unknown base url")
 	errUnknownEndpoint = errors.New("unknown endpoint")
 	errAlreadyReserved = errors.New("route is either already aliased or already maps to a handle")
+	errAnotherNetwork  = errors.New("chain alias belongs to another network")
 )
 
 // RootInfo contains information returned at the root endpoint
@@ -74,11 +75,18 @@ type router struct {
 	// it cannot drift from them.
 	chainSpelling map[string]string
 
+	// net is the network this node runs, and so which chain aliases are its
+	// own. Held here because the router is where a route comes into being: a
+	// name this network does not own never becomes a route, and the 404 then
+	// falls out of dispatch rather than being a second rule that could
+	// disagree with the first.
+	net Network
+
 	// rootInfoProvider provides node information for GET /
 	rootInfoProvider RootInfoProvider
 }
 
-func newRouter() *router {
+func newRouter(net Network) *router {
 	return &router{
 		reservedRoutes: make(set.Set[string]),
 		aliases:        make(map[string][]string),
@@ -87,6 +95,7 @@ func newRouter() *router {
 		paths:          make(map[string]http.Handler),
 		mounts:         make(map[string]http.Handler),
 		chainSpelling:  make(map[string]string),
+		net:            net,
 	}
 }
 
@@ -107,12 +116,8 @@ const rpcEndpoint = "/rpc"
 // A path naming no chain this node serves has no other spelling and is left
 // exactly as the client wrote it.
 func (r *router) spellings(p string) []string {
-	rest, isChain := strings.CutPrefix(p, chainPrefix)
+	alias, endpoint, isChain := chainNamed(p)
 	if !isChain {
-		return nil
-	}
-	alias, endpoint, _ := strings.Cut(rest, "/")
-	if alias == "" {
 		return nil
 	}
 
@@ -137,6 +142,27 @@ func (r *router) spellings(p string) []string {
 		return []string{named + rpcEndpoint}
 	}
 	return []string{named, named + rpcEndpoint}
+}
+
+// chainNamed is the chain a path names and what it asks of that chain. One
+// parse, read both when a route is created and when a request is dispatched,
+// so what a node may register and what it will answer cannot drift apart.
+func chainNamed(p string) (alias, endpoint string, ok bool) {
+	rest, isChain := strings.CutPrefix(p, chainPrefix)
+	if !isChain {
+		return "", "", false
+	}
+	alias, endpoint, _ = strings.Cut(rest, "/")
+	return alias, endpoint, alias != ""
+}
+
+// serves reports whether a chain answers here at all, whichever endpoint it
+// hangs its handlers on.
+func (r *router) serves(alias string) bool {
+	r.routeLock.Lock()
+	defer r.routeLock.Unlock()
+	_, ok := r.chainSpelling[strings.ToLower(alias)]
+	return ok
 }
 
 // serveBelowMount answers a request that matched no exact route by handing it
@@ -310,6 +336,7 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 		info = r.rootInfoProvider.GetRootInfo()
 	} else {
 		// Default info when provider not set
+		own := Chain("", r.net.Alias())
 		info = RootInfo{
 			Ready: true,
 			Chains: struct {
@@ -317,7 +344,7 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 				P string `json:"p"`
 				X string `json:"x"`
 			}{
-				C: Chain("", "C") + "/rpc",
+				C: own + rpcEndpoint,
 				P: Chain("", "P"),
 				X: Chain("", "X"),
 			},
@@ -327,8 +354,8 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 				Info      string `json:"info"`
 				Health    string `json:"health"`
 			}{
-				RPC:       Chain("", "C") + "/rpc",
-				Websocket: Chain("", "C") + "/ws",
+				RPC:       own + rpcEndpoint,
+				Websocket: own + "/ws",
 				Info:      baseURL + "/info",
 				Health:    baseURL + "/health",
 			},
@@ -340,24 +367,24 @@ func (r *router) handleRootGET(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-// handleRootPOST proxies JSON-RPC requests to the C-chain
+// handleRootPOST serves this network's OWN chain, so a wallet pointed at the
+// bare host reaches the EVM this node runs rather than one named for a network
+// it is not on.
+//
+// The request is rewritten and dispatched, not looked up: a chain that answers
+// at its own root and one that answers under /rpc are both reached that way,
+// and by the same code that reaches them when the caller types the path out.
 func (r *router) handleRootPOST(w http.ResponseWriter, req *http.Request) {
-	// Look up the C-chain RPC handler
-	handler, err := r.GetHandler(Chain("", "C"), "/rpc")
-	if err != nil {
-		// Try alternate path formats
-		handler, err = r.GetHandler(Chain("", "C")+"/rpc", "")
-		if err != nil {
-			// Return proper JSON-RPC error
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = w.Write([]byte(`{"jsonrpc":"2.0","id":null,"error":{"code":-32603,"message":"C-chain not available"}}`))
-			return
-		}
+	if !r.serves(r.net.Alias()) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = w.Write([]byte(`{"jsonrpc":"2.0","id":null,"error":{"code":-32603,"message":"chain not available"}}`))
+		return
 	}
 
-	// Forward the request to the C-chain handler
-	handler.ServeHTTP(w, req)
+	own := req.Clone(req.Context())
+	own.URL.Path = Chain("", r.net.Alias())
+	r.servePath(w, own)
 }
 
 // SetRootInfoProvider sets the provider for root endpoint information
@@ -414,6 +441,16 @@ func (r *router) addRouter(base, endpoint string, handler http.Handler) error {
 }
 
 func (r *router) forceAddRouter(base, endpoint string, handler http.Handler) error {
+	// A chain named for another network never becomes a route here. This is
+	// the single write path — every alias, and every alias of an alias,
+	// recurses back through it — so refusing here is refusing everywhere, and
+	// no read afterwards has to know the rule. Checked before anything is
+	// written, so a refusal leaves nothing behind.
+	alias, _, isChain := chainNamed(base)
+	if isChain && !r.net.Owns(alias) {
+		return fmt.Errorf("%w: %s", errAnotherNetwork, alias)
+	}
+
 	endpoints := r.routes[base]
 	if endpoints == nil {
 		endpoints = make(map[string]http.Handler)
@@ -436,11 +473,9 @@ func (r *router) forceAddRouter(base, endpoint string, handler http.Handler) err
 	// Remember how this chain spelled its alias, so a caller who folds it can
 	// be sent here. Recorded beside the path it belongs to — the two are
 	// written in one place and cannot disagree.
-	if rest, isChain := strings.CutPrefix(base, chainPrefix); isChain && rest != "" {
-		if alias, _, _ := strings.Cut(rest, "/"); alias != "" {
-			if _, taken := r.chainSpelling[strings.ToLower(alias)]; !taken {
-				r.chainSpelling[strings.ToLower(alias)] = alias
-			}
+	if isChain {
+		if _, taken := r.chainSpelling[strings.ToLower(alias)]; !taken {
+			r.chainSpelling[strings.ToLower(alias)] = alias
 		}
 	}
 
@@ -461,9 +496,16 @@ func (r *router) AddAlias(base string, aliases ...string) error {
 	r.routeLock.Lock()
 	defer r.routeLock.Unlock()
 
+	// Refused before anything is recorded. An alias is remembered here and
+	// applied whenever the chain it names registers a route, so an alias kept
+	// for a chain that may never be served is an error that repeats for the
+	// life of the node rather than one that happens once.
 	for _, alias := range aliases {
 		if r.reservedRoutes.Contains(alias) {
 			return fmt.Errorf("%w: %s", errAlreadyReserved, alias)
+		}
+		if name, _, isChain := chainNamed(alias); isChain && !r.net.Owns(name) {
+			return fmt.Errorf("%w: %s", errAnotherNetwork, name)
 		}
 	}
 

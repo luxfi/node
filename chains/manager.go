@@ -938,15 +938,9 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		} else {
 			// Register each handler with the HTTP server
 			for endpoint, handler := range handlers {
-				chainAlias := chainParams.ID.String()
-				// For C-Chain, also register under the "C" alias
-				if chainParams.ID == m.CChainID {
-					chainAlias = "C"
-				}
-
 				// AddRoute builds the full path as /v1/<base><endpoint>, so a
-				// base of "chain/C" and an endpoint of "/rpc" is
-				// /v1/chain/C/rpc.
+				// base of "chain/c" and an endpoint of "/rpc" is
+				// /v1/chain/c/rpc.
 				//
 				// One segment, [constants.ChainAliasPrefix]. "chain" is what
 				// these are: C-Chain, X-Chain, M-Chain. "bc" was short for
@@ -964,9 +958,22 @@ func (m *manager) createChain(chainParams ChainParameters) {
 					}
 				}
 
-				route(chainAlias)
-				if chainAlias != chainParams.ID.String() {
-					route(chainParams.ID.String())
+				// A chain always answers at its id. The network's OWN EVM also
+				// answers to the names the network itself carries: its brand,
+				// and the EVM chain id a wallet already knows it by.
+				//
+				// "C" was minted here for whichever chain the node calls its
+				// C-Chain, on every network. But C-Chain is the Lux primary
+				// network's EVM and no other network's, so a node on Hanzo's
+				// network presented its EVM under a name belonging to a chain
+				// it is not — which is what five running nodes do today, while
+				// answering eth_chainId 0x9063.
+				aliases := []string{chainParams.ID.String()}
+				if chainParams.ID == m.CChainID {
+					aliases = append(server.NetworkOf(m.NetworkID).Aliases(), aliases...)
+				}
+				for _, alias := range aliases {
+					route(alias)
 				}
 
 				// Also register with chain name alias for user-friendly routing (e.g., /v1/chain/zoo/rpc)
@@ -1017,7 +1024,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 				}
 
 				m.Log.Info("Registered HTTP handler",
-					log.String("chainAlias", chainAlias),
+					log.String("chainAlias", aliases[0]),
 					log.Stringer("chainID", chainParams.ID),
 					log.String("prefix", constants.ChainAliasPrefix),
 					log.String("endpoint", endpoint),

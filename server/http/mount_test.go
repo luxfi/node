@@ -53,7 +53,7 @@ func TestChainHandlerServesItsOwnPaths(t *testing.T) {
 	handlers, err := vm.CreateHandlers(context.Background())
 	require.NoError(t, err)
 
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 	chainID := ids.GenerateTestID().String()
 	base := Chain("", chainID)
 	for endpoint, h := range handlers {
@@ -72,7 +72,7 @@ func TestChainHandlerServesItsOwnPaths(t *testing.T) {
 // point itself (quantumvm, mpcvm, keyvm, the C-Chain EVM: one JSON-RPC handler
 // that ignores the path) working exactly as before.
 func TestMountedEndpointStillServesItself(t *testing.T) {
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 	base := Chain("", ids.GenerateTestID().String())
 	var got string
 	rpc := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -91,7 +91,7 @@ func TestMountedEndpointStillServesItself(t *testing.T) {
 // endpoints share one base: /v1/health, /v1/health/readiness, /v1/health/health,
 // /v1/health/liveness are four distinct handlers and each must keep its own.
 func TestSiblingEndpointsDoNotShadow(t *testing.T) {
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 	base := baseURL + "/health"
 	mark := func(name string) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

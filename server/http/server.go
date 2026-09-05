@@ -129,6 +129,7 @@ func New(
 	allowedOrigins []string,
 	shutdownTimeout time.Duration,
 	nodeID ids.NodeID,
+	networkID uint32,
 	tracingEnabled bool,
 	tracer trace.Tracer,
 	registerer metric.Registerer,
@@ -140,7 +141,10 @@ func New(
 		return nil, err
 	}
 
-	router := newRouter()
+	// The network is what decides which chain aliases this node may serve, so
+	// the router learns it here, once, from the same id the rest of the node
+	// runs on.
+	router := newRouter(NetworkOf(networkID))
 	handler := wrapHandler(router, nodeID, allowedOrigins, allowedHosts)
 
 	httpServer := &http.Server{

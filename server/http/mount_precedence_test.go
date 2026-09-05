@@ -37,7 +37,7 @@ func namedHandler(name string, seen *string) http.Handler {
 // would hand every admin path to /rpc, which is the endpoint that did not ask
 // for it.
 func TestDeepestMountOwnsThePath(t *testing.T) {
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 	base := Chain("", ids.GenerateTestID().String())
 	var seen string
 	require.NoError(t, r.AddRouter(base, "/rpc", namedHandler("rpc", &seen)))
@@ -57,7 +57,7 @@ func TestDeepestMountOwnsThePath(t *testing.T) {
 // so /health/readiness must reach its own handler on its own full path — the
 // mount fallback is a fallback, and an exact match is not a miss.
 func TestExactRouteBeatsAMount(t *testing.T) {
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 	base := baseURL + "/health"
 	var seen string
 	require.NoError(t, r.AddRouter(base, "", namedHandler("root", &seen)))
@@ -75,7 +75,7 @@ func TestExactRouteBeatsAMount(t *testing.T) {
 // handlers that were actually mounted. A path under no endpoint is still a
 // miss, or the node answers for chains it does not run.
 func TestAnUnmountedPathIs404(t *testing.T) {
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 	base := Chain("", ids.GenerateTestID().String())
 	var seen string
 	require.NoError(t, r.AddRouter(base, "/rpc", namedHandler("rpc", &seen)))

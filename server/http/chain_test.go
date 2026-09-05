@@ -32,10 +32,15 @@ import (
 // spells the address it is asserting is unreachable.
 const gone = "bc"
 
-// newServer builds the shipped server and hands back both it and the handler
-// its listener would serve: the router underneath CORS and the host filter, not
-// the router alone. Routes are asserted through that whole chain.
-func newServer(t *testing.T) (Server, http.Handler) {
+// newServer builds the shipped server on a network and hands back both it and
+// the handler its listener would serve: the router underneath CORS and the
+// host filter, not the router alone. Routes are asserted through that whole
+// chain.
+//
+// A network id of 0 is a network nobody has written down, which owns no name
+// and refuses none — what a test that is measuring something other than
+// ownership wants.
+func newServer(t *testing.T, networkID uint32) (Server, http.Handler) {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
@@ -47,6 +52,7 @@ func newServer(t *testing.T) (Server, http.Handler) {
 		[]string{"*"},
 		time.Second,
 		ids.EmptyNodeID,
+		networkID,
 		false,
 		nil,
 		metric.NewRegistry(),
@@ -63,7 +69,7 @@ func newServer(t *testing.T) (Server, http.Handler) {
 // replaced answers nothing.
 func TestChainAnswersUnderOneSegment(t *testing.T) {
 	require := require.New(t)
-	s, serve := newServer(t)
+	s, serve := newServer(t, 0)
 
 	app := zip.New(zip.Config{AppName: "platform"})
 

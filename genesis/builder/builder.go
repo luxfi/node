@@ -23,6 +23,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/net/endpoints"
+	"github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/reward"
@@ -819,8 +820,14 @@ func VMGenesis(genesisBytes []byte, vmID ids.ID) (*pchaintxs.Tx, error) {
 	return nil, fmt.Errorf("couldn't find blockchain with VM ID %s", vmID)
 }
 
-// Aliases returns the default aliases for chains and APIs
-func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, error) {
+// Aliases returns the default aliases for chains and APIs.
+//
+// networkID is the network the node runs, because the EVM in genesis answers
+// to the name of the network it belongs to. This table minted "C" for it on
+// every network, so a node on Hanzo's network published its EVM under the name
+// of the Lux primary network's chain — the same mistake the chain manager made,
+// at a second address.
+func Aliases(genesisBytes []byte, networkID uint32) (map[string][]string, map[ids.ID][]string, error) {
 	apiAliases := map[string][]string{
 		path.Join(constants.ChainAliasPrefix, constants.PlatformChainID.String()): {
 			"P",
@@ -851,10 +858,14 @@ func Aliases(genesisBytes []byte) (map[string][]string, map[ids.ID][]string, err
 			}
 			chainAliases[chainID] = XChainAliases
 		case constants.EVMID:
+			// One EVM plugin serves every network — the vmID in genesis is the
+			// same bytes for a Lux, a Hanzo and a Zoo chain — so the network is
+			// the only thing that says whose EVM this is.
+			own := server.NetworkOf(networkID).Alias()
 			apiAliases[endpoint] = []string{
-				"C",
+				own,
 				"evm",
-				path.Join(constants.ChainAliasPrefix, "C"),
+				path.Join(constants.ChainAliasPrefix, own),
 				path.Join(constants.ChainAliasPrefix, "evm"),
 			}
 			chainAliases[chainID] = CChainAliases

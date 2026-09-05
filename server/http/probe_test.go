@@ -43,7 +43,7 @@ func TestProbePaths(t *testing.T) {
 	handler, err := Mount(health.NewService(log.NewNoOpLogger(), reporter).Ops())
 	require.NoError(t, err)
 
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 	require.NoError(t, r.AddRouter(baseURL+"/health", Ops, handler))
 
 	get := func(path string) int {
@@ -86,7 +86,7 @@ func TestHealthzFollowsLiveness(t *testing.T) {
 
 	handler, err := Mount(health.NewService(log.NewNoOpLogger(), reporter).Ops())
 	require.NoError(t, err)
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 	require.NoError(t, r.AddRouter(baseURL+"/health", Ops, handler))
 
 	rec := httptest.NewRecorder()

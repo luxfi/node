@@ -19,7 +19,7 @@ func (t *testHandler) ServeHTTP(_ http.ResponseWriter, _ *http.Request) {
 func TestAliasing(t *testing.T) {
 	require := require.New(t)
 
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 
 	require.NoError(r.AddAlias("1", "2", "3"))
 	require.NoError(r.AddAlias("1", "4"))
@@ -50,7 +50,7 @@ func TestAliasing(t *testing.T) {
 
 func TestBlock(t *testing.T) {
 	require := require.New(t)
-	r := newRouter()
+	r := newRouter(NetworkOf(0))
 
 	require.NoError(r.AddAlias("1", "1"))
 
