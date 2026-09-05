@@ -31,10 +31,9 @@ Result<std::pair<TypeKind, zap::Message>> parse_shape(ByteView b, ShapeKind want
     if (pre->sk != want) return std::unexpected(kErrWrongShapeKind);
     if (reject_reserved_type && pre->tk == TypeKind::Reserved)
         return std::unexpected(kErrWrongTypeKind);
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(pre->zap_bytes, &msg, &err)) return std::unexpected(err);
-    return std::make_pair(pre->tk, msg);
+    const auto msg = zap::Message::parse(pre->zap_bytes);
+    if (!msg) return std::unexpected(std::string(zap::describe(msg.error())));
+    return std::make_pair(pre->tk, *msg);
 }
 
 // write_address_list writes a stride-20 address list and returns
@@ -66,14 +65,14 @@ std::pair<int, int> write_byte_list(zap::Builder& b, const Bytes& data) {
 
 std::vector<std::uint32_t> read_sig_indices(const zap::Object& obj, int off) {
     auto l = obj.list_stride(off, kSigIndexStride);
-    std::vector<std::uint32_t> out(static_cast<std::size_t>(l.len()));
-    for (int i = 0; i < l.len(); ++i) out[std::size_t(i)] = l.u32(i);
+    std::vector<std::uint32_t> out(static_cast<std::size_t>(l.size()));
+    for (int i = 0; i < l.size(); ++i) out[std::size_t(i)] = l.u32(i);
     return out;
 }
 
 Id id_at(const zap::Object& obj, int off) {
     Id out{};
-    auto s = obj.bytes_fixed_slice(off, 32);
+    auto s = obj.bytes_fixed(off, 32);
     if (s.size() == 32) std::memcpy(out.data(), s.data(), 32);
     return out;
 }
@@ -103,7 +102,7 @@ Result<Split> next_envelope(ByteView blob) {
     std::size_t zap_start = kEnvelopePrefix;
     if (zap_start + std::size_t(zap::kHeaderSize) > blob.size())
         return std::unexpected(kErrShortEnvelope);
-    int zap_size = int(zap::get_u32(blob.data() + zap_start + 12));
+    int zap_size = int(zap::load_u32(blob.data() + zap_start + 12));
     std::size_t env_end = zap_start + std::size_t(zap_size);
     if (zap_size < zap::kHeaderSize || env_end > blob.size())
         return std::unexpected(kErrShortEnvelope);
@@ -123,15 +122,15 @@ Bytes write_envelope_prefix(TypeKind tk, ShapeKind sk, const Bytes& zap_bytes) {
 
 ShortId AddressList::at(int i) const {
     ShortId out{};
-    if (i < 0 || i >= list_.len()) return out;
+    if (i < 0 || i >= list_.size()) return out;
     auto obj = list_.object(i, int(kAddressStride));
     for (int j = 0; j < int(kAddressStride); ++j) out[std::size_t(j)] = obj.u8(j);
     return out;
 }
 
 std::vector<ShortId> AddressList::all() const {
-    std::vector<ShortId> out(static_cast<std::size_t>(list_.len()));
-    for (int i = 0; i < list_.len(); ++i) out[std::size_t(i)] = at(i);
+    std::vector<ShortId> out(static_cast<std::size_t>(list_.size()));
+    for (int i = 0; i < list_.size(); ++i) out[std::size_t(i)] = at(i);
     return out;
 }
 
@@ -254,7 +253,7 @@ Result<MintOperation> wrap_mint_operation(ByteView b) {
 
 Bytes Credential::signature_bytes() const {
     auto l = obj_.list_stride(kOffCredSignatureList, 1);
-    int n = l.len();
+    int n = l.size();
     Bytes out(static_cast<std::size_t>(n));
     for (int i = 0; i < n; ++i) out[std::size_t(i)] = l.u8(i);
     return out;
@@ -262,7 +261,7 @@ Bytes Credential::signature_bytes() const {
 
 Bytes Credential::pubkey_bytes() const {
     auto l = obj_.list_stride(kOffCredPubKeyList, 1);
-    int n = l.len();
+    int n = l.size();
     Bytes out(static_cast<std::size_t>(n));
     for (int i = 0; i < n; ++i) out[std::size_t(i)] = l.u8(i);
     return out;
@@ -270,7 +269,7 @@ Bytes Credential::pubkey_bytes() const {
 
 int Credential::signature_count(int sig_size) const {
     if (sig_size <= 0) return 0;
-    int total = obj_.list_stride(kOffCredSignatureList, 1).len();
+    int total = obj_.list_stride(kOffCredSignatureList, 1).size();
     if (total % sig_size != 0) return 0;
     return total / sig_size;
 }
@@ -353,7 +352,7 @@ Id XVMBaseTx::blockchain_id() const { return id_at(obj_, kOffXVMBaseTxBlockchain
 
 Result<TransferableOut> XVMBaseTx::out_at(std::uint32_t i) const {
     auto l = obj_.list_stride(kOffXVMBaseTxOuts, kObjPtrStride);
-    if (int(i) >= l.len()) return std::unexpected(kErrShortEnvelope);
+    if (int(i) >= l.size()) return std::unexpected(kErrShortEnvelope);
     auto o = l.object_ptr(int(i));
     if (o.is_null()) return std::unexpected(kErrShortEnvelope);
     return TransferableOut(o);
@@ -361,7 +360,7 @@ Result<TransferableOut> XVMBaseTx::out_at(std::uint32_t i) const {
 
 Result<TransferableIn> XVMBaseTx::in_at(std::uint32_t i) const {
     auto l = obj_.list_stride(kOffXVMBaseTxIns, kObjPtrStride);
-    if (int(i) >= l.len()) return std::unexpected(kErrShortEnvelope);
+    if (int(i) >= l.size()) return std::unexpected(kErrShortEnvelope);
     auto o = l.object_ptr(int(i));
     if (o.is_null()) return std::unexpected(kErrShortEnvelope);
     return TransferableIn(o);
