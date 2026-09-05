@@ -44,7 +44,25 @@ func xrt() *runtime.Runtime {
 	return r
 }
 
+// The chains the corpus covers, by the letter a vector names.
+//
+//	P  platformvm    X  xvm      Q  quantumvm
+//	Z  zkvm          F  fhevm    D  dexvm
+//
+// P and X are dispatched by op below, because they share one op vocabulary.
+// The four chains added here each answer their own ops — a D vector asks for
+// an asset id, not for a transaction — so each takes the whole vector.
 func evaluate(v Vector) Result {
+	switch v.Chain {
+	case "Q":
+		return evalQ(v)
+	case "Z":
+		return evalZ(v)
+	case "F":
+		return evalF(v)
+	case "D":
+		return evalD(v)
+	}
 	switch v.Op {
 	case "tx":
 		if v.Chain == "P" {
@@ -246,10 +264,22 @@ func classify(err error) string {
 	case has("overflow"), has("underflow"):
 		return VOverflow
 	case has("wrong transaction type"), has("wrong tx type"),
-		has("not permitted"), has("not held"), has("unsupported"):
+		has("not permitted"), has("not held"), has("unsupported"),
+		has("forbidden"),
+		// A token, kind or mode the chain does not recognise is refused by
+		// name. It has to be tested BEFORE the ledger words, because the
+		// message that refuses it usually lists the ones it would accept.
+		has("unknown"),
+		// A parameter set the chain does not run is a kind it refuses by
+		// name, not a signature that failed to authorise.
+		has("parameter set"):
 		return VUnsupported
 	case has("credential"), has("signature"), has("unauthorized"),
-		has("not authorised"), has("not authorized"):
+		has("not authorised"), has("not authorized"),
+		// A zero-knowledge proof IS the credential on a shielded chain.
+		has("proof verification failed"),
+		// An address that is not the one the signing key derives.
+		has("does not match auth"):
 		return VAuth
 	case has("warp"):
 		return VWarp
@@ -257,7 +287,11 @@ func classify(err error) string {
 		has("consumed"), has("produced"), has("flow"), has("fee"),
 		has("not found"), has("doesn't exist"), has("does not exist"),
 		has("isn't a current"), has("not validator"), has("no such"),
-		has("could not load"), has("shared memory"):
+		has("could not load"), has("shared memory"), has("state root"),
+		// A block that does not sit in the time its parent leaves it is
+		// refused for what the chain holds, exactly as a transaction
+		// spending a UTXO nobody has is.
+		has("precedes its parent"), has("skew allowance"):
 		return VLedger
 	default:
 		return VSyntactic
