@@ -13,7 +13,7 @@
 # An installed package wins, so a machine that has one does not re-fetch. Set
 # -DCMAKE_PREFIX_PATH=<install> to use it.
 
-set(ZAP_TAG v0.1.0)
+set(ZAP_TAG v0.1.1)
 
 find_package(Zap QUIET)
 if(NOT Zap_FOUND)
