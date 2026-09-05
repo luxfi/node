@@ -106,6 +106,7 @@ fn a_chain() -> (Arc<Xvm>, Tx) {
             timestamp: AT,
         },
         Arc::new(FixedClock::new(AT)),
+        Arc::new(lux_xvm::gossip::Fixed(vec![0x5A, 0xA5, 0x11, 0x22])),
         Some(Arc::new(OneNet)),
         Some(Arc::new(NoMemory)),
     )
