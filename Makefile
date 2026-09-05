@@ -221,6 +221,7 @@ chains-build:
 PREC        := $(CONF)/precompile
 PREC_GO     := $(PREC)/precompile
 PREC_RUST   := $(ROOT)/chains/rust/evm/target/release/conformance
+PREC_CPP    := $(ROOT)/chains/cpp/evm/build/evm_conformance
 PREC_VECS   := $(CONF)/corpus/precompile_vectors.tsv
 PREC_WANT   := $(CONF)/corpus/precompile_expected.tsv
 
@@ -232,13 +233,22 @@ precompiles: precompiles-build
 		-vectors $(PREC_VECS) \
 		-expected $(PREC_WANT) \
 		-eval "go=$(PREC_GO) eval" \
-		-eval "rust=$(PREC_RUST)"
+		-eval "rust=$(PREC_RUST)" \
+		-eval "cpp=$(PREC_CPP)"
 
+# The C++ evaluator asks cevm's precompile seam, and cevm's algorithm bodies
+# come from Conan. The install writes the toolchain the configure then reads;
+# both are cheap once the packages are in the cache.
 precompiles-build:
-	@echo "==> precompile differential: building two evaluators"
+	@echo "==> precompile differential: building three evaluators"
 	cd $(PREC) && GOWORK=off go build -o precompile .
 	cd $(ROOT)/chains/rust/evm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	@for f in $(PREC_GO) $(PREC_RUST); do \
+	conan install $(ROOT)/chains/cpp/evm --output-folder=$(ROOT)/chains/cpp/evm/build \
+		-s build_type=Release -s compiler.cppstd=gnu20 --build=missing
+	cmake -S $(ROOT)/chains/cpp/evm -B $(ROOT)/chains/cpp/evm/build -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_TOOLCHAIN_FILE=$(ROOT)/chains/cpp/evm/build/conan_toolchain.cmake
+	cmake --build $(ROOT)/chains/cpp/evm/build --target evm_conformance -j$(NPROC)
+	@for f in $(PREC_GO) $(PREC_RUST) $(PREC_CPP); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
 	done
 
