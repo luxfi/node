@@ -24,7 +24,7 @@
 
 use std::collections::HashMap;
 
-use crate::components::{Credential, Input, Output, Utxo};
+use crate::components::{Credential, Input, Output, Owners, Utxo};
 use crate::ids::Id;
 
 /// Why a transaction does not add up.
@@ -238,55 +238,86 @@ pub fn verify_credentials(
         return Err(CredentialError::WrongNumberOfCredentials);
     }
     for ((input, cred), utxo) in ins.iter().zip(creds.iter()).zip(utxos.iter()) {
-        let owners = &utxo.output.owners;
+        verify_permission(&utxo.output.owners, &input.sig_indices, cred, sighash, now)?;
+    }
+    Ok(())
+}
 
-        // The owner's own locktime — distinct from the stakeable lock, and
-        // checked here because an output whose owner-time has not arrived is
-        // not spendable by anyone.
-        if now < owners.locktime {
-            return Err(CredentialError::TimelockNotExpired);
-        }
-        if input.sig_indices.len() != owners.threshold as usize {
-            return Err(CredentialError::WrongNumberOfSignatures {
-                given: input.sig_indices.len(),
-                needed: owners.threshold as usize,
-            });
-        }
-        if cred.sigs.len() != input.sig_indices.len() {
-            return Err(CredentialError::WrongNumberOfSignatures {
-                given: cred.sigs.len(),
-                needed: input.sig_indices.len(),
-            });
-        }
-        for (position, index) in input.sig_indices.iter().enumerate() {
-            let expected = owners
-                .addrs
-                .get(*index as usize)
-                .ok_or(CredentialError::AddressIndexOutOfBounds)?;
-            let got = crate::sign::recover(sighash, &cred.sigs[position])
-                .ok_or(CredentialError::MalformedSignature)?;
-            if got != *expected {
-                return Err(CredentialError::WrongSigner);
-            }
+/// Whether one credential satisfies one owner.
+///
+/// Go: `secp256k1fx.Fx.VerifyPermission`. This is the whole signature rule, in
+/// one place, used by both things that need it: a spend, where the owner is the
+/// output being consumed, and an authorisation, where the owner is a network's
+/// or a validator's. Two copies of this rule would be two answers to who
+/// signed.
+pub fn verify_permission(
+    owners: &Owners,
+    sig_indices: &[u32],
+    cred: &Credential,
+    sighash: &Id,
+    now: u64,
+) -> Result<(), CredentialError> {
+    // The owner's own locktime — distinct from the stakeable lock, and checked
+    // here because an output whose owner-time has not arrived is not spendable
+    // by anyone.
+    if now < owners.locktime {
+        return Err(CredentialError::TimelockNotExpired);
+    }
+    if sig_indices.len() != owners.threshold as usize {
+        return Err(CredentialError::WrongNumberOfSignatures {
+            given: sig_indices.len(),
+            needed: owners.threshold as usize,
+        });
+    }
+    if cred.sigs.len() != sig_indices.len() {
+        return Err(CredentialError::WrongNumberOfSignatures {
+            given: cred.sigs.len(),
+            needed: sig_indices.len(),
+        });
+    }
+    for (position, index) in sig_indices.iter().enumerate() {
+        let expected = owners
+            .addrs
+            .get(*index as usize)
+            .ok_or(CredentialError::AddressIndexOutOfBounds)?;
+        // The address a signature names comes from [`crate::sign::recover`] —
+        // the one implementation in this crate. It is called here rather than
+        // passed in, because a check that can be handed a different answer is a
+        // check that can be handed one that always agrees.
+        let got = crate::sign::recover(sighash, &cred.sigs[position])
+            .ok_or(CredentialError::MalformedSignature)?;
+        if got != *expected {
+            return Err(CredentialError::WrongSigner);
         }
     }
     Ok(())
 }
 
-/// The shape of the check, pinned.
+/// The shape of both checks, pinned.
 ///
-/// This once took a recovery function as an argument, and nothing supplied
-/// one — so the loop above ran zero times and a transaction executed with no
-/// signature checked at all. The fix was not to find the missing caller: it
-/// was to stop the check taking an answer from outside, so that there is
+/// `verify_credentials` once took a recovery function as an argument, and
+/// nothing supplied one — so its loop ran zero times and a transaction executed
+/// with no signature checked at all. The fix was not to find the missing
+/// caller: it was to stop the check taking an answer from outside, so there is
 /// nothing to forget to pass.
 ///
-/// The type below says exactly that. Adding a parameter of any kind — a
-/// recoverer, a verifier, a flag that skips the loop — changes this function's
-/// type and this line stops compiling. It is not a test that has to be run and
-/// it is not a rule anyone has to remember; it is the build.
-const _: fn(&[Utxo], &[Input], &[Credential], &Id, u64) -> Result<(), CredentialError> =
-    verify_credentials;
+/// The two lines below say exactly that. Adding a parameter of any kind — a
+/// recoverer, a verifier, a flag that skips the loop — changes one of these
+/// functions' types and this file stops compiling. It is not a test that has to
+/// be run and it is not a rule anyone has to remember; it is the build.
+///
+/// Both are pinned, not just the outer one: `verify_permission` is where the
+/// recovery actually happens, and it is what the authorisation paths call
+/// directly, so pinning only the caller would leave the door where the check
+/// really lives.
+/// The spend check: what is being spent, what claims to spend it, the
+/// signatures, the bytes they cover, and the clock. No sixth thing.
+type SpendCheck = fn(&[Utxo], &[Input], &[Credential], &Id, u64) -> Result<(), CredentialError>;
+/// The one-owner check the authorisation paths call directly.
+type OwnerCheck = fn(&Owners, &[u32], &Credential, &Id, u64) -> Result<(), CredentialError>;
+
+const _: SpendCheck = verify_credentials;
+const _: OwnerCheck = verify_permission;
 
 /// Why the signatures do not authorise the spend.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

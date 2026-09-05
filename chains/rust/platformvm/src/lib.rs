@@ -31,26 +31,36 @@
 //! - [`flow`] — the check that value is not created.
 //! - [`genesis`] — how the chain is born.
 //! - [`state`] — what the chain believes.
+//! - [`store`] — where it is written down, so a restart remembers it.
+//! - [`persist`] — what is written down, and how it is read back.
 //! - [`executor`] — what a transaction does to that belief.
 //! - [`block`] — the four things a block can be.
 //! - [`uptime`] — how much of its term a validator was reachable for.
+//! - [`validators`] — who validates, now and at any height already passed.
 //! - [`vm`] — the chain, as the node holds it.
 
 pub mod block;
 pub mod components;
 pub mod executor;
 pub mod flow;
+pub(crate) mod gas;
 pub mod genesis;
 pub mod ids;
+pub mod l1;
 pub mod reward;
 pub mod security;
 pub mod sign;
 pub mod signer;
 pub mod stakingparams;
+pub mod persist;
 pub mod state;
+pub mod store;
 pub mod txs;
 pub mod uptime;
+pub mod validators;
 pub mod vm;
+pub mod warp;
+pub mod warpmsg;
 pub mod zap;
 
 pub use ids::Id;

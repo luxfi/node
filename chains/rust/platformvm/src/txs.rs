@@ -143,6 +143,20 @@ pub struct Envelope {
     pub memo: Vec<u8>,
 }
 
+/// The chain a transaction has to be addressed to, and the asset it is
+/// denominated in.
+///
+/// Go hands the same three fields down as a whole `runtime.Runtime`; these are
+/// the ones a transaction is checked against. They travel together because a
+/// transaction that satisfied two of them and not the third is still a
+/// transaction for somewhere else.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Chain {
+    pub network_id: u32,
+    pub blockchain_id: Id,
+    pub native_asset: Id,
+}
+
 /// Who is staking, from when until when, with what weight.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Validator {
@@ -184,15 +198,20 @@ pub struct PChainOwner {
 }
 
 impl PChainOwner {
-    /// The same check [`Owners`] makes, on the fields this shape has.
-    fn verify(&self) -> Result<(), Error> {
+    /// The same group, as the shape everything else spends against. The
+    /// locktime is zero because a balance owner has none — that is the whole
+    /// difference between the two types.
+    pub fn as_owners(&self) -> Owners {
         Owners {
             locktime: 0,
             threshold: self.threshold,
             addrs: self.addresses.clone(),
         }
-        .verify()
-        .map_err(Error::Owner)
+    }
+
+    /// The same check [`Owners`] makes, on the fields this shape has.
+    fn verify(&self) -> Result<(), Error> {
+        self.as_owners().verify().map_err(Error::Owner)
     }
 }
 
@@ -265,6 +284,10 @@ pub enum Error {
     Wire(zap::Error),
     /// A first byte that names no kind.
     UnknownKind(u8),
+    /// Addressed to another network. Go: `ErrWrongNetworkID`.
+    WrongNetwork { addressed: u32, here: u32 },
+    /// Addressed to another chain of this network. Go: `ErrWrongChainID`.
+    WrongBlockchain,
     OutputsNotSorted,
     InputsNotSortedUnique,
     Output(crate::components::OutputError),
@@ -372,6 +395,13 @@ impl std::fmt::Display for Error {
         match self {
             Error::Wire(e) => write!(f, "{e}"),
             Error::UnknownKind(k) => write!(f, "zap: unknown tx kind {k}"),
+            Error::WrongNetwork { addressed, here } => write!(
+                f,
+                "the transaction has the wrong network ID: addressed to {addressed}, this is {here}"
+            ),
+            Error::WrongBlockchain => {
+                write!(f, "the transaction has the wrong chain ID")
+            }
             Error::OutputsNotSorted => write!(f, "outputs not sorted"),
             Error::InputsNotSortedUnique => write!(f, "inputs not sorted and unique"),
             Error::Output(e) => write!(f, "output failed verification: {e}"),
@@ -2202,9 +2232,10 @@ impl Unsigned {
     /// Everything here is a property of the bytes: value is present, order is
     /// canonical, weights add up. Anything that needs to know what the chain
     /// currently believes belongs in the executor, not here.
-    pub fn syntactic_verify(&self, native_asset: Id) -> Result<(), Error> {
+    pub fn syntactic_verify(&self, chain: Chain) -> Result<(), Error> {
+        let native_asset = chain.native_asset;
         if let Some(base) = self.envelope() {
-            verify_envelope(base)?;
+            verify_envelope(base, chain)?;
         }
         match self {
             Unsigned::RewardValidator { .. } | Unsigned::Base(_) => Ok(()),
@@ -2546,7 +2577,24 @@ fn verify_network_validators(vdrs: &[NetworkValidator]) -> Result<(), Error> {
     Ok(())
 }
 
-fn verify_envelope(base: &Envelope) -> Result<(), Error> {
+fn verify_envelope(base: &Envelope, chain: Chain) -> Result<(), Error> {
+    // Where this transaction is addressed. Go: `utxo.BaseTx.Verify`, which
+    // refuses a mismatch with `ErrWrongNetworkID` / `ErrWrongChainID` before it
+    // looks at anything else.
+    //
+    // It is the first check and not an afterthought: a transaction that is
+    // well-formed on two networks is one signature that spends on both, so a
+    // chain that did not read the address would let a spend made on the test
+    // network be replayed onto the main one.
+    if base.network_id != chain.network_id {
+        return Err(Error::WrongNetwork {
+            addressed: base.network_id,
+            here: chain.network_id,
+        });
+    }
+    if base.blockchain_id != chain.blockchain_id {
+        return Err(Error::WrongBlockchain);
+    }
     for o in &base.outs {
         o.verify().map_err(Error::Output)?;
     }
@@ -2756,7 +2804,7 @@ impl Tx {
             .collect()
     }
 
-    pub fn syntactic_verify(&self, native_asset: Id) -> Result<(), Error> {
+    pub fn syntactic_verify(&self, chain: Chain) -> Result<(), Error> {
         if self.id == crate::ids::EMPTY {
             return Err(Error::NotInitialized);
         }
@@ -2766,7 +2814,7 @@ impl Tx {
             .map(|e| e.memo.as_slice())
             .unwrap_or(&[]);
         verify_memo(memo).map_err(|e| Error::MemoCarried(e.0))?;
-        self.unsigned.syntactic_verify(native_asset)
+        self.unsigned.syntactic_verify(chain)
     }
 }
 
@@ -2809,6 +2857,17 @@ mod tests {
         }
     }
 
+    /// The chain these tests are addressed to. `envelope()` names the same
+    /// network and blockchain, so a test that is not about addressing does not
+    /// have to think about it.
+    fn chain() -> Chain {
+        Chain {
+            network_id: 1,
+            blockchain_id: [3; 32],
+            native_asset: [9u8; 32],
+        }
+    }
+
     fn envelope() -> Envelope {
         Envelope {
             network_id: 1,
@@ -2817,6 +2876,49 @@ mod tests {
             ins: vec![input(1, 0, 200)],
             memo: Vec::new(),
         }
+    }
+
+    #[test]
+    fn a_transaction_addressed_to_another_network_is_refused() {
+        // Go: `utxo.BaseTx.Verify` -> `ErrWrongNetworkID`. A transaction that
+        // is well-formed on two networks is one signature that spends on both,
+        // so a chain that did not read the address would let a spend made on
+        // the test network be replayed onto the main one.
+        let mut e = envelope();
+        e.network_id = 2;
+        assert_eq!(
+            Unsigned::Base(e).syntactic_verify(chain()),
+            Err(Error::WrongNetwork {
+                addressed: 2,
+                here: 1
+            })
+        );
+    }
+
+    #[test]
+    fn a_transaction_addressed_to_another_chain_is_refused() {
+        // Go: `ErrWrongChainID`. The same argument one level down: the P-chain
+        // and the X-chain are on one network, and a spend signed for one is not
+        // a spend on the other.
+        let mut e = envelope();
+        e.blockchain_id = [4; 32];
+        assert_eq!(
+            Unsigned::Base(e).syntactic_verify(chain()),
+            Err(Error::WrongBlockchain)
+        );
+    }
+
+    #[test]
+    fn the_address_is_read_before_anything_else_about_the_envelope() {
+        // Otherwise a transaction for another network could be refused for a
+        // reason that a later version stops refusing, and start being accepted.
+        let mut e = envelope();
+        e.network_id = 2;
+        e.outs = vec![out(9, 0)]; // also worthless, which is its own refusal
+        assert!(matches!(
+            Unsigned::Base(e).syntactic_verify(chain()),
+            Err(Error::WrongNetwork { .. })
+        ));
     }
 
     fn validator() -> Validator {
@@ -3125,18 +3227,17 @@ mod tests {
 
     #[test]
     fn outputs_must_be_sorted_and_inputs_sorted_and_unique() {
-        let native = [9u8; 32];
         let mut e = envelope();
         e.outs = vec![out(9, 1), out(8, 1)];
         assert_eq!(
-            Unsigned::Base(e).syntactic_verify(native),
+            Unsigned::Base(e).syntactic_verify(chain()),
             Err(Error::OutputsNotSorted)
         );
 
         let mut e = envelope();
         e.ins = vec![input(1, 0, 1), input(1, 0, 1)];
         assert_eq!(
-            Unsigned::Base(e).syntactic_verify(native),
+            Unsigned::Base(e).syntactic_verify(chain()),
             Err(Error::InputsNotSortedUnique)
         );
     }
@@ -3144,7 +3245,6 @@ mod tests {
     #[test]
     fn a_staker_may_not_declare_more_weight_than_it_staked() {
         // The rule that keeps consensus influence backed by value.
-        let native = [9u8; 32];
         let mut v = validator();
         v.weight = 51; // one more than the 50 staked
         let tx = Unsigned::AddPermissionlessValidator {
@@ -3158,7 +3258,7 @@ mod tests {
             delegation_shares: 0,
         };
         assert_eq!(
-            tx.syntactic_verify(native),
+            tx.syntactic_verify(chain()),
             Err(Error::WeightMismatch {
                 declared: 51,
                 staked: 50
@@ -3169,7 +3269,6 @@ mod tests {
     /// A legacy staker stakes the chain's own asset, and nothing else.
     #[test]
     fn a_legacy_staker_may_not_stake_some_other_asset() {
-        let native = [9u8; 32];
         let mut s = stake();
         s[0].asset = [1; 32];
         let tx = Unsigned::AddValidator {
@@ -3180,7 +3279,7 @@ mod tests {
             delegation_shares: 0,
         };
         assert_eq!(
-            tx.syntactic_verify(native),
+            tx.syntactic_verify(chain()),
             Err(Error::StakeMustBeNativeAsset)
         );
     }
@@ -3196,7 +3295,6 @@ mod tests {
     /// network that stakes anything else.
     #[test]
     fn a_permissionless_staker_stakes_one_asset_whichever_it_is() {
-        let native = [9u8; 32];
         let other = |asset: u8, amount: u64| Output {
             asset: [asset; 32],
             stake_lock: 0,
@@ -3220,10 +3318,10 @@ mod tests {
         };
 
         // One asset that is not the chain's own: fine here.
-        assert_eq!(apv(vec![other(1, 50)], 50).syntactic_verify(native), Ok(()));
+        assert_eq!(apv(vec![other(1, 50)], 50).syntactic_verify(chain()), Ok(()));
         // Two assets: not fine, whichever they are.
         assert_eq!(
-            apv(vec![other(1, 25), other(2, 25)], 50).syntactic_verify(native),
+            apv(vec![other(1, 25), other(2, 25)], 50).syntactic_verify(chain()),
             Err(Error::MultipleStakedAssets)
         );
     }
@@ -3231,7 +3329,6 @@ mod tests {
     #[test]
     fn a_validator_may_not_take_more_than_the_whole_delegation_reward() {
         // Go: errTooManyShares, at exactly PercentDenominator + 1.
-        let native = [9u8; 32];
         let tx = Unsigned::AddValidator {
             base: envelope(),
             validator: validator(),
@@ -3239,7 +3336,7 @@ mod tests {
             rewards_owner: owners(3),
             delegation_shares: PERCENT_DENOMINATOR + 1,
         };
-        assert_eq!(tx.syntactic_verify(native), Err(Error::TooManyShares));
+        assert_eq!(tx.syntactic_verify(chain()), Err(Error::TooManyShares));
 
         let ok = Unsigned::AddValidator {
             base: envelope(),
@@ -3248,12 +3345,11 @@ mod tests {
             rewards_owner: owners(3),
             delegation_shares: PERCENT_DENOMINATOR,
         };
-        assert_eq!(ok.syntactic_verify(native), Ok(()));
+        assert_eq!(ok.syntactic_verify(chain()), Ok(()));
     }
 
     #[test]
     fn a_validator_needs_weight() {
-        let native = [9u8; 32];
         let mut v = validator();
         v.weight = 0;
         let tx = Unsigned::AddChainValidator {
@@ -3262,35 +3358,32 @@ mod tests {
             chain: [6; 32],
             chain_auth: vec![],
         };
-        assert_eq!(tx.syntactic_verify(native), Err(Error::WeightTooSmall));
+        assert_eq!(tx.syntactic_verify(chain()), Err(Error::WeightTooSmall));
     }
 
     #[test]
     fn a_chain_validator_may_not_name_the_primary_network() {
         // Go: ChainValidator.Verify returns errBadChainID for the primary
         // network — that set is entered by staking, not by being named.
-        let native = [9u8; 32];
         let tx = Unsigned::AddChainValidator {
             base: envelope(),
             validator: validator(),
             chain: PRIMARY_NETWORK_ID,
             chain_auth: vec![],
         };
-        assert_eq!(tx.syntactic_verify(native), Err(Error::BadChainId));
+        assert_eq!(tx.syntactic_verify(chain()), Err(Error::BadChainId));
     }
 
     #[test]
     fn a_memo_is_refused() {
-        let native = [9u8; 32];
         let mut e = envelope();
         e.memo = b"hello".to_vec();
         let tx = Tx::new(Unsigned::Base(e), Vec::new());
-        assert_eq!(tx.syntactic_verify(native), Err(Error::MemoCarried(5)));
+        assert_eq!(tx.syntactic_verify(chain()), Err(Error::MemoCarried(5)));
     }
 
     #[test]
     fn a_name_longer_than_the_limit_is_refused() {
-        let native = [9u8; 32];
         let tx = Unsigned::CreateChain {
             base: envelope(),
             chain: [6; 32],
@@ -3301,7 +3394,7 @@ mod tests {
             chain_auth: vec![],
         };
         assert_eq!(
-            tx.syntactic_verify(native),
+            tx.syntactic_verify(chain()),
             Err(Error::NameTooLong(MAX_NAME_LEN + 1))
         );
     }
@@ -3573,30 +3666,30 @@ mod tests {
 
         // A chain with no VM has nothing to run it.
         assert_eq!(
-            ok("yeet", [0; 32], valid, vec![], vec![]).syntactic_verify(native()),
+            ok("yeet", [0; 32], valid, vec![], vec![]).syntactic_verify(chain()),
             Err(Error::InvalidVmId)
         );
         // The primary network validates itself; a blockchain may not ask it to.
         assert_eq!(
-            ok("yeet", vm, PRIMARY_NETWORK_ID, vec![], vec![]).syntactic_verify(native()),
+            ok("yeet", vm, PRIMARY_NETWORK_ID, vec![], vec![]).syntactic_verify(chain()),
             Err(Error::CantValidatePrimaryNetwork)
         );
         let long = "a".repeat(MAX_NAME_LEN + 1);
         assert_eq!(
-            ok(&long, vm, valid, vec![], vec![]).syntactic_verify(native()),
+            ok(&long, vm, valid, vec![], vec![]).syntactic_verify(chain()),
             Err(Error::NameTooLong(MAX_NAME_LEN + 1))
         );
         // Go's case is "⌘" — outside ASCII, so outside what a name may say.
         assert_eq!(
-            ok("⌘", vm, valid, vec![], vec![]).syntactic_verify(native()),
+            ok("⌘", vm, valid, vec![], vec![]).syntactic_verify(chain()),
             Err(Error::IllegalNameCharacter('⌘'))
         );
         assert_eq!(
-            ok("yeet", vm, valid, vec![0; MAX_GENESIS_LEN + 1], vec![]).syntactic_verify(native()),
+            ok("yeet", vm, valid, vec![0; MAX_GENESIS_LEN + 1], vec![]).syntactic_verify(chain()),
             Err(Error::GenesisTooLong(MAX_GENESIS_LEN + 1))
         );
         assert_eq!(
-            ok("yeet", vm, valid, vec![], vec![[2; 32], [1; 32]]).syntactic_verify(native()),
+            ok("yeet", vm, valid, vec![], vec![[2; 32], [1; 32]]).syntactic_verify(chain()),
             Err(Error::FxIdsNotSortedAndUnique)
         );
         // And an authorization that would let one signature count twice.
@@ -3605,16 +3698,16 @@ mod tests {
             *chain_auth = vec![1, 0];
         }
         assert_eq!(
-            bad_auth.syntactic_verify(native()),
+            bad_auth.syntactic_verify(chain()),
             Err(Error::AuthIndicesNotSortedUnique)
         );
 
         assert_eq!(
-            ok("yeet", vm, valid, vec![], vec![]).syntactic_verify(native()),
+            ok("yeet", vm, valid, vec![], vec![]).syntactic_verify(chain()),
             Ok(())
         );
         assert_eq!(
-            ok("a chain 9", vm, valid, vec![], vec![]).syntactic_verify(native()),
+            ok("a chain 9", vm, valid, vec![], vec![]).syntactic_verify(chain()),
             Ok(())
         );
     }
@@ -3641,12 +3734,12 @@ mod tests {
             uptime_requirement: PERCENT_DENOMINATOR,
             chain_auth: vec![0],
         };
-        assert_eq!(valid().syntactic_verify(native()), Ok(()));
+        assert_eq!(valid().syntactic_verify(chain()), Ok(()));
 
         let case = |mutate: fn(&mut Unsigned), want: Error| {
             let mut tx = valid();
             mutate(&mut tx);
-            assert_eq!(tx.syntactic_verify(native()), Err(want));
+            assert_eq!(tx.syntactic_verify(chain()), Err(want));
         };
 
         case(
@@ -3890,7 +3983,7 @@ mod tests {
                 },
                 Vec::new()
             )
-            .syntactic_verify(native()),
+            .syntactic_verify(chain()),
             Err(Error::Security(crate::security::Error::NoSecurity))
         );
         // No set of its own, but carrying validators for one.
@@ -3904,12 +3997,12 @@ mod tests {
                 },
                 genesis_set()
             )
-            .syntactic_verify(native()),
+            .syntactic_verify(chain()),
             Err(Error::NoOwnSetButHasValidators)
         );
         // Its own set, and nobody in it to make the first block.
         assert_eq!(
-            make(sovereign, Vec::new()).syntactic_verify(native()),
+            make(sovereign, Vec::new()).syntactic_verify(chain()),
             Err(Error::OwnSetMustIncludeValidator)
         );
         // A contract-managed set that names no contract.
@@ -3921,7 +4014,7 @@ mod tests {
                 },
                 genesis_set()
             )
-            .syntactic_verify(native()),
+            .syntactic_verify(chain()),
             Err(Error::ContractManagerNeedsAddress)
         );
         // A genesis set out of order, so two nodes writing the same intent
@@ -3929,34 +4022,34 @@ mod tests {
         let mut reversed = genesis_set();
         reversed.reverse();
         assert_eq!(
-            make(sovereign, reversed).syntactic_verify(native()),
+            make(sovereign, reversed).syntactic_verify(chain()),
             Err(Error::ValidatorsNotSortedAndUnique)
         );
         // A node named twice would be counted twice.
         let doubled = vec![genesis_set()[0].clone(), genesis_set()[0].clone()];
         assert_eq!(
-            make(sovereign, doubled).syntactic_verify(native()),
+            make(sovereign, doubled).syntactic_verify(chain()),
             Err(Error::ValidatorsNotSortedAndUnique)
         );
         // A validator worth nothing.
         let mut weightless = genesis_set();
         weightless[0].weight = 0;
         assert_eq!(
-            make(sovereign, weightless).syntactic_verify(native()),
+            make(sovereign, weightless).syntactic_verify(chain()),
             Err(Error::ZeroWeight)
         );
         // A node id that is not one.
         let mut short_node = genesis_set();
         short_node[0].node_id = vec![5; 19];
         assert_eq!(
-            make(sovereign, short_node).syntactic_verify(native()),
+            make(sovereign, short_node).syntactic_verify(chain()),
             Err(Error::BadNodeIdLength(19))
         );
         // A signer slot that carries no key at all.
         let mut keyless = genesis_set();
         keyless[0].signer = Signer::Empty;
         assert_eq!(
-            make(sovereign, keyless).syntactic_verify(native()),
+            make(sovereign, keyless).syntactic_verify(chain()),
             Err(Error::Signer(crate::signer::Error::MalformedPublicKey))
         );
         // A manager address longer than a network may name.
@@ -3968,12 +4061,12 @@ mod tests {
             *manager_address = vec![0; MAX_CHAIN_ADDRESS_LEN + 1];
         }
         assert_eq!(
-            long_address.syntactic_verify(native()),
+            long_address.syntactic_verify(chain()),
             Err(Error::AddressTooLong(MAX_CHAIN_ADDRESS_LEN + 1))
         );
 
         assert_eq!(
-            make(sovereign, genesis_set()).syntactic_verify(native()),
+            make(sovereign, genesis_set()).syntactic_verify(chain()),
             Ok(())
         );
     }
@@ -4003,11 +4096,11 @@ mod tests {
         };
 
         assert_eq!(
-            make(PRIMARY_NETWORK_ID, sovereign, genesis_set()).syntactic_verify(native()),
+            make(PRIMARY_NETWORK_ID, sovereign, genesis_set()).syntactic_verify(chain()),
             Err(Error::ConvertPrimaryNetwork)
         );
         assert_eq!(
-            make([6; 32], sovereign, Vec::new()).syntactic_verify(native()),
+            make([6; 32], sovereign, Vec::new()).syntactic_verify(chain()),
             Err(Error::ConvertMustHaveValidators)
         );
         assert_eq!(
@@ -4020,7 +4113,7 @@ mod tests {
                 },
                 genesis_set()
             )
-            .syntactic_verify(native()),
+            .syntactic_verify(chain()),
             Err(Error::ConvertMustEstablishOwnSet)
         );
         let mut bad_auth = make([6; 32], sovereign, genesis_set());
@@ -4028,12 +4121,12 @@ mod tests {
             *auth = vec![3, 3];
         }
         assert_eq!(
-            bad_auth.syntactic_verify(native()),
+            bad_auth.syntactic_verify(chain()),
             Err(Error::AuthIndicesNotSortedUnique)
         );
 
         assert_eq!(
-            make([6; 32], sovereign, genesis_set()).syntactic_verify(native()),
+            make([6; 32], sovereign, genesis_set()).syntactic_verify(chain()),
             Ok(())
         );
     }
@@ -4051,7 +4144,7 @@ mod tests {
                 validation_id: [13; 32],
                 balance: 0,
             }
-            .syntactic_verify(native()),
+            .syntactic_verify(chain()),
             Err(Error::ZeroBalance)
         );
         assert_eq!(
@@ -4060,7 +4153,7 @@ mod tests {
                 validation_id: [13; 32],
                 auth: vec![1, 1],
             }
-            .syntactic_verify(native()),
+            .syntactic_verify(chain()),
             Err(Error::AuthIndicesNotSortedUnique)
         );
         assert_eq!(
@@ -4070,7 +4163,7 @@ mod tests {
                 chain: PRIMARY_NETWORK_ID,
                 chain_auth: vec![0],
             }
-            .syntactic_verify(native()),
+            .syntactic_verify(chain()),
             Err(Error::RemovePrimaryNetworkValidator)
         );
         assert_eq!(
@@ -4080,7 +4173,7 @@ mod tests {
                 chain_auth: vec![0],
                 owner: owners(7),
             }
-            .syntactic_verify(native()),
+            .syntactic_verify(chain()),
             Err(Error::TransferPermissionlessChain)
         );
         // A validator the network's owner admits by name may not be admitted
@@ -4092,7 +4185,7 @@ mod tests {
                 chain: PRIMARY_NETWORK_ID,
                 chain_auth: vec![0],
             }
-            .syntactic_verify(native()),
+            .syntactic_verify(chain()),
             Err(Error::BadChainId)
         );
     }
@@ -4100,7 +4193,6 @@ mod tests {
     /// Go: `TestAddPermissionlessValidatorTxSyntacticVerify`, case for case.
     #[test]
     fn a_permissionless_validator_is_refused_for_each_thing_that_is_wrong() {
-        let native = [9u8; 32];
         let good_owner = || owners(3);
         // An owner nobody can satisfy: one signature required, no address to
         // give it. Go reaches this case through a mock; a real unspendable
@@ -4153,12 +4245,12 @@ mod tests {
                 0,
                 0
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::EmptyNodeId)
         );
         // A validator that stakes nothing.
         assert_eq!(
-            apv(node, net, Signer::Empty, Vec::new(), good_owner(), 0, 0).syntactic_verify(native),
+            apv(node, net, Signer::Empty, Vec::new(), good_owner(), 0, 0).syntactic_verify(chain()),
             Err(Error::NoStake)
         );
         // A fee larger than the whole reward.
@@ -4172,7 +4264,7 @@ mod tests {
                 0,
                 PERCENT_DENOMINATOR + 1
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::TooManyShares)
         );
         // A validator worth nothing.
@@ -4186,7 +4278,7 @@ mod tests {
                 0,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::WeightTooSmall)
         );
         // A rewards owner nobody can satisfy.
@@ -4200,7 +4292,7 @@ mod tests {
                 1,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::Owner(
                 crate::components::OwnerError::ThresholdExceedsAddresses
             ))
@@ -4216,7 +4308,7 @@ mod tests {
                 1,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::InvalidSigner {
                 has_key: false,
                 is_primary: true
@@ -4239,7 +4331,7 @@ mod tests {
                 1,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::Output(crate::components::OutputError::Owner(
                 crate::components::OwnerError::ThresholdExceedsAddresses
             )))
@@ -4255,7 +4347,7 @@ mod tests {
                 1,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::Overflow)
         );
         // Stake in two assets.
@@ -4269,7 +4361,7 @@ mod tests {
                 1,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::MultipleStakedAssets)
         );
         // Stake out of order.
@@ -4283,7 +4375,7 @@ mod tests {
                 3,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::OutputsNotSorted)
         );
         // A weight the stake does not back.
@@ -4297,7 +4389,7 @@ mod tests {
                 1,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Err(Error::WeightMismatch {
                 declared: 1,
                 staked: 2
@@ -4314,7 +4406,7 @@ mod tests {
                 2,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Ok(())
         );
         // And a primary-network validator, with one.
@@ -4328,7 +4420,7 @@ mod tests {
                 2,
                 PERCENT_DENOMINATOR
             )
-            .syntactic_verify(native),
+            .syntactic_verify(chain()),
             Ok(())
         );
     }
@@ -4337,7 +4429,6 @@ mod tests {
     /// shape, with no signer and no shares to get wrong.
     #[test]
     fn a_permissionless_delegator_is_refused_for_each_thing_that_is_wrong() {
-        let native = [9u8; 32];
         let out = |asset: u8, amount: u64| Output {
             asset: [asset; 32],
             stake_lock: 0,
@@ -4358,26 +4449,26 @@ mod tests {
                 rewards_owner: owner,
             };
         assert_eq!(
-            apd(Vec::new(), owners(3), 0).syntactic_verify(native),
+            apd(Vec::new(), owners(3), 0).syntactic_verify(chain()),
             Err(Error::NoStake)
         );
         assert_eq!(
-            apd(vec![out(1, 1)], owners(3), 0).syntactic_verify(native),
+            apd(vec![out(1, 1)], owners(3), 0).syntactic_verify(chain()),
             Err(Error::WeightTooSmall)
         );
         assert_eq!(
-            apd(vec![out(1, 1), out(2, 1)], owners(3), 2).syntactic_verify(native),
+            apd(vec![out(1, 1), out(2, 1)], owners(3), 2).syntactic_verify(chain()),
             Err(Error::MultipleStakedAssets)
         );
         assert_eq!(
-            apd(vec![out(1, 1), out(1, 1)], owners(3), 1).syntactic_verify(native),
+            apd(vec![out(1, 1), out(1, 1)], owners(3), 1).syntactic_verify(chain()),
             Err(Error::WeightMismatch {
                 declared: 1,
                 staked: 2
             })
         );
         assert_eq!(
-            apd(vec![out(1, 1), out(1, 1)], owners(3), 2).syntactic_verify(native),
+            apd(vec![out(1, 1), out(1, 1)], owners(3), 2).syntactic_verify(chain()),
             Ok(())
         );
     }
