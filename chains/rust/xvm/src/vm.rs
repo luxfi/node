@@ -520,15 +520,17 @@ impl host::Vm for Xvm {
 
     fn accept(&self, id: &host::Id) -> Result<(), host::Error> {
         let mut inner = self.inner.lock().expect("chain poisoned");
-        let requests = inner.manager.accept(id).map_err(to_host)?;
+        // The shared area goes IN, rather than the block's asks coming out: the
+        // block's own state and what it moves across a chain boundary are one
+        // write, and only the accept path holds both halves at once. A caller
+        // handed the asks after the state had been written would be making the
+        // second of two writes, which is the arrangement an interrupted process
+        // turns into value created or lost.
+        inner
+            .manager
+            .accept(id, self.shared_memory.as_deref())
+            .map_err(to_host)?;
         inner.known.remove(id);
-        if !requests.is_empty() {
-            let sm = self
-                .shared_memory
-                .as_ref()
-                .ok_or_else(|| host::Error::Invalid("no shared memory to apply to".into()))?;
-            sm.apply(&requests).map_err(to_host)?;
-        }
         Ok(())
     }
 
@@ -670,6 +672,7 @@ fn id_param(params: &serde_json::Value, name: &str) -> Result<Id, host::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::Batch;
     use crate::fx::secp256k1::{address_of, MintOutput, TransferInput, TransferOutput};
     use crate::fx::{FxIn, Input, Owners, State};
     use crate::host::Vm as _;
@@ -710,7 +713,14 @@ mod tests {
         fn get(&self, _: &Id, _: &[Vec<u8>]) -> crate::Result<Vec<Vec<u8>>> {
             Ok(Vec::new())
         }
-        fn apply(&self, _: &[(Id, AtomicRequests)]) -> crate::Result<()> {
+        fn apply(&self, _: &[(Id, AtomicRequests)], batch: &Batch) -> crate::Result<()> {
+            // These chains never cross a boundary, so nothing arrives here
+            // holding a block. If something did, returning without writing
+            // `batch` would lose it.
+            assert!(
+                batch.is_empty(),
+                "a block reached a shared area that does not write"
+            );
             Ok(())
         }
     }

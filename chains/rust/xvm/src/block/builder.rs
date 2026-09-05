@@ -133,6 +133,7 @@ pub fn build(mgr: &Manager, backend: &Backend<'_>, now: u64, candidates: &[Tx]) 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::Batch;
     use crate::fx::secp256k1::{address_of, MintOutput, TransferInput, TransferOutput};
     use crate::fx::{self, Input, Owners, State};
     use crate::ids;
@@ -172,7 +173,15 @@ mod tests {
         fn get(&self, _: &Id, _: &[Vec<u8>]) -> Result<Vec<Vec<u8>>> {
             Ok(Vec::new())
         }
-        fn apply(&self, _: &[(Id, AtomicRequests)]) -> Result<()> {
+        fn apply(&self, _: &[(Id, AtomicRequests)], batch: &Batch) -> Result<()> {
+            // Nothing this builder makes crosses a chain boundary, so nothing
+            // arrives here holding a block. If something did, returning without
+            // writing `batch` would lose that block — the exact failure the
+            // parameter exists to prevent — so say so rather than succeed.
+            assert!(
+                batch.is_empty(),
+                "a block reached a shared area that does not write"
+            );
             Ok(())
         }
     }

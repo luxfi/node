@@ -130,6 +130,11 @@ pub enum Error {
     ConflictingBlockTxs,
     IncorrectHeight(u64, u64),
     BlockNotFound,
+    /// A block that moves value across a chain boundary, on a chain that was
+    /// never given the shared area to move it through. The block's own state
+    /// and that movement are one write, so with nowhere to make the movement
+    /// there is no half of it that may be written on its own.
+    NoSharedMemory,
     ConflictingParentTxs,
     ChainNotSynced,
     NoTransactions,
@@ -297,6 +302,10 @@ impl std::fmt::Display for Error {
                 write!(f, "block has incorrect height: expected {want}, got {got}")
             }
             BlockNotFound => write!(f, "block not found"),
+            NoSharedMemory => write!(
+                f,
+                "xvm block: this block moves value across a chain boundary and this chain has no shared memory to move it through"
+            ),
             ConflictingParentTxs => write!(
                 f,
                 "block contains a transaction that conflicts with a transaction in a parent block"
