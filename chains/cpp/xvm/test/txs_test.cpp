@@ -12,12 +12,13 @@
 // the bytes is not a round trip: the bytes ARE the transaction, since the id is
 // their hash.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "keys.hpp"
 
 #include "lux/xvm/txs.hpp"
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {

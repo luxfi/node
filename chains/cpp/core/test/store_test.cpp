@@ -9,17 +9,17 @@
 // reopened — a store tested only through the handle that wrote it proves
 // nothing about durability.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 
-#include "lux/xvm/store.hpp"
+#include "lux/core/store.hpp"
 
 #include <cstdio>
 #include <string>
 #include <unistd.h>
 #include <vector>
 
-using namespace lux::xvm;
-using namespace lux::xvm::test;
+using namespace lux::core;
+using namespace lux::core::test;
 
 namespace {
 
@@ -27,7 +27,7 @@ Bytes b(const std::string& s) { return Bytes(s.begin(), s.end()); }
 std::string s(const Bytes& v) { return std::string(v.begin(), v.end()); }
 
 std::string temp_path(const char* name) {
-    return "/tmp/xvm-store-" + std::to_string(::getpid()) + "-" + name;
+    return "/tmp/lux-core-store-" + std::to_string(::getpid()) + "-" + name;
 }
 
 void memory_reads_what_it_wrote() {

@@ -10,7 +10,7 @@
 // testing the chain. The chain-backed gate is exercised in vm_test, where it
 // belongs.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 
 #include "lux/xvm/mempool.hpp"
@@ -20,6 +20,7 @@
 #include <vector>
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {

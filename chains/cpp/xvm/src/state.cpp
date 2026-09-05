@@ -3,7 +3,7 @@
 
 #include "lux/xvm/state.hpp"
 
-#include "lux/xvm/zap.hpp"
+#include "lux/core/zap.hpp"
 
 namespace lux::xvm::state {
 namespace {

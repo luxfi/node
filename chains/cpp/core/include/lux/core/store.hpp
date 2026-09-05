@@ -1,11 +1,14 @@
 // Copyright (C) 2026, Lux Industries Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
-// store.hpp — where the chain's state actually rests.
+// store.hpp — where a chain's state actually rests. ONE store, for every chain
+// in this node.
 //
 // A chain that forgets what it accepted when the process exits is not a chain:
-// it would re-sign a height it already signed. So the state has a store under
-// it, and the store is a byte-keyed map with ONE durability point — `commit`.
+// it would re-sign a height it already signed, and a set it forgot — a spent
+// output, a used nullifier — is a set that lets the same thing be spent twice.
+// So the state has a store under it, and the store is a byte-keyed map with ONE
+// durability point: `commit`.
 //
 //   Store   the interface: get, put, erase, ordered scan, commit
 //   Memory  a store that never outlives the process (tests, and a chain that
@@ -14,7 +17,7 @@
 //           on open
 //
 // The log's records are ZAP messages, one per commit, concatenated. That is not
-// a convenience: ZAP is the only serialization in this chain, and a message
+// a convenience: ZAP is the only serialization in this node, and a message
 // already declares its own length, so the log needs no framing of its own to
 // know where one record ends and the next begins.
 //
@@ -25,31 +28,31 @@
 
 #pragma once
 
-#include "lux/xvm/id.hpp"
-#include "lux/xvm/wire.hpp"
+#include "lux/core/id.hpp"
 
 #include <cstddef>
+#include <expected>
 #include <functional>
 #include <map>
 #include <memory>
 #include <optional>
 #include <string>
 
-namespace lux::xvm::store {
+namespace lux::core::store {
 
 template <class T>
-using Result = wire::Result<T>;
+using Result = std::expected<T, std::string>;
 
 inline constexpr const char* kErrOpen = "cannot open store";
 inline constexpr const char* kErrWrite = "cannot write store";
 inline constexpr const char* kErrCorruptRecord = "store record does not parse";
 
-// Store — the durable map the chain rests on.
+// Store — the durable map a chain rests on.
 //
 // Writes are visible to reads immediately and durable only after `commit`,
-// which is the same discipline Go's versiondb gives the X-Chain: the block
-// being verified can read what it just wrote, and nothing reaches the disk
-// until the block is accepted.
+// which is the same discipline Go's versiondb gives a chain: the block being
+// verified can read what it just wrote, and nothing reaches the disk until the
+// block is accepted.
 struct Store {
     virtual ~Store() = default;
 
@@ -59,8 +62,8 @@ struct Store {
 
     // each walks every row whose key begins with `prefix`, in ascending key
     // order, until `f` returns false. Ascending order is a promise, not an
-    // accident: the UTXO enumeration an execution root folds over is defined by
-    // it.
+    // accident: the state root a validator signs is a fold over the set in that
+    // order, so a store that answered in another one would sign another root.
     virtual void each(ByteView prefix,
                       const std::function<bool(ByteView key, ByteView value)>& f) const = 0;
 
@@ -89,11 +92,10 @@ private:
 //
 // The whole map is held in memory and the file is the durable log of how it got
 // that way. That is a deliberate bound and it is stated rather than hidden: the
-// X-Chain's occupied UTXO set is what the execution root folds over on every
-// block, so it is read in full every height anyway, and a cache that could evict
-// it would only add a disk read to the hot path. A chain whose set outgrows
-// memory needs a different store, and it can have one — that is what the
-// interface is for.
+// occupied set is what the state root folds over on every block, so it is read
+// in full every height anyway, and a cache that could evict it would only add a
+// disk read to the hot path. A chain whose set outgrows memory needs a
+// different store, and it can have one — that is what the interface is for.
 class File final : public Store {
 public:
     static Result<std::unique_ptr<File>> open(const std::string& path);
@@ -139,4 +141,4 @@ private:
 Bytes encode_batch(const std::map<Bytes, std::optional<Bytes>>& batch);
 Result<std::map<Bytes, std::optional<Bytes>>> decode_batch(ByteView record);
 
-}  // namespace lux::xvm::store
+}  // namespace lux::core::store
