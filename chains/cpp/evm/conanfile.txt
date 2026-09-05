@@ -1,0 +1,12 @@
+# cevm's precompile bodies come from the lux-crypto package and its blst, and
+# its fixed-width integers from intx. Same packages, same versions as cevm's own
+# conanfile.py — this file names only the part of that graph a precompile call
+# reaches, so the evaluator does not build the GPU backends to ask what SHA-256
+# costs.
+[requires]
+lux-crypto/1.4.5
+intx/0.15.0
+
+[generators]
+CMakeDeps
+CMakeToolchain
