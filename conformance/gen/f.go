@@ -32,10 +32,12 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/luxfi/chains/fhevm"
 	"github.com/luxfi/chains/mpcvm/fhe"
@@ -421,8 +423,152 @@ func fVectors() []Vector {
 		vec("F_WIRE_ONE_BYTE", "F", "tx", []byte{0x5a}),
 	)
 
+	v = append(v, fDecoderVectors(handle)...)
+
 	fAssert(v)
 	return v
+}
+
+// The decoder's acceptance set, which on this chain is a consensus question.
+//
+// A payload is an opaque byte string the payer chooses, and whether it DECODES
+// decides whether the transaction is valid — so every rule Go's encoding/json
+// happens to have is a rule the F-chain has. These are the rules that are easy
+// to get subtly wrong in another language, one vector each, and each of them is
+// a correct transaction with one thing done to its payload. Every answer below
+// is the Go chain's, whatever it is: the point is that all three implementations
+// give the SAME one.
+func fDecoderVectors(handle [32]byte) []Vector {
+	// raw builds a signed transaction around payload bytes written by hand,
+	// which is the only way to pose these questions — json.Marshal cannot emit
+	// a duplicate member, a folded name, or a stray brace.
+	raw := func(t uint8, scheme string, subject [32]byte, payload string) *fhevm.Transaction {
+		return fSign(&fhevm.Transaction{
+			Type: t, Scheme: scheme, Subject: subject,
+			GasLimit: fGasLimit, Nonce: 1, Payload: []byte(payload),
+		})
+	}
+	// advance builds a COMPLETE, correct epoch proposal, marshals it, and hands
+	// the bytes to `edit` — which is how a vector varies one spelling of one
+	// member and nothing else. The subject is the digest of the proposal, so an
+	// edit that survives decoding reaches a transaction the chain admits.
+	advance := func(edit func(string) string) *fhevm.Transaction {
+		c := fCommittee()
+		key := fNetworkKey()
+		body := string(fPayload(fhevm.AdvancePayload{
+			Epoch: 1, Committee: c, Threshold: 1, PublicKey: key,
+		}))
+		return fSign(&fhevm.Transaction{
+			Type:     fhevm.TxAdvanceEpoch,
+			Subject:  fCommitteeDigest(1, 1, key, c),
+			GasLimit: fGasLimit,
+			Nonce:    1,
+			Payload:  []byte(edit(body)),
+		})
+	}
+	digest := [32]byte(zBytes(0x21, 32))
+	register := func(payload string) *fhevm.Transaction {
+		return raw(fhevm.TxRegisterCiphertext, fScheme, fHandle(digest, fScheme), payload)
+	}
+	// The register payload, spelled out, so each vector below can vary one
+	// piece of it and nothing else.
+	digestArray := "["
+	for i, b := range digest {
+		if i > 0 {
+			digestArray += ","
+		}
+		digestArray += fmt.Sprintf("%d", b)
+	}
+	digestArray += "]"
+	good := `{"digest":` + digestArray + `,"type":1,"level":3,"size":4096}`
+
+	// A literal null where a struct belongs. Go decodes it as the ZERO struct
+	// and does not error, so what refuses the transaction is whatever rule the
+	// zero payload then breaks — which is a different answer per operation, and
+	// that is the point: an implementation that refused null outright would
+	// name the wrong rule on every one of them.
+	nullRevoke := raw(fhevm.TxRevokePermit, "", [32]byte(zBytes(0x22, 32)), `null`)
+	nullAdvance := raw(fhevm.TxAdvanceEpoch, "", [32]byte{}, `null`)
+	nullRegister := register(`null`)
+
+	// Trailing content, which is not one rule but two. Go reads a payload
+	// through a Decoder and asks dec.More(), and More answers "is there another
+	// ELEMENT" — so a stray ']' or '}' is NOT trailing content, while a comma or
+	// a second document is.
+	braceAfter := register(good + `}`)
+	bracketAfter := register(good + `]`)
+	commaAfter := register(good + `,`)
+	documentAfter := register(good + `{}`)
+
+	// Member names. Go matches exactly, then by unicode.SimpleFold — which is
+	// not ASCII case folding: U+017F folds onto s and U+212A onto k, so
+	// "ſize" names Size and "publicKey" names PublicKey.
+	upperKeys := register(`{"DIGEST":` + digestArray + `,"TYPE":1,"Level":3,"SIZE":4096}`)
+	longS := register(`{"digest":` + digestArray + `,"type":1,"level":3,"` + "\u017F" + `ize":4096}`)
+
+	// The Kelvin sign folds onto k, so it names PublicKey — and the vector is
+	// built on a COMPLETE epoch proposal so that the answer turns on whether
+	// the key was read: if it was, the proposal is whole and the transaction is
+	// admitted; if it was not, the network key is missing and the committee is
+	// refused. A proposal with a null committee would have been refused either
+	// way and told nobody anything.
+	kelvin := advance(func(body string) string {
+		return strings.Replace(body, `"publicKey":`, `"public`+"\u212A"+`ey":`, 1)
+	})
+
+	// The same shape for a base64 word broken across a line, which
+	// encoding/base64 ignores: the bytes are identical, so a reader that
+	// ignores the newline reaches a whole proposal and one that does not
+	// reaches a proposal with no key.
+	wrappedKey := advance(func(body string) string {
+		enc := base64.StdEncoding.EncodeToString(fNetworkKey())
+		return strings.Replace(body, `"`+enc+`"`,
+			`"`+enc[:8]+`\r\n`+enc[8:]+`"`, 1)
+	})
+
+	// Two members naming ONE field. Go resolves each key on its own and then
+	// writes it, so the LATER key wins whichever way each of them matched — and
+	// an implementation that preferred the exact match would read a different
+	// size out of the same bytes.
+	dupLastWins := register(`{"digest":` + digestArray + `,"type":1,"level":3,"size":4096,"SIZE":8192}`)
+
+	// A Go array discards elements past its length WITHOUT asking what type
+	// they are, and leaves the ones it never reached at zero.
+	longArray := register(`{"digest":` + digestArray[:len(digestArray)-1] + `,"x",999],"type":1,"level":3,"size":4096}`)
+	shortArray := register(`{"digest":[1,2,3],"type":1,"level":3,"size":4096}`)
+
+	// An id word that is not cb58. An address takes "" and a quoted "null" as
+	// the zero address before it reaches cb58 at all; a node id does the same;
+	// the bare "NodeID-" prefix does not.
+	emptyGrantee := raw(fhevm.TxGrantPermit, "", handle, `{"grantee":"","operations":1,"expiry":0}`)
+	wordedNullGrantee := raw(fhevm.TxGrantPermit, "", handle, `{"grantee":"null","operations":1,"expiry":0}`)
+
+	// NOT here: the JSON nesting cap. Go allows 10,000 open containers and
+	// refuses the 10,001st, and both sides of that boundary are refused for the
+	// SAME compared verdict — the runner weighs parse/kind/id/syntactic/exec
+	// and not the sentence — so a vector could not tell a wrong cap from a
+	// right one. It would cost 1.3 MB of brackets to say nothing. The cap is
+	// pinned where it can actually be seen, in the C++ suite's json test,
+	// against the two answers Go was asked for directly.
+
+	return []Vector{
+		vec("F_JSON_NULL_REVOKE", "F", "tx", nullRevoke.Bytes()),
+		vec("F_JSON_NULL_ADVANCE", "F", "tx", nullAdvance.Bytes()),
+		vec("F_JSON_NULL_REGISTER", "F", "tx", nullRegister.Bytes()),
+		vec("F_JSON_TRAILING_BRACE", "F", "tx", braceAfter.Bytes()),
+		vec("F_JSON_TRAILING_BRACKET", "F", "tx", bracketAfter.Bytes()),
+		vec("F_JSON_TRAILING_COMMA", "F", "tx", commaAfter.Bytes()),
+		vec("F_JSON_TRAILING_DOCUMENT", "F", "tx", documentAfter.Bytes()),
+		vec("F_JSON_UPPERCASE_KEYS", "F", "tx", upperKeys.Bytes()),
+		vec("F_JSON_LONG_S_KEY", "F", "tx", longS.Bytes()),
+		vec("F_JSON_KELVIN_KEY", "F", "tx", kelvin.Bytes()),
+		vec("F_JSON_DUPLICATE_KEY", "F", "tx", dupLastWins.Bytes()),
+		vec("F_JSON_ARRAY_TAIL_DISCARDED", "F", "tx", longArray.Bytes()),
+		vec("F_JSON_ARRAY_SHORT", "F", "tx", shortArray.Bytes()),
+		vec("F_JSON_BASE64_NEWLINE", "F", "tx", wrappedKey.Bytes()),
+		vec("F_JSON_EMPTY_GRANTEE", "F", "tx", emptyGrantee.Bytes()),
+		vec("F_JSON_WORDED_NULL_GRANTEE", "F", "tx", wordedNullGrantee.Bytes()),
+	}
 }
 
 // fAssert holds the emit to the claims this half of the corpus rests on: the
