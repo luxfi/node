@@ -32,12 +32,36 @@ std::vector<ShortId> to_short_ids(const std::vector<ShortId>& v) { return v; }
 // signature and returns its Lux address — ripemd160(sha256(compressed pubkey)).
 // The COMPRESSED form is what the address commits to, so recovery's
 // uncompressed X||Y is compressed here rather than hashed as-is.
+//
+// THE LAST BYTE IS A RECOVERY ID, NOT A PARITY BIT. It names which of the
+// candidate points the signature came from: 0 and 1 choose the y with even or
+// odd parity over x = r; 2 and 3 are the same two points over x = r + n, the
+// case where the signer's R had an x-coordinate that wrapped the group order.
+// The reference admits the byte as a whole and then tries the recovery it
+// names — luxfi/crypto rejects >= 4 outright and hands 2 and 3 to the wrapped
+// path, k256 the same — and the wrapped path fails for every signature anyone
+// can produce, because it needs r < p - n and p - n is about 2^128. So on the
+// same signature all three languages must answer: 0 and 1 recover, 2 and 3 do
+// not, 4 and above are not recovery ids at all.
+//
+// Masking the byte — v & 1 — would read 2 as 0 and recover the SAME address the
+// untouched signature recovers. Editing one byte of any valid credential would
+// then produce a transaction this node accepts and Go and Rust reject, which is
+// a chain split, and one that costs an attacker a single XOR. The rule is
+// enforced here because the C recovery routine below normalizes its v argument
+// rather than refusing it, so the caller is the only place that can hold it.
 Result<ShortId> recover_address(const Id& hash, const Signature& sig) {
     std::uint8_t uncompressed[64];
     const std::uint8_t v = sig[64];
     if (v >= 4) return std::unexpected("invalid signature recovery id");
-    secp256k1_status st = secp256k1_ecrecover(hash.data(), sig.data(), sig.data() + 32,
-                                              std::uint8_t(v & 1), uncompressed);
+    // 2 and 3 name the wrapped-x recovery. This curve arithmetic cannot express
+    // it — secp256k1_ecrecover refuses an r that is not below n, which is
+    // exactly what the wrapped case has — and the reference fails it for every
+    // reachable signature, so failing it here is the same answer, reached
+    // honestly rather than by dropping the bit that says so.
+    if (v > 1) return std::unexpected("recovery failed");
+    secp256k1_status st =
+        secp256k1_ecrecover(hash.data(), sig.data(), sig.data() + 32, v, uncompressed);
     if (st != SECP256K1_OK) return std::unexpected("recovery failed");
     std::array<std::uint8_t, 33> compressed{};
     compressed[0] = std::uint8_t(0x02 | (uncompressed[63] & 1));

@@ -145,9 +145,23 @@ foreach(_t ${XVM_TESTS})
   add_test(NAME ${_t} COMMAND ${_t}_test)
 endforeach()
 
+# The C++ X-chain's evaluator for the cross-language chain differential. It is
+# not a test: it prints this chain's answer for every X vector in
+# conformance/corpus/vectors.tsv and says nothing about whether that answer is
+# right. Deciding that is the runner's job, and it needs all three answers to do
+# it. Built unconditionally — a differential that quietly lost one of its three
+# voices would report agreement among whoever was left.
+add_executable(xvm_conformance test/conformance.cpp)
+target_link_libraries(xvm_conformance PRIVATE xvm)
+target_compile_options(xvm_conformance PRIVATE -Wall -Wextra)
+
+# Everything that links the sanitized library is sanitized, the evaluator
+# included — it is declared above this block for exactly that reason. Left out,
+# it failed to LINK under -DXVM_SANITIZE while ctest still reported fourteen
+# passes, so the differential was the one voice a sanitized run silently lost.
 if(XVM_SANITIZE)
   set(_san -fsanitize=${XVM_SANITIZE} -fno-omit-frame-pointer)
-  set(_targets xvm)
+  set(_targets xvm xvm_conformance)
   foreach(_t ${XVM_TESTS})
     list(APPEND _targets ${_t}_test)
   endforeach()
