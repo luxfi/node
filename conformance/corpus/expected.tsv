@@ -95,6 +95,7 @@ R	Z_TX_NO_EXPIRY	ok	Transfer	1cd330a2604414b9a7303ce68469b39723e918f368656bf3ca0
 R	Z_TX_UNKNOWN_TYPE	ok	unknown	319e35211830075cf8e0b2d551c5d64e0cb04ba7b1ec7dc0a7dd91546f23709d	SYNTACTIC	SYNTACTIC	invalid transaction type
 R	Z_TX_EXPIRED	ok	Transfer	f7e30b941e40f3e64590915e066d8c4a3752ec814380053353778e0eef358fa5	SYNTACTIC	SYNTACTIC	transaction has expired
 R	Z_TX_CLASSICAL_PROOF	ok	Transfer	acd6017eab1337f83a1df85e914896ba419d6295d4919053406c566fee23bb59	OK	UNSUPPORTED	proof verification failed: zkvm: classical proof system forbidden on strict-PQ chain — only STARK/FRI accepted
+R	Z_TX_TAMPERED_PROOF	ok	Transfer	f761bad3b5433f0af94f905427afbcc822a03c90826214aa9c0d9f7c7700c95b	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
 R	Z_BLOCK_TRAILING_BYTES	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
 R	Z_BLOCK_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
 R	Z_BLOCK_EMPTY_WIRE	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
@@ -119,6 +120,7 @@ R	F_TX_REQUEST_NO_PERMIT	ok	RequestDecrypt	049c5a0dd38d8baca9e59d02ee8ef23837ca7
 R	F_TX_FULFILL_NO_RESULT	ok	FulfillDecrypt	9e6b41ab16101a7826593310faae2f71d54dec7236301712cce6e5ada850bce8	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: fulfill carries no result handle
 R	F_TX_EMPTY_COMMITTEE	ok	AdvanceEpoch	501df8e57e7171fec2818a68f4a231bba6e37c62122a0788a900b51159a53824	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid committee: empty committee
 R	F_TX_UNKNOWN_PAYLOAD_FIELD	ok	RegisterCiphertext	8aef9f3c6e90f2a14adc6ef4e30aff56b384582292674a4e09f2557d115a7bad	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: register: json: cannot unmarshal string into Go struct field RegisterPayload.digest of type [32]uint8
+R	F_TX_TAMPERED_CIPHERTEXT	ok	RegisterCiphertext	494c85b8e0a29311d539fd08957846462d49f4fbd74e95b32bcb7ac678a84cbd	SYNTACTIC	SYNTACTIC	fhevm: fhevm: subject does not match its payload: handle does not match digest+scheme
 R	F_TX_UNSIGNED	ok	RegisterCiphertext	ae4a543f05b662d8316557bcd3dcd8fe604fabb84939e7767c472d8941f7a650	OK	AUTH	fhevm: transaction missing payer auth/signature
 R	F_TX_TAMPERED_SIGNATURE	ok	RegisterCiphertext	62b5967c7b8fba382f5b3c16c300fccbcc847b5491660dbe3a42ce47f791a6b5	OK	AUTH	fhevm: invalid payer signature
 R	F_TX_PAYER_MISMATCH	ok	RegisterCiphertext	09ff7e924d32cf81f09478df34da0315398b75579eec760bd6f6bab5724da578	OK	AUTH	fhevm: payer does not match auth public key
