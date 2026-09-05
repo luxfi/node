@@ -167,6 +167,206 @@ Every evaluator is built before the run and a build that fails stops the
 target. A differential that quietly lost one of its voices would report
 agreement among whoever was left.
 
+## Timing it
+
+`make chains` asks whether the three implementations agree. `make bench` asks
+how long each of them takes to answer, over exactly the corpus they agreed on.
+
+```
+make bench            build the evaluators, time each one, print the table
+```
+
+Every evaluator takes an optional repeat count after the corpus path:
+
+```
+conformance/gen/gen eval conformance/corpus/vectors.tsv 200
+chains/rust/platformvm/target/release/conformance conformance/corpus/vectors.tsv 200
+chains/cpp/xvm/build/xvm_conformance conformance/corpus/vectors.tsv 200
+```
+
+With a count it walks the whole corpus that many times and prints one extra
+line to **stderr**, where the differential's runner does not read:
+
+```
+B  <impl>  <vectors>  <repeats>  <seconds>
+B  rust/platformvm  159  200  2.884113
+```
+
+Without a count nothing changes: one pass, no timing line, the same verdicts on
+stdout. And the verdicts are byte-identical at any count — every round computes
+them, the last round's are printed — so `make chains` reads the stream it always
+read.
+
+### What is measured
+
+The differential's own work, and only that: for each vector, decode the hex,
+parse the wire, verify it, and — as far as the implementation goes — execute it
+against the empty chain. Each evaluator runs its own monotonic clock around its
+own loop, starting after the corpus has been read and split into fields, and
+stopping before the first verdict is printed.
+
+### What is not measured
+
+Process start: the dynamic loader, the Go runtime coming up, the 27 MB of
+linked reference the Go evaluator carries. Reading and splitting `vectors.tsv`.
+Formatting and writing the result lines. Process exit. The build.
+
+Timing the child process from outside would have counted every one of those as
+chain work, and the Go evaluator's start alone is longer than the whole C++ run.
+
+### Where the comparison is fair
+
+One corpus, byte for byte, the same vectors in the same order. `make chains` is
+the proof that it is the same work: all three produce the same five compared
+fields for all 208 vectors, so nobody is being timed while quietly answering an
+easier question. Each evaluator is run five times and the runs are interleaved —
+every evaluator once, then every evaluator again — so a machine that slows down
+halfway through slows all of them down rather than one.
+
+### Where it is not
+
+**The C++ X-chain does less work than the other two.** `chains/cpp/xvm` answers
+`SKIPPED` for `exec`: it parses and checks syntax and stops there, where the Go
+and Rust X-chains go on to verify semantically and then execute against the
+empty chain. It is the fastest row in the table, and that is the reason. Its
+number is a parse-and-syntax number, and it becomes comparable the day that
+evaluator runs the same two passes — which is the same gap the `SKIPPED` field
+already reports to the differential.
+
+**`go` is one row over two chains.** The Go evaluator answers all 208 vectors;
+Rust and C++ each answer one chain per binary, 159 P and 49 X. A P-chain vector
+costs at least twenty times an X-chain one in all three languages, so `go`'s
+µs/vector is a blend of the two and cannot be read against `rust/platformvm`'s.
+The rows to read against `go` are `rust (all)` and `cpp (all)`: the same 208
+vectors, that implementation's binaries summed within each run.
+
+To compare one chain at a time, hand the evaluators a corpus holding only that
+chain's vectors. Nothing in any of them has to change — the corpus path is an
+argument, and the Rust and C++ evaluators already ignore the other chain's
+lines, so only the Go one sees a difference:
+
+```
+awk -F'\t' '/^#/ || ($1=="V" && $3=="P")' conformance/corpus/vectors.tsv > p.tsv
+go run ./conformance/bench -vectors p.tsv -repeats 200 -runs 7 \
+  -eval "go=conformance/gen/gen eval" \
+  -eval "rust=chains/rust/platformvm/target/release/conformance" \
+  -eval "cpp=chains/cpp/platformvm/build/pvm_conformance"
+```
+
+`make bench` deliberately does not do this. Its job is to time the workload the
+differential actually runs, and that workload is the whole corpus.
+
+**Go builds its chain once, inside the clock.** `execp.go` stands up a real
+`platformvm` state — an in-memory database, a genesis, a metrics registry, a
+validator manager — behind a `sync.Once`, on the first vector that executes, and
+that lands inside the first round. Fitting a line through the fastest of twelve
+runs at one repeat and at two hundred puts the build at 2.4 ms against a pass of
+16.9 ms: 0.07% of a 200-repeat run, and most of a single-repeat one. Rust and
+C++ build a trivial in-memory state per vector instead, which is inside every
+round, and the same fit gives them a fixed cost of 2 ms and -1 ms — which is to
+say none, measured to the noise floor. The setups are not the same shape, and
+the repeat count is what stops that from being the thing measured.
+
+**The optimisation settings are alike, not identical.** Rust is cargo's default
+release profile: `opt-level = 3`, no LTO, sixteen codegen units, no debug
+assertions, no overflow checks. C++ is CMake's `Release`: `-O3 -DNDEBUG`, no LTO
+and no interprocedural optimisation. Go has no such dial to set. Neither the
+Rust nor the C++ binary was built with LTO or profile-guided optimisation, and
+turning either on would move two of the three numbers and not the third.
+
+**The allocators are not the same.** Every verdict is seven heap-allocated
+strings and this workload allocates heavily. Rust and C++ both reach the system
+allocator; Go uses its own and collects behind it. That difference is inside the
+measurement and cannot be taken out of it without changing what is computed.
+
+**They are not three ports of equal maturity.** Go is the reference the fleet
+runs, executing against the node's own `state.State` behind a diff, with metrics
+and a validator manager attached. Rust and C++ execute against state types of
+their own. That is not a like-for-like runtime even where the verdict is
+identical.
+
+**Nothing memoises a verdict, and that was checked rather than assumed.** Every
+round decodes the hex again, parses again, verifies again and executes again;
+what survives a round is Go's chain state and nothing else. Two things say so.
+The printed rows are identical whether the count is 1 or 200, and every round
+writes into a vector that is printed afterwards, so no round can be dropped by
+an optimiser. And the cost of ONE pass does not fall as the count rises: taking
+the fastest of eight runs at 25, 50 and 100 repeats, `cpp/xvm` spends 0.1118,
+0.1138 and 0.1128 ms per pass — flat to 1.8% across a fourfold change — and no
+evaluator's per-pass cost falls by more than 3%, which is inside the noise on a
+busy machine. A verdict cached after the first round would not shave three
+percent off the later passes; it would make them nearly free.
+
+**One machine, one architecture.** These are Apple M1 Max numbers and say
+nothing about x86-64. An M1 Max also has performance cores and efficiency cores,
+so a run scheduled onto an efficiency core is several times slower than one that
+is not — one of the things the spread is there to show.
+
+### Reading the table
+
+```
+evaluator        vectors  repeats  runs  fastest s  median s  slowest s  spread  µs/vector
+```
+
+`µs/vector` is per vector per repeat, taken from the **fastest** run. Everything
+else on the machine can only ever add time to a run, never subtract it, so the
+fastest one is the least contaminated. The spread beside it — slowest over
+fastest — says how contaminated the others were. A large spread means the
+machine was busy, not that an implementation is erratic, and the honest response
+is to say so and run it again somewhere quiet rather than to quote a mean over
+the noise.
+
+That is not a hypothetical. The first run of this was taken on an Apple M1 Max
+carrying a load average around 35, and the spreads came back between 341% and
+1001% — a slowest run seventeen times the fastest. Nothing in that table was a
+measurement of anything. Repeated at a load average near 13 the same
+measurement came back with spreads between 6% and 19%, and that is what is
+recorded below.
+
+### What it said
+
+An Apple M1 Max, ten cores, macOS, load average around 13. The absolute numbers
+belong to that machine; the ratios are what carries.
+
+```
+evaluator        vectors  repeats  runs  fastest s  median s  slowest s  spread  µs/vector
+go               208      200      5     3.012      3.198     3.428      14%     72.41
+rust/platformvm  159      200      5     2.978      3.186     3.296      11%     93.63
+rust/xvm          49      200      5     0.042      0.044     0.050      19%      4.27
+rust (all)       208      200      5     3.022      3.230     3.345      11%     72.64
+cpp/platformvm   159      200      5     3.913      4.112     4.238       8%     123.05
+cpp/xvm           49      200      5     0.022      0.022     0.023       6%      2.23
+cpp (all)        208      200      5     3.936      4.134     4.260       8%     94.61
+```
+
+Over the whole corpus Go and Rust are the same speed: 3.012 s against 3.022 s,
+a third of a percent apart with spreads of 14% and 11%, which is to say the
+difference is not resolvable here and should not be quoted as one. C++ takes
+about 30% longer — and it does so while its X-chain evaluator is the one
+skipping a pass.
+
+Per chain, each evaluator handed a corpus of one chain's vectors, µs per vector
+from the fastest run:
+
+| chain | go | rust | cpp |
+| --- | --- | --- | --- |
+| P, 159 vectors | 92 | 92–94 | 119–123 |
+| X, 49 vectors | 3.3 | 4.2 | 2.2, and skipping a pass |
+
+The C++ P-chain is the slowest of the three by about 30%, and Go and Rust are
+again indistinguishable from each other. The P row is four measurements per
+implementation across two sittings and holds to within a few percent. The X row
+is one quiet sitting: those runs are the shortest and so the most easily
+disturbed, and the two numbers there that a second quiet run corroborates —
+rust 4.27 and cpp 2.23 from the whole-corpus table above — agree with it to 2%.
+
+The C++ X-chain is the fastest of the three at the X-chain and it is the one
+doing less. Those two facts cannot be separated with this data: how much of the
+gap is the skipped execution pass and how much is C++ being faster at what it
+does share is not a question the harness can answer until that evaluator runs
+the same two passes. Rust's X-chain is the slowest of the three that are
+comparable, by about a quarter.
+
 ## The one place `luxfi/node` is allowed
 
 `conformance/gen` depends on it. That is the whole point of a reference. It is

@@ -8,7 +8,16 @@
 // The runner compares the three sets of lines; this program never sees another
 // implementation's answer and has nothing to agree with.
 //
-// Usage: pvm_conformance <vectors.tsv>
+// Usage: pvm_conformance <vectors.tsv> [repeats]
+//
+// A repeat count asks for the same work to be done that many times and for the
+// elapsed time of THAT WORK to be reported: the corpus is read before the clock
+// starts and the verdicts are printed after it stops, so what the clock covers
+// is parsing, verification and execution and nothing else. The verdicts are
+// kept rather than dropped, so a round cannot be optimised away, and they are
+// printed once however many rounds ran — the runner's input does not change
+// because someone asked for a time. The timing line goes to stderr, where the
+// runner does not read: B <impl> <vectors> <repeats> <seconds>
 
 #include "lux/platformvm/block.hpp"
 #include "lux/platformvm/executor.hpp"
@@ -16,6 +25,7 @@
 #include "lux/platformvm/txs.hpp"
 #include "lux/platformvm/vm.hpp"
 
+#include <chrono>
 #include <cstdio>
 #include <cctype>
 #include <cstdlib>
@@ -119,6 +129,13 @@ bool unhex(const std::string& s, std::vector<std::uint8_t>& out) {
     }
     return true;
 }
+
+// One corpus line this evaluator answers, already split into fields. Splitting
+// happens once, when the corpus is read; a repeated run re-evaluates the same
+// vectors rather than re-reading the file.
+struct Vector {
+    std::string id, op, wire;
+};
 
 struct Row {
     std::string id, parse = kNone, kind = kNone, hash = kNone, syntactic = kNone, exec = kNone,
@@ -375,10 +392,33 @@ static Row eval_seam(const std::string& id) {
     return r;
 }
 
+static Row evaluate(const Vector& v) {
+    if (v.op == "tx") return eval_tx(v.id, v.wire);
+    if (v.op == "block") return eval_block(v.id, v.wire);
+    if (v.op == "seam") return eval_seam(v.id);
+    Row r;
+    r.id = v.id;
+    r.parse = kInternal;
+    r.note = "unknown op " + v.op;
+    return r;
+}
+
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::fprintf(stderr, "usage: pvm_conformance <vectors.tsv>\n");
+    if (argc < 2 || argc > 3) {
+        std::fprintf(stderr, "usage: pvm_conformance <vectors.tsv> [repeats]\n");
         return 2;
+    }
+    // Absent, the repeat count is 0: evaluate the corpus once and say nothing
+    // about how long it took, which is what the differential asks for and what
+    // it has always got.
+    long repeats = 0;
+    if (argc == 3) {
+        char* end = nullptr;
+        repeats = std::strtol(argv[2], &end, 10);
+        if (end == argv[2] || *end != '\0' || repeats < 1) {
+            std::fprintf(stderr, "usage: pvm_conformance <vectors.tsv> [repeats]\n");
+            return 2;
+        }
     }
     std::ifstream in(argv[1]);
     if (!in) {
@@ -386,6 +426,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // Reading the corpus, before the clock starts.
+    std::vector<Vector> vectors;
     std::string line;
     while (std::getline(in, line)) {
         if (line.empty() || line[0] == '#') continue;
@@ -412,20 +454,23 @@ int main(int argc, char** argv) {
         // see that this implementation did not answer, rather than inventing an
         // answer it has no standing to give.
         if (f[2] != "P") continue;
+        vectors.push_back(Vector{f[1], f[3], f[4]});
+    }
 
-        if (f[3] == "tx") {
-            print(eval_tx(f[1], f[4]));
-        } else if (f[3] == "block") {
-            print(eval_block(f[1], f[4]));
-        } else if (f[3] == "seam") {
-            print(eval_seam(f[1]));
-        } else {
-            Row r;
-            r.id = f[1];
-            r.parse = kInternal;
-            r.note = "unknown op " + f[3];
-            print(r);
-        }
+    std::vector<Row> rows;
+    rows.reserve(vectors.size());
+    const auto begun = std::chrono::steady_clock::now();
+    for (long round = 0; round < (repeats > 0 ? repeats : 1); ++round) {
+        rows.clear();
+        for (const Vector& v : vectors) rows.push_back(evaluate(v));
+    }
+    const double elapsed =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() - begun).count();
+
+    for (const Row& r : rows) print(r);
+    if (repeats > 0) {
+        std::fprintf(stderr, "B\tcpp/platformvm\t%zu\t%ld\t%.6f\n", vectors.size(), repeats,
+                     elapsed);
     }
     return 0;
 }
