@@ -35,6 +35,7 @@ fn unhex(s: &str) -> Vec<u8> {
 fn test_config() -> Config {
     Config {
         network_id: 1,
+        blockchain_id: [3; 32],
         native_asset: [9; 32],
         validator_fee: Default::default(),
         staking: StakingPolicy {
@@ -114,7 +115,7 @@ fn evaluate_differential_corpus() {
         } else if v.expected_action == "execute" {
             match Tx::parse(&bytes) {
                 Ok(tx) => {
-                    match tx.syntactic_verify(config.native_asset) {
+                    match tx.syntactic_verify(config.chain()) {
                         Ok(_) => {
                             status = "ACCEPTED";
                             detail = "syntactically verified and valid tx".to_string();
