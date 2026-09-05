@@ -104,6 +104,20 @@ chain to into one batch. A restart therefore never sees a block applied at a
 height the chain has not reached, and a block that was verified and then lost
 leaves nothing behind.
 
+**A block and the value it moved across a chain boundary are ONE write.** When
+an accepted block imports or exports, `Manager::accept` does not write its state
+and then ask the shared area to do its part; it STAGES the state
+(`Chain::commit_batch`) and hands that batch to `SharedMemory::apply`, which
+writes the shared area's changes and the block's own in a single write. This is
+Go's arrangement — `Block.Accept` stages `CommitBatch` and passes it to
+`SharedMemory.Apply`, which combines it with `WriteAll` — and it is the whole
+point: as two writes, an interruption between them credits an import whose
+source was never spent, or spends an export nobody was ever handed. A chain with
+no shared area refuses such a block (`Error::NoSharedMemory`) rather than
+writing the half it can. `block/manager.rs` counts the writes in a test, because
+atomicity is a property of how many chances there are to stop, not of what ends
+up stored.
+
 **The asset family of the state root is empty, deliberately.** The chain's state
 is unspent outputs and nothing else — an asset exists only as the id stamped on
 the outputs its creating transaction produced. Projecting an asset arena would

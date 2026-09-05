@@ -68,6 +68,24 @@ pub trait Chain: ReadOnlyChain + Send {
     fn commit(&mut self) -> Result<()> {
         Ok(())
     }
+
+    /// Hand back what has changed as one batch, WITHOUT writing it.
+    ///
+    /// This is [`Chain::commit`] cut in half, for the one caller that cannot
+    /// let the write happen on its own: an accepted block whose value also has
+    /// to move through the area this chain shares with another. That caller
+    /// takes this batch, gives it to the shared area, and the shared area
+    /// writes its own changes and this batch in a single write — so a block
+    /// and the value it moved land together or not at all.
+    ///
+    /// Go's `CommitBatch`, and it is used for exactly the same thing:
+    /// `Block.Accept` stages the batch and hands it to `SharedMemory.Apply`.
+    ///
+    /// The changes are taken, not copied. Whoever holds the batch owns the
+    /// only remaining record of them, which is what makes the write single.
+    fn commit_batch(&mut self) -> Result<Batch> {
+        Ok(Batch::new())
+    }
 }
 
 /// Where a block's state layer can be found, by block id.
@@ -366,6 +384,15 @@ impl Chain for Store {
         db.write(&self.pending)?;
         self.pending = Batch::new();
         Ok(())
+    }
+
+    /// The pending batch, taken rather than written.
+    ///
+    /// A store with no device has nothing pending — it never recorded anything
+    /// — so the batch is empty and writing it is a no-op. That is the same
+    /// answer [`Chain::commit`] gives such a store, by the same reasoning.
+    fn commit_batch(&mut self) -> Result<Batch> {
+        Ok(std::mem::take(&mut self.pending))
     }
 }
 

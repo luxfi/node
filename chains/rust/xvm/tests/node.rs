@@ -19,6 +19,7 @@ use std::sync::Arc;
 
 use lux_node::vm::{Error as HostError, Vm as _};
 
+use lux_xvm::db::Batch;
 use lux_xvm::fx::secp256k1::{address_of, MintOutput, TransferInput, TransferOutput};
 use lux_xvm::fx::{self, FxIn, Input, Owners, State};
 use lux_xvm::ids::{self, Id, ShortId};
@@ -56,7 +57,14 @@ impl SharedMemory for NoMemory {
     fn get(&self, _: &Id, _: &[Vec<u8>]) -> lux_xvm::Result<Vec<Vec<u8>>> {
         Ok(Vec::new())
     }
-    fn apply(&self, _: &[(Id, AtomicRequests)]) -> lux_xvm::Result<()> {
+    fn apply(&self, _: &[(Id, AtomicRequests)], batch: &Batch) -> lux_xvm::Result<()> {
+        // Nothing here crosses a chain boundary, so nothing arrives holding a
+        // block. If something did, returning without writing `batch` would lose
+        // it, which is the failure the parameter exists to prevent.
+        assert!(
+            batch.is_empty(),
+            "a block reached a shared area that does not write"
+        );
         Ok(())
     }
 }
