@@ -41,3 +41,5 @@ serde_json = "1"
 # The wire vectors build a proof of possession, which needs the same curve the
 # chain verifies under.
 blst = "0.3"
+serde = { version = "1", features = ["derive"] }
+

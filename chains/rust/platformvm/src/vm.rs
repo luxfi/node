@@ -759,7 +759,14 @@ mod tests {
 
     fn config() -> Config {
         Config {
+            network_id: 1,
             native_asset: ASSET,
+            validator_fee: crate::l1::FeeConfig {
+                capacity: 20_000,
+                target: 10_000,
+                min_price: 512,
+                excess_conversion_constant: 1_246_488,
+            },
             staking: StakingPolicy {
                 min_validator_stake: 2 * MEGA,
                 max_validator_stake: 3_000 * MEGA,
