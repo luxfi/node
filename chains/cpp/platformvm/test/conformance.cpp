@@ -60,7 +60,7 @@ constexpr const char* kInternal = "INTERNAL";
 // asset all-9s. The Go and Rust evaluators are given the same three numbers.
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = b;
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = b;
     return v;
 }
 
@@ -294,7 +294,7 @@ static Row eval_tx(const std::string& id, const std::string& wire) {
     r.parse = "ok";
     r.kind = kind_name(tx.unsigned_tx->kind());
     Id txid = tx.id();
-    r.hash = txid.hex();
+    r.hash = hex(txid);
 
     Status syn = tx.syntactic_verify(runtime());
     if (!syn) {
@@ -340,11 +340,11 @@ static Row eval_block(const std::string& id, const std::string& wire) {
     r.parse = "ok";
     r.kind = block_kind_name(blk->kind());
     Id bid = blk->id();
-    r.hash = bid.hex();
+    r.hash = hex(bid);
     r.syntactic = kOk;
     r.exec = kLedger;
     Id parent = blk->parent();
-    r.note = "height=" + std::to_string(blk->height()) + " parent=" + parent.hex().substr(0, 8);
+    r.note = "height=" + std::to_string(blk->height()) + " parent=" + hex(parent).substr(0, 8);
     return r;
 }
 

@@ -16,7 +16,7 @@ namespace {
 
 Id id_of(std::uint8_t b) {
     Id v{};
-    v.b[0] = b;
+    v[0] = b;
     return v;
 }
 

@@ -22,7 +22,6 @@
 #include "lux/platformvm/components.hpp"
 #include "lux/platformvm/error.hpp"
 #include "lux/platformvm/ids.hpp"
-#include "lux/platformvm/sha256.hpp"
 #include "lux/platformvm/txs.hpp"
 
 #include <cstdint>
@@ -38,7 +37,7 @@ ShortId address_of_compressed_key(std::span<const std::uint8_t> compressed);
 
 // Recover the signing key from a 65-byte r‖s‖v signature over `hash`, and return
 // the address it belongs to. An unrecoverable signature is a refusal.
-Result<ShortId> recover_address(const Hash256& hash, std::span<const std::uint8_t> sig65);
+Result<ShortId> recover_address(const Id& hash, std::span<const std::uint8_t> sig65);
 
 // The signature-checking half of the fx. `bootstrapped` false skips the
 // recovery, exactly as the reference does while a node replays history.

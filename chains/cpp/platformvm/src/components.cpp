@@ -61,7 +61,7 @@ std::vector<std::uint8_t> secp_transfer_output_envelope(const TransferOutput& o)
     std::int64_t addr_count = 0;
     if (!o.owners.addrs.empty()) {
         auto lb = b.start_list(kAddressStride);
-        for (const auto& a : o.owners.addrs) lb.add_bytes(a.span());
+        for (const auto& a : o.owners.addrs) lb.add_bytes(view(a));
         addr_off = lb.offset();
         addr_count = static_cast<std::int64_t>(o.owners.addrs.size());
     }
@@ -151,7 +151,7 @@ Result<TransferableOutput> TransferableOutput::from_wire_bytes(std::span<const s
     const auto addrs = root.list_stride(kTOAddressList, static_cast<std::uint32_t>(kAddressStride));
     for (int i = 0; i < addrs.size(); ++i)
         out.out.owners.addrs.push_back(
-            ShortId::from(addrs.object(i, kAddressStride).bytes_fixed(0, kAddressStride)));
+            short_id_from(addrs.object(i, kAddressStride).bytes_fixed(0, kAddressStride)));
     return out;
 }
 
@@ -160,9 +160,9 @@ std::vector<std::uint8_t> UTXO::wire_bytes() const {
     const auto inner = as_output.wire_bytes();
     zap::Builder b(zap::kHeaderSize + kUSize + static_cast<std::int64_t>(inner.size()) + 32);
     auto ob = b.start_object(kUSize);
-    ob.set_bytes_fixed(kUTxID, utxo.tx_id.span());
+    ob.set_bytes_fixed(kUTxID, view(utxo.tx_id));
     ob.set_u32(kUOutputIndex, utxo.output_index);
-    ob.set_bytes_fixed(kUAssetID, asset.span());
+    ob.set_bytes_fixed(kUAssetID, view(asset));
     ob.set_bytes(kUOutput, inner);
     ob.finish_as_root();
     return with_prefix(kTypeKindReserved, kShapeKindUTXO, b.finish());
@@ -176,9 +176,9 @@ Result<UTXO> UTXO::from_wire_bytes(std::span<const std::uint8_t> b) {
     const auto root = m->root();
 
     UTXO u;
-    u.utxo.tx_id = Id::from(root.bytes_fixed(kUTxID, kIdLen));
+    u.utxo.tx_id = id_from(root.bytes_fixed(kUTxID, kIdLen));
     u.utxo.output_index = root.u32(kUOutputIndex);
-    u.asset = Id::from(root.bytes_fixed(kUAssetID, kIdLen));
+    u.asset = id_from(root.bytes_fixed(kUAssetID, kIdLen));
     auto out = TransferableOutput::from_wire_bytes(root.bytes(kUOutput), u.asset);
     if (!out) return std::unexpected(out.error());
     u.stake_lock = out.value().stake_lock;

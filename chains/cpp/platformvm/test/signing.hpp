@@ -12,7 +12,6 @@
 
 #include "lux/platformvm/fx.hpp"
 #include "lux/platformvm/ids.hpp"
-#include "lux/platformvm/sha256.hpp"
 #include "lux/platformvm/txs.hpp"
 
 #include "ecdsa.hpp"
