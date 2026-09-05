@@ -90,6 +90,8 @@ bool VmBlock::verify() {
 
 void VmBlock::accept() { (void)vm_->accept_block(*blk_); }
 
+void VmBlock::reject() { vm_->reject_block(*blk_); }
+
 // ── the chain
 
 PlatformVM::PlatformVM(const Id& chain_id, executor::Backend backend, const Genesis& genesis)
@@ -269,6 +271,19 @@ Status PlatformVM::verify_block(const block::Block& b, Verified& out) {
         }
     }
     return fail(Err::UnknownBlockKind);
+}
+
+void PlatformVM::reject_block(const block::Block& b) {
+    // Release what the block pinned first: submit() prices a transaction
+    // against the state that won, which is not the state this block layered.
+    verified_.erase(b.id());
+    atomic_requests_.erase(b.id());
+
+    // Ask each decision transaction again. One the winning state no longer
+    // admits is dropped — it was answered, not refused.
+    for (const auto& tx : b.decision_txs()) {
+        (void)submit(tx);
+    }
 }
 
 Status PlatformVM::accept_block(const block::Block& b) {
