@@ -439,6 +439,14 @@ impl State {
         out
     }
 
+    /// Every L1 validator of every network, in name order. The whole plane at
+    /// once, for the readers that build a set across all of them.
+    pub fn all_l1_validators(&self) -> Vec<&L1Validator> {
+        let mut out: Vec<&L1Validator> = self.l1_validators.values().collect();
+        out.sort_by_key(|v| v.validation_id);
+        out
+    }
+
     /// Active validators in the order their money runs out, which is the order
     /// advancing the clock deactivates them in.
     pub fn active_l1_validators(&self) -> Vec<&L1Validator> {

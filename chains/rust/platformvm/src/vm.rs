@@ -33,6 +33,7 @@ use crate::executor::{self, Config, Fees};
 use crate::ids::{hash256, EMPTY, PRIMARY_NETWORK_ID};
 use crate::state::State;
 use crate::txs::{Tx, Unsigned};
+use crate::validators;
 
 /// A block plus the roots consensus signs over.
 #[derive(Clone, Debug)]
@@ -107,6 +108,10 @@ struct Inner {
     /// What each verified block would leave behind.
     verified: HashMap<Id, Verified>,
     accepted_by_height: HashMap<u64, Id>,
+    /// What every accepted height changed about the validator sets. This is
+    /// what lets a signature made at a past height be checked at all: the set
+    /// then is the set now with everything since undone.
+    history: validators::History,
     last_accepted: Id,
     last_accepted_height: u64,
     preference: Id,
@@ -156,6 +161,7 @@ impl PlatformVm {
                 blocks,
                 verified: HashMap::new(),
                 accepted_by_height,
+                history: validators::History::new(),
                 last_accepted: id,
                 last_accepted_height: 0,
                 preference: id,
@@ -201,6 +207,7 @@ impl PlatformVm {
                 blocks,
                 verified: HashMap::new(),
                 accepted_by_height,
+                history: validators::History::new(),
                 last_accepted: id,
                 last_accepted_height: 0,
                 preference: id,
@@ -227,6 +234,37 @@ impl PlatformVm {
     /// The state as of the last accepted block.
     pub fn state(&self) -> State {
         self.inner.lock().unwrap().state.clone()
+    }
+
+    /// Who validated `chain` at `height`, keyed by node.
+    ///
+    /// This is what a node needs to check a signature made in the past: the
+    /// answer is the set now with every recorded change since `height` undone.
+    /// A height this chain has not accepted is refused rather than
+    /// extrapolated — Go's `makeValidatorSet` refuses it too, with
+    /// `errUnfinalizedHeight`.
+    pub fn validator_set_at(
+        &self,
+        chain: &Id,
+        height: u64,
+    ) -> Result<std::collections::BTreeMap<crate::ids::NodeId, validators::Validator>, Error> {
+        let inner = self.inner.lock().unwrap();
+        let mut set = validators::current_set(&inner.state, chain)
+            .map_err(|e| Error::Invalid(e.to_string()))?;
+        inner
+            .history
+            .rewind(&mut set, chain, inner.last_accepted_height, height)
+            .map_err(|e| Error::BadRequest(e.to_string()))?;
+        Ok(set)
+    }
+
+    /// The set validating `chain` as of the last accepted block.
+    pub fn validator_set(
+        &self,
+        chain: &Id,
+    ) -> Result<std::collections::BTreeMap<crate::ids::NodeId, validators::Validator>, Error> {
+        let inner = self.inner.lock().unwrap();
+        validators::current_set(&inner.state, chain).map_err(|e| Error::Invalid(e.to_string()))
     }
 }
 
@@ -537,6 +575,19 @@ impl Vm for PlatformVm {
         let mut inner = self.inner.lock().unwrap();
         let v = inner.verified.get(id).cloned().ok_or(Error::NotFound)?;
         if v.on_abort.is_none() {
+            // Record what this height did to the validator sets BEFORE the new
+            // state replaces the old one, because the record is the difference
+            // between the two and one of them is about to be gone.
+            //
+            // A proposal block leaves two states behind and commits neither;
+            // its height changes nothing, and the option block that follows is
+            // the height that does.
+            let changed = validators::changes(&inner.state, &v.on_commit)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+            inner
+                .history
+                .record(v.block.height(), &changed)
+                .map_err(|e| Error::Invalid(e.to_string()))?;
             inner.state = v.on_commit;
         }
         inner.last_accepted = *id;
@@ -612,19 +663,31 @@ impl Vm for PlatformVm {
             }
             "platform.getCurrentValidators" => {
                 let chain = chain_param(params)?;
-                let validators: Vec<serde_json::Value> = inner
-                    .state
-                    .validator_set(&chain)
-                    .into_iter()
-                    .map(|(node, weight, key)| {
-                        serde_json::json!({
-                            "nodeID": hex(&node.0),
-                            "weight": weight,
-                            "publicKey": key.map(|k| hex(&k)),
-                        })
-                    })
-                    .collect();
-                Ok(serde_json::json!({ "validators": validators }))
+                let set = validators::current_set(&inner.state, &chain)
+                    .map_err(|e| Error::Invalid(e.to_string()))?;
+                Ok(serde_json::json!({ "validators": as_json(&set) }))
+            }
+            // Who validated then, so a signature made then can be checked now.
+            "platform.getValidatorsAt" => {
+                let chain = chain_param(params)?;
+                let height = params
+                    .get("height")
+                    .and_then(|h| h.as_u64())
+                    .ok_or_else(|| Error::BadRequest("height must be a number".into()))?;
+                let mut set = validators::current_set(&inner.state, &chain)
+                    .map_err(|e| Error::Invalid(e.to_string()))?;
+                inner
+                    .history
+                    .rewind(&mut set, &chain, inner.last_accepted_height, height)
+                    .map_err(|e| Error::BadRequest(e.to_string()))?;
+                Ok(serde_json::json!({
+                    "height": height,
+                    "validators": as_json(&set),
+                    // The commitment the set at that height is named by, so a
+                    // caller can check it against what a certificate claimed
+                    // rather than comparing lists by eye.
+                    "setRoot": hex(&validators::set_root(&set)),
+                }))
             }
             other => Err(Error::NoMethod(other.to_string())),
         }
@@ -656,6 +719,25 @@ fn chain_param(params: &serde_json::Value) -> Result<Id, Error> {
     let mut id = [0u8; 32];
     id.copy_from_slice(&bytes);
     Ok(id)
+}
+
+/// A set as the RPC hands it back. The key is the uncompressed one the set
+/// commitment hashes, because that is the key a caller has to check a
+/// signature against; handing back the compressed form would be handing back
+/// something no aggregate verifies under.
+fn as_json(
+    set: &std::collections::BTreeMap<crate::ids::NodeId, validators::Validator>,
+) -> Vec<serde_json::Value> {
+    set.values()
+        .map(|v| {
+            serde_json::json!({
+                "nodeID": hex(&v.node_id.0),
+                "weight": v.weight,
+                "publicKey": v.public_key.as_deref().map(hex),
+                "txID": hex(&v.tx_id),
+            })
+        })
+        .collect()
 }
 
 fn hex(bytes: &[u8]) -> String {
@@ -896,6 +978,72 @@ mod tests {
 
         assert_eq!(vm.last_accepted(), blk.id());
         assert_eq!(vm.block_id_at(1).unwrap(), blk.id());
+    }
+
+    #[test]
+    fn a_past_height_still_names_the_set_that_validated_then() {
+        // The point of the record. A chain that has admitted a validator must
+        // still be able to say who was in the set BEFORE it did, or a
+        // signature made then can never be checked.
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+
+        assert!(vm.validator_set(&PRIMARY_NETWORK_ID).unwrap().is_empty());
+
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+        vm.accept(&blk.id()).unwrap();
+
+        let now_set = vm.validator_set_at(&PRIMARY_NETWORK_ID, 1).unwrap();
+        assert_eq!(now_set.len(), 1);
+        let held = &now_set[&NodeId([5; 20])];
+        assert_eq!(held.weight, 10 * MEGA);
+        // The uncompressed key — the one the set commitment hashes.
+        assert_eq!(held.public_key.as_ref().map(|k| k.len()), Some(96));
+
+        // And at the height before it, nobody.
+        assert!(vm.validator_set_at(&PRIMARY_NETWORK_ID, 0).unwrap().is_empty());
+
+        // A height this chain has not reached has no set, rather than the
+        // current one under a false name.
+        assert!(matches!(
+            vm.validator_set_at(&PRIMARY_NETWORK_ID, 2),
+            Err(Error::BadRequest(_))
+        ));
+    }
+
+    #[test]
+    fn the_set_at_a_height_is_answered_over_the_wire_with_its_root() {
+        let now = 1000;
+        let vm = vm(now);
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+        vm.accept(&blk.id()).unwrap();
+
+        let at_one = vm
+            .call(
+                "platform.getValidatorsAt",
+                &serde_json::json!({ "height": 1 }),
+            )
+            .unwrap();
+        assert_eq!(at_one["validators"].as_array().unwrap().len(), 1);
+
+        let at_zero = vm
+            .call(
+                "platform.getValidatorsAt",
+                &serde_json::json!({ "height": 0 }),
+            )
+            .unwrap();
+        assert!(at_zero["validators"].as_array().unwrap().is_empty());
+        // An empty set commits to the zero id rather than to sha256("").
+        assert_eq!(at_zero["setRoot"], hex(&crate::ids::EMPTY));
+
+        // The root is over the set, so the two heights do not share one.
+        assert_ne!(at_one["setRoot"], at_zero["setRoot"]);
     }
 
     #[test]
