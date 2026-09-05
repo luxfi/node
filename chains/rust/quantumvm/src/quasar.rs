@@ -14,6 +14,25 @@
 //! halves check out, so the post-quantum half rides inside every signature the
 //! quorum is counted from.
 //!
+//! ## Where the committee's keys come from
+//!
+//! Every key here is minted here. [`Quasar::add_validator`] is the only way
+//! into the committee, it takes a name and a weight, and it makes the key
+//! pair itself — the same shape as the reference, whose `AddValidator`
+//! (`chains/quantumvm/quasar.go`) hands the name to the consensus core and the
+//! core generates the BLS and ML-DSA-65 keys.
+//!
+//! That is a security property, not a convenience. Aggregate BLS is only sound
+//! over keys the verifier chose: a registrant who gets to name its own public
+//! key can name pk_a − Σpkᵢ, and then the sum of that key with the honest keys
+//! it was built from is pk_a — a key it holds the secret for, so it signs a
+//! full quorum alone. Minting is what makes that key unrepresentable: the
+//! rogue key's discrete log is exactly what nobody knows, so nothing can put
+//! it in this map. A committee that took keys from the wire would need a proof
+//! of possession bound to the identity registering it, and it would be
+//! admitting members the reference cannot — a disagreement about who is in the
+//! committee, which is a disagreement about which certificates verify.
+//!
 //! ## Why the certificate is not a field of the block
 //!
 //! The block id is the SHA-256 of the block's own bytes. A signature inside the
@@ -62,12 +81,40 @@ pub struct Aggregate {
     pub validators: Vec<String>,
 }
 
-/// A committee member: what is needed to CHECK their signatures.
+/// A committee member.
+///
+/// The public halves are what CHECKS their signatures and the secret halves
+/// are what MAKES them, and both live in the one value because the committee
+/// holds no member of which only one is true. A member is built from a
+/// [`Secret`] and derives its public halves from it, so the 48 bytes a
+/// signature is checked against are a function of a key minted here rather
+/// than a field anyone gets to fill in — which is what keeps a key chosen to
+/// cancel against the honest ones out of the aggregate.
 #[derive(Clone, Debug)]
 struct Member {
     bls: PublicKey,
     mldsa: Vec<u8>,
+    secret: Secret,
     weight: u64,
+}
+
+/// The halves this node signs a member's statements with.
+#[derive(Clone, Debug)]
+struct Secret {
+    bls: SecretKey,
+    mldsa: MldsaKey,
+}
+
+impl Member {
+    /// The member a secret makes: its public halves are that secret's.
+    fn of(secret: Secret, weight: u64) -> Member {
+        Member {
+            bls: secret.bls.sk_to_pk(),
+            mldsa: secret.mldsa.public.clone(),
+            secret,
+            weight,
+        }
+    }
 }
 
 /// A block gathering signatures.
@@ -101,9 +148,6 @@ pub struct Setup {
 
 struct Held {
     members: BTreeMap<String, Member>,
-    /// The secret halves this node actually holds — its own, and any minted
-    /// here by [`Quasar::add_validator`].
-    secrets: BTreeMap<String, (SecretKey, MldsaKey)>,
     pending: HashMap<Id, Pending>,
     finalized: HashSet<Id>,
 }
@@ -155,7 +199,6 @@ impl Quasar {
         let q = Quasar {
             held: Mutex::new(Held {
                 members: BTreeMap::new(),
-                secrets: BTreeMap::new(),
                 pending: HashMap::new(),
                 finalized: HashSet::new(),
             }),
@@ -188,13 +231,14 @@ impl Quasar {
         self.held.lock().expect("quasar").members.len()
     }
 
-    /// Register a validator whose keys are minted here.
+    /// Register a validator. THE way into the committee, and the only one.
     ///
-    /// This is the reference's registration path, and it is a LOCAL ceremony:
-    /// the keys come into existence in this process. That is right for this
-    /// node's own identity and for a single-process committee; a peer's keys
-    /// come from the chain that published them, and register through
-    /// [`Quasar::admit`], which takes public halves only.
+    /// It takes a name and a weight and mints the keys, exactly as the
+    /// reference does (`AddValidator`, `chains/quantumvm/quasar.go`, which
+    /// hands the name to the consensus core and the core generates the pair).
+    /// There is deliberately no second door that takes a key someone else
+    /// chose: see the module note, and [`Quasar::verify_aggregate`] for what
+    /// such a key does to an aggregate.
     ///
     /// The committee is a SET, and it is the set the threshold was derived
     /// from. Registering an id twice would hand it a fresh key, silently
@@ -207,38 +251,13 @@ impl Quasar {
         let bls = SecretKey::key_gen(&ikm, &[]).map_err(|e| Error::Signing(format!("{e:?}")))?;
         let mldsa = self.quantum.generate()?;
 
-        let member = Member {
-            bls: bls.sk_to_pk(),
-            mldsa: mldsa.public.clone(),
-            weight,
-        };
         let mut held = self.held.lock().expect("quasar");
-        Self::register(&mut held, validator, member, self.committee)?;
-        held.secrets.insert(validator.to_string(), (bls, mldsa));
-        Ok(())
-    }
-
-    /// Register a validator from the public halves the chain published.
-    ///
-    /// This node cannot sign as them, which is the point: what a committee
-    /// member needs from a peer is the ability to CHECK what that peer says.
-    pub fn admit(&self, validator: &str, weight: u64, bls: &[u8], mldsa: &[u8]) -> Result<()> {
-        let bls = PublicKey::key_validate(bls)
-            .map_err(|e| Error::UnverifiedSigner(format!("{validator}: BLS key: {e:?}")))?;
-        if mldsa.len() != self.quantum.public_key_size() {
-            return Err(Error::UnverifiedSigner(format!(
-                "{validator}: ML-DSA key is {} bytes, ML-DSA-65 takes {}",
-                mldsa.len(),
-                self.quantum.public_key_size()
-            )));
-        }
-        let member = Member {
-            bls,
-            mldsa: mldsa.to_vec(),
-            weight,
-        };
-        let mut held = self.held.lock().expect("quasar");
-        Self::register(&mut held, validator, member, self.committee)
+        Self::register(
+            &mut held,
+            validator,
+            Member::of(Secret { bls, mldsa }, weight),
+            self.committee,
+        )
     }
 
     fn register(held: &mut Held, validator: &str, member: Member, committee: usize) -> Result<()> {
@@ -406,9 +425,13 @@ impl Quasar {
 
     /// Make this node's signature over `message`.
     fn make(&self, held: &Held, validator: &str, message: &[u8]) -> Result<Sig> {
-        let (bls, mldsa) = held.secrets.get(validator).ok_or_else(|| {
-            Error::UnverifiedSigner(format!("{validator}: this node holds no key for it"))
-        })?;
+        let Secret { bls, mldsa } = &held
+            .members
+            .get(validator)
+            .ok_or_else(|| {
+                Error::UnverifiedSigner(format!("{validator}: this node holds no key for it"))
+            })?
+            .secret;
         let bls_sig = bls.sign(message, DST, &[]).compress().to_vec();
         let mldsa_sig = {
             use lux_pq::Signer as _;
@@ -435,12 +458,30 @@ impl Quasar {
     /// aggregated keys of the DISTINCT registered validators it names, at or
     /// above the threshold.
     ///
-    /// Distinct is the load-bearing word. BLS is linear, so a repeated id adds
-    /// the same key again: t copies of one validator yield t·pk, which that
-    /// validator's own signature scaled to t·σ satisfies — one validator forges
-    /// a t-of-n aggregate. A signer COUNT carried inside the message is not
-    /// evidence of anything and is never what the threshold is compared
-    /// against.
+    /// A sum of keys is safe to check one signature against only if two things
+    /// hold, and this method can enforce exactly one of them. Reading it as
+    /// self-sufficient is the mistake to avoid: the check below is complete
+    /// for what it covers and silent about the rest.
+    ///
+    /// WHAT IT ENFORCES is that the ids are distinct. BLS is linear, so a
+    /// repeated id adds the same key again: t copies of one validator yield
+    /// t·pk, which that validator's own signature scaled to t·σ satisfies —
+    /// one validator forges a t-of-n aggregate. A signer COUNT carried inside
+    /// the message is not evidence of anything and is never what the threshold
+    /// is compared against.
+    ///
+    /// WHAT IT CANNOT is that each key in the sum is one the committee chose.
+    /// Against honest keys pk₁…pk_{t-1} an attacker who may name its own key
+    /// names pk_r = pk_a − Σpkᵢ; the t keys are then distinct, the t ids are
+    /// distinct, every check here passes, and the sum is pk_a — which the
+    /// attacker's own signature satisfies alone. Distinctness does not touch
+    /// that attack, and no test written about distinctness would have found
+    /// it. What closes it is upstream and structural: [`Quasar::add_validator`]
+    /// is the only door into the committee and it MINTS what it registers, so
+    /// pk_r — whose discrete log is precisely what nobody knows — cannot be a
+    /// member. The premise this method rests on is that door; a second one
+    /// taking a key off the wire would need a proof of possession bound to the
+    /// name registering it, or this check verifies quorums that never met.
     pub fn verify_aggregate(&self, message: &[u8], agg: &Aggregate) -> bool {
         let held = self.held.lock().expect("quasar");
         let sig = match BlsSignature::uncompress(&agg.bls) {
@@ -772,39 +813,164 @@ mod tests {
         assert!(!q.verify_aggregate(b"hash", &stranger));
     }
 
-    #[test]
-    fn a_peer_registers_by_its_public_halves_and_this_node_cannot_sign_as_it() {
-        let mine = committee(4);
-        let theirs = bridge(4);
-        let (bls, mldsa) = theirs.public_keys("node-0").unwrap();
-
-        let peer = bridge(4);
-        peer.admit("peer", 5, &bls, &mldsa).unwrap();
-        assert_eq!(peer.weight("peer"), Some(5));
-
-        // Their signature checks out here…
-        let id = ids::filled(10);
-        peer.sign_block(id, b"hash", 1).unwrap();
-        let theirs_sig = sign_as(&theirs, "node-0", b"hash");
-        let renamed = Sig {
-            validator: "peer".into(),
-            ..theirs_sig
-        };
-        peer.add_signature(id, renamed).unwrap();
-
-        // …and this node holds no secret for them, so it cannot speak as them.
-        let held = peer.held.lock().expect("quasar");
-        assert!(peer.make(&held, "peer", b"hash").is_err());
-        drop(held);
-        let _ = mine;
+    /// pk_a − Σ honest: the key an attacker registers so that the honest keys
+    /// it was built from cancel out of the sum, leaving a key it holds.
+    ///
+    /// Raw curve arithmetic because this is the adversary's side of the
+    /// argument, not the bridge's — the point of computing it here is that the
+    /// forgery below is a real signature that really verifies, so a test that
+    /// says the bridge refuses it is refusing something.
+    fn rogue_key(honest: &[Vec<u8>], attacker: &PublicKey) -> Vec<u8> {
+        // SAFETY: every pointer is to a live local, and each compressed key is
+        // checked to decompress before it is used.
+        unsafe {
+            let mut affine = std::mem::MaybeUninit::<blst::blst_p1_affine>::zeroed().assume_init();
+            assert_eq!(
+                blst::blst_p1_uncompress(&mut affine, attacker.compress().as_ptr()),
+                blst::BLST_ERROR::BLST_SUCCESS
+            );
+            let mut sum = std::mem::MaybeUninit::<blst::blst_p1>::zeroed().assume_init();
+            blst::blst_p1_from_affine(&mut sum, &affine);
+            for key in honest {
+                let mut a = std::mem::MaybeUninit::<blst::blst_p1_affine>::zeroed().assume_init();
+                assert_eq!(
+                    blst::blst_p1_uncompress(&mut a, key.as_ptr()),
+                    blst::BLST_ERROR::BLST_SUCCESS
+                );
+                let mut p = std::mem::MaybeUninit::<blst::blst_p1>::zeroed().assume_init();
+                blst::blst_p1_from_affine(&mut p, &a);
+                blst::blst_p1_cneg(&mut p, true);
+                let mut next = std::mem::MaybeUninit::<blst::blst_p1>::zeroed().assume_init();
+                blst::blst_p1_add_or_double(&mut next, &sum, &p);
+                sum = next;
+            }
+            let mut compressed = [0u8; 48];
+            blst::blst_p1_compress(compressed.as_mut_ptr(), &sum);
+            compressed.to_vec()
+        }
     }
 
+    // The rogue key, which is why nothing here takes a key. An attacker that
+    // could name its own public key signs a whole quorum by itself: it names
+    // pk_a − Σpkᵢ, the honest keys cancel, and the sum the aggregate is checked
+    // against is a key it holds. Registration mints instead, so the attacker
+    // may get a NAME into the committee and still not get its KEY in, and the
+    // forgery it prepared verifies against nothing the committee holds.
     #[test]
-    fn a_key_that_is_not_a_key_is_refused_at_registration() {
+    fn a_rogue_key_forges_a_quorum_and_cannot_become_a_member() {
         let q = bridge(4);
-        assert!(q.admit("peer", 1, b"not a bls key", &[0; 1952]).is_err());
-        let (bls, _) = q.public_keys("node-0").unwrap();
-        assert!(q.admit("peer", 1, &bls, b"short").is_err());
+        q.add_validator("node-1", 1).unwrap();
+        assert_eq!(q.threshold(), 3);
+
+        let honest: Vec<Vec<u8>> = ["node-0", "node-1"]
+            .iter()
+            .map(|v| q.public_keys(v).unwrap().0)
+            .collect();
+        let mut ikm = [0u8; 32];
+        ikm[0] = 0xa7;
+        let attacker = SecretKey::key_gen(&ikm, &[]).unwrap();
+        let rogue = rogue_key(&honest, &attacker.sk_to_pk());
+
+        let message = b"a block no honest validator ever signed";
+        let forged = attacker.sign(message, DST, &[]).compress().to_vec();
+
+        // The attack is real: against the sum of the two honest keys and the
+        // rogue one, the attacker's lone signature verifies. If this ever stops
+        // holding, the test below is passing for the wrong reason.
+        let mut keys: Vec<PublicKey> = honest
+            .iter()
+            .map(|k| PublicKey::key_validate(k).unwrap())
+            .collect();
+        keys.push(PublicKey::key_validate(&rogue).unwrap());
+        let refs: Vec<&PublicKey> = keys.iter().collect();
+        let sum = AggregatePublicKey::aggregate(&refs, true)
+            .unwrap()
+            .to_public_key();
+        assert_eq!(
+            BlsSignature::uncompress(&forged)
+                .unwrap()
+                .verify(true, message, DST, &[], &sum, true),
+            blst::BLST_ERROR::BLST_SUCCESS,
+            "the rogue-key forgery does not verify; the test proves nothing"
+        );
+
+        // And it is unreachable: the only way in is a name, and the key that
+        // name gets is minted here, not chosen by whoever asked.
+        q.add_validator("rogue", 1).unwrap();
+        assert_ne!(
+            q.public_keys("rogue").unwrap().0,
+            rogue,
+            "a registrant chose its own key"
+        );
+        let agg = Aggregate {
+            bls: forged,
+            validators: vec!["node-0".into(), "node-1".into(), "rogue".into()],
+        };
+        assert!(
+            !q.verify_aggregate(message, &agg),
+            "one attacker signed a 3-of-4 quorum"
+        );
+
+        // The reason it is unreachable, said as an invariant over the whole
+        // committee: every member's public key is the one its own secret
+        // derives. A member holding a key nobody here can sign as is not a
+        // thing this type can represent, which is the difference between a
+        // check that has to be remembered and one that cannot be forgotten.
+        let held = q.held.lock().expect("quasar");
+        for (name, member) in &held.members {
+            assert_eq!(
+                member.secret.bls.sk_to_pk(),
+                member.bls,
+                "{name} answers to a key it did not mint"
+            );
+            assert_eq!(member.secret.mldsa.public, member.mldsa);
+        }
+    }
+
+    // The other thing a key off the wire buys: the SAME key under two names.
+    // The threshold counts distinct names, so one honest signature would fill
+    // two of the slots — which is why a committee that admitted published keys
+    // would need a proof of possession bound to the name, not merely one over
+    // the key. Minting settles it: two names, two keys, and a signature made
+    // under one name verifies under no other.
+    #[test]
+    fn no_two_names_in_the_committee_share_a_key() {
+        let q = committee(4);
+        let names = ["node-0", "node-1", "node-2", "node-3"];
+        let keys: HashSet<Vec<u8>> = names.iter().map(|v| q.public_keys(v).unwrap().0).collect();
+        assert_eq!(keys.len(), names.len(), "one key answers to two names");
+
+        let id = ids::filled(15);
+        q.sign_block(id, b"hash", 1).unwrap();
+        let lifted = Sig {
+            validator: "node-2".into(),
+            ..sign_as(&q, "node-1", b"hash")
+        };
+        assert!(!q.verify(b"hash", &lifted));
+        assert!(matches!(
+            q.add_signature(id, lifted),
+            Err(Error::UnverifiedSigner(_))
+        ));
+    }
+
+    // The committee has ONE door, and this counts them.
+    //
+    // A second door is not a wrong line inside a function — it is a function
+    // that was not there before, and every test about the signatures a
+    // committee collects goes on passing while one stands open. The reference
+    // has one door (`AddValidator`, `chains/quantumvm/quasar.go`), so a port
+    // with two admits members the reference cannot, and two nodes that
+    // disagree about who is in the committee disagree about which certificates
+    // verify. Counting the call sites of the private choke point is the one
+    // statement a test can make about a door that must not exist.
+    #[test]
+    fn the_committee_has_one_door() {
+        let door = concat!("Self::", "register(");
+        let doors = include_str!("quasar.rs").matches(door).count();
+        assert_eq!(
+            doors, 1,
+            "{doors} ways into the committee; the reference has one, and it mints what it registers"
+        );
     }
 
     // Go: TestSignBlockDoesNotRaceIncomingSignatures. This node signing and
