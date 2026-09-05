@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+
+[package]
+name = "lux-quantumvm"
+version = "0.1.0"
+edition = "2021"
+description = "The Lux Q-Chain in Rust: ML-DSA transaction stamps, the Quasar finality bridge, ZAP on the wire"
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node2"
+publish = false
+
+[dependencies]
+# The host. `vm::Vm` and `vm::Block` are the node's OWN trait definitions, not a
+# copy of them. A chain that restated the seam would compile against a shape the
+# node never sees, and would keep compiling on the day the node changed a
+# method. A path dependency because `lux-node` is not published.
+lux-node = { path = "../../../../../lux-rs/node" }
+
+# `Id` — `lux_consensus::finality::Id`, `[u8; 32]`. Named from the crate the
+# host names it from, so a block this chain builds is named the way the node
+# that certifies it names it, with nothing in between to translate.
+lux-consensus = "1.23.0"
+
+# ML-DSA-65 (FIPS 204): the per-validator identity signature this chain stamps
+# transactions and round digests with. One implementation, the same
+# `libluxcrypto` the Go node signs under — a second ML-DSA would be a second
+# set of keys nobody else can check.
+#
+# Naming it here also hands this crate the `links` metadata that says where that
+# library was resolved, which is what lets the test binaries load.
+lux-pq = { path = "../../../../../lux-rs/sdk/lux-pq" }
+
+# The validator signature the Quasar bridge collects and aggregates. Same curve
+# and same domain tag as the Go committee's — a second BLS is a second network.
+blst = "0.3"
+
+# A block id is `sha256(bytes)` and a transaction id is `sha256(preimage)`; the
+# quantum stamp folds under SHA-512. A second implementation of either would be
+# a second answer to "which block".
+sha2 = "0.10"
+
+# The one boundary where a chain answers a caller in a shape it did not choose.
+# A hand-written parser at a boundary is a vulnerability with a schedule.
+serde_json = "1"
+
+# The operating system's own randomness, for a key's nonce and a stamp's noise.
+# One call to the kernel, no userspace pool to reseed and no fallback path that
+# could quietly produce something predictable.
+getrandom = "0.2"
+
+[dev-dependencies]
+# The differential corpus is JSON and its wires are hex, because that is how the
+# Go generator prints them.
+hex = "0.4"
+serde = { version = "1", features = ["derive"] }
