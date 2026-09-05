@@ -185,6 +185,8 @@ XVM_CPP     := $(ROOT)/chains/cpp/xvm/build/xvm_conformance
 chains: chains-build
 	@echo
 	cd $(ROOT) && GOWORK=off go run ./conformance/runner \
+		-subject chain \
+		-fields parse,kind,id,syntactic,exec \
 		-vectors $(CONF_VECS) \
 		-expected $(CONF_WANT) \
 		-eval "go=$(CONF_GEN) eval" \
