@@ -165,6 +165,35 @@ impl Exempt for Listed {
 /// The three fx families of this chain all spend with a secp256k1 signature,
 /// so all three are classical. This is a function of the family rather than a
 /// flag on the credential, because the family is what the wire carries.
+///
+/// ## THIS IS STRICTER THAN THE REFERENCE, DELIBERATELY
+///
+/// Go asks the question as a type assertion —
+/// `c.(*secp256k1fx.Credential)` in `EnforceCredentialPolicy` — and its own
+/// comment reads "any non-`secp256k1fx.Credential` type" as post-quantum. But
+/// `nftfx.Credential` and `propertyfx.Credential` are each declared as
+///
+/// ```text
+/// type Credential struct { secp256k1fx.Credential `serialize:"true"` }
+/// ```
+///
+/// An embedded field is a different type, so both assertions fail and Go
+/// ADMITS an nft or property credential under the strict profile. What it
+/// admits is the classical credential verbatim: the same `Sigs`, recovered by
+/// the same curve. A gate whose whole purpose is to refuse a signature an
+/// attacker can forge, letting that same signature through because it is
+/// wearing a second type name, does not do the thing it is for. Go's X-chain
+/// test (`vm_security_profile_test.go`) only ever offers a bare
+/// `secp256k1fx.Credential`, so this case is untested there rather than
+/// decided there.
+///
+/// Being stricter here cannot split the chain. This gate runs at ADMISSION —
+/// `Mempool::add`, reached from `Xvm::issue` — and nowhere in block
+/// verification. A node holding this rule builds from fewer transactions than
+/// a Go node would; it still verifies and accepts every block a Go node
+/// produces, including one carrying exactly this credential. The disagreement
+/// is about what a node will relay, which is a policy, not about what is true,
+/// which is consensus.
 pub fn classical(cred: &Cred) -> bool {
     matches!(
         cred.family,
@@ -272,6 +301,49 @@ mod tests {
             ),
             Ok(())
         );
+    }
+
+    #[test]
+    fn an_nft_or_property_credential_is_classical_here_and_is_not_in_go() {
+        // The deliberate divergence, pinned so it cannot be lost or become an
+        // accident. Go asks `c.(*secp256k1fx.Credential)`; `nftfx.Credential`
+        // and `propertyfx.Credential` EMBED that type rather than being it, so
+        // Go's assertion fails and it admits both under the strict profile.
+        // What it admits is a secp256k1 signature, recovered by the same
+        // curve — exactly what the profile exists to refuse.
+        for family in [Family::Nft, Family::Property] {
+            assert!(classical(&cred(family)), "{family:?} spends classically");
+            assert_eq!(
+                admits(&[cred(family)], Some(&strict_pq()), None, &SHORT_EMPTY),
+                Err(Error::ClassicalCredentialRefused),
+                "{family:?} must not walk through the gate wearing another name"
+            );
+        }
+        // The case Go DOES decide, decided the same way here.
+        assert_eq!(
+            admits(
+                &[cred(Family::Secp256k1)],
+                Some(&strict_pq()),
+                None,
+                &SHORT_EMPTY
+            ),
+            Err(Error::ClassicalCredentialRefused)
+        );
+        // And the divergence is confined to admission: an exempted originator
+        // gets through on all three, so the rule is stricter about WHAT is
+        // classical, not about who the list covers.
+        let listed = Listed::of(&[SHORT_EMPTY]);
+        for family in [Family::Secp256k1, Family::Nft, Family::Property] {
+            assert_eq!(
+                admits(
+                    &[cred(family)],
+                    Some(&strict_pq()),
+                    Some(&listed),
+                    &SHORT_EMPTY
+                ),
+                Ok(())
+            );
+        }
     }
 
     #[test]
