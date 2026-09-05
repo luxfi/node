@@ -21,6 +21,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 
 use crate::block::Block;
+use crate::db::{self, Batch, Db};
 use crate::error::{Error, Result};
 use crate::ids::{self, Id, EMPTY};
 use crate::txs::Tx;
@@ -57,6 +58,16 @@ pub trait Chain: ReadOnlyChain + Send {
     fn add_block(&mut self, block: Block);
     fn set_last_accepted(&mut self, blk_id: Id);
     fn set_timestamp(&mut self, t: u64);
+
+    /// Put what has changed where it belongs.
+    ///
+    /// A [`Store`] with a device writes its pending batch to it. A [`Diff`] has
+    /// no device — its changes reach the layer below when it is applied — so
+    /// there is nothing for it to do, which is why the default is to succeed
+    /// rather than to refuse.
+    fn commit(&mut self) -> Result<()> {
+        Ok(())
+    }
 }
 
 /// Where a block's state layer can be found, by block id.
@@ -68,6 +79,20 @@ pub trait Versions {
 ///
 /// Backed by ordered maps: the UTXO map is ordered because the enumeration
 /// order is part of the consensus rule, not a convenience.
+///
+/// ## What is written down
+///
+/// A store may be given a [`crate::db::Db`], and then every change it takes is
+/// also recorded into a pending batch. Nothing reaches the device until
+/// [`Store::commit`], which is called when a block is accepted — so what is on
+/// disk is exactly what was decided, and a block that was verified and then
+/// lost leaves no trace. That is Go's arrangement: `versiondb` buffers, the
+/// accept path calls `Commit`, and the two shapes above this — store and
+/// diff — are the same two Go has.
+///
+/// A store without a `Db` is the same store with nowhere to write. Its
+/// `commit` succeeds having done nothing, which is what a node running on a
+/// memory database does, rather than a silent failure or a second code path.
 #[derive(Default)]
 pub struct Store {
     utxos: BTreeMap<Id, Utxo>,
@@ -76,11 +101,112 @@ pub struct Store {
     blocks: HashMap<Id, Block>,
     last_accepted: Id,
     timestamp: u64,
+    /// Where this store is written down, if anywhere.
+    db: Option<Arc<dyn Db>>,
+    /// What has changed since the last [`Store::commit`].
+    pending: Batch,
 }
 
 impl Store {
     pub fn new() -> Store {
         Store::default()
+    }
+
+    /// A store backed by `db`, holding whatever `db` already holds.
+    ///
+    /// An empty database gives an empty store, which the caller then fills from
+    /// genesis. A database that has been written to gives the chain back as it
+    /// was left, and nothing is re-executed: what was accepted was accepted,
+    /// and re-deriving it from the blocks would be a second implementation of
+    /// the ledger that has to agree with the first.
+    pub fn on(db: Arc<dyn Db>) -> Result<Store> {
+        let mut s = Store::new();
+
+        for (k, v) in db.range(db::UTXO) {
+            let utxo = Utxo::from_wire(&v)?;
+            let named = k[db::UTXO.len()..].to_vec();
+            // The key is the id, and the id is derived from the value. A stored
+            // pair where they disagree is a record this chain did not write.
+            if ids::from_slice(&named) != Some(utxo.input_id()) {
+                return Err(Error::Storage(format!(
+                    "utxo filed under {} is {}",
+                    ids::hex(&named),
+                    ids::hex(&utxo.input_id())
+                )));
+            }
+            s.utxos.insert(utxo.input_id(), utxo);
+        }
+
+        for (k, v) in db.range(db::TX) {
+            let tx = Tx::parse(&v)?;
+            let named = k[db::TX.len()..].to_vec();
+            if ids::from_slice(&named) != Some(tx.id()) {
+                return Err(Error::Storage(format!(
+                    "tx filed under {} is {}",
+                    ids::hex(&named),
+                    ids::hex(&tx.id())
+                )));
+            }
+            s.txs.insert(tx.id(), tx);
+        }
+
+        for (k, v) in db.range(db::BLOCK) {
+            // `blockID` also begins with `block`, so the height index would be
+            // read here as well were it not skipped by its own prefix.
+            if k.starts_with(db::BLOCK_ID) {
+                continue;
+            }
+            let blk = Block::parse(&v)?;
+            let named = k[db::BLOCK.len()..].to_vec();
+            if ids::from_slice(&named) != Some(blk.id()) {
+                return Err(Error::Storage(format!(
+                    "block filed under {} is {}",
+                    ids::hex(&named),
+                    ids::hex(&blk.id())
+                )));
+            }
+            s.blocks.insert(blk.id(), blk);
+        }
+
+        for (k, v) in db.range(db::BLOCK_ID) {
+            let height = db::height_of(&k)
+                .ok_or_else(|| Error::Storage(format!("not a height key: {}", ids::hex(&k))))?;
+            let id = ids::from_slice(&v)
+                .ok_or_else(|| Error::Storage(format!("height {height} names no block")))?;
+            s.block_ids.insert(height, id);
+        }
+
+        if let Some(v) = db.get(&db::key(db::SINGLETON, &[db::LAST_ACCEPTED])) {
+            s.last_accepted = ids::from_slice(&v)
+                .ok_or_else(|| Error::Storage("last accepted is not an id".into()))?;
+        }
+        if let Some(v) = db.get(&db::key(db::SINGLETON, &[db::TIMESTAMP])) {
+            let eight: [u8; 8] = v
+                .as_slice()
+                .try_into()
+                .map_err(|_| Error::Storage("the timestamp is not eight bytes".into()))?;
+            s.timestamp = u64::from_be_bytes(eight);
+        }
+
+        s.db = Some(db);
+        Ok(s)
+    }
+
+    /// Whether this store is written down anywhere.
+    pub fn is_persistent(&self) -> bool {
+        self.db.is_some()
+    }
+
+    /// What is waiting to be written. A way to see the store, not a rule.
+    pub fn uncommitted(&self) -> usize {
+        self.pending.len()
+    }
+
+    /// Record a change, if there is anywhere to record it.
+    fn note(&mut self, f: impl FnOnce(&mut Batch)) {
+        if self.db.is_some() {
+            f(&mut self.pending);
+        }
     }
 
     /// Wrap it as a shareable chain layer.
@@ -163,28 +289,83 @@ impl ReadOnlyChain for Store {
 
 impl Chain for Store {
     fn add_utxo(&mut self, utxo: Utxo) {
-        self.utxos.insert(utxo.input_id(), utxo);
+        let id = utxo.input_id();
+        let raw = utxo.wire_bytes();
+        self.note(|b| b.put(db::key(db::UTXO, &id), raw));
+        self.utxos.insert(id, utxo);
     }
 
     fn delete_utxo(&mut self, utxo_id: &Id) {
+        let id = *utxo_id;
+        self.note(|b| b.delete(db::key(db::UTXO, &id)));
         self.utxos.remove(utxo_id);
     }
 
     fn add_tx(&mut self, tx: Tx) {
-        self.txs.insert(tx.id(), tx);
+        let id = tx.id();
+        let raw = tx.bytes().to_vec();
+        self.note(|b| b.put(db::key(db::TX, &id), raw));
+        self.txs.insert(id, tx);
     }
 
     fn add_block(&mut self, block: Block) {
-        self.block_ids.insert(block.height(), block.id());
-        self.blocks.insert(block.id(), block);
+        let id = block.id();
+        let height = block.height();
+        let raw = block.bytes().to_vec();
+        self.note(|b| {
+            b.put(db::key(db::BLOCK, &id), raw);
+            b.put(db::height_key(height), id.to_vec());
+        });
+        self.block_ids.insert(height, id);
+        self.blocks.insert(id, block);
     }
 
     fn set_last_accepted(&mut self, blk_id: Id) {
+        // The initialised marker is written with the first block the chain
+        // accepts, which is what makes an empty database and a chain at genesis
+        // two different things on disk.
+        self.note(|b| {
+            b.put(db::key(db::SINGLETON, &[db::IS_INITIALIZED]), vec![1]);
+            b.put(
+                db::key(db::SINGLETON, &[db::LAST_ACCEPTED]),
+                blk_id.to_vec(),
+            );
+        });
         self.last_accepted = blk_id;
     }
 
     fn set_timestamp(&mut self, t: u64) {
+        // Seconds since the epoch, big-endian. Go writes a `time.Time`'s own
+        // binary encoding here; that is a language's internal representation of
+        // a clock reading, and the chain's timestamp is seconds everywhere else
+        // it appears — in a block header, on the wire, in the rule that bounds
+        // it. One representation, and it is the one the rules are stated in.
+        self.note(|b| {
+            b.put(
+                db::key(db::SINGLETON, &[db::TIMESTAMP]),
+                t.to_be_bytes().to_vec(),
+            )
+        });
         self.timestamp = t;
+    }
+
+    /// Put what has changed on the device.
+    ///
+    /// Called when a block is accepted, and only then. Until it returns, the
+    /// changes exist in this process and nowhere else; after it returns they
+    /// survive the process. A store with no database has nothing to do and
+    /// says so by succeeding.
+    fn commit(&mut self) -> Result<()> {
+        let Some(db) = self.db.clone() else {
+            self.pending = Batch::new();
+            return Ok(());
+        };
+        // The batch is cleared only once the device has it: a write that failed
+        // leaves the changes pending, so the next commit tries them again
+        // rather than dropping them on the floor.
+        db.write(&self.pending)?;
+        self.pending = Batch::new();
+        Ok(())
     }
 }
 

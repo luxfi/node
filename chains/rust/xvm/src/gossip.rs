@@ -728,7 +728,8 @@ mod tests {
     fn a_strict_chain_refuses_a_classical_transaction_at_the_gossip_door() {
         let mut pool = Mempool::new();
         pool.hold_to(crate::security::strict_pq(), None);
-        let mut set = Gossip::new(pool, &Config::default(), Arc::new(Everything), entropy()).unwrap();
+        let mut set =
+            Gossip::new(pool, &Config::default(), Arc::new(Everything), entropy()).unwrap();
         let mut tx = a_tx(1, 0, b"a");
         tx.sign(crate::fx::Family::Secp256k1, &[vec![[7u8; 32]]])
             .unwrap();

@@ -40,6 +40,7 @@
 //! be two ids for one thing.
 
 pub mod block;
+pub mod db;
 pub mod error;
 pub mod fx;
 pub mod gossip;
