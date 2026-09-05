@@ -337,6 +337,13 @@ measurement of anything. Repeated at a load average near 13 the same
 measurement came back with spreads between 6% and 19%, and that is what is
 recorded below.
 
+Which is also the evidence that the fastest run is the right one to quote. Run
+again at a load average of 25, the spreads roughly tripled — 22% to 73% against
+6% to 19% — and every µs/vector moved by less than 4%: `cpp/xvm` 2.23 both
+times, `go` 71.41 against 72.41, `cpp/platformvm` 118.30 against 123.05. The
+machine's noise went into the spread, which is what the spread is for, and left
+the minimum where it was.
+
 ### What it said
 
 An Apple M1 Max, ten cores, macOS, load average around 13. The absolute numbers
