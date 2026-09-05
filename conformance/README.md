@@ -369,17 +369,18 @@ from the fastest run:
 
 The C++ P-chain is the slowest of the three by about 30%, and Go and Rust are
 again indistinguishable from each other. The P row is four measurements per
-implementation across two sittings and holds to within a few percent. The X row
-is one quiet sitting: those runs are the shortest and so the most easily
-disturbed, and the two numbers there that a second quiet run corroborates —
-rust 4.27 and cpp 2.23 from the whole-corpus table above — agree with it to 2%.
+implementation across two sittings and holds to within a few percent. Every
+number in the X row is corroborated twice: `rust/xvm` and `cpp/xvm` appear as
+4.27 and 2.23 in the whole-corpus table above, within 2% of their X-only
+numbers, and `go`'s 3.3 came back as 3.38 in a separate run on a machine three
+times busier.
 
 The C++ X-chain is the fastest of the three at the X-chain and it is the one
 doing less. Those two facts cannot be separated with this data: how much of the
 gap is the skipped execution pass and how much is C++ being faster at what it
 does share is not a question the harness can answer until that evaluator runs
-the same two passes. Rust's X-chain is the slowest of the three that are
-comparable, by about a quarter.
+the same two passes. Between the two that do run the same passes, Rust's
+X-chain is about a quarter slower than Go's.
 
 ## The one place `luxfi/node` is allowed
 
