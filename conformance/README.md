@@ -140,31 +140,57 @@ agreement among whoever was left.
 a separate Go module for exactly that reason, so it cannot reach node2's own
 dependency graph — which `make luxd` still greps and still fails on.
 
-## What it found on `main`
+## What it found, and how each one closed
 
-Thirteen vectors disagree. The two the harness was built to catch:
+Thirteen vectors disagreed when the harness was written. All thirteen are
+closed: the three chains and the corpus now agree on every compared field of
+all 53 vectors, and the NOT COMPARED list is empty. What follows is the record
+of what it caught, because a differential that reported nothing would be
+indistinguishable from one nobody had run.
+
+The two the harness was built to catch:
 
 **The P-chain fork.** On `RegisterL1Validator`, `SetL1ValidatorWeight`,
 `IncreaseL1ValidatorBalance`, `DisableL1Validator`, `ConvertNetwork` and the
-sovereign form of `CreateNetwork`, Go and C++ execute — reaching the ledger and
-failing only for want of state — and Rust answers `UNSUPPORTED`, refusing each
+sovereign form of `CreateNetwork`, Go and C++ executed — reaching the ledger and
+failing only for want of state — and Rust answered `UNSUPPORTED`, refusing each
 by name. That is the sovereign-L1 birth path every downstream L1 depends on.
-`AddPermissionlessDelegator` diverges the same way, through
+`AddPermissionlessDelegator` diverged the same way, through
 `NetworkTermsNotHeld`.
 
-**The X-chain reject.** `X_SEAM_BLOCK_REJECT`: Go and Rust have a reject, C++
-does not — and `P_SEAM_BLOCK_REJECT` shows the same hole on the P-chain. The
-root of both is the C++ host seam itself: `lux::node::Block` declares `verify`
-and `accept` and no `reject`, so neither C++ chain can be told a block lost.
+CLOSED by the Rust port growing the plane: an L1 validator register, a
+network's own staking terms and validator set, and a chain identity to check a
+transaction against. The three `…NotHeld` refusals no longer exist as error
+variants, and all seven vectors now reach the ledger.
+
+**The X-chain reject.** `X_SEAM_BLOCK_REJECT`: Go and Rust had a reject, C++ did
+not — and `P_SEAM_BLOCK_REJECT` showed the same hole on the P-chain. The root of
+both was the C++ host seam itself: `lux::node::Block` declared `verify` and
+`accept` and no `reject`, so neither C++ chain could be told a block lost.
+
+CLOSED at the seam, which is where it had to be: `lux::node::Block` now
+declares `virtual void reject() = 0`, the engine calls it on a block it gives
+up on, and both C++ chains override it — xvm re-verifying each transaction
+before returning it to the pool, platformvm reissuing its decision transactions
+unverified, each following its own chain's reference rather than one rule for
+both. The evaluators ask the question of `lux::node::Block` rather than of the
+concrete class, so the vector goes green only when consensus can genuinely
+reach the reject.
 
 Three more it found that were not on anyone's list:
 
-- **`P_EDGE_WRONG_NETWORK`** — a transaction addressed to network 2 passes the
+- **`P_EDGE_WRONG_NETWORK`** — a transaction addressed to network 2 passed the
   Rust P-chain's syntactic check, which Go and C++ both refuse with "wrong
   network ID". A transaction that is well-formed on two networks is one
-  signature that spends on both.
-- **`P_EDGE_EMPTY_NODE_ID`** — C++ refuses `AddValidator` by kind before it
-  looks at the validator; Go and Rust report the empty node id. The transaction
+  signature that spends on both. CLOSED: `syntactic_verify` takes the chain it
+  is being verified for, and refuses a transaction naming another network or
+  another blockchain.
+- **`P_EDGE_EMPTY_NODE_ID`** — C++ refused `AddValidator` by kind before it
+  looked at the validator; Go and Rust report the empty node id. The transaction
   is refused either way, for two different reasons, which is a rule that will
-  one day accept for the wrong reason.
-- **`P_IMPORT`** — Rust refuses `Import` outright where Go and C++ execute it.
+  one day accept for the wrong reason. CLOSED: C++ checks the node id first,
+  which is the order Go's `standard_tx_executor.go` uses.
+- **`P_IMPORT`** — Rust refused `Import` outright where Go and C++ execute it.
+  CLOSED: execution takes an `Atomic`, the shared half an import reads from.
+  A node with none finds nothing rather than refusing — the answer Go gives
+  from an empty shared memory.
