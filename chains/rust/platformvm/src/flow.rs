@@ -293,6 +293,32 @@ pub fn verify_permission(
     Ok(())
 }
 
+/// The shape of both checks, pinned.
+///
+/// `verify_credentials` once took a recovery function as an argument, and
+/// nothing supplied one — so its loop ran zero times and a transaction executed
+/// with no signature checked at all. The fix was not to find the missing
+/// caller: it was to stop the check taking an answer from outside, so there is
+/// nothing to forget to pass.
+///
+/// The two lines below say exactly that. Adding a parameter of any kind — a
+/// recoverer, a verifier, a flag that skips the loop — changes one of these
+/// functions' types and this file stops compiling. It is not a test that has to
+/// be run and it is not a rule anyone has to remember; it is the build.
+///
+/// Both are pinned, not just the outer one: `verify_permission` is where the
+/// recovery actually happens, and it is what the authorisation paths call
+/// directly, so pinning only the caller would leave the door where the check
+/// really lives.
+/// The spend check: what is being spent, what claims to spend it, the
+/// signatures, the bytes they cover, and the clock. No sixth thing.
+type SpendCheck = fn(&[Utxo], &[Input], &[Credential], &Id, u64) -> Result<(), CredentialError>;
+/// The one-owner check the authorisation paths call directly.
+type OwnerCheck = fn(&Owners, &[u32], &Credential, &Id, u64) -> Result<(), CredentialError>;
+
+const _: SpendCheck = verify_credentials;
+const _: OwnerCheck = verify_permission;
+
 /// Why the signatures do not authorise the spend.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CredentialError {
