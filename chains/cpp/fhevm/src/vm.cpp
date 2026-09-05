@@ -42,15 +42,21 @@ Id vm_id() {
 
 // ---- genesis -----------------------------------------------------------------
 
+// parse_genesis reads the genesis the way the reference reads it — plain
+// json.Unmarshal, not a Decoder. So a member this build does not know is
+// IGNORED rather than refused, and any non-space byte after the value is an
+// error. Refusing the unknown member here meant a genesis Go starts a chain on
+// stopped this one from starting at all, which is not a divergence about one
+// transaction but about the whole chain.
 Result<Genesis> parse_genesis(std::string_view s) {
     json::Value v;
     std::string err;
     std::size_t consumed = 0;
     if (!json::parse(s, &v, &consumed, &err)) return fail(Err::InvalidPayload, err);
-    if (json::more(s, consumed)) return fail(Err::InvalidPayload, "genesis: trailing content");
+    if (json::trailing(s, consumed)) return fail(Err::InvalidPayload, "genesis: trailing content");
     json::Reader r(v, {"version", "message", "timestamp", "alloc", "committee", "threshold",
                        "publicKey"},
-                   &err);
+                   &err, json::Unknown::Ignore);
     if (!r.ok()) return fail(Err::InvalidPayload, "genesis: " + err);
 
     Genesis g;
@@ -85,7 +91,9 @@ Result<Genesis> parse_genesis(std::string_view s) {
         g.committee_nil = false;
         for (const auto& el : c->array) {
             CommitteeMember m;
-            if (!read_member(el, &m, &err)) return fail(Err::InvalidPayload, "genesis: " + err);
+            if (!read_member(el, &m, &err, json::Unknown::Ignore)) {
+                return fail(Err::InvalidPayload, "genesis: " + err);
+            }
             g.committee.push_back(std::move(m));
         }
     }

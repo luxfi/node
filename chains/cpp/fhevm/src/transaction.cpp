@@ -603,7 +603,7 @@ Result<void> apply_fulfill(const Transaction& tx, VM& vm, std::int64_t now) {
     DecryptRecord req = *found;
     const EpochRecord* ep = vm.epoch(req.epoch);
     if (ep == nullptr) return fail(Err::EpochNotFound);
-    vote(req.attestations, tx.payer, p->result);
+    vote(req.attestations, req.attestations_nil, tx.payer, p->result);
     // The request completes the moment a threshold of DISTINCT members have
     // named the same handle. A member that names a different one is counted
     // against that value alone, so it delays nothing and pays for the privilege.
@@ -619,7 +619,7 @@ Result<void> apply_advance(const Transaction& tx, VM& vm, std::int64_t now) {
     auto p = decode_advance(view(tx.payload));
     if (!p) return std::unexpected(p.error());
     EpochRecord cur = vm.current_epoch();
-    vote(cur.attestations, tx.payer, tx.subject);
+    vote(cur.attestations, cur.attestations_nil, tx.payer, tx.subject);
     if (tally(cur.attestations, tx.subject) < cur.threshold) {
         // Not yet decided: record the vote against the sitting epoch and stop.
         return vm.put_epoch(cur);

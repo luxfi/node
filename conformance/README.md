@@ -24,7 +24,7 @@ answers next to each other.
 | Q quantumvm | 81 | yes | **no** | yes |
 | Z zkvm | 137 | yes | **no** | yes |
 | D dexvm | 35 | yes | **no** | yes |
-| F fhevm | 168 | yes | **no** | yes |
+| F fhevm | 264 | yes | **no** | yes |
 
 Most of those counts are damage. Every vector this reference reads back as a
 block or a transaction is also cut to a quarter, cut to a half, cut by one
@@ -32,6 +32,15 @@ byte, extended by one and extended by four — which is where a parser reads pas
 a buffer. Which vectors get that treatment is not a list anyone maintains: a
 vector is damaged if the reference parses it, because half of a truncation is a
 truncation and a vector already damaged on purpose is one.
+
+F's count includes an `F_JSON_*` group added after the C++ port and the
+reference were found to disagree about what their JSON decoders accept. Each is
+a correct transaction with one thing done to its payload — a stray closing
+brace, a member name folded by `unicode.SimpleFold` rather than by ASCII case,
+two keys naming one field, a discarded array element of the wrong type, a base64
+word broken across a line, a literal `null` where a struct belongs — and every
+one of them is a transaction the Go chain ADMITS, so an implementation that
+refuses it is named rather than quietly stricter. See `chains/cpp/fhevm/LLM.md`.
 
 P and X come from `luxfi/node`; Q, Z, D and F from `luxfi/chains`. Both are
 PUBLISHED versions and there is no replace directive, so the corpus regenerates

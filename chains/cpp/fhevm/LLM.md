@@ -46,6 +46,22 @@ genesis document and the genesis block id. It also verifies GO-PRODUCED ML-DSA-6
 signatures, which is how the two implementations are known to agree on FIPS 204's
 pure variant with an empty context rather than assumed to.
 
+`fhevm_conformance` is the other half, and it is not a test: it reads the shared
+`conformance/corpus/vectors.tsv` and PRINTS this chain's answer per vector, which
+`make chains` compares against the Go F-chain's. F contributes 264 rows there —
+the six operations, the well-formedness and authorisation edges, the wire damage,
+and a `F_JSON_*` group covering exactly the decoder rules named below, each one a
+correct transaction with one thing done to its payload. Those are the vectors
+that would catch any of these rules coming back:
+
+    F_JSON_TRAILING_BRACE/BRACKET   Decoder.More is not "are there bytes left"
+    F_JSON_UPPERCASE/LONG_S/KELVIN  names fold by SimpleFold, not by ASCII case
+    F_JSON_DUPLICATE_KEY            two keys, one field: the later one wins
+    F_JSON_ARRAY_TAIL_DISCARDED     a discarded element is never type-checked
+    F_JSON_BASE64_NEWLINE           base64 ignores \r and \n
+    F_JSON_NULL_*                   null is the zero struct, per operation
+    F_JSON_EMPTY/WORDED_NULL_GRANTEE  the two words an address takes as zero
+
 Regenerate the goldens by copying `test/golden_gen_test.go` into
 `~/work/lux/chains/fhevm` as `cppgolden_test.go` and running
 
@@ -56,12 +72,43 @@ Regenerate the goldens by copying `test/golden_gen_test.go` into
 **JSON is a consensus question here, not a formatting one.** A payload is opaque
 bytes the chain keeps verbatim, and whether it DECODES decides whether the
 transaction is valid — so `json.hpp` reproduces Go's `encoding/json` exactly:
-unknown members refused, trailing content refused, field names matched exactly
-then case-insensitively, `null` as the zero value, integer literals handed to a
-strconv-strict parser, Go's array rule (extra elements discarded, missing ones
-zero), `[]byte` as base64, `ids.ShortID` as cb58, `ids.NodeID` as `NodeID-<cb58>`,
-`ids.ID` as its native-chain name where it has one. The writer matches
-`json.Marshal` down to the HTML escaping and the sorted map keys.
+integer literals handed to a strconv-strict parser, Go's array rule (extra
+elements discarded WITHOUT a type check, missing ones zero), `null` as the zero
+value for a member AND for a whole struct, `[]byte` as base64 (which ignores
+`\r` and `\n`), `ids.ShortID` as cb58, `ids.NodeID` as `NodeID-<cb58>`, `ids.ID`
+as its native-chain name or its one-letter alias where it has one. The writer
+matches `json.Marshal` down to the HTML escaping, the sorted map keys, and
+`\ufffd` for every byte that starts no well-formed rune.
+
+Two of those rules are subtler than they look, and each was measured against the
+reference rather than read off:
+
+**The chain reads JSON two ways, and they are different acceptance sets.**
+Payloads go through a `Decoder` with `DisallowUnknownFields` (`transaction.go`
+decode); records and genesis go through plain `json.Unmarshal` (`vm.go` loadInto,
+Initialize). So a member the schema does not describe is REFUSED in a payload and
+IGNORED in a record — and `Decoder.More`, which asks whether another ELEMENT
+follows, answers false at `]` and `}`, while `Unmarshal` scans the whole document
+and refuses any trailing byte. `json::more` and `json::trailing` are those two
+questions, and `json::Unknown` is which side of the line a reader is on. Reading
+records under the payload rules SKIPPED rows the reference loads, and refused a
+genesis it starts a chain on.
+
+**Field names fold by `unicode.SimpleFold`, not by ASCII case.** Every schema
+name here is ASCII, and exactly two runes outside ASCII fold onto an ASCII
+letter — U+017F onto s, U+212A onto k — so `{"ſize":…}` names Size and
+`{"public<U+212A>ey":…}` names PublicKey, in Go and now here. And with two keys
+naming one field the LATER one wins whichever way each matched, because Go
+resolves each key on its own and then writes it; preferring the exact match read
+a different value out of the same bytes.
+
+**A decoder that recurses is a decoder the payer controls.** The parser is
+iterative and so is the teardown. Capping the open containers at Go's 10,000 was
+not enough on its own: at that depth a Debug build with the sanitizers on still
+walked off the stack, so the same 128 KiB of brackets was a refusal on one build
+and fatal on another — a consensus property decided by the compiler's frame size.
+The cap stays at Go's number, because that is which documents the two agree to
+refuse; the flatness is what makes the answer the same everywhere.
 
 **Verification is the whole of the auth surface.** `auth.hpp` offers no signing
 and no key generation: a payer signs offline with a key F never sees, and a
@@ -107,11 +154,13 @@ block timestamp needs and which are Go's `SetInt64`/`Int64` exactly.
   pinned in the test too, so a change to the runtime's parameters shows up as a
   failure rather than as two networks encrypting under different moduli.
 
-- **The differential harness does not yet cover F.** `conformance/harness_runner.py`
-  evaluates `corpus/chain_differential.json` across platformvm, xvm, quantumvm
-  and zkvm; there are no F vectors, so this port is checked against Go by its own
-  golden header instead. Adding F to the shared corpus needs Go-side generation
-  in `conformance/gen`, which is that harness's change and not this one.
+- **The JSON nesting cap is not in the corpus, deliberately.** Both sides of
+  Go's boundary — 10,000 open containers and 10,001 — are refused with the same
+  compared verdict, and the runner weighs parse/kind/id/syntactic/exec rather
+  than the sentence, so a vector could not tell a wrong cap from a right one. It
+  would cost 1.3 MB of brackets to say nothing. The cap is pinned where it can
+  be seen instead: `test/json_test.cpp`, against the two answers Go was asked
+  for directly, and run under the sanitizers.
 
 - **Concurrency is the host's.** This VM takes no locks, matching the house
   shape (`chains/cpp/xvm` does the same) and the seam's single-threaded drive.

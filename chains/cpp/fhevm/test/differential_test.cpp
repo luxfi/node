@@ -344,8 +344,11 @@ int main() {
         r.status = RequestStatus::Pending;
         r.created_at = fhevm_golden::kGenesisTime;
         r.permit_id = id_of(fhevm_golden::kPermitIdA);
-        r.attestations.push_back(
-            Attestation{account_of(fhevm_golden::kM0Addr), id_of(fhevm_golden::kResultHandle)});
+        // Through vote(), not by hand, so the nil flag is set the way an
+        // attestation actually arrives — and a record built here is the one an
+        // accepted transaction would have written.
+        vote(r.attestations, r.attestations_nil, account_of(fhevm_golden::kM0Addr),
+             id_of(fhevm_golden::kResultHandle));
         check_eq(marshal(r), fhevm_golden::kDecryptRecordJSON, "decrypt record");
         DecryptRecord back;
         std::string err;

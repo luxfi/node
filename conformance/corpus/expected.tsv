@@ -132,6 +132,22 @@ R	F_WIRE_TRAILING_BYTES	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid 
 R	F_WIRE_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
 R	F_WIRE_EMPTY	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: short buffer
 R	F_WIRE_ONE_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: short buffer
+R	F_JSON_NULL_REVOKE	ok	RevokePermit	b2a8b647f37589aac05ebab1f24555a8b45d5160f899df0806e9e5afc69f4dd0	OK	LEDGER	fhevm: permit not found
+R	F_JSON_NULL_ADVANCE	ok	AdvanceEpoch	4d46f405cd2324b5c60d0441d709f9fe4e831c7e1f3afa7d79f7a148910c7cb3	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid committee: empty committee
+R	F_JSON_NULL_REGISTER	ok	RegisterCiphertext	120b8a6e030103fe7fc97058e59dc8980a5bcae46d79408ee547bee88f01b1e0	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: register: empty ciphertext digest
+R	F_JSON_TRAILING_BRACE	ok	RegisterCiphertext	956219f2cdd38060963254f9eb2160fb509af4b6b275cea29214e3e0612a2c0e	OK	OK	admitted by the funded chain
+R	F_JSON_TRAILING_BRACKET	ok	RegisterCiphertext	13667d858f147cf25ffd7227acb0475178829f5efb73c07c2117718b83a83777	OK	OK	admitted by the funded chain
+R	F_JSON_TRAILING_COMMA	ok	RegisterCiphertext	47df0e7e3f41c02dfd68b011702d074076c47463ae8d1f55078b4a6d7db94131	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: register: trailing content
+R	F_JSON_TRAILING_DOCUMENT	ok	RegisterCiphertext	9b493333bf337a95121efca5209fac2b7a051787a970df6f7eb62adb494fec9f	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: register: trailing content
+R	F_JSON_UPPERCASE_KEYS	ok	RegisterCiphertext	db5e76a258ec1d88d05813bf54ac21bf84f0586f529215bb281b7f53123017b2	OK	OK	admitted by the funded chain
+R	F_JSON_LONG_S_KEY	ok	RegisterCiphertext	75e950d626cf841eeb8de6a8899aa7a1531242d7503f94de55b72ffa11f54c04	OK	OK	admitted by the funded chain
+R	F_JSON_KELVIN_KEY	ok	AdvanceEpoch	0f9e88686e4c460bc8cf05c81e7c9314603818cc155df121b27b9fb5b0ab3393	OK	OK	admitted by the funded chain
+R	F_JSON_DUPLICATE_KEY	ok	RegisterCiphertext	b7f3fee0bffd394e59a7af34687fa48c20864c91465e66e7edf42b03c88f2682	OK	OK	admitted by the funded chain
+R	F_JSON_ARRAY_TAIL_DISCARDED	ok	RegisterCiphertext	d149faf21b2dc7a40c6c89f060c3e75682d3c724bde69501e5e548a46e7abcb3	OK	OK	admitted by the funded chain
+R	F_JSON_ARRAY_SHORT	ok	RegisterCiphertext	e7c53228117294e91312895d7093f8293761bdbe31d35b2c0430e8777b6e67ec	SYNTACTIC	SYNTACTIC	fhevm: fhevm: subject does not match its payload: handle does not match digest+scheme
+R	F_JSON_BASE64_NEWLINE	ok	AdvanceEpoch	0b7af68a549095099624050f6abb2fe05754db08504db04226e3aae402b77f50	OK	OK	admitted by the funded chain
+R	F_JSON_EMPTY_GRANTEE	ok	GrantPermit	246a6feba9344391c943866e053fb65267f6f8527eb5645e105737caff572cc8	OK	LEDGER	fhevm: ciphertext not found
+R	F_JSON_WORDED_NULL_GRANTEE	ok	GrantPermit	f70e9682c7cd56addc400c7ecf1edc699b915c88f686407a2da25eb7a7106eef	OK	LEDGER	fhevm: ciphertext not found
 R	D_ASSETID_EVM_NATIVE	ok	AssetID	17b2d55c97c7250dd0e0d88fe65b359ef205ad648760140e5841202c042147ff	OK	OK	derived
 R	D_ASSETID_ERC20	ok	AssetID	f78ce2d083844fa6fdf4125d95989b9ed38efa32086c81d25e7ce3c37b673941	OK	OK	derived
 R	D_ASSETID_UTXO	ok	AssetID	6e9415353d6dce8cf0b9dda1c0d2ab35ee28c4325f379232aa45923b90b522ea	OK	OK	derived
@@ -629,3 +645,83 @@ R	F_TX_NONCE_GAP_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too sm
 R	F_TX_NONCE_GAP_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
 R	F_TX_NONCE_GAP_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
 R	F_TX_NONCE_GAP_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_NULL_REVOKE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_NULL_REVOKE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_NULL_REVOKE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_NULL_REVOKE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_NULL_REVOKE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_NULL_ADVANCE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_NULL_ADVANCE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_NULL_ADVANCE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_NULL_ADVANCE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_NULL_ADVANCE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_NULL_REGISTER_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_NULL_REGISTER_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_NULL_REGISTER_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_NULL_REGISTER_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_NULL_REGISTER_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_TRAILING_BRACE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_BRACE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_BRACE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_BRACE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_TRAILING_BRACE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_TRAILING_BRACKET_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_BRACKET_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_BRACKET_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_BRACKET_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_TRAILING_BRACKET_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_TRAILING_COMMA_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_COMMA_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_COMMA_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_COMMA_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_TRAILING_COMMA_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_TRAILING_DOCUMENT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_DOCUMENT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_DOCUMENT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_TRAILING_DOCUMENT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_TRAILING_DOCUMENT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_UPPERCASE_KEYS_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_UPPERCASE_KEYS_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_UPPERCASE_KEYS_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_UPPERCASE_KEYS_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_UPPERCASE_KEYS_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_LONG_S_KEY_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_LONG_S_KEY_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_LONG_S_KEY_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_LONG_S_KEY_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_LONG_S_KEY_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_KELVIN_KEY_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: bad zap length
+R	F_JSON_KELVIN_KEY_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_KELVIN_KEY_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_KELVIN_KEY_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_KELVIN_KEY_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_DUPLICATE_KEY_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_DUPLICATE_KEY_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_DUPLICATE_KEY_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_DUPLICATE_KEY_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_DUPLICATE_KEY_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_ARRAY_TAIL_DISCARDED_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_ARRAY_TAIL_DISCARDED_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_ARRAY_TAIL_DISCARDED_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_ARRAY_TAIL_DISCARDED_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_ARRAY_TAIL_DISCARDED_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_ARRAY_SHORT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_ARRAY_SHORT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_ARRAY_SHORT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_ARRAY_SHORT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_ARRAY_SHORT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_BASE64_NEWLINE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: bad zap length
+R	F_JSON_BASE64_NEWLINE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_BASE64_NEWLINE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_BASE64_NEWLINE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_BASE64_NEWLINE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_EMPTY_GRANTEE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_EMPTY_GRANTEE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_EMPTY_GRANTEE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_EMPTY_GRANTEE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_EMPTY_GRANTEE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_WORDED_NULL_GRANTEE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_WORDED_NULL_GRANTEE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_WORDED_NULL_GRANTEE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_JSON_WORDED_NULL_GRANTEE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_JSON_WORDED_NULL_GRANTEE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes

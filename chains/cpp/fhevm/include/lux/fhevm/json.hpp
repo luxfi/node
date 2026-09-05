@@ -60,17 +60,45 @@ struct Value {
 // with a reason.
 bool parse(std::string_view in, Value* out, std::size_t* consumed, std::string* err);
 
-// more reports whether another value begins after the first — Go's dec.More(),
-// which is what makes trailing content a refusal rather than a shrug.
+// THE CHAIN READS JSON TWO WAYS, and they are not the same acceptance set.
+// Go's own code makes the distinction and this file keeps it:
+//
+//   PAYLOADS  (transaction.go decode)  json.Decoder + DisallowUnknownFields
+//             an unknown member is REFUSED; a stray ']' or '}' after the value
+//             is NOT trailing content, because Decoder.More asks whether
+//             another ELEMENT follows.
+//
+//   RECORDS and GENESIS  (vm.go loadInto, Initialize)  plain json.Unmarshal
+//             an unknown member is IGNORED; ANY non-space byte after the value
+//             is an error, closing brackets included.
+//
+// Reading records under the payload rules refused a genesis Go starts on, and
+// reading payloads under the record rules refused a transaction Go admits. Both
+// were measured against the reference.
+
+// more is Go's Decoder.More: is there another ELEMENT after this value? It
+// answers false at end of input and at ']' or '}'. For payloads.
 bool more(std::string_view in, std::size_t consumed);
+
+// trailing is what json.Unmarshal refuses: any non-space byte after the value,
+// whatever it is. For records and genesis.
+bool trailing(std::string_view in, std::size_t consumed);
+
+// Unknown says what a member the schema does not describe means.
+enum class Unknown {
+    Refuse,  // DisallowUnknownFields — payloads
+    Ignore,  // plain Unmarshal — records and genesis
+};
 
 // Reader is one JSON object being read as a struct: it holds the schema, so an
 // unknown member is caught once here rather than at each field.
 class Reader {
 public:
-    // ok is false when the value is not an object, or carries a member the
-    // schema does not describe. err says which.
-    Reader(const Value& v, std::initializer_list<std::string_view> schema, std::string* err);
+    // ok is false when the value is not a JSON object — except null, which Go
+    // takes as the zero struct — or, under Unknown::Refuse, when it carries a
+    // member the schema does not describe. err says which.
+    Reader(const Value& v, std::initializer_list<std::string_view> schema, std::string* err,
+           Unknown unknown = Unknown::Refuse);
 
     bool ok() const { return ok_; }
     // find returns the LAST member with this name — exact match preferred, then

@@ -37,7 +37,11 @@ std::int64_t tally(const std::vector<Attestation>& as, const Id& value) {
     return std::int64_t(seen.size());
 }
 
-void vote(std::vector<Attestation>& as, const Account& member, const Id& value) {
+void vote(std::vector<Attestation>& as, bool& is_nil, const Account& member, const Id& value) {
+    // Casting a vote makes the list non-nil, which is what Go's append does to a
+    // nil slice — and the difference is on the wire: Marshal writes null for a
+    // nil slice and [] for an empty one.
+    is_nil = false;
     for (auto& a : as) {
         if (a.member == member) {
             a.value = value;
@@ -122,8 +126,9 @@ void write_member(json::Writer& w, const CommitteeMember& m) {
     w.end_object();
 }
 
-bool read_member(const json::Value& v, CommitteeMember* out, std::string* err) {
-    json::Reader r(v, {"node_id", "public_key", "weight", "index"}, err);
+bool read_member(const json::Value& v, CommitteeMember* out, std::string* err,
+                 json::Unknown unknown) {
+    json::Reader r(v, {"node_id", "public_key", "weight", "index"}, err, unknown);
     if (!r.ok()) return false;
     if (!read_node_id(r.find("node_id"), "node_id", &out->node_id, err)) return false;
     const json::Value* pk = r.find("public_key");
@@ -136,8 +141,12 @@ bool read_member(const json::Value& v, CommitteeMember* out, std::string* err) {
     return true;
 }
 
-void write_attestations(json::Writer& w, const std::vector<Attestation>& as) {
-    if (as.empty()) {
+// write_attestations writes a Go []Attestation, and `is_nil` is the difference
+// between a nil slice and an empty one: Go marshals the first as null and the
+// second as []. Nothing this chain WRITES produces an empty non-nil list, but a
+// row that arrives holding one has to come back out as it went in.
+void write_attestations(json::Writer& w, const std::vector<Attestation>& as, bool is_nil) {
+    if (as.empty() && is_nil) {
         w.null();
         return;
     }
@@ -153,14 +162,16 @@ void write_attestations(json::Writer& w, const std::vector<Attestation>& as) {
     w.end_array();
 }
 
-bool read_attestations(const json::Value* v, std::vector<Attestation>* out, std::string* err) {
+bool read_attestations(const json::Value* v, std::vector<Attestation>* out, bool* is_nil,
+                       std::string* err, json::Unknown unknown) {
     if (v == nullptr || v->null()) return true;
+    *is_nil = false;
     if (v->kind != json::Kind::Array) {
         *err = "cannot unmarshal into attestations";
         return false;
     }
     for (const auto& el : v->array) {
-        json::Reader r(el, {"member", "value"}, err);
+        json::Reader r(el, {"member", "value"}, err, unknown);
         if (!r.ok()) return false;
         Attestation a;
         if (!read_account(r.find("member"), "member", &a.member, err)) return false;
@@ -270,7 +281,7 @@ std::string marshal(const DecryptRecord& r) {
     w.key("permitId");
     w.byte_array(view(r.permit_id));
     w.key("attestations");
-    write_attestations(w, r.attestations);
+    write_attestations(w, r.attestations, r.attestations_nil);
     w.end_object();
     return w.str();
 }
@@ -287,7 +298,7 @@ std::string marshal(const EpochRecord& r) {
         w.i64(r.end_time);
     }
     w.key("committee");
-    if (r.committee.empty()) {
+    if (r.committee.empty() && r.committee_nil) {
         w.null();
     } else {
         w.begin_array();
@@ -301,7 +312,7 @@ std::string marshal(const EpochRecord& r) {
     w.key("status");
     w.u64(std::uint8_t(r.status));
     w.key("attestations");
-    write_attestations(w, r.attestations);
+    write_attestations(w, r.attestations, r.attestations_nil);
     w.end_object();
     return w.str();
 }
@@ -309,11 +320,19 @@ std::string marshal(const EpochRecord& r) {
 namespace {
 
 // one_value parses a whole document as a single JSON value: the shape every
-// record read has, and the place trailing content is refused.
+// record read has.
+//
+// A record is read the way the reference reads one — plain json.Unmarshal, not
+// a Decoder — so the rules here are Unmarshal's and not a payload's. Unmarshal
+// scans the whole document, so ANY non-space byte after the value is an error,
+// a stray closing bracket included; and it IGNORES a member the schema does not
+// describe, which is why every read below passes Unknown::Ignore. A record row
+// carrying a member this build does not know is one an older or newer build
+// wrote, and the reference loads it.
 bool one_value(std::string_view s, json::Value* v, std::string* err) {
     std::size_t consumed = 0;
     if (!json::parse(s, v, &consumed, err)) return false;
-    if (json::more(s, consumed)) {
+    if (json::trailing(s, consumed)) {
         *err = "trailing content";
         return false;
     }
@@ -330,9 +349,29 @@ bool read_chain_id(const json::Value* v, std::string_view field, Id* out, std::s
         *err = "cannot unmarshal into " + std::string(field);
         return false;
     }
-    if (v->str.empty()) return true;
+    // ids.ID.UnmarshalJSON reads "" as the zero id — unlike an address, which
+    // refuses it. Two types, two rules; json.cpp's read_account keeps the other.
+    if (v->str.empty()) {
+        *out = Id{};
+        return true;
+    }
     // A native chain answers with its own name rather than cb58, so the reader
-    // has to know both spellings — the same two the writer chooses between.
+    // has to know both spellings — the same two the writer chooses between —
+    // AND the one-letter alias, which the reference also takes and which the
+    // writer never emits. A reader that took less than the writer of the OTHER
+    // implementation emits is how one node skips a row the other loads.
+    if (v->str.size() == 1) {
+        char c = v->str[0];
+        if (c >= 'a' && c <= 'z') c = char(c - 'a' + 'A');
+        if (std::string_view("PCXQABMFZGIKD").find(c) != std::string_view::npos) {
+            Id candidate{};
+            candidate[31] = std::uint8_t(c);
+            *out = candidate;
+            return true;
+        }
+        // A single letter that names no chain falls through to cb58, which
+        // refuses it — the same order the reference resolves in.
+    }
     for (char letter : std::string_view("PCXQABMFZGIKD")) {
         Id candidate{};
         candidate[31] = std::uint8_t(letter);
@@ -357,7 +396,7 @@ bool unmarshal(std::string_view s, CiphertextRecord* out, std::string* err) {
     if (!one_value(s, &v, err)) return false;
     json::Reader r(v, {"handle", "owner", "type", "level", "epoch", "registered_at", "size",
                        "chain_id", "scheme", "digest"},
-                   err);
+                   err, json::Unknown::Ignore);
     if (!r.ok()) return false;
     std::uint64_t u = 0;
     if (!read_id(r.find("handle"), "handle", &out->handle, err)) return false;
@@ -383,7 +422,7 @@ bool unmarshal(std::string_view s, PermitRecord* out, std::string* err) {
     if (!one_value(s, &v, err)) return false;
     json::Reader r(v, {"permit_id", "handle", "grantee", "grantor", "operations", "expiry",
                        "created_at", "attestation", "chain_id", "status"},
-                   err);
+                   err, json::Unknown::Ignore);
     if (!r.ok()) return false;
     if (!read_id(r.find("permit_id"), "permit_id", &out->permit_id, err)) return false;
     if (!read_id(r.find("handle"), "handle", &out->handle, err)) return false;
@@ -413,7 +452,7 @@ bool unmarshal(std::string_view s, DecryptRecord* out, std::string* err) {
                        "callback_selector", "source_chain", "epoch", "nonce", "expiry", "status",
                        "created_at", "completed_at", "result_handle", "error", "permitId",
                        "attestations"},
-                   err);
+                   err, json::Unknown::Ignore);
     if (!r.ok()) return false;
     if (!read_id(r.find("request_id"), "request_id", &out->request_id, err)) return false;
     if (!read_id(r.find("ciphertext_handle"), "ciphertext_handle", &out->ciphertext_handle, err)) {
@@ -443,7 +482,10 @@ bool unmarshal(std::string_view s, DecryptRecord* out, std::string* err) {
     if (!read_id(r.find("result_handle"), "result_handle", &out->result_handle, err)) return false;
     if (!read_string(r.find("error"), "error", &out->error, err)) return false;
     if (!read_id(r.find("permitId"), "permitId", &out->permit_id, err)) return false;
-    if (!read_attestations(r.find("attestations"), &out->attestations, err)) return false;
+    if (!read_attestations(r.find("attestations"), &out->attestations, &out->attestations_nil,
+                           err)) {
+        return false;
+    }
     return true;
 }
 
@@ -452,7 +494,7 @@ bool unmarshal(std::string_view s, EpochRecord* out, std::string* err) {
     if (!one_value(s, &v, err)) return false;
     json::Reader r(v, {"epoch", "start_time", "end_time", "committee", "threshold", "public_key",
                        "status", "attestations"},
-                   err);
+                   err, json::Unknown::Ignore);
     if (!r.ok()) return false;
     if (!read_u64(r.find("epoch"), "epoch", ~std::uint64_t(0), &out->epoch, err)) return false;
     if (!read_i64(r.find("start_time"), "start_time", &out->start_time, err)) return false;
@@ -466,7 +508,7 @@ bool unmarshal(std::string_view s, EpochRecord* out, std::string* err) {
         out->committee_nil = false;
         for (const auto& el : c->array) {
             CommitteeMember m;
-            if (!read_member(el, &m, err)) return false;
+            if (!read_member(el, &m, err, json::Unknown::Ignore)) return false;
             out->committee.push_back(std::move(m));
         }
     }
@@ -479,7 +521,10 @@ bool unmarshal(std::string_view s, EpochRecord* out, std::string* err) {
     std::uint64_t u = 0;
     if (!read_u64(r.find("status"), "status", 255, &u, err)) return false;
     out->status = EpochStatus(u);
-    if (!read_attestations(r.find("attestations"), &out->attestations, err)) return false;
+    if (!read_attestations(r.find("attestations"), &out->attestations, &out->attestations_nil,
+                           err)) {
+        return false;
+    }
     return true;
 }
 
