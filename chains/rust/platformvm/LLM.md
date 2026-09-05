@@ -12,7 +12,7 @@ and signed for by whoever owns it. None exists to make entry selective.
 
 ```
 cd chains/rust/platformvm
-PATH=~/.cargo/bin:$PATH cargo test          # 407 tests
+PATH=~/.cargo/bin:$PATH cargo test          # 410 tests
 PATH=~/.cargo/bin:$PATH cargo clippy --all-targets
 ```
 

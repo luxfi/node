@@ -2083,7 +2083,79 @@ pub fn advance_time_to(state: &mut State, new_time: u64, config: &Config) -> Res
         changed = true;
     }
 
+    // A registration nobody issued stops being issuable once its own expiry
+    // has passed, and the chain stops having to remember it. Go:
+    // `removeStaleExpiries`. The set is in time order, so this is a prefix.
+    let stale: Vec<crate::l1::Expiry> = state
+        .expiries()
+        .take_while(|e| e.timestamp <= new_time)
+        .cloned()
+        .collect();
+    for expiry in &stale {
+        state.delete_expiry(expiry);
+    }
+
+    // And the clock charges the L1 validators for the time it moved. Go:
+    // `advanceValidatorFeeState`.
+    let seconds = new_time.saturating_sub(state.timestamp());
+    if advance_validator_fees(state, config, seconds)? {
+        changed = true;
+    }
+
     state.set_timestamp(new_time);
+    Ok(changed)
+}
+
+/// Charge every active L1 validator for `seconds`, and drop the ones that can
+/// no longer pay.
+///
+/// This is what makes the L1 plane's balance a *lifetime* rather than a number
+/// sitting in a record. A validator pays continuously for the P-chain's trouble
+/// in tracking it, and it leaves when the money runs out rather than when a
+/// clock strikes — so a chain that never charged would keep every registration
+/// alive for ever, free, and the fee that bounds how many there can be would
+/// bound nothing.
+///
+/// The order is the whole trick: validators are walked in increasing
+/// `end_accumulated_fee`, so the prefix that can no longer pay is exactly the
+/// prefix this deactivates, and the walk stops at the first one that can. That
+/// is why a balance is stored as an absolute accrued-fee mark and not as a
+/// remaining amount — a remaining amount would have to be decremented for every
+/// validator on every tick.
+///
+/// A deactivated validator is not refunded: it is deactivated *because* there
+/// is nothing left. It stays in the set and keeps its weight, because weight
+/// nobody can vote toward is still weight a quorum has to beat.
+fn advance_validator_fees(
+    state: &mut State,
+    config: &Config,
+    seconds: u64,
+) -> Result<bool, Error> {
+    let fee_state = crate::l1::FeeState {
+        current: state.num_active_l1_validators() as u64,
+        excess: state.l1_excess(),
+    };
+    let cost = fee_state.cost_of(&config.validator_fee, seconds);
+    let accrued = state
+        .accrued_fees()
+        .checked_add(cost)
+        .ok_or(Error::Overflow)?;
+
+    let spent: Vec<crate::l1::Validator> = state
+        .active_l1_validators()
+        .into_iter()
+        .take_while(|v| v.end_accumulated_fee <= accrued)
+        .cloned()
+        .collect();
+    let changed = !spent.is_empty();
+    for mut validator in spent {
+        validator.end_accumulated_fee = 0;
+        state.put_l1_validator(validator)?;
+    }
+
+    let moved = fee_state.advance_time(config.validator_fee.target, seconds);
+    state.set_l1_excess(moved.excess);
+    state.set_accrued_fees(accrued);
     Ok(changed)
 }
 
@@ -3543,6 +3615,87 @@ mod tests {
             ),
             Err(Error::Flow(_))
         ));
+    }
+
+    // ── the clock, over the L1 plane
+
+    #[test]
+    fn the_clock_charges_an_l1_validator_and_drops_it_when_the_money_runs_out() {
+        // What makes the balance a lifetime rather than a number sitting in a
+        // record. A chain that never charged would keep every registration
+        // alive for ever, free, and the fee that bounds how many there can be
+        // would bound nothing.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, tx) = converted(
+            now,
+            network,
+            vec![network_validator(1, 100, 4_096), network_validator(2, 50, 1_000_000)],
+            2_000_000,
+        );
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
+        assert_eq!(state.num_active_l1_validators(), 2);
+
+        // Two active validators against a target of 10_000 is far below it, so
+        // the price sits at the floor: 512 per second.
+        let cheap = state.l1_validators(&network)[0].validation_id;
+        let _ = cheap;
+
+        // Eight seconds at the floor is 4_096 — exactly what the first one
+        // prepaid, and it is dropped at the mark it can pay UP TO.
+        assert_eq!(advance_time_to(&mut state, now + 8, &config()), Ok(true));
+        assert_eq!(state.accrued_fees(), 4_096);
+        assert_eq!(state.num_active_l1_validators(), 1);
+
+        // The spent one is still in the set, still weighing on it, and cannot
+        // be sampled.
+        let by_node: std::collections::HashMap<NodeId, crate::l1::Validator> = state
+            .l1_validators(&network)
+            .into_iter()
+            .cloned()
+            .map(|v| (v.node_id, v))
+            .collect();
+        let spent = &by_node[&NodeId([1; 20])];
+        assert!(!spent.is_active());
+        assert_eq!(spent.weight, 100);
+        assert_eq!(spent.effective_node_id(), NodeId::EMPTY);
+        // And it is not refunded: it was dropped BECAUSE there is nothing left.
+        assert_eq!(spent.end_accumulated_fee, 0);
+        // The one that can still pay is untouched.
+        assert!(by_node[&NodeId([2; 20])].is_active());
+    }
+
+    #[test]
+    fn a_clock_that_does_not_move_charges_nothing() {
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, tx) = converted(now, network, vec![network_validator(1, 100, 4_096)], 10_000);
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
+        advance_time_to(&mut state, now, &config()).unwrap();
+        assert_eq!(state.accrued_fees(), 0);
+        assert_eq!(state.num_active_l1_validators(), 1);
+    }
+
+    #[test]
+    fn a_registration_stops_being_remembered_once_it_can_no_longer_be_issued() {
+        // The chain remembers a registration only to refuse a replay of it, and
+        // a message past its own expiry can never be issued again. Go:
+        // `removeStaleExpiries`.
+        let now = 1000;
+        let network = [0x77u8; 32];
+        let (mut state, input) = an_l1(now, network, 10_000);
+        let (msg, tx) = register_tx(now, network, 9, 42, 0, input);
+        execute_standard(&mut state, &tx, &config(), &fees(), &NoImports).unwrap();
+
+        let expiry = crate::l1::Expiry {
+            timestamp: now + 60,
+            validation_id: msg.validation_id(),
+        };
+        assert!(state.has_expiry(&expiry));
+        advance_time_to(&mut state, now + 59, &config()).unwrap();
+        assert!(state.has_expiry(&expiry), "not yet past it");
+        advance_time_to(&mut state, now + 60, &config()).unwrap();
+        assert!(!state.has_expiry(&expiry), "the moment it passes, it is dropped");
     }
 
     // ── the sovereign-L1 plane
