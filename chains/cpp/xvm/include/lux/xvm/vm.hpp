@@ -149,8 +149,19 @@ public:
     // the genesis buffer; an asset created later has no name, only an id.
     wire::Result<Id> alias_of(const std::string& alias) const;
 
-    // bootstrapped tells the fxs that history has finished replaying, which is
-    // when signature verification switches on.
+    // set_bootstrapped is the ONE switch for whether this chain checks the
+    // signatures on what it executes, and it is written so that not calling it
+    // is the SAFE answer: a VM that nobody ever tells anything verifies
+    // everything. Passing false is a host saying "these blocks are history the
+    // network already agreed on, and their signatures were checked when they
+    // were first accepted" — the only thing that may skip the work.
+    //
+    // Go reaches this through the engine's SetState, which every chain is driven
+    // through before it serves a peer. This seam grew the same call
+    // (lux/node/vm.hpp, `virtual void set_bootstrapped(bool)`, defaulted to
+    // silence); the signature here is that one, so a host holding nothing but a
+    // lux::node::VM* can drive it, and a host holding the concrete Vm reaches
+    // the same method rather than a second one that could disagree.
     void set_bootstrapped(bool v);
     bool bootstrapped() const { return backend_.bootstrapped; }
 

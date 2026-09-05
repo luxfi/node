@@ -14,7 +14,7 @@ include/lux/xvm/   zap wire  ·  fx envelopes  ·  fx families  ·  txs  ·  add
                    store  ·  state  ·  root  ·  executor  ·  block  ·  genesis
                    mempool  ·  vm
 src/               their implementations
-test/              fourteen suites, 934 assertions, all green (also under
+test/              fourteen suites, 959 assertions, all green (also under
                    -fsanitize=address,undefined)
 ```
 
@@ -44,6 +44,28 @@ unsigned body `{0,1,2,3,4,5}`, a fixed 65-byte signature, and the address that
 signature belongs to. Recovering that exact address here proves this port's
 hash, its ECDSA recovery and its address derivation are the same three
 functions Go's are — every later "the signature is accepted" rests on it.
+
+That fixture is read back at every RECOVERY ID too, because the last byte of a
+signature is consensus and reading it wrong is a fork. The table below is that
+one signature handed to luxfi/crypto and to k256, run rather than reasoned
+about, and `recovery_id_matches_the_reference` asserts this port lands on all
+five rows:
+
+| `v` | Go | Rust | meaning |
+|---|---|---|---|
+| 0 | `015cce…e7f0` | `015cce…e7f0` | the signer |
+| 1 | `aaabc7…8271` | `aaabc7…8271` | the other candidate `y` |
+| 2 | recovery failed | recovery failed | `x` wrapped the group order |
+| 3 | recovery failed | recovery failed | `x` wrapped, odd `y` |
+| ≥4 | invalid recovery id | invalid recovery id | not a recovery id |
+
+2 and 3 name the recovery whose `R` has `x = r + n`. Producing one needs
+`r < p - n`, about 2^128 of work, so no signature that exists takes those values
+and both references fail them. `secp256k1_ecrecover` NORMALIZES its `v` argument
+instead of refusing it, so the rule lives in `recover_address`, which is the only
+place that still has the byte. Masking it there — `v & 1`, which this port did —
+read 2 as 0 and handed back the signer: one flipped byte in any valid credential
+made a transaction this chain accepted and the other two refused.
 
 ## Layering
 
@@ -104,7 +126,7 @@ cross-language KAT in Go's `xvmroot_test.go`, digit for digit.
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
-ctest --test-dir build            # 14/14, 934 assertions
+ctest --test-dir build            # 14/14, 959 assertions
 cmake -S . -B build-san -DXVM_SANITIZE=address,undefined && ...   # also green
 ```
 
@@ -119,7 +141,7 @@ Ported, with the Go tests ported alongside:
 
 - the ZAP codec, byte-identical (`wire_test`, 59)
 - all three fx families: outputs, inputs, operations, credentials, and every
-  spend and operation gate (`fx_test`, 79 — ported from `secp256k1fx/fx_test.go`,
+  spend and operation gate (`fx_test`, 89 — ported from `secp256k1fx/fx_test.go`,
   `nftfx/fx_test.go`, `propertyfx/fx_test.go`)
 - the five transactions, their wire, their round trips (`txs_test`, 84)
 - syntactic verification — the complete Go case table, every section
@@ -138,7 +160,7 @@ Ported, with the Go tests ported alongside:
   `NewGenesis` from a definition map (`genesis_test`, 33)
 - the pool, the admission gate and the bloom filter (`mempool_test`, 62)
 - build → verify → accept → **reject**, and the chain coming back after the
-  process exits (`vm_test`, 170)
+  process exits (`vm_test`, 185)
 
 Two of those are worth naming, because each is a place where a chain that
 merely answered questions correctly would still be wrong.
@@ -175,6 +197,25 @@ false answer.
 - `batch_verify.go`, a GPU batch-signature optimization whose Go version cannot
   change a verdict (it returns nil on every path)
 
+## Bootstrapping is the exception, not the default
+
+Skipping signature checks while replaying settled history is an OPTIMIZATION, so
+the default is the checking one and the switch only ever relaxes it
+(`executor::Backend::bootstrapped`, `fx::Fx::bootstrapped_`, both `true`). Go's
+field starts `false` and is safe because its engine drives every chain through
+`SetState` before it meets a peer. Nothing in the C++ node did, so a chain that
+started `false` stayed `false`: it checked no signature for its whole life and
+looked exactly like a chain that did.
+
+`Vm::set_bootstrapped` is the one switch, and its signature is the seam's —
+`lux/node/vm.hpp` grew `virtual void set_bootstrapped(bool)`, defaulted to
+silence, so a host holding nothing but a `lux::node::VM*` can drive it and a
+host holding the concrete `Vm` reaches the same method rather than a second one
+that could disagree. `vm_test` asserts that signature at compile time: a method
+differing by one qualifier would SHADOW the seam's rather than override it, and
+a host driving the seam would then reach the do-nothing body while the chain sat
+unchanged — the same fail-open by a quieter route.
+
 ## The one thing this port cannot do by itself
 
 `VmBlock::reject` exists, is faithful and is tested — but the node's seam
@@ -199,12 +240,23 @@ that speaks for this chain — `test/conformance.cpp`, built as `xvm_conformance
 (`conformance/`, the `chains` target at the repository root), not to this
 directory: a chain that scored itself would be marking its own paper.
 
-Run against this port, it agrees with Go on all fourteen X vectors, on every
-compared field — `parse`, `kind`, the id hash, `syntactic` and `exec`. One of
-those fourteen is not a transaction at all. `X_SEAM_BLOCK_REJECT` asks the
-compiler whether a block here can be rejected; against the code this replaces it
-answered ABSENT while Go answered PRESENT, which is the divergence written up
-above, caught by the only kind of check that could catch it.
+Run against this port, it agrees with Go on thirteen of the fourteen X vectors,
+on every compared field — `parse`, `kind`, the id hash, `syntactic` and `exec`.
+The fourteenth is not a transaction at all. `X_SEAM_BLOCK_REJECT` asks the
+compiler whether a block here can be rejected, and it answers ABSENT while Go
+answers PRESENT: the divergence written up above, held open by the only kind of
+check that could catch it, and the runner exits non-zero for it.
+
+It asks that of `lux::node::Block`, and the distinction is the whole vector.
+Asked of `VmBlock` — which is what it asked before — it answered PRESENT, because
+`VmBlock::reject` does exist; but consensus holds a `lux::node::Block&` and can
+call only what that interface declares, so it reported agreement about a
+capability the C++ node does not have. A probe of the concrete class can only
+ever say that this file's author wrote a method. Three runs pin the difference:
+the old probe on today's seam AGREES with Go on all 53 vectors, the new one
+reports one disagreement, and the new one on a seam carrying
+`virtual void reject() = 0` agrees again — green only once consensus can
+genuinely reach the reject.
 
 One gap is worth stating because agreement can hide it: on five of those vectors
 the `exec` field is compared by nobody. Go, Rust and C++ all answer `SKIPPED`

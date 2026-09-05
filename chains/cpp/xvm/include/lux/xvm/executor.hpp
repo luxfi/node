@@ -121,7 +121,15 @@ struct Backend {
     // The fee asset may differ from the chain's own asset when this VM runs as a
     // chain of its own.
     Id fee_asset_id{};
-    bool bootstrapped = false;
+
+    // Whether history has finished replaying. It gates signature checking — and
+    // in the executor, whether an operation is verified at all — so its default
+    // is the checking one. Go's field starts false and its engine turns it on
+    // through SetState before the chain ever sees a peer; the C++ seam has no
+    // such call, so a false default here would be a chain that verifies nothing
+    // and looks exactly like one that does. A node replaying history says so,
+    // once, through Vm::set_bootstrapped.
+    bool bootstrapped = true;
 
     std::uint32_t network_id = 0;
     Id chain_id{};

@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <ctime>
 #include <string>
+#include <type_traits>
 #include <unistd.h>
 
 using namespace lux::xvm;
@@ -130,6 +131,116 @@ struct Chain {
         return tx;
     }
 };
+
+// ================= what a VM does before anyone tells it anything =================
+//
+// Skipping signature checks while replaying settled history is an optimization,
+// and this is the case that keeps it one. Go's chain starts with the check off
+// and its engine turns it on through SetState before the chain ever meets a
+// peer; the C++ seam has no such call to rely on, so a chain that started off
+// would stay off — checking nothing, for its whole life, while looking exactly
+// like a chain that checks. So the default is the checking one, and the switch
+// only ever relaxes it.
+//
+// The signature of that switch is asserted too. lux::node::VM declares
+// `virtual void set_bootstrapped(bool)`, and a Vm method that differed by one
+// qualifier would SHADOW it rather than override it: a host driving the seam
+// would then reach the seam's do-nothing body while the concrete chain sat
+// unchanged, which is the same fail-open by a quieter route.
+static_assert(std::is_same_v<decltype(&Vm::set_bootstrapped), void (Vm::*)(bool)>,
+              "Vm::set_bootstrapped must be exactly lux::node::VM::set_bootstrapped(bool), "
+              "or a host driving the seam silently changes nothing");
+
+void signature_checking_is_the_default() {
+    std::printf("\n  -- a chain nobody has spoken to --\n");
+
+    store::Memory store;
+    auto genesis = genesis_asset(4);
+    const Id asset = genesis->id();
+
+    VmConfig cfg;
+    cfg.network_id = kNetworkID;
+    cfg.chain_id = chain_id();
+    cfg.net_id = id(0x0A);
+    cfg.fee_asset_id = asset;
+
+    // Built and brought up, and NOT told anything about its lifecycle — the
+    // host that forgets, or the seam that never grew the call.
+    Vm vm(cfg, the_fxs(), store);
+    auto r = vm.initialize({genesis}, kGenesisTime);
+    check(r.has_value(), r ? "genesis installs" : "genesis installs: " + r.error());
+    vm.set_now(kGenesisTime + 1);
+
+    check(vm.bootstrapped(), "a VM nobody has spoken to is checking signatures");
+
+    // A credential from the wrong key over a genesis output owned by key 0.
+    // Nothing about its SHAPE is wrong: the only thing that refuses it is the
+    // recovery, which is the thing the flag governs.
+    auto utx = std::make_shared<txs::BaseTx>();
+    utx->base.network_id = kNetworkID;
+    utx->base.blockchain_id = chain_id();
+    utx->base.ins.push_back(
+        txs::TransferableInput{txs::UTXOID{asset, 0, false}, asset, tin(kStartingBalance)});
+    utx->base.outs.push_back(txs::TransferableOutput{asset, tout(100, 1)});
+    auto forged = std::make_shared<txs::Tx>();
+    forged->unsigned_tx = utx;
+    auto cred = std::make_shared<fx::secp256k1fx::Credential>();
+    cred->signatures = {sign_unsigned_tx(test_key(1), view(utx->bytes()))};
+    forged->creds.push_back(cred);
+    (void)forged->initialize();
+
+    auto refused = vm.verify_tx(*forged);
+    check(!refused, "…so it refuses a credential the owner did not sign");
+    check(!refused && refused.error().find(fx::kErrWrongSig) != std::string::npos,
+          "…and refuses it as a wrong signature, not as some earlier shape check");
+    check(!vm.issue(forged), "…and will not take it into the mempool either");
+
+    // And the check is real on the path a PEER reaches, not just at the mempool
+    // door. The same forged credential inside a block, with a root deliberately
+    // left blank: the root is the LAST thing verification looks at, so which of
+    // the two refusals comes back says how far the block got.
+    auto built = block::build(vm.last_accepted(), 1, vm.now(), kEmptyId, {forged});
+    check(built.has_value(), built ? "a peer's block carrying it is well-formed"
+                                   : "block: " + built.error());
+    Bytes raw = (*built)->bytes;
+
+    auto why = [&](const std::shared_ptr<lux::node::Block>& b) {
+        auto* vb = dynamic_cast<VmBlock*>(b.get());
+        return vb == nullptr ? std::string("not a block") : vb->error();
+    };
+
+    auto peer_block = vm.parse(view(raw));
+    check(peer_block != nullptr && !peer_block->verify(),
+          "…and a block carrying it does not verify either");
+    check(peer_block != nullptr && why(peer_block).find(fx::kErrWrongSig) != std::string::npos,
+          "…stopping at the signature, before it ever reaches the root");
+
+    // The switch is the only thing that relaxes it, and it is not a one-way
+    // door: a node finishes replaying and starts checking again. While
+    // replaying the mempool shuts for its own reason — the node's state is
+    // behind, so no verdict it reached would be about the chain that exists —
+    // so the block path is where the relaxation shows.
+    vm.set_bootstrapped(false);
+    check(!vm.bootstrapped(), "a host replaying history says so, once");
+    check(!vm.verify_tx(*forged) &&
+              vm.verify_tx(*forged).error().find(kErrChainNotSynced) != std::string::npos,
+          "…and a replaying node stops answering for the mempool at all");
+
+    auto replayed = vm.parse(view(raw));
+    check(replayed != nullptr && !replayed->verify(), "the same bytes are still not a valid block");
+    check(replayed != nullptr &&
+              why(replayed).find(kErrUnexpectedMerkleRoot) != std::string::npos,
+          "…but it now fails on its root, having walked THROUGH the signature it "
+          "was stopped at before");
+
+    vm.set_bootstrapped(true);
+    check(vm.bootstrapped(), "and the chain goes back to checking when replay ends");
+    check(!vm.verify_tx(*forged), "…refusing the same forged credential again");
+    auto again = vm.parse(view(raw));
+    check(again != nullptr && !again->verify() &&
+              why(again).find(fx::kErrWrongSig) != std::string::npos,
+          "…and stopping at the signature once more");
+}
 
 // ================= genesis and the seam's identity =================
 
@@ -935,6 +1046,7 @@ void through_the_seam_only() {
 
 int main() {
     std::printf("xvm — the chain through the node's VM seam\n");
+    signature_checking_is_the_default();
     genesis_and_identity();
     issue_gate();
     happy_path();
