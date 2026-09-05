@@ -12,9 +12,18 @@ and signed for by whoever owns it. None exists to make entry selective.
 
 ```
 cd chains/rust/platformvm
-PATH=~/.cargo/bin:$PATH cargo test          # 293 tests
+PATH=~/.cargo/bin:$PATH cargo test          # 419 tests
 PATH=~/.cargo/bin:$PATH cargo clippy --all-targets
 ```
+
+**One build hazard, and it is the machine's, not the code's.** This crate's
+dependency graph reaches `lux-rs/node`, which is large, and `~/.cargo/config.toml`
+routes every rustc through a shared compile cache. Under load that cache has
+handed back artifacts that do not match their crate — the symptom is
+`E0463: can't find crate for alloy_rlp` with the rlib sitting right there on
+disk. `CARGO_BUILD_RUSTC_WRAPPER="" cargo …` bypasses it and builds
+deterministically; a stale-looking failure is worth one retry that way before
+it is believed.
 
 ## The claim, and how it is checked
 
@@ -80,6 +89,9 @@ refused at the header.
 | `reward` | what a staker is paid. |
 | `flow` | value is not created, and the spend is authorised. |
 | `state` | what the chain believes. |
+| `store` | where that is written down: a byte map whose batch is all there or none of it is. |
+| `persist` | what is written down, as records, and how it is read back. |
+| `validators` | who validates, now and at any height already passed. |
 | `uptime` | how much of its term a validator was reachable for — the node's measurement, not the chain's. |
 | `executor` | what a transaction does to that belief. |
 | `block` | the four things a block can be. |
@@ -88,12 +100,24 @@ refused at the header.
 
 ## The seam
 
-`PlatformVm` has one inherent method per method of `lux-rs/node`'s `Vm` trait,
-with the same names, the same `Id` (`lux_consensus::finality::Id`) and the same
-error shape, so the host satisfies its trait by naming this type. The trait is
-not re-declared here: a second declaration would be a second seam, and the two
-could drift. `vm::Vm` and `vm::Block` in this crate state the same shape for
-this crate's own use.
+`PlatformVm` implements `lux-rs/node`'s own `Vm` — `lux_node::vm::Vm`, reached
+through a path dependency on that crate and re-exported from `vm` for
+convenience. Nothing of the seam is declared here. A restated trait of the same
+shape compiles and satisfies nothing, because the node's chain map holds
+`Box<dyn lux_node::vm::Vm>` and only the host's own trait coerces into it;
+`the_seam_is_the_hosts_own_declaration` builds that box by its full path so the
+claim is checked rather than asserted. `Id` is `lux_consensus::finality::Id` on
+both sides of the join, so there is one id type in a node's chain map.
+
+The dependency runs chain → node, not node → chain: a chain naming the seam it
+plugs into cannot also be named by it. Registration therefore belongs to
+whatever holds both, which is this repo.
+
+`PlatformVm::open` is the one way to start a chain that writes itself down: it
+resumes what the store holds, or writes the chain's birth if it holds nothing.
+Two entry points would be two answers to which chain this is, and the wrong one
+is a node that silently rejoins at height zero. What comes back is checked, not
+trusted.
 
 `PlatformVm::from_genesis` is the whole birth of a network in one call: hand it
 the bytes a network was published as and it holds the first block, the first
@@ -102,54 +126,70 @@ a commit block naming the genesis bytes as its parent at `GENESIS_TIME`
 (2020-12-05T05:00:00Z) — the shape Go's `state.init` builds, so both
 implementations name the first block identically.
 
+## The differential
+
+`conformance/chain-differential` hands one corpus of Go-built bytes to the Go,
+Rust and C++ P-chains and compares every answer with every other. `src/bin/
+conformance.rs` is this chain's voice in it.
+
+On **all 39 P-chain vectors this chain now answers exactly what Go answers** —
+parse, kind, id, syntactic verdict and execution verdict. The two P-chain rows
+the run still reports are C++'s, and Go sides with this chain on both:
+`P_EDGE_EMPTY_NODE_ID`, where C++ refuses `AddValidator` by kind before it looks
+at the validator, and `P_SEAM_BLOCK_REJECT`, where the C++ host seam has no
+`reject` at all.
+
+That is what closed the fork. It used to be the other way round: C++ executed
+the sovereign-L1 plane and this chain refused it by name, and the run named six
+vectors for it.
+
 ## What is deliberately absent
 
 Nothing here is a stub. Where a thing is not held, the path that would need it
 refuses **by name** with its own error, rather than succeeding against nothing.
 
-- **The L1-validator plane.** Registrations, their fee balances, the expiry of
-  a registration nobody paid for, and the validator-fee state that drains
-  them. `RegisterL1Validator`, `SetL1ValidatorWeight`,
-  `IncreaseL1ValidatorBalance` and `DisableL1Validator` parse and verify
-  syntactically — their bytes are byte-identical to Go — and the executor
-  refuses them with `L1ValidatorPlaneNotHeld` / `WrongTxType`. A
-  `CreateNetwork` that asks for a set of its own, and every `ConvertNetwork`,
-  refuse with `OwnSetNotHeld`; a `CreateNetwork` that restakes its parent
-  executes for real.
-- **Warp.** Signed cross-chain messages and their aggregate verification. The
-  L1 transactions carry a message this port stores and does not interpret.
-- **Atomic import.** `ImportTx` needs the proof that the source chain produced
-  the output; without the shared-memory half there is nothing to check, so it
-  is refused rather than trusted.
 - **`TransformChainTx`.** Refused — which is *fidelity*, not a gap: Go refuses
-  it permanently too (`errTransformChainTxNotPermitted`).
-- **A network's own staking terms.** A network states them in the
-  transformation that made it staked, and since that transaction is refused,
-  no transformation is ever recorded. So the only network whose terms can be
-  answered is the primary one, and everything that would need another's says
-  `NetworkTermsNotHeld`: admitting a validator, admitting a delegator,
-  promoting one into a set (which would mint on the wrong schedule), and the
-  reward gate. Substituting the primary network's terms would judge a
-  network's validators on rules nobody agreed to, which is worse than
-  answering nobody.
-- **Dynamic fees.** `FlatFees` is Go's static schedule. The gas-metered
-  alternative — complexity times weights times a price that moves with demand —
-  is not ported.
+  it permanently too (`errTransformChainTxNotPermitted`). A network's terms are
+  therefore whatever it was born with, and a network born without them refuses
+  by name rather than borrowing the primary network's.
+- **Dynamic transaction fees.** This is a divergence, not just a gap, and it is
+  worth stating as one. `FlatFees` is Go's static schedule and it is what this
+  chain charges. Go's live chain charges by gas instead — `PickFeeCalculator`
+  returns the dynamic calculator on every verify and every build, and calls the
+  static schedule "unreachable" — so the two answer different amounts for the
+  same transaction. Fixing it means another `executor::Fees` implementation
+  over Go's per-kind complexity tables, checked against Go vector by vector;
+  the seam is already the right shape for it and `executor::Fees` says so.
+  The `gas` module holds the price curve, which *is* called — `l1` prices the
+  LP-77 continuous validator fee with it, and `warp` uses its wide integer.
+  It is `pub(crate)` and denies dead code, so nothing can sit in it unused.
 - **Persisting a node's measurements.** `uptime::Tracker` is ported whole,
   with Go's whole test suite, and `uptime::Ledger` keeps its measurements in
   memory. A node that wants them to survive a restart writes its own
   `uptime::Record` over whatever it already persists — which is right, because
   these numbers are not agreed and must not be in the state that is.
-- **Persistence.** `State` is in memory. There is no database, no versioned
-  diff layer, and no height-indexed validator sets (Go's weight diffs, which
-  answer "who was validating at height N").
 - **The node's edges.** Mempool policy, block-building heuristics, gossip, the
-  metrics surface, and the full JSON-RPC service. `call` answers four
+  metrics surface, and the full JSON-RPC service. `call` answers five
   read-only methods (`getHeight`, `getTimestamp`, `getCurrentSupply`,
-  `getCurrentValidators`).
+  `getCurrentValidators`, `getValidatorsAt`).
 - **Legacy scheduled stakers.** `AddValidatorTx` and `AddDelegatorTx` are read
   off the wire and refused by the executor — again matching Go, where the
   scheduled-staker flow has no role now that stakers enter immediately.
+
+## The two halves a node fills
+
+Neither is a stub and neither has a default that pretends. Both are traits the
+node implements, because both are things the chain cannot know by itself.
+
+- `executor::Uptime` — how much of its term a validator was reachable for. Two
+  honest nodes measure differently, which is why the reward is a *proposal*.
+- `executor::Atomic` — what another chain has already handed over. An import
+  spends value made somewhere else, so only the shared half both chains write
+  to can say the export happened. `NoImports` is the honest answer for a node
+  with no such half: every import is refused for want of what it names, exactly
+  as Go answers from an empty shared memory. Removing what an import consumed
+  from the shared half is the node's, on accept — Go splits it the same way,
+  returning `AtomicRequests` for the node to apply.
 
 ## Things worth knowing before changing anything
 
@@ -166,7 +206,35 @@ refuses **by name** with its own error, rather than succeeding against nothing.
   function as an argument and nothing in the executor supplied it, so a
   transaction could execute with no signature checked at all. It now calls
   `sign::recover` directly: a check that can be handed a different answer is a
-  check that can be handed one that always agrees.
+  check that can be handed one that always agrees. Both it and
+  `verify_permission` — the one-owner check the authorisation paths call, and
+  where the recovery actually happens — have their types pinned by a `const _`
+  in `flow`, so adding a parameter of any kind stops the build rather than
+  waiting for someone to notice. Every path that takes a credential has a test
+  that forges the last one with a **real stranger's signature** rather than
+  removing it, so each exercises a genuine recovery landing on the wrong
+  address — which is the failure the original missing-recoverer bug could not
+  have produced, and the reason the tests that existed then all passed.
+- **Where a transaction is addressed is part of the bytes being well formed.**
+  `syntactic_verify` takes a `txs::Chain` — network, blockchain, native asset —
+  and refuses a mismatch before it looks at anything else, because a
+  transaction that is well formed on two networks is one signature that spends
+  on both.
+- **A warp message is only bound to its source by the aggregate.** The source
+  chain and the sender's address are written *inside* the message, so anyone
+  can put any pair there; what nobody can write is a quorum of that chain's
+  validators over the bytes. `Vm::verify` checks that first, over every
+  transaction a block carries — the decision ones and, on a proposal block, the
+  one the chain emitted about itself — because a warp message is an assertion
+  about another chain no matter who put it in the block. Without it
+  `verify_l1_conversion` would be comparing a claim with itself, and anyone
+  could re-weight or de-register any L1's validators.
+- **The set at a past height is not the set now.** A signature made at height
+  H is checked long after H. `validators::History` records what each accepted
+  height changed and rewinds; `PlatformVm::validator_set_at` answers, and
+  refuses a height the chain has not reached rather than extrapolating one.
+- **Reward arithmetic reproduces a defect on purpose.** `cap - supply` wraps
+  past the cap and the live chain is past it. See `reward`.
 - **Reward arithmetic is exact.** Go divides with `big.Int` at the end;
   `reward` reproduces that with the identity `floor(floor(x/a)/b) ==
   floor(x/(a·b))` so every divisor fits a `u64`, and the Go test table is

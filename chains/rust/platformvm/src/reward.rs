@@ -22,6 +22,17 @@
 //!
 //! Durations are nanoseconds, because Go's are — the same integer flows
 //! through the same arithmetic and lands on the same result.
+//!
+//! ## The subtraction is unguarded, deliberately
+//!
+//! `cap - supply` wraps once the supply passes the cap, and the Lux mainnet has
+//! passed it: the live chain's `potentialReward` values are computed from the
+//! wrapped value. A clamp here would be a monetary change, not a translation,
+//! and this is a port — so the behaviour is reproduced and pinned by a test
+//! that recovers a real mainnet reward from real mainnet inputs. The one-line
+//! remedy is written down next to that test, stated and not applied: changing
+//! live emission belongs in a node release operators choose to adopt, never in
+//! a stake-weighted vote (see [`crate::stakingparams`]).
 
 use std::time::Duration;
 
@@ -80,10 +91,16 @@ impl Calculator {
     ///
     /// The result is capped at what is left to mint, so the supply can be
     /// approached but never passed — the invariant the staker set relies on
-    /// when it adds a potential reward to the supply before it is paid.
+    /// when it adds a potential reward to the supply before it is paid. Past
+    /// the cap "what is left" is the wrapped quantity, which is the defect the
+    /// live chain runs on; see the module note.
     pub fn calculate(&self, duration: Duration, amount: u64, current_supply: u64) -> u64 {
         let staked_duration = duration.as_nanos();
-        let remaining_supply = self.supply_cap.saturating_sub(current_supply);
+        // DELIBERATE: this wraps past the cap, exactly as Go's
+        // `remainingSupply := c.supplyCap - currentSupply` does. Saturating
+        // here would pay zero where mainnet pays 33.5M LUX — a port that
+        // silently fixed the money would fork every reward transaction.
+        let remaining_supply = self.supply_cap.wrapping_sub(current_supply);
         if current_supply == 0 {
             // Go divides by the supply; a zero supply has no reward to divide.
             return 0;
@@ -414,6 +431,127 @@ mod tests {
                 assert_eq!(a + b, total, "split({total}, {shares})");
             }
         }
+    }
+
+    /// Go's `ExampleNewCalculator`, and the same number the C++ port pins.
+    #[test]
+    fn the_worked_example_pays_what_the_reference_documents() {
+        let c = Calculator::new(default_config());
+        assert_eq!(
+            c.calculate(
+                Duration::from_secs(4 * 7 * 24 * 60 * 60),
+                100_000 * LUX,
+                447_903_490 * LUX,
+            ),
+            473_168_954
+        );
+    }
+
+    // ── the supply-cap underflow
+    //
+    // Ported from Go's `supply_cap_underflow_mainnet_test.go`, value for value,
+    // and the same numbers the C++ port pins. These hold a REAL DEFECT that the
+    // live chain runs on: past the cap the subtraction wraps and the reward is
+    // computed from the wrapped value. Reproduced exactly, because changing
+    // emission is a monetary decision and not a translation.
+    //
+    // Measured mainnet (96369) state:
+    //   platform.getCurrentSupply     -> 13272095200543363741 base units
+    //   xvm.getAssetDescription(LUX)  -> denomination 9, so 1 LUX = 1e9
+    //   platform.getCurrentValidators -> weight 500000000000000000 (500M LUX),
+    //                                    potentialReward 33575831900252839
+
+    const MAINNET_CURRENT_SUPPLY: u64 = 13_272_095_200_543_363_741;
+    const MAINNET_VALIDATOR_WEIGHT: u64 = 500_000_000_000_000_000;
+    const MAINNET_POTENTIAL_REWARD: u64 = 33_575_831_900_252_839;
+    /// The supply at the instant that validator bonded, recovered from the
+    /// observed reward.
+    const MAINNET_SUPPLY_AT_BOND: u64 = 13_106_511_852_580_896_694;
+
+    fn mainnet_reward_config() -> Config {
+        Config {
+            max_consumption_rate: 120_000,
+            min_consumption_rate: 100_000,
+            minting_period: Duration::from_secs(365 * 24 * 60 * 60),
+            supply_cap: 2_000_000_000_000_000_000,
+        }
+    }
+
+    fn mainnet_staked_duration() -> Duration {
+        Duration::from_secs(1_797_088_011 - 1_765_573_611)
+    }
+
+    /// Go: `TestMainnetSupplyExceedsCompiledCap`.
+    #[test]
+    fn the_live_supply_is_already_past_the_compiled_cap() {
+        assert!(
+            MAINNET_CURRENT_SUPPLY > mainnet_reward_config().supply_cap,
+            "the live supply must exceed the compiled cap, or none of this is relevant"
+        );
+    }
+
+    /// Go: `TestMainnetRewardsAreComputedFromAnUnderflow`.
+    ///
+    /// The proof that this port is the same currency: feeding the real
+    /// calculator the wrapped-regime inputs reproduces the `potentialReward`
+    /// the chain is actually carrying, to the unit.
+    #[test]
+    fn a_mainnet_reward_is_reproduced_from_the_wrap_that_produced_it() {
+        let cap = mainnet_reward_config().supply_cap;
+        let wrapped = cap.wrapping_sub(MAINNET_SUPPLY_AT_BOND);
+        assert!(
+            wrapped > cap,
+            "the subtraction must have wrapped, or there is no defect to demonstrate"
+        );
+        assert_eq!(
+            Calculator::new(mainnet_reward_config()).calculate(
+                mainnet_staked_duration(),
+                MAINNET_VALIDATOR_WEIGHT,
+                MAINNET_SUPPLY_AT_BOND,
+            ),
+            MAINNET_POTENTIAL_REWARD
+        );
+    }
+
+    /// Go: `TestMainnetRewardWouldBeZeroWithoutTheWrap` — the size of the
+    /// divergence a saturating subtraction would introduce. Not a rounding
+    /// error: the difference between 33.5M LUX and nothing.
+    #[test]
+    fn without_the_wrap_the_same_stake_would_earn_nothing() {
+        let mut at_cap = mainnet_reward_config();
+        at_cap.supply_cap = MAINNET_SUPPLY_AT_BOND + 1;
+        assert_eq!(
+            Calculator::new(at_cap).calculate(
+                mainnet_staked_duration(),
+                MAINNET_VALIDATOR_WEIGHT,
+                MAINNET_SUPPLY_AT_BOND,
+            ),
+            0
+        );
+    }
+
+    /// Go: `TestSupplyCapGuardIsTheFix` — the one-line remedy, stated and not
+    /// applied. Altering live emission is a monetary change, and monetary
+    /// changes belong in a release operators adopt, never in a vote.
+    #[test]
+    fn the_guard_is_what_the_fix_would_be() {
+        // Written out rather than as `saturating_sub`, because it is quoting
+        // the remedy Go states in its own words: the point is what the fix
+        // WOULD be, so it reads as the change somebody would make.
+        #[allow(clippy::manual_saturating_arithmetic, clippy::implicit_saturating_sub)]
+        let guarded = |cap: u64, supply: u64| if supply >= cap { 0 } else { cap - supply };
+        assert_eq!(
+            guarded(mainnet_reward_config().supply_cap, MAINNET_CURRENT_SUPPLY),
+            0
+        );
+        assert_eq!(guarded(MAINNET_SUPPLY_AT_BOND + 1, MAINNET_SUPPLY_AT_BOND), 1);
+        // And the unguarded form is what mainnet runs.
+        assert_ne!(
+            mainnet_reward_config()
+                .supply_cap
+                .wrapping_sub(MAINNET_CURRENT_SUPPLY),
+            0
+        );
     }
 
     #[test]
