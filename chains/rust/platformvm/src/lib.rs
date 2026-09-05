@@ -43,7 +43,7 @@ pub mod block;
 pub mod components;
 pub mod executor;
 pub mod flow;
-pub mod gas;
+pub(crate) mod gas;
 pub mod genesis;
 pub mod ids;
 pub mod l1;

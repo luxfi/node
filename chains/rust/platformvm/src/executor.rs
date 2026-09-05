@@ -94,16 +94,31 @@ pub struct Config {
 /// What a transaction costs.
 ///
 /// Injected, not computed: Go passes a `fee.Calculator` into every execution
-/// for the same reason.
+/// for the same reason, and this is the seam the two chains differ across.
+///
+/// **They do differ.** Go's live P-Chain charges by gas, always — its
+/// `state.PickFeeCalculator` returns `txfee.NewDynamicCalculator` on every
+/// verify and every build, and says of the flat schedule that it "is
+/// unreachable". This chain charges [`FlatFees`]. So for the same transaction
+/// the two answer different amounts, and a node of each would disagree about
+/// whether its fee was paid.
+///
+/// It is written here, at the seam, because this is where it would be fixed:
+/// the dynamic calculator is complexity → gas → cost, and it arrives as another
+/// implementation of this trait, not as a change to any caller. Porting it means
+/// porting Go's per-kind complexity tables (`vms/platformvm/txs/fee/complexity.go`),
+/// which is a body of arithmetic that has to be checked against Go vector by
+/// vector before it is trusted — an unchecked port of it would not close this
+/// divergence, it would move it somewhere harder to see.
 pub trait Fees {
     fn fee(&self, tx: &Unsigned) -> u64;
 }
 
-/// The flat per-kind fee schedule.
+/// The flat per-kind fee schedule — what this chain actually charges.
 ///
-/// Go states it as `fee.StaticConfig` and it is reproduced field for field.
-/// The gas-metered alternative — complexity times weights times a price that
-/// moves with demand — is not in this port; see LLM.md.
+/// Go states it as `fee.StaticConfig` and it is reproduced field for field. Go
+/// no longer reaches it; see [`Fees`] for what Go charges instead and why that
+/// is not here.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FlatFees {
     pub tx: u64,
