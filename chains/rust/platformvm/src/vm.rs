@@ -103,6 +103,9 @@ struct Inner {
     /// How reachable each validator has been. The chain cannot measure it —
     /// see [`executor::Uptime`] — so the node that runs the chain answers.
     uptime: Box<dyn executor::Uptime>,
+    /// What another chain has handed to this one. The other half of an import,
+    /// which this chain cannot see by itself — see [`executor::Atomic`].
+    atomic: Box<dyn executor::Atomic>,
     /// The state as of the last accepted block.
     state: State,
     /// Every block this chain knows, accepted or not.
@@ -151,6 +154,7 @@ impl PlatformVm {
         config: Config,
         fees: Box<dyn Fees + Send + Sync>,
         uptime: Box<dyn executor::Uptime>,
+        atomic: Box<dyn executor::Atomic>,
         genesis_state: State,
     ) -> PlatformVm {
         let timestamp = genesis_state.timestamp();
@@ -166,6 +170,7 @@ impl PlatformVm {
                 config,
                 fees,
                 uptime,
+                atomic,
                 state: genesis_state,
                 blocks,
                 verified: HashMap::new(),
@@ -197,6 +202,7 @@ impl PlatformVm {
         config: Config,
         fees: Box<dyn Fees + Send + Sync>,
         uptime: Box<dyn executor::Uptime>,
+        atomic: Box<dyn executor::Atomic>,
         genesis_bytes: &[u8],
     ) -> Result<PlatformVm, crate::genesis::Error> {
         let published = crate::genesis::Genesis::parse(genesis_bytes)?;
@@ -215,6 +221,7 @@ impl PlatformVm {
                 config,
                 fees,
                 uptime,
+                atomic,
                 state,
                 blocks,
                 verified: HashMap::new(),
@@ -248,6 +255,7 @@ impl PlatformVm {
         config: Config,
         fees: Box<dyn Fees + Send + Sync>,
         uptime: Box<dyn executor::Uptime>,
+        atomic: Box<dyn executor::Atomic>,
         genesis_bytes: &[u8],
         mut store: Box<dyn store::Store>,
     ) -> Result<PlatformVm, Error> {
@@ -257,7 +265,7 @@ impl PlatformVm {
         let Some((last_accepted, last_accepted_height)) = tip else {
             // Nothing written: this is the chain's birth, and the birth is
             // written down before anything is built on it.
-            let vm = PlatformVm::from_genesis(config, fees, uptime, genesis_bytes)
+            let vm = PlatformVm::from_genesis(config, fees, uptime, atomic, genesis_bytes)
                 .map_err(|e| Error::Malformed(e.to_string()))?;
             {
                 let mut inner = vm.inner.lock().unwrap();
@@ -297,6 +305,7 @@ impl PlatformVm {
                 config,
                 fees,
                 uptime,
+                atomic,
                 state,
                 blocks: stored.into_iter().collect(),
                 verified: HashMap::new(),
@@ -316,7 +325,7 @@ impl PlatformVm {
     /// Hand the chain a transaction to include.
     pub fn submit(&self, tx: Tx) -> Result<(), Error> {
         let mut inner = self.inner.lock().unwrap();
-        tx.syntactic_verify(inner.config.native_asset)
+        tx.syntactic_verify(inner.config.chain())
             .map_err(|e| Error::Invalid(e.to_string()))?;
         inner.mempool.push(tx);
         Ok(())
@@ -648,7 +657,13 @@ impl Vm for PlatformVm {
                     .map_err(|e| Error::Invalid(e.to_string()))?;
 
                 for tx in blk.decision_txs() {
-                    executor::execute_standard(&mut state, tx, &inner.config, inner.fees.as_ref())
+                    executor::execute_standard(
+                        &mut state,
+                        tx,
+                        &inner.config,
+                        inner.fees.as_ref(),
+                        inner.atomic.as_ref(),
+                    )
                         .map_err(|e| Error::Invalid(e.to_string()))?;
                 }
 
@@ -900,6 +915,7 @@ mod tests {
     fn config() -> Config {
         Config {
             network_id: 1,
+            blockchain_id: [3; 32],
             native_asset: ASSET,
             validator_fee: crate::l1::FeeConfig {
                 capacity: 20_000,
@@ -994,6 +1010,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             genesis(now),
         )
     }
@@ -1153,6 +1170,7 @@ mod tests {
                 config(),
                 Box::new(FlatFees::default()),
                 Box::new(AlwaysUp),
+                Box::new(executor::NoImports),
                 &published,
                 Box::new(store::File::open(&path).unwrap()),
             )
@@ -1174,6 +1192,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             &published,
             Box::new(store::File::open(&path).unwrap()),
         )
@@ -1210,6 +1229,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             &published,
             Box::new(store::Memory::new()),
         )
@@ -1234,6 +1254,7 @@ mod tests {
                 config(),
                 Box::new(FlatFees::default()),
                 Box::new(AlwaysUp),
+                Box::new(executor::NoImports),
                 &a_published_network(1000),
                 Box::new(s),
             ),
@@ -1367,6 +1388,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             genesis(now),
         )
     }
@@ -1652,6 +1674,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             &bytes,
         )
         .expect("the bytes are a genesis");
@@ -1662,6 +1685,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             &bytes,
         )
         .expect("the bytes are a genesis");
@@ -1695,6 +1719,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             b"not a genesis"
         )
         .is_err());
@@ -1707,6 +1732,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             uptime,
+            Box::new(executor::NoImports),
             genesis(now),
         )
     }
@@ -1828,6 +1854,7 @@ mod tests {
             governed,
             Box::new(FlatFees::default()),
             Box::new(Reachable(0.85)),
+            Box::new(executor::NoImports),
             genesis(now),
         );
         let answer = answer_to_the_reward(&vm, bonded_at);
