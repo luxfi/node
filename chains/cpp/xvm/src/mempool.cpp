@@ -21,120 +21,16 @@ constexpr double kLn2Squared = kLn2 * kLn2;
 
 }  // namespace
 
-// ================= Pool =================
+// ================= the pool's four refusals, in this chain's words =========
 
-void Pool::erase_at(const Id& tx_id, Order::iterator it) {
-    bytes_available_ += (*it)->size();
-    order_.erase(it);
-    index_.erase(tx_id);
-    auto c = consumed_.find(tx_id);
-    if (c != consumed_.end()) {
-        for (const auto& in : c->second) consumer_.erase(in);
-        consumed_.erase(c);
+std::string refused(Refusal r, const Id& tx_id) {
+    switch (r) {
+        case Refusal::Duplicate: return with_id(kErrDuplicateTx, tx_id);
+        case Refusal::TooLarge: return with_id(kErrTxTooLarge, tx_id);
+        case Refusal::Full: return with_id(kErrPoolFull, tx_id);
+        case Refusal::Conflict: return with_id(kErrConflictsWithOtherTx, tx_id);
     }
-}
-
-Result<void> Pool::add(TxPtr tx) {
-    if (tx == nullptr) return std::unexpected(txs::kErrNilTx);
-    const Id tx_id = tx->id();
-
-    if (index_.count(tx_id) != 0) return std::unexpected(with_id(kErrDuplicateTx, tx_id));
-
-    const std::size_t size = tx->size();
-    if (size > kMaxTxSize) return std::unexpected(with_id(kErrTxTooLarge, tx_id));
-    if (size > bytes_available_) return std::unexpected(with_id(kErrPoolFull, tx_id));
-
-    // An input already spoken for by a pooled tx makes this one unplaceable: a
-    // block cannot hold both, so holding both would only make the builder
-    // discover the conflict later, once per round.
-    const std::set<Id> inputs = tx->input_ids();
-    for (const auto& in : inputs) {
-        if (consumer_.count(in) != 0)
-            return std::unexpected(with_id(kErrConflictsWithOtherTx, tx_id));
-    }
-
-    bytes_available_ -= size;
-    order_.push_back(std::move(tx));
-    index_[tx_id] = std::prev(order_.end());
-    for (const auto& in : inputs) consumer_[in] = tx_id;
-    consumed_[tx_id] = inputs;
-
-    // A tx that is IN the pool is not a dropped tx.
-    auto d = dropped_.find(tx_id);
-    if (d != dropped_.end()) {
-        dropped_order_.erase(d->second.second);
-        dropped_.erase(d);
-    }
-    return {};
-}
-
-Pool::TxPtr Pool::get(const Id& tx_id) const {
-    auto it = index_.find(tx_id);
-    if (it == index_.end()) return nullptr;
-    return *it->second;
-}
-
-void Pool::remove(const std::vector<TxPtr>& list) {
-    for (const auto& tx : list) {
-        if (tx == nullptr) continue;
-        const Id tx_id = tx->id();
-        auto it = index_.find(tx_id);
-        if (it != index_.end()) {
-            erase_at(tx_id, it->second);
-            continue;
-        }
-        // Not pooled: drop whatever IS pooled that spends one of its inputs.
-        for (const auto& in : tx->input_ids()) {
-            auto c = consumer_.find(in);
-            if (c == consumer_.end()) continue;
-            const Id other = c->second;
-            auto o = index_.find(other);
-            if (o != index_.end()) {
-                erase_at(other, o->second);
-            } else {
-                // A consumer with no pooled tx cannot happen; if it somehow
-                // does, the index is what would leak, so it is cleared here.
-                consumed_.erase(other);
-                consumer_.erase(in);
-            }
-        }
-    }
-}
-
-Pool::TxPtr Pool::peek() const {
-    if (order_.empty()) return nullptr;
-    return order_.front();
-}
-
-void Pool::each(const std::function<bool(const TxPtr&)>& f) const {
-    for (const auto& tx : order_) {
-        if (!f(tx)) return;
-    }
-}
-
-void Pool::mark_dropped(const Id& tx_id, const std::string& reason) {
-    // "The pool is full" is a fact about the pool, not about the transaction,
-    // so remembering it would refuse a perfectly good tx once space freed up.
-    if (reason.find(kErrPoolFull) != std::string::npos) return;
-    if (index_.count(tx_id) != 0) return;
-
-    auto it = dropped_.find(tx_id);
-    if (it != dropped_.end()) {
-        dropped_order_.erase(it->second.second);
-        dropped_.erase(it);
-    }
-    dropped_order_.push_back(tx_id);
-    dropped_[tx_id] = {reason, std::prev(dropped_order_.end())};
-    while (dropped_order_.size() > kDroppedCacheSize) {
-        dropped_.erase(dropped_order_.front());
-        dropped_order_.pop_front();
-    }
-}
-
-std::string Pool::drop_reason(const Id& tx_id) const {
-    auto it = dropped_.find(tx_id);
-    if (it == dropped_.end()) return {};
-    return it->second.first;
+    return with_id("refused", tx_id);
 }
 
 // ================= Bloom =================
@@ -289,12 +185,12 @@ Result<void> Gossip::add(TxPtr tx) {
 
     // 2. Already refused. The ORIGINAL reason is returned: a second opinion
     //    would cost a second verification and could not be a better one.
-    if (auto reason = pool_->drop_reason(tx_id); !reason.empty())
-        return std::unexpected(reason);
+    if (auto reason = dropped_.why(tx_id); reason.has_value())
+        return std::unexpected(*reason);
 
     // 3. This node's own execution, against its last accepted state.
     if (auto r = verifier_->verify_tx(*tx); !r) {
-        pool_->mark_dropped(tx_id, r.error());
+        remember(tx_id, r.error());
         return std::unexpected(r.error());
     }
 
@@ -307,12 +203,17 @@ Result<void> Gossip::add_unverified(TxPtr tx) {
 
     // 4. Structural admission.
     if (auto r = pool_->add(tx); !r) {
-        pool_->mark_dropped(tx_id, r.error());
-        return std::unexpected(r.error());
+        const std::string why = refused(r.error(), tx_id);
+        // "The pool is full" is a fact about the pool, not about the
+        // transaction, so remembering it would refuse a perfectly good one once
+        // space freed up.
+        if (r.error() != Refusal::Full) remember(tx_id, why);
+        return std::unexpected(why);
     }
+    dropped_.forget(tx_id);
 
     bloom_.add(tx_id);
-    if (bloom_.reset_if_needed(pool_->len() * std::size_t(kBloomChurnMultiplier))) {
+    if (bloom_.reset_if_needed(pool_->size() * std::size_t(kBloomChurnMultiplier))) {
         // A rebuilt filter is empty; what the pool still holds goes back in, or
         // a peer would be told this node has nothing.
         pool_->each([&](const TxPtr& held) {

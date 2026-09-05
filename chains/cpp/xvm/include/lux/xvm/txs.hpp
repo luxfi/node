@@ -313,4 +313,11 @@ struct Tx {
 Result<std::shared_ptr<Tx>> parse(ByteView signed_bytes);
 Result<std::shared_ptr<UnsignedTx>> parse_unsigned(ByteView unsigned_bytes);
 
+// The three questions the node's pool asks about a transaction, and all it may
+// ask. They are declared beside the transaction rather than beside the pool
+// because the pool must not know what an X-Chain transaction is.
+inline Id pool_id(const std::shared_ptr<Tx>& tx) { return tx->id(); }
+inline std::size_t pool_size(const std::shared_ptr<Tx>& tx) { return tx->size(); }
+inline std::set<Id> pool_inputs(const std::shared_ptr<Tx>& tx) { return tx->input_ids(); }
+
 }  // namespace lux::xvm::txs
