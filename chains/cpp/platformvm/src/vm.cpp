@@ -366,7 +366,7 @@ Status PlatformVM::reject_block(const block::Block& b) {
         // rivals this for the same outputs. Remembered, the way every other
         // refusal here is, so whoever submitted it can be told rather than left
         // with silence.
-        if (auto st = mempool_.add(tx); !st) mempool_.mark_dropped(tx.id(), st.error());
+        (void)submit(tx);
     }
 
     return ok();
@@ -494,7 +494,7 @@ std::shared_ptr<lux::node::Block> PlatformVM::build() {
 
     std::vector<txs::Tx> included;
     std::set<Id> inputs;
-    for (const auto& tx : mempool_.peek(mempool_.size())) {
+    for (const auto& tx : mempool::oldest(mempool_, mempool_.size())) {
         bool overlaps = false;
         for (const auto& in : tx.input_ids())
             if (inputs.count(in) != 0) overlaps = true;

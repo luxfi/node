@@ -177,7 +177,7 @@ public:
     // to the pool. Go: block/executor.manager.VerifyTx.
     wire::Result<void> verify_tx(txs::Tx& tx) override;
 
-    std::size_t mempool_size() const { return pool_.len(); }
+    std::size_t mempool_size() const { return pool_.size(); }
     mempool::Pool& pool() { return pool_; }
     mempool::Gossip& gossip() { return gossip_; }
 
