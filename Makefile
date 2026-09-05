@@ -15,6 +15,14 @@ CHAINS_DIR      := $(HOME)/work/lux/chains
 NODE_RUST_DIR   := $(HOME)/work/lux-rs/node
 NODE_CPP_DIR    := $(HOME)/work/lux-cpp/node
 NODE_CPP_BUILD  := $(NODE_CPP_DIR)/build
+
+# The C++ node reaches cevm's dependencies through the toolchain Conan writes
+# for them. It is searched for rather than named, because the cevm checkout it
+# belongs to sits under either root depending on the machine, and the first one
+# that exists is the answer.
+CONAN_TOOLCHAIN := $(firstword $(wildcard \
+    $(HOME)/work/luxcpp/cevm/build-node/build/Release/generators/conan_toolchain.cmake \
+    $(HOME)/work/lux-cpp/cevm/build-node/build/Release/generators/conan_toolchain.cmake))
 GPU_DIR         := $(HOME)/work/luxcpp/gpu
 LUX_CRYPTO_DIST := $(HOME)/work/lux/crypto/dist
 
@@ -76,16 +84,23 @@ luxd-rust:
 	@ls -lh $(BIN)/luxd-rust
 
 # cpp: lux-cpp/node — a real node host (mesh + BLS quorum finality + cevm).
-# Reuses the repo's own already-configured build/ (Conan toolchain resolved)
-# rather than reconfiguring, for speed; nothing but that conventional,
+# Configures the repo's own build/ against the Conan toolchain cevm's
+# dependencies come through, then builds; nothing but that conventional,
 # gitignored directory is written back into the source tree.
 luxd-cpp:
 	@echo "==> cpp: lux-cpp/node (full node host)"
 	@mkdir -p $(BIN)
-	@test -f $(NODE_CPP_BUILD)/CMakeCache.txt || { \
-		echo "FAIL: $(NODE_CPP_BUILD) is not configured — run:" >&2; \
-		echo "  cmake -S $(NODE_CPP_DIR) -B $(NODE_CPP_BUILD) -DCMAKE_TOOLCHAIN_FILE=<conan toolchain>" >&2; \
-		exit 1; }
+	@test -n "$(CONAN_TOOLCHAIN)" || { \
+			echo "FAIL: no Conan toolchain for cevm. Write one with:" >&2; \
+			echo "  conan install <cevm> -pr <cevm>/.github/conan/manylinux-relax.profile \\" >&2; \
+			echo "    -s build_type=Release -s compiler.cppstd=gnu20 \\" >&2; \
+			echo "    --output-folder=<cevm>/build-node --build=missing" >&2; \
+			exit 1; }
+	@# Configure every time. It is idempotent, and a CMakeCache.txt is written
+	@# by a configure that FAILED as well as by one that finished, so testing
+	@# for the cache skips the step exactly when it is needed.
+	cmake -S $(NODE_CPP_DIR) -B $(NODE_CPP_BUILD) -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_TOOLCHAIN_FILE=$(CONAN_TOOLCHAIN)
 	cmake --build $(NODE_CPP_BUILD) --target luxd -j$(NPROC)
 	@test -x $(NODE_CPP_BUILD)/luxd
 	cp $(NODE_CPP_BUILD)/luxd $(BIN)/luxd-cpp
