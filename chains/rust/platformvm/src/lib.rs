@@ -31,6 +31,8 @@
 //! - [`flow`] — the check that value is not created.
 //! - [`genesis`] — how the chain is born.
 //! - [`state`] — what the chain believes.
+//! - [`store`] — where it is written down, so a restart remembers it.
+//! - [`persist`] — what is written down, and how it is read back.
 //! - [`executor`] — what a transaction does to that belief.
 //! - [`block`] — the four things a block can be.
 //! - [`uptime`] — how much of its term a validator was reachable for.
@@ -50,7 +52,9 @@ pub mod security;
 pub mod sign;
 pub mod signer;
 pub mod stakingparams;
+pub mod persist;
 pub mod state;
+pub mod store;
 pub mod txs;
 pub mod uptime;
 pub mod validators;

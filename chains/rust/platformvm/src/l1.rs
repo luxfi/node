@@ -197,7 +197,7 @@ impl FeeState {
                 self.excess,
                 config.excess_conversion_constant,
             );
-            return seconds.checked_mul(price).unwrap_or(u64::MAX);
+            return seconds.saturating_mul(price);
         }
 
         let mut cost: u64 = 0;
@@ -212,7 +212,7 @@ impl FeeState {
                 let Some(rest) = config.min_price.checked_mul(seconds - i) else {
                     return u64::MAX;
                 };
-                return cost.checked_add(rest).unwrap_or(u64::MAX);
+                return cost.saturating_add(rest);
             }
 
             let price = gas::calculate_price(
