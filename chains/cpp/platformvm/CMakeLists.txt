@@ -196,3 +196,14 @@ if(PLATFORMVM_BUILD_TESTS)
     add_test(NAME pvm_${_t} COMMAND pvm_${_t}_test)
   endforeach()
 endif()
+
+# The C++ P-chain's evaluator for the cross-language chain differential. It is
+# not a test: it prints this chain's answer for every vector in
+# conformance/corpus/vectors.tsv and says nothing about whether that answer is
+# right. Deciding that is the runner's job, and it needs all three answers to
+# do it. Built unconditionally — a differential that quietly lost one of its
+# three voices would report agreement among whoever was left.
+add_executable(pvm_conformance test/conformance.cpp)
+target_link_libraries(pvm_conformance PRIVATE lux_platformvm)
+target_include_directories(pvm_conformance PRIVATE include)
+target_compile_options(pvm_conformance PRIVATE -Wall -Wextra)
