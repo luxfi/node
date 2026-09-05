@@ -214,11 +214,11 @@ pub fn owner_root(threshold: u32, keys: &[Vec<u8>]) -> Hash256 {
 /// An [`Id`] read as a root, and back. The root is what a block carries in its
 /// header, where it is an id like any other.
 pub fn id_to_root(id: &Id) -> Hash256 {
-    id.0
+    *id
 }
 
 pub fn root_to_id(root: &Hash256) -> Id {
-    Id(*root)
+    *root
 }
 
 /// The root of a chain that has committed to nothing.
@@ -229,6 +229,7 @@ pub fn empty() -> Hash256 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ids;
 
     // The canonical fixture: eight UTXO slots with four occupied, four asset
     // slots with three occupied, four transactions with a mixed status
@@ -423,7 +424,7 @@ mod tests {
 
     #[test]
     fn a_root_and_an_id_are_the_same_thirty_two_bytes() {
-        let id = Id::prefixed_bytes(&[1, 2, 3]);
+        let id = ids::prefixed(&[1, 2, 3]);
         assert_eq!(root_to_id(&id_to_root(&id)), id);
     }
 }

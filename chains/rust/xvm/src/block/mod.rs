@@ -21,7 +21,7 @@ pub mod root;
 
 use crate::error::{Error, Result};
 use crate::hash::sha256;
-use crate::ids::Id;
+use crate::ids::{self, Id};
 use crate::txs::Tx;
 use crate::wire::containers::{read_blob_list, write_blob_list};
 use crate::zap::{self, Builder};
@@ -67,7 +67,7 @@ impl Block {
             time: timestamp,
             root,
             txs,
-            block_id: Id(sha256(&bytes)),
+            block_id: sha256(&bytes),
             bytes,
         })
     }
@@ -113,12 +113,12 @@ impl Block {
             txs.push(Tx::parse(buf)?);
         }
         Ok(Block {
-            parent_id: Id::prefixed_bytes(obj.bytes_fixed(OFF_PARENT, 32)),
+            parent_id: ids::prefixed(obj.bytes_fixed(OFF_PARENT, 32)),
             height: obj.u64(OFF_HEIGHT),
             time: obj.u64(OFF_TIME),
-            root: Id::prefixed_bytes(obj.bytes_fixed(OFF_ROOT, 32)),
+            root: ids::prefixed(obj.bytes_fixed(OFF_ROOT, 32)),
             txs,
-            block_id: Id(sha256(bytes)),
+            block_id: sha256(bytes),
             bytes: bytes.to_vec(),
         })
     }
@@ -135,10 +135,10 @@ fn serialize(parent_id: Id, height: u64, time: u64, root: Id, txs: &[Tx]) -> Res
     let mut b = Builder::default();
     let (len_off, len_count, blob) = write_blob_list(&mut b, &raw);
     let ob = b.start_object(SIZE_BLK);
-    ob.set_bytes_fixed(&mut b, OFF_PARENT, &parent_id.0);
+    ob.set_bytes_fixed(&mut b, OFF_PARENT, &parent_id);
     ob.set_u64(&mut b, OFF_HEIGHT, height);
     ob.set_u64(&mut b, OFF_TIME, time);
-    ob.set_bytes_fixed(&mut b, OFF_ROOT, &root.0);
+    ob.set_bytes_fixed(&mut b, OFF_ROOT, &root);
     ob.set_list(&mut b, OFF_TX_LEN, len_off, len_count);
     ob.set_bytes(&mut b, OFF_TX_BLOB, &blob);
     ob.finish_as_root(&mut b);
@@ -155,7 +155,7 @@ mod tests {
     use crate::utxo::{Asset, BaseTxFields, TransferableInput, TransferableOutput, UtxoId};
 
     fn asset(n: u8) -> Id {
-        Id::prefixed_bytes(&[n])
+        ids::prefixed(&[n])
     }
 
     fn a_tx(amt: u64) -> Tx {
@@ -206,7 +206,7 @@ mod tests {
     #[test]
     fn the_id_is_the_hash_of_exactly_the_bytes() {
         let blk = Block::new(asset(1), 1, 1, asset(2), vec![a_tx(1)]).unwrap();
-        assert_eq!(blk.id(), Id(sha256(blk.bytes())));
+        assert_eq!(blk.id(), sha256(blk.bytes()));
     }
 
     #[test]
