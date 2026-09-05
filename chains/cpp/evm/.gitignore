@@ -1,0 +1,3 @@
+# Written into the source directory by `conan install`, and full of the
+# absolute paths of whoever ran it.
+CMakeUserPresets.json
