@@ -369,7 +369,12 @@ struct Fx {
     Clock* clock = nullptr;
 
 protected:
-    bool bootstrapped_ = false;
+    // Checking signatures is the DEFAULT, and bootstrapping is the exception a
+    // host asks for. Go can start this false because its engine drives the
+    // chain through SetState and always turns it on; nothing in the C++ seam
+    // does, so an fx that started false would check no signature for its whole
+    // life and never say so. See Vm::set_bootstrapped.
+    bool bootstrapped_ = true;
 };
 
 // verify_credentials is the shared spend gate: locktime, threshold, signer

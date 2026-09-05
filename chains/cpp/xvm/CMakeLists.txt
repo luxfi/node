@@ -65,12 +65,10 @@ message(STATUS "xvm: reusing crypto at ${_crypto}")
 find_checkout(_node "include/lux/node/vm.hpp"
   "${NODE_DIR}"
   "$ENV{HOME}/work/lux-cpp/node"
-  "$ENV{HOME}/work/lux/node2"
   "${CMAKE_SOURCE_DIR}/../../../../lux-cpp/node")
 find_checkout(_consensus "include/lux/consensus/quorum_cert_engine.hpp"
   "${CONSENSUS_DIR}"
   "$ENV{HOME}/work/lux-cpp/consensus"
-  "$ENV{HOME}/work/luxcpp/consensus"
   "${CMAKE_SOURCE_DIR}/../../../../lux-cpp/consensus")
 
 # The seam is the point of the port, so its absence is a hard error rather than
@@ -101,14 +99,17 @@ target_include_directories(xvm_crypto PUBLIC
 # ── xvm itself ───────────────────────────────────────────────────────────────
 add_library(xvm STATIC
   src/id.cpp
+  src/address.cpp
   src/wire.cpp
   src/fx.cpp
   src/txs.cpp
+  src/store.cpp
   src/state.cpp
   src/root.cpp
   src/executor.cpp
   src/block.cpp
   src/genesis.cpp
+  src/mempool.cpp
   src/vm.cpp
 )
 target_include_directories(xvm PUBLIC
@@ -127,11 +128,15 @@ target_compile_options(xvm PRIVATE -Wall -Wextra)
 #   syntactic   every syntactic rejection, ported case for case
 #   semantic    the chain's own agreement, incl. import/export
 #   executor    what applying a tx does to the UTXO set
+#   address     bech32, against Go's own strings
+#   store       the durable log, and what survives a restart
 #   state       the diff, and what acceptance means
 #   block       block bytes, ids, and parsing
-#   vm          build → verify → accept over the node's seam
+#   mempool     the admission gate, the pool, and the bloom filter
+#   vm          build → verify → accept → REJECT over the node's seam
 enable_testing()
-set(XVM_TESTS wire root syntactic txs fx executor state block genesis semantic vm)
+set(XVM_TESTS wire root syntactic txs fx executor address store state block genesis mempool
+              semantic vm)
 foreach(_t ${XVM_TESTS})
   add_executable(${_t}_test test/${_t}_test.cpp)
   target_link_libraries(${_t}_test PRIVATE xvm)
@@ -140,9 +145,23 @@ foreach(_t ${XVM_TESTS})
   add_test(NAME ${_t} COMMAND ${_t}_test)
 endforeach()
 
+# The C++ X-chain's evaluator for the cross-language chain differential. It is
+# not a test: it prints this chain's answer for every X vector in
+# conformance/corpus/vectors.tsv and says nothing about whether that answer is
+# right. Deciding that is the runner's job, and it needs all three answers to do
+# it. Built unconditionally — a differential that quietly lost one of its three
+# voices would report agreement among whoever was left.
+add_executable(xvm_conformance test/conformance.cpp)
+target_link_libraries(xvm_conformance PRIVATE xvm)
+target_compile_options(xvm_conformance PRIVATE -Wall -Wextra)
+
+# Everything that links the sanitized library is sanitized, the evaluator
+# included — it is declared above this block for exactly that reason. Left out,
+# it failed to LINK under -DXVM_SANITIZE while ctest still reported fourteen
+# passes, so the differential was the one voice a sanitized run silently lost.
 if(XVM_SANITIZE)
   set(_san -fsanitize=${XVM_SANITIZE} -fno-omit-frame-pointer)
-  set(_targets xvm)
+  set(_targets xvm xvm_conformance)
   foreach(_t ${XVM_TESTS})
     list(APPEND _targets ${_t}_test)
   endforeach()
