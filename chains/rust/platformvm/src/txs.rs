@@ -184,15 +184,20 @@ pub struct PChainOwner {
 }
 
 impl PChainOwner {
-    /// The same check [`Owners`] makes, on the fields this shape has.
-    fn verify(&self) -> Result<(), Error> {
+    /// The same group, as the shape everything else spends against. The
+    /// locktime is zero because a balance owner has none — that is the whole
+    /// difference between the two types.
+    pub fn as_owners(&self) -> Owners {
         Owners {
             locktime: 0,
             threshold: self.threshold,
             addrs: self.addresses.clone(),
         }
-        .verify()
-        .map_err(Error::Owner)
+    }
+
+    /// The same check [`Owners`] makes, on the fields this shape has.
+    fn verify(&self) -> Result<(), Error> {
+        self.as_owners().verify().map_err(Error::Owner)
     }
 }
 
