@@ -186,15 +186,29 @@ func vec(idStr, chain, op string, wire []byte) Vector {
 }
 
 // buildCorpus returns every vector, in a stable order.
+//
+// The four groups that carry one complete encoding per kind are also handed to
+// `malformations`, which cuts each of them short and runs each of them long.
+// The edge groups are not: their vectors are already damaged on purpose, and
+// half of a truncation is a truncation.
 func buildCorpus() []Vector {
+	pTxs := platformTxs()
+	pBlocks := platformBlocks()
+	xTx := xTxs()
+	xBlk := xBlocks()
+
 	var v []Vector
-	v = append(v, platformTxs()...)
-	v = append(v, platformBlocks()...)
+	v = append(v, pTxs...)
+	v = append(v, pBlocks...)
 	v = append(v, platformEdges()...)
-	v = append(v, xTxs()...)
-	v = append(v, xBlocks()...)
+	v = append(v, xTx...)
+	v = append(v, xBlk...)
 	v = append(v, xEdges()...)
 	v = append(v, seams()...)
+	v = append(v, malformations(pTxs)...)
+	v = append(v, malformations(pBlocks)...)
+	v = append(v, malformations(xTx)...)
+	v = append(v, malformations(xBlk)...)
 	return v
 }
 
@@ -679,6 +693,56 @@ func xEdges() []Vector {
 	v = append(v, vec("X_EDGE_CORRUPT_TAIL", "X", "tx", corrupt))
 
 	return v
+}
+
+// ---------------------------------------------------------------------------
+// Wire damage, derived from every kind.
+//
+// The hand-written edges above damage one transaction, the P-chain BaseTx.
+// Whether the other twenty-nine kinds are read the same way when the buffer is
+// the wrong length is a separate question for each of them, and it is a
+// question three hand-written decoders answer independently.
+//
+// Truncation asks whether a decoder notices it has run out of buffer or reads
+// past the end of one. The three cuts land in different places: a quarter in
+// and half way in stop inside a field, while one byte short of complete leaves
+// every length prefix the encoder wrote intact and only the last byte missing
+// — the shape a decoder driven by a length it read is likeliest to accept.
+//
+// Trailing bytes ask the opposite question: whether a decoder that has
+// finished reading a structure cares that the buffer has not ended. That
+// difference is invisible on well-formed bytes and it renames transactions:
+// the id is over the bytes given, so `P_EDGE_TRAILING_BYTES` and `P_BASE`
+// carry one transaction under two ids.
+// ---------------------------------------------------------------------------
+
+func malformations(src []Vector) []Vector {
+	var v []Vector
+	for _, s := range src {
+		b, err := hex.DecodeString(s.Wire)
+		must(err)
+		if len(b) < 8 {
+			panic(fmt.Errorf("%s carries %d bytes, too few to cut", s.ID, len(b)))
+		}
+		v = append(v,
+			vec(s.ID+"_TRUNC_QUARTER", s.Chain, s.Op, b[:len(b)/4]),
+			vec(s.ID+"_TRUNC_HALF", s.Chain, s.Op, b[:len(b)/2]),
+			vec(s.ID+"_TRUNC_MINUS1", s.Chain, s.Op, b[:len(b)-1]),
+			vec(s.ID+"_TRAIL_1", s.Chain, s.Op, extend(b, 1)),
+			vec(s.ID+"_TRAIL_4", s.Chain, s.Op, extend(b, 4)),
+		)
+	}
+	return v
+}
+
+// extend copies the bytes and leaves n unread ones after them.
+func extend(b []byte, n int) []byte {
+	out := make([]byte, len(b)+n)
+	copy(out, b)
+	for i := len(b); i < len(out); i++ {
+		out[i] = 0xFF
+	}
+	return out
 }
 
 // ---------------------------------------------------------------------------
