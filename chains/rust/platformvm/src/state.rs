@@ -491,6 +491,45 @@ impl State {
         self.expiries.iter()
     }
 
+    /// Every unspent output, by the name it is stored under.
+    pub fn utxos(&self) -> impl Iterator<Item = (&Id, &Utxo)> {
+        self.utxos.iter()
+    }
+
+    /// Every transaction the chain has kept.
+    pub fn txs(&self) -> impl Iterator<Item = (&Id, &Tx)> {
+        self.txs.iter()
+    }
+
+    /// The blockchain names already taken, lowercased.
+    pub fn chain_names(&self) -> impl Iterator<Item = &String> {
+        self.chain_names.iter()
+    }
+
+    /// Take a name without creating the blockchain that took it. Only a
+    /// restart uses this: the name and the blockchain are separate rows, and a
+    /// restored chain has to end up with both.
+    pub fn take_chain_name(&mut self, name: &str) {
+        if !name.is_empty() {
+            self.chain_names.insert(name.to_lowercase());
+        }
+    }
+
+    /// Every network that went sovereign, and what it converted with.
+    pub fn conversions(&self) -> impl Iterator<Item = (&Id, &Conversion)> {
+        self.conversions.iter()
+    }
+
+    /// Every network's own staking terms, as the transformation stating them.
+    pub fn transformations(&self) -> impl Iterator<Item = (&Id, &Tx)> {
+        self.transformations.iter()
+    }
+
+    /// What each validator has earned from its delegators and not been paid.
+    pub fn delegatee_rewards(&self) -> impl Iterator<Item = (&(Id, NodeId), &u64)> {
+        self.delegatee_rewards.iter()
+    }
+
     pub fn add_blockchain(&mut self, tx_id: Id, name: &str) {
         self.blockchains.push(tx_id);
         if !name.is_empty() {

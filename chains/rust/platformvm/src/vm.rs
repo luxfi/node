@@ -33,6 +33,8 @@ use crate::executor::{self, Config, Fees};
 use crate::ids::{hash256, EMPTY, PRIMARY_NETWORK_ID};
 use crate::state::State;
 use crate::txs::{Tx, Unsigned};
+use crate::persist;
+use crate::store;
 use crate::validators;
 
 /// A block plus the roots consensus signs over.
@@ -108,10 +110,18 @@ struct Inner {
     /// What each verified block would leave behind.
     verified: HashMap<Id, Verified>,
     accepted_by_height: HashMap<u64, Id>,
+    /// The root each accepted block left behind. Kept because it cannot be
+    /// recomputed once the state has moved past it, and a block that answered
+    /// a zero root would be claiming to have committed to nothing.
+    accepted_roots: HashMap<Id, Id>,
     /// What every accepted height changed about the validator sets. This is
     /// what lets a signature made at a past height be checked at all: the set
     /// then is the set now with everything since undone.
     history: validators::History,
+    /// Where the accepted state is written down. A chain given nowhere to
+    /// write still runs, and says so by holding nothing here rather than by
+    /// writing into something that forgets.
+    store: Option<Box<dyn store::Store>>,
     last_accepted: Id,
     last_accepted_height: u64,
     preference: Id,
@@ -151,7 +161,6 @@ impl PlatformVm {
         blocks.insert(id, genesis);
         let mut accepted_by_height = HashMap::new();
         accepted_by_height.insert(0, id);
-        let _ = state_root;
         PlatformVm {
             inner: Mutex::new(Inner {
                 config,
@@ -161,7 +170,9 @@ impl PlatformVm {
                 blocks,
                 verified: HashMap::new(),
                 accepted_by_height,
+                accepted_roots: HashMap::from([(id, state_root)]),
                 history: validators::History::new(),
+                store: None,
                 last_accepted: id,
                 last_accepted_height: 0,
                 preference: id,
@@ -191,6 +202,7 @@ impl PlatformVm {
         let published = crate::genesis::Genesis::parse(genesis_bytes)?;
         let rewards = crate::reward::Calculator::new(config.reward);
         let state = published.state(&rewards)?;
+        let state_root = root_of(&state);
         let genesis = block::Block::commit(published.id(), 0, GENESIS_TIME);
         let id = genesis.id();
         let mut blocks = HashMap::new();
@@ -207,10 +219,94 @@ impl PlatformVm {
                 blocks,
                 verified: HashMap::new(),
                 accepted_by_height,
+                accepted_roots: HashMap::from([(id, state_root)]),
                 history: validators::History::new(),
+                store: None,
                 last_accepted: id,
                 last_accepted_height: 0,
                 preference: id,
+                mempool: Vec::new(),
+                now,
+            }),
+        })
+    }
+
+    /// Start a chain that writes itself down — resuming what is written if
+    /// anything is.
+    ///
+    /// One call rather than two, because "start" and "resume" are the same
+    /// question asked of the store: a chain handed somewhere to write either
+    /// comes back as what is there or writes its own birth. Two entry points
+    /// would be two answers to which chain this is, and the wrong one is a
+    /// node that silently rejoins at height zero.
+    ///
+    /// What comes back is checked, not trusted: a block filed under a name
+    /// that is not the hash of its bytes, a staker whose priority names
+    /// nothing, an L1 validator whose fixed fields moved — each is refused,
+    /// because a node that starts from a state it cannot justify votes on one.
+    pub fn open(
+        config: Config,
+        fees: Box<dyn Fees + Send + Sync>,
+        uptime: Box<dyn executor::Uptime>,
+        genesis_bytes: &[u8],
+        mut store: Box<dyn store::Store>,
+    ) -> Result<PlatformVm, Error> {
+        let (stored, by_height, roots, tip) =
+            persist::restore_blocks(store.as_ref()).map_err(|e| Error::Malformed(e.to_string()))?;
+
+        let Some((last_accepted, last_accepted_height)) = tip else {
+            // Nothing written: this is the chain's birth, and the birth is
+            // written down before anything is built on it.
+            let vm = PlatformVm::from_genesis(config, fees, uptime, genesis_bytes)
+                .map_err(|e| Error::Malformed(e.to_string()))?;
+            {
+                let mut inner = vm.inner.lock().unwrap();
+                let genesis: Vec<(Id, u64, block::Block, Id)> = inner
+                    .blocks
+                    .iter()
+                    .map(|(id, b)| {
+                        (*id, b.height(), b.clone(), inner.accepted_roots[id])
+                    })
+                    .collect();
+                persist::flush(
+                    store.as_mut(),
+                    &State::new(),
+                    &inner.state,
+                    &validators::History::new(),
+                    &inner.history,
+                    &genesis,
+                    (inner.last_accepted, inner.last_accepted_height),
+                )
+                .map_err(|e| Error::Invalid(e.to_string()))?;
+                inner.store = Some(store);
+            }
+            return Ok(vm);
+        };
+
+        let state = persist::restore(store.as_ref()).map_err(|e| Error::Malformed(e.to_string()))?;
+        let history =
+            persist::restore_history(store.as_ref()).map_err(|e| Error::Malformed(e.to_string()))?;
+        if !stored.contains_key(&last_accepted) {
+            return Err(Error::Malformed(
+                "the stored tip names a block that is not stored".into(),
+            ));
+        }
+        let now = state.timestamp();
+        Ok(PlatformVm {
+            inner: Mutex::new(Inner {
+                config,
+                fees,
+                uptime,
+                state,
+                blocks: stored.into_iter().collect(),
+                verified: HashMap::new(),
+                accepted_by_height: by_height.into_iter().collect(),
+                accepted_roots: roots.into_iter().collect(),
+                history,
+                store: Some(store),
+                last_accepted,
+                last_accepted_height,
+                preference: last_accepted,
                 mempool: Vec::new(),
                 now,
             }),
@@ -345,10 +441,15 @@ impl Inner {
     }
 
     fn wrap(&self, blk: block::Block) -> PChainBlock {
+        let id = blk.id();
         let state_root = self
             .verified
-            .get(&blk.id())
+            .get(&id)
             .map(|v| v.state_root)
+            // A block that was accepted before this process started is not in
+            // the verified set, and its root is the one that was written down
+            // when it was accepted.
+            .or_else(|| self.accepted_roots.get(&id).copied())
             .unwrap_or(EMPTY);
         PChainBlock {
             payload_root: payload_root_of(&blk),
@@ -574,6 +675,11 @@ impl Vm for PlatformVm {
     fn accept(&self, id: &Id) -> Result<(), Error> {
         let mut inner = self.inner.lock().unwrap();
         let v = inner.verified.get(id).cloned().ok_or(Error::NotFound)?;
+        // What is about to be replaced. The difference between these and what
+        // follows is both what the validator-set record holds and what is
+        // written to the store, so it is taken once.
+        let was = inner.state.clone();
+        let history_was = inner.history.clone();
         if v.on_abort.is_none() {
             // Record what this height did to the validator sets BEFORE the new
             // state replaces the old one, because the record is the difference
@@ -593,7 +699,24 @@ impl Vm for PlatformVm {
         inner.last_accepted = *id;
         inner.last_accepted_height = v.block.height();
         inner.accepted_by_height.insert(v.block.height(), *id);
+        inner.accepted_roots.insert(*id, v.state_root);
         inner.preference = *id;
+
+        // Written down as one thing, so a machine that stops here comes back
+        // at this height or at the one before it, and never between them.
+        if let Some(mut store) = inner.store.take() {
+            let written = persist::flush(
+                store.as_mut(),
+                &was,
+                &inner.state,
+                &history_was,
+                &inner.history,
+                &[(*id, v.block.height(), v.block.clone(), v.state_root)],
+                (*id, v.block.height()),
+            );
+            inner.store = Some(store);
+            written.map_err(|e| Error::Invalid(e.to_string()))?;
+        }
 
         // Every sibling of the accepted block is now unreachable.
         let parent = v.block.parent();
@@ -766,6 +889,7 @@ mod tests {
     use crate::ids::{NodeId, ShortId};
     use crate::reward;
     use crate::signer::Signer;
+    use crate::store::Store;
     use crate::txs::{Envelope, Validator};
 
     const ASSET: Id = [9u8; 32];
@@ -978,6 +1102,143 @@ mod tests {
 
         assert_eq!(vm.last_accepted(), blk.id());
         assert_eq!(vm.block_id_at(1).unwrap(), blk.id());
+    }
+
+    /// The bytes a network is published as, holding exactly the one output
+    /// `a_validator_tx` spends. Enough for a chain to be born from and then to
+    /// change.
+    fn a_published_network(now: u64) -> Vec<u8> {
+        use crate::genesis::{Allocation, Genesis};
+        Genesis {
+            utxos: vec![Allocation {
+                utxo: Utxo {
+                    id: UtxoId {
+                        tx_id: [1; 32],
+                        output_index: 0,
+                    },
+                    output: Output {
+                        asset: ASSET,
+                        stake_lock: 0,
+                        amount: 10 * MEGA,
+                        owners: spend_owner(),
+                    },
+                },
+                message: Vec::new(),
+            }],
+            validators: Vec::new(),
+            chains: Vec::new(),
+            timestamp: now,
+            initial_supply: 400 * 1_000_000 * 1_000_000,
+            message: "a network".to_string(),
+        }
+        .to_bytes()
+    }
+
+    #[test]
+    fn a_chain_comes_back_as_the_chain_it_was() {
+        // The whole reason the state is written down. A node that restarts and
+        // remembers nothing has to be TOLD what it decided by the peers whose
+        // claims it exists to check.
+        let now = 1000;
+        let path = {
+            let mut p = std::env::temp_dir();
+            p.push(format!("lux-pvm-restart-{}", std::process::id()));
+            let _ = std::fs::remove_file(&p);
+            p
+        };
+        let published = a_published_network(now);
+
+        let (tip, height, root, set_at_zero) = {
+            let vm = PlatformVm::open(
+                config(),
+                Box::new(FlatFees::default()),
+                Box::new(AlwaysUp),
+                &published,
+                Box::new(store::File::open(&path).unwrap()),
+            )
+            .expect("a chain writes its own birth");
+            vm.set_clock(now);
+            vm.submit(a_validator_tx(now)).unwrap();
+            let blk = vm.build().unwrap();
+            vm.verify(&blk.id()).unwrap();
+            vm.accept(&blk.id()).unwrap();
+            (
+                vm.last_accepted(),
+                blk.height(),
+                vm.get(&blk.id()).unwrap().state_root(),
+                vm.validator_set_at(&PRIMARY_NETWORK_ID, 0).unwrap(),
+            )
+        };
+
+        let back = PlatformVm::open(
+            config(),
+            Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
+            &published,
+            Box::new(store::File::open(&path).unwrap()),
+        )
+        .expect("what was written is a chain");
+
+        assert_eq!(back.last_accepted(), tip, "the same tip");
+        assert_eq!(back.block_id_at(height), Ok(tip));
+        assert_eq!(back.block_id_at(0), Ok(back.get(&tip).unwrap().parent()));
+        // The same state, checked by the digest a certificate is over rather
+        // than by a list of fields somebody remembered.
+        assert_eq!(back.get(&tip).unwrap().state_root(), root);
+        // The set now, and the set at a height decided before the restart.
+        assert_eq!(
+            back.validator_set(&PRIMARY_NETWORK_ID).unwrap()[&NodeId([5; 20])].weight,
+            10 * MEGA
+        );
+        assert_eq!(back.validator_set_at(&PRIMARY_NETWORK_ID, 0).unwrap(), set_at_zero);
+        assert!(set_at_zero.is_empty());
+
+        // And it goes on from there rather than starting again.
+        assert!(matches!(
+            back.validator_set_at(&PRIMARY_NETWORK_ID, height + 1),
+            Err(Error::BadRequest(_))
+        ));
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn a_chain_given_nowhere_to_write_still_runs() {
+        // A memory store has no durability to offer and does not claim any.
+        let now = 1000;
+        let published = a_published_network(now);
+        let vm = PlatformVm::open(
+            config(),
+            Box::new(FlatFees::default()),
+            Box::new(AlwaysUp),
+            &published,
+            Box::new(store::Memory::new()),
+        )
+        .unwrap();
+        vm.set_clock(now);
+        vm.submit(a_validator_tx(now)).unwrap();
+        let blk = vm.build().unwrap();
+        vm.verify(&blk.id()).unwrap();
+        vm.accept(&blk.id()).unwrap();
+        assert_eq!(vm.validator_set(&PRIMARY_NETWORK_ID).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn a_stored_tip_naming_a_block_that_is_not_there_does_not_start_a_chain() {
+        let mut s = store::Memory::new();
+        let mut tip = [7u8; 32].to_vec();
+        tip.extend_from_slice(&3u64.to_le_bytes());
+        s.put(b"P", &tip);
+        s.commit().unwrap();
+        assert!(matches!(
+            PlatformVm::open(
+                config(),
+                Box::new(FlatFees::default()),
+                Box::new(AlwaysUp),
+                &a_published_network(1000),
+                Box::new(s),
+            ),
+            Err(Error::Malformed(_))
+        ));
     }
 
     #[test]

@@ -168,6 +168,7 @@ impl Wide {
         }
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn cmp(&self, other: &Wide) -> std::cmp::Ordering {
         for i in (0..8).rev() {
             match self.limbs[i].cmp(&other.limbs[i]) {
