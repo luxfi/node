@@ -133,6 +133,85 @@ void go_signature_kat() {
            "a signature this port made verifies against the address it derives");
 }
 
+// ================= the recovery id, against both other languages =================
+//
+// The last byte of a signature is a recovery id, and what a chain does with the
+// four values it can take is consensus: a transaction one language accepts and
+// another refuses is a fork. The Go fixture above is the one signature all three
+// languages already share, so the table below is that signature read back at
+// every recovery id by luxfi/crypto (Go) and k256 (Rust), run on those bytes
+// rather than reasoned about:
+//
+//     v   Go                     Rust                   what it means
+//     0   015cce…e7f0            015cce…e7f0            the signer
+//     1   aaabc7…8271            aaabc7…8271            the other candidate y
+//     2   recovery failed        recovery failed        x wrapped the order
+//     3   recovery failed        recovery failed        x wrapped, odd y
+//     4   invalid recovery id    invalid recovery id    not a recovery id
+//
+// 2 and 3 name the recovery whose R has x = r + n. Producing one needs
+// r < p - n, about 2^128 of work, so no signature that exists takes those
+// values and both references fail them. A port that masked the byte down to its
+// low bit would instead read 2 as 0 and hand back the signer — accepting, off a
+// single flipped byte, a transaction the rest of the network refuses.
+//
+// The address at v=1 is asserted too, and not only the refusals: it is what
+// proves the id is being USED rather than ignored, so that "2 is refused"
+// cannot be passing for the wrong reason.
+
+ShortId recovery_addr_v1() {
+    return ShortId{0xaa, 0xab, 0xc7, 0x96, 0x32, 0xce, 0x64, 0x53, 0x7f, 0x91,
+                   0x65, 0xed, 0x52, 0x33, 0x10, 0x70, 0xd8, 0x03, 0x82, 0x71};
+}
+
+// with_recovery_id is the whole attack: one byte of a valid credential.
+fx::Signature with_recovery_id(fx::Signature sig, std::uint8_t v) {
+    sig[64] = v;
+    return sig;
+}
+
+void recovery_id_matches_the_reference() {
+    std::printf("\n  -- the recovery id, against Go and Rust --\n");
+
+    Rig rig;
+    const auto bytes = go_tx_bytes();
+    auto in = tin(1, {0});
+    auto to_signer = tout(1, owners(0, 1, {go_addr()}));
+    auto to_other = tout(1, owners(0, 1, {recovery_addr_v1()}));
+
+    // v = 0: the signer, as both references read it.
+    auto c0 = cred({with_recovery_id(go_sig(), 0)});
+    expect(rig.secp.verify_transfer(view(bytes), in.get(), c0.get(), to_signer.get()), "",
+           "v=0 recovers the signer");
+
+    // v = 1: the OTHER candidate — a different address, so the id is read.
+    auto c1 = cred({with_recovery_id(go_sig(), 1)});
+    expect(rig.secp.verify_transfer(view(bytes), in.get(), c1.get(), to_other.get()), "",
+           "v=1 recovers the other candidate");
+    expect(rig.secp.verify_transfer(view(bytes), in.get(), c1.get(), to_signer.get()),
+           fx::kErrWrongSig, "…and v=1 is therefore not the signer");
+
+    // v = 2 and 3: the wrapped-x recovery. Both references fail it, so this one
+    // must too — and it must fail as a RECOVERY, not merely land on some other
+    // address, or a signature would be one collision away from spending.
+    for (std::uint8_t v : {std::uint8_t(2), std::uint8_t(3)}) {
+        auto c = cred({with_recovery_id(go_sig(), v)});
+        const std::string at = " (v=" + std::to_string(v) + ")";
+        expect(rig.secp.verify_transfer(view(bytes), in.get(), c.get(), to_signer.get()),
+               "recovery failed", "a wrapped-x recovery id does not spend the signer's output" + at);
+        expect(rig.secp.verify_transfer(view(bytes), in.get(), c.get(), to_other.get()),
+               "recovery failed", "…nor the other candidate's" + at);
+    }
+
+    // 4 and up are not recovery ids at all, and both references say so by name.
+    for (std::uint8_t v : {std::uint8_t(4), std::uint8_t(27), std::uint8_t(255)}) {
+        auto c = cred({with_recovery_id(go_sig(), v)});
+        expect(rig.secp.verify_transfer(view(bytes), in.get(), c.get(), to_signer.get()),
+               "invalid signature recovery id",
+               "v=" + std::to_string(v) + " is not a recovery id");
+    }
+}
+
 // ================= secp256k1fx VerifyTransfer =================
 
 void secp_verify_transfer() {
@@ -558,6 +637,7 @@ void value_gates() {
 int main() {
     std::printf("xvm — the fx families, ported from the Go fx tests\n");
     go_signature_kat();
+    recovery_id_matches_the_reference();
     secp_verify_transfer();
     secp_verify_operation();
     secp_verify_permission();

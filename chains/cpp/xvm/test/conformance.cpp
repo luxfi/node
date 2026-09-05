@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <fstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using namespace lux::xvm;
@@ -219,6 +220,17 @@ Row eval_block(const std::string& id, const std::string& wire) {
 // and the two sides then disagree about what is still pending — which is not
 // visible in any transaction's bytes, so no wire vector could catch it.
 //
+// THE QUESTION IS ABOUT THE SEAM, NOT ABOUT THIS PORT'S OWN CLASS. Consensus
+// holds a lux::node::Block& and can call only what lux::node::Block declares;
+// a reject that exists on VmBlock and nowhere in that interface is a method
+// nothing will ever call. Asking `VmBlock` reported PRESENT while the seam had
+// no reject at all — the differential agreeing with Go about a capability the
+// C++ node does not have, which is the exact gap this vector was added to
+// catch. So the probe is on the interface, and it goes green only when
+// consensus can genuinely reach the port's reject: the seam declares it AND
+// VmBlock is a lux::node::Block, so an override is the only way to satisfy
+// both.
+//
 // Dependent on its parameter, so the compiler answers the question instead of
 // refusing to ask it.
 template <class B>
@@ -229,13 +241,17 @@ Row eval_seam(const std::string& id) {
     r.id = id;
     r.parse = "ok";
     r.kind = "Block.Reject";
-    if constexpr (can_be_rejected<VmBlock>) {
+    static_assert(std::is_base_of_v<lux::node::Block, VmBlock>,
+                  "a reject reachable through the seam is only reachable if the port's block "
+                  "IS the seam's block");
+    if constexpr (can_be_rejected<lux::node::Block>) {
         r.exec = "PRESENT";
-        r.note = "xvm VmBlock::reject";
+        r.note = "xvm VmBlock::reject, reached through lux::node::Block";
     } else {
         r.exec = "ABSENT";
-        r.note = "the C++ block decision seam has verify and accept, and no reject: a rejected "
-                 "block's transactions are not returned to the mempool";
+        r.note = "the C++ block decision seam has verify and accept, and no reject: consensus "
+                 "cannot tell a block it lost, so a rejected block's transactions are not "
+                 "returned to the mempool";
     }
     return r;
 }
