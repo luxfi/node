@@ -201,19 +201,26 @@ one choosing its own cases. That is how a P-chain fork survived —
 `chains/rust/platformvm` refuses it by name, and nothing anywhere put those two
 answers side by side.
 
-It fails on `main`, which is the point. Thirteen vectors disagree, including
-both bugs it was built to catch (the L1-plane fork; the missing block reject on
-the C++ side, whose root is that `lux::node::Block` — the C++ host seam itself —
-declares `verify` and `accept` and no `reject`) and three that were not on
-anyone's list, the sharpest being that a transaction addressed to another
-network passes the Rust P-chain's syntactic check.
+It failed when it was written, which was the point: thirteen vectors
+disagreed, including both bugs it was built to catch (the L1-plane fork; the
+missing block reject on the C++ side, whose root was that `lux::node::Block` —
+the C++ host seam itself — declared `verify` and `accept` and no `reject`) and
+three that were not on anyone's list, the sharpest being that a transaction
+addressed to another network passed the Rust P-chain's syntactic check.
+
+All thirteen are closed. The three chains and the corpus now agree on every
+compared field of all 53 vectors, and no field goes uncompared. `make chains`
+exits zero, and it is the only thing that says so — the ports' own suites pass
+either way, which is how a fork lived here for as long as it did.
 
 `conformance/gen` is the one place in this repo that depends on `luxfi/node`.
 That is what a reference is. It is a separate Go module so it cannot reach
 node2's own dependency graph, which `make luxd` still greps and still fails on.
 
-Known gap, reported rather than hidden: the X-chain's `exec` field is
-`SKIPPED` on four vectors, because the X-chain semantic pass needs a funded
-UTXO set and a shared-memory peer that nothing here stands up. The runner lists
-those under NOT COMPARED above the result; a field no two implementations
-answered is never counted as agreement.
+Two golden-generator packages, `chains/rust/platformvm/tests/vectors` and
+`chains/cpp/xvm/test/golden`, are references of the same kind but live in the
+ROOT module, so `go list -deps ./...` does reach `luxfi/node` through them.
+Nothing that ships imports either one and `make luxd`'s grep is scoped to the
+runtime it builds, so no artifact carries the dependency — but the module is
+not clean by inspection, and the honest fix is to give them their own module
+the way `conformance/gen` has one.
