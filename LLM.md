@@ -276,6 +276,36 @@ The wire-format suite that used to sit in `chains/cpp/platformvm/test/` moved
 to the SDK with the implementation, case for case. A wire rule belongs in one
 place, and its test belongs beside it.
 
+### Why Rust cannot just do the same thing
+
+`chains/rust/{xvm,quantumvm,platformvm}/src/zap.rs` are the same drift on the
+Rust side — 896 lines twice over, byte-identical to each other, and 770 lines
+in the third that differs from them in 1,261 lines. The fix is the same shape
+but it is blocked on something first, and it is worth knowing why before
+anyone tries.
+
+There are two different wire formats published under the name ZAP:
+
+- The one this repo speaks. A 16-byte header (`"ZAP\0"`, version, flags, root,
+  size) and relative pointers into an 8-byte-aligned data segment. That is
+  `zap-proto/go`, `zap-proto/js`, the capability tokens in `zap-proto/spec`,
+  every chain here, and now `zap-proto/cpp`.
+- A Cap'n Proto derivative — segment tables, far pointers, the kj runtime,
+  renamed. That is `zap-proto/rust` (the `zap` crate on crates.io),
+  `zap-proto/c` and `zap-proto/cpp-core`.
+
+So `zap.rs` was not written out of carelessness. The crate published under the
+name does not implement this wire, and the C++ SDK repo shipped no source at
+all. Adopting a published artifact was not available to either language, which
+is the actual root of the drift.
+
+C++ is closed: the SDK now exists. Rust needs the same thing published for the
+Rust half of format one before `chains/rust/**` can drop its copies. Whoever
+does it should port `include/zap/zap.hpp` and the two test suites in
+`zap-proto/cpp` rather than start from the Go source again — the C++ port
+already found the rules a fresh reading misses, and the KATs are bytes the Go
+runtime printed.
+
 ## The chain differential (`make chains`)
 
 `make conformance` is the **consensus** layer. `make chains` is the **chain**
