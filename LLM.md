@@ -140,13 +140,35 @@ as well — and it fails a run in which any implementation printed no row at
 all, since with four voices three answering is still a comparison, it agrees,
 and the fourth's silence would read as a pass.
 
-`make precompiles` is described in `conformance/PRECOMPILE.md`. Two things it
-establishes about Go before the other two runtimes are even asked: at
-`0x…0100` the stock table charges 6900 and the Lux `secp256r1` module charges
-3450, and the module is what answers, because `LuxPrecompileOverrider` is
-consulted before the standard table; and address zero is not unclaimed — the
+`make precompiles` is described in `conformance/PRECOMPILE.md`. **It fails, and
+what it found is the reason it exists.**
+
+Across 235 calls the three runtimes split two against one, and the one is Go:
+Rust and C++ disagree with each other on 15 fields and each disagrees with Go
+on roughly 200. Go is alone because it is the only one that applies the Lux
+precompile modules, and those modules are laid out on the **pre-final**
+EIP-2537, which still had separate multiply precompiles. The final EIP dropped
+them, so every BLS12-381 address from `0x0c` up is shifted by one slot:
+`0x0d` is a G1 multi-exponentiation to the Lux module and a G2 addition to
+geth, revm and cevm — different curve groups, not different gas. 243 of the
+252 Go-versus-C++ disagreements name a `bls12381` module. All seven keys are
+enabled in the canonical C-Chain upgrade at a timestamp in December 2025, so a
+Rust or C++ node forks that chain the first time a contract calls `0x0c`
+through `0x11`.
+
+Two smaller ones. At `0x…0100` the stock table charges 6900 and the Lux
+`secp256r1` module charges 3450, and the module is what answers, because
+`LuxPrecompileOverrider` is consulted before the standard table — latent,
+since that key is enabled nowhere. And address zero is not unclaimed: the
 dead-address module (LP-0150) is registered there and reads chain state, so it
 cannot be answered for without a chain.
+
+The residue is two reporting conventions rather than two behaviours. revm
+cannot say what a refusal cost, because it computes the price inside the
+function that does the work, so it writes SKIPPED rather than a zero it does
+not mean. And cevm prices an unpriceable input above the limit, so it calls a
+malformed length "out of gas" where revm calls it a refusal — 15 vectors. At
+transaction level both consume everything offered, so neither is a fork.
 
 This is **consensus-layer** conformance, not **node-level** — three live
 `bin/luxd-*` daemons handed the same blocks over real sockets and checked
