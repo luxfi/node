@@ -6,24 +6,30 @@
 //
 // A transaction's payload is an opaque byte string the chain keeps verbatim,
 // and whether it DECODES decides whether the transaction is valid. So the two
-// implementations have to accept and refuse exactly the same bytes:
+// implementations have to accept and refuse exactly the same bytes. The rules
+// that hold everywhere:
 //
-//   - a member the schema does not describe is REFUSED, not ignored
-//     (Go: Decoder.DisallowUnknownFields). A megabyte of ciphertext body in a
-//     "body" member used to decode fine and come back out of the block store.
-//   - a second value after the first is refused (Go: dec.More()).
-//   - a field name matches EXACTLY, or failing that case-insensitively — the
-//     rule Go's struct decoder uses, so `{"DIGEST":...}` is the same member
-//     here as it is there.
-//   - `null` for any member leaves it at its zero value and is not an error.
+//   - a field name matches EXACTLY, or failing that by unicode.SimpleFold —
+//     which is NOT ASCII case folding, and the difference is two runes that
+//     matter here (see fold_name in json.cpp). With two keys naming one field
+//     the LATER one wins, whichever way each of them matched.
+//   - `null` for a member leaves it at its zero value, and `null` for the whole
+//     STRUCT leaves every member at its zero value. Neither is an error.
 //   - a number decoded into an integer must BE an integer: Go hands the literal
 //     to strconv, so "1.0" and "1e2" are refused where "100" is taken.
+//   - a Go [N]byte discards elements past its length WITHOUT type-checking them
+//     and leaves the ones it never reached at zero.
 //   - a duplicate member takes its last value, silently, as Go does.
 //
-// And the writer matches Marshal, down to the parts that look like decoration:
+// And two rules that DIFFER between the chain's two readers — unknown members
+// and trailing bytes. See the block above `more` below; getting them the same
+// way round for both is the bug this file was written to stop repeating.
+//
+// The writer matches Marshal, down to the parts that look like decoration:
 // <, > and & are escaped, map keys come out sorted, a [N]byte writes as an
-// array of numbers while a []byte writes as base64. Those are what the Go chain
-// PERSISTS, so a record written any other way is a different database.
+// array of numbers while a []byte writes as base64, and every byte that starts
+// no well-formed rune becomes \ufffd. Those are what the Go chain PERSISTS, so
+// a record written any other way is a different database.
 
 #pragma once
 
