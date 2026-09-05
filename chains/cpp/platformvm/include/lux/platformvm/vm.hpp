@@ -72,6 +72,13 @@ class VmBlock final : public lux::node::Block {
     bool verify() override;
     void accept() override;
 
+    // The other half of being decided. This block will never be accepted, so
+    // the layers it was holding are released and the transactions it charged
+    // for go back to the pool — they were never refused, they lost a race, and
+    // a chain that swallowed them would disagree with every other node about
+    // what is still waiting. Go: block/executor/rejector.go.
+    void reject() override;
+
     const block::Block& inner() const { return *blk_; }
     // Why the last verify() said no. Empty when it said yes.
     const std::string& refusal() const { return refusal_; }
@@ -190,6 +197,7 @@ class PlatformVM final : public lux::node::VM {
 
     Status verify_block(const block::Block& b, Verified& out);
     Status accept_block(const block::Block& b);
+    Status reject_block(const block::Block& b);
 
     // The state a child of `parent_id` is verified against: the accepted state
     // if the parent is the last accepted block, otherwise the parent's layer.

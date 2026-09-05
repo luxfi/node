@@ -176,6 +176,71 @@ TEST(AValidatorJoinsThroughABlock) {
     REQUIRE_EQ_NUM(0, chain.mempool_size());
 }
 
+// The other half of being decided. Go: block/executor/rejector.go — free the
+// block's pinned state, and put its decision transactions back where the next
+// build draws from.
+//
+// The pool half usually has nothing to do here, and that is the invariant
+// holding rather than a gap. Go's builder takes a transaction OUT of the pool as
+// it packs it (executeTx → mempool.Remove) so on that side reject is the only
+// thing that returns it; this builder peeks and removes at ACCEPT, so a block
+// that never reached accept never emptied anything. Two roads, one destination:
+// after a decision the pool holds exactly what is still pending, which is what
+// is asserted — including that a rejection does not put a second copy in.
+//
+// The state half is never idle. A block that will never be accepted must stop
+// being something a later block can be verified against, and a builder that
+// returns nothing is otherwise indistinguishable from a builder that had
+// nothing to build — hence the control.
+TEST(ARejectedBlockGivesBackWhatItHeld) {
+    vm::PlatformVM chain(kPChain, make_backend(), genesis());
+    const std::uint64_t end = kGenesisTime + 90 * 24 * 60 * 60;
+    const auto join = join_tx(10'000'000'000, 5'000'000'000, end);
+    chain.submit(join);
+
+    auto lost = chain.build();
+    REQUIRE(lost != nullptr);
+    auto* lost_inner = dynamic_cast<vm::VmBlock*>(lost.get());
+    REQUIRE_MSG(lost->verify(), lost_inner->refusal());
+    REQUIRE_EQ_NUM(1, chain.mempool_size());
+
+    // THE CONTROL. While the block is undecided, its layer is the state a child
+    // is verified against — and this child can be built against nothing else: it
+    // spends the change the join transaction left, which exists only inside that
+    // layer.
+    chain.submit(pay_tx(join.tx_id, 4'999'000'000, 1'000'000));
+    REQUIRE_EQ_NUM(2, chain.mempool_size());
+    chain.prefer(lost->id());
+    auto child = chain.build();
+    REQUIRE_MSG(child != nullptr, "a child of an undecided block could not be built at all");
+    REQUIRE_U64(2u, child->height());
+
+    lost->reject();
+
+    // Both transactions are still waiting: the join, which was in the block that
+    // lost, and the payment, which was never in a block at all. Once each.
+    REQUIRE_EQ_NUM(2, chain.mempool_size());
+
+    // And the layer is gone. Same parent, same pool, same builder — and now
+    // there is nothing to build on.
+    chain.prefer(lost->id());
+    REQUIRE_MSG(chain.build() == nullptr, "a block the chain rejected is still being built on");
+
+    // Rejecting twice returns them once.
+    lost->reject();
+    REQUIRE_EQ_NUM(2, chain.mempool_size());
+
+    // And the chain advances from the tip it actually has, carrying the
+    // transaction the rejected block was holding.
+    chain.prefer(chain.last_accepted());
+    auto next = chain.build();
+    REQUIRE(next != nullptr);
+    auto* next_inner = dynamic_cast<vm::VmBlock*>(next.get());
+    REQUIRE_MSG(next->verify(), next_inner->refusal());
+    next->accept();
+    REQUIRE_OK(chain.accepted().get_current_validator(kPrimaryNetworkId, node_of(0x90)));
+}
+
 // A block travels as bytes: parsed by another node, it has the same id and
 // verifies to the same root. That is the whole reason the bytes are canonical.
 TEST(ABlockCrossesTheWire) {

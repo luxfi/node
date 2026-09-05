@@ -89,6 +89,7 @@ bool VmBlock::verify() {
 }
 
 void VmBlock::accept() { (void)vm_->accept_block(*blk_); }
+void VmBlock::reject() { (void)vm_->reject_block(*blk_); }
 
 // ── the chain
 
@@ -321,6 +322,53 @@ Status PlatformVM::accept_block(const block::Block& b) {
     // Anything the block carried is no longer waiting — nor is anything that
     // was waiting to spend the same outputs, which can never be accepted now.
     mempool_.remove(b.decision_txs());
+    return ok();
+}
+
+Status PlatformVM::reject_block(const block::Block& b) {
+    // THE LAYERS GO FIRST, and this is the half that is never optional. The
+    // block can never be accepted, so the state its execution pinned is a state
+    // nothing may be verified against — leave it and a child of a block the
+    // network decided against still finds a parent to build on. This is Go's
+    // `free`, and like Go's it frees exactly ONE block: an option block that
+    // lost releases its own layer, while the proposal block above it keeps its
+    // three until the winning option is accepted, which is where accept_block
+    // releases them. The block's BYTES stay reachable through blocks_, as they
+    // do in Go — being decided against is not being forgotten.
+    verified_.erase(b.id());
+
+    // ONLY THE DECISION TRANSACTIONS COME BACK. They were submitted by someone
+    // else and are still theirs to have included, so they belong in the pool the
+    // next build() draws from. A proposal block's own transaction is not
+    // reachable from here at all: it belongs to the height that was rejected,
+    // and the next builder emits a fresh one from current state. Go's rejector
+    // says exactly this by iterating DecisionTxs, which never contains it.
+    //
+    // Not re-verified. Go's P-chain rejector re-issues unconditionally and lets
+    // the next build discover that a transaction no longer executes — where it
+    // is skipped rather than dragged into a block that would be refused. (X's
+    // rejector DOES re-verify; the two chains genuinely differ, and each port
+    // follows its own.)
+    //
+    // Usually there is nothing to do, and that is not this call being pointless
+    // — it is where the invariant is already held. Go's builder takes a
+    // transaction OUT of the pool as it packs it (executeTx → mempool.Remove),
+    // so on that side reject is the only thing that puts it back; this builder
+    // peeks and removes at ACCEPT instead, so a block that never reached accept
+    // never emptied anything. Two roads, one invariant: after a decision the
+    // pool holds exactly what is still pending. What is asked for here is that
+    // invariant rather than Go's mechanism, so anything already waiting is left
+    // alone — re-adding it would report a duplicate and record a refusal
+    // against a transaction that is, in fact, waiting.
+    for (const auto& tx : b.decision_txs()) {
+        if (mempool_.has(tx.id())) continue;
+        // A genuine refusal — the pool is full, or something waiting already
+        // rivals this for the same outputs. Remembered, the way every other
+        // refusal here is, so whoever submitted it can be told rather than left
+        // with silence.
+        if (auto st = mempool_.add(tx); !st) mempool_.mark_dropped(tx.id(), st.error());
+    }
+
     return ok();
 }
 
