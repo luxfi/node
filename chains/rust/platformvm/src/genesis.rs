@@ -523,7 +523,7 @@ mod tests {
             max_consumption_rate: 120_000,
             min_consumption_rate: 100_000,
             minting_period: Duration::from_secs(365 * 24 * 60 * 60),
-            supply_cap: 720_000_000_000_000_000,
+            supply_cap: 2_000_000_000_000_000_000,
         });
         let state = g.state(&rewards).expect("a genesis state");
 
@@ -575,7 +575,7 @@ mod tests {
             max_consumption_rate: 120_000,
             min_consumption_rate: 100_000,
             minting_period: Duration::from_secs(365 * 24 * 60 * 60),
-            supply_cap: 720_000_000_000_000_000,
+            supply_cap: 2_000_000_000_000_000_000,
         });
         let mut g = genesis();
         g.validators = vec![chain_tx("not a validator")];

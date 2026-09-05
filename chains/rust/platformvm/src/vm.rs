@@ -993,7 +993,7 @@ mod tests {
                 max_consumption_rate: 120_000,
                 min_consumption_rate: 100_000,
                 minting_period: std::time::Duration::from_secs(YEAR),
-                supply_cap: 720 * 1_000_000 * 1_000_000,
+                supply_cap: 2_000_000_000_000_000_000,
             },
             bootstrapped: true,
         }
