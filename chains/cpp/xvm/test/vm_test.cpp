@@ -969,6 +969,66 @@ void preference() {
     check(c.vm->get_state(blk->id()) != nullptr, "after acceptance the block IS the chain state");
 }
 
+// ================= the other half of a decision =================
+
+// Go: block/executor/block.go Reject. A block that will never be accepted gives
+// back what it was holding — its pinned state to nobody, and its transactions to
+// the pool, each one asked AGAIN against the state that actually won so that
+// what still holds returns and what no longer does is remembered as dropped.
+//
+// This was written and unreachable: the node's seam declared accept and nothing
+// else, so nothing could ask for it. It is reachable now, and the engine asks on
+// every block it gives up on — which is why the property is worth pinning here
+// rather than leaving to the node.
+void losing_block() {
+    std::printf("\n  -- rejected --\n");
+    Chain c;
+
+    const Id genesis = c.vm->last_accepted();
+    auto tx = c.spend(0, 100);
+    check(c.vm->issue(tx).has_value(), "the tx is issued");
+    check(c.vm->mempool_size() == 1, "…and is waiting for a block");
+
+    auto blk = c.vm->build();
+    if (blk == nullptr) {
+        check(false, "build: " + c.vm->last_error());
+        return;
+    }
+    check(c.vm->mempool_size() == 0, "building the block takes it out of the pool");
+    check(c.vm->get_state(blk->id()) != nullptr, "…and pins the state that block would produce");
+
+    blk->reject();
+    check(c.vm->mempool_size() == 1, "rejecting the block hands the transaction back");
+    check(c.vm->pool().get(tx->id()) != nullptr, "…the same transaction, by id");
+    check(c.vm->pool().drop_reason(tx->id()).empty(),
+          "…not remembered as dropped: it lost a race, it was not refused");
+    check(c.vm->get_state(blk->id()) == nullptr,
+          "…and the pinned state is released, so nothing can be built on it");
+
+    // Nothing the block would have done was done.
+    check(c.vm->last_accepted() == genesis, "the chain did not move");
+    check(c.vm->chain_state().get_utxo(c.funded_utxo(0).input_id()).has_value(),
+          "…and the output the block would have spent is still spendable");
+
+    blk->reject();
+    check(c.vm->mempool_size() == 1, "rejecting twice hands it back once");
+
+    // Handed back means USABLE again, which is the whole reason to hand it back:
+    // a node that swallowed it would disagree with every peer about what is
+    // still pending, and then build a different block.
+    auto next = c.vm->build();
+    if (next == nullptr) {
+        check(false, "rebuild: " + c.vm->last_error());
+        return;
+    }
+    check(next->verify(), "the next block carries it and verifies");
+    next->accept();
+    check(c.vm->mempool_size() == 0, "…and accepting drains the pool");
+    txs::UTXOID produced{tx->id(), 0, false};
+    check(c.vm->chain_state().get_utxo(produced.input_id()).has_value(),
+          "…the transaction landed after all, one height later");
+}
+
 // ================= accepting something that was never verified =================
 
 void accept_unverified() {
@@ -1059,6 +1119,7 @@ int main() {
     reject_all_valid();
     reject_what_is_not_there();
     preference();
+    losing_block();
     accept_unverified();
     seam_answers();
     through_the_seam_only();

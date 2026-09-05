@@ -216,20 +216,22 @@ differing by one qualifier would SHADOW the seam's rather than override it, and
 a host driving the seam would then reach the do-nothing body while the chain sat
 unchanged — the same fail-open by a quieter route.
 
-## The one thing this port cannot do by itself
+## The half of a decision that took a host change to reach
 
-`VmBlock::reject` exists, is faithful and is tested — but the node's seam
-(`lux/node/vm.hpp`) declares `verify` and `accept` and no `reject`, so consensus
-in `lux-cpp/node` has no way to call it. The port is ready for it and the body
-does not change when the seam grows `virtual void reject() = 0`; until then the
-method is reachable only by naming `VmBlock`.
+`VmBlock::reject` was written, faithful and tested long before anything could
+call it: the node's seam (`lux/node/vm.hpp`) declared `verify` and `accept` and
+no `reject`, so consensus in `lux-cpp/node` held a `lux::node::Block&` through
+which the method did not exist. It was reachable only by naming `VmBlock`, which
+nothing in the host does.
 
-That is a HOST decision, not this chain's: the seam is shared with the C-Chain,
-whose reject is the EVM's to write. It is written down here rather than papered
-over with a default no-op, because a no-op reject would be a fake that returns
-success — the chain would silently go on dropping a rejected block's
-transactions and the differential's `X_SEAM_BLOCK_REJECT` vector would report
-PRESENT while the divergence stayed.
+The seam now declares `virtual void reject() = 0`, and `VmBlock::reject`
+overrides it — the body is the one that was already here, unchanged. That was a
+HOST decision, not this chain's, because the seam is shared with the C-Chain,
+whose reject is the EVM's to write; it landed in `lux-cpp/node` in the same
+change as this one, and it had to, since a pure virtual with no override does
+not compile. It was never papered over with a default no-op: a no-op reject
+would be a fake that returns success — the chain would go on dropping a rejected
+block's transactions while `X_SEAM_BLOCK_REJECT` reported PRESENT.
 
 ## Where this chain is checked against the other two
 
@@ -240,23 +242,22 @@ that speaks for this chain — `test/conformance.cpp`, built as `xvm_conformance
 (`conformance/`, the `chains` target at the repository root), not to this
 directory: a chain that scored itself would be marking its own paper.
 
-Run against this port, it agrees with Go on thirteen of the fourteen X vectors,
-on every compared field — `parse`, `kind`, the id hash, `syntactic` and `exec`.
-The fourteenth is not a transaction at all. `X_SEAM_BLOCK_REJECT` asks the
-compiler whether a block here can be rejected, and it answers ABSENT while Go
-answers PRESENT: the divergence written up above, held open by the only kind of
-check that could catch it, and the runner exits non-zero for it.
+Run against this port, it agrees with Go on all fourteen X vectors, on every
+compared field — `parse`, `kind`, the id hash, `syntactic` and `exec`. The
+fourteenth is not a transaction at all: `X_SEAM_BLOCK_REJECT` asks the compiler
+whether a block here can be rejected. It answered ABSENT for as long as the seam
+had no reject, and answers PRESENT now that it has one.
 
 It asks that of `lux::node::Block`, and the distinction is the whole vector.
-Asked of `VmBlock` — which is what it asked before — it answered PRESENT, because
-`VmBlock::reject` does exist; but consensus holds a `lux::node::Block&` and can
-call only what that interface declares, so it reported agreement about a
-capability the C++ node does not have. A probe of the concrete class can only
-ever say that this file's author wrote a method. Three runs pin the difference:
-the old probe on today's seam AGREES with Go on all 53 vectors, the new one
-reports one disagreement, and the new one on a seam carrying
-`virtual void reject() = 0` agrees again — green only once consensus can
-genuinely reach the reject.
+Asked of `VmBlock` — which is what it asked first — it answered PRESENT while the
+seam was still bare, because `VmBlock::reject` did exist; but consensus holds a
+`lux::node::Block&` and can call only what that interface declares, so it
+reported agreement about a capability the C++ node did not have. A probe of the
+concrete class can only ever say that this file's author wrote a method. Three
+runs pin the difference: the old probe on the bare seam AGREES with Go on all 53
+vectors, the new probe on that same bare seam reports one disagreement, and the
+new probe on a seam carrying `virtual void reject() = 0` agrees again — green
+only once consensus can genuinely reach the reject.
 
 One gap is worth stating because agreement can hide it: on five of those vectors
 the `exec` field is compared by nobody. Go, Rust and C++ all answer `SKIPPED`
