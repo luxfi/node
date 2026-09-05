@@ -189,7 +189,7 @@ line to **stderr**, where the differential's runner does not read:
 
 ```
 B  <impl>  <vectors>  <repeats>  <seconds>
-B  rust/platformvm  159  200  2.884113
+B  rust/platformvm  159  20  0.286851
 ```
 
 Without a count nothing changes: one pass, no timing line, the same verdicts on
@@ -211,8 +211,21 @@ Process start: the dynamic loader, the Go runtime coming up, the 27 MB of
 linked reference the Go evaluator carries. Reading and splitting `vectors.tsv`.
 Formatting and writing the result lines. Process exit. The build.
 
-Timing the child process from outside would have counted every one of those as
-chain work, and the Go evaluator's start alone is longer than the whole C++ run.
+That exclusion is not a detail. Timing each evaluator's whole process from the
+outside at one repeat, fastest of twenty, against what its own clock reported:
+
+| evaluator | whole process | the work | everything else |
+| --- | --- | --- | --- |
+| go | 63.9 ms | 20.3 ms | 43.6 ms |
+| rust/platformvm | 28.1 ms | 17.7 ms | 10.3 ms |
+| rust/xvm | 7.8 ms | 0.3 ms | 7.5 ms |
+| cpp/platformvm | 39.2 ms | 25.4 ms | 13.7 ms |
+| cpp/xvm | 5.9 ms | 0.2 ms | 5.7 ms |
+
+Go pays 43.6 ms for things that are not chain work — four times what the C++
+X-chain's entire process costs, and more than the C++ P-chain's entire process.
+A benchmark that timed the processes would have reported that as Go being slow
+at the P-chain.
 
 ### Where the comparison is fair
 
@@ -228,10 +241,11 @@ halfway through slows all of them down rather than one.
 **The C++ X-chain does less work than the other two.** `chains/cpp/xvm` answers
 `SKIPPED` for `exec`: it parses and checks syntax and stops there, where the Go
 and Rust X-chains go on to verify semantically and then execute against the
-empty chain. It is the fastest row in the table, and that is the reason. Its
-number is a parse-and-syntax number, and it becomes comparable the day that
-evaluator runs the same two passes — which is the same gap the `SKIPPED` field
-already reports to the differential.
+empty chain. It is the fastest row in the table and it is the one doing less,
+and the harness cannot say how much of that gap is the missing pass and how much
+is C++ being quicker at what it does share. Its number is a parse-and-syntax
+number, and it becomes comparable the day that evaluator runs the same two
+passes — the same gap the `SKIPPED` field already reports to the differential.
 
 **`go` is one row over two chains.** The Go evaluator answers all 208 vectors;
 Rust and C++ each answer one chain per binary, 159 P and 49 X. A P-chain vector
