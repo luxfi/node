@@ -105,5 +105,14 @@ node a different id for the same block.
   of the chain's configuration surface; this runtime reports it without reading
   it, and says so.
 - **The committee's registration path mints keys locally**, as the reference's
-  does. `Quasar::admit` is the other door: a peer registers by the public halves
-  the chain published, and this node then cannot sign as them.
+  does, and it is the only one. `Quasar::add_validator` takes a name and a
+  weight and makes the key pair, mirroring `AddValidator` in
+  `chains/quantumvm/quasar.go`. There is deliberately no door that takes a key
+  off the wire: aggregate BLS is sound only over keys the verifier chose, so a
+  registrant free to name its own public key names `pk_a − Σpkᵢ` and signs a
+  whole quorum by itself, and the same key under two names turns one honest
+  signature into two of the threshold's slots. Minting makes both
+  unrepresentable. Admitting a published key would need a proof of possession
+  bound to the name registering it — and would put members in this committee
+  that the reference cannot hold, which is a disagreement about which
+  certificates verify.
