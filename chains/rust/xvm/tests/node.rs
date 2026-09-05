@@ -203,7 +203,7 @@ fn the_nodes_own_rpc_server_routes_a_call_to_this_chain() {
     // A method only this chain answers, reached through the node's X route.
     let got = post(
         addr,
-        "/v1/bc/X",
+        "/v1/chain/x",
         r#"{"jsonrpc":"2.0","id":1,"method":"xvm.getBlockchainID","params":{}}"#,
     );
     assert_eq!(got["result"], serde_json::json!(ids::hex(&chain_id())));
@@ -214,7 +214,7 @@ fn the_nodes_own_rpc_server_routes_a_call_to_this_chain() {
         r#"{{"jsonrpc":"2.0","id":2,"method":"xvm.issueTx","params":{{"tx":"{}"}}}}"#,
         ids::hex(tx.bytes())
     );
-    let issued = post(addr, "/v1/bc/X", &body);
+    let issued = post(addr, "/v1/chain/x", &body);
     assert_eq!(
         issued["result"]["txID"],
         serde_json::json!(ids::hex(&tx.id()))
@@ -233,7 +233,7 @@ fn the_nodes_own_rpc_server_routes_a_call_to_this_chain() {
     // a panic and not a 500 with a chain string in it.
     let nope = post(
         addr,
-        "/v1/bc/X",
+        "/v1/chain/x",
         r#"{"jsonrpc":"2.0","id":4,"method":"xvm.nonsense","params":{}}"#,
     );
     assert_eq!(nope["error"]["code"], serde_json::json!(-32601));

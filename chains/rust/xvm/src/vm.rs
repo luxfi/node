@@ -7,10 +7,13 @@
 //! block, the state they change. This is the one place that speaks the host's
 //! language — ten methods, keyed by block id, with the lock inside.
 //!
-//! The mempool lives here rather than in the manager, because holding pending
-//! transactions is a node's job, not a ledger's: the manager decides what is
-//! true and this decides what to try next. A transaction that a block rejected
-//! comes back here to be re-offered, and one that a block accepted is gone.
+//! The mempool lives beside the manager rather than inside it, because holding
+//! pending transactions is a node's job, not a ledger's: the manager decides
+//! what is true and the pool decides what to try next. A transaction that a
+//! block rejected comes back to it to be re-offered, and one that a block
+//! accepted is gone. It is [`crate::mempool::Mempool`] — the one pool, with the
+//! conflict set and the admission terms — rather than a second, simpler one
+//! kept here, because two pools would be two answers to "may this in".
 
 use std::sync::{Arc, Mutex};
 
@@ -20,6 +23,8 @@ use crate::block::Block;
 use crate::error::Error as ChainError;
 use crate::host;
 use crate::ids::Id;
+use crate::mempool::Mempool;
+use crate::security::{Exempt, Profile};
 use crate::state::{Chain as _, Store};
 use crate::txs::executor::{Backend, Config, Net, SharedMemory};
 use crate::txs::Tx;
@@ -83,53 +88,6 @@ pub struct Genesis {
     pub txs: Vec<Tx>,
     /// Seconds since the epoch.
     pub timestamp: u64,
-}
-
-/// The transactions waiting to go into a block.
-///
-/// Insertion-ordered and free of duplicates: a transaction offered twice is
-/// held once, and the order they were offered in is the order they are tried.
-#[derive(Default)]
-struct Mempool {
-    order: Vec<Id>,
-    txs: std::collections::HashMap<Id, Tx>,
-    /// Why a transaction was dropped, kept so a caller can be told.
-    dropped: std::collections::HashMap<Id, ChainError>,
-}
-
-impl Mempool {
-    fn add(&mut self, tx: Tx) -> bool {
-        let id = tx.id();
-        if self.txs.contains_key(&id) {
-            return false;
-        }
-        self.dropped.remove(&id);
-        self.order.push(id);
-        self.txs.insert(id, tx);
-        true
-    }
-
-    fn remove(&mut self, id: &Id) {
-        if self.txs.remove(id).is_some() {
-            self.order.retain(|i| i != id);
-        }
-    }
-
-    fn drop_with(&mut self, id: Id, why: ChainError) {
-        self.remove(&id);
-        self.dropped.insert(id, why);
-    }
-
-    fn candidates(&self) -> Vec<Tx> {
-        self.order
-            .iter()
-            .filter_map(|id| self.txs.get(id).cloned())
-            .collect()
-    }
-
-    fn len(&self) -> usize {
-        self.txs.len()
-    }
 }
 
 /// Everything the chain holds, behind one lock.
@@ -225,15 +183,61 @@ impl Xvm {
         self.inner.lock().expect("chain poisoned").bootstrapped
     }
 
+    /// Hold this chain's transactions to a security profile.
+    ///
+    /// Go's `SetAuthPolicy`, called once at start-up from the chain's
+    /// configuration. Until it is called the pool admits on structure alone;
+    /// after it, [`crate::security::admits`] runs on every offer. Both the
+    /// direct [`Xvm::issue`] path and the gossip path go through the same pool,
+    /// so there is one place a transaction can get in and one rule it passes.
+    pub fn hold_to(&self, profile: Profile, exempt: Option<Arc<dyn Exempt>>) {
+        self.inner
+            .lock()
+            .expect("chain poisoned")
+            .mempool
+            .hold_to(profile, exempt);
+    }
+
+    /// The terms this chain admits on, if it has been told any.
+    pub fn profile(&self) -> Option<Profile> {
+        self.inner
+            .lock()
+            .expect("chain poisoned")
+            .mempool
+            .profile()
+            .cloned()
+    }
+
     /// Offer a transaction. It is verified against the preferred state before
     /// it is held, so the mempool never carries something that cannot go in a
-    /// block on this branch.
+    /// block on this branch, and the pool's own admission — size, room,
+    /// conflicts, security terms — decides whether it is kept.
+    ///
+    /// A refusal is remembered, so the same transaction offered again by a peer
+    /// is answered from memory rather than executed a second time.
     pub fn issue(&self, tx: Tx) -> crate::Result<()> {
         let mut inner = self.inner.lock().expect("chain poisoned");
         let backend = self.backend(inner.bootstrapped);
-        inner.manager.verify_tx(&backend, &tx)?;
-        inner.mempool.add(tx);
+        let id = tx.id();
+        if let Err(why) = inner.manager.verify_tx(&backend, &tx) {
+            inner.mempool.mark_dropped(id, why.clone());
+            return Err(why);
+        }
+        if let Err(why) = inner.mempool.add(tx) {
+            inner.mempool.mark_dropped(id, why.clone());
+            return Err(why);
+        }
         Ok(())
+    }
+
+    /// Why a transaction was refused, if this node still remembers.
+    pub fn refusal(&self, id: &Id) -> Option<ChainError> {
+        self.inner
+            .lock()
+            .expect("chain poisoned")
+            .mempool
+            .drop_reason(id)
+            .cloned()
     }
 
     /// How many transactions are waiting.
@@ -339,13 +343,14 @@ impl host::Vm for Xvm {
         let now = self.clock.now();
         let candidates = inner.mempool.candidates();
         let built = builder::build(&inner.manager, &backend, now, &candidates).map_err(to_host)?;
-        // What went in is no longer pending; what could not go in is not coming
-        // back on this branch.
-        for tx in built.block.txs() {
-            inner.mempool.remove(&tx.id());
-        }
+        // What went in is no longer pending, and neither is anything that
+        // wanted the same outputs. What could not go in is not coming back on
+        // this branch, and the reason is remembered.
+        let taken = built.block.txs().to_vec();
+        inner.mempool.remove(&taken);
         for (id, why) in built.dropped {
-            inner.mempool.drop_with(id, why);
+            inner.mempool.remove_id(&id);
+            inner.mempool.mark_dropped(id, why);
         }
         inner.known.insert(built.block.id(), built.block.clone());
         Ok(Box::new(built.block))
@@ -378,10 +383,10 @@ impl host::Vm for Xvm {
         let backend = self.backend(inner.bootstrapped);
         inner.manager.verify(&backend, &blk).map_err(to_host)?;
         // A transaction that is in a verified block is not a candidate for
-        // another one on this branch.
-        for tx in blk.txs() {
-            inner.mempool.remove(&tx.id());
-        }
+        // another one on this branch — and neither is one that wanted the same
+        // outputs, whether or not this node was holding it.
+        let taken = blk.txs().to_vec();
+        inner.mempool.remove(&taken);
         Ok(())
     }
 
@@ -412,8 +417,14 @@ impl host::Vm for Xvm {
                 good.push(tx);
             }
         }
+        // Re-offered through the pool's own admission, so a transaction that a
+        // rejected block carried does not re-enter on weaker terms than one a
+        // peer sends: the security gate runs on it again.
         for tx in good {
-            inner.mempool.add(tx);
+            let id = tx.id();
+            if let Err(why) = inner.mempool.add(tx) {
+                inner.mempool.mark_dropped(id, why);
+            }
         }
         Ok(())
     }
@@ -837,12 +848,69 @@ mod tests {
     }
 
     #[test]
-    fn the_same_transaction_offered_twice_is_held_once() {
+    fn the_same_transaction_offered_twice_is_held_once_and_the_second_is_told_why() {
         let (vm, g, _) = a_chain(1000);
         let tx = spend_genesis(&g, 1_000, 2);
+        let id = tx.id();
         vm.issue(tx.clone()).unwrap();
-        vm.issue(tx).unwrap();
+        // Go answers `ErrDuplicateTx` rather than quietly succeeding: a wallet
+        // that re-sent needs to know this node already has it, and a peer that
+        // re-gossiped needs the same answer without the node executing it
+        // twice.
+        assert_eq!(vm.issue(tx).unwrap_err(), ChainError::DuplicateTx);
         assert_eq!(vm.pending(), 1);
+        // Being held is not being dropped: the duplicate is refused, and the
+        // one that is held keeps no refusal against its name.
+        assert_eq!(vm.refusal(&id), None);
+    }
+
+    #[test]
+    fn a_second_spend_of_one_output_is_refused_before_it_is_executed() {
+        // The pool's conflict set, which the chain's own verification cannot
+        // see: both of these verify against the SAME preferred state — nothing
+        // has been accepted — and only one can ever go in a block.
+        let (vm, g, _) = a_chain(1000);
+        let first = spend_genesis(&g, 1_000, 2);
+        let second = spend_genesis(&g, 1_000, 3);
+        assert_ne!(first.id(), second.id(), "two different transactions");
+        vm.issue(first).unwrap();
+        assert_eq!(
+            vm.issue(second.clone()).unwrap_err(),
+            ChainError::ConflictsWithOtherTx
+        );
+        assert_eq!(vm.pending(), 1);
+        // And the refusal is remembered, so the next peer to offer it is
+        // answered from memory rather than by executing it again.
+        assert_eq!(
+            vm.refusal(&second.id()),
+            Some(ChainError::ConflictsWithOtherTx)
+        );
+    }
+
+    #[test]
+    fn a_chain_told_to_hold_to_strict_post_quantum_admits_no_classical_spend() {
+        // The X-Chain's three fx families all spend with a secp256k1 signature,
+        // so under the strict profile with no exemption there is nothing this
+        // chain can admit. That refusal is the point: a chain that took the
+        // spend anyway would be post-quantum in its block format and classical
+        // in what it accepts.
+        let (vm, g, _) = a_chain(1000);
+        vm.hold_to(crate::security::strict_pq(), None);
+        assert_eq!(vm.profile().map(|p| p.which), Some(crate::security::Which::StrictPq));
+        let tx = spend_genesis(&g, 1_000, 2);
+        let id = tx.id();
+        assert_eq!(
+            vm.issue(tx).unwrap_err(),
+            ChainError::ClassicalCredentialRefused
+        );
+        assert_eq!(vm.pending(), 0);
+        assert!(vm.refusal(&id).is_some(), "and this node remembers why");
+
+        // The same transaction, on a chain told the permissive terms, goes in.
+        let (other, g2, _) = a_chain(1000);
+        other.hold_to(crate::security::permissive(), None);
+        other.issue(spend_genesis(&g2, 1_000, 2)).unwrap();
+        assert_eq!(other.pending(), 1);
     }
 
     #[test]
