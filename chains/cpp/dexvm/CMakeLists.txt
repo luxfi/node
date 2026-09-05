@@ -167,9 +167,23 @@ foreach(_t ${DEXVM_TESTS})
   add_test(NAME ${_t} COMMAND ${_t}_test)
 endforeach()
 
+# ── the differential evaluator ───────────────────────────────────────────────
+#
+# Not a test: it reads the shared corpus and PRINTS this chain's answers, and
+# `make chains` compares them against the Go D-chain's. Built unconditionally,
+# so a chain that stopped answering is a build failure rather than a silently
+# missing voice.
+add_executable(dexvm_conformance test/conformance.cpp)
+target_link_libraries(dexvm_conformance PRIVATE dexvm)
+# The corpus format, the verdict words and the error-word table are shared with
+# every other C++ evaluator, because a table that differed between two of them
+# reported its own difference as a chain's.
+target_include_directories(dexvm_conformance PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../conformance/include)
+target_compile_options(dexvm_conformance PRIVATE -Wall -Wextra)
+
 if(DEXVM_SANITIZE)
   set(_san -fsanitize=${DEXVM_SANITIZE} -fno-omit-frame-pointer)
-  set(_targets dexvm)
+  set(_targets dexvm dexvm_conformance)
   foreach(_t ${DEXVM_TESTS})
     list(APPEND _targets ${_t}_test)
   endforeach()
