@@ -12,7 +12,7 @@ and signed for by whoever owns it. None exists to make entry selective.
 
 ```
 cd chains/rust/platformvm
-PATH=~/.cargo/bin:$PATH cargo test          # 416 tests
+PATH=~/.cargo/bin:$PATH cargo test          # 419 tests
 PATH=~/.cargo/bin:$PATH cargo clippy --all-targets
 ```
 
@@ -202,7 +202,11 @@ node implements, because both are things the chain cannot know by itself.
   `verify_permission` — the one-owner check the authorisation paths call, and
   where the recovery actually happens — have their types pinned by a `const _`
   in `flow`, so adding a parameter of any kind stops the build rather than
-  waiting for someone to notice.
+  waiting for someone to notice. Every path that takes a credential has a test
+  that forges the last one with a **real stranger's signature** rather than
+  removing it, so each exercises a genuine recovery landing on the wrong
+  address — which is the failure the original missing-recoverer bug could not
+  have produced, and the reason the tests that existed then all passed.
 - **Where a transaction is addressed is part of the bytes being well formed.**
   `syntactic_verify` takes a `txs::Chain` — network, blockchain, native asset —
   and refuses a mismatch before it looks at anything else, because a
