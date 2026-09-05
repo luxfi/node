@@ -7,7 +7,16 @@
 //! vector. The runner compares the three sets of lines; this program never
 //! sees another implementation's answer and has nothing to agree with.
 //!
-//! Usage: `conformance <vectors.tsv>`
+//! Usage: `conformance <vectors.tsv> [repeats]`
+//!
+//! A repeat count asks for the same work to be done that many times and for
+//! the elapsed time of THAT WORK to be reported: the corpus is read before the
+//! clock starts and the verdicts are printed after it stops, so what the clock
+//! covers is parsing, verification and execution and nothing else. The verdicts
+//! are kept rather than dropped, so a round cannot be optimised away, and they
+//! are printed once however many rounds ran — the runner's input does not
+//! change because someone asked for a time. The timing line goes to stderr,
+//! where the runner does not read: `B <impl> <vectors> <repeats> <seconds>`.
 
 use lux_xvm::block::manager::Manager;
 use lux_xvm::block::Block;
@@ -34,11 +43,27 @@ const AUTH: &str = "AUTH";
 const WARP: &str = "WARP";
 const UNSUPPORTED: &str = "UNSUPPORTED";
 
+fn usage() -> ! {
+    eprintln!("usage: conformance <vectors.tsv> [repeats]");
+    std::process::exit(2);
+}
+
 fn main() {
-    let path = std::env::args().nth(1).unwrap_or_else(|| {
-        eprintln!("usage: conformance <vectors.tsv>");
-        std::process::exit(2);
-    });
+    let mut args = std::env::args().skip(1);
+    let path = match args.next() {
+        Some(p) => p,
+        None => usage(),
+    };
+    // Absent, the repeat count is 0: evaluate the corpus once and say nothing
+    // about how long it took, which is what the differential asks for and what
+    // it has always got.
+    let repeats: u64 = match args.next() {
+        None => 0,
+        Some(s) => match s.parse() {
+            Ok(n) if n >= 1 => n,
+            _ => usage(),
+        },
+    };
     let text = match std::fs::read_to_string(&path) {
         Ok(t) => t,
         Err(e) => {
@@ -47,6 +72,8 @@ fn main() {
         }
     };
 
+    // Reading the corpus, before the clock starts.
+    let mut vectors: Vec<(&str, &str, &str)> = Vec::new();
     for line in text.lines() {
         if line.is_empty() || line.starts_with('#') {
             continue;
@@ -61,7 +88,24 @@ fn main() {
         if f[2] != "X" {
             continue;
         }
-        println!("{}", evaluate(f[1], f[3], f[4]));
+        vectors.push((f[1], f[3], f[4]));
+    }
+
+    let mut rows: Vec<Row> = Vec::with_capacity(vectors.len());
+    let start = std::time::Instant::now();
+    for _ in 0..repeats.max(1) {
+        rows.clear();
+        for &(id, op, wire) in &vectors {
+            rows.push(evaluate(id, op, wire));
+        }
+    }
+    let elapsed = start.elapsed().as_secs_f64();
+
+    for r in &rows {
+        println!("{r}");
+    }
+    if repeats > 0 {
+        eprintln!("B\trust/xvm\t{}\t{}\t{:.6}", vectors.len(), repeats, elapsed);
     }
 }
 
