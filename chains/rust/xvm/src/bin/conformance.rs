@@ -11,9 +11,13 @@
 
 use lux_xvm::block::manager::Manager;
 use lux_xvm::block::Block;
+use lux_xvm::db::Batch;
 use lux_xvm::fx;
 use lux_xvm::ids::Id;
-use lux_xvm::txs::executor::{verify_syntactic, Backend, Config};
+use lux_xvm::state::Store;
+use lux_xvm::txs::executor::{
+    execute, verify_semantic, verify_syntactic, AtomicRequests, Backend, Config, SharedMemory,
+};
 use lux_xvm::txs::{Kind, Tx};
 use lux_xvm::utxo::Runtime;
 use lux_xvm::Error;
@@ -29,7 +33,6 @@ const LEDGER: &str = "LEDGER";
 const AUTH: &str = "AUTH";
 const WARP: &str = "WARP";
 const UNSUPPORTED: &str = "UNSUPPORTED";
-const SKIPPED: &str = "SKIPPED";
 
 fn main() {
     let path = std::env::args().nth(1).unwrap_or_else(|| {
@@ -130,7 +133,7 @@ fn hex(b: &[u8]) -> String {
 /// inputs equal outputs — so the differential measures the chain's rules and
 /// not three fee schedules; a non-zero schedule here would reject every vector
 /// before any rule was reached. The Go and C++ evaluators are given the same.
-fn backend<'a>() -> Backend<'a> {
+fn backend(peer: &EmptyPeer) -> Backend<'_> {
     Backend {
         runtime: Runtime {
             network_id: 1,
@@ -147,8 +150,55 @@ fn backend<'a>() -> Backend<'a> {
         bootstrapped: true,
         now: 1000,
         net: None,
-        shared_memory: None,
+        shared_memory: Some(peer),
     }
+}
+
+/// A shared area that holds nothing.
+///
+/// The empty half of an empty ledger: this chain has never been handed anything
+/// by a peer, and saying so is the honest answer. The Go evaluator's shared area
+/// says the same. Nothing in the corpus reaches it — every X vector names an
+/// input on THIS chain, and that lookup fails first — but a chain given no
+/// shared area at all would refuse imports for a different reason than a chain
+/// given an empty one, and the two evaluators would then be answering two
+/// different questions.
+struct EmptyPeer;
+
+impl SharedMemory for EmptyPeer {
+    fn get(&self, _: &Id, _: &[Vec<u8>]) -> lux_xvm::Result<Vec<Vec<u8>>> {
+        Err(Error::NotFound)
+    }
+
+    fn apply(&self, _: &[(Id, AtomicRequests)], _: &Batch) -> lux_xvm::Result<()> {
+        Ok(())
+    }
+}
+
+/// Run the semantic pass and then the executor over a chain that holds nothing,
+/// and report the verdict class.
+///
+/// Both passes, in that order, because that is the order a block runs them in
+/// ([`lux_xvm::block::manager::Manager::verify`]): semantic verification asks
+/// whether the transaction is allowed, execution applies it. A vector that
+/// passed the first and failed the second would be hidden by running only one.
+///
+/// An EMPTY chain, and deliberately — the same arrangement the P-chain vectors
+/// are judged under. A funded state would have to be built three times, once
+/// per language, and the differential would then be measuring three state
+/// builders rather than three chains. What survives an empty chain is the
+/// verdict CLASS, which is the shape a fork has: every X vector that reaches
+/// here names an input the chain does not hold, and the implementations must
+/// agree both that they looked it up and that its absence is a LEDGER refusal.
+fn exec_tx(b: &Backend<'_>, tx: &Tx) -> (String, String) {
+    let mut state = Store::new();
+    if let Err(e) = verify_semantic(b, &state, tx) {
+        return (classify(&e), format!("{e:?}"));
+    }
+    if let Err(e) = execute(&mut state, tx) {
+        return (classify(&e), format!("{e:?}"));
+    }
+    (OK.into(), "executed on the empty chain".into())
 }
 
 fn eval_tx(id: &str, wire: &str) -> Row {
@@ -176,7 +226,8 @@ fn eval_tx(id: &str, wire: &str) -> Row {
     r.kind = kind_name(tx.unsigned.kind()).into();
     r.hash = hex(&tx.id());
 
-    let b = backend();
+    let peer = EmptyPeer;
+    let b = backend(&peer);
     if let Err(e) = verify_syntactic(&b, &tx) {
         let class = classify(&e);
         r.note = format!("{e:?}");
@@ -185,13 +236,7 @@ fn eval_tx(id: &str, wire: &str) -> Row {
         return r;
     }
     r.syntactic = OK.into();
-    // The semantic pass needs a funded UTXO set and a shared-memory peer;
-    // neither is stood up here, so this layer is reported as not evaluated
-    // rather than as a pass. The Go evaluator says the same for the same
-    // reason, which is why the runner reports the field as not compared
-    // instead of quietly agreeing.
-    r.exec = SKIPPED.into();
-    r.note = "semantic verification not evaluated: needs a funded UTXO set".into();
+    (r.exec, r.note) = exec_tx(&b, &tx);
     r
 }
 
