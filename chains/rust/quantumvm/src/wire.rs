@@ -34,9 +34,12 @@ use std::sync::Arc;
 use crate::block::Block;
 use crate::error::{Error, Result};
 use crate::ids::{self, Id};
+use crate::qchain_zap::{
+    self as wire, BlockInput, BodyInput, TxInput, BLOCK_SIZE, BODY_SIZE, TX_SIZE,
+};
 use crate::quantum::Stamp;
 use crate::tx::Tx;
-use crate::zap;
+use lux_zap::zap;
 
 /// What a block may weigh on the wire.
 ///
@@ -51,58 +54,13 @@ pub const MAX_BLOCK_SIZE: usize = 2 << 20;
 /// the NEXT block may be stamped at all.
 pub const MAX_FUTURE_SKEW: i64 = 60;
 
-// ---- the block object ----
-//
-//  Timestamp i64   @ 0    (Unix seconds — Q-Chain block-time resolution)
-//  Height    u64   @ 8
-//  ParentID  32B   @ 16
-//  ChainID   32B   @ 48   (the chain this block belongs to)
-//  NetworkID u32   @ 80   (the network that chain belongs to)
-//  TxLens    list  @ 88   (u32 per transaction wire length)
-//  TxBlob    bytes @ 96   (the transaction wires, concatenated)
-const BLK_TIME: usize = 0;
-const BLK_HEIGHT: usize = 8;
-const BLK_PARENT: usize = 16;
-const BLK_CHAIN: usize = 48;
-const BLK_NETWORK: usize = 80;
-const BLK_TX_LENS: usize = 88;
-const BLK_TX_BLOB: usize = 96;
-const BLK_SIZE: usize = 104;
-
-// ---- the transaction body ----
-//
-// Two wires, because a transaction is two things. This one is the SIGNATURE
-// PREIMAGE — what the ML-DSA signature covers, and therefore what may never
-// include the signature. The envelope below is what rides in a block: the
-// preimage plus the signature over it.
-//
-//  Timestamp i64   @ 0   (Unix seconds)
-//  Nonce     u64   @ 8
-//  Data      bytes @ 16
-const TX_TIME: usize = 0;
-const TX_NONCE: usize = 8;
-const TX_DATA: usize = 16;
-const TX_SIZE: usize = 24;
-
-// ---- the transaction envelope ----
-//
-//  Body      bytes @ 0    (the preimage above)
-//  Algorithm u32   @ 8
-//  Stamped   i64   @ 16   (signature time, Unix nanoseconds)
-//  PublicKey bytes @ 24   (ML-DSA public key)
-//  Signature bytes @ 32   (ML-DSA signature over body ‖ stamp ‖ stamped)
-//  Stamp     bytes @ 40   (the quantum stamp)
-const ENV_BODY: usize = 0;
-const ENV_ALG: usize = 8;
-const ENV_TIME: usize = 16;
-const ENV_KEY: usize = 24;
-const ENV_SIG: usize = 32;
-const ENV_STAMP: usize = 40;
-const ENV_SIZE: usize = 48;
+// The block, the signature preimage and the envelope that carries it are
+// three structs in `chains/schema/qchain.zap`; their offsets and their
+// accessors come from there. What is here is what a Q block MEANS.
 
 /// The smallest an envelope can be: the ZAP header plus the fixed section, with
 /// every variable field null.
-pub const MIN_TX_WIRE: usize = zap::HEADER_SIZE + ENV_SIZE;
+pub const MIN_TX_WIRE: usize = zap::HEADER_SIZE + TX_SIZE;
 
 /// Go's zero `time.Time` in Unix nanoseconds.
 ///
@@ -126,13 +84,11 @@ pub fn absent_stamp() -> Stamp {
 
 /// The transaction's canonical wire: the signature preimage.
 pub fn tx_body(tx: &Tx) -> Vec<u8> {
-    let mut b = zap::Builder::new(zap::HEADER_SIZE + TX_SIZE + tx.data.len() + 32);
-    let ob = b.start_object(TX_SIZE);
-    ob.set_u64(&mut b, TX_TIME, tx.timestamp as u64);
-    ob.set_u64(&mut b, TX_NONCE, tx.nonce);
-    ob.set_bytes(&mut b, TX_DATA, &tx.data);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    wire::new_body(&BodyInput {
+        time: tx.timestamp,
+        nonce: tx.nonce,
+        data: &tx.data,
+    })
 }
 
 /// The transaction and the signature over it, as it rides in a block.
@@ -147,24 +103,14 @@ pub fn tx_envelope(tx: &Tx) -> Vec<u8> {
         }
     };
 
-    let mut b = zap::Builder::new(
-        zap::HEADER_SIZE
-            + ENV_SIZE
-            + body.len()
-            + sig.public_key.len()
-            + sig.signature.len()
-            + sig.quantum_stamp.len()
-            + 64,
-    );
-    let ob = b.start_object(ENV_SIZE);
-    ob.set_bytes(&mut b, ENV_BODY, &body);
-    ob.set_u32(&mut b, ENV_ALG, sig.algorithm);
-    ob.set_u64(&mut b, ENV_TIME, sig.stamped as u64);
-    ob.set_bytes(&mut b, ENV_KEY, &sig.public_key);
-    ob.set_bytes(&mut b, ENV_SIG, &sig.signature);
-    ob.set_bytes(&mut b, ENV_STAMP, &sig.quantum_stamp);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    wire::new_tx(&TxInput {
+        body: &body,
+        algorithm: sig.algorithm,
+        stamped: sig.stamped,
+        public_key: &sig.public_key,
+        signature: &sig.signature,
+        stamp: &sig.quantum_stamp,
+    })
 }
 
 /// The block's canonical wire.
@@ -177,24 +123,15 @@ pub fn block_bytes(b: &Block) -> Vec<u8> {
         blob.extend_from_slice(&wire);
     }
 
-    let mut bld =
-        zap::Builder::new(zap::HEADER_SIZE + BLK_SIZE + blob.len() + 4 * lens.len() + 128);
-    let mut list = bld.start_list();
-    for len in &lens {
-        list.add_u32(&mut bld, *len);
-    }
-    let (lens_off, lens_count) = list.finish();
-
-    let ob = bld.start_object(BLK_SIZE);
-    ob.set_u64(&mut bld, BLK_TIME, b.timestamp as u64);
-    ob.set_u64(&mut bld, BLK_HEIGHT, b.height);
-    ob.set_bytes_fixed(&mut bld, BLK_PARENT, &b.parent);
-    ob.set_bytes_fixed(&mut bld, BLK_CHAIN, &b.chain);
-    ob.set_u32(&mut bld, BLK_NETWORK, b.network);
-    ob.set_list(&mut bld, BLK_TX_LENS, lens_off, lens_count);
-    ob.set_bytes(&mut bld, BLK_TX_BLOB, &blob);
-    ob.finish_as_root(&mut bld);
-    bld.finish()
+    wire::new_block(&BlockInput {
+        time: b.timestamp,
+        height: b.height,
+        parent: &b.parent,
+        chain: &b.chain,
+        network: b.network,
+        tx_lengths: &lens,
+        tx_blob: &blob,
+    })
 }
 
 /// Decode a block, transaction set included, and accept the bytes only if they
@@ -210,27 +147,28 @@ pub fn parse_block(data: &[u8]) -> Result<Block> {
     if msg.size() != data.len() {
         return Err(Error::Trailing("block"));
     }
-    let o = msg.root();
+    let block_view = wire::Block::new(msg.root());
+    let o = block_view.object();
     // A field read past the end of the buffer answers zero rather than failing,
     // so a wire too short to hold the header does not decode to nothing — it
     // decodes to height 0, time 0 and the empty parent. Every truncation would
     // name that one value, under as many different ids as there are ways to
     // truncate.
-    if o.offset() + BLK_SIZE > msg.size() {
+    if o.offset() + BLOCK_SIZE > msg.size() {
         return Err(Error::Truncated {
             what: "block",
             have: msg.size().saturating_sub(o.offset()),
-            need: BLK_SIZE,
+            need: BLOCK_SIZE,
         });
     }
 
     let block = Block::new(
-        o.u64(BLK_TIME) as i64,
-        o.u64(BLK_HEIGHT),
-        ids::from_slice(o.bytes_fixed(BLK_PARENT, 32)).unwrap_or(ids::EMPTY),
-        ids::from_slice(o.bytes_fixed(BLK_CHAIN, 32)).unwrap_or(ids::EMPTY),
-        o.u32(BLK_NETWORK),
-        parse_tx_set(o.list(BLK_TX_LENS), o.bytes(BLK_TX_BLOB))?,
+        block_view.time(),
+        block_view.height(),
+        *block_view.parent(),
+        *block_view.chain(),
+        block_view.network(),
+        parse_tx_set(block_view.tx_lengths(), block_view.tx_blob())?,
     );
 
     // Canonical or nothing. Re-serializing what was decoded and comparing is
@@ -297,22 +235,23 @@ pub fn parse_tx_envelope(data: &[u8]) -> Result<Tx> {
     if msg.size() != data.len() {
         return Err(Error::Trailing("transaction"));
     }
-    let o = msg.root();
-    if o.offset() + ENV_SIZE > msg.size() {
+    let view = wire::Tx::new(msg.root());
+    let at = view.object().offset();
+    if at + TX_SIZE > msg.size() {
         return Err(Error::Truncated {
             what: "transaction",
-            have: msg.size().saturating_sub(o.offset()),
-            need: ENV_SIZE,
+            have: msg.size().saturating_sub(at),
+            need: TX_SIZE,
         });
     }
 
-    let mut tx = parse_tx_body(o.bytes(ENV_BODY))?;
+    let mut tx = parse_tx_body(view.body())?;
     tx.stamp = Some(Stamp {
-        algorithm: o.u32(ENV_ALG),
-        stamped: o.u64(ENV_TIME) as i64,
-        public_key: o.bytes(ENV_KEY).to_vec(),
-        signature: o.bytes(ENV_SIG).to_vec(),
-        quantum_stamp: o.bytes(ENV_STAMP).to_vec(),
+        algorithm: view.algorithm(),
+        stamped: view.stamped(),
+        public_key: view.public_key().to_vec(),
+        signature: view.signature().to_vec(),
+        quantum_stamp: view.stamp().to_vec(),
     });
     Ok(tx)
 }
@@ -323,19 +262,16 @@ pub fn parse_tx_body(body: &[u8]) -> Result<Tx> {
     if msg.size() != body.len() {
         return Err(Error::Trailing("transaction body"));
     }
-    let o = msg.root();
-    if o.offset() + TX_SIZE > msg.size() {
+    let view = wire::Body::new(msg.root());
+    let at = view.object().offset();
+    if at + BODY_SIZE > msg.size() {
         return Err(Error::Truncated {
             what: "transaction body",
-            have: msg.size().saturating_sub(o.offset()),
-            need: TX_SIZE,
+            have: msg.size().saturating_sub(at),
+            need: BODY_SIZE,
         });
     }
-    Ok(Tx::new(
-        o.u64(TX_TIME) as i64,
-        o.u64(TX_NONCE),
-        o.bytes(TX_DATA).to_vec(),
-    ))
+    Ok(Tx::new(view.time(), view.nonce(), view.data().to_vec()))
 }
 
 /// The id of a block wire, without holding the block.
@@ -478,19 +414,23 @@ mod tests {
         let mut wire = b.bytes().to_vec();
         // The list length field sits at the root object's offset + 92.
         let root = u32::from_le_bytes(wire[8..12].try_into().unwrap()) as usize;
-        let at = root + BLK_TX_LENS + 4;
+        let at = root + wire::BLOCK_TX_LENGTHS + 4;
 
-        // A count the reader's own clamp still lets through — no larger than
-        // the message — and that no blob of this size could hold. This is the
-        // one the allocation bound has to catch.
+        // A count the reader's own clamp still lets through — four bytes an
+        // entry, and this many entries do fit — that no blob of this size
+        // could hold, because each entry names at least MIN_TX_WIRE bytes.
+        // This is the one the allocation bound has to catch.
+        let blob = tx_envelope(&tx(1)).len();
+        let absurd_count = (blob / MIN_TX_WIRE + 1) as u32;
         let mut absurd = wire.clone();
-        absurd[at..at + 4].copy_from_slice(&(wire.len() as u32).to_le_bytes());
+        absurd[at..at + 4].copy_from_slice(&absurd_count.to_le_bytes());
         let err = parse_block(&absurd).unwrap_err();
         assert!(matches!(err, Error::TxCountAbsurd { .. }), "{err}");
 
-        // And a count past the message size never reaches an allocation at
-        // all: the reader answers the null list, the block decodes with no
-        // transactions, and re-encoding it does not reproduce these bytes.
+        // And a count no run of four-byte entries could fit never reaches an
+        // allocation at all: the reader answers the null list, the block
+        // decodes with no transactions, and re-encoding it does not reproduce
+        // these bytes.
         wire[at..at + 4].copy_from_slice(&1_000_000u32.to_le_bytes());
         assert!(matches!(parse_block(&wire), Err(Error::NonCanonical)));
     }
@@ -502,11 +442,11 @@ mod tests {
         let root = u32::from_le_bytes(wire[8..12].try_into().unwrap()) as usize;
         // Shorten the one length so the blob has bytes nothing names.
         let lens_rel = i32::from_le_bytes(
-            wire[root + BLK_TX_LENS..root + BLK_TX_LENS + 4]
+            wire[root + wire::BLOCK_TX_LENGTHS..root + wire::BLOCK_TX_LENGTHS + 4]
                 .try_into()
                 .unwrap(),
         );
-        let lens_at = (root as i64 + BLK_TX_LENS as i64 + lens_rel as i64) as usize;
+        let lens_at = (root as i64 + wire::BLOCK_TX_LENGTHS as i64 + lens_rel as i64) as usize;
         let shorter = (MIN_TX_WIRE + 4) as u32;
         wire[lens_at..lens_at + 4].copy_from_slice(&shorter.to_le_bytes());
         assert!(parse_block(&wire).is_err());
@@ -529,7 +469,7 @@ mod tests {
 
     #[test]
     fn the_transaction_wire_floor_is_the_header_plus_the_fixed_section() {
-        assert_eq!(MIN_TX_WIRE, zap::HEADER_SIZE + ENV_SIZE);
+        assert_eq!(MIN_TX_WIRE, zap::HEADER_SIZE + TX_SIZE);
         assert_eq!(MIN_TX_WIRE, 64);
     }
 }

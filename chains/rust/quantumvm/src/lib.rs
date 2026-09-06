@@ -22,10 +22,12 @@
 //!
 //! ## What is where
 //!
-//! - [`zap`] — the serialization. Every byte on a wire or a disk is a ZAP
-//!   object: a fixed section at known offsets plus a tail.
-//! - [`wire`] — the block and transaction encodings, at the offsets the Go
-//!   chain writes, and the canonical-or-nothing parse that admits exactly one
+//! - [`qchain_zap`] — the block and transaction shapes, emitted by `zapgen`
+//!   from `chains/schema/qchain.zap`. Every byte on a wire or a disk is a ZAP
+//!   object: a fixed section at known offsets plus a tail, read through
+//!   `lux_zap`, the one runtime all three chains call.
+//! - [`wire`] — what a Q block MEANS: the transaction set a length list
+//!   partitions, and the canonical-or-nothing parse that admits exactly one
 //!   byte string per block.
 //! - [`quantum`] — the ML-DSA signer: keys, the stamp, what the signature
 //!   covers, and batch verification.
@@ -46,8 +48,8 @@ pub mod quasar;
 pub mod store;
 pub mod tx;
 pub mod vm;
+pub mod qchain_zap;
 pub mod wire;
-pub mod zap;
 
 /// The node's seam, from the node.
 ///
