@@ -7,7 +7,7 @@
 
 #include "lux/platformvm/genesis.hpp"
 
-#include "lux/platformvm/zap.hpp"
+#include <zap/zap.hpp>
 
 namespace lux::platformvm::genesis {
 namespace {
@@ -49,8 +49,9 @@ BlobList write_blob_list(zap::Builder& b, const std::vector<std::vector<std::uin
         lb.add_u32(static_cast<std::uint32_t>(raw.size()));
         out.blob.insert(out.blob.end(), raw.begin(), raw.end());
     }
-    out.len_off = lb.offset();
-    out.len_count = lb.count();
+    const auto [lb_off, lb_count] = lb.finish();
+    out.len_off = lb_off;
+    out.len_count = lb_count;
     return out;
 }
 

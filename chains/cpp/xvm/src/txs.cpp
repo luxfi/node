@@ -72,7 +72,7 @@ BlobList write_blob_list(zap::Builder& b, const std::vector<Bytes>& bufs) {
 Result<std::vector<ByteView>> read_blob_list(const zap::Object& obj, int len_ptr_off,
                                              int blob_ptr_off) {
     auto lengths = obj.list_stride(len_ptr_off, kItemLenStride);
-    int n = lengths.len();
+    int n = lengths.size();
     if (n == 0) return std::vector<ByteView>{};
     ByteView blob = obj.bytes(blob_ptr_off);
     std::vector<ByteView> out;
@@ -108,11 +108,11 @@ std::pair<int, int> write_utxo_ids(zap::Builder& b, const std::vector<UTXOID>& i
 
 std::vector<UTXOID> read_utxo_ids(const zap::Object& obj, int ptr_off) {
     auto list = obj.list_stride(ptr_off, kUTXOIDStride);
-    std::vector<UTXOID> out(static_cast<std::size_t>(list.len()));
-    for (int i = 0; i < list.len(); ++i) {
+    std::vector<UTXOID> out(static_cast<std::size_t>(list.size()));
+    for (int i = 0; i < list.size(); ++i) {
         auto e = list.object(i, int(kUTXOIDStride));
         UTXOID u;
-        auto s = e.bytes_fixed_slice(0, 32);
+        auto s = e.bytes_fixed(0, 32);
         if (s.size() == 32) std::memcpy(u.tx_id.data(), s.data(), 32);
         u.output_index = e.u32(32);
         out[std::size_t(i)] = u;
@@ -122,7 +122,7 @@ std::vector<UTXOID> read_utxo_ids(const zap::Object& obj, int ptr_off) {
 
 Id id_at(const zap::Object& obj, int off) {
     Id out{};
-    auto s = obj.bytes_fixed_slice(off, 32);
+    auto s = obj.bytes_fixed(off, 32);
     if (s.size() == 32) std::memcpy(out.data(), s.data(), 32);
     return out;
 }
@@ -309,10 +309,9 @@ Bytes InitialState::bytes() const {
 }
 
 Result<InitialState> parse_initial_state(ByteView b) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(b, &msg, &err)) return std::unexpected(err);
-    auto obj = msg.root();
+    const auto msg = zap::Message::parse(b);
+    if (!msg) return std::unexpected(std::string(zap::describe(msg.error())));
+    auto obj = msg->root();
     auto bufs = read_blob_list(obj, kOffISOutsLen, kOffISOutsBlob);
     if (!bufs) return std::unexpected(bufs.error());
     InitialState is;
@@ -372,10 +371,9 @@ Bytes Operation::bytes() const {
 }
 
 Result<Operation> parse_operation(ByteView b) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(b, &msg, &err)) return std::unexpected(err);
-    auto obj = msg.root();
+    const auto msg = zap::Message::parse(b);
+    if (!msg) return std::unexpected(std::string(zap::describe(msg.error())));
+    auto obj = msg->root();
     auto fx_op = fx::wrap_operation(obj.bytes(kOffOpFxOp));
     if (!fx_op) return std::unexpected(fx_op.error());
     Operation op;
@@ -626,7 +624,7 @@ Result<std::shared_ptr<UnsignedTx>> parse_import(ByteView unsigned_bytes, const 
     tx->base = std::move(*base);
     tx->source_chain = id_at(obj, kOffImportSource);
     auto l = obj.list_stride(kOffImportIns, 4);
-    for (int i = 0; i < l.len(); ++i) {
+    for (int i = 0; i < l.size(); ++i) {
         wire::TransferableIn w(l.object_ptr(i));
         auto in = input_from_wire(w);
         if (!in) return std::unexpected(in.error());
@@ -643,7 +641,7 @@ Result<std::shared_ptr<UnsignedTx>> parse_export(ByteView unsigned_bytes, const 
     tx->base = std::move(*base);
     tx->destination_chain = id_at(obj, kOffExportDest);
     auto l = obj.list_stride(kOffExportOuts, 4);
-    for (int i = 0; i < l.len(); ++i) {
+    for (int i = 0; i < l.size(); ++i) {
         wire::TransferableOut w(l.object_ptr(i));
         auto out = output_from_wire(w);
         if (!out) return std::unexpected(out.error());
@@ -656,10 +654,9 @@ Result<std::shared_ptr<UnsignedTx>> parse_export(ByteView unsigned_bytes, const 
 }  // namespace
 
 Result<std::shared_ptr<UnsignedTx>> parse_unsigned(ByteView unsigned_bytes) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(unsigned_bytes, &msg, &err)) return std::unexpected(err);
-    auto obj = msg.root();
+    const auto msg = zap::Message::parse(unsigned_bytes);
+    if (!msg) return std::unexpected(std::string(zap::describe(msg.error())));
+    auto obj = msg->root();
     switch (XKind(obj.u8(kOffXKind))) {
         case XKind::Base:
             return parse_base(unsigned_bytes, obj);

@@ -222,7 +222,8 @@ Result<std::shared_ptr<CreateNetworkTx>> CreateNetworkTx::create(
     if (!addr_pool.empty()) {
         auto alb = b.start_list(wire::kAddrStride);
         for (const auto& a : addr_pool) alb.add_bytes(a.span());
-        val_addr_off = alb.offset();
+        const auto [alb_off, alb_count] = alb.finish();
+        val_addr_off = alb_off;
         val_addr_count = static_cast<std::int64_t>(addr_pool.size());
     }
 
@@ -303,7 +304,8 @@ Result<std::shared_ptr<ConvertNetworkTx>> ConvertNetworkTx::create(
     if (!addr_pool.empty()) {
         auto alb = b.start_list(wire::kAddrStride);
         for (const auto& a : addr_pool) alb.add_bytes(a.span());
-        val_addr_off = alb.offset();
+        const auto [alb_off, alb_count] = alb.finish();
+        val_addr_off = alb_off;
         val_addr_count = static_cast<std::int64_t>(addr_pool.size());
     }
     const auto ap = wire::write_auth(b, auth);

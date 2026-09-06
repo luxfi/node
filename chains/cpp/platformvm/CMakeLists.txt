@@ -28,6 +28,9 @@ endif()
 
 set(PLATFORMVM_SANITIZE "" CACHE STRING "Sanitizer for platformvm code only (e.g. address,undefined)")
 
+# The wire this chain speaks comes from the published SDK, not from here.
+include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
+
 # find_checkout(VAR MARKER candidate...) — first candidate holding MARKER wins.
 function(find_checkout out marker)
   foreach(_root ${ARGN})
@@ -142,7 +145,7 @@ add_library(lux_platformvm STATIC
   src/adopt.cpp
   src/mempool.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
-target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto)
+target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto zap::zap)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
 # __int128, a compiler extension every target this ships on has.
 target_compile_options(lux_platformvm PRIVATE -Wall -Wextra)
@@ -188,7 +191,7 @@ if(PLATFORMVM_BUILD_TESTS)
     target_compile_definitions(pvm_test_main PUBLIC LUX_PLATFORMVM_HAS_NODE_SET_ROOT=1)
   endif()
 
-  foreach(_t zap sha256 reward components txs syntactic block state flow fee warp genesis staking adopt mempool executor l1 validators vm)
+  foreach(_t sha256 reward components txs syntactic block state flow fee warp genesis staking adopt mempool executor l1 validators vm)
     add_executable(pvm_${_t}_test test/${_t}_test.cpp)
     target_link_libraries(pvm_${_t}_test PRIVATE pvm_test_main)
     target_compile_options(pvm_${_t}_test PRIVATE -Wall -Wextra)

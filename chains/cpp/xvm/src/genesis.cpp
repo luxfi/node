@@ -3,7 +3,7 @@
 
 #include "lux/xvm/genesis.hpp"
 
-#include "lux/xvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <algorithm>
 
@@ -30,8 +30,8 @@ int write_u32_list(zap::Builder& b, const std::vector<std::uint32_t>& xs) {
 
 std::vector<std::uint32_t> read_u32_list(const zap::Object& o, int ptr_off) {
     auto l = o.list_stride(ptr_off, kU32Stride);
-    std::vector<std::uint32_t> out(std::size_t(l.len()));
-    for (int i = 0; i < l.len(); ++i) out[std::size_t(i)] = l.u32(i);
+    std::vector<std::uint32_t> out(std::size_t(l.size()));
+    for (int i = 0; i < l.size(); ++i) out[std::size_t(i)] = l.u32(i);
     return out;
 }
 
@@ -91,10 +91,10 @@ Result<Bytes> bytes(const Genesis& g) {
 }
 
 Result<Genesis> parse(ByteView genesis_bytes) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(genesis_bytes, &msg, &err))
-        return std::unexpected("parse xvm genesis: " + err);
+    const auto parsed = zap::Message::parse(genesis_bytes);
+    if (!parsed)
+        return std::unexpected("parse xvm genesis: " + std::string(zap::describe(parsed.error())));
+    const zap::Message msg = *parsed;
     // A buffer longer than the message it declares parses the same and hashes
     // differently. That is a malleability surface, so it is refused rather than
     // tolerated.
