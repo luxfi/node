@@ -23,6 +23,9 @@
 
 #include <algorithm>
 #include <ctime>
+#include <functional>
+#include <map>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <unistd.h>
@@ -81,9 +84,52 @@ std::vector<executor::ParsedFx> the_fxs() {
             executor::ParsedFx{id(3), std::make_shared<fx::PropertyFx>()}};
 }
 
+// ---- the cross-chain surface, stated ----
+//
+// A peer chain the X-Chain may import from and export to, and the shared memory
+// between them. Both are test doubles for the seams in executor.hpp: the chain
+// asks which network a peer is on, and reads the UTXO bytes a peer put there.
+
+Id peer_chain() { return id(0x77); }
+
+struct Nets final : executor::NetLookup {
+    std::map<Id, Id> of;
+    wire::Result<Id> network_of(const Id& chain) const override {
+        auto it = of.find(chain);
+        if (it == of.end()) return std::unexpected("unknown chain");
+        return it->second;
+    }
+};
+
+struct Memory final : executor::SharedMemory {
+    std::map<Bytes, Bytes> rows;
+    wire::Result<std::vector<Bytes>> get(const Id&,
+                                         const std::vector<Bytes>& keys) const override {
+        std::vector<Bytes> out;
+        for (const auto& k : keys) {
+            auto it = rows.find(k);
+            if (it == rows.end()) return std::unexpected("not found in shared memory");
+            out.push_back(it->second);
+        }
+        return out;
+    }
+    void put(const txs::UTXO& utxo) {
+        auto b = utxo.wire_bytes();
+        if (!b) return;
+        Id key = utxo.utxo_id.input_id();
+        rows[Bytes(key.begin(), key.end())] = *b;
+    }
+};
+
 // Chain is a booted VM: genesis installed, bootstrapped, clock set.
+//
+// The peer chain and the shared memory between them are DECLARED BEFORE the VM,
+// so they outlive it: the backend holds raw pointers to both and a VM torn down
+// after its own seams would read freed memory on the way out.
 struct Chain {
     store::Memory store;
+    Nets nets;
+    Memory memory;
     std::shared_ptr<txs::Tx> genesis;
     std::unique_ptr<Vm> vm;
     Id asset;
@@ -104,6 +150,37 @@ struct Chain {
         check(r.has_value(), r ? "genesis installs" : "genesis installs: " + r.error());
         vm->set_bootstrapped(true);
         vm->set_now(kGenesisTime + 1);
+
+        // The peer sits on the same network, which is what makes it importable
+        // from and exportable to at all.
+        nets.of[peer_chain()] = cfg.net_id;
+        vm->backend().net_lookup = &nets;
+        vm->backend().shared_memory = &memory;
+    }
+
+    // seal issues a transaction and drives the block that carries it all the way
+    // to acceptance — Go's issueAndAccept. It answers whether the whole journey
+    // worked, so a caller that only cares that a transaction lands says so once.
+    bool seal(const std::shared_ptr<txs::Tx>& tx, const std::string& what) {
+        auto issued = vm->issue(tx);
+        if (!issued) {
+            check(false, what + ": " + issued.error());
+            return false;
+        }
+        auto blk = vm->build();
+        if (blk == nullptr) {
+            check(false, what + " (build): " + vm->last_error());
+            return false;
+        }
+        if (!blk->verify()) {
+            auto* vb = dynamic_cast<VmBlock*>(blk.get());
+            check(false, what + " (verify): " + (vb == nullptr ? "" : vb->error()));
+            return false;
+        }
+        blk->accept();
+        const bool ok = vm->last_accepted() == blk->id();
+        check(ok, what);
+        return ok;
     }
 
     // funded_utxo names the i'th genesis output — a real UTXO of the genesis
@@ -1135,6 +1212,892 @@ void through_the_seam_only() {
     check(vm.chain_id() == chain_id(), "the chain still knows its own id");
 }
 
+// ================= the empty root is not a root =================
+//
+// Ported from vm_merkleroot_test.TestMerkleRootEmptyRootRejected. The historical
+// pre-activation shape of a block carried ids.Empty where the execution root now
+// sits, and there is no surviving path that accepts it: the executor recomputes
+// the real root and refuses the mismatch like any other.
+//
+// root_is_recomputed() flips ONE BYTE of an honest root. This is the other shape —
+// the root a block that never computed one would carry — and it is the shape a
+// node running old code would actually emit, so it is worth its own case.
+void the_empty_root_is_refused() {
+    std::printf("\n  -- a block that declares no root at all --\n");
+    Chain c;
+
+    auto tx = c.spend(0, 100);
+    (void)c.vm->issue(tx);
+    auto built = c.vm->build();
+    if (built == nullptr) {
+        check(false, "build: " + c.vm->last_error());
+        return;
+    }
+    check(built->root() != kEmptyId, "the built block's root is not empty");
+
+    // A sibling identical to the built block in every field but the root, which is
+    // left empty.
+    auto* vb = dynamic_cast<VmBlock*>(built.get());
+    if (vb == nullptr) {
+        check(false, "the built block is a VmBlock");
+        return;
+    }
+    auto empty = block::build(vb->standard()->parent_id, vb->standard()->height,
+                              vb->standard()->time, kEmptyId, vb->standard()->transactions);
+    if (!empty) {
+        check(false, "the empty-root sibling builds: " + empty.error());
+        return;
+    }
+    check((*empty)->root == kEmptyId, "…and it declares the empty root");
+    check((*empty)->block_id != built->id(),
+          "…which makes it a different block, because the root is part of the id");
+
+    auto parsed = c.vm->parse(view((*empty)->bytes));
+    check(parsed != nullptr, "the empty-root block parses");
+    if (parsed == nullptr) return;
+    check(!parsed->verify(), "…and does not verify");
+    auto* pb = dynamic_cast<VmBlock*>(parsed.get());
+    check(pb != nullptr && pb->error().find(kErrUnexpectedMerkleRoot) != std::string::npos,
+          "…because the real execution root is not empty");
+}
+
+// ================= imported inputs may be spent once =================
+//
+// Ported from block/executor.TestVerifyUniqueInputs and the "tx imported inputs
+// overlap" case of TestBlockVerify. Both are about the same thing and neither is
+// about ordinary double-spending: an imported UTXO is not a row in this chain's
+// table, so nothing local goes missing when two transactions both claim it. The
+// only thing that stops the second is this check.
+
+// imported_utxo puts a UTXO of the chain's asset into shared memory and returns
+// the (UTXOID, amount) an ImportTx names it by.
+txs::UTXOID put_in_shared_memory(Chain& c, std::uint8_t seed, std::uint64_t amount) {
+    txs::UTXOID uid{id(seed), 0, false};
+    c.memory.put(txs::UTXO{uid, c.asset, tout(amount, 0)});
+    return uid;
+}
+
+// import_of builds a signed ImportTx that consumes `uid` from the peer chain and
+// pays `pays` back out on this chain.
+std::shared_ptr<txs::Tx> import_of(const Chain& c, const txs::UTXOID& uid, std::uint64_t amount,
+                                   std::uint64_t pays) {
+    auto utx = std::make_shared<txs::ImportTx>();
+    utx->base.network_id = kNetworkID;
+    utx->base.blockchain_id = chain_id();
+    utx->base.outs.push_back(txs::TransferableOutput{c.asset, tout(pays)});
+    utx->source_chain = peer_chain();
+    utx->imported_ins = {txs::TransferableInput{uid, c.asset, tin(amount)}};
+
+    auto tx = std::make_shared<txs::Tx>();
+    tx->unsigned_tx = utx;
+    auto cred = std::make_shared<fx::secp256k1fx::Credential>();
+    cred->signatures = {sign_unsigned_tx(test_key(0), view(utx->bytes()))};
+    tx->creds.push_back(cred);
+    (void)tx->initialize();
+    return tx;
+}
+
+void an_imported_input_is_spent_once() {
+    std::printf("\n  -- an imported input, claimed twice --\n");
+
+    // Go's first case: no inputs at all is not a conflict with anything.
+    {
+        Chain c;
+        auto tx = c.spend(0, 100);
+        check(c.vm->issue(tx).has_value(),
+              "a transaction that imports nothing has nothing to conflict with");
+        auto blk = c.vm->build();
+        check(blk != nullptr && blk->verify(), "…and its block verifies");
+    }
+
+    // Two transactions in ONE block, both importing the same UTXO. The second is
+    // refused as a conflict inside the block, before the root is ever compared.
+    {
+        Chain c;
+        auto uid = put_in_shared_memory(c, 0x55, kStartingBalance);
+        auto a = import_of(c, uid, kStartingBalance, 100);
+        auto b = import_of(c, uid, kStartingBalance, 200);
+        check(a->id() != b->id(), "the two imports are different transactions");
+
+        auto blk = forge(c, c.vm->last_accepted(), 1, c.vm->now(), kEmptyId, {a, b});
+        auto v = c.vm->parse(view(blk->bytes));
+        check(v != nullptr && !v->verify(),
+              "a block importing one UTXO twice is refused");
+        auto* vb = dynamic_cast<VmBlock*>(v.get());
+        check(vb != nullptr && vb->error().find(kErrConflictingBlockTxs) != std::string::npos,
+              "…as conflicting transactions inside the block");
+    }
+
+    // The same claim, split across a block and its child. blk1 is verified but NOT
+    // accepted, so its imported input is still pinned; a child that claims it too
+    // is refused against the ancestry.
+    {
+        Chain c;
+        auto uid = put_in_shared_memory(c, 0x56, kStartingBalance);
+        auto first = import_of(c, uid, kStartingBalance, 100);
+        check(c.vm->issue(first).has_value(), "the first import is admitted");
+        auto blk1 = c.vm->build();
+        if (blk1 == nullptr) {
+            check(false, "the first block builds: " + c.vm->last_error());
+            return;
+        }
+        check(c.vm->get_state(blk1->id()) != nullptr,
+              "…and the block pins its state without being accepted");
+
+        auto second = import_of(c, uid, kStartingBalance, 200);
+        auto child = forge(c, blk1->id(), 2, c.vm->now(), kEmptyId, {second});
+        auto v = c.vm->parse(view(child->bytes));
+        check(v != nullptr && !v->verify(),
+              "a child claiming its parent's imported input is refused");
+        auto* vb = dynamic_cast<VmBlock*>(v.get());
+        check(vb != nullptr && vb->error().find(kErrConflictingParentTxs) != std::string::npos,
+              "…as conflicting with an undecided ancestor");
+
+        // A child importing something ELSE is fine, so the refusal above is about
+        // the shared input rather than about having an undecided parent at all.
+        auto other_uid = put_in_shared_memory(c, 0x57, kStartingBalance);
+        auto other = import_of(c, other_uid, kStartingBalance, 300);
+        check(c.vm->issue(other).has_value(), "a second, unrelated import is admitted");
+        c.vm->prefer(blk1->id());
+        auto blk2 = c.vm->build();
+        check(blk2 != nullptr, blk2 != nullptr
+                                   ? "…and a child carrying it builds on the undecided parent"
+                                   : "the unrelated child builds: " + c.vm->last_error());
+        check(blk2 != nullptr && blk2->parent() == blk1->id(), "…extending that parent");
+    }
+}
+
+// ================= a UTXO that arrived, and one that left =================
+//
+// Ported from vm_test.TestIssueImportTx / TestIssueExportTx /
+// TestClearForceAcceptedExportTx.
+//
+// WHAT IS NOT ASSERTED, and why. Each Go test ends by reading the PEER's shared
+// memory: the source chain's UTXO must be gone after an import is accepted, and
+// the destination chain must hold one indexed element after an export is. This
+// port cannot be asked either question, because it never writes shared memory:
+// executor::SharedMemory declares `get` and nothing else, and Vm::accept_block
+// applies the block's diff and drops the atomic requests it collected during
+// verification. Writing a test that "passed" over that gap would be a test of
+// nothing, so the halves that exist are asserted and the missing half is named.
+void a_utxo_arrives_from_another_chain() {
+    std::printf("\n  -- importing --\n");
+    Chain c;
+
+    const std::uint64_t amount = 1010;
+    auto uid = put_in_shared_memory(c, 0x58, amount);
+    auto tx = import_of(c, uid, amount, amount);
+
+    check(c.vm->chain_state().get_utxo(uid.input_id()).has_value() == false,
+          "the imported UTXO is not a row in this chain's table");
+    if (!c.seal(tx, "an import is issued, built and accepted")) return;
+
+    // What the import produced IS a row here, denominated in the asset that
+    // arrived.
+    txs::UTXOID produced{tx->id(), 0, false};
+    auto u = c.vm->chain_state().get_utxo(produced.input_id());
+    check(u.has_value(), "…and what it paid out is a UTXO on this chain");
+    check(u && u->asset_id == c.asset, "…of the asset that arrived");
+    const auto* out = u ? dynamic_cast<const fx::FxTransferOut*>(u->out.get()) : nullptr;
+    check(out != nullptr && out->amount() == amount, "…carrying the whole amount");
+
+    // The imported UTXO is still not a local row: importing does not copy the
+    // source chain's table, it consumes from shared memory.
+    check(!c.vm->chain_state().get_utxo(uid.input_id()).has_value(),
+          "the source chain's UTXO never becomes a row here");
+
+    // An import naming a UTXO shared memory does not hold is refused rather than
+    // treated as an empty input.
+    auto missing = import_of(c, txs::UTXOID{id(0x59), 0, false}, amount, amount);
+    auto r = c.vm->issue(missing);
+    check(!r, "an import of a UTXO nobody exported is refused");
+    check(!r && r.error().find("shared memory") != std::string::npos,
+          "…because shared memory does not hold it");
+}
+
+void a_utxo_leaves_for_another_chain() {
+    std::printf("\n  -- exporting --\n");
+    Chain c;
+
+    auto utx = std::make_shared<txs::ExportTx>();
+    utx->base.network_id = kNetworkID;
+    utx->base.blockchain_id = chain_id();
+    utx->base.ins.push_back(
+        txs::TransferableInput{c.funded_utxo(0), c.asset, tin(kStartingBalance)});
+    utx->base.outs.push_back(txs::TransferableOutput{c.asset, tout(kStartingBalance - 400)});
+    utx->destination_chain = peer_chain();
+    utx->exported_outs = {txs::TransferableOutput{c.asset, tout(400)}};
+
+    auto tx = std::make_shared<txs::Tx>();
+    tx->unsigned_tx = utx;
+    auto cred = std::make_shared<fx::secp256k1fx::Credential>();
+    cred->signatures = {sign_unsigned_tx(test_key(0), view(utx->bytes()))};
+    tx->creds.push_back(cred);
+    (void)tx->initialize();
+
+    const std::size_t before = c.vm->chain_state().utxo_count();
+    if (!c.seal(tx, "an export is issued, built and accepted")) return;
+
+    // The change stayed; the exported output did not. This is the whole local
+    // effect of an export, and the count is the check that nothing else moved.
+    txs::UTXOID change{tx->id(), 0, false};
+    txs::UTXOID exported{tx->id(), 1, false};
+    check(c.vm->chain_state().get_utxo(change.input_id()).has_value(),
+          "the change output stays on this chain");
+    check(!c.vm->chain_state().get_utxo(exported.input_id()).has_value(),
+          "the exported output does not — it left");
+    check(!c.vm->chain_state().get_utxo(c.funded_utxo(0).input_id()).has_value(),
+          "…and the output it was funded from is spent");
+    check(c.vm->chain_state().utxo_count() == before,
+          "one UTXO in, one out: nothing else moved");
+
+    // An export to a chain on ANOTHER network is refused: value must not leave
+    // for a chain this one is not on.
+    {
+        Chain d;
+        d.nets.of[id(0x78)] = id(0xFF);  // a peer on a different network
+        auto bad = std::make_shared<txs::ExportTx>();
+        bad->base.network_id = kNetworkID;
+        bad->base.blockchain_id = chain_id();
+        bad->base.ins.push_back(
+            txs::TransferableInput{d.funded_utxo(0), d.asset, tin(kStartingBalance)});
+        bad->base.outs.push_back(
+            txs::TransferableOutput{d.asset, tout(kStartingBalance - 400)});
+        bad->destination_chain = id(0x78);
+        bad->exported_outs = {txs::TransferableOutput{d.asset, tout(400)}};
+        auto btx = std::make_shared<txs::Tx>();
+        btx->unsigned_tx = bad;
+        auto bc = std::make_shared<fx::secp256k1fx::Credential>();
+        bc->signatures = {sign_unsigned_tx(test_key(0), view(bad->bytes()))};
+        btx->creds.push_back(bc);
+        (void)btx->initialize();
+
+        auto r = d.vm->issue(btx);
+        check(!r && r.error().find(executor::kErrMismatchedNetIDs) != std::string::npos,
+              "an export to a chain on another network is refused");
+    }
+}
+
+// ================= the other two fx families, end to end =================
+//
+// Ported from vm_test.TestIssueNFT and TestIssueProperty. Both are the same
+// journey: define an asset whose initial state is a MINT AUTHORITY of a non-value
+// fx, run an operation that spends that authority, and then run a second
+// operation over what the first produced. fx_test proves each gate in isolation;
+// this proves the chain carries an OperationTx from the mempool to the UTXO set.
+
+// create_asset issues, builds and accepts a CreateAssetTx carrying `states`, and
+// returns it. With no inputs and no fee there is nothing to authorize, which is
+// why it needs no credential.
+std::shared_ptr<txs::Tx> create_asset(Chain& c, const std::string& name,
+                                      const std::string& symbol,
+                                      std::vector<txs::InitialState> states) {
+    auto utx = std::make_shared<txs::CreateAssetTx>();
+    utx->base.network_id = kNetworkID;
+    utx->base.blockchain_id = chain_id();
+    utx->name = name;
+    utx->symbol = symbol;
+    utx->denomination = 0;
+    std::sort(states.begin(), states.end(),
+              [](const txs::InitialState& a, const txs::InitialState& b) {
+                  return a.compare(b) < 0;
+              });
+    utx->states = std::move(states);
+
+    auto tx = std::make_shared<txs::Tx>();
+    tx->unsigned_tx = utx;
+    (void)tx->initialize();
+    return tx;
+}
+
+// operation_tx builds a signed OperationTx over one operation, with the fx
+// credential the operation's own family requires.
+std::shared_ptr<txs::Tx> operation_tx(const Id& asset_id, const txs::UTXOID& consumes,
+                                      std::shared_ptr<fx::FxOperation> op,
+                                      wire::TypeKind family, int signer) {
+    auto utx = std::make_shared<txs::OperationTx>();
+    utx->base.network_id = kNetworkID;
+    utx->base.blockchain_id = chain_id();
+    txs::Operation o;
+    o.asset_id = asset_id;
+    o.utxo_ids = {consumes};
+    o.op = std::move(op);
+    utx->ops = {o};
+
+    auto tx = std::make_shared<txs::Tx>();
+    tx->unsigned_tx = utx;
+    const auto sig = sign_unsigned_tx(test_key(signer), view(utx->bytes()));
+    if (family == wire::TypeKind::NFT) {
+        auto cred = std::make_shared<fx::nftfx::Credential>();
+        cred->signatures = {sig};
+        tx->creds.push_back(cred);
+    } else {
+        auto cred = std::make_shared<fx::propertyfx::Credential>();
+        cred->signatures = {sig};
+        tx->creds.push_back(cred);
+    }
+    (void)tx->initialize();
+    return tx;
+}
+
+fx::OutputOwners owned_by(int key) { return fx::OutputOwners{0, 1, {test_address(key)}}; }
+
+void the_nft_family_end_to_end() {
+    std::printf("\n  -- an NFT: define, mint, move --\n");
+    Chain c;
+
+    // The asset declares TWO families: secp256k1 at index 0 holding a unit of
+    // value, and nftfx at index 1 holding the mint authority. That is Go's
+    // TestVerifyFxUsage shape, and it is the one that matters — an asset with a
+    // single fx cannot tell "the fx this asset declared" from "the only fx there
+    // is", so a check that looked at the wrong one would still pass.
+    txs::InitialState value;
+    value.fx_index = 0;
+    value.outs = {tout(1, 0)};
+    value.sort();
+
+    auto mint_authority = std::make_shared<fx::nftfx::MintOutput>();
+    mint_authority->group_id = 1;
+    mint_authority->out_owners = owned_by(0);
+    txs::InitialState authority;
+    authority.fx_index = 1;
+    authority.outs = {mint_authority};
+    authority.sort();
+
+    auto create = create_asset(c, "Team Rocket", "TR", {value, authority});
+    if (!c.seal(create, "the asset is defined")) return;
+    const Id nft_asset = create->id();
+
+    // Index 0 is the secp value output, index 1 the nft mint authority: base
+    // outputs first (there are none), then each state's outputs in state order.
+    auto value_utxo = c.vm->chain_state().get_utxo(txs::UTXOID{nft_asset, 0, false}.input_id());
+    auto authority_utxo =
+        c.vm->chain_state().get_utxo(txs::UTXOID{nft_asset, 1, false}.input_id());
+    check(value_utxo.has_value(), "its unit of value is a UTXO");
+    check(authority_utxo.has_value(), "…and its mint authority is another");
+    check(authority_utxo &&
+              dynamic_cast<fx::nftfx::MintOutput*>(authority_utxo->out.get()) != nullptr,
+          "…which is an nftfx mint output");
+
+    // Mint. The operation spends the authority and pays out an NFT.
+    auto mint = std::make_shared<fx::nftfx::MintOperation>();
+    mint->mint_input.sig_indices = {0};
+    mint->group_id = 1;
+    mint->payload = Bytes{'h', 'e', 'l', 'l', 'o'};
+    mint->outputs = {std::make_shared<fx::OutputOwners>(owned_by(0))};
+
+    auto mint_tx = operation_tx(nft_asset, txs::UTXOID{nft_asset, 1, false}, mint,
+                                wire::TypeKind::NFT, 0);
+    if (!c.seal(mint_tx, "the NFT is minted")) return;
+
+    check(!c.vm->chain_state().get_utxo(txs::UTXOID{nft_asset, 1, false}.input_id()).has_value(),
+          "…and the authority it spent is gone");
+    txs::UTXOID nft{mint_tx->id(), 0, false};
+    auto minted = c.vm->chain_state().get_utxo(nft.input_id());
+    check(minted.has_value(), "…leaving the NFT itself in the set");
+    auto* nft_out = minted ? dynamic_cast<fx::nftfx::TransferOutput*>(minted->out.get()) : nullptr;
+    check(nft_out != nullptr, "…as an nftfx transfer output");
+    check(nft_out != nullptr && nft_out->group_id == 1, "…in the group it was minted for");
+    check(nft_out != nullptr && nft_out->payload == Bytes({'h', 'e', 'l', 'l', 'o'}),
+          "…carrying the payload it was minted with");
+    check(nft_out != nullptr && nft_out->out_owners.addrs == std::vector<ShortId>{test_address(0)},
+          "…owned by whoever minted it");
+
+    // Move it to someone else.
+    auto move = std::make_shared<fx::nftfx::TransferOperation>();
+    move->input.sig_indices = {0};
+    move->output.group_id = 1;
+    move->output.payload = Bytes{'h', 'e', 'l', 'l', 'o'};
+    move->output.out_owners = owned_by(2);
+
+    auto move_tx = operation_tx(nft_asset, nft, move, wire::TypeKind::NFT, 0);
+    if (!c.seal(move_tx, "the NFT is moved")) return;
+
+    check(!c.vm->chain_state().get_utxo(nft.input_id()).has_value(),
+          "…the old owner's UTXO is gone");
+    auto moved = c.vm->chain_state().get_utxo(txs::UTXOID{move_tx->id(), 0, false}.input_id());
+    auto* moved_out = moved ? dynamic_cast<fx::nftfx::TransferOutput*>(moved->out.get()) : nullptr;
+    check(moved_out != nullptr &&
+              moved_out->out_owners.addrs == std::vector<ShortId>{test_address(2)},
+          "…and the NFT is the new owner's");
+
+    // TestVerifyFxUsage's own point: the SECP value of that two-family asset is
+    // still spendable as ordinary value. An fx-usage check that read the asset's
+    // last declared family, or its first, rather than asking whether the family in
+    // hand is among them, would refuse this.
+    auto spend = std::make_shared<txs::BaseTx>();
+    spend->base.network_id = kNetworkID;
+    spend->base.blockchain_id = chain_id();
+    spend->base.ins.push_back(txs::TransferableInput{txs::UTXOID{nft_asset, 0, false},
+                                                     nft_asset, tin(1)});
+    spend->base.outs.push_back(txs::TransferableOutput{nft_asset, tout(1, 2)});
+    auto spend_tx = std::make_shared<txs::Tx>();
+    spend_tx->unsigned_tx = spend;
+    auto cred = std::make_shared<fx::secp256k1fx::Credential>();
+    cred->signatures = {sign_unsigned_tx(test_key(0), view(spend->bytes()))};
+    spend_tx->creds.push_back(cred);
+    (void)spend_tx->initialize();
+    check(c.seal(spend_tx, "the asset's ordinary value is still spendable"),
+          "…so declaring a second fx did not cost the asset its first");
+}
+
+void the_property_family_end_to_end() {
+    std::printf("\n  -- a property: define, mint, burn --\n");
+    Chain c;
+
+    // propertyfx is the third family this chain registers (the_fxs()), so the
+    // asset declares index 2. Go's test registers only two and says 1; the index
+    // is the fx's POSITION in the host's list, not a constant, which is exactly
+    // why it is declared per asset rather than assumed.
+    auto authority = std::make_shared<fx::propertyfx::MintOutput>();
+    authority->out_owners = owned_by(0);
+    txs::InitialState state;
+    state.fx_index = 2;
+    state.outs = {authority};
+    state.sort();
+
+    auto create = create_asset(c, "Team Rocket", "TR", {state});
+    if (!c.seal(create, "the asset is defined")) return;
+    const Id prop_asset = create->id();
+
+    // Mint. The operation re-creates the authority and pays out an owned output.
+    //
+    // Go's mint leaves OwnedOutput zero-valued; this port refuses a threshold of
+    // zero outright (an output nobody can authorize is not an output), so the
+    // owned output is given a real owner. That is the only difference, and it
+    // makes the burn below a real spend rather than a spend of nothing.
+    auto mint = std::make_shared<fx::propertyfx::MintOperation>();
+    mint->mint_input.sig_indices = {0};
+    mint->mint_output.out_owners = owned_by(0);
+    mint->owned_output.out_owners = owned_by(0);
+
+    auto mint_tx = operation_tx(prop_asset, txs::UTXOID{prop_asset, 0, false}, mint,
+                                wire::TypeKind::Property, 0);
+    if (!c.seal(mint_tx, "the property is minted")) return;
+
+    txs::UTXOID re_minted{mint_tx->id(), 0, false};
+    txs::UTXOID owned{mint_tx->id(), 1, false};
+    auto a = c.vm->chain_state().get_utxo(re_minted.input_id());
+    auto o = c.vm->chain_state().get_utxo(owned.input_id());
+    check(a && dynamic_cast<fx::propertyfx::MintOutput*>(a->out.get()) != nullptr,
+          "…the mint authority is re-created at index 0");
+    check(o && dynamic_cast<fx::propertyfx::OwnedOutput*>(o->out.get()) != nullptr,
+          "…and the owned output is at index 1");
+    check(!c.vm->chain_state().get_utxo(txs::UTXOID{prop_asset, 0, false}.input_id()).has_value(),
+          "…while the authority it spent is gone");
+
+    // Burn. A burn produces nothing at all, which is the point: the owned output
+    // simply stops existing.
+    auto burn = std::make_shared<fx::propertyfx::BurnOperation>();
+    burn->input.sig_indices = {0};
+
+    const std::size_t before = c.vm->chain_state().utxo_count();
+    auto burn_tx = operation_tx(prop_asset, owned, burn, wire::TypeKind::Property, 0);
+    if (!c.seal(burn_tx, "the property is burned")) return;
+
+    check(!c.vm->chain_state().get_utxo(owned.input_id()).has_value(),
+          "…and what was burned is gone");
+    check(c.vm->chain_state().utxo_count() == before - 1,
+          "…having produced nothing to replace it");
+    check(c.vm->chain_state().get_utxo(re_minted.input_id()).has_value(),
+          "…while the mint authority is untouched");
+}
+
+// ================= two assets in one transaction =================
+//
+// Ported from vm_test.TestIssueTxWithFeeAsset and TestIssueTxWithAnotherAsset. The
+// X-Chain is a multi-asset settlement layer, so a transaction may move the fee
+// asset and some other asset at once, and the flow check has to balance EACH asset
+// separately. A checker that summed them would let a shortfall in one be paid for
+// by a surplus in the other.
+void two_assets_in_one_transaction() {
+    std::printf("\n  -- two assets, one transaction --\n");
+    Chain c;
+
+    // A second asset, whose whole supply is a genesis-style initial state.
+    txs::InitialState state;
+    state.fx_index = 0;
+    state.outs = {tout(kStartingBalance, 0)};
+    state.sort();
+    auto create = create_asset(c, "Second", "SEC", {state});
+    if (!c.seal(create, "a second asset is defined")) return;
+    const Id other = create->id();
+
+    // One transaction spending a UTXO of EACH asset and paying each back out.
+    // Inputs must be sorted and unique, which the builder below leans on the
+    // tx-layer sort for rather than assuming an order.
+    auto utx = std::make_shared<txs::BaseTx>();
+    utx->base.network_id = kNetworkID;
+    utx->base.blockchain_id = chain_id();
+    utx->base.ins.push_back(
+        txs::TransferableInput{c.funded_utxo(0), c.asset, tin(kStartingBalance)});
+    utx->base.ins.push_back(
+        txs::TransferableInput{txs::UTXOID{other, 0, false}, other, tin(kStartingBalance)});
+    std::sort(utx->base.ins.begin(), utx->base.ins.end(),
+              [](const txs::TransferableInput& a, const txs::TransferableInput& b) {
+                  return a.utxo_id.compare(b.utxo_id) < 0;
+              });
+    utx->base.outs.push_back(txs::TransferableOutput{c.asset, tout(kStartingBalance, 1)});
+    utx->base.outs.push_back(txs::TransferableOutput{other, tout(kStartingBalance, 1)});
+    txs::sort_transferable_outputs(utx->base.outs);
+
+    auto tx = std::make_shared<txs::Tx>();
+    tx->unsigned_tx = utx;
+    for (std::size_t i = 0; i < utx->base.ins.size(); ++i) {
+        auto cred = std::make_shared<fx::secp256k1fx::Credential>();
+        cred->signatures = {sign_unsigned_tx(test_key(0), view(utx->bytes()))};
+        tx->creds.push_back(cred);
+    }
+    (void)tx->initialize();
+
+    if (!c.seal(tx, "a transaction moving both assets is accepted")) return;
+
+    // Both payments landed, each denominated in the asset it came from.
+    bool saw_fee_asset = false, saw_other = false;
+    for (std::uint32_t i = 0; i < 2; ++i) {
+        auto u = c.vm->chain_state().get_utxo(txs::UTXOID{tx->id(), i, false}.input_id());
+        if (!u) continue;
+        if (u->asset_id == c.asset) saw_fee_asset = true;
+        if (u->asset_id == other) saw_other = true;
+    }
+    check(saw_fee_asset, "…paying out the fee asset");
+    check(saw_other, "…and the other asset, in the same transaction");
+
+    // And the balance is PER ASSET: a transaction paying out more of the second
+    // asset than it consumed is refused even though the first asset is over-funded
+    // by more than the shortfall.
+    auto bad = std::make_shared<txs::BaseTx>();
+    bad->base.network_id = kNetworkID;
+    bad->base.blockchain_id = chain_id();
+    bad->base.ins.push_back(
+        txs::TransferableInput{c.funded_utxo(1), c.asset, tin(kStartingBalance)});
+    bad->base.outs.push_back(txs::TransferableOutput{other, tout(1, 1)});
+    auto bad_tx = std::make_shared<txs::Tx>();
+    bad_tx->unsigned_tx = bad;
+    auto cred = std::make_shared<fx::secp256k1fx::Credential>();
+    cred->signatures = {sign_unsigned_tx(test_key(0), view(bad->bytes()))};
+    bad_tx->creds.push_back(cred);
+    (void)bad_tx->initialize();
+
+    auto r = c.vm->issue(bad_tx);
+    check(!r && r.error().find(txs::kErrInsufficientFunds) != std::string::npos,
+          "a surplus of one asset does not fund a shortfall in another");
+}
+
+// ================= what the builder leaves out =================
+//
+// Ported from block/builder.TestBuilderBuildBlock. Go drives its builder through
+// mocks; here the transactions are real, so each case has to be made real too —
+// which is stronger, because a mock can be made to fail in a way the code never
+// fails.
+void the_builder_leaves_out_what_will_not_hold() {
+    std::printf("\n  -- what the builder drops --\n");
+
+    // A transaction that passes the mempool gate and then stops holding, because
+    // the chain moved underneath it. It is admitted against the last accepted
+    // state, and by the time the builder tries it that state has advanced.
+    {
+        Chain c;
+        auto first = c.spend(0, 100);
+        auto second = c.spend(0, 200);  // same input as `first`
+
+        check(c.vm->issue(first).has_value(), "the first transaction is admitted");
+        auto blk = c.vm->build();
+        if (blk == nullptr) {
+            check(false, "build: " + c.vm->last_error());
+            return;
+        }
+        blk->accept();
+
+        // `second` spends what `first` already spent. The gate refuses it now, so
+        // it is put into the POOL directly — the builder must be the thing that
+        // drops it, which is what this case is about.
+        check(c.vm->pool().add(second).has_value(),
+              "a stale transaction is placed in the pool directly");
+        check(c.vm->mempool_size() == 1, "…and the pool holds it");
+
+        auto next = c.vm->build();
+        check(next == nullptr, "the builder builds nothing from it");
+        check(c.vm->mempool_size() == 0, "…and it is out of the pool");
+        check(c.vm->pool().drop_reason(second->id()).find(state::kErrNotFound) !=
+                  std::string::npos,
+              "…dropped for the reason the chain gave");
+    }
+
+    // Two transactions spending ONE output. The pool refuses the second at
+    // admission, so both have to be placed directly for the BUILDER's own conflict
+    // check to be what is exercised. tx1 was pooled first, so tx1 is the one that
+    // survives — insertion order is the tie-break, and it is what makes two nodes
+    // holding the same pool build the same block.
+    {
+        Chain c;
+        auto tx1 = c.spend(0, 100);
+        auto tx2 = c.spend(0, 200);
+        check(c.vm->pool().add(tx1).has_value(), "the first transaction is pooled");
+        // The pool's own conflict check refuses tx2, which is the check being
+        // stepped around here — this case is about the builder's.
+        check(!c.vm->pool().add(tx2), "…and the pool itself already refuses the second");
+
+        auto blk = c.vm->build();
+        if (blk == nullptr) {
+            check(false, "build: " + c.vm->last_error());
+            return;
+        }
+        auto* vb = dynamic_cast<VmBlock*>(blk.get());
+        check(vb != nullptr && vb->standard()->transactions.size() == 1,
+              "the block carries exactly one transaction");
+        check(vb != nullptr && vb->standard()->transactions[0]->id() == tx1->id(),
+              "…and it is the one pooled first");
+        check(blk->height() == 1, "…at the parent's height plus one");
+        check(blk->parent() == c.vm->last_accepted(), "…over the preferred block");
+    }
+
+    // A block is not built out of nothing when every candidate is dropped: an
+    // empty block would cost a consensus round and decide nothing.
+    {
+        Chain c;
+        auto stale = c.spend(0, 100);
+        auto other = c.spend(0, 200);
+        check(c.vm->issue(stale).has_value(), "a transaction is admitted");
+        auto blk = c.vm->build();
+        if (blk == nullptr) {
+            check(false, "build: " + c.vm->last_error());
+            return;
+        }
+        blk->accept();
+        check(c.vm->pool().add(other).has_value(), "a doomed transaction is pooled");
+        check(c.vm->build() == nullptr, "the builder returns nothing rather than an empty block");
+        check(c.vm->mempool_size() == 0, "…and the pool is left empty");
+    }
+}
+
+// The block's timestamp is max(parent, now) — Go's "preferred timestamp after
+// now" and "preferred timestamp before now" cases. Neither is a formality: a
+// block that ran the clock backwards would be refused by every node including its
+// own builder, and one that ran ahead would be refused as beyond the sync bound.
+void the_block_timestamp_is_the_later_of_two() {
+    std::printf("\n  -- the block's timestamp --\n");
+
+    // The clock reads BEFORE the parent's timestamp: the parent's is taken.
+    {
+        Chain c;
+        c.vm->set_now(kGenesisTime - 2);
+        auto tx = c.spend(0, 100);
+        check(c.vm->issue(tx).has_value(), "a transaction is admitted");
+        auto blk = c.vm->build();
+        if (blk == nullptr) {
+            check(false, "build: " + c.vm->last_error());
+            return;
+        }
+        auto* vb = dynamic_cast<VmBlock*>(blk.get());
+        check(vb != nullptr && vb->standard()->time == kGenesisTime,
+              "a clock behind the parent gives the block the PARENT's timestamp");
+    }
+
+    // The clock reads after: the clock is taken.
+    {
+        Chain c;
+        c.vm->set_now(kGenesisTime + 5);
+        auto tx = c.spend(0, 100);
+        check(c.vm->issue(tx).has_value(), "a transaction is admitted");
+        auto blk = c.vm->build();
+        if (blk == nullptr) {
+            check(false, "build: " + c.vm->last_error());
+            return;
+        }
+        auto* vb = dynamic_cast<VmBlock*>(blk.get());
+        check(vb != nullptr && vb->standard()->time == kGenesisTime + 5,
+              "a clock ahead of the parent gives the block the CLOCK's timestamp");
+        check(vb != nullptr && vb->standard()->time >= kGenesisTime,
+              "…and either way it never precedes the parent");
+    }
+}
+
+// ================= an fx the host did not supply =================
+//
+// Ported from vm_test.TestInvalidFx, in the only form this port can be asked.
+//
+// Go's VM.Initialize refuses a nil fx outright (errIncompatibleFx). This port's Vm
+// takes its fx list in a CONSTRUCTOR, which has no error channel, and skips a null
+// entry instead of refusing it — so "does construction fail?" cannot be asked
+// here, and a test that asserted the skip would only bless it.
+//
+// What CAN be asked is the thing Go's error protects: a chain missing an fx must
+// not act as though it had one. That is the fail-closed claim, and it is the one
+// worth pinning, because it is what a missing fx would actually cost.
+void a_family_the_host_did_not_supply() {
+    std::printf("\n  -- an fx the host left out --\n");
+
+    store::Memory store;
+    auto genesis = genesis_asset(4);
+    VmConfig cfg;
+    cfg.network_id = kNetworkID;
+    cfg.chain_id = chain_id();
+    cfg.net_id = id(0x0A);
+    cfg.fee_asset_id = genesis->id();
+
+    // secp256k1 at index 0, and a NULL entry where nftfx would be.
+    std::vector<executor::ParsedFx> fxs = {
+        executor::ParsedFx{id(1), std::make_shared<fx::Secp256k1Fx>()},
+        executor::ParsedFx{id(2), nullptr},
+    };
+    Vm vm(cfg, std::move(fxs), store);
+    auto r = vm.initialize({genesis}, kGenesisTime);
+    check(r.has_value(), r ? "the chain comes up" : "boot: " + r.error());
+    if (!r) return;
+    vm.set_bootstrapped(true);
+    vm.set_now(kGenesisTime + 1);
+
+    // Ordinary value still works: the family that IS there is unaffected.
+    {
+        auto utx = std::make_shared<txs::BaseTx>();
+        utx->base.network_id = kNetworkID;
+        utx->base.blockchain_id = chain_id();
+        utx->base.ins.push_back(txs::TransferableInput{txs::UTXOID{genesis->id(), 0, false},
+                                                       genesis->id(), tin(kStartingBalance)});
+        utx->base.outs.push_back(txs::TransferableOutput{genesis->id(), tout(100)});
+        auto tx = std::make_shared<txs::Tx>();
+        tx->unsigned_tx = utx;
+        auto cred = std::make_shared<fx::secp256k1fx::Credential>();
+        cred->signatures = {sign_unsigned_tx(test_key(0), view(utx->bytes()))};
+        tx->creds.push_back(cred);
+        (void)tx->initialize();
+        check(vm.issue(tx).has_value(), "the family the host DID supply still works");
+    }
+
+    // An asset declaring the missing family is refused rather than defined: index
+    // 1 is not an fx this chain has.
+    {
+        auto mint_authority = std::make_shared<fx::nftfx::MintOutput>();
+        mint_authority->group_id = 1;
+        mint_authority->out_owners = owned_by(0);
+        txs::InitialState s;
+        s.fx_index = 1;
+        s.outs = {mint_authority};
+        s.sort();
+
+        auto utx = std::make_shared<txs::CreateAssetTx>();
+        utx->base.network_id = kNetworkID;
+        utx->base.blockchain_id = chain_id();
+        utx->name = "Team Rocket";
+        utx->symbol = "TR";
+        utx->states = {s};
+        auto tx = std::make_shared<txs::Tx>();
+        tx->unsigned_tx = utx;
+        (void)tx->initialize();
+
+        auto issued = vm.issue(tx);
+        check(!issued, "an asset declaring the missing family is refused");
+        check(!issued && issued.error().find(txs::kErrUnknownFx) != std::string::npos,
+              "…as an unknown feature extension, not quietly defined");
+    }
+}
+
+// ================= acceptance that cannot be made durable =================
+//
+// Ported from the failure half of block/executor.TestBlockAccept. Go injects three
+// failures into Accept — the commit batch cannot be taken, shared memory cannot be
+// applied, the metrics cannot be recorded — and requires that each is RETURNED.
+//
+// Two of the three have no counterpart here: this port keeps no metrics, and it
+// never writes shared memory (see the importing/exporting cases above). The third
+// does: the store under the state can refuse to commit, and Go's "can't get commit
+// batch" is exactly that.
+//
+// The port's seam declares `void accept()`, so a refusal cannot be returned; what
+// it can do is not be SILENT, and last_error() is where it says so. That is what
+// is asserted. It is also less than Go gets: the in-memory chain has already moved
+// by the time the commit is attempted, so a caller that ignores last_error() would
+// carry on from a height that is not on disk. That gap is named here rather than
+// asserted away.
+struct RefusingStore final : store::Store {
+    store::Memory under;
+    bool refuse = false;
+    int commits = 0;
+
+    std::optional<Bytes> get(ByteView key) const override { return under.get(key); }
+    void put(ByteView key, ByteView value) override { under.put(key, value); }
+    void erase(ByteView key) override { under.erase(key); }
+    void each(ByteView prefix,
+              const std::function<bool(ByteView, ByteView)>& f) const override {
+        under.each(prefix, f);
+    }
+    store::Result<void> commit() override {
+        ++commits;
+        if (refuse) return std::unexpected("the disk is full");
+        return under.commit();
+    }
+};
+
+void an_acceptance_that_cannot_be_made_durable() {
+    std::printf("\n  -- acceptance the store refuses --\n");
+
+    RefusingStore store;
+    auto genesis = genesis_asset(4);
+    VmConfig cfg;
+    cfg.network_id = kNetworkID;
+    cfg.chain_id = chain_id();
+    cfg.net_id = id(0x0A);
+    cfg.fee_asset_id = genesis->id();
+
+    Vm vm(cfg, the_fxs(), store);
+    auto r = vm.initialize({genesis}, kGenesisTime);
+    check(r.has_value(), r ? "the chain comes up" : "boot: " + r.error());
+    if (!r) return;
+    vm.set_bootstrapped(true);
+    vm.set_now(kGenesisTime + 1);
+    check(store.commits == 1, "installing genesis committed once — genesis is durable too");
+
+    auto utx = std::make_shared<txs::BaseTx>();
+    utx->base.network_id = kNetworkID;
+    utx->base.blockchain_id = chain_id();
+    utx->base.ins.push_back(txs::TransferableInput{txs::UTXOID{genesis->id(), 0, false},
+                                                   genesis->id(), tin(kStartingBalance)});
+    utx->base.outs.push_back(txs::TransferableOutput{genesis->id(), tout(100)});
+    auto tx = std::make_shared<txs::Tx>();
+    tx->unsigned_tx = utx;
+    auto cred = std::make_shared<fx::secp256k1fx::Credential>();
+    cred->signatures = {sign_unsigned_tx(test_key(0), view(utx->bytes()))};
+    tx->creds.push_back(cred);
+    (void)tx->initialize();
+
+    check(vm.issue(tx).has_value(), "a transaction is issued");
+    auto blk = vm.build();
+    if (blk == nullptr) {
+        check(false, "build: " + vm.last_error());
+        return;
+    }
+
+    store.refuse = true;
+    blk->accept();
+    check(!vm.last_error().empty(), "an acceptance the store refuses is not silent");
+    check(vm.last_error().find("the disk is full") != std::string::npos,
+          "…and it reports the store's own reason");
+
+    // Go's other two injections — shared memory and metrics — have no counterpart:
+    // this port applies neither, so there is nothing there to fail. Named, not
+    // faked.
+
+    // Go's other two injections — shared memory and metrics — have no counterpart:
+    // this port applies neither, so there is nothing there to fail. Named, not
+    // faked.
+    //
+    // The block-not-found path is Go's first Accept case, asserted in
+    // accept_unverified() above. It is asked here too, against this same VM, so the
+    // two failures are known to be distinguishable rather than one error string
+    // standing in for every way acceptance can go wrong.
+    auto stranger = block::build(vm.last_accepted(), vm.last_accepted_height() + 1, vm.now(),
+                                 kEmptyId, {tx});
+    if (stranger) {
+        auto parsed = vm.parse(view((*stranger)->bytes));
+        if (parsed != nullptr) {
+            parsed->accept();
+            check(vm.last_error() == std::string(kErrBlockNotFound),
+                  "…while a block nobody verified fails for its own, different reason");
+        }
+    }
+}
+
 }  // namespace
 
 int main() {
@@ -1157,5 +2120,16 @@ int main() {
     seam_answers();
     through_the_seam_only();
     reject_returns_the_transactions();
+    the_empty_root_is_refused();
+    an_imported_input_is_spent_once();
+    a_utxo_arrives_from_another_chain();
+    a_utxo_leaves_for_another_chain();
+    the_nft_family_end_to_end();
+    the_property_family_end_to_end();
+    two_assets_in_one_transaction();
+    the_builder_leaves_out_what_will_not_hold();
+    the_block_timestamp_is_the_later_of_two();
+    a_family_the_host_did_not_supply();
+    an_acceptance_that_cannot_be_made_durable();
     return report("vm");
 }
