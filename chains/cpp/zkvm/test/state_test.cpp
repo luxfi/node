@@ -103,6 +103,40 @@ void the_spent_set_is_permanent() {
     check(never && !never->spent, "and an unspent note reads as unspent");
 }
 
+void the_write_path_is_no_weaker_than_the_read_path() {
+    std::printf("\nthe refusal in front of a second spend reads the RECORDS, not a cache\n");
+
+    store::Memory db;
+    auto ndb = NullifierDb::open(db);
+    if (!ndb) {
+        check(false, "the set opens");
+        return;
+    }
+    check_ok((*ndb)->mark_spent(view(b("n")), 4), "a note is spent");
+
+    // The in-memory set stops being a superset of the records. spent_at already
+    // survives this — it falls through to the records — and mark_spent, the LAST
+    // refusal in front of a double spend, must survive it too. When it consulted
+    // the cache alone it did not: it wrote a second record over the first, at a
+    // new height, and returned success.
+    (*ndb)->forget_cache();
+    check_err((*ndb)->mark_spent(view(b("n")), 9), kErrNullifierSpent,
+              "spending it again is still refused with the set forgotten");
+
+    auto r = (*ndb)->spent_at(view(b("n")));
+    check(r && r->spent && r->height == 4,
+          "and the record still names the block that actually spent it");
+
+    // A store that cannot be read must not be mistaken for one holding nothing.
+    store::Memory real;
+    Broken broken(real);
+    auto over_broken = NullifierDb::open(broken);
+    check_ok(over_broken, "a set opens over a store whose reads fail");
+    if (over_broken)
+        check_err((*over_broken)->mark_spent(view(b("n")), 1), "disk gone",
+                  "and a spend against it fails rather than proceeding blind");
+}
+
 void a_failed_read_is_not_an_unspent_note() {
     std::printf("\na read that FAILED is not an unspent note\n");
     store::Memory real;
@@ -297,6 +331,7 @@ void the_root_has_one_definition() {
 int main() {
     the_spent_set_follows_the_records();
     the_spent_set_is_permanent();
+    the_write_path_is_no_weaker_than_the_read_path();
     a_failed_read_is_not_an_unspent_note();
     a_read_does_not_write_the_set();
     a_short_record_is_not_a_height();
