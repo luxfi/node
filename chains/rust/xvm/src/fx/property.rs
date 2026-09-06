@@ -37,15 +37,15 @@ impl MintOutput {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<MintOutput> {
-        let v = shapes::wrap_mint_output(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_mint_output(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(MintOutput {
             owners: Owners {
                 locktime: v.locktime(),
                 threshold: v.threshold(),
-                addrs: v.addresses().all(),
+                addrs: shapes::addrs(v.addresses()),
             },
         })
     }
@@ -72,15 +72,15 @@ impl OwnedOutput {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<OwnedOutput> {
-        let v = shapes::wrap_owned_output(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_owned_output(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(OwnedOutput {
             owners: Owners {
                 locktime: v.locktime(),
                 threshold: v.threshold(),
-                addrs: v.addresses().all(),
+                addrs: shapes::addrs(v.addresses()),
             },
         })
     }
@@ -116,16 +116,16 @@ impl MintOperation {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<MintOperation> {
-        let v = shapes::wrap_mint_operation(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_mint_operation(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(MintOperation {
             mint_input: Input {
-                sig_indices: v.sig_indices(),
+                sig_indices: shapes::indices(v.sig_indices()),
             },
-            mint_output: MintOutput::from_envelope(v.mint_output_bytes())?,
-            owned_output: OwnedOutput::from_envelope(v.transfer_output_bytes())?,
+            mint_output: MintOutput::from_envelope(v.mint_output())?,
+            owned_output: OwnedOutput::from_envelope(v.transfer_output())?,
         })
     }
 }
@@ -150,13 +150,13 @@ impl BurnOperation {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<BurnOperation> {
-        let v = shapes::wrap_burn_operation(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_burn_operation(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(BurnOperation {
             input: Input {
-                sig_indices: v.sig_indices(),
+                sig_indices: shapes::indices(v.sig_indices()),
             },
         })
     }

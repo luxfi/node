@@ -84,7 +84,7 @@ impl Owners {
         Ok(Owners {
             locktime: v.locktime(),
             threshold: v.threshold(),
-            addrs: v.addresses().all(),
+            addrs: shapes::addrs(v.addresses()),
         })
     }
 }
@@ -119,8 +119,8 @@ impl TransferOutput {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<TransferOutput> {
-        let v = shapes::wrap_transfer_output(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_transfer_output(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(TransferOutput {
@@ -128,7 +128,7 @@ impl TransferOutput {
             owners: Owners {
                 locktime: v.locktime(),
                 threshold: v.threshold(),
-                addrs: v.addresses().all(),
+                addrs: shapes::addrs(v.addresses()),
             },
         })
     }
@@ -155,15 +155,15 @@ impl MintOutput {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<MintOutput> {
-        let v = shapes::wrap_mint_output(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_mint_output(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(MintOutput {
             owners: Owners {
                 locktime: v.locktime(),
                 threshold: v.threshold(),
-                addrs: v.addresses().all(),
+                addrs: shapes::addrs(v.addresses()),
             },
         })
     }
@@ -218,14 +218,14 @@ impl TransferInput {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<TransferInput> {
-        let v = shapes::wrap_transfer_input(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_transfer_input(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(TransferInput {
             amt: v.amount(),
             input: Input {
-                sig_indices: v.sig_indices(),
+                sig_indices: shapes::indices(v.sig_indices()),
             },
         })
     }
@@ -260,14 +260,14 @@ impl Credential {
     }
 
     pub fn from_envelope_for(b: &[u8], tk: TypeKind) -> Result<Credential> {
-        let v = shapes::wrap_credential(b)?;
-        if v.type_kind() != tk {
+        let (got, v) = shapes::wrap_credential(b)?;
+        if got != tk {
             return Err(wire::Error::WrongTypeKind.into());
         }
-        let n = v.signature_count(SIGNATURE_LEN);
+        let n = shapes::signature_count(&v, SIGNATURE_LEN);
         let mut sigs = Vec::with_capacity(n.min(4096));
         for i in 0..n {
-            let raw = v.signature_at(i, SIGNATURE_LEN).unwrap_or_default();
+            let raw = shapes::signature_at(&v, i, SIGNATURE_LEN).unwrap_or_default();
             let mut s = [0u8; SIGNATURE_LEN];
             s[..raw.len().min(SIGNATURE_LEN)].copy_from_slice(&raw[..raw.len().min(SIGNATURE_LEN)]);
             sigs.push(s);
@@ -310,16 +310,16 @@ impl MintOperation {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<MintOperation> {
-        let v = shapes::wrap_mint_operation(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_mint_operation(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(MintOperation {
             mint_input: Input {
-                sig_indices: v.sig_indices(),
+                sig_indices: shapes::indices(v.sig_indices()),
             },
-            mint_output: MintOutput::from_envelope(v.mint_output_bytes())?,
-            transfer_output: TransferOutput::from_envelope(v.transfer_output_bytes())?,
+            mint_output: MintOutput::from_envelope(v.mint_output())?,
+            transfer_output: TransferOutput::from_envelope(v.transfer_output())?,
         })
     }
 }

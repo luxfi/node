@@ -21,10 +21,9 @@ use crate::fx::{self, secp256k1, Cred, State};
 use crate::hash::sha256;
 use crate::ids::{self, Id};
 use crate::utxo::{Asset, BaseTxFields, TransferableInput, TransferableOutput, Utxo, UtxoId};
-use crate::wire::containers::{
-    self, read_blob_list, read_utxo_ids, write_blob_list, write_utxo_ids, InSpec, OutSpec,
-};
-use crate::zap::{self, Builder, Object};
+use crate::wire::containers::{self, read_blob_list, read_utxo_ids, InSpec, OutSpec};
+use crate::xchain_zap as wire;
+use lux_zap::zap;
 
 /// Which of the five a transaction is.
 ///
@@ -53,47 +52,9 @@ impl Kind {
     }
 }
 
-/// Where the kind byte lives, in every one of the five.
-pub const OFF_KIND: usize = 0;
-/// Where the shared spending envelope lives, in every one of the five.
-pub const OFF_BASE_TX: usize = 8;
-/// The fixed section of a plain transfer.
-pub const SIZE_BASE_OBJ: usize = 16;
-
-// CreateAssetTx
-const OFF_CA_NAME: usize = 16;
-const OFF_CA_SYMBOL: usize = 24;
-const OFF_CA_DENOM: usize = 32;
-const OFF_CA_STATES_LEN: usize = 36;
-const OFF_CA_STATES_BLOB: usize = 44;
-const SIZE_CA: usize = 52;
-
-// OperationTx
-const OFF_OPS_LEN: usize = 16;
-const OFF_OPS_BLOB: usize = 24;
-const SIZE_OP_TX: usize = 32;
-
-// ImportTx
-const OFF_IMPORT_SOURCE: usize = 16;
-const OFF_IMPORT_INS: usize = 48;
-const SIZE_IMPORT: usize = 56;
-
-// ExportTx
-const OFF_EXPORT_DEST: usize = 16;
-const OFF_EXPORT_OUTS: usize = 48;
-const SIZE_EXPORT: usize = 56;
-
-// InitialState
-const OFF_IS_FX_INDEX: usize = 0;
-const OFF_IS_OUTS_LEN: usize = 4;
-const OFF_IS_OUTS_BLOB: usize = 12;
-const SIZE_IS: usize = 20;
-
-// Operation
-const OFF_OP_ASSET: usize = 0;
-const OFF_OP_UTXO_IDS: usize = 32;
-const OFF_OP_FX_OP: usize = 40;
-const SIZE_OP: usize = 48;
+/// Where the kind byte lives, in every one of the five. The rest of each
+/// shape is in `chains/schema/xchain.zap`.
+pub const OFF_KIND: usize = wire::BASE_KIND;
 
 // ------------------------------------------------------------ InitialState --
 
@@ -111,26 +72,23 @@ pub struct InitialState {
 impl InitialState {
     pub fn bytes(&self) -> Vec<u8> {
         let outs: Vec<Vec<u8>> = self.outs.iter().map(|o| o.bytes()).collect();
-        let mut b = Builder::default();
-        let (len_off, len_count, blob) = write_blob_list(&mut b, &outs);
-        let ob = b.start_object(SIZE_IS);
-        ob.set_u32(&mut b, OFF_IS_FX_INDEX, self.fx_index);
-        ob.set_list(&mut b, OFF_IS_OUTS_LEN, len_off, len_count);
-        ob.set_bytes(&mut b, OFF_IS_OUTS_BLOB, &blob);
-        ob.finish_as_root(&mut b);
-        b.finish()
+        let (lengths, blob) = packed(&outs);
+        wire::new_initial_state(&wire::InitialStateInput {
+            fx_index: self.fx_index,
+            out_lens: &lengths,
+            out_blob: &blob,
+        })
     }
 
     pub fn parse(buf: &[u8]) -> Result<InitialState> {
-        let msg = zap::Message::parse(buf)?;
-        let obj = msg.root();
-        let out_bufs = read_blob_list(&obj, OFF_IS_OUTS_LEN, OFF_IS_OUTS_BLOB)?;
+        let v = wire::InitialState::new(zap::Message::parse(buf)?.root());
+        let out_bufs = read_blob_list(v.out_lens(), v.out_blob())?;
         let mut outs = Vec::with_capacity(out_bufs.len());
         for env in out_bufs {
             outs.push(State::from_envelope(env)?);
         }
         Ok(InitialState {
-            fx_index: obj.u32(OFF_IS_FX_INDEX),
+            fx_index: v.fx_index(),
             outs,
         })
     }
@@ -184,30 +142,32 @@ impl Operation {
 
     pub fn bytes(&self) -> Vec<u8> {
         let fx_op = self.op.bytes();
-        let mut b = Builder::default();
-        let ids: Vec<(Id, u32)> = self
+        let records: Vec<[u8; wire::UTXO_ID_SIZE]> = self
             .utxo_ids
             .iter()
-            .map(|u| (u.tx_id, u.output_index))
+            .map(|u| {
+                wire::pack_utxo_id(&wire::UtxoIdInput {
+                    tx_id: &u.tx_id,
+                    index: u.output_index,
+                })
+            })
             .collect();
-        let (utxo_off, utxo_count) = write_utxo_ids(&mut b, &ids);
-        let ob = b.start_object(SIZE_OP);
-        ob.set_bytes_fixed(&mut b, OFF_OP_ASSET, &self.asset.id);
-        ob.set_list(&mut b, OFF_OP_UTXO_IDS, utxo_off, utxo_count);
-        ob.set_bytes(&mut b, OFF_OP_FX_OP, &fx_op);
-        ob.finish_as_root(&mut b);
-        b.finish()
+        let ids: Vec<&[u8]> = records.iter().map(|r| &r[..]).collect();
+        wire::new_operation(&wire::OperationInput {
+            asset: &self.asset.id,
+            utxo_ids: &ids,
+            fx_op: &fx_op,
+        })
     }
 
     pub fn parse(buf: &[u8]) -> Result<Operation> {
-        let msg = zap::Message::parse(buf)?;
-        let obj = msg.root();
-        let op = fx::Op::from_envelope(obj.bytes(OFF_OP_FX_OP))?;
+        let v = wire::Operation::new(zap::Message::parse(buf)?.root());
+        let op = fx::Op::from_envelope(v.fx_op())?;
         Ok(Operation {
             asset: Asset {
-                id: ids::prefixed(obj.bytes_fixed(OFF_OP_ASSET, 32)),
+                id: ids::prefixed(v.asset()),
             },
-            utxo_ids: read_utxo_ids(&obj, OFF_OP_UTXO_IDS)
+            utxo_ids: read_utxo_ids(v.utxo_ids())
                 .into_iter()
                 .map(|(tx_id, index)| UtxoId::new(tx_id, index))
                 .collect(),
@@ -388,7 +348,7 @@ fn base_tx_wire(base: &BaseTxFields) -> Vec<u8> {
             input: inner,
         })
         .collect();
-    containers::new_xvm_base_tx(
+    containers::new_envelope(
         base.network_id,
         &base.blockchain_id,
         &outs,
@@ -397,28 +357,38 @@ fn base_tx_wire(base: &BaseTxFields) -> Vec<u8> {
     )
 }
 
-fn decode_base_tx_wire(obj: &Object<'_>) -> Result<BaseTxFields> {
-    let w = containers::wrap_xvm_base_tx(obj.bytes(OFF_BASE_TX))?;
+/// A run of self-contained buffers, as the length list and the blob that list
+/// partitions.
+fn packed(bufs: &[Vec<u8>]) -> (Vec<u32>, Vec<u8>) {
+    (bufs.iter().map(|b| b.len() as u32).collect(), bufs.concat())
+}
+
+fn decode_base_tx_wire(envelope: &[u8]) -> Result<BaseTxFields> {
+    let w = containers::wrap_envelope(envelope)?;
     let mut base = BaseTxFields {
-        network_id: w.network_id(),
-        blockchain_id: w.blockchain_id(),
+        network_id: w.network(),
+        blockchain_id: ids::prefixed(w.chain()),
         outs: Vec::new(),
         ins: Vec::new(),
         memo: Vec::new(),
     };
-    for i in 0..w.outs_count() {
-        let wo = w.out_at(i)?;
+    for i in 0..w.outs().len() {
+        let wo = containers::out_at(&w, i)?;
         base.outs.push(TransferableOutput {
-            asset: Asset { id: wo.asset_id() },
-            out: State::from_envelope(wo.output_bytes())?,
+            asset: Asset {
+                id: ids::prefixed(wo.asset()),
+            },
+            out: State::from_envelope(wo.output())?,
         });
     }
-    for i in 0..w.ins_count() {
-        let wi = w.in_at(i)?;
+    for i in 0..w.ins().len() {
+        let wi = containers::in_at(&w, i)?;
         base.ins.push(TransferableInput {
-            utxo_id: UtxoId::new(wi.tx_id(), wi.output_index()),
-            asset: Asset { id: wi.asset_id() },
-            input: fx::FxIn::from_envelope(wi.input_bytes())?,
+            utxo_id: UtxoId::new(ids::prefixed(wi.tx_id()), wi.index()),
+            asset: Asset {
+                id: ids::prefixed(wi.asset()),
+            },
+            input: fx::FxIn::from_envelope(wi.input())?,
         });
     }
     let memo = w.memo();
@@ -429,102 +399,75 @@ fn decode_base_tx_wire(obj: &Object<'_>) -> Result<BaseTxFields> {
 }
 
 fn serialize_base(t: &BaseTx) -> Vec<u8> {
-    let env = base_tx_wire(&t.base);
-    let mut b = Builder::default();
-    let ob = b.start_object(SIZE_BASE_OBJ);
-    ob.set_u8(&mut b, OFF_KIND, Kind::Base as u8);
-    ob.set_bytes(&mut b, OFF_BASE_TX, &env);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    wire::new_base(&wire::BaseInput {
+        kind: Kind::Base as u8,
+        base: &base_tx_wire(&t.base),
+    })
 }
 
 fn serialize_create_asset(t: &CreateAssetTx) -> Vec<u8> {
-    let env = base_tx_wire(&t.base);
     let states: Vec<Vec<u8>> = t.states.iter().map(|s| s.bytes()).collect();
-    let mut b = Builder::default();
-    let (len_off, len_count, blob) = write_blob_list(&mut b, &states);
-    let ob = b.start_object(SIZE_CA);
-    ob.set_u8(&mut b, OFF_KIND, Kind::CreateAsset as u8);
-    ob.set_bytes(&mut b, OFF_BASE_TX, &env);
-    ob.set_bytes(&mut b, OFF_CA_NAME, t.name.as_bytes());
-    ob.set_bytes(&mut b, OFF_CA_SYMBOL, t.symbol.as_bytes());
-    ob.set_u8(&mut b, OFF_CA_DENOM, t.denomination);
-    ob.set_list(&mut b, OFF_CA_STATES_LEN, len_off, len_count);
-    ob.set_bytes(&mut b, OFF_CA_STATES_BLOB, &blob);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    let (lengths, blob) = packed(&states);
+    wire::new_create_asset(&wire::CreateAssetInput {
+        kind: Kind::CreateAsset as u8,
+        base: &base_tx_wire(&t.base),
+        name: t.name.as_bytes(),
+        symbol: t.symbol.as_bytes(),
+        denominator: t.denomination,
+        state_lens: &lengths,
+        state_blob: &blob,
+    })
 }
 
 fn serialize_operation(t: &OperationTx) -> Vec<u8> {
-    let env = base_tx_wire(&t.base);
     let ops: Vec<Vec<u8>> = t.ops.iter().map(|o| o.bytes()).collect();
-    let mut b = Builder::default();
-    let (len_off, len_count, blob) = write_blob_list(&mut b, &ops);
-    let ob = b.start_object(SIZE_OP_TX);
-    ob.set_u8(&mut b, OFF_KIND, Kind::Operation as u8);
-    ob.set_bytes(&mut b, OFF_BASE_TX, &env);
-    ob.set_list(&mut b, OFF_OPS_LEN, len_off, len_count);
-    ob.set_bytes(&mut b, OFF_OPS_BLOB, &blob);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    let (lengths, blob) = packed(&ops);
+    wire::new_operate(&wire::OperateInput {
+        kind: Kind::Operation as u8,
+        base: &base_tx_wire(&t.base),
+        op_lens: &lengths,
+        op_blob: &blob,
+    })
 }
 
 fn serialize_import(t: &ImportTx) -> Vec<u8> {
-    let env = base_tx_wire(&t.base);
     let inners: Vec<Vec<u8>> = t.imported_ins.iter().map(|i| i.input.bytes()).collect();
-    let mut b = Builder::default();
-    let offs: Vec<usize> = t
+    let ins: Vec<wire::TransferableInInput<'_>> = t
         .imported_ins
         .iter()
         .zip(inners.iter())
-        .map(|(i, inner)| {
-            containers::append_transferable_in(
-                &mut b,
-                &i.utxo_id.tx_id,
-                i.utxo_id.output_index,
-                &i.asset.id,
-                inner,
-            )
+        .map(|(i, inner)| wire::TransferableInInput {
+            tx_id: &i.utxo_id.tx_id,
+            index: i.utxo_id.output_index,
+            asset: &i.asset.id,
+            input: inner,
         })
         .collect();
-    let mut lb = b.start_list();
-    for off in &offs {
-        lb.add_object_ptr(&mut b, *off);
-    }
-    let (ins_off, ins_len) = lb.finish();
-
-    let ob = b.start_object(SIZE_IMPORT);
-    ob.set_u8(&mut b, OFF_KIND, Kind::Import as u8);
-    ob.set_bytes(&mut b, OFF_BASE_TX, &env);
-    ob.set_bytes_fixed(&mut b, OFF_IMPORT_SOURCE, &t.source_chain);
-    ob.set_list(&mut b, OFF_IMPORT_INS, ins_off, ins_len);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    wire::new_import(&wire::ImportInput {
+        kind: Kind::Import as u8,
+        base: &base_tx_wire(&t.base),
+        source: &t.source_chain,
+        ins: &ins,
+    })
 }
 
 fn serialize_export(t: &ExportTx) -> Vec<u8> {
-    let env = base_tx_wire(&t.base);
     let inners: Vec<Vec<u8>> = t.exported_outs.iter().map(|o| o.out.bytes()).collect();
-    let mut b = Builder::default();
-    let offs: Vec<usize> = t
+    let outs: Vec<wire::TransferableOutInput<'_>> = t
         .exported_outs
         .iter()
         .zip(inners.iter())
-        .map(|(o, inner)| containers::append_transferable_out(&mut b, &o.asset.id, inner))
+        .map(|(o, inner)| wire::TransferableOutInput {
+            asset: &o.asset.id,
+            output: inner,
+        })
         .collect();
-    let mut lb = b.start_list();
-    for off in &offs {
-        lb.add_object_ptr(&mut b, *off);
-    }
-    let (outs_off, outs_len) = lb.finish();
-
-    let ob = b.start_object(SIZE_EXPORT);
-    ob.set_u8(&mut b, OFF_KIND, Kind::Export as u8);
-    ob.set_bytes(&mut b, OFF_BASE_TX, &env);
-    ob.set_bytes_fixed(&mut b, OFF_EXPORT_DEST, &t.destination_chain);
-    ob.set_list(&mut b, OFF_EXPORT_OUTS, outs_off, outs_len);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    wire::new_export(&wire::ExportInput {
+        kind: Kind::Export as u8,
+        base: &base_tx_wire(&t.base),
+        destination: &t.destination_chain,
+        outs: &outs,
+    })
 }
 
 // ------------------------------------------------------------------ parsing --
@@ -532,29 +475,34 @@ fn serialize_export(t: &ExportTx) -> Vec<u8> {
 /// Read an unsigned transaction. The first byte selects which of the five, and
 /// a byte that names none of them is a refusal.
 pub fn parse_unsigned(unsigned_bytes: &[u8]) -> Result<Unsigned> {
-    let msg = zap::Message::parse(unsigned_bytes)?;
-    let obj = msg.root();
-    let raw = obj.u8(OFF_KIND);
+    let root = zap::Message::parse(unsigned_bytes)?.root();
+    // Every one of the five opens with the kind byte and the envelope at the
+    // same two offsets, so the shape that carries only those reads them for
+    // all five, and the kind says which of the five to read the rest as.
+    let head = wire::Base::new(root);
+    let raw = head.kind();
     let kind = Kind::from_u8(raw).ok_or(Error::UnknownTxKind(raw))?;
-    let base = decode_base_tx_wire(&obj)?;
+    let base = decode_base_tx_wire(head.base())?;
     match kind {
         Kind::Base => Ok(Unsigned::Base(BaseTx { base })),
         Kind::CreateAsset => {
-            let state_bufs = read_blob_list(&obj, OFF_CA_STATES_LEN, OFF_CA_STATES_BLOB)?;
+            let v = wire::CreateAsset::new(root);
+            let state_bufs = read_blob_list(v.state_lens(), v.state_blob())?;
             let mut states = Vec::with_capacity(state_bufs.len());
             for buf in state_bufs {
                 states.push(InitialState::parse(buf)?);
             }
             Ok(Unsigned::CreateAsset(CreateAssetTx {
                 base,
-                name: String::from_utf8_lossy(obj.bytes(OFF_CA_NAME)).into_owned(),
-                symbol: String::from_utf8_lossy(obj.bytes(OFF_CA_SYMBOL)).into_owned(),
-                denomination: obj.u8(OFF_CA_DENOM),
+                name: String::from_utf8_lossy(v.name()).into_owned(),
+                symbol: String::from_utf8_lossy(v.symbol()).into_owned(),
+                denomination: v.denominator(),
                 states,
             }))
         }
         Kind::Operation => {
-            let op_bufs = read_blob_list(&obj, OFF_OPS_LEN, OFF_OPS_BLOB)?;
+            let v = wire::Operate::new(root);
+            let op_bufs = read_blob_list(v.op_lens(), v.op_blob())?;
             let mut ops = Vec::with_capacity(op_bufs.len());
             for buf in op_bufs {
                 ops.push(Operation::parse(buf)?);
@@ -562,37 +510,41 @@ pub fn parse_unsigned(unsigned_bytes: &[u8]) -> Result<Unsigned> {
             Ok(Unsigned::Operation(OperationTx { base, ops }))
         }
         Kind::Import => {
-            let source_chain = ids::prefixed(obj.bytes_fixed(OFF_IMPORT_SOURCE, 32));
-            let l = obj.list_stride(OFF_IMPORT_INS, containers::OBJ_PTR_STRIDE);
-            let mut imported_ins = Vec::with_capacity(l.len());
-            for i in 0..l.len() {
-                let w = containers::TransferableIn::from_object(l.object_ptr(i));
+            let v = wire::Import::new(root);
+            let n = v.ins().len();
+            let mut imported_ins = Vec::with_capacity(n);
+            for i in 0..n {
+                let w = v.ins_at(i);
                 imported_ins.push(TransferableInput {
-                    utxo_id: UtxoId::new(w.tx_id(), w.output_index()),
-                    asset: Asset { id: w.asset_id() },
-                    input: fx::FxIn::from_envelope(w.input_bytes())?,
+                    utxo_id: UtxoId::new(ids::prefixed(w.tx_id()), w.index()),
+                    asset: Asset {
+                        id: ids::prefixed(w.asset()),
+                    },
+                    input: fx::FxIn::from_envelope(w.input())?,
                 });
             }
             Ok(Unsigned::Import(ImportTx {
                 base,
-                source_chain,
+                source_chain: ids::prefixed(v.source()),
                 imported_ins,
             }))
         }
         Kind::Export => {
-            let destination_chain = ids::prefixed(obj.bytes_fixed(OFF_EXPORT_DEST, 32));
-            let l = obj.list_stride(OFF_EXPORT_OUTS, containers::OBJ_PTR_STRIDE);
-            let mut exported_outs = Vec::with_capacity(l.len());
-            for i in 0..l.len() {
-                let w = containers::TransferableOut::from_object(l.object_ptr(i));
+            let v = wire::Export::new(root);
+            let n = v.outs().len();
+            let mut exported_outs = Vec::with_capacity(n);
+            for i in 0..n {
+                let w = v.outs_at(i);
                 exported_outs.push(TransferableOutput {
-                    asset: Asset { id: w.asset_id() },
-                    out: State::from_envelope(w.output_bytes())?,
+                    asset: Asset {
+                        id: ids::prefixed(w.asset()),
+                    },
+                    out: State::from_envelope(w.output())?,
                 });
             }
             Ok(Unsigned::Export(ExportTx {
                 base,
-                destination_chain,
+                destination_chain: ids::prefixed(v.destination()),
                 exported_outs,
             }))
         }
@@ -633,7 +585,7 @@ impl Tx {
     fn rebind(&mut self) {
         let unsigned_bytes = self.unsigned.bytes();
         let cred_envs: Vec<Vec<u8>> = self.creds.iter().map(|c| c.bytes()).collect();
-        let signed = containers::new_signed_tx(&unsigned_bytes, &cred_envs);
+        let signed = containers::new_signed(&unsigned_bytes, &cred_envs);
         self.tx_id = sha256(&signed);
         self.bytes = signed;
         self.unsigned_bytes = unsigned_bytes;
@@ -680,11 +632,11 @@ impl Tx {
     /// Read a signed transaction off the wire, byte-preserving: the id is over
     /// exactly the bytes that arrived.
     pub fn parse(signed_bytes: &[u8]) -> Result<Tx> {
-        let st = containers::wrap_signed_tx(signed_bytes)?;
-        let unsigned_bytes = st.unsigned_bytes().to_vec();
+        let st = containers::wrap_signed(signed_bytes)?;
+        let unsigned_bytes = st.unsigned().to_vec();
         let unsigned = parse_unsigned(&unsigned_bytes)?;
         let mut creds = Vec::with_capacity(st.credential_count() as usize);
-        for env in st.credential_envelopes()? {
+        for env in containers::credential_envelopes(&st)? {
             creds.push(Cred::from_envelope(env)?);
         }
         Ok(Tx {

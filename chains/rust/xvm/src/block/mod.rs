@@ -23,16 +23,9 @@ use crate::error::{Error, Result};
 use crate::hash::sha256;
 use crate::ids::{self, Id};
 use crate::txs::Tx;
-use crate::wire::containers::{read_blob_list, write_blob_list};
-use crate::zap::{self, Builder};
-
-const OFF_PARENT: usize = 0;
-const OFF_HEIGHT: usize = 32;
-const OFF_TIME: usize = 40;
-const OFF_ROOT: usize = 48;
-const OFF_TX_LEN: usize = 80;
-const OFF_TX_BLOB: usize = 88;
-const SIZE_BLK: usize = 96;
+use crate::wire::containers::read_blob_list;
+use crate::xchain_zap::{self as wire, BlockInput};
+use lux_zap::zap;
 
 /// One block.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -105,18 +98,17 @@ impl Block {
 
     /// Read a block off the wire, byte-preserving.
     pub fn parse(bytes: &[u8]) -> Result<Block> {
-        let msg = zap::Message::parse(bytes)?;
-        let obj = msg.root();
-        let tx_bufs = read_blob_list(&obj, OFF_TX_LEN, OFF_TX_BLOB)?;
+        let v = wire::Block::new(zap::Message::parse(bytes)?.root());
+        let tx_bufs = read_blob_list(v.tx_lengths(), v.tx_blob())?;
         let mut txs = Vec::with_capacity(tx_bufs.len());
         for buf in tx_bufs {
             txs.push(Tx::parse(buf)?);
         }
         Ok(Block {
-            parent_id: ids::prefixed(obj.bytes_fixed(OFF_PARENT, 32)),
-            height: obj.u64(OFF_HEIGHT),
-            time: obj.u64(OFF_TIME),
-            root: ids::prefixed(obj.bytes_fixed(OFF_ROOT, 32)),
+            parent_id: ids::prefixed(v.parent()),
+            height: v.height(),
+            time: v.time(),
+            root: ids::prefixed(v.root()),
             txs,
             block_id: sha256(bytes),
             bytes: bytes.to_vec(),
@@ -132,17 +124,16 @@ fn serialize(parent_id: Id, height: u64, time: u64, root: Id, txs: &[Tx]) -> Res
         }
         raw.push(tx.bytes().to_vec());
     }
-    let mut b = Builder::default();
-    let (len_off, len_count, blob) = write_blob_list(&mut b, &raw);
-    let ob = b.start_object(SIZE_BLK);
-    ob.set_bytes_fixed(&mut b, OFF_PARENT, &parent_id);
-    ob.set_u64(&mut b, OFF_HEIGHT, height);
-    ob.set_u64(&mut b, OFF_TIME, time);
-    ob.set_bytes_fixed(&mut b, OFF_ROOT, &root);
-    ob.set_list(&mut b, OFF_TX_LEN, len_off, len_count);
-    ob.set_bytes(&mut b, OFF_TX_BLOB, &blob);
-    ob.finish_as_root(&mut b);
-    Ok(b.finish())
+    let lengths: Vec<u32> = raw.iter().map(|r| r.len() as u32).collect();
+    let blob: Vec<u8> = raw.concat();
+    Ok(wire::new_block(&BlockInput {
+        parent: &parent_id,
+        height,
+        time,
+        root: &root,
+        tx_lengths: &lengths,
+        tx_blob: &blob,
+    }))
 }
 
 #[cfg(test)]

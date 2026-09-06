@@ -350,8 +350,8 @@ impl From<wire::Error> for Error {
     }
 }
 
-impl From<crate::zap::Error> for Error {
-    fn from(e: crate::zap::Error) -> Self {
+impl From<lux_zap::zap::Error> for Error {
+    fn from(e: lux_zap::zap::Error) -> Self {
         Error::Wire(wire::Error::Zap(e))
     }
 }
