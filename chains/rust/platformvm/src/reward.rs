@@ -400,7 +400,13 @@ mod tests {
         );
     }
 
-    /// Go's `TestSplit`.
+    /// Go's `TestSplit`, all nine cases with its expected values verbatim.
+    ///
+    /// The four large ones are the ones that matter: above
+    /// `PERCENT_DENOMINATOR` the optimistic product no longer fits a u64, so
+    /// `split` falls back to dividing first, and the answer changes. Dropping
+    /// them leaves the fallback branch unexercised, which is exactly the branch
+    /// a real delegator reward at mainnet weights takes.
     #[test]
     fn a_reward_splits_the_way_go_splits_it() {
         let cases: &[(u64, u32, u64)] = &[
@@ -411,6 +417,19 @@ mod tests {
             (1, PERCENT_DENOMINATOR as u32 - 1, 1),
             (1, 1, 1),
             (1, 0, 0),
+            // Past the point where `remainder_shares * total` fits a u64.
+            (9_223_374_036_974_675_809, 2, 18_446_748_749_757),
+            (
+                9_223_374_036_974_675_809,
+                PERCENT_DENOMINATOR as u32,
+                9_223_374_036_974_675_809,
+            ),
+            (
+                9_223_372_036_855_275_808,
+                PERCENT_DENOMINATOR as u32 - 2,
+                9_223_353_590_111_202_098,
+            ),
+            (9_223_372_036_855_275_808, 2, 18_446_744_349_518),
         ];
         for (amount, shares, want) in cases {
             let (from_shares, remainder) = split(*amount, *shares);
@@ -560,6 +579,112 @@ mod tests {
         assert_eq!(
             c.calculate(MAX_STAKING_DURATION, MEGA_LUX, 720 * MEGA_LUX),
             0
+        );
+    }
+
+    // ---- the live mainnet numbers ----
+    //
+    // Go states these in `reward/supply_cap_underflow_mainnet_test.go`, read
+    // off mainnet (96369) with `platform.getCurrentSupply`,
+    // `platform.getCurrentValidators` and `xvm.getAssetDescription`. They are
+    // reproduced here rather than recomputed: a number this port derived for
+    // itself would agree with this port and with nothing else.
+
+    /// `platform.getCurrentSupply`, in base units.
+    const MAINNET_CURRENT_SUPPLY: u64 = 13_272_095_200_543_363_741;
+    /// One validator's `weight` — 500M LUX at denomination 9.
+    const MAINNET_VALIDATOR_WEIGHT: u64 = 500_000_000_000_000_000;
+    /// The `potentialReward` that validator is actually carrying.
+    const MAINNET_POTENTIAL_REWARD: u64 = 33_575_831_900_252_839;
+    /// Its term: `endTime - startTime`, in seconds.
+    const MAINNET_STAKED_SECONDS: u64 = 1_797_088_011 - 1_765_573_611;
+    /// The supply at the instant it bonded, recovered by Go from the reward.
+    const MAINNET_SUPPLY_AT_BOND: u64 = 13_106_511_852_580_896_694;
+
+    /// `genesis/pkg/genesis/params.go MainnetParams.RewardConfig`, verbatim.
+    fn mainnet_reward_config() -> Config {
+        Config {
+            max_consumption_rate: 120_000,
+            min_consumption_rate: 100_000,
+            minting_period: Duration::from_secs(365 * 24 * 60 * 60),
+            supply_cap: 2_000_000_000_000_000_000,
+        }
+    }
+
+    /// Go's `TestMainnetSupplyExceedsCompiledCap`: the precondition for
+    /// everything below. The live supply is already past the cap the reward
+    /// calculator is built with — 13.27e18 against a cap of 2e18.
+    #[test]
+    fn the_live_supply_is_already_past_the_compiled_cap() {
+        assert!(
+            MAINNET_CURRENT_SUPPLY > mainnet_reward_config().supply_cap,
+            "live supply {MAINNET_CURRENT_SUPPLY} must exceed the compiled cap {}, \
+             or none of these tests is about anything",
+            mainnet_reward_config().supply_cap
+        );
+    }
+
+    /// Go's `TestSupplyCapGuardIsTheFix`, asserted against the real calculator
+    /// rather than a local closure — because here the guard IS the calculator.
+    ///
+    /// Go's `Calculate` opens with a bare `c.supplyCap - currentSupply`, which
+    /// wraps past the cap and scales the whole reward by the wrapped value.
+    /// This port subtracts with `saturating_sub`, so past the cap there is no
+    /// headroom and emission stops, which is what Go's test calls the fix.
+    #[test]
+    fn past_the_cap_a_mainnet_stake_earns_nothing() {
+        let cap = mainnet_reward_config().supply_cap;
+
+        // The wrap Go's arithmetic performs, stated so the divergence below is
+        // not a matter of opinion: unguarded, the headroom is larger than the
+        // cap itself.
+        assert!(
+            cap.wrapping_sub(MAINNET_CURRENT_SUPPLY) > cap,
+            "the unguarded subtraction must wrap, or there is no defect to guard against"
+        );
+        // And what this port computes instead.
+        assert_eq!(cap.saturating_sub(MAINNET_CURRENT_SUPPLY), 0);
+        assert_eq!(
+            (MAINNET_SUPPLY_AT_BOND + 1).saturating_sub(MAINNET_SUPPLY_AT_BOND),
+            1
+        );
+
+        let c = Calculator::new(mainnet_reward_config());
+        assert_eq!(
+            c.calculate(
+                Duration::from_secs(MAINNET_STAKED_SECONDS),
+                MAINNET_VALIDATOR_WEIGHT,
+                MAINNET_CURRENT_SUPPLY,
+            ),
+            0,
+            "past the cap the guard yields no headroom, so no reward is minted"
+        );
+    }
+
+    /// Go's `TestMainnetRewardWouldBeZeroWithoutTheWrap`, with the mainnet
+    /// config, weight and duration rather than an abstract supply at an
+    /// abstract cap.
+    ///
+    /// A cap one unit above the supply at bond is the only regime in which the
+    /// subtraction is meaningful at all, and there the reward collapses to
+    /// nothing. The size of the divergence is the whole point: not a rounding
+    /// error, the difference between 33,575,831,900,252,839 base units and
+    /// zero.
+    #[test]
+    fn at_the_cap_a_mainnet_stake_earns_nothing() {
+        let at_cap = Config {
+            supply_cap: MAINNET_SUPPLY_AT_BOND + 1,
+            ..mainnet_reward_config()
+        };
+        let got = Calculator::new(at_cap).calculate(
+            Duration::from_secs(MAINNET_STAKED_SECONDS),
+            MAINNET_VALIDATOR_WEIGHT,
+            MAINNET_SUPPLY_AT_BOND,
+        );
+        assert_eq!(got, 0, "at the cap, emission must be zero");
+        assert_ne!(
+            MAINNET_POTENTIAL_REWARD, 0,
+            "and this is what mainnet issued instead"
         );
     }
 
