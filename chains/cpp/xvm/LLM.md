@@ -10,7 +10,9 @@ test files) — the behavioural source of truth. Where the two differ, the Go on
 is right and this is a bug.
 
 ```
-include/lux/xvm/   zap wire  ·  fx envelopes  ·  fx families  ·  txs  ·  address
+schema/wire.zap    the wire, as a schema — the offsets, once, for every language
+include/lux/xvm/gen/  what zapgen writes from it: the readers and the builders
+include/lux/xvm/   fx envelopes  ·  fx families  ·  txs  ·  address
                    store  ·  state  ·  root  ·  executor  ·  block  ·  genesis
                    mempool  ·  vm
 src/               their implementations
@@ -32,6 +34,27 @@ cp test/golden/golden_gen.go /tmp/gg/main.go
 cd ~/work/lux/node && GOWORK=off go run /tmp/gg/main.go > /tmp/golden.hpp
 diff /tmp/golden.hpp <this>/test/golden.hpp     # must be empty
 ```
+
+## Where the wire lives
+
+`schema/wire.zap` states every offset and every list stride the X-Chain has, and
+`zapgen` writes `include/lux/xvm/gen/wire_zap.hpp` from it — the readers, the
+builders, and nothing else. Regenerate after editing the schema and commit what
+it writes:
+
+```sh
+cmake --build build --target wire-schema
+```
+
+`include/lux/xvm/wire.hpp` is what the bytes MEAN, and only that: the two-byte
+(TypeKind, ShapeKind) discriminator each shape travels behind, the walker over a
+packed envelope run, the quorum gate on an owner group, and the conversions from
+the wire's byte runs to the chain's `Id` and `ShortId`. No offset is spelled
+there, and none is spelled twice anywhere.
+
+Three shapes — a mint authority, a property state output, a bare owner group —
+have exactly the same four fields. They are one struct in the schema and three
+ShapeKinds in `wire.hpp`, which is where the difference actually is.
 
 That generator is a **tool**, not a dependency: it runs against the Go checkout
 to produce a header. Nothing in the C++ build imports Go, and the library's
