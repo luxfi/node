@@ -47,20 +47,6 @@ enum class Kind : std::uint8_t {
     Standard = 4,
 };
 
-inline constexpr std::int64_t kOffKind = 0;
-inline constexpr std::int64_t kOffParent = 1;
-inline constexpr std::int64_t kOffHeight = 33;
-inline constexpr std::int64_t kOffTime = 41;
-inline constexpr std::int64_t kOffTxLengths = 49;
-inline constexpr std::int64_t kOffTxBlob = 57;
-inline constexpr std::int64_t kOffProposalTx = 65;
-
-inline constexpr std::int64_t kSizeDecided = 49;
-inline constexpr std::int64_t kSizeStandard = 65;
-inline constexpr std::int64_t kSizeProposal = 73;
-
-inline constexpr std::int64_t kTxLenStride = 4;
-
 class Visitor;
 
 // Wire is the single place a block's bytes are bound and its id derived. It is a

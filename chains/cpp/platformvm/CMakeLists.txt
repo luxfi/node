@@ -31,6 +31,14 @@ set(PLATFORMVM_SANITIZE "" CACHE STRING "Sanitizer for platformvm code only (e.g
 # The wire this chain speaks comes from the published SDK, not from here.
 include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
 
+# The wire's offsets, readers and builders: schema/wire.zap in,
+# include/lux/platformvm/gen out.
+foreach(_s wire genesis warp warpmsg)
+  zap_schema(${_s}-schema
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema/${_s}.zap
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/lux/platformvm/gen)
+endforeach()
+
 # find_checkout(VAR MARKER candidate...) — first candidate holding MARKER wins.
 function(find_checkout out marker)
   foreach(_root ${ARGN})

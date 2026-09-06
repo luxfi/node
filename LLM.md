@@ -333,12 +333,26 @@ language, and that is what a generator is for.
 beside it and the accessors are printed:
 
 ```
-chains/cpp/xvm/schema/wire.zap        ->  include/lux/xvm/gen/wire_zap.hpp
-chains/cpp/quantumvm/schema/wire.zap  ->  include/lux/quantumvm/gen/wire_zap.hpp
+chains/cpp/xvm/schema/wire.zap             ->  include/lux/xvm/gen/wire_zap.hpp
+chains/cpp/quantumvm/schema/wire.zap       ->  include/lux/quantumvm/gen/wire_zap.hpp
+chains/cpp/platformvm/schema/wire.zap      ->  include/lux/platformvm/gen/wire_zap.hpp
+chains/cpp/platformvm/schema/genesis.zap   ->  include/lux/platformvm/gen/genesis_zap.hpp
+chains/cpp/platformvm/schema/warp.zap      ->  include/lux/platformvm/gen/warp_zap.hpp
+chains/cpp/platformvm/schema/warpmsg.zap   ->  include/lux/platformvm/gen/warpmsg_zap.hpp
 ```
 
-`cmake --build build --target wire-schema` regenerates; the output is committed,
-so a build needs neither Go nor the generator.
+One schema per namespace, because a package name is what a backend renders as
+a namespace and a file declares one. The P-chain's four cover every shape it
+puts on a wire or in a store: nineteen transactions, three blocks, the
+credentials, an owner set, the two fx envelopes an output is ordered by, the
+genesis blob, and the six warp messages.
+
+`cmake --build build --target wire-schema` regenerates (`genesis-schema`,
+`warp-schema`, `warpmsg-schema` for the others); the output is committed, so a
+build needs neither Go nor the generator. The generator has its own published
+pin, `ZAPGEN_TAG` in `chains/cpp/zap.cmake`, separate from the runtime's
+`ZAP_TAG` — they are different repositories, and one tag naming both is how
+that target came to point at a version that was never published.
 
 The four list shapes the Lux wire actually has are DERIVED from the element
 type, never declared — a run of numbers at its own width, a run of fixed-width
@@ -351,9 +365,15 @@ What is left in each chain's `wire.hpp` is what the bytes MEAN: the X-chain's
 canonicality rule and its bound on a transaction count. Neither spells an
 offset.
 
-Still by hand, and named rather than left to be found: platformvm (2,566 lines
-across txs, txs_wire, block, genesis, warp and components), zkvm (890), dexvm
-(239), fhevm (251). 5,717 lines, of which platformvm is three quarters.
+The P-chain kept 283 lines beside its four schemas, and not one of them is an
+offset. What is there is the ARRANGEMENT, which is a fact about the chain
+rather than about the format: an output's owner addresses do not live in the
+output, they live in one run shared by the whole transaction, and the output
+names a slice of it. That decision is stated once instead of at the nineteen
+places a transaction is built.
+
+Still by hand, and named rather than left to be found: zkvm (1,452 lines),
+fhevm (913), dexvm (585).
 
 ### Why Rust cannot just do the same thing
 
