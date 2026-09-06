@@ -1,0 +1,48 @@
+[package]
+name = "lux-fhevm"
+version = "0.1.0"
+edition = "2021"
+description = "The Lux F-Chain in Rust: the coordination plane for confidential compute, ZAP on the wire."
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node2"
+publish = false
+
+[dependencies]
+# The host. `host::Vm` and `host::Block` are the node's OWN trait definitions,
+# not a copy of them: a chain that restated the seam would compile against a
+# shape the node never sees, and the day the node changed a method the chain
+# would still build. A path dependency because `lux-node` is not published.
+lux-node = { path = "../../../../../lux-rs/node" }
+
+# ML-DSA-65, and the only cryptography this chain performs beyond SHA-256.
+# It reaches `libluxcrypto`, which is the C ABI of `luxfi/crypto` — the SAME
+# implementation the Go reference verifies with, rather than a second one to
+# keep in step with it. Naming it here also hands this crate the `links`
+# metadata `build.rs` repeats, so the test binaries can load.
+lux-pq = { path = "../../../../../lux-rs/sdk/lux-pq" }
+
+# `Id` — `lux_consensus::finality::Id`, `[u8; 32]`. Named from the crate the
+# host names it from, so a block this chain builds is named the same way the
+# node that certifies it names it, with nothing in between to translate.
+lux-consensus = "1.23.0"
+
+# Every name this chain derives is a SHA-256: the ciphertext handle, the permit
+# id, the request id, the committee digest, the payer's address, the
+# transaction id and the block id. Writing it by hand would be a second
+# implementation to keep in step with Go and C++.
+sha2 = "0.10"
+
+# The three boundaries where a chain reads a shape it did not choose: an
+# operation payload and a genesis are JSON, an address inside one is CB58, and
+# a public key inside one is base64. A hand-written parser at a boundary is a
+# vulnerability with a schedule.
+# `preserve_order`, because one of the rules this decoder copies is about
+# ORDER: two members naming one field are both resolved and the LATER one is
+# written. A map that sorted its keys could not express that rule at all.
+serde_json = { version = "1", features = ["preserve_order"] }
+bs58 = "0.5"
+base64 = "0.22"
+
+[dev-dependencies]
+# Golden vectors are hex, because that is how the Go generator prints them.
+hex = "0.4"

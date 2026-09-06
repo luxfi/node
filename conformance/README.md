@@ -21,10 +21,10 @@ answers next to each other.
 | --- | --- | --- | --- | --- |
 | P platformvm | 159 | yes | yes | yes |
 | X xvm | 49 | yes | yes | yes |
-| Q quantumvm | 81 | yes | **no** | yes |
-| Z zkvm | 137 | yes | **no** | yes |
-| D dexvm | 35 | yes | **no** | yes |
-| F fhevm | 264 | yes | **no** | yes |
+| Q quantumvm | 81 | yes | yes | yes |
+| Z zkvm | 137 | yes | yes | yes |
+| D dexvm | 35 | yes | yes | yes |
+| F fhevm | 264 | yes | yes | yes |
 
 Most of those counts are damage. Every vector this reference reads back as a
 block or a transaction is also cut to a quarter, cut to a half, cut by one
@@ -50,13 +50,20 @@ The four chains were added because they had **no vector at all**, which is the
 same shape the P-chain fork hid in for weeks: a chain nothing is pointed at
 agrees with itself. Every fork this program has found, the differential found.
 
-**The Rust column does not answer them, and the run FAILS because of it.** The
-runner lists what each implementation never answered under NOT ANSWERED and
-exits non-zero: silence is not agreement, and a target that went green while a
-whole column said nothing about four chains would be reporting the agreement of
-whoever was left. Those four evaluators are `chains/rust`'s to write. Nothing
-else is waiting on them — the corpus, the runner and the result format are the
-ones already in use, and each slots in as one more `-eval "rust=…"` line.
+**All three columns answer all six chains, and every compared field of all 725
+vectors agrees.** That is recent. The Rust column used to answer P and X and
+say nothing about the other four, and the runner listed 421 vectors under NOT
+ANSWERED and exited non-zero — silence is not agreement, and a target that went
+green while a whole column said nothing about four chains would be reporting the
+agreement of whoever was left. Each of the four slotted in as one more
+`-eval "rust=…"` line, which is the whole of what the runner had to learn.
+
+The last two, Z and F, each found something on the way in. The Rust Z-chain had
+no VM and no evaluator at all, and once it had both it agreed with Go on all 137
+vectors first time. The Rust F-chain answered every vector and disagreed with Go
+on seven, all of them in the `F_JSON_*` group and all of them the same kind of
+mistake: a JSON decoder that was stricter than `encoding/json` in ways nobody
+had written down. Those are described under **What is compared** below.
 
 D is not a block chain here. Go's `dexvm` is a REGISTRY: it decides what an
 asset IS, what a market IS, which kinds may be registered, and whether native
@@ -190,6 +197,42 @@ not a comparison, and the harness said so under NOT COMPARED rather than
 pretending. The C++ evaluator still declines; giving it the same two passes on
 its own empty chain is what closes the last voice.
 
+### What `encoding/json` accepts
+
+An F operation payload is JSON, so what the chain admits depends on what its
+decoder admits, and Go's decoder is not the strict reading anyone writes by
+default. The `F_JSON_*` group asks the question directly, and it caught four
+rules the Rust F-chain did not have. Each is one member of one payload, and each
+would have refused a transaction the reference admits — which on a live chain is
+a node that refuses a block its peers accepted.
+
+`null` where a struct belongs is the ZERO struct, not a refusal. What then
+refuses the transaction is whatever rule the zero payload breaks, and that is a
+different rule per operation: `F_JSON_NULL_REVOKE` reaches the ledger and is
+refused for a permit nobody holds, while the register and advance payloads are
+refused for their own shapes. A decoder that refused `null` outright names the
+wrong rule on all three and the wrong verdict on one.
+
+Trailing content is two rules and not one. Go reads a payload through a
+`Decoder` and asks `dec.More()`, and More answers "is there another ELEMENT" —
+it reports false for `]` and `}`. So a stray closing bracket after a complete
+value leaves the payload standing, while a comma or a second document does not.
+
+Member names fold by `unicode.SimpleFold`, which is not ASCII case folding.
+U+017F folds onto `S` and U+212A onto `K`, so `ſize` names Size and `publicKey`
+spelled with a Kelvin sign names PublicKey. And when two members name one field
+both are resolved and the LATER one is written, whichever way each of them
+matched — so a decoder that preferred the exact match reads a different value
+out of the same bytes, and one that sorted its members cannot express the rule
+at all.
+
+A base64 word broken across a line is the same word: `encoding/base64` ignores
+CR and LF wherever they fall. `F_JSON_BASE64_NEWLINE` carries a complete epoch
+proposal with its network key wrapped, so the answer turns on whether the key
+was read — a reader that refused the newline reaches a proposal with no key and
+refuses the committee, which is a rule about the committee standing in for a
+rule about base64.
+
 ### Seam vectors
 
 Two vectors carry no bytes. They ask each implementation whether its
@@ -237,13 +280,13 @@ What the three implementations agree on today, and what they are now held to:
 ## Running it
 
 ```
-make chains           build all nine evaluators, run the differential
+make chains           build all twelve evaluators, run the differential
 make chains-corpus    regenerate the corpus from the Go reference
 ```
 
-**`make chains` fails today, and it should.** Four chains have no Rust
-evaluator, the runner lists 421 vectors under NOT ANSWERED, and it exits
-non-zero. Silence is not agreement.
+**`make chains` passes today.** 725 vectors, four voices — go, rust, cpp and
+the committed corpus — agreement on every compared field, and nothing under NOT
+ANSWERED.
 
 The corpus is committed, so a reference that changed its mind shows up as a
 diff. `expected.tsv` — the Go chains' answers at generation time — also joins

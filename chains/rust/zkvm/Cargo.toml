@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+
+[package]
+name = "lux-zkvm"
+version = "0.1.0"
+edition = "2021"
+description = "The Lux Z-Chain in Rust: the shielded pool, its spent set and its strict-PQ proof profile, ZAP on the wire."
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node2"
+publish = false
+
+[dependencies]
+# The host. `vm::Vm` and `vm::Block` are the node's OWN trait definitions, not a
+# copy of them. A chain that restated the seam would compile against a shape the
+# node never sees, and would keep compiling on the day the node changed a
+# method. A path dependency because `lux-node` is not published.
+lux-node = { path = "../../../../../lux-rs/node" }
+
+# `Id` — `lux_consensus::finality::Id`, `[u8; 32]`. Named from the crate the
+# host names it from, so a block this chain builds is named the way the node
+# that certifies it names it, with nothing in between to translate.
+lux-consensus = "1.23.0"
+
+# Named, not used: `lux-node` reaches `libluxcrypto` through this crate, and
+# only a DIRECT dependent is handed the `links` metadata that says where that
+# library was resolved. Naming it here is what lets `build.rs` repeat the one
+# answer instead of searching for a second one, so this crate's test binaries —
+# which run the node — can load.
+lux-pq = { path = "../../../../../lux-rs/sdk/lux-pq" }
+
+# SHA-256 is the whole of this chain's arithmetic on identity. A block id, a
+# transaction id, the state root and the chain binding are all folds of it, and
+# writing any of them by hand would be a second implementation to keep in step
+# with Go and C++.
+sha2 = "0.10"
+
+# The one boundary where a chain answers a caller in a shape it did not choose:
+# the genesis file, and the JSON-RPC calls the host routes here. A hand-written
+# parser at a boundary is a vulnerability with a schedule.
+serde_json = "1"
+
+[dev-dependencies]
+# Golden vectors are hex, because that is how the Go generator prints them.
+hex = "0.4"

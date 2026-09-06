@@ -25,7 +25,7 @@ retiring it is the outcome this repo works toward, not a precondition of it.
 
 ```
 runtime/{go,rust,cpp}   thin shim READMEs — what gets built, from where, how
-chains/{go,rust,cpp}    the chain suite — cpp runs six chains, rust two, go a README
+chains/{go,rust,cpp}    the chain suite — cpp and rust each run six chains, go a README
 gpu/                    thin shim to the GPU kernel library
 conformance/            wires the existing pop/verdict corpus per language
 bin/                    build output — luxd-go, luxd-rust, luxd-cpp (gitignored)
@@ -140,18 +140,25 @@ as well — and it fails a run in which any implementation printed no row at
 all, since with four voices three answering is still a comparison, it agrees,
 and the fourth's silence would read as a pass.
 
-**`make chains` fails too, and for a different reason.** It covers six chains
-now — P and X from `luxfi/node`, and Q, Z, D and F from `luxfi/chains`, which
-had no vector at all until they were added, which is the same shape the
-P-chain fork hid in. The C++ column answers all six and agrees with Go on 417
-of the 421 vectors on the four new ones (Q 81/81, D 35/35, F 168/168, Z
-133/137). The Rust column answers P and X and says nothing about the other
-four, so the runner lists 421 vectors under NOT ANSWERED and exits non-zero.
-Those four Rust evaluators are the outstanding work; the corpus, the runner
-and the result format are the ones already in use, and each slots in as one
-more `-eval "rust=…"` line. `conformance/README.md` has the detail, including
-the four Z rows that do disagree and why they are the corpus's fault rather
-than either chain's.
+**`make chains` passes.** It covers six chains — P and X from `luxfi/node`, and
+Q, Z, D and F from `luxfi/chains`, which had no vector at all until they were
+added, which is the same shape the P-chain fork hid in. All three columns now
+answer all six, and every compared field of all 725 vectors agrees.
+
+The Rust column was the last to close, and the last two chains in it each said
+something. `chains/rust/zkvm` had sixteen modules, no VM to hold them and no
+evaluator; given both it agreed with Go on all 137 Z vectors on its first run,
+so the fifteen thousand lines under it had been right and unexercised.
+`chains/rust/fhevm` answered every F vector and disagreed with Go on seven —
+all in the `F_JSON_*` group, all the same kind of mistake. Its JSON decoder was
+stricter than `encoding/json` in four ways nobody had written down: it refused a
+`null` payload where Go reads the zero struct, refused a stray `}` or `]` after
+a complete value where Go's `Decoder.More` reports no further element, folded
+member names by ASCII case where Go folds by `unicode.SimpleFold`, and refused a
+base64 word broken across a line that `encoding/base64` reads straight through.
+Each would have refused a transaction the reference admits, which on a live
+chain is a node that refuses a block its peers accepted.
+`conformance/README.md` states all four rules.
 
 `make precompiles` is described in `conformance/PRECOMPILE.md`. **It fails, and
 what it found is the reason it exists.**
@@ -220,7 +227,7 @@ make luxd RUNTIME=cpp     # bin/luxd-cpp   — lux-cpp/node (full host)
 make all                  # all three + gpu; reports each; nonzero exit unless 3/3
 make gpu                  # lux-gpu/gpu kernel library
 make conformance          # the pop/verdict corpus, all three languages
-make chains               # the P/X chain differential, all three languages
+make chains               # the six-chain differential, all three languages
 make chains-corpus        # regenerate that corpus from the Go reference
 make precompiles          # the EVM precompile differential, all three languages
 make precompiles-corpus   # regenerate that corpus from the Go reference
