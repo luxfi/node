@@ -56,35 +56,34 @@ jobs:
 
   build:
     needs: verify
-    runs-on: [lux-build-linux-amd64]
+    # One job per architecture, each on its own native pool. The lab runs both,
+    # so neither arch is emulated: the binary that ships for an arch was compiled
+    # AND smoke-tested on that arch. Emulating arm64 on an amd64 host would run
+    # the gates below against a QEMU translation of the binary, which answers a
+    # different question than "does this run on the machine it ships to".
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            pool: lux-build-linux-amd64
+          - arch: arm64
+            pool: lux-build-linux-arm64
+    runs-on: ['${{ matrix.pool }}']
     # cevm (CGO), luxd, and twelve VM plugins. The long pole is cevm.
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compute tags
+      - name: Compute this arch's image name
         id: meta
+        # A per-arch name, never a release name. The release names are a manifest
+        # list and only the merge job may write them: a tag that resolves to one
+        # architecture is worse than a tag that does not exist yet, because it
+        # pulls successfully on that arch and fails everywhere else.
         run: |
           set -euo pipefail
-          SHA_TAG="ghcr.io/luxfi/node:sha-${GITHUB_SHA:0:7}"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-            {
-              echo "tags<<EOF"
-              echo "ghcr.io/luxfi/node:v${VERSION}"
-              echo "ghcr.io/luxfi/node:${VERSION}"
-              echo "$SHA_TAG"
-              echo "EOF"
-            } >> "$GITHUB_OUTPUT"
-            echo "probe=ghcr.io/luxfi/node:v${VERSION}" >> "$GITHUB_OUTPUT"
-          else
-            {
-              echo "tags<<EOF"
-              echo "$SHA_TAG"
-              echo "EOF"
-            } >> "$GITHUB_OUTPUT"
-            echo "probe=$SHA_TAG" >> "$GITHUB_OUTPUT"
-          fi
+          echo "image=ghcr.io/luxfi/node:sha-${GITHUB_SHA:0:7}-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
         # The daemon's built-in BuildKit, not a side container. The
@@ -94,8 +93,9 @@ jobs:
         # GPU — the driver does. The refusal lands while this step is still
         # running and the step still reports success, so it surfaces one step
         # later as a build that dies in seconds with no builder to explain it.
-        # These images are single-platform, which is all the built-in driver
-        # serves.
+        # Each job builds ONE platform, which is all the built-in driver
+        # serves. The manifest list that joins them is assembled from the
+        # registry by the merge job, which needs no builder at all.
         with:
           driver: docker
 
@@ -129,13 +129,13 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64
+          platforms: linux/${{ matrix.arch }}
           secrets: |
             ghtok=${{ runner.temp }}/ghtok
           load: true
           push: false
           provenance: false
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.meta.outputs.image }}
           # Provenance in the image itself, because the TAG has already lied. The
           # image published as v1.36.47 stamps a commit whose tree does not contain
           # a string the shipped binary carries, so "which tag is it" and "which code
@@ -167,7 +167,7 @@ jobs:
         # a disagreeing pair does not become an image.
         run: |
           set -euo pipefail
-          img="${{ steps.meta.outputs.probe }}"
+          img="${{ steps.meta.outputs.image }}"
 
           docker run --rm --entrypoint sh "$img" -c './luxd --version' | head -3
           docker run --rm --entrypoint sh "$img" -c './repair-cchain --help >/dev/null'
@@ -233,20 +233,16 @@ jobs:
           fi
           echo "luxd and all plugins agree on luxfi/vm"
 
-      - name: Push
-        run: |
-          set -euo pipefail
-          while IFS= read -r t; do
-            [ -n "$t" ] && docker push "$t"
-          done <<< "${{ steps.meta.outputs.tags }}"
+      - name: Push this arch
+        run: docker push '${{ steps.meta.outputs.image }}'
 
-      - name: Verify the pushed manifest resolves
+      - name: Verify this arch's pushed image resolves
         # A tag that names nothing pullable is how a StatefulSet ends up pinned
         # to a phantom: the pin applies, the pod never starts, and the tag looks
         # like a release. Prove it before the job is green.
         run: |
           set -euo pipefail
-          img="${{ steps.meta.outputs.probe }}"
+          img="${{ steps.meta.outputs.image }}"
           for i in 1 2 3 4 5 6; do
             if docker manifest inspect "$img" >/dev/null 2>&1; then
               echo "$img is resolvable"; exit 0
@@ -254,3 +250,71 @@ jobs:
             echo "manifest not visible yet (attempt ${i}/6) — retrying"; sleep 5
           done
           echo "::error::$img not pullable after push"; exit 1
+
+  merge:
+    needs: build
+    # Registry-side only: imagetools reads the two per-arch manifests and writes
+    # a list that points at both. No builder, no platform of its own, so which
+    # pool runs this does not matter.
+    runs-on: [lux-build-linux-amd64]
+    timeout-minutes: 15
+    steps:
+      - name: Compute the release names
+        id: meta
+        run: |
+          set -euo pipefail
+          SHA_TAG="ghcr.io/luxfi/node:sha-${GITHUB_SHA:0:7}"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            {
+              echo "tags<<EOF"
+              echo "ghcr.io/luxfi/node:v${VERSION}"
+              echo "ghcr.io/luxfi/node:${VERSION}"
+              echo "$SHA_TAG"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "probe=ghcr.io/luxfi/node:v${VERSION}" >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "tags<<EOF"
+              echo "$SHA_TAG"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "probe=$SHA_TAG" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USER }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Join both architectures under every release name
+        run: |
+          set -euo pipefail
+          base="ghcr.io/luxfi/node:sha-${GITHUB_SHA:0:7}"
+          args=''
+          while IFS= read -r t; do
+            [ -n "$t" ] && args="$args -t $t"
+          done <<< "${{ steps.meta.outputs.tags }}"
+          # shellcheck disable=SC2086
+          docker buildx imagetools create $args "${base}-amd64" "${base}-arm64"
+
+      - name: Prove every release name carries BOTH architectures
+        # A manifest list with one entry pulls fine on the arch that built it and
+        # fails everywhere else, which is exactly the state this workflow is
+        # replacing. Counting the platforms is what makes "multi-arch" a fact
+        # rather than an intention.
+        run: |
+          set -euo pipefail
+          while IFS= read -r t; do
+            [ -z "$t" ] && continue
+            got=$(docker buildx imagetools inspect "$t" --format '{{range .Manifest.Manifests}}{{.Platform.OS}}/{{.Platform.Architecture}} {{end}}')
+            echo "$t -> ${got}"
+            for want in linux/amd64 linux/arm64; do
+              case " $got " in
+                *" $want "*) ;;
+                *) echo "::error::$t does not carry $want"; exit 1 ;;
+              esac
+            done
+          done <<< "${{ steps.meta.outputs.tags }}"
