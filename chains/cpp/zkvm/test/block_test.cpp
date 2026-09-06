@@ -276,6 +276,36 @@ void a_block_that_cannot_write_spends_nothing() {
     unbind_stark_verifier();
 }
 
+// What syntactic_verify claims is not that it refuses the same blocks — it is
+// WHERE it refuses them: before the chain is consulted at all. The conformance
+// corpus cannot show that, because every vector in it names the genesis block
+// as its parent and the genesis block exists. So the claim is made here, on a
+// block whose parent no chain holds.
+void the_syntactic_pass_does_not_read_the_ledger() {
+    std::printf("\nthe syntactic pass answers about a block no chain holds\n");
+    Chain c;
+    const Id nowhere = id_of(0xAB);
+
+    // Well formed, and on nothing. syntactic_verify has an answer anyway, which
+    // it could not have if it had looked the parent up.
+    auto orphan = block_over(*c.vm, nowhere, 1, kNow, {});
+    check_ok(orphan->syntactic_verify(), "a well-formed block with a parent nobody has passes");
+    check_err(orphan->check(), kErrNoBlock, "and check, which does look, refuses it");
+
+    // The same block, past the clock: the state-free rule fires with no parent
+    // to be found, so the refusal cannot have come from the lookup.
+    auto future = block_over(*c.vm, nowhere, 1, kNow + kMaxClockSkew + 10, {});
+    check_err(future->syntactic_verify(), kErrFutureBlock, "the clock is decided without one");
+
+    // And the rules that DO need the chain stay below the line. A lie about the
+    // state root is a fact about the chain's tree, not about these bytes.
+    auto lying = block_over(*c.vm, c.vm->genesis_block()->id(), 1, kNow, {});
+    lying->state_root = Bytes(32, 0xAA);
+    lying->set_id(lying->compute_id());
+    check_ok(lying->syntactic_verify(), "a state root the block did not produce is not syntactic");
+    check_err(lying->check(), kErrInvalidStateRoot, "check is where that is caught");
+}
+
 void the_seam_never_throws() {
     std::printf("\nthe seam answers rather than throwing\n");
     bind_accepting_stark_verifier();
@@ -300,6 +330,7 @@ int main() {
     a_rejected_block_returns_its_transactions();
     a_block_is_decided_once();
     a_block_that_cannot_write_spends_nothing();
+    the_syntactic_pass_does_not_read_the_ledger();
     the_seam_never_throws();
     return report("block");
 }

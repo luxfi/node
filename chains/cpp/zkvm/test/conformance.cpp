@@ -152,23 +152,24 @@ conf::Row eval_block(const std::string& id, const std::string& wire) {
     const Id blk_id = blk->id();
     r.hash = conf::hex(blk_id.data(), blk_id.size());
 
-    // The shape check, per transaction, from the port's own method. It is the
-    // Z-chain's analogue of a syntactic pass: everything about a transaction
-    // that can be decided without asking the chain anything.
-    for (const auto& tx : blk->txs) {
-        if (auto v = tx.validate_basic(); !v) {
-            r.syntactic = conf::classify(v.error());
-            r.exec = r.syntactic;
-            r.note = v.error();
-            return r;
-        }
+    // The syntactic pass is the chain's own — check's first half, everything it
+    // settles from the block in hand before it reads a key. Asking the chain
+    // where its boundary falls is the point: an evaluator that decided that for
+    // itself would be a second opinion about the port under test, and this row
+    // disagreed with Go for four vectors because both evaluators used to hold
+    // one. Go names the rules that land here by their sentinels; this names them
+    // by calling the method they live in.
+    if (auto v = blk->syntactic_verify(); !v) {
+        r.syntactic = conf::classify(v.error());
+        r.exec = r.syntactic;
+        r.note = v.error();
+        return r;
     }
     r.syntactic = conf::kOk;
 
-    // check is this node's whole verdict on the block: the transaction cap, the
-    // clock, the block-level spent set, the one admission predicate over every
-    // transaction — which is where the strict-PQ profile gate fires — and the
-    // state root.
+    // check is this node's whole verdict: the half above, then the spent set and
+    // the proofs — which is where the strict-PQ profile gate fires — then the
+    // parent, the tip it must sit on, and the state root.
     if (auto v = blk->check(); !v) {
         r.exec = conf::classify(v.error());
         r.note = v.error();

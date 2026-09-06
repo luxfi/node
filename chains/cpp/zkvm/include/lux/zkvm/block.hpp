@@ -94,6 +94,19 @@ public:
     wire::Result<void> check();
     wire::Result<void> commit();
 
+    // syntactic_verify is check's first half: the rules a node settles from the
+    // block in hand — the genesis/parent pairing, the transaction cap, the
+    // clock, a nullifier repeated inside the block, and each transaction's own
+    // shape and expiry against the height this block claims. It reads no key,
+    // looks up no parent and asks the spent set nothing, so a block that cannot
+    // be true of ANY chain is refused before this one is touched.
+    //
+    // The boundary is check's own: every line below the call to this asks the
+    // ledger something. It has a name because it was already there without one,
+    // as an ordering property — and three ports of this chain each had to work
+    // out where it fell, and worked it out differently.
+    wire::Result<void> syntactic_verify() const;
+
     Status status() const { return status_; }
     const std::string& error() const { return error_; }
 
