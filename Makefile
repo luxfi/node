@@ -36,28 +36,14 @@ CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
         dex dex-test luxd-go luxd-rust luxd-cpp clean help
 
 help:
-	@echo "make luxd RUNTIME=go|rust|cpp   build one runtime into bin/luxd-<runtime>"
-	@echo "make all                        build all three + gpu, report pass/fail"
-	@echo "make gpu                        build the GPU kernel library"
-	@echo "make conformance                run the pop/verdict corpus, all 3 languages"
-	@echo "make chains                     run the P/X chain differential, all 3 languages"
-	@echo "make chains-corpus              regenerate the corpus from the Go reference"
-	@echo "make bench                      time the differential's work in all 3 languages"
-	@echo "make precompiles                run the precompile differential"
-	@echo "make precompiles-corpus         regenerate the precompile corpus"
-	@echo "make dex                        run the AMM/order-book differential against running nodes"
-	@echo "make dex-test                   the parts of that harness checkable without a chain"
-	@echo "make clean                      remove bin/"
+	@grep -hE '^[a-z][a-z-]*:.*## ' $(MAKEFILE_LIST) \
+	  | sed 's/:.*## /\t/' | sort | column -t -s $$'\t'
 
 # ---- make luxd RUNTIME=go|rust|cpp -----------------------------------------
 
-luxd:
-	@case "$(RUNTIME)" in \
-		go)   $(MAKE) --no-print-directory luxd-go ;; \
-		rust) $(MAKE) --no-print-directory luxd-rust ;; \
-		cpp)  $(MAKE) --no-print-directory luxd-cpp ;; \
-		*) echo "usage: make luxd RUNTIME=go|rust|cpp" >&2; exit 1 ;; \
-	esac
+luxd: ## build one runtime into bin/luxd-<runtime> (RUNTIME=go|rust|cpp)
+	@test -n "$(RUNTIME)" || { echo "usage: make luxd RUNTIME=go|rust|cpp" >&2; exit 1; }
+	@$(MAKE) --no-print-directory luxd-$(RUNTIME)
 
 # go: chains/evm — the C-Chain VM plugin, the one VM of thirteen that is
 # already free of luxfi/node and ava-labs. It is NOT a node daemon; see
@@ -111,7 +97,7 @@ luxd-cpp:
 
 # ---- make all: attempt all three + gpu, report every one, fail loudly -----
 
-all:
+all: ## build all three runtimes plus gpu; nonzero unless 3/3
 	@mkdir -p $(BIN)
 	@rm -f $(BIN)/luxd-go $(BIN)/luxd-rust $(BIN)/luxd-cpp
 	@echo "=== node2: building go, rust, cpp, gpu ==="
@@ -151,7 +137,7 @@ all:
 # found broken here, and would silently fail this target on an unrelated
 # binary while the actual kernel library was fine. Removed first so the
 # post-build check can only pass against something this run produced.
-gpu:
+gpu: ## build the GPU kernel library
 	@echo "==> gpu: lux-gpu/gpu, target luxgpu_core_static ($(GPU_DIR))"
 	rm -f $(GPU_DIR)/build/libluxgpu.a
 	cmake -B $(GPU_DIR)/build -S $(GPU_DIR)
@@ -161,7 +147,7 @@ gpu:
 
 # ---- conformance ------------------------------------------------------------
 
-conformance: conformance-go conformance-rust conformance-cpp
+conformance: conformance-go conformance-rust conformance-cpp ## run the pop/verdict corpus in all three languages
 	@echo; echo "=== conformance: go, rust and cpp all ran against the shared pop/verdict corpus ==="
 
 conformance-go:
@@ -223,7 +209,7 @@ DVM_CPP     := $(ROOT)/chains/cpp/dexvm/build/dexvm_conformance
 FVM_CPP     := $(ROOT)/chains/cpp/fhevm/build/fhevm_conformance
 CPP_EVALS   := $(PVM_CPP) $(XVM_CPP) $(QVM_CPP) $(ZVM_CPP) $(DVM_CPP) $(FVM_CPP)
 
-chains: chains-build
+chains: chains-build ## run the chain differential in all three languages
 	@echo
 	cd $(ROOT) && GOWORK=off go run ./conformance/runner \
 		-subject chain \
@@ -283,7 +269,7 @@ chains-build:
 # measurement, and the spread of the five is printed beside the median.
 # See conformance/README.md.
 
-bench: chains-build
+bench: chains-build ## time the differential work in all three languages
 	@echo
 	cd $(ROOT) && GOWORK=off go run ./conformance/bench \
 		-vectors $(CONF_VECS) \
@@ -308,7 +294,7 @@ PREC_CPP    := $(ROOT)/chains/cpp/evm/build/evm_conformance
 PREC_VECS   := $(CONF)/corpus/precompile_vectors.tsv
 PREC_WANT   := $(CONF)/corpus/precompile_expected.tsv
 
-precompiles: precompiles-build
+precompiles: precompiles-build ## run the precompile differential
 	@echo
 	cd $(ROOT) && GOWORK=off go run ./conformance/runner \
 		-subject precompile \
@@ -336,17 +322,17 @@ precompiles-build:
 	done
 
 # Rebuild the precompile corpus from the Go reference.
-precompiles-corpus:
+precompiles-corpus: ## regenerate the precompile corpus
 	cd $(PREC) && GOWORK=off go run . emit ../corpus
 
 # Rebuild the corpus from the Go reference. Its output is committed, so a
 # corpus that moves shows up as a diff rather than as a silent new normal.
-chains-corpus:
+chains-corpus: ## regenerate the chain corpus from the Go reference
 	cd $(CONF)/gen && GOWORK=off go run . emit ../corpus
 
 # ---- clean -------------------------------------------------------------------
 
-clean:
+clean: ## remove bin/
 	rm -rf $(BIN)
 
 # ---- make dex: the AMM and order-book differential ---------------------------
@@ -355,8 +341,8 @@ clean:
 # resulting book compared. Needs three running nodes; `make dex-test` needs
 # none. See conformance/dex/README.md.
 
-dex:
+dex: ## run the AMM and order-book differential against running nodes
 	cd $(ROOT)/conformance/dex && GOWORK=off go run . $(DEXFLAGS)
 
-dex-test:
+dex-test: ## the parts of that harness checkable without a chain
 	cd $(ROOT)/conformance/dex && GOWORK=off go test -count=1 ./...
