@@ -414,3 +414,55 @@ What it says, and the honest caveats, are in `conformance/README.md` under
 **Timing it** — the sharpest being that `chains/cpp/xvm` answers `SKIPPED` for
 `exec` and is therefore the fastest thing in the table because it is the only
 one that stops after the syntactic pass.
+
+## Running the three, and why two of them sit at height 0
+
+`make luxd RUNTIME={go,rust,cpp}` builds; nothing here starts a cluster. Three
+things have to hold before a height moves, and only the first is obvious.
+
+**Up is not producing.** All three answer `eth_chainId` and `eth_blockNumber`
+the moment their listener opens, from a chain that has decided nothing. A fleet
+was found in exactly that state: the Rust cluster had served RPC for eleven
+hours at height 0, and the read-only RPC benchmark that had been run against it
+could not have noticed, because every question it asks is answerable at height
+0. Ask for the height twice, a minute apart, and compare — a single sample
+cannot tell a live chain from a frozen one.
+
+**The Rust and Go nodes build a block only when there is one to build.** Rust
+says so in its own loop: `Error::Empty` is not an error there but *a chain with
+no transactions is a chain at rest*. Go reaches the same place from the other
+end — `--automine` is documented as anvil-like, auto-producing *on
+transactions*. So both idle at height 0 forever with nothing wrong, and neither
+logs anything while doing it. The C++ node does the opposite and produces empty
+blocks, which is why it is the only one of the three that ever looks alive on
+its own. Neither policy is a bug; the difference between them is worth knowing
+before reading a height.
+
+**The shipped genesis funds nobody who holds a key.** `configs/localnet`
+allocates the C-chain to one treasury address, which is a Safe. There is no key
+here for it, so out of the box neither Go nor Rust can execute a single
+transaction, and by the paragraph above that means neither can leave height 0.
+Feeding work to them takes a genesis that funds a key the caller holds — the
+first Anvil account is the one the C++ node's built-in genesis already funds and
+the one `conformance/dex` signs with, so funding it on the other two makes one
+key drive all three. Rust takes such a document with `--genesis`, and its parser
+reads a Go *network* genesis by descending into `cChainGenesis`, so the single
+file Go is given with `--genesis-file` serves both.
+
+**The C++ node cannot catch up, and that halts the cluster.** Leadership is
+`height % n == index` and a follower waits for that leader's block, deliberately
+never building a sibling. But certification needs live votes, and a proposer
+certifies on a quorum without waiting for the last follower — so a node that is
+slow once is left a height behind with no way back, because its peers have moved
+on and will not vote at an old height again. It stays behind until the rotation
+reaches its turn to lead, and then the whole cluster stops: observed at height
+533, with node 1 stuck on 532 and nodes 0, 2 and 3 waiting on node 1 to lead.
+The logs say `timeout — retrying` forever and the RPC keeps answering, so the
+cluster reads as up.
+
+Closing it needs a block a node can accept on a certificate it verifies rather
+than on votes it collects. `Node2Host::verifyCert` already exists, so the
+verification half is there; what is missing is a frame to carry a certificate
+(the link defines only `kTxMsgType` and `kBlockMsgType`) and a path into the VM
+that accepts a block without voting on it. That is a real addition, not a patch,
+and it is not attempted here.
