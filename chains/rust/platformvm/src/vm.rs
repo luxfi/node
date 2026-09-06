@@ -2203,6 +2203,7 @@ mod tests {
                     ungoverned.clone(),
                     Box::new(FlatFees::default()),
                     Box::new(Reachable(reachable)),
+                    Box::new(executor::NoImports),
                     genesis(bonded_at),
                 );
                 let answer = answer_to_the_reward(&vm, bonded_at);
@@ -2340,6 +2341,7 @@ mod tests {
             config(),
             Box::new(FlatFees::default()),
             Box::new(AlwaysUp),
+            Box::new(executor::NoImports),
             genesis(now),
         );
         assert_eq!(elsewhere.get(&built.id()).err(), Some(Error::NotFound));
