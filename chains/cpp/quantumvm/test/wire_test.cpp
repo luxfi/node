@@ -200,7 +200,7 @@ TEST(TheTransactionListMustPartitionTheBlob) {
     const auto msg = zap::Message::parse(view(wire));
     REQUIRE(msg.has_value());
     const zap::Object root = msg->root();
-    const zap::List lens = root.list(kBlkTxLens);
+    const zap::List lens = wire::Block(root).TxLens();
     REQUIRE_EQ(2, lens.size());
 
     const std::uint32_t first = lens.u32(0);
@@ -215,7 +215,7 @@ TEST(TheTransactionListMustPartitionTheBlob) {
     }
 
     // And an absurd count is refused BEFORE it is allocated for.
-    const std::size_t count_at = static_cast<std::size_t>(root.offset() + kBlkTxLens + 4);
+    const std::size_t count_at = static_cast<std::size_t>(root.offset() + kBlockTxLensOff + 4);
     Bytes tampered = wire;
     put_u32_le(tampered, count_at, static_cast<std::uint32_t>(wire.size()));
     REQUIRE_ERR(parse_block_bytes(view(tampered)), Err::TxCountAbsurd);
@@ -299,9 +299,9 @@ TEST(BaseTransactionIDNonEmpty) {
 // the empty parent. Every possible truncation named that one value, each under a
 // different id.
 TEST(WireRefusesAHeaderThatIsNotThere) {
-    zap::Builder b(zap::kHeaderSize + kBlkSize);
+    zap::Builder b(zap::kHeaderSize + kBlockSize);
     auto ob = b.start_object(8);  // eight bytes where the header needs a hundred
-    ob.set_u64(kBlkTime, 0);
+    ob.set_u64(kBlockTimestampOff, 0);
     ob.finish_as_root();
     const Bytes short_wire = b.finish();
 

@@ -21,6 +21,15 @@
 cmake_minimum_required(VERSION 3.20)
 project(lux_quantumvm LANGUAGES C CXX ASM)
 
+
+# The wire this chain speaks comes from the published SDK, not from here.
+include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
+
+# The wire's accessors: schema/wire.zap in, include/lux/quantumvm/gen out.
+zap_schema(wire-schema
+  ${CMAKE_CURRENT_SOURCE_DIR}/schema/wire.zap
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/lux/quantumvm/gen)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -153,7 +162,7 @@ add_library(lux_quantumvm STATIC
   src/vm.cpp
   src/service.cpp)
 target_include_directories(lux_quantumvm PUBLIC include "${CRYPTO_DIR}/ed25519/cpp")
-target_link_libraries(lux_quantumvm PUBLIC blst lux_qvm_mldsa)
+target_link_libraries(lux_quantumvm PUBLIC zap::zap blst lux_qvm_mldsa)
 target_compile_options(lux_quantumvm PRIVATE -Wall -Wextra)
 find_package(Threads REQUIRED)
 target_link_libraries(lux_quantumvm PUBLIC Threads::Threads)
