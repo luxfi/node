@@ -65,12 +65,12 @@ Result<AddressedCall> AddressedCall::build(std::span<const std::uint8_t> source_
 }
 
 Result<Envelope> parse_envelope(std::span<const std::uint8_t> b) {
-    const auto msg = wire::WrapDigest(b);
+    const auto msg = wire::WrapTag(b);
     if (!msg) return fail(Err::BufferTooSmall, "warp payload is not a zap message");
     switch (static_cast<PKind>(msg->Kind())) {
         case PKind::Hash: {
             Hash h;
-            h.hash = Id::from(msg->Hash());
+            h.hash = Id::from(wire::Digest(msg->object()).Hash());
             h.bytes.assign(b.begin(), b.end());
             return Envelope{std::move(h)};
         }
@@ -199,13 +199,13 @@ Result<Id> ConversionData::conversion_id() const {
 }
 
 Result<Message> parse_message(std::span<const std::uint8_t> b) {
-    const auto msg = wire::WrapConversion(b);
+    const auto msg = wire::WrapTag(b);
     if (!msg) return fail(Err::BufferTooSmall, "warp message payload is not a zap message");
     const auto root = msg->object();
     switch (static_cast<MKind>(msg->Kind())) {
         case MKind::ChainToL1Conversion: {
             ChainToL1Conversion m;
-            m.id = Id::from(msg->ID());
+            m.id = Id::from(wire::Conversion(root).ID());
             m.bytes.assign(b.begin(), b.end());
             return Message{std::move(m)};
         }
