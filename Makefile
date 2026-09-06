@@ -33,7 +33,7 @@ CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
 
 .PHONY: chains-build all luxd gpu conformance conformance-go conformance-rust conformance-cpp \
         chains chains-corpus bench precompiles precompiles-build precompiles-corpus \
-        dex dex-test luxd-go luxd-rust luxd-cpp clean help
+        dex dex-test luxd-go luxd-rust luxd-cpp wire clean help
 
 help:
 	@grep -hE '^[a-z][a-z-]*:.*## ' $(MAKEFILE_LIST) \
@@ -169,6 +169,28 @@ conformance-cpp:
 	else \
 		echo "skipped: $(CONSENSUS_CPP)/build is not configured"; \
 	fi
+
+# ---- make wire: the accessors, from the schemas ------------------------------
+#
+# A chain's wire is stated once, in chains/schema, and zapgen writes the
+# accessors for it. The emitted files are committed, so nothing here is needed
+# to build: this target is how they are REWRITTEN when a schema changes, and
+# how anyone checks that what is committed is what the schema says — run it and
+# `git diff` must be empty.
+#
+# The generator is named by the exact commit that wrote these files. A moving
+# reference would let the accessors change without the schema changing.
+
+ZAPGEN := github.com/zap-proto/go/cmd/zapgen@v1.8.3-0.20260906161840-5648be21f1ab
+
+wire: ## rewrite the chain accessors from chains/schema
+	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -runtime -out chains/rust/zap/src
+	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
+	  -out chains/rust/platformvm/src chains/schema/pchain.zap
+	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
+	  -out chains/rust/xvm/src        chains/schema/xchain.zap
+	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
+	  -out chains/rust/quantumvm/src  chains/schema/qchain.zap
 
 # ---- make chains: the cross-language chain differential ----------------------
 #
