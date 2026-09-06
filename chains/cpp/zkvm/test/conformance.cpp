@@ -152,13 +152,15 @@ conf::Row eval_block(const std::string& id, const std::string& wire) {
     const Id blk_id = blk->id();
     r.hash = conf::hex(blk_id.data(), blk_id.size());
 
-    // The syntactic pass is the chain's own — check's first half, everything it
-    // settles from the block in hand before it reads a key. Asking the chain
-    // where its boundary falls is the point: an evaluator that decided that for
-    // itself would be a second opinion about the port under test, and this row
-    // disagreed with Go for four vectors because both evaluators used to hold
-    // one. Go names the rules that land here by their sentinels; this names them
-    // by calling the method they live in.
+    // The syntactic pass is the chain's own. The question — what did verify
+    // decide before it read the store — is the corpus's, defined once in
+    // conformance/README.md under "`syntactic` where verify is one pass"; this
+    // port answers it by NAMING the boundary in its own source and calling it.
+    // An evaluator that decided where the boundary fell would be a second
+    // opinion about the port under test, and this row disagreed with Go for four
+    // vectors while both readers held one. Go cannot do the same, because its
+    // reference is a published module nothing here can add a method to, so it
+    // names the refusals ahead of the line instead.
     if (auto v = blk->syntactic_verify(); !v) {
         r.syntactic = conf::classify(v.error());
         r.exec = r.syntactic;
