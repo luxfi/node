@@ -3258,7 +3258,11 @@ mod tests {
         // its way in — carrying one is not a way to change a transaction's id
         // without changing what it does.
         assert_eq!(
-            back.syntactic_verify(asset),
+            back.syntactic_verify(Chain {
+                network_id: 96369,
+                blockchain_id: [0xBB; 32],
+                native_asset: asset,
+            }),
             Err(Error::MemoCarried(b"native-zap".len()))
         );
     }
@@ -3276,7 +3280,7 @@ mod tests {
         let staker_tx_id: Id = [7; 32];
         let tx = Tx::new(Unsigned::RewardValidator { staker_tx_id }, Vec::new());
 
-        assert_eq!(tx.syntactic_verify([9; 32]), Ok(()));
+        assert_eq!(tx.syntactic_verify(chain()), Ok(()));
 
         let Unsigned::RewardValidator { staker_tx_id: got } = &tx.unsigned else {
             panic!("the builder made something other than a reward transaction");
