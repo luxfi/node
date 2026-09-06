@@ -152,6 +152,15 @@ Result<void> SyntacticVerifier::create_asset_tx(txs::CreateAssetTx& tx) {
 
     for (const auto& state : tx.states) {
         if (auto r = state.verify(int(backend_.fxs.size())); !r) return r;
+        // An fx index in RANGE is not the same as an fx that is THERE. A slot the
+        // host left empty keeps its position — the index is the position, so a
+        // missing family cannot be compacted away without renumbering every asset
+        // that came before — but an asset must not be able to declare it. Go
+        // refuses the empty slot earlier, when the VM is initialized; this port
+        // takes its fx list through a constructor and has no error to return
+        // there, so the refusal lands here, at the one place an empty slot could
+        // otherwise be named.
+        if (backend_.fxs[state.fx_index].fx == nullptr) return std::unexpected(kErrUnknownFx);
     }
     for (std::size_t i = 0; i + 1 < tx.states.size(); ++i) {
         if (tx.states[i].compare(tx.states[i + 1]) >= 0)
