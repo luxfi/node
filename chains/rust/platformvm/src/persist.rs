@@ -33,7 +33,7 @@ use crate::state::{Conversion, Staker, State};
 use crate::store::{self, Store};
 use crate::txs::{Priority, Tx};
 use crate::validators::{Change, History, WeightDiff, Where};
-use lux_zap::zap;
+use crate::state_zap as w;
 
 /// A record's kind. One byte, first, so a scan by kind is a prefix scan.
 mod kind {
@@ -141,45 +141,42 @@ fn read_u64(raw: &[u8], what: &'static str) -> Result<u64, Error> {
 /// Go writes this same triple in `secp256k1fx.OutputOwners`; the layout here is
 /// this store's own, because what is written down is not what crosses the wire.
 fn owners_value(o: &Owners) -> Vec<u8> {
-    let mut b = zap::Builder::new_v2(64 + o.addrs.len() * 20);
-    let mut ob = b.start_object(24);
-    ob.set_u64(&mut b, 0, o.locktime);
-    ob.set_u32(&mut b, 8, o.threshold);
     let flat: Vec<u8> = o.addrs.iter().flat_map(|a| a.0).collect();
-    ob.set_bytes(&mut b, 16, &flat);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    w::new_owners(&w::OwnersInput {
+        locktime: o.locktime,
+        threshold: o.threshold,
+        addresses: &flat,
+    })
 }
 
 fn read_owners(raw: &[u8]) -> Result<Owners, Error> {
-    let m = zap::Message::parse(raw).map_err(|_| Error::Unreadable("owner"))?;
-    let o = m.root();
-    let flat = o.bytes(16);
+    let v = w::Owners::wrap(raw).map_err(|_| Error::Unreadable("owner"))?;
+    let flat = v.addresses();
     if flat.len() % 20 != 0 {
         return Err(Error::Unreadable("owner"));
     }
     Ok(Owners {
-        locktime: o.u64(0),
-        threshold: o.u32(8),
+        locktime: v.locktime(),
+        threshold: v.threshold(),
         addrs: flat.as_chunks::<20>().0.iter().copied().map(ShortId).collect(),
     })
 }
 
 fn staker_value(s: &Staker) -> Vec<u8> {
-    let mut b = zap::Builder::new_v2(192);
-    let mut ob = b.start_object(72);
-    ob.set_u64(&mut b, 0, s.weight);
-    ob.set_u64(&mut b, 8, s.start_time);
-    ob.set_u64(&mut b, 16, s.end_time);
-    ob.set_u64(&mut b, 24, s.potential_reward);
-    ob.set_u64(&mut b, 32, s.next_time);
-    ob.set_u8(&mut b, 40, s.priority as u8);
-    // A key is present or it is not; a validator registered before keys existed
-    // has none, and an all-zero key would be a key that verifies nothing.
-    ob.set_u8(&mut b, 41, s.public_key.is_some() as u8);
-    ob.set_bytes(&mut b, 48, s.public_key.as_ref().map(|k| &k[..]).unwrap_or(&[]));
-    ob.finish_as_root(&mut b);
-    b.finish()
+    w::new_staker(&w::StakerInput {
+        weight: s.weight,
+        start: s.start_time,
+        end: s.end_time,
+        reward: s.potential_reward,
+        next: s.next_time,
+        priority: s.priority as u8,
+        // A key is present or it is not; a validator registered before keys
+        // existed has none, and an all-zero key would be a key that verifies
+        // nothing.
+        has_key: s.public_key.is_some() as u8,
+        public_key: s.public_key.as_ref().map(|k| &k[..]).unwrap_or(&[]),
+        ..Default::default()
+    })
 }
 
 fn read_staker(k: &[u8], raw: &[u8]) -> Result<(bool, Staker), Error> {
@@ -187,14 +184,12 @@ fn read_staker(k: &[u8], raw: &[u8]) -> Result<(bool, Staker), Error> {
     if k.len() != 1 + 1 + 32 + 20 + 32 {
         return Err(Error::Unreadable("staker key"));
     }
-    let m = zap::Message::parse(raw).map_err(|_| Error::Unreadable("staker"))?;
-    let o = m.root();
-    let priority = priority_from(o.u8(40)).ok_or(Error::Unreadable("staker priority"))?;
-    let public_key = if o.u8(41) == 0 {
+    let v = w::Staker::wrap(raw).map_err(|_| Error::Unreadable("staker"))?;
+    let priority = priority_from(v.priority()).ok_or(Error::Unreadable("staker priority"))?;
+    let public_key = if v.has_key() == 0 {
         None
     } else {
-        let bytes = o.bytes(48);
-        Some(<[u8; 48]>::try_from(bytes).map_err(|_| Error::Unreadable("staker key"))?)
+        Some(<[u8; 48]>::try_from(v.public_key()).map_err(|_| Error::Unreadable("staker key"))?)
     };
     Ok((
         k[1] != 0,
@@ -203,11 +198,11 @@ fn read_staker(k: &[u8], raw: &[u8]) -> Result<(bool, Staker), Error> {
             node_id: NodeId(k[34..54].try_into().unwrap()),
             tx_id: k[54..86].try_into().unwrap(),
             public_key,
-            weight: o.u64(0),
-            start_time: o.u64(8),
-            end_time: o.u64(16),
-            potential_reward: o.u64(24),
-            next_time: o.u64(32),
+            weight: v.weight(),
+            start_time: v.start(),
+            end_time: v.end(),
+            potential_reward: v.reward(),
+            next_time: v.next(),
             priority,
         },
     ))
@@ -233,83 +228,74 @@ fn priority_from(v: u8) -> Option<Priority> {
 }
 
 fn l1_value(v: &L1Validator) -> Vec<u8> {
-    let mut b = zap::Builder::new_v2(384);
-    let mut ob = b.start_object(112);
-    ob.set_bytes_fixed(&mut b, 0, &v.chain_id);
-    ob.set_bytes_fixed(&mut b, 32, &v.node_id.0);
-    ob.set_u64(&mut b, 56, v.start_time);
-    ob.set_u64(&mut b, 64, v.weight);
-    ob.set_u64(&mut b, 72, v.min_nonce);
-    ob.set_u64(&mut b, 80, v.end_accumulated_fee);
-    ob.set_bytes(&mut b, 88, &v.public_key);
-    ob.set_bytes(&mut b, 96, &v.remaining_balance_owner);
-    ob.set_bytes(&mut b, 104, &v.deactivation_owner);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    w::new_l1_validator(&w::L1ValidatorInput {
+        chain: &v.chain_id,
+        node_id: &v.node_id.0,
+        start: v.start_time,
+        weight: v.weight,
+        min_nonce: v.min_nonce,
+        end_fee: v.end_accumulated_fee,
+        public_key: &v.public_key,
+        remaining_owner: &v.remaining_balance_owner,
+        disable_owner: &v.deactivation_owner,
+    })
 }
 
 fn read_l1(id: Id, raw: &[u8]) -> Result<L1Validator, Error> {
-    let m = zap::Message::parse(raw).map_err(|_| Error::Unreadable("l1 validator"))?;
-    let o = m.root();
+    let v = w::L1Validator::wrap(raw).map_err(|_| Error::Unreadable("l1 validator"))?;
     Ok(L1Validator {
         validation_id: id,
-        chain_id: crate::ids::id_at(o, 0),
-        node_id: NodeId(crate::ids::short_at(o, 32).0),
-        start_time: o.u64(56),
-        weight: o.u64(64),
-        min_nonce: o.u64(72),
-        end_accumulated_fee: o.u64(80),
-        public_key: o.bytes(88).to_vec(),
-        remaining_balance_owner: o.bytes(96).to_vec(),
-        deactivation_owner: o.bytes(104).to_vec(),
+        chain_id: *v.chain(),
+        node_id: NodeId(*v.node_id()),
+        start_time: v.start(),
+        weight: v.weight(),
+        min_nonce: v.min_nonce(),
+        end_accumulated_fee: v.end_fee(),
+        public_key: v.public_key().to_vec(),
+        remaining_balance_owner: v.remaining_owner().to_vec(),
+        deactivation_owner: v.disable_owner().to_vec(),
     })
 }
 
 fn conversion_value(c: &Conversion) -> Vec<u8> {
-    let mut b = zap::Builder::new_v2(160);
-    let mut ob = b.start_object(72);
-    ob.set_bytes_fixed(&mut b, 0, &c.conversion_id);
-    ob.set_bytes_fixed(&mut b, 32, &c.chain_id);
-    ob.set_bytes(&mut b, 64, &c.address);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    w::new_conversion(&w::ConversionInput {
+        conversion_id: &c.conversion_id,
+        chain: &c.chain_id,
+        address: &c.address,
+    })
 }
 
 fn read_conversion(raw: &[u8]) -> Result<Conversion, Error> {
-    let m = zap::Message::parse(raw).map_err(|_| Error::Unreadable("conversion"))?;
-    let o = m.root();
+    let v = w::Conversion::wrap(raw).map_err(|_| Error::Unreadable("conversion"))?;
     Ok(Conversion {
-        conversion_id: crate::ids::id_at(o, 0),
-        chain_id: crate::ids::id_at(o, 32),
-        address: o.bytes(64).to_vec(),
+        conversion_id: *v.conversion_id(),
+        chain_id: *v.chain(),
+        address: v.address().to_vec(),
     })
 }
 
 fn change_value(c: &Change) -> Vec<u8> {
-    let mut b = zap::Builder::new_v2(320);
-    let mut ob = b.start_object(64);
-    ob.set_u64(&mut b, 0, c.weight.amount);
-    ob.set_u8(&mut b, 8, c.weight.decrease as u8);
-    ob.set_u8(&mut b, 9, c.renamed as u8);
-    ob.set_bytes_fixed(&mut b, 16, &c.validation);
-    ob.set_bytes(&mut b, 48, &c.key_before);
-    ob.set_bytes(&mut b, 56, &c.key_after);
-    ob.finish_as_root(&mut b);
-    b.finish()
+    w::new_change(&w::ChangeInput {
+        amount: c.weight.amount,
+        decrease: c.weight.decrease as u8,
+        renamed: c.renamed as u8,
+        validation: &c.validation,
+        key_before: &c.key_before,
+        key_after: &c.key_after,
+    })
 }
 
 fn read_change(raw: &[u8]) -> Result<Change, Error> {
-    let m = zap::Message::parse(raw).map_err(|_| Error::Unreadable("set change"))?;
-    let o = m.root();
+    let v = w::Change::wrap(raw).map_err(|_| Error::Unreadable("set change"))?;
     Ok(Change {
         weight: WeightDiff {
-            amount: o.u64(0),
-            decrease: o.u8(8) != 0,
+            amount: v.amount(),
+            decrease: v.decrease() != 0,
         },
-        renamed: o.u8(9) != 0,
-        validation: crate::ids::id_at(o, 16),
-        key_before: o.bytes(48).to_vec(),
-        key_after: o.bytes(56).to_vec(),
+        renamed: v.renamed() != 0,
+        validation: *v.validation(),
+        key_before: v.key_before().to_vec(),
+        key_after: v.key_after().to_vec(),
     })
 }
 
