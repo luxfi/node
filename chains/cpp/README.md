@@ -7,8 +7,21 @@ Ported from `~/work/lux/node/vms/*` into `~/work/lux-cpp/node`'s VM seam
 | chain | here | state |
 | --- | --- | --- |
 | P — the platform chain | `platformvm/` | ported; see its `LLM.md` |
-| X — the UTXO DAG | — | not started |
-| Q, Z | — | not started |
+| X — the UTXO DAG | `xvm/` | ported; see its `LLM.md` |
+| Q — the quantum chain | `quantumvm/` | ported; see its `LLM.md` |
+| Z — the shielded chain | `zkvm/` | ported; see its `LLM.md` |
+| D — the DEX admission layer | `dexvm/` | ported; see its `LLM.md` |
+| F — confidential compute | `fhevm/` | ported; see its `LLM.md` |
+
+Every one of them answers the shared corpus. `test/conformance.cpp` in each
+chain reads `conformance/corpus/vectors.tsv` and prints that chain's verdicts;
+`make chains` compares them against Go's and against Rust's. They are built
+whether or not tests are, because a differential that quietly lost one of its
+voices would report agreement among whoever was left.
+
+`conformance/` holds what those six evaluators share — the corpus format, the
+verdict words and the error-word table. It lives once because a table that
+differed between two of them reported its own difference as a chain's.
 
 ## platformvm
 
