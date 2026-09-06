@@ -21,7 +21,8 @@
 
 use crate::ids::{hash256, Id};
 use crate::txs::{self, Tx};
-use crate::zap;
+use crate::pchain_zap as w;
+use lux_zap::zap;
 
 /// Which block this is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -45,19 +46,7 @@ impl Kind {
     }
 }
 
-const OFF_KIND: usize = 0;
-const OFF_PARENT: usize = 1;
-const OFF_HEIGHT: usize = 33;
-const OFF_TIME: usize = 41;
-const OFF_TX_LENGTHS: usize = 49;
-const OFF_TX_BLOB: usize = 57;
-const OFF_PROPOSAL_TX: usize = 65;
 
-const SIZE_DECIDED: usize = 49;
-const SIZE_STANDARD: usize = 65;
-const SIZE_PROPOSAL: usize = 73;
-
-const TX_LEN_STRIDE: usize = 4;
 
 /// Why a buffer is not a block.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -177,15 +166,21 @@ impl Block {
             return Err(Error::ExtraSpace);
         }
         let o = msg.root();
-        let raw = o.u8(OFF_KIND);
+        let raw = o.u8(w::DECIDED_KIND);
         let kind = Kind::from_u8(raw).ok_or(Error::UnknownKind(raw))?;
 
+        // Three shapes, one prefix: a decided block stops at its timestamp, a
+        // standard block adds the transactions it applies, and a proposal
+        // block adds one of its own after those. Reading the prefix through
+        // Decided whatever the kind is what makes the shorter shape a genuine
+        // prefix rather than a special case.
+        let head = w::Decided::new(o);
         let decision_txs = match kind {
-            Kind::Standard | Kind::Proposal => read_tx_list(o)?,
+            Kind::Standard | Kind::Proposal => read_tx_list(w::Standard::new(o))?,
             _ => Vec::new(),
         };
         let proposal_tx = if kind == Kind::Proposal {
-            let raw = o.bytes(OFF_PROPOSAL_TX);
+            let raw = w::Proposal::new(o).proposal_tx();
             if raw.is_empty() {
                 return Err(Error::NoProposalTx);
             }
@@ -196,9 +191,9 @@ impl Block {
 
         Ok(Block {
             kind,
-            parent: o.id(OFF_PARENT),
-            height: o.u64(OFF_HEIGHT),
-            timestamp: o.u64(OFF_TIME),
+            parent: *head.parent(),
+            height: head.height(),
+            timestamp: head.time(),
             decision_txs,
             proposal_tx,
             id: hash256(bytes),
@@ -254,48 +249,45 @@ fn build(
     decision_txs: &[Tx],
     proposal_tx: Option<&Tx>,
 ) -> Vec<u8> {
-    let mut b = zap::Builder::new(zap::HEADER_SIZE + 256);
+    // Writing the shorter shape is what makes the shorter bytes: a decided
+    // block has no transaction list to say anything about, so it does not
+    // reserve the two fields a standard block does.
+    let lengths: Vec<u32> = decision_txs.iter().map(|t| t.bytes().len() as u32).collect();
+    let blob: Vec<u8> = decision_txs.iter().flat_map(|t| t.bytes().to_vec()).collect();
 
-    let has_tx_list = matches!(kind, Kind::Standard | Kind::Proposal);
-    let mut blob: Vec<u8> = Vec::new();
-    let mut lengths = (0usize, 0usize);
-    if has_tx_list && !decision_txs.is_empty() {
-        let mut lb = b.start_list();
-        for tx in decision_txs {
-            b.list_u32(&mut lb, tx.bytes().len() as u32);
-            blob.extend_from_slice(tx.bytes());
-        }
-        lengths = (lb.offset(), lb.count());
+    match (kind, proposal_tx) {
+        (Kind::Proposal, Some(tx)) => w::new_proposal(&w::ProposalInput {
+            kind: kind as u8,
+            parent: &parent,
+            height,
+            time: timestamp,
+            tx_lengths: &lengths,
+            tx_blob: &blob,
+            proposal_tx: tx.bytes(),
+        }),
+        (Kind::Standard, _) | (Kind::Proposal, None) => w::new_standard(&w::StandardInput {
+            kind: kind as u8,
+            parent: &parent,
+            height,
+            time: timestamp,
+            tx_lengths: &lengths,
+            tx_blob: &blob,
+        }),
+        _ => w::new_decided(&w::DecidedInput {
+            kind: kind as u8,
+            parent: &parent,
+            height,
+            time: timestamp,
+        }),
     }
-
-    let size = match kind {
-        Kind::Standard => SIZE_STANDARD,
-        Kind::Proposal => SIZE_PROPOSAL,
-        _ => SIZE_DECIDED,
-    };
-
-    let ob = b.start_object(size);
-    b.set_u8(&ob, OFF_KIND, kind as u8);
-    b.set_bytes_fixed(&ob, OFF_PARENT, &parent);
-    b.set_u64(&ob, OFF_HEIGHT, height);
-    b.set_u64(&ob, OFF_TIME, timestamp);
-    if has_tx_list {
-        b.set_list(&ob, OFF_TX_LENGTHS, lengths.0, lengths.1);
-        b.set_bytes(&ob, OFF_TX_BLOB, &blob);
-    }
-    if let Some(tx) = proposal_tx {
-        b.set_bytes(&ob, OFF_PROPOSAL_TX, tx.bytes());
-    }
-    b.finish_as_root(&ob);
-    b.finish()
 }
 
-fn read_tx_list(o: zap::Object<'_>) -> Result<Vec<Tx>, Error> {
-    let lengths = o.list(OFF_TX_LENGTHS, TX_LEN_STRIDE);
+fn read_tx_list(v: w::Standard<'_>) -> Result<Vec<Tx>, Error> {
+    let lengths = v.tx_lengths();
     if lengths.is_empty() {
         return Ok(Vec::new());
     }
-    let blob = o.bytes(OFF_TX_BLOB);
+    let blob = v.tx_blob();
     let mut out = Vec::with_capacity(lengths.len());
     let mut cursor = 0usize;
     for i in 0..lengths.len() {
@@ -429,7 +421,7 @@ mod tests {
         let blk = Block::proposal([1; 32], 5, 1000, a_proposal());
         let mut bytes = blk.bytes().to_vec();
         let root = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
-        let at = root + OFF_PROPOSAL_TX;
+        let at = root + w::PROPOSAL_PROPOSAL_TX;
         bytes[at..at + 8].copy_from_slice(&[0u8; 8]);
         assert_eq!(Block::parse(&bytes), Err(Error::NoProposalTx));
     }
@@ -440,7 +432,7 @@ mod tests {
         let mut bytes = blk.bytes().to_vec();
         let root = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
         // The length list is one u32; enlarge it past the blob.
-        let at = root + OFF_TX_LENGTHS;
+        let at = root + w::STANDARD_TX_LENGTHS;
         let rel = i32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
         let list = (at as i64 + rel as i64) as usize;
         bytes[list..list + 4].copy_from_slice(&99_999u32.to_le_bytes());
@@ -469,7 +461,7 @@ mod tests {
             assert!(blk.proposal_tx().is_none());
             // The whole fixed section is the 49 bytes a decided block needs.
             let msg = zap::Message::parse(blk.bytes()).unwrap();
-            assert_eq!(msg.size(), zap::HEADER_SIZE + SIZE_DECIDED);
+            assert_eq!(msg.size(), zap::HEADER_SIZE + w::DECIDED_SIZE);
         }
     }
 

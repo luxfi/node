@@ -17,8 +17,10 @@
 //!
 //! ## Where things are
 //!
-//! - [`zap`] — the wire. A ZAP object is a fixed payload plus pointers, read
-//!   by indexing rather than parsing.
+//! - [`pchain_zap`] — the shapes, emitted by `zapgen` from
+//!   `chains/schema/pchain.zap`. A ZAP object is a fixed payload plus
+//!   pointers, read by indexing rather than parsing, through `lux_zap` — the
+//!   one runtime every chain here calls.
 //! - [`ids`], [`components`] — names, and the unspent outputs value lives in.
 //! - [`txs`] — what someone can ask the chain to do, and what the bytes of
 //!   each request are.
@@ -52,6 +54,7 @@ pub mod security;
 pub mod sign;
 pub mod signer;
 pub mod stakingparams;
+pub mod pchain_zap;
 pub mod persist;
 pub mod state;
 pub mod store;
@@ -61,7 +64,6 @@ pub mod validators;
 pub mod vm;
 pub mod warp;
 pub mod warpmsg;
-pub mod zap;
 
 pub use ids::Id;
 pub use vm::PlatformVm;
