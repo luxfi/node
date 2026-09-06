@@ -27,7 +27,7 @@
 #include "lux/quantumvm/error.hpp"
 #include "lux/quantumvm/id.hpp"
 #include "lux/quantumvm/transaction.hpp"
-#include "lux/quantumvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <cstdint>
 #include <memory>

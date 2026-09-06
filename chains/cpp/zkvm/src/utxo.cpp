@@ -3,7 +3,7 @@
 
 #include "lux/zkvm/utxo.hpp"
 
-#include "lux/zkvm/zap.hpp"
+#include <zap/zap.hpp>
 
 namespace lux::zkvm {
 namespace {

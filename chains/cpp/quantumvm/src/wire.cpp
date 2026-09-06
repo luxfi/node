@@ -12,7 +12,7 @@ namespace {
 std::int64_t write_u32_list(zap::Builder& b, const std::vector<std::uint32_t>& xs) {
     auto lb = b.start_list(4);
     for (std::uint32_t x : xs) lb.add_u32(x);
-    return lb.offset();
+    return lb.finish().first;
 }
 
 void append(Bytes& dst, ByteView src) { dst.insert(dst.end(), src.begin(), src.end()); }
