@@ -32,6 +32,9 @@
 #pragma once
 
 #include "lux/fhevm/id.hpp"
+// json.hpp for the two reads a member and an attestation are spelled in — the
+// Writer, the Value, and which acceptance set the caller is in.
+#include "lux/fhevm/json.hpp"
 
 #include <cstdint>
 #include <string>
@@ -157,6 +160,9 @@ struct DecryptRecord {
     std::string error;
     Id permit_id{};
     std::vector<Attestation> attestations;
+    // attestations_nil keeps a Go nil slice distinguishable from an empty one:
+    // Go writes null for the first and [] for the second.
+    bool attestations_nil = true;
 
     bool operator==(const DecryptRecord&) const = default;
 };
@@ -175,6 +181,9 @@ struct EpochRecord {
     bool public_key_nil = true;
     EpochStatus status = EpochStatus::Active;
     std::vector<Attestation> attestations;
+    // attestations_nil keeps a Go nil slice distinguishable from an empty one:
+    // Go writes null for the first and [] for the second.
+    bool attestations_nil = true;
     // committee_nil keeps a Go nil slice distinguishable from an empty one.
     bool committee_nil = true;
 
@@ -195,7 +204,7 @@ std::int64_t tally(const std::vector<Attestation>& as, const Id& value);
 // one vote — so a member can neither raise a value's count by repeating itself
 // nor hedge across two values — but a vote is not spent by being cast. It used
 // to be spent, and a committee that split its vote could then never converge.
-void vote(std::vector<Attestation>& as, const Account& member, const Id& value);
+void vote(std::vector<Attestation>& as, bool& is_nil, const Account& member, const Id& value);
 
 // committee_order is the canonical ordering of a committee: ascending node id.
 // A committee is hashed to decide an epoch advance, so two members proposing the
@@ -249,15 +258,17 @@ bool unmarshal(std::string_view json, EpochRecord* out, std::string* err);
 // A committee member is written and read on its own too: it travels inside an
 // epoch-advance payload as well as inside an epoch record, and the two must
 // agree byte for byte.
-namespace json {
-class Writer;
-struct Value;
-}  // namespace json
 void write_member(json::Writer& w, const CommitteeMember& m);
-bool read_member(const json::Value& v, CommitteeMember* out, std::string* err);
+// read_member reads one committee member. `unknown` is the caller's acceptance
+// set, and the two callers genuinely differ: an epoch PROPOSAL is a payload, so
+// a member carrying an undescribed field is refused there, while an epoch
+// RECORD is read by plain Unmarshal and one is ignored.
+bool read_member(const json::Value& v, CommitteeMember* out, std::string* err,
+                 json::Unknown unknown = json::Unknown::Refuse);
 // write_attestations / read_attestations are shared by the decrypt record and
 // the epoch record, which tally the same votes.
-void write_attestations(json::Writer& w, const std::vector<Attestation>& as);
-bool read_attestations(const json::Value* v, std::vector<Attestation>* out, std::string* err);
+void write_attestations(json::Writer& w, const std::vector<Attestation>& as, bool is_nil);
+bool read_attestations(const json::Value* v, std::vector<Attestation>* out, bool* is_nil,
+                       std::string* err, json::Unknown unknown = json::Unknown::Ignore);
 
 }  // namespace lux::fhevm

@@ -82,17 +82,19 @@ void tally_counts_distinct_members() {
     Id y{2};
 
     std::vector<Attestation> as;
-    vote(as, a, x);
-    vote(as, a, x);
+    bool as_nil = true;
+    vote(as, as_nil, a, x);
+    check(!as_nil, "casting a vote makes the list non-nil, as append does in Go");
+    vote(as, as_nil, a, x);
     check(as.size() == 1, "a repeated member holds one entry");
     check_eq(std::uint64_t(tally(as, x)), 1, "and counts once");
 
-    vote(as, b, x);
+    vote(as, as_nil, b, x);
     check_eq(std::uint64_t(tally(as, x)), 2, "two members are two votes");
     check_eq(std::uint64_t(tally(as, y)), 0, "votes for another value do not count");
 
     // Moving a vote moves it: the old value keeps nothing.
-    vote(as, a, y);
+    vote(as, as_nil, a, y);
     check(as.size() == 2, "still one entry per member");
     check_eq(std::uint64_t(tally(as, x)), 1, "the value it left keeps only the other member");
     check_eq(std::uint64_t(tally(as, y)), 1, "and the value it moved to gains one");
@@ -177,7 +179,7 @@ void records_survive_their_own_round_trip() {
     dr.result_handle = digest_of("result");
     dr.error = "none";
     dr.permit_id = pm.permit_id;
-    dr.attestations.push_back(Attestation{c.keys[0].addr, dr.result_handle});
+    vote(dr.attestations, dr.attestations_nil, c.keys[0].addr, dr.result_handle);
     DecryptRecord dr_back;
     check(unmarshal(marshal(dr), &dr_back, &err) && dr_back == dr,
           "a decrypt record round-trips, attestations included");
@@ -192,7 +194,7 @@ void records_survive_their_own_round_trip() {
     ep.public_key = network_public_key();
     ep.public_key_nil = false;
     ep.status = EpochStatus::Ended;
-    ep.attestations.push_back(Attestation{c.keys[1].addr, digest_of("next")});
+    vote(ep.attestations, ep.attestations_nil, c.keys[1].addr, digest_of("next"));
     EpochRecord ep_back;
     bool ok = unmarshal(marshal(ep), &ep_back, &err);
     check(ok && ep_back.epoch == ep.epoch && ep_back.end_time == ep.end_time &&
@@ -230,17 +232,40 @@ void omitempty_is_gos_omitempty() {
           "an epoch that has not ended omits its end time");
 }
 
-void a_record_the_schema_does_not_describe_is_refused() {
-    // The same rule payloads follow: what a node reads back is what it wrote,
-    // and a row carrying anything else is refused rather than partly loaded.
+void a_record_is_read_the_way_unmarshal_reads_one() {
+    // NOT the rule payloads follow, and that is the point. The reference reads
+    // a payload through a Decoder with DisallowUnknownFields and a RECORD
+    // through plain json.Unmarshal, which are two different acceptance sets.
+    // Both were asked of Go directly:
+    //
+    //   record with an unknown member   Unmarshal: no error   (ignored)
+    //   record with a trailing '}'      Unmarshal: error      (any tail is)
+    //
+    // Reading rows under the payload rules SKIPPED a row the reference loads,
+    // and two nodes that load different rows answer the same query differently.
     CiphertextRecord back;
     std::string err;
     std::string doc = marshal(CiphertextRecord{});
     doc.insert(doc.size() - 1, ",\"body\":\"AAAA\"");
-    check(!unmarshal(doc, &back, &err), "a record with a member the schema lacks is refused");
-    check(!unmarshal("{not json", &back, &err), "and so is one that does not parse");
+    check(unmarshal(doc, &back, &err), "a member the schema lacks is ignored, as Unmarshal does");
+
+    check(!unmarshal("{not json", &back, &err), "one that does not parse is still refused");
     check(!unmarshal(marshal(CiphertextRecord{}) + "{}", &back, &err),
-          "and one with a second document after it");
+          "and so is one with a second document after it");
+    // Unmarshal scans the WHOLE document, so a stray bracket is trailing
+    // content here even though Decoder.More says it is not in a payload.
+    check(!unmarshal(marshal(CiphertextRecord{}) + "}", &back, &err),
+          "including a stray closing brace, which a payload is allowed");
+    check(unmarshal(marshal(CiphertextRecord{}) + "  \n", &back, &err),
+          "but whitespace is not content");
+
+    // The same split reaches a nested committee member: refused inside an
+    // epoch PROPOSAL, ignored inside an epoch RECORD.
+    EpochRecord ep;
+    std::string erow =
+        R"({"epoch":1,"start_time":0,"committee":[{"node_id":"","public_key":null,"weight":1,"index":0,"rank":9}],"threshold":1,"public_key":null,"status":0,"attestations":null})";
+    check(unmarshal(erow, &ep, &err) && ep.committee.size() == 1,
+          "an unknown member inside a committee member is ignored in a record");
 }
 
 void the_persisted_schema_is_pinned() {
@@ -322,7 +347,7 @@ void the_persisted_schema_is_pinned() {
     // storing that?
     check_eq(sizeof(CiphertextRecord), std::size_t(184), "CiphertextRecord holds no more than it declares");
     check_eq(sizeof(PermitRecord), std::size_t(216), "PermitRecord holds no more than it declares");
-    check_eq(sizeof(DecryptRecord), std::size_t(312), "DecryptRecord holds no more than it declares");
+    check_eq(sizeof(DecryptRecord), std::size_t(320), "DecryptRecord holds no more than it declares");
     check_eq(sizeof(EpochRecord), std::size_t(120), "EpochRecord holds no more than it declares");
 }
 
@@ -337,7 +362,7 @@ int main() {
     canonical_order();
     records_survive_their_own_round_trip();
     omitempty_is_gos_omitempty();
-    a_record_the_schema_does_not_describe_is_refused();
+    a_record_is_read_the_way_unmarshal_reads_one();
     the_persisted_schema_is_pinned();
     return report("records");
 }

@@ -6,24 +6,30 @@
 //
 // A transaction's payload is an opaque byte string the chain keeps verbatim,
 // and whether it DECODES decides whether the transaction is valid. So the two
-// implementations have to accept and refuse exactly the same bytes:
+// implementations have to accept and refuse exactly the same bytes. The rules
+// that hold everywhere:
 //
-//   - a member the schema does not describe is REFUSED, not ignored
-//     (Go: Decoder.DisallowUnknownFields). A megabyte of ciphertext body in a
-//     "body" member used to decode fine and come back out of the block store.
-//   - a second value after the first is refused (Go: dec.More()).
-//   - a field name matches EXACTLY, or failing that case-insensitively — the
-//     rule Go's struct decoder uses, so `{"DIGEST":...}` is the same member
-//     here as it is there.
-//   - `null` for any member leaves it at its zero value and is not an error.
+//   - a field name matches EXACTLY, or failing that by unicode.SimpleFold —
+//     which is NOT ASCII case folding, and the difference is two runes that
+//     matter here (see fold_name in json.cpp). With two keys naming one field
+//     the LATER one wins, whichever way each of them matched.
+//   - `null` for a member leaves it at its zero value, and `null` for the whole
+//     STRUCT leaves every member at its zero value. Neither is an error.
 //   - a number decoded into an integer must BE an integer: Go hands the literal
 //     to strconv, so "1.0" and "1e2" are refused where "100" is taken.
+//   - a Go [N]byte discards elements past its length WITHOUT type-checking them
+//     and leaves the ones it never reached at zero.
 //   - a duplicate member takes its last value, silently, as Go does.
 //
-// And the writer matches Marshal, down to the parts that look like decoration:
+// And two rules that DIFFER between the chain's two readers — unknown members
+// and trailing bytes. See the block above `more` below; getting them the same
+// way round for both is the bug this file was written to stop repeating.
+//
+// The writer matches Marshal, down to the parts that look like decoration:
 // <, > and & are escaped, map keys come out sorted, a [N]byte writes as an
-// array of numbers while a []byte writes as base64. Those are what the Go chain
-// PERSISTS, so a record written any other way is a different database.
+// array of numbers while a []byte writes as base64, and every byte that starts
+// no well-formed rune becomes \ufffd. Those are what the Go chain PERSISTS, so
+// a record written any other way is a different database.
 
 #pragma once
 
@@ -52,6 +58,21 @@ struct Value {
     std::vector<Value> array;
     std::vector<std::pair<std::string, Value>> members;
 
+    Value() = default;
+    Value(const Value&) = default;
+    Value(Value&&) noexcept = default;
+    Value& operator=(const Value&) = default;
+    Value& operator=(Value&&) noexcept = default;
+
+    // A DESTRUCTOR, because the compiler's would recurse. A vector of Values
+    // destroys each of them and each destroys its own vector, so a tree the
+    // parser built without touching the stack came apart down it — measured, at
+    // Go's own depth cap, in a Debug build under a 2 MB stack, which is an
+    // ordinary size for a thread that is not main. A destructor cannot refuse
+    // anything either; it can only abort. So this one drains iteratively and
+    // the depth a payload reaches costs heap and nothing else.
+    ~Value();
+
     bool null() const { return kind == Kind::Null; }
 };
 
@@ -60,17 +81,45 @@ struct Value {
 // with a reason.
 bool parse(std::string_view in, Value* out, std::size_t* consumed, std::string* err);
 
-// more reports whether another value begins after the first — Go's dec.More(),
-// which is what makes trailing content a refusal rather than a shrug.
+// THE CHAIN READS JSON TWO WAYS, and they are not the same acceptance set.
+// Go's own code makes the distinction and this file keeps it:
+//
+//   PAYLOADS  (transaction.go decode)  json.Decoder + DisallowUnknownFields
+//             an unknown member is REFUSED; a stray ']' or '}' after the value
+//             is NOT trailing content, because Decoder.More asks whether
+//             another ELEMENT follows.
+//
+//   RECORDS and GENESIS  (vm.go loadInto, Initialize)  plain json.Unmarshal
+//             an unknown member is IGNORED; ANY non-space byte after the value
+//             is an error, closing brackets included.
+//
+// Reading records under the payload rules refused a genesis Go starts on, and
+// reading payloads under the record rules refused a transaction Go admits. Both
+// were measured against the reference.
+
+// more is Go's Decoder.More: is there another ELEMENT after this value? It
+// answers false at end of input and at ']' or '}'. For payloads.
 bool more(std::string_view in, std::size_t consumed);
+
+// trailing is what json.Unmarshal refuses: any non-space byte after the value,
+// whatever it is. For records and genesis.
+bool trailing(std::string_view in, std::size_t consumed);
+
+// Unknown says what a member the schema does not describe means.
+enum class Unknown {
+    Refuse,  // DisallowUnknownFields — payloads
+    Ignore,  // plain Unmarshal — records and genesis
+};
 
 // Reader is one JSON object being read as a struct: it holds the schema, so an
 // unknown member is caught once here rather than at each field.
 class Reader {
 public:
-    // ok is false when the value is not an object, or carries a member the
-    // schema does not describe. err says which.
-    Reader(const Value& v, std::initializer_list<std::string_view> schema, std::string* err);
+    // ok is false when the value is not a JSON object — except null, which Go
+    // takes as the zero struct — or, under Unknown::Refuse, when it carries a
+    // member the schema does not describe. err says which.
+    Reader(const Value& v, std::initializer_list<std::string_view> schema, std::string* err,
+           Unknown unknown = Unknown::Refuse);
 
     bool ok() const { return ok_; }
     // find returns the LAST member with this name — exact match preferred, then

@@ -284,6 +284,17 @@ std::string base64(ByteView b) {
 }
 
 bool base64_decode(std::string_view s, Bytes* out) {
+    // Go's encoding/base64 IGNORES \r and \n anywhere in the input, so a
+    // base64 member carrying "AA\nAA" decodes there and used to be refused
+    // here. The newlines come out of the JSON string's own escapes, so this is
+    // reachable from a payload rather than from a wrapped file.
+    std::string packed;
+    packed.reserve(s.size());
+    for (char c : s) {
+        if (c == '\r' || c == '\n') continue;
+        packed.push_back(c);
+    }
+    s = packed;
     if (s.size() % 4 != 0) return false;
     Bytes res;
     res.reserve(s.size() / 4 * 3);
