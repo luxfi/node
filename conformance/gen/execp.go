@@ -41,7 +41,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	pvalidators "github.com/luxfi/node/vms/platformvm/validators"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
