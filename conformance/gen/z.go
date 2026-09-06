@@ -11,14 +11,11 @@
 // block as their parent, so a refusal is the rule that refused rather than a
 // parent nobody has.
 //
-// The two layers are split where Verify splits them:
-//
-//	syntactic — what the block and its transactions say about themselves: the
-//	            height/parent pairing, the transaction cap, the timestamp
-//	            bound, a nullifier spent twice inside one block, and each
-//	            transaction's own shape and expiry
-//	exec      — what needed the chain: the proofs, the spent set, the parent
-//	            and the tip it must sit on, and the state root it commits to
+// Verify is ONE pass, so the two layers are read out of where its refusal came
+// from rather than out of a second entry point this chain does not have. What
+// the two layers MEAN is the corpus's question, not this file's: it is defined
+// once in conformance/README.md under "`syntactic` where verify is one pass",
+// and zBlockAlone below is this reference's answer to it.
 //
 // The Z-chain's block id is a hash over CONTENT, not over the wire, and it
 // opens with sha256(ChainID ‖ NetworkID) — which is not on the wire either. So
@@ -398,38 +395,50 @@ func zGenesisID() (ids.ID, error) {
 	return vm.LastAccepted(context.Background())
 }
 
-// zBlockAlone says whether a refusal was reached without the chain.
+// zBlockAlone says whether Verify reached its refusal BEFORE it read the chain.
 //
-// The words are the reference's own sentinels, quoted from
-// `chains/zkvm/block.go` and `chains/zkvm/transaction.go`. Everything not named
-// here needed the spent set, the proof verifier, the parent or the tip.
+// The question is the corpus's and is defined once, in conformance/README.md
+// under "`syntactic` where verify is one pass". This is only where the Go
+// REFERENCE puts that boundary, and it is a walk of Block.Verify and VM.admit
+// in the order they run.
+//
+// The first line on this chain that asks the store anything is
+// verifyTransaction's nullifierDB.Spent. Every refusal Verify can reach before
+// it is named below; the spent set, the proofs, the parent, the tip and the
+// state root are all past it, and none of them is here.
+//
+// Named by the reference's own sentinels, quoted because `luxfi/chains/zkvm`
+// keeps every one of them unexported and there is no symbol to name instead.
+// Matched WHOLE, so a longer message that merely contains one of these — the
+// proof verifier raises "transaction missing proof" too, from the far side of
+// the boundary — is not read as it.
 func zBlockAlone(msg string) bool {
 	for _, w := range []string{
-		"invalid block",                     // height 0 with a parent, or over the tx cap
-		"block timestamp too far in future", //
-		"nullifier spent twice in one block",
-		"invalid transaction type",
+		// Block.Verify, ahead of every read:
+		"invalid block",                      // height 0 carrying a parent
+		"block timestamp too far in future",  // the node's own clock
+		"nullifier spent twice in one block", // the block's transactions against each other
+		// VM.admit, per transaction, ahead of verifyTransaction:
+		"invalid transaction type", // Transaction.ValidateBasic — the shape
 		"transaction has no inputs",
 		"transaction has no outputs",
 		"transaction missing proof",
 		"transaction names no expiry height",
-		"transaction has expired",
 		"invalid transfer transaction",
 		"invalid shield transaction",
 		"invalid unshield transaction",
+		"transaction has expired", // and the expiry, against the block's own height
 	} {
-		if strings.Contains(msg, w) {
-			// "invalid block height" and "invalid block timestamp" both start
-			// with "invalid block", and both needed the parent to notice.
-			if w == "invalid block" &&
-				(strings.Contains(msg, "invalid block height") ||
-					strings.Contains(msg, "invalid block timestamp")) {
-				continue
-			}
+		if msg == w {
 			return true
 		}
 	}
-	return false
+	// The cap is the one refusal above the line that says more than its
+	// sentinel: "invalid block: 3 transactions over the 2 cap". Matched as a
+	// PREFIX and never as a substring, because "invalid block height" and
+	// "invalid block timestamp" open with that same sentinel and both needed
+	// the parent to notice.
+	return strings.HasPrefix(msg, "invalid block: ")
 }
 
 // zKindName says what came off the wire.

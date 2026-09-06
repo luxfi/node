@@ -300,6 +300,12 @@ fn eval_block(id: &str, wire: &str) -> Row {
     // because the two questions are not the same one: a block of another chain
     // is well formed, and a chain that only asked the second question would
     // accept every peer's chain as its own.
+    //
+    // These two are also exactly what `verify` settles before it looks for the
+    // parent, which is this chain's first read of the store — so they are the
+    // whole of `syntactic` here. That question is the corpus's, not this file's,
+    // and it is defined once in conformance/README.md under "`syntactic` where
+    // verify is one pass".
     match block
         .on_chain(chain(), NETWORK)
         .and_then(|()| block.well_formed())

@@ -22,16 +22,13 @@
 // parent therefore gets PAST the parent lookup, and the exec field carries a
 // verdict the chain computed rather than a constant standing in for one.
 //
-// The two layers are split where the reference splits them:
-//
-//	syntactic — the chain binding and the block's own well-formedness, which
-//	            Verify decides before it needs a chain at all
-//	exec      — the parent, the height and time it must follow, and the
-//	            signatures over its transactions
-//
-// Nothing about that split is invented here: it is Verify's own order, and the
-// Rust evaluator answers the same two layers from `on_chain`/`well_formed` and
-// then `follows`/`stamps_verify`.
+// Verify is ONE pass, so the two layers are read out of where its refusal came
+// from rather than out of a second entry point this chain does not have. What
+// the two layers MEAN is the corpus's question, not this file's: it is defined
+// once in conformance/README.md under "`syntactic` where verify is one pass",
+// and qBlockAlone below is this reference's answer to it. The Rust evaluator
+// answers the same question by calling `on_chain` and then `well_formed`, which
+// is where its own verify stops before looking for a parent.
 package main
 
 import (
@@ -352,14 +349,23 @@ func startQvm() (*quantumvm.VM, error) {
 	return vm, nil
 }
 
-// qBlockAlone says whether a refusal was reached before the chain was consulted.
+// qBlockAlone says whether Verify reached its refusal BEFORE it read the chain.
 //
-// The words are the reference's own sentinels, quoted from
-// `chains/quantumvm/block.go`. A refusal at this layer is the block's own
-// business — the chain it names, and whether it is a block at all — and every
-// other refusal needed a parent to reach. Splitting them is what lets a port
-// that checks the chain binding be compared against one that does not, instead
-// of both reporting "refused" and looking alike.
+// The question is the corpus's and is defined once, in conformance/README.md
+// under "`syntactic` where verify is one pass". This is only where the Go
+// REFERENCE puts that boundary, and it is a walk of Block.Verify in the order
+// it runs.
+//
+// The first line on this chain that asks the store anything is Verify's
+// vm.blockAt(parentID). The four refusals it can reach before that are named
+// below. Everything else — the height it must follow, the time against the
+// parent, the clock, the quantum stamps — is past it, and on this chain the
+// clock is past it, which is the whole reason the boundary is a place in the
+// code rather than a kind of rule.
+//
+// Named by the reference's own sentinels, quoted because `luxfi/chains/quantumvm`
+// keeps every one of them unexported. Matched as substrings, not whole, because
+// this reference wraps each one in the detail that made it fire.
 func qBlockAlone(msg string, height uint64) bool {
 	switch {
 	case strings.Contains(msg, "belongs to another chain"):
