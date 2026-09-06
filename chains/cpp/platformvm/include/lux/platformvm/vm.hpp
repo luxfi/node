@@ -105,6 +105,13 @@ class PlatformVM final : public lux::node::VM {
     lux::node::Id last_accepted() const override;
     std::uint64_t last_accepted_height() const override { return last_accepted_height_; }
 
+    // The highest height this node itself decided. This chain advances only
+    // through accept() — there is no import path that moves the tip without a
+    // certificate under it — so the decided frontier IS the accepted tip. A
+    // chain that grows one must stop answering with this and start answering
+    // with what it certified.
+    std::uint64_t frontier() const override { return last_accepted_height(); }
+
     // A transaction waiting to go into a block. What is refused HERE is what a
     // node will not spend anything on: a duplicate, an oversized one, one that
     // would overfill the pool, one that rivals something already waiting, and
