@@ -32,24 +32,10 @@ use std::collections::BTreeMap;
 use crate::gas::Wide;
 use crate::ids::{hash256, Id, NodeId};
 use crate::signer::{self, PUBLIC_KEY_LEN, SIGNATURE_LEN};
-use lux_zap::zap;
+use crate::warp_zap as w;
 
-// UnsignedMessage: NetworkID u32 @0, SourceChainID 32B @4, Payload bytes @36.
-const UM_OFF_NETWORK_ID: usize = 0;
-const UM_OFF_SOURCE: usize = 4;
-const UM_OFF_PAYLOAD: usize = 36;
-const UM_SIZE: usize = 44;
-
-// Message: unsigned bytes @0, signature bytes @8.
-const MSG_OFF_UNSIGNED: usize = 0;
-const MSG_OFF_SIGNATURE: usize = 8;
-const MSG_SIZE: usize = 16;
-
-// BitSetSignature: kind u8 @0, Signature 96B @1, Signers bytes @97.
-const OFF_KIND: usize = 0;
-const BSS_OFF_SIGNATURE: usize = 1;
-const BSS_OFF_SIGNERS: usize = 97;
-const BSS_SIZE: usize = 105;
+// The offsets are in `chains/schema/warp.zap`, and `warp_zap` is what came
+// out of it.
 
 /// The wire kinds a signature can be. Only the first is a scheme this port
 /// implements; the rest are named so a refusal can say which one it met.
@@ -123,28 +109,25 @@ pub struct Unsigned {
 
 impl Unsigned {
     pub fn build(network_id: u32, source_chain_id: Id, payload: &[u8]) -> Unsigned {
-        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + UM_SIZE + payload.len() + 16);
-        let mut ob = b.start_object(UM_SIZE);
-        ob.set_u32(&mut b, UM_OFF_NETWORK_ID, network_id);
-        ob.set_bytes_fixed(&mut b, UM_OFF_SOURCE, &source_chain_id);
-        ob.set_bytes(&mut b, UM_OFF_PAYLOAD, payload);
-        ob.finish_as_root(&mut b);
         Unsigned {
             network_id,
             source_chain_id,
             payload: payload.to_vec(),
-            bytes: b.finish(),
+            bytes: w::new_unsigned(&w::UnsignedInput {
+                network_id,
+                source: &source_chain_id,
+                payload,
+            }),
         }
     }
 
     pub fn parse(raw: &[u8]) -> Result<Unsigned, Error> {
-        let msg = zap::Message::parse(raw)
+        let v = w::Unsigned::wrap(raw)
             .map_err(|_| Error::Malformed("the unsigned message is not a zap message"))?;
-        let root = msg.root();
         Ok(Unsigned {
-            network_id: root.u32(UM_OFF_NETWORK_ID),
-            source_chain_id: crate::ids::id_at(root, UM_OFF_SOURCE),
-            payload: root.bytes(UM_OFF_PAYLOAD).to_vec(),
+            network_id: v.network_id(),
+            source_chain_id: *v.source(),
+            payload: v.payload().to_vec(),
             bytes: raw.to_vec(),
         })
     }
@@ -186,58 +169,38 @@ pub struct Message {
 
 impl Message {
     pub fn build(unsigned: &Unsigned, signature: &BitSet) -> Message {
-        let mut sb = zap::Builder::new_v2(zap::HEADER_SIZE + BSS_SIZE + signature.signers.len() + 16);
-        let mut sob = sb.start_object(BSS_SIZE);
-        sob.set_u8(&mut sb, OFF_KIND, KIND_BITSET);
-        sob.set_bytes_fixed(&mut sb, BSS_OFF_SIGNATURE, &signature.signature);
-        sob.set_bytes(&mut sb, BSS_OFF_SIGNERS, &signature.signers);
-        sob.finish_as_root(&mut sb);
-        let sig_bytes = sb.finish();
-
-        let mut b = zap::Builder::new_v2(
-            zap::HEADER_SIZE + MSG_SIZE + unsigned.bytes.len() + sig_bytes.len() + 32,
-        );
-        let mut ob = b.start_object(MSG_SIZE);
-        ob.set_bytes(&mut b, MSG_OFF_UNSIGNED, &unsigned.bytes);
-        ob.set_bytes(&mut b, MSG_OFF_SIGNATURE, &sig_bytes);
-        ob.finish_as_root(&mut b);
-
+        let sig_bytes = w::new_bit_set_signature(&w::BitSetSignatureInput {
+            kind: KIND_BITSET,
+            signature: &signature.signature,
+            signers: &signature.signers,
+        });
         Message {
             unsigned: unsigned.clone(),
             signature: signature.clone(),
-            bytes: b.finish(),
+            bytes: w::new_message(&w::MessageInput {
+                unsigned: &unsigned.bytes,
+                signature: &sig_bytes,
+            }),
         }
     }
 
     pub fn parse(raw: &[u8]) -> Result<Message, Error> {
-        let msg = zap::Message::parse(raw)
+        let v = w::Message::wrap(raw)
             .map_err(|_| Error::Malformed("the message is not a zap message"))?;
-        let root = msg.root();
+        let unsigned = Unsigned::parse(v.unsigned())?;
 
-        let unsigned = Unsigned::parse(root.bytes(MSG_OFF_UNSIGNED))?;
-
-        let sig_bytes = root.bytes(MSG_OFF_SIGNATURE);
-        let sig_msg = zap::Message::parse(sig_bytes)
+        let sig = w::BitSetSignature::wrap(v.signature())
             .map_err(|_| Error::Malformed("the signature is not a zap message"))?;
-        let sig_root = sig_msg.root();
-
-        let kind = sig_root.u8(OFF_KIND);
+        let kind = sig.kind();
         if kind != KIND_BITSET {
             return Err(Error::UnknownSignature(kind));
         }
 
-        let raw_sig = sig_root.bytes_fixed(BSS_OFF_SIGNATURE, SIGNATURE_LEN);
-        if raw_sig.len() != SIGNATURE_LEN {
-            return Err(Error::Malformed("the signature field is short"));
-        }
-        let mut signature = [0u8; SIGNATURE_LEN];
-        signature.copy_from_slice(raw_sig);
-
         Ok(Message {
             unsigned,
             signature: BitSet {
-                signers: sig_root.bytes(BSS_OFF_SIGNERS).to_vec(),
-                signature,
+                signers: sig.signers().to_vec(),
+                signature: *sig.signature(),
             },
             bytes: raw.to_vec(),
         })
@@ -495,20 +458,16 @@ mod tests {
         // The alternative — parsing an unknown kind to an empty BitSet — is a
         // signature that verifies against nothing.
         let unsigned = Unsigned::build(1, [1; 32], b"x");
-        let mut sb = zap::Builder::new_v2(zap::HEADER_SIZE + BSS_SIZE + 16);
-        let mut sob = sb.start_object(BSS_SIZE);
-        sob.set_u8(&mut sb, OFF_KIND, 0x01); // Corona
-        sob.set_bytes_fixed(&mut sb, BSS_OFF_SIGNATURE, &[9u8; SIGNATURE_LEN]);
-        sob.finish_as_root(&mut sb);
-        let sig_bytes = sb.finish();
-
-        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + MSG_SIZE + unsigned.bytes.len() + sig_bytes.len() + 32);
-        let mut ob = b.start_object(MSG_SIZE);
-        ob.set_bytes(&mut b, MSG_OFF_UNSIGNED, &unsigned.bytes);
-        ob.set_bytes(&mut b, MSG_OFF_SIGNATURE, &sig_bytes);
-        ob.finish_as_root(&mut b);
-
-        assert_eq!(Message::parse(&b.finish()), Err(Error::UnknownSignature(1)));
+        let sig_bytes = w::new_bit_set_signature(&w::BitSetSignatureInput {
+            kind: 0x01, // Corona
+            signature: &[9u8; SIGNATURE_LEN],
+            signers: &[],
+        });
+        let raw = w::new_message(&w::MessageInput {
+            unsigned: &unsigned.bytes,
+            signature: &sig_bytes,
+        });
+        assert_eq!(Message::parse(&raw), Err(Error::UnknownSignature(1)));
     }
 
     #[test]

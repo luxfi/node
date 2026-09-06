@@ -307,35 +307,74 @@ The wire-format suite that used to sit in `chains/cpp/platformvm/test/` moved
 to the SDK with the implementation, case for case. A wire rule belongs in one
 place, and its test belongs beside it.
 
-### Why Rust cannot just do the same thing
+### The Rust chains: generated, from `chains/schema`
 
-`chains/rust/{xvm,quantumvm,platformvm}/src/zap.rs` are the same drift on the
-Rust side — 896 lines twice over, byte-identical to each other, and 770 lines
-in the third that differs from them in 1,261 lines. The fix is the same shape
-but it is blocked on something first, and it is worth knowing why before
-anyone tries.
+Rust had the same drift — `chains/rust/{xvm,quantumvm,zkvm}/src/zap.rs` at 896
+lines each, platformvm's at 770 and fhevm's at 598, five copies of one reader.
+They are gone, and so is every hand-written accessor over them.
 
-There are two different wire formats published under the name ZAP:
+**Every byte a Rust chain writes now comes out of a schema.** The schemas are
+in `chains/schema`, one per wire, and `zapgen` writes the accessors:
 
-- The one this repo speaks. A 16-byte header (`"ZAP\0"`, version, flags, root,
-  size) and relative pointers into an 8-byte-aligned data segment. That is
-  `zap-proto/go`, `zap-proto/js`, the capability tokens in `zap-proto/spec`,
-  every chain here, and now `zap-proto/cpp`.
-- A Cap'n Proto derivative — segment tables, far pointers, the kj runtime,
-  renamed. That is `zap-proto/rust` (the `zap` crate on crates.io),
-  `zap-proto/c` and `zap-proto/cpp-core`.
+| schema | what it states | emitted to |
+|---|---|---|
+| `pchain.zap` | the P-chain's transactions, blocks, credentials, and the fx primitives it spends | `platformvm/src/pchain_zap.rs` |
+| `warp.zap` | the warp envelope, its payloads, and the conversion preimage | `platformvm/src/warp_zap.rs` |
+| `state.zap` | what the P-chain writes to its own disk | `platformvm/src/state_zap.rs` |
+| `xchain.zap` | the X-chain's transactions, blocks and fx primitives | `xvm/src/xchain_zap.rs` |
+| `qchain.zap` | the Q-chain's blocks and transactions | `quantumvm/src/qchain_zap.rs` |
+| `zchain.zap` | the Z-chain's shielded transactions and blocks | `zkvm/src/zchain_zap.rs` |
+| `fchain.zap` | the F-chain's transactions and blocks | `fhevm/src/fchain_zap.rs` |
 
-So `zap.rs` was not written out of carelessness. The crate published under the
-name does not implement this wire, and the C++ SDK repo shipped no source at
-all. Adopting a published artifact was not available to either language, which
-is the actual root of the drift.
+One runtime under all of them: `chains/rust/zap`, also emitted, which every
+chain takes as a path dependency. `make wire` rewrites all of it and is a
+fixed point — run it and `git diff` is empty, which is how you check that what
+is committed is what the schemas say. The generator is pinned by exact commit,
+because a moving reference would let the accessors change without the schema
+changing.
 
-C++ is closed: the SDK now exists. Rust needs the same thing published for the
-Rust half of format one before `chains/rust/**` can drop its copies. Whoever
-does it should port `include/zap/zap.hpp` and the two test suites in
-`zap-proto/cpp` rather than start from the Go source again — the C++ port
-already found the rules a fresh reading misses, and the KATs are bytes the Go
-runtime printed.
+Two things that are NOT in a schema and should not be: the two bytes an fx
+primitive travels behind (the family and the shape), and the framing of a run
+of variable-width items as a length list beside one blob. Both are the chain's
+rules about a sequence of messages, not the layout of one.
+
+**Three traps, all of them found by measurement.**
+
+Every hand copy defaulted `Builder::new` to wire version 2. The emitted
+runtime keeps `new` at version 1 and names `new_v2` for the other, so a swap
+that looks purely mechanical moves byte 4 of every message. The P-chain's warp
+differential caught it against bytes Go printed. Every P-chain writer says
+`new_v2`.
+
+`chains/rust/platformvm/src/state_zap.rs`'s `Staker` reserves sixteen bytes
+past its last field. The record has always reserved them; the schema names
+them `Reserved` for the same reason `Out` and `In` name their `Pad` — a schema
+that stopped at the last real field would write a shorter record than every
+record already on disk.
+
+`TransferOutput` and `Utxo` are declared in BOTH `xchain.zap` and
+`pchain.zap`, because the X-chain makes them and the P-chain spends them.
+That is two statements of one format, and it is not what anyone wants. Lifting
+them into a shared `fx.zap` needs an import across schemas that `zapgen` does
+not have — `xchain.zap`'s own envelope holds `list<ptr<TransferableOut>>`, so
+the reference cannot be moved away from it. Until the import exists,
+`chains/rust/zap/tests/one_format.rs` is the join: it reads both schema files
+and fails the day the two declarations drift.
+
+**What proves the bytes did not move**: `tests/corpus_bytes.rs`, in each of the
+five chains. Each reads every vector of its own chain out of the shared corpus
+— which the Go chain generated — re-encodes it through the BUILDER, and
+compares to Go's hex. `Tx::parse` keeps the bytes it was handed, so asking a
+parsed value for its bytes would prove nothing; these go back through the
+writer. 68 P transactions and 4 P blocks, 19 X transactions and 6 X blocks, 12
+Q blocks, 22 Z blocks, 43 F transactions — every vector the corpus expects to
+parse. The rest are the deliberately malformed ones and are still refused.
+
+A ZAP message carries its own length, so some vectors hold bytes past the end
+of the message and still parse (`…_TRAIL_1`, `…_TRAIL_4`, `X_EDGE_CORRUPT_TAIL`).
+What a writer writes is the message: where a vector IS the message the two are
+the same bytes, and where it is not, the message is its prefix. A rewrite
+longer than its vector, or one disagreeing anywhere inside the message, fails.
 
 ## The chain differential (`make chains`)
 
