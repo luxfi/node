@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+
+[package]
+name = "lux-dexvm"
+version = "0.1.0"
+edition = "2021"
+description = "The Lux D-Chain in Rust: what an asset IS, what a market IS, and under which posture value may activate"
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node2"
+publish = false
+
+[dependencies]
+# An AssetID and a MarketID are a length-prefixed SHA-256 fold, and those bytes
+# are consensus: two implementations folding differently have forked the value
+# plane without ever disagreeing about a transaction. One hash, the same one Go
+# and C++ fold with.
+sha2 = "0.10"
+
+# There is no other dependency, and in particular no `lux-node`. The seam is
+# what a chain implements to be run by the node, and Go's `chains/dexvm` has no
+# block, no transaction and no VM — it is a registry the C-Chain settlement
+# precompile calls in process. A block layer written here would be an opinion
+# about a wire no chain writes and nothing could check it: the corpus has no D
+# block vector, because there is no D block. See LLM.md.

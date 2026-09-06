@@ -4,7 +4,7 @@ The post-quantum lane of the parallel-witness finality model (LP-020). Ported
 from the Go reference at `~/work/lux/chains/quantumvm` (6,470 lines), against
 the object-safe VM seam of `~/work/lux-rs/node` (`src/vm.rs`).
 
-6,875 lines across 14 files. 118 tests, all green. No stubs.
+6,875 lines across 14 files. 126 tests, all green. No stubs.
 
 ## Build
 
@@ -43,10 +43,21 @@ holds this crate to them and fails on any divergence.
 for the envelope around an unsigned one, as constants, asserted byte-for-byte.
 
 `src/bin/conformance.rs` is the Q evaluator for the cross-language harness
-(`conformance/corpus/vectors.tsv` → `R` rows). Against the Go reference over the
-four Q vectors in that corpus — a canonical block, this chain's GENESIS block,
-one padded and one carrying a preimage where an envelope belongs — Go and Rust
-agree on every compared field, block ids included.
+(`conformance/corpus/vectors.tsv` → `R` rows), and `tests/corpus.rs` runs it
+from `cargo test` and holds it to Go's recorded answers on all 81 Q vectors.
+Go, Rust and C++ agree on every compared field, block ids included.
+
+`exec` is the one field this evaluator declines: acceptance is decided against a
+parent and a clock, and it stands up no chain to hold either. It prints
+`SKIPPED`, the runner excludes it, and Go and C++ still answer it — so the field
+is compared, just not by this voice.
+
+**The chain identity is corpus contract.** A Q block names its chain and its
+network on the wire and the chain refuses one whose pair is not the one the node
+serves, so the two numbers decide the verdict of every well-formed vector. They
+are declared once in the evaluator and feed both the `Q_CHAIN_IDENTITY` row and
+the binding check, so an evaluator pointed at the wrong chain says so in one row
+rather than answering "belongs to another chain" eighty times.
 
 ## Layout
 

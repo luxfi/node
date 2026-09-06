@@ -14,7 +14,7 @@
 //! row is a claim and this program has no claim to make about a P-chain
 //! transaction.
 
-use lux_quantumvm::ids;
+use lux_quantumvm::ids::{self, Id};
 use lux_quantumvm::wire;
 
 const NONE: &str = "-";
@@ -25,8 +25,29 @@ const NONE: &str = "-";
 const OK: &str = "OK";
 const MALFORMED: &str = "MALFORMED";
 const SYNTACTIC: &str = "SYNTACTIC";
+const OVERFLOW: &str = "OVERFLOW";
+const LEDGER: &str = "LEDGER";
+const AUTH: &str = "AUTH";
+const WARP: &str = "WARP";
+const UNSUPPORTED: &str = "UNSUPPORTED";
 const SKIPPED: &str = "SKIPPED";
 const INTERNAL: &str = "INTERNAL";
+
+// The chain this evaluator answers for.
+//
+// Q carries the pair ON the wire — a block names its chain and its network —
+// and it also REFUSES a block whose pair is not the one the node serves. So the
+// node's own identity decides the verdict of every well-formed vector, and it
+// is corpus contract rather than this file's private choice. It is asked back
+// as Q_CHAIN_IDENTITY, and the same two constants feed both that row and the
+// binding check below: an evaluator pointed at the wrong chain says so in one
+// row instead of reporting "belongs to another chain" eighty times.
+const CHAIN_BYTE: u8 = 30;
+const NETWORK: u32 = 1;
+
+fn chain() -> Id {
+    ids::filled(CHAIN_BYTE)
+}
 
 fn main() {
     let path = std::env::args().nth(1).unwrap_or_else(|| {
@@ -95,12 +116,83 @@ fn evaluate(id: &str, op: &str, wire: &str) -> Row {
     match op {
         "tx" => eval_tx(id, wire),
         "block" => eval_block(id, wire),
+        "identity" => eval_identity(id),
         _ => {
             let mut r = row(id);
             r.parse = INTERNAL.into();
             r.note = format!("unknown op {op}");
             r
         }
+    }
+}
+
+/// The identity THIS evaluator derives ids under, never the one the corpus
+/// asked about. A row that echoed the question would agree with an evaluator
+/// built for another chain, which is the disagreement it exists to surface.
+fn eval_identity(id: &str) -> Row {
+    let mut r = row(id);
+    r.parse = "ok".into();
+    r.kind = "ChainIdentity".into();
+    r.hash = ids::hex(&chain());
+    r.syntactic = format!("network={NETWORK}");
+    r.exec = OK.into();
+    r.note = "the identity this evaluator derives ids under".into();
+    r
+}
+
+/// The same word table the Go and C++ evaluators carry, in the same order, so
+/// that one refusal means one class in all three. The order is load-bearing: a
+/// refusal that names a kind the chain does not run usually lists the ones it
+/// does, and those lists carry ledger words.
+fn classify(s: &str) -> &'static str {
+    let s = s.to_lowercase();
+    let has = |w: &str| s.contains(w);
+    if has("overflow") || has("underflow") {
+        OVERFLOW
+    } else if has("wrong transaction type")
+        || has("wrong tx type")
+        || has("not permitted")
+        || has("not held")
+        || has("unsupported")
+        || has("forbidden")
+        || has("unknown")
+        || has("parameter set")
+    {
+        UNSUPPORTED
+    } else if has("credential")
+        || has("signature")
+        || has("unauthorized")
+        || has("not authorised")
+        || has("not authorized")
+        || has("proof verification failed")
+        || has("does not match auth")
+    {
+        AUTH
+    } else if has("warp") {
+        WARP
+    } else if has("utxo")
+        || has("funds")
+        || has("insufficient")
+        || has("burn")
+        || has("consumed")
+        || has("produced")
+        || has("flow")
+        || has("fee")
+        || has("not found")
+        || has("doesn't exist")
+        || has("does not exist")
+        || has("isn't a current")
+        || has("not validator")
+        || has("no such")
+        || has("could not load")
+        || has("shared memory")
+        || has("state root")
+        || has("precedes its parent")
+        || has("skew allowance")
+    {
+        LEDGER
+    } else {
+        SYNTACTIC
     }
 }
 
@@ -154,8 +246,9 @@ fn eval_tx(id: &str, wire: &str) -> Row {
     match tx.verify() {
         Ok(()) => r.syntactic = OK.into(),
         Err(e) => {
-            r.syntactic = SYNTACTIC.into();
-            r.note = e.to_string();
+            let why = e.to_string();
+            r.syntactic = classify(&why).into();
+            r.note = why;
         }
     }
 
@@ -197,14 +290,25 @@ fn eval_block(id: &str, wire: &str) -> Row {
     r.kind = "QuantumBlock".into();
     r.hash = ids::hex(&block.id());
 
-    // What can be decided from the block alone: it is not genesis, it carries
-    // work, and it fits on the wire. Whether it sits correctly on its parent
-    // needs a chain, which the corpus does not stand up.
-    match block.well_formed() {
+    // What can be decided from the block alone, in the order the chain's own
+    // `verify` decides it: the block belongs to this chain and this network,
+    // then it is not genesis, carries work, and fits on the wire. Whether it
+    // sits correctly on its parent needs a chain, which the corpus does not
+    // stand up.
+    //
+    // The binding comes first because it comes first in `Qvm::verify`, and
+    // because the two questions are not the same one: a block of another chain
+    // is well formed, and a chain that only asked the second question would
+    // accept every peer's chain as its own.
+    match block
+        .on_chain(chain(), NETWORK)
+        .and_then(|()| block.well_formed())
+    {
         Ok(()) => r.syntactic = OK.into(),
         Err(e) => {
-            r.syntactic = SYNTACTIC.into();
-            r.note = e.to_string();
+            let why = e.to_string();
+            r.syntactic = classify(&why).into();
+            r.note = why;
         }
     }
 
