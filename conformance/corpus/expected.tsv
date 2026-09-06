@@ -51,6 +51,122 @@ R	X_EDGE_WRONG_NETWORK	ok	Base	90baf8d22feb413213660109bae58fb977905171cbe1cd337
 R	X_EDGE_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: zap: buffer too small
 R	X_EDGE_EMPTY	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse signed tx: wire: envelope shorter than 2-byte discriminator prefix
 R	X_EDGE_CORRUPT_TAIL	ok	Base	f8a5de6070a3cfdd0b59cd2c474b67e423a5f1f7d041e1d838eaeb145157d4e8	OK	LEDGER	not found
+R	Q_CHAIN_IDENTITY	ok	ChainIdentity	1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e	network=1	OK	the identity this evaluator derives ids under
+R	Z_CHAIN_IDENTITY	ok	ChainIdentity	2828282828282828282828282828282828282828282828282828282828282828	network=1	OK	the identity this evaluator derives ids under
+R	F_CHAIN_IDENTITY	ok	ChainIdentity	3232323232323232323232323232323232323232323232323232323232323232	network=1	OK	the identity this evaluator derives ids under
+R	Q_GENESIS	ok	QuantumBlock	ab8796ffa73ee71477f8f9ae85ccf47e77c81e2cfc2fdacc8ef1e9801fccab52	SYNTACTIC	SYNTACTIC	quantumvm: invalid block height
+R	Q_BLOCK	ok	QuantumBlock	8bc66e885245d2b3e491108d5bf76bc9c5c36f03f9a786085940065e99f3f4ba	OK	AUTH	quantumvm: block transaction signatures failed verification: signature 0 verification failed: quantum stamp expired
+R	Q_BLOCK_ORPHAN	ok	QuantumBlock	67ec8725bbfa89ca0cec45bb26c2bc2d21546ee70f5aab3b908286d087e2a049	OK	LEDGER	quantumvm: parent block not found: SeLqn3UAUoRymWmwW7axrzJK7JfNaBR2cHCryA6cFscgkny8
+R	Q_BLOCK_EMPTY	ok	QuantumBlock	9b0048620c661a27f467f548eeaab07a6b84f02be878ae55c1a3e85d8152b8f6	SYNTACTIC	SYNTACTIC	quantumvm: block carries no transactions
+R	Q_BLOCK_DUPLICATE_TX	ok	QuantumBlock	a1d5a296294b4e3e141cd03cda9ab8bb7a08af6dfded389fbc0580ecee388c1b	OK	AUTH	quantumvm: block transaction signatures failed verification: signature 1 verification failed: quantum stamp expired
+R	Q_BLOCK_ALGORITHM_UNSET	ok	QuantumBlock	f9d894cf3ab4dea9c240f1e48bf6b62486dcaea606443145dd24157fe1f38cf8	OK	UNSUPPORTED	quantumvm: block transaction signatures failed verification: signature 0 verification failed: unsupported quantum algorithm
+R	Q_BLOCK_FOREIGN_CHAIN	ok	QuantumBlock	a4c2fb668f8117e0479728832fc890db741340d20c45c1038526f5407795b402	SYNTACTIC	SYNTACTIC	quantumvm: block belongs to another chain: chain Ehxc55KX4rpMLnv28ZX9ridFgNSWXjZqrrfLi1rzqx3rEDWjm network 1, this node serves chain EGKGEJH3uP1vN2QFC4QZtrdxNG8
+R	Q_BLOCK_FOREIGN_NETWORK	ok	QuantumBlock	3cd9701024e94b996d1db75f0fd61af3ec599e4297bbff558c4a2556214d52e2	SYNTACTIC	SYNTACTIC	quantumvm: block belongs to another chain: chain EGKGEJH3uP1vN2QFC4QZtrdxNG8rAAPRqFP8r3huEhBHJLBmB network 2, this node serves chain EGKGEJH3uP1vN2QFC4QZtrdxNG8
+R	Q_BLOCK_HEIGHT_SKIP	ok	QuantumBlock	d4c44e84bb0d1f430288dd1c832e522f4ed6faf800d82d448ec4aae6325ac968	OK	SYNTACTIC	quantumvm: invalid block height: 5 does not follow parent 0
+R	Q_BLOCK_TIME_BEFORE_PARENT	ok	QuantumBlock	6678942e31c9331a8e8eec6a5c71238768da9a9362e5043792a414f79ccc1121	OK	LEDGER	quantumvm: block timestamp precedes its parent: -1 precedes 0
+R	Q_BLOCK_TIME_AHEAD	ok	QuantumBlock	50a7e2504322de5b715a3787777113998190518844a08e5d58729f6165b96449	OK	LEDGER	quantumvm: block timestamp is beyond the skew allowance: 1099511627776 exceeds now+1m0s
+R	Q_BLOCK_PADDED	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block wire is not the canonical encoding of its content
+R	Q_BLOCK_TRAILING_BYTES	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_CORRUPT_TAIL	ok	QuantumBlock	477626957bdf11631f37570ac7ec406f4baecc9948b33abdd0b1c0f83b686389	OK	AUTH	quantumvm: block transaction signatures failed verification: signature 0 verification failed: quantum stamp expired
+R	Q_BLOCK_BODY_IN_BLOB	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: transaction 0: zap: buffer too small
+R	Q_BLOCK_TXLEN_MISMATCH	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: transaction lengths do not partition the transaction blob: entry 0 claims 147 of 131 remaining
+R	Q_BLOCK_TXCOUNT_ABSURD	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block declares more transactions than its bytes can hold: 4096 in 131 bytes
+R	Q_BLOCK_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_EMPTY_WIRE	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_ONE_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Z_GENESIS	ok	Empty	9c227870184f9269e1c720c2df8256dea664debf56f8eec76acab03c4bea755d	OK	LEDGER	invalid state root
+R	Z_BLOCK_EMPTY	ok	Empty	bc4f760d9248b429374b18ecfa7f8f9a4934dd1a23c2ab0c0122a389bcd58718	OK	OK	verified against the seeded chain
+R	Z_BLOCK_TRANSFER	ok	Transfer	d58aa660bf553e75ac5c743b56b1635debf7d3e722a1e452a0efab54c3dcf397	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_SHIELD	ok	Shield	18e4dc0d73c58ed4b803133aea37ebcc0c638cc0c170452389cb4fc3c0187fdc	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_UNSHIELD	ok	Unshield	532093100c5caadf53165db318ea6d9acde498384c5bf8a6e2ebdf62c23dc729	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_MINT	ok	Mint	d2cd39439e506a95de61e61d88ede2230e38290de056f566f8aba67b2f3e2c17	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_BURN	ok	Burn	277f8e33cf947d4e32170e4333ca6b0021e0a23023a234291d75caf334cbe1dd	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_ORPHAN	ok	Empty	cb2f838e377668daee9cb84cb7a0f4ef41d3a9f1d37275379044671ffae0ff7e	OK	LEDGER	chain: no such block: SeLqn3UAUoRymWmwW7axrzJK7JfNaBR2cHCryA6cFscgkny8
+R	Z_BLOCK_HEIGHT_SKIP	ok	Empty	f53e2c4544509825db2e4710773731ba4a8d87111f7a0958543d6dcb94417bbd	OK	SYNTACTIC	invalid block height
+R	Z_BLOCK_TIME_BEFORE_PARENT	ok	Empty	a3de5df2bc9474f418b93c6f43839f5304addd51063cf6949861bdaa4536c947	OK	SYNTACTIC	invalid block timestamp
+R	Z_BLOCK_TIME_AHEAD	ok	Empty	8b002e1c893c12dc8804c8e4ca491b33c4f90bceb94cf73011e37a66179785db	SYNTACTIC	SYNTACTIC	block timestamp too far in future
+R	Z_BLOCK_GENESIS_WITH_PARENT	ok	Empty	fc58e7739e53e9ef39224b40a93cef89d6dfedc017de556b8ceaba15b3467071	SYNTACTIC	SYNTACTIC	invalid block
+R	Z_BLOCK_WRONG_STATE_ROOT	ok	Empty	036e4a9f89b7a66c634c18e25bf3c6c6e9516c4e77283dc15c413468084ae2f8	OK	LEDGER	invalid state root
+R	Z_BLOCK_DUPLICATE_NULLIFIER	ok	Transferx2	77d4887fa3f673b7f0af1b43813e46a925b25140de847c9da297421cd5a5a52a	SYNTACTIC	SYNTACTIC	nullifier spent twice in one block
+R	Z_TX_NO_INPUTS	ok	Transfer	2a62baa48f23c8f9f7ee78dfe3739fdfa3fa08086e2a4b99feb6c5e0c595327f	SYNTACTIC	SYNTACTIC	transaction has no inputs
+R	Z_TX_NO_OUTPUTS	ok	Transfer	e208ab992faf5582e06136a33f7df2656ae91b4bf92e42107c83adb0ecd0953a	SYNTACTIC	SYNTACTIC	transaction has no outputs
+R	Z_TX_NO_PROOF	ok	Transfer	69b9063764f2bb8f937919acfdc723524ae8516d2bdb5525b98348eb0e84b367	SYNTACTIC	SYNTACTIC	transaction missing proof
+R	Z_TX_NO_EXPIRY	ok	Transfer	1cd330a2604414b9a7303ce68469b39723e918f368656bf3ca0b2771407919d2	SYNTACTIC	SYNTACTIC	transaction names no expiry height
+R	Z_TX_UNKNOWN_TYPE	ok	unknown	319e35211830075cf8e0b2d551c5d64e0cb04ba7b1ec7dc0a7dd91546f23709d	SYNTACTIC	SYNTACTIC	invalid transaction type
+R	Z_TX_EXPIRED	ok	Transfer	f7e30b941e40f3e64590915e066d8c4a3752ec814380053353778e0eef358fa5	SYNTACTIC	SYNTACTIC	transaction has expired
+R	Z_TX_CLASSICAL_PROOF	ok	Transfer	acd6017eab1337f83a1df85e914896ba419d6295d4919053406c566fee23bb59	OK	UNSUPPORTED	proof verification failed: zkvm: classical proof system forbidden on strict-PQ chain — only STARK/FRI accepted
+R	Z_TX_TAMPERED_PROOF	ok	Transfer	f761bad3b5433f0af94f905427afbcc822a03c90826214aa9c0d9f7c7700c95b	OK	AUTH	proof verification failed: zkvm: STARK shielded proof verification failed: starkfri: proof verification failed
+R	Z_BLOCK_TRAILING_BYTES	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_EMPTY_WIRE	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_ONE_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_GENESIS	ok	Genesis	67de330c19ffcc6b46eaf213575b4bbc28536518580a491af3eaf3227625723c	OK	OK	the chain the F vectors are judged on
+R	F_REGISTER	ok	RegisterCiphertext	b35098252eaee2c232aa238da59b9686d49610df88a3413c0d4e96586319a2bf	OK	OK	admitted by the funded chain
+R	F_GRANT	ok	GrantPermit	1a18d1d9ad23143350c06c3f907d29effc102735ec17c481b52ffde4a22035c1	OK	LEDGER	fhevm: ciphertext not found
+R	F_REVOKE	ok	RevokePermit	c52b646aadea448cd086f1f51edba7028a522edfc6a8e9d162c4db6b4c6faa46	OK	LEDGER	fhevm: permit not found
+R	F_REQUEST	ok	RequestDecrypt	25b958e21980fe8a3dc8bdcfc9ea50d74888ee76a456320566f30c53b14b6084	OK	LEDGER	fhevm: ciphertext not found
+R	F_FULFILL	ok	FulfillDecrypt	f5b2cb6f4a04c7c6eec56c7fe796e7a672b30399e875a871f2c03c0d26186610	OK	LEDGER	fhevm: decrypt request not found
+R	F_ADVANCE	ok	AdvanceEpoch	6abee74e628cd77503c6c0428034f8403af213c7fa95cb128566e459821572a7	OK	OK	admitted by the funded chain
+R	F_TX_UNKNOWN_TYPE	ok	unknown	42cb27e496317b90d78b835de98a324032182f0898230b39212c2fe69f7572c9	SYNTACTIC	SYNTACTIC	fhevm: invalid transaction type
+R	F_TX_ZERO_NONCE	ok	RegisterCiphertext	b502836878306ae78d04ec570400f29c229e4c6338360fe7727c1a6b27a5b0b2	SYNTACTIC	SYNTACTIC	fhevm: fhevm: bad or replayed nonce: nonce starts at 1
+R	F_TX_SUBJECT_MISMATCH	ok	RegisterCiphertext	0f31d32af2767a8ab89e3cfc8b03786f54587b70febcb130d6e567b097e3c108	SYNTACTIC	SYNTACTIC	fhevm: fhevm: subject does not match its payload: handle does not match digest+scheme
+R	F_TX_EMPTY_DIGEST	ok	RegisterCiphertext	1337c3b59a0fa61720db5af6d73157c0b85678f5bd5c2ff404a0cf8ca10be780	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: register: empty ciphertext digest
+R	F_TX_ZERO_SIZE	ok	RegisterCiphertext	b38f2437501a2a9854306a08d02a4a39008dea39107e81f420378e725c462378	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: register: ciphertext size 0
+R	F_TX_NEGATIVE_LEVEL	ok	RegisterCiphertext	3da50c6f8f7014110835b3516b2406004ec1c28ae386660c007d660bafccb99e	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: register: negative level
+R	F_TX_UNKNOWN_SCHEME	ok	RegisterCiphertext	691ddf126be0d012226ad74c48bca172645feaa12ac526b2d2b43f16ee97fdf4	UNSUPPORTED	UNSUPPORTED	fhevm gas: fhevm: unsupported FHE scheme: "no-such-scheme"
+R	F_TX_GRANT_NO_OPS	ok	GrantPermit	544c2c9f9f0518596413e699a5c8e9e6379ba917e71eec8b86e9c31be13523c5	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: grant confers no operation
+R	F_TX_GRANT_UNKNOWN_OPS	ok	GrantPermit	e1a8f69ce50c1e8e33cdc342b81b96e79a22eb400a9348c0895d332eab54b426	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: unknown permit operation bits
+R	F_TX_REQUEST_NO_PERMIT	ok	RequestDecrypt	049c5a0dd38d8baca9e59d02ee8ef23837ca7adec5a06be60ea799f1de20a025	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: request names no permit
+R	F_TX_FULFILL_NO_RESULT	ok	FulfillDecrypt	9e6b41ab16101a7826593310faae2f71d54dec7236301712cce6e5ada850bce8	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: fulfill carries no result handle
+R	F_TX_EMPTY_COMMITTEE	ok	AdvanceEpoch	501df8e57e7171fec2818a68f4a231bba6e37c62122a0788a900b51159a53824	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid committee: empty committee
+R	F_TX_UNKNOWN_PAYLOAD_FIELD	ok	RegisterCiphertext	8aef9f3c6e90f2a14adc6ef4e30aff56b384582292674a4e09f2557d115a7bad	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: register: json: cannot unmarshal string into Go struct field RegisterPayload.digest of type [32]uint8
+R	F_TX_TAMPERED_CIPHERTEXT	ok	RegisterCiphertext	494c85b8e0a29311d539fd08957846462d49f4fbd74e95b32bcb7ac678a84cbd	SYNTACTIC	SYNTACTIC	fhevm: fhevm: subject does not match its payload: handle does not match digest+scheme
+R	F_TX_UNSIGNED	ok	RegisterCiphertext	ae4a543f05b662d8316557bcd3dcd8fe604fabb84939e7767c472d8941f7a650	OK	AUTH	fhevm: transaction missing payer auth/signature
+R	F_TX_TAMPERED_SIGNATURE	ok	RegisterCiphertext	62b5967c7b8fba382f5b3c16c300fccbcc847b5491660dbe3a42ce47f791a6b5	OK	AUTH	fhevm: invalid payer signature
+R	F_TX_PAYER_MISMATCH	ok	RegisterCiphertext	09ff7e924d32cf81f09478df34da0315398b75579eec760bd6f6bab5724da578	OK	AUTH	fhevm: payer does not match auth public key
+R	F_TX_SHORT_AUTH	ok	RegisterCiphertext	bf1ecefa8fc7edf07a8f61832efc5a66c10c2eaefdac04f3c3e6572238436434	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: auth is 8 bytes, not 1952
+R	F_TX_SHORT_SIGNATURE	ok	RegisterCiphertext	ba966788040bade6ef4fbf6866af996bf623f1cdc11cf3646ea5af4e65791fa8	SYNTACTIC	SYNTACTIC	fhevm: fhevm: invalid transaction payload: signature is 8 bytes, not 3309
+R	F_TX_FOREIGN_CHAIN	ok	RegisterCiphertext	dffc8cb9b96637cc91be451293bacac250f9a129ce997e809c5b436a933f12b5	OK	AUTH	fhevm: invalid payer signature
+R	F_TX_NONCE_GAP	ok	RegisterCiphertext	8f71353fea42a2bdae3280f34985f9e22edfb51568302ffa70e44d15f13c42e5	OK	SYNTACTIC	fhevm: bad or replayed nonce
+R	F_WIRE_TRAILING_BYTES	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_WIRE_TRUNCATED	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_WIRE_EMPTY	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: short buffer
+R	F_WIRE_ONE_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: short buffer
+R	D_ASSETID_EVM_NATIVE	ok	AssetID	17b2d55c97c7250dd0e0d88fe65b359ef205ad648760140e5841202c042147ff	OK	OK	derived
+R	D_ASSETID_ERC20	ok	AssetID	f78ce2d083844fa6fdf4125d95989b9ed38efa32086c81d25e7ce3c37b673941	OK	OK	derived
+R	D_ASSETID_UTXO	ok	AssetID	6e9415353d6dce8cf0b9dda1c0d2ab35ee28c4325f379232aa45923b90b522ea	OK	OK	derived
+R	D_ASSETID_OTHER_NETWORK	ok	AssetID	95cadbb01f8d7a0959197a273db205231456a2053dba7ba97cd0c8baa8ab6f64	OK	OK	derived
+R	D_ASSETID_OTHER_CHAIN	ok	AssetID	722a92b62fcedff518241db0271d096e5c91d21e4ec9d1a59fd04eb314f35087	OK	OK	derived
+R	D_ASSETID_EMPTY_CHAIN	ok	AssetID	-	OK	SYNTACTIC	registry: asset source chain id is empty
+R	D_ASSETID_INVALID_KIND	ok	AssetID	-	UNSUPPORTED	UNSUPPORTED	registry: unknown asset kind "INVALID" (only EVM_NATIVE, ERC20, UTXO)
+R	D_ASSETID_SHORT_ERC20_REF	ok	AssetID	-	OK	SYNTACTIC	registry: canonical reference does not match asset kind: ERC20 token address must be 20 bytes, got 19
+R	D_ASSETID_NATIVE_WITH_REF	ok	AssetID	-	OK	SYNTACTIC	registry: canonical reference does not match asset kind: EVM_NATIVE reference must be the native marker (address zero)
+R	D_ASSETID_ZERO_ERC20_REF	ok	AssetID	-	OK	SYNTACTIC	registry: canonical reference does not match asset kind: ERC20 token address must not be the zero address
+R	D_ASSETID_SHORT_UTXO_REF	ok	AssetID	-	OK	SYNTACTIC	registry: canonical reference does not match asset kind: UTXO assetID must be 32 bytes, got 31
+R	D_MARKETID	ok	MarketID	6d3e427ab2f7354a48cdc7ba48f593589672701c808211e711dce9d48096dbf4	OK	OK	derived
+R	D_MARKETID_REVERSED	ok	MarketID	27b57a3ba62728623b0fcbee3d035381642321e2a43b0ff8a1e601f7084b120f	OK	OK	derived
+R	D_MARKETID_OTHER_VENUE	ok	MarketID	902ca69a7b79443f99ea27892775ed9302187bb92dfa0ee70e5b0fb320a5167f	OK	OK	derived
+R	D_MARKETID_OTHER_NETWORK	ok	MarketID	61d424a71fd49a96743841f7fc0bf3472313e082d1d363d3cb4f350c63b2ed4a	OK	OK	derived
+R	D_KIND_EVM_NATIVE	ok	AssetKind	-	OK	OK	EVM_NATIVE
+R	D_KIND_ERC20	ok	AssetKind	-	OK	OK	ERC20
+R	D_KIND_UTXO	ok	AssetKind	-	OK	OK	UTXO
+R	D_KIND_INVALID	ok	AssetKind	-	UNSUPPORTED	UNSUPPORTED	registry: unknown asset kind "INVALID" (only EVM_NATIVE, ERC20, UTXO)
+R	D_KIND_TICKER	ok	AssetKind	-	UNSUPPORTED	UNSUPPORTED	registry: unknown asset kind "LUX" (only EVM_NATIVE, ERC20, UTXO)
+R	D_KIND_EMPTY	ok	AssetKind	-	UNSUPPORTED	UNSUPPORTED	registry: unknown asset kind "" (only EVM_NATIVE, ERC20, UTXO)
+R	D_MODE_QUORUM_FINALITY	ok	ConsensusMode	-	OK	OK	QUORUM_FINALITY
+R	D_MODE_HONEST_VALIDATOR_LABELED	ok	ConsensusMode	-	OK	OK	HONEST_VALIDATOR_LABELED
+R	D_MODE_UNSET	ok	ConsensusMode	-	OK	OK	UNSET
+R	D_MODE_UNKNOWN	ok	ConsensusMode	-	UNSUPPORTED	UNSUPPORTED	registry: unknown consensus mode "BFT" (only QUORUM_FINALITY or HONEST_VALIDATOR_LABELED)
+R	D_CLASS_MAINNET	ok	NetworkClass	-	OK	OK	mainnet
+R	D_CLASS_TESTNET	ok	NetworkClass	-	OK	OK	testnet
+R	D_CLASS_LOCAL	ok	NetworkClass	-	OK	OK	dev
+R	D_CLASS_LOCALNET	ok	NetworkClass	-	OK	OK	dev
+R	D_GUARD_OFF	ok	ValueActivation	-	OK	OK	UNSET (no disclaimer)
+R	D_GUARD_QUORUM	ok	ValueActivation	-	OK	OK	QUORUM_FINALITY (no disclaimer)
+R	D_GUARD_LABELED_FULL	ok	ValueActivation	-	OK	OK	HONEST_VALIDATOR_LABELED DEX value active under HONEST_VALIDATOR_LABELED (CFT parity): no Byzantine-finality claim
+R	D_GUARD_LABELED_NO_CAPS	ok	ValueActivation	-	OK	SYNTACTIC	registry: refuse HONEST_VALIDATOR_LABELED value activation — caps-on + real-assets-only + halt-ready not all asserted (capsOn=false realAssetsOnly=true haltRe
+R	D_GUARD_LABELED_NO_HALT	ok	ValueActivation	-	OK	SYNTACTIC	registry: refuse HONEST_VALIDATOR_LABELED value activation — caps-on + real-assets-only + halt-ready not all asserted (capsOn=true realAssetsOnly=true haltRea
+R	D_GUARD_UNSET	ok	ValueActivation	-	OK	SYNTACTIC	registry: refuse DEX value activation — consensus mode is UNSET (no Byzantine-finality and no labeled CFT-parity declared)
 R	X_SEAM_BLOCK_REJECT	ok	Block.Reject	-	-	PRESENT	xvm block/executor Block.Reject re-offers each still-valid tx to the mempool
 R	P_SEAM_BLOCK_REJECT	ok	Block.Reject	-	-	PRESENT	platformvm block/executor Block.Reject frees the block and drops its state
 R	P_REWARD_VALIDATOR_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse tx: zap: buffer too small
@@ -208,3 +324,308 @@ R	X_BLOCK_EMPTY_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse bloc
 R	X_BLOCK_EMPTY_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't parse block: zap: buffer too small
 R	X_BLOCK_EMPTY_TRAIL_1	ok	StandardBlock	9b2ce0e2cfaf518b3191225d6ad2036b090670d6b2710460e807573ce660d810	OK	LEDGER	height=1 parent=0a0a0a0a txs=0
 R	X_BLOCK_EMPTY_TRAIL_4	ok	StandardBlock	0e007f909ee6fb4114c07ed2e39134863b85a303d72250f5a78a69368340cd69	OK	LEDGER	height=1 parent=0a0a0a0a txs=0
+R	Q_GENESIS_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_GENESIS_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_GENESIS_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_GENESIS_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_GENESIS_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_ORPHAN_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_ORPHAN_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_ORPHAN_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_ORPHAN_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_ORPHAN_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_EMPTY_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_EMPTY_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_EMPTY_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_EMPTY_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_EMPTY_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_DUPLICATE_TX_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_DUPLICATE_TX_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_DUPLICATE_TX_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_DUPLICATE_TX_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_DUPLICATE_TX_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_ALGORITHM_UNSET_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_ALGORITHM_UNSET_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_ALGORITHM_UNSET_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_ALGORITHM_UNSET_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_ALGORITHM_UNSET_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_FOREIGN_CHAIN_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_FOREIGN_CHAIN_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_FOREIGN_CHAIN_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_FOREIGN_CHAIN_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_FOREIGN_CHAIN_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_FOREIGN_NETWORK_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_FOREIGN_NETWORK_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_FOREIGN_NETWORK_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_FOREIGN_NETWORK_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_FOREIGN_NETWORK_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_HEIGHT_SKIP_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_HEIGHT_SKIP_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_HEIGHT_SKIP_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_HEIGHT_SKIP_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_HEIGHT_SKIP_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_TIME_BEFORE_PARENT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_TIME_BEFORE_PARENT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_TIME_BEFORE_PARENT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_TIME_BEFORE_PARENT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_TIME_BEFORE_PARENT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_TIME_AHEAD_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_TIME_AHEAD_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_TIME_AHEAD_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_TIME_AHEAD_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_TIME_AHEAD_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_CORRUPT_TAIL_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_CORRUPT_TAIL_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_CORRUPT_TAIL_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: zap: buffer too small
+R	Q_BLOCK_CORRUPT_TAIL_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Q_BLOCK_CORRUPT_TAIL_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	failed to parse block: quantumvm: block trailing bytes
+R	Z_GENESIS_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_GENESIS_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_GENESIS_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_GENESIS_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_GENESIS_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_EMPTY_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_EMPTY_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_EMPTY_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_EMPTY_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_EMPTY_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_TRANSFER_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_TRANSFER_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_TRANSFER_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_TRANSFER_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_TRANSFER_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_SHIELD_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_SHIELD_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_SHIELD_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_SHIELD_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_SHIELD_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_UNSHIELD_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_UNSHIELD_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_UNSHIELD_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_UNSHIELD_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_UNSHIELD_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_MINT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_MINT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_MINT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_MINT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_MINT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_BURN_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_BURN_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_BURN_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_BURN_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_BURN_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_ORPHAN_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_ORPHAN_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_ORPHAN_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_ORPHAN_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_ORPHAN_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_HEIGHT_SKIP_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_HEIGHT_SKIP_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_HEIGHT_SKIP_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_HEIGHT_SKIP_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_HEIGHT_SKIP_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_TIME_BEFORE_PARENT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_TIME_BEFORE_PARENT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_TIME_BEFORE_PARENT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_TIME_BEFORE_PARENT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_TIME_BEFORE_PARENT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_TIME_AHEAD_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_TIME_AHEAD_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_TIME_AHEAD_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_TIME_AHEAD_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_TIME_AHEAD_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_GENESIS_WITH_PARENT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_GENESIS_WITH_PARENT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_GENESIS_WITH_PARENT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_GENESIS_WITH_PARENT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_GENESIS_WITH_PARENT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_WRONG_STATE_ROOT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_WRONG_STATE_ROOT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_WRONG_STATE_ROOT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_WRONG_STATE_ROOT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_WRONG_STATE_ROOT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_DUPLICATE_NULLIFIER_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_DUPLICATE_NULLIFIER_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_DUPLICATE_NULLIFIER_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_BLOCK_DUPLICATE_NULLIFIER_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_BLOCK_DUPLICATE_NULLIFIER_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_NO_INPUTS_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_INPUTS_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_INPUTS_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_INPUTS_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_NO_INPUTS_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_NO_OUTPUTS_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_OUTPUTS_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_OUTPUTS_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_OUTPUTS_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_NO_OUTPUTS_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_NO_PROOF_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_PROOF_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_PROOF_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_PROOF_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_NO_PROOF_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_NO_EXPIRY_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_EXPIRY_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_EXPIRY_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_NO_EXPIRY_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_NO_EXPIRY_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_UNKNOWN_TYPE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_UNKNOWN_TYPE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_UNKNOWN_TYPE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_UNKNOWN_TYPE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_UNKNOWN_TYPE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_EXPIRED_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_EXPIRED_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_EXPIRED_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_EXPIRED_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_EXPIRED_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_CLASSICAL_PROOF_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_CLASSICAL_PROOF_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_CLASSICAL_PROOF_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_CLASSICAL_PROOF_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_CLASSICAL_PROOF_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_TAMPERED_PROOF_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_TAMPERED_PROOF_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_TAMPERED_PROOF_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	Z_TX_TAMPERED_PROOF_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	Z_TX_TAMPERED_PROOF_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	zkvm wire: trailing bytes
+R	F_REGISTER_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_REGISTER_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_REGISTER_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_REGISTER_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_REGISTER_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_GRANT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_GRANT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_GRANT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_GRANT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_GRANT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_REVOKE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_REVOKE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_REVOKE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_REVOKE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_REVOKE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_REQUEST_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_REQUEST_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_REQUEST_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_REQUEST_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_REQUEST_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_FULFILL_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_FULFILL_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_FULFILL_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_FULFILL_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_FULFILL_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_ADVANCE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: bad zap length
+R	F_ADVANCE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_ADVANCE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_ADVANCE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_ADVANCE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_UNKNOWN_TYPE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNKNOWN_TYPE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNKNOWN_TYPE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNKNOWN_TYPE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_UNKNOWN_TYPE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_ZERO_NONCE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_ZERO_NONCE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_ZERO_NONCE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_ZERO_NONCE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_ZERO_NONCE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_SUBJECT_MISMATCH_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_SUBJECT_MISMATCH_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_SUBJECT_MISMATCH_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_SUBJECT_MISMATCH_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_SUBJECT_MISMATCH_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_EMPTY_DIGEST_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_EMPTY_DIGEST_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_EMPTY_DIGEST_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_EMPTY_DIGEST_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_EMPTY_DIGEST_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_ZERO_SIZE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_ZERO_SIZE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_ZERO_SIZE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_ZERO_SIZE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_ZERO_SIZE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_NEGATIVE_LEVEL_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_NEGATIVE_LEVEL_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_NEGATIVE_LEVEL_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_NEGATIVE_LEVEL_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_NEGATIVE_LEVEL_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_UNKNOWN_SCHEME_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNKNOWN_SCHEME_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNKNOWN_SCHEME_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNKNOWN_SCHEME_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_UNKNOWN_SCHEME_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_GRANT_NO_OPS_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_GRANT_NO_OPS_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_GRANT_NO_OPS_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_GRANT_NO_OPS_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_GRANT_NO_OPS_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_GRANT_UNKNOWN_OPS_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_GRANT_UNKNOWN_OPS_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_GRANT_UNKNOWN_OPS_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_GRANT_UNKNOWN_OPS_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_GRANT_UNKNOWN_OPS_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_REQUEST_NO_PERMIT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_REQUEST_NO_PERMIT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_REQUEST_NO_PERMIT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_REQUEST_NO_PERMIT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_REQUEST_NO_PERMIT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_FULFILL_NO_RESULT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_FULFILL_NO_RESULT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_FULFILL_NO_RESULT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_FULFILL_NO_RESULT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_FULFILL_NO_RESULT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_EMPTY_COMMITTEE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_EMPTY_COMMITTEE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_EMPTY_COMMITTEE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_EMPTY_COMMITTEE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_EMPTY_COMMITTEE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_UNKNOWN_PAYLOAD_FIELD_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNKNOWN_PAYLOAD_FIELD_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNKNOWN_PAYLOAD_FIELD_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNKNOWN_PAYLOAD_FIELD_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_UNKNOWN_PAYLOAD_FIELD_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_TAMPERED_CIPHERTEXT_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_TAMPERED_CIPHERTEXT_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_TAMPERED_CIPHERTEXT_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_TAMPERED_CIPHERTEXT_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_TAMPERED_CIPHERTEXT_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_UNSIGNED_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: bad zap length
+R	F_TX_UNSIGNED_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: bad zap length
+R	F_TX_UNSIGNED_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_UNSIGNED_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_UNSIGNED_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_TAMPERED_SIGNATURE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_TAMPERED_SIGNATURE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_TAMPERED_SIGNATURE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_TAMPERED_SIGNATURE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_TAMPERED_SIGNATURE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_PAYER_MISMATCH_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_PAYER_MISMATCH_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_PAYER_MISMATCH_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_PAYER_MISMATCH_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_PAYER_MISMATCH_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_SHORT_AUTH_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_SHORT_AUTH_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_SHORT_AUTH_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_SHORT_AUTH_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_SHORT_AUTH_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_SHORT_SIGNATURE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_SHORT_SIGNATURE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_SHORT_SIGNATURE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_SHORT_SIGNATURE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_SHORT_SIGNATURE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_FOREIGN_CHAIN_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_FOREIGN_CHAIN_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_FOREIGN_CHAIN_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_FOREIGN_CHAIN_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_FOREIGN_CHAIN_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_NONCE_GAP_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_NONCE_GAP_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_NONCE_GAP_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	zap: buffer too small
+R	F_TX_NONCE_GAP_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes
+R	F_TX_NONCE_GAP_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	fhevm: fhevm: invalid transaction payload: trailing bytes

@@ -193,6 +193,13 @@ public:
     lux::node::Id last_accepted() const override { return last_accepted_; }
     std::uint64_t last_accepted_height() const override;
 
+    // The highest height this node itself decided. This chain advances only
+    // through accept() — there is no import path that moves the tip without a
+    // certificate under it — so the decided frontier IS the accepted tip. A
+    // chain that grows one must stop answering with this and start answering
+    // with what it certified.
+    std::uint64_t frontier() const override { return last_accepted_height(); }
+
     // ---- what the port exposes beyond the seam ----
 
     state::State& chain_state() { return state_; }

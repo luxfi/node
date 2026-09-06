@@ -4,6 +4,7 @@ go 1.26.5
 
 require (
 	github.com/luxfi/address v1.1.1
+	github.com/luxfi/chains v1.7.38
 	github.com/luxfi/constants v1.6.4
 	github.com/luxfi/crypto v1.20.5
 	github.com/luxfi/database v1.21.5
@@ -16,6 +17,8 @@ require (
 	github.com/luxfi/utils v1.3.1
 	github.com/luxfi/utxo v0.5.10
 	github.com/luxfi/validators v1.3.3
+	github.com/luxfi/vm v1.3.16
+	github.com/luxfi/zap v1.2.7
 )
 
 require (
@@ -45,6 +48,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.10 // indirect
 	github.com/aws/smithy-go v1.24.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.5.0 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
 	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
@@ -57,18 +61,22 @@ require (
 	github.com/cockroachdb/pebble v1.1.5 // indirect
 	github.com/cockroachdb/redact v1.1.8 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
+	github.com/consensys/gnark-crypto v0.20.1 // indirect
+	github.com/crate-crypto/go-eth-kzg v1.5.0 // indirect
 	github.com/cronokirby/saferith v0.33.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
 	github.com/getsentry/sentry-go v0.46.2 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-json-experiment/json v0.0.0-20260601182631-00ed12fed2a6 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/gofiber/schema v1.7.1 // indirect
 	github.com/gofiber/utils/v2 v2.0.4 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -88,6 +96,7 @@ require (
 	github.com/hanzos3/crc64nvme v1.1.2 // indirect
 	github.com/hanzos3/go v1.0.2 // indirect
 	github.com/hanzos3/md5-simd v1.1.3 // indirect
+	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/holiman/uint256 v1.3.2 // indirect
 	github.com/klauspost/compress v1.19.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
@@ -99,13 +108,13 @@ require (
 	github.com/luxfi/api v1.1.14 // indirect
 	github.com/luxfi/atomic v1.0.0 // indirect
 	github.com/luxfi/cache v1.3.1 // indirect
-	github.com/luxfi/chains v1.7.38 // indirect
 	github.com/luxfi/codec v1.2.1 // indirect
 	github.com/luxfi/compress v0.1.1 // indirect
 	github.com/luxfi/concurrent v0.1.1 // indirect
 	github.com/luxfi/consensus v1.36.80 // indirect
 	github.com/luxfi/container v0.2.2 // indirect
 	github.com/luxfi/corona v0.10.4 // indirect
+	github.com/luxfi/crypto/ipa v1.2.4 // indirect
 	github.com/luxfi/dkg v0.3.5 // indirect
 	github.com/luxfi/filesystem v0.0.1 // indirect
 	github.com/luxfi/formatting v1.1.3 // indirect
@@ -126,17 +135,17 @@ require (
 	github.com/luxfi/net v0.1.1 // indirect
 	github.com/luxfi/p2p v1.22.1 // indirect
 	github.com/luxfi/pq v1.1.0 // indirect
+	github.com/luxfi/precompile v0.19.8 // indirect
 	github.com/luxfi/proto v1.4.10 // indirect
 	github.com/luxfi/pulsar v1.9.2 // indirect
 	github.com/luxfi/rpc v1.1.0 // indirect
 	github.com/luxfi/sampler v1.1.0 // indirect
 	github.com/luxfi/staking v1.6.1 // indirect
+	github.com/luxfi/sys v0.1.0 // indirect
 	github.com/luxfi/threshold v1.12.6 // indirect
 	github.com/luxfi/tls v1.1.1 // indirect
 	github.com/luxfi/version v1.0.1 // indirect
-	github.com/luxfi/vm v1.3.16 // indirect
 	github.com/luxfi/warp v1.24.1 // indirect
-	github.com/luxfi/zap v1.2.7 // indirect
 	github.com/luxfi/zapdb v1.10.6 // indirect
 	github.com/luxfi/zwing v0.6.1 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
@@ -146,6 +155,7 @@ require (
 	github.com/montanaflynn/stats v0.9.0 // indirect
 	github.com/mr-tron/base58 v1.3.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/pelletier/go-toml/v2 v2.3.0 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pires/go-proxyproto v0.11.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -157,7 +167,13 @@ require (
 	github.com/rogpeppe/go-internal v1.15.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
+	github.com/sagikazarmark/locafero v0.12.0 // indirect
+	github.com/spf13/afero v1.15.0 // indirect
+	github.com/spf13/cast v1.10.0 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/spf13/viper v1.21.0 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
+	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/supranational/blst v0.3.16 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
