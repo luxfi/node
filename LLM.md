@@ -307,6 +307,54 @@ The wire-format suite that used to sit in `chains/cpp/platformvm/test/` moved
 to the SDK with the implementation, case for case. A wire rule belongs in one
 place, and its test belongs beside it.
 
+Four more copies followed: `chains/cpp/zap` (which fhevm read), and
+quantumvm's, zkvm's and dexvm's. 2,198 lines. Every C++ chain now links
+`zap::zap` and nothing else.
+
+### A nuance about `set_bytes`, since the paragraph above is half the story
+
+There are two Go runtimes, and they differ here. `zap-proto/go` holds a byte
+tail until `Finish()`; `github.com/luxfi/zap`, the hardened runtime the chain
+corpus was generated through, appends it on the spot. They produce the same
+bytes for exactly one write order — every payload first, then the object, then
+nothing but field setters — and every builder in this tree happens to write
+that way, which is why nothing ever caught it.
+
+That is now a property of the code rather than an accident: zapgen EMITS that
+order, and a test in the generator pins it.
+
+## The wire's accessors come out of a schema
+
+The runtime is one implementation. What sits on top of it — the offsets, the
+strides, the readers and the builders — was written by hand, per chain, per
+language, and that is what a generator is for.
+
+`zapgen` has a C++ backend, so a chain states its wire once in a `.zap` schema
+beside it and the accessors are printed:
+
+```
+chains/cpp/xvm/schema/wire.zap        ->  include/lux/xvm/gen/wire_zap.hpp
+chains/cpp/quantumvm/schema/wire.zap  ->  include/lux/quantumvm/gen/wire_zap.hpp
+```
+
+`cmake --build build --target wire-schema` regenerates; the output is committed,
+so a build needs neither Go nor the generator.
+
+The four list shapes the Lux wire actually has are DERIVED from the element
+type, never declared — a run of numbers at its own width, a run of fixed-width
+byte records, a run of struct payloads back to back, and a run of relative
+pointers when the element carries a tail and cannot sit inline. A schema
+therefore cannot spell one list two ways.
+
+What is left in each chain's `wire.hpp` is what the bytes MEAN: the X-chain's
+(TypeKind, ShapeKind) discriminator and its quorum gate, the Q-chain's
+canonicality rule and its bound on a transaction count. Neither spells an
+offset.
+
+Still by hand, and named rather than left to be found: platformvm (2,566 lines
+across txs, txs_wire, block, genesis, warp and components), zkvm (890), dexvm
+(239), fhevm (251). 5,717 lines, of which platformvm is three quarters.
+
 ### Why Rust cannot just do the same thing
 
 `chains/rust/{xvm,quantumvm,platformvm}/src/zap.rs` are the same drift on the
