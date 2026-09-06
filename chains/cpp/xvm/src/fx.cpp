@@ -26,7 +26,6 @@ bool sorted_and_unique(const std::vector<ShortId>& v) {
     return true;
 }
 
-std::vector<ShortId> to_short_ids(const std::vector<ShortId>& v) { return v; }
 
 // recover_address recovers the signer of `hash` from a 65-byte recoverable
 // signature and returns its Lux address — ripemd160(sha256(compressed pubkey)).
@@ -101,8 +100,9 @@ bool OutputOwners::equals(const OutputOwners& other) const {
 void OutputOwners::sort() { std::sort(addrs.begin(), addrs.end()); }
 
 Bytes OutputOwners::bytes() const {
-    return wire::new_output_owners(
-        wire::OutputOwnersInput{locktime, threshold, to_short_ids(addrs)});
+    return wire::write_envelope_prefix(
+        wire::TypeKind::Reserved, wire::ShapeKind::OutputOwners,
+        wire::NewOutputOwners(wire::OutputOwnersInput{locktime, threshold, addrs}));
 }
 
 std::vector<Bytes> OutputOwners::addresses() const {
@@ -113,9 +113,10 @@ std::vector<Bytes> OutputOwners::addresses() const {
 }
 
 Result<OutputOwners> wrap_output_owners(ByteView b) {
-    auto v = wire::wrap_output_owners(b);
-    if (!v) return std::unexpected(v.error());
-    return OutputOwners{v->locktime(), v->threshold(), v->address_list().all()};
+    auto o = wire::payload(b, wire::ShapeKind::OutputOwners, wire::TypeKind::Reserved);
+    if (!o) return std::unexpected(o.error());
+    const wire::OutputOwners v(*o);
+    return OutputOwners{v.Locktime(), v.Threshold(), wire::addresses(v)};
 }
 
 // ================= secp256k1fx =================
@@ -127,17 +128,19 @@ Result<void> TransferOutput::verify() const {
 }
 
 Bytes TransferOutput::bytes() const {
-    return wire::new_transfer_output(wire::TransferOutputInput{
-        kTypeKind, amt, out_owners.locktime, out_owners.threshold, out_owners.addrs});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::TransferOutput,
+        wire::NewTransferOutput(wire::TransferOutputInput{
+            amt, out_owners.locktime, out_owners.threshold, out_owners.addrs}));
 }
 
 Result<std::shared_ptr<TransferOutput>> wrap_transfer_output(ByteView b) {
-    auto v = wire::wrap_transfer_output(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::TransferOutput, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::TransferOutput v(*o);
     auto out = std::make_shared<TransferOutput>();
-    out->amt = v->amount();
-    out->out_owners = OutputOwners{v->locktime(), v->threshold(), v->address_list().all()};
+    out->amt = v.Amount();
+    out->out_owners = OutputOwners{v.Locktime(), v.Threshold(), wire::addresses(v)};
     return out;
 }
 
@@ -147,31 +150,34 @@ Result<void> TransferInput::verify() const {
 }
 
 Bytes TransferInput::bytes() const {
-    return wire::new_transfer_input(
-        wire::TransferInputInput{kTypeKind, amt, input.sig_indices});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::TransferInput,
+        wire::NewTransferInput(wire::TransferInputInput{amt, input.sig_indices}));
 }
 
 Result<std::shared_ptr<TransferInput>> wrap_transfer_input(ByteView b) {
-    auto v = wire::wrap_transfer_input(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::TransferInput, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::TransferInput v(*o);
     auto in = std::make_shared<TransferInput>();
-    in->amt = v->amount();
-    in->input.sig_indices = v->sig_indices();
+    in->amt = v.Amount();
+    in->input.sig_indices = wire::sig_indices(v.SigIndices());
     return in;
 }
 
 Bytes MintOutput::bytes() const {
-    return wire::new_mint_output(wire::MintOutputInput{kTypeKind, out_owners.locktime,
-                                                       out_owners.threshold, out_owners.addrs});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::MintOutput,
+        wire::NewOutputOwners(wire::OutputOwnersInput{out_owners.locktime, out_owners.threshold,
+                                                      out_owners.addrs}));
 }
 
 Result<std::shared_ptr<MintOutput>> wrap_mint_output(ByteView b) {
-    auto v = wire::wrap_mint_output(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::MintOutput, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::OutputOwners v(*o);
     auto out = std::make_shared<MintOutput>();
-    out->out_owners = OutputOwners{v->locktime(), v->threshold(), v->address_list().all()};
+    out->out_owners = OutputOwners{v.Locktime(), v.Threshold(), wire::addresses(v)};
     return out;
 }
 
@@ -188,20 +194,22 @@ Result<void> MintOperation::verify() const {
 }
 
 Bytes MintOperation::bytes() const {
-    return wire::new_mint_operation(wire::MintOperationInput{
-        kTypeKind, mint_input.sig_indices, mint_output.bytes(), transfer_output.bytes()});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::MintOperation,
+        wire::NewMintOperation(wire::MintOperationInput{
+            mint_input.sig_indices, mint_output.bytes(), transfer_output.bytes()}));
 }
 
 Result<std::shared_ptr<MintOperation>> wrap_mint_operation(ByteView b) {
-    auto v = wire::wrap_mint_operation(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
-    auto mo = wrap_mint_output(v->mint_output_bytes());
+    auto o = wire::payload(b, wire::ShapeKind::MintOperation, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::MintOperation v(*o);
+    auto mo = wrap_mint_output(v.MintOutput());
     if (!mo) return std::unexpected(mo.error());
-    auto to = wrap_transfer_output(v->transfer_output_bytes());
+    auto to = wrap_transfer_output(v.TransferOutput());
     if (!to) return std::unexpected(to.error());
     auto op = std::make_shared<MintOperation>();
-    op->mint_input.sig_indices = v->sig_indices();
+    op->mint_input.sig_indices = wire::sig_indices(v.SigIndices());
     op->mint_output = **mo;
     op->transfer_output = **to;
     return op;
@@ -211,18 +219,20 @@ Bytes Credential::bytes() const {
     Bytes concat;
     concat.reserve(signatures.size() * kSignatureLen);
     for (const auto& s : signatures) concat.insert(concat.end(), s.begin(), s.end());
-    return wire::new_credential(wire::CredentialInput{kTypeKind, 0, concat, {}});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::Credential,
+        wire::NewCredential(wire::CredentialInput{0, concat, {}}));
 }
 
 Result<std::shared_ptr<Credential>> wrap_credential(ByteView b) {
-    auto v = wire::wrap_credential(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::Credential, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::Credential v(*o);
     auto c = std::make_shared<Credential>();
-    int n = v->signature_count(kSignatureLen);
+    int n = wire::signature_count(v, kSignatureLen);
     c->signatures.resize(std::size_t(n));
     for (int i = 0; i < n; ++i) {
-        Bytes raw = v->signature_at(i, kSignatureLen);
+        Bytes raw = wire::signature_at(v, i, kSignatureLen);
         std::copy(raw.begin(), raw.end(), c->signatures[std::size_t(i)].begin());
     }
     return c;
@@ -234,17 +244,19 @@ Result<std::shared_ptr<Credential>> wrap_credential(ByteView b) {
 namespace nftfx {
 
 Bytes MintOutput::bytes() const {
-    return wire::new_nft_mint_output(wire::NFTMintOutputInput{
-        kTypeKind, group_id, out_owners.locktime, out_owners.threshold, out_owners.addrs});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::NFTMintOutput,
+        wire::NewNFTMintOutput(wire::NFTMintOutputInput{
+            group_id, out_owners.locktime, out_owners.threshold, out_owners.addrs}));
 }
 
 Result<std::shared_ptr<MintOutput>> wrap_mint_output(ByteView b) {
-    auto v = wire::wrap_nft_mint_output(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::NFTMintOutput, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::NFTMintOutput v(*o);
     auto out = std::make_shared<MintOutput>();
-    out->group_id = v->group_id();
-    out->out_owners = OutputOwners{v->locktime(), v->threshold(), v->address_list().all()};
+    out->group_id = v.GroupID();
+    out->out_owners = OutputOwners{v.Locktime(), v.Threshold(), wire::addresses(v)};
     return out;
 }
 
@@ -254,20 +266,21 @@ Result<void> TransferOutput::verify() const {
 }
 
 Bytes TransferOutput::bytes() const {
-    return wire::new_nft_transfer_output(
-        wire::NFTTransferOutputInput{kTypeKind, group_id, payload, out_owners.locktime,
-                                     out_owners.threshold, out_owners.addrs});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::NFTTransferOutput,
+        wire::NewNFTTransferOutput(wire::NFTTransferOutputInput{
+            group_id, out_owners.locktime, out_owners.threshold, out_owners.addrs, payload}));
 }
 
 Result<std::shared_ptr<TransferOutput>> wrap_transfer_output(ByteView b) {
-    auto v = wire::wrap_nft_transfer_output(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::NFTTransferOutput, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::NFTTransferOutput v(*o);
     auto out = std::make_shared<TransferOutput>();
-    out->group_id = v->group_id();
-    auto p = v->payload();
+    out->group_id = v.GroupID();
+    const auto p = v.Payload();
     out->payload.assign(p.begin(), p.end());
-    out->out_owners = OutputOwners{v->locktime(), v->threshold(), v->address_list().all()};
+    out->out_owners = OutputOwners{v.Locktime(), v.Threshold(), wire::addresses(v)};
     return out;
 }
 
@@ -293,24 +306,31 @@ Result<void> MintOperation::verify() const {
 }
 
 Bytes MintOperation::bytes() const {
-    std::vector<Bytes> owners;
-    owners.reserve(outputs.size());
-    for (const auto& o : outputs) owners.push_back(o->bytes());
-    return wire::new_nft_mint_operation(wire::NFTMintOperationInput{
-        kTypeKind, mint_input.sig_indices, group_id, payload, owners});
+    // The owners travel as a packed run of whole envelopes, each self-
+    // delimiting by its own ZAP size word, so the count rides beside it.
+    Bytes owners;
+    for (const auto& o : outputs) {
+        const Bytes one = o->bytes();
+        owners.insert(owners.end(), one.begin(), one.end());
+    }
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::NFTMintOperation,
+        wire::NewNFTMintOperation(wire::NFTMintOperationInput{
+            mint_input.sig_indices, group_id, payload,
+            static_cast<std::uint32_t>(outputs.size()), owners}));
 }
 
 Result<std::shared_ptr<MintOperation>> wrap_mint_operation(ByteView b) {
-    auto v = wire::wrap_nft_mint_operation(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::NFTMintOperation, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::NFTMintOperation v(*o);
     auto op = std::make_shared<MintOperation>();
-    op->mint_input.sig_indices = v->sig_indices();
-    op->group_id = v->group_id();
-    auto p = v->payload();
+    op->mint_input.sig_indices = wire::sig_indices(v.SigIndices());
+    op->group_id = v.GroupID();
+    const auto p = v.Payload();
     op->payload.assign(p.begin(), p.end());
-    ByteView blob = v->owners_bytes();
-    for (std::uint32_t i = 0; i < v->owners_count(); ++i) {
+    ByteView blob = v.OwnersBytes();
+    for (std::uint32_t i = 0; i < v.OwnersCount(); ++i) {
         auto split = wire::next_envelope(blob);
         if (!split) return std::unexpected(split.error());
         auto owner = fx::wrap_output_owners(split->envelope);
@@ -331,18 +351,20 @@ Result<void> TransferOperation::verify() const {
 }
 
 Bytes TransferOperation::bytes() const {
-    return wire::new_nft_transfer_operation(
-        wire::NFTTransferOperationInput{kTypeKind, input.sig_indices, output.bytes()});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::NFTTransferOp,
+        wire::NewNFTTransferOperation(
+            wire::NFTTransferOperationInput{input.sig_indices, output.bytes()}));
 }
 
 Result<std::shared_ptr<TransferOperation>> wrap_transfer_operation(ByteView b) {
-    auto v = wire::wrap_nft_transfer_operation(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
-    auto out = wrap_transfer_output(v->output_bytes());
+    auto o = wire::payload(b, wire::ShapeKind::NFTTransferOp, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::NFTTransferOperation v(*o);
+    auto out = wrap_transfer_output(v.OutputBytes());
     if (!out) return std::unexpected(out.error());
     auto op = std::make_shared<TransferOperation>();
-    op->input.sig_indices = v->sig_indices();
+    op->input.sig_indices = wire::sig_indices(v.SigIndices());
     op->output = **out;
     return op;
 }
@@ -351,18 +373,20 @@ Bytes Credential::bytes() const {
     Bytes concat;
     concat.reserve(signatures.size() * kSignatureLen);
     for (const auto& s : signatures) concat.insert(concat.end(), s.begin(), s.end());
-    return wire::new_credential(wire::CredentialInput{kTypeKind, 0, concat, {}});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::Credential,
+        wire::NewCredential(wire::CredentialInput{0, concat, {}}));
 }
 
 Result<std::shared_ptr<Credential>> wrap_credential(ByteView b) {
-    auto v = wire::wrap_credential(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::Credential, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::Credential v(*o);
     auto c = std::make_shared<Credential>();
-    int n = v->signature_count(kSignatureLen);
+    int n = wire::signature_count(v, kSignatureLen);
     c->signatures.resize(std::size_t(n));
     for (int i = 0; i < n; ++i) {
-        Bytes raw = v->signature_at(i, kSignatureLen);
+        Bytes raw = wire::signature_at(v, i, kSignatureLen);
         std::copy(raw.begin(), raw.end(), c->signatures[std::size_t(i)].begin());
     }
     return c;
@@ -374,30 +398,34 @@ Result<std::shared_ptr<Credential>> wrap_credential(ByteView b) {
 namespace propertyfx {
 
 Bytes MintOutput::bytes() const {
-    return wire::new_mint_output(wire::MintOutputInput{kTypeKind, out_owners.locktime,
-                                                       out_owners.threshold, out_owners.addrs});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::MintOutput,
+        wire::NewOutputOwners(wire::OutputOwnersInput{out_owners.locktime, out_owners.threshold,
+                                                      out_owners.addrs}));
 }
 
 Result<std::shared_ptr<MintOutput>> wrap_mint_output(ByteView b) {
-    auto v = wire::wrap_mint_output(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::MintOutput, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::OutputOwners v(*o);
     auto out = std::make_shared<MintOutput>();
-    out->out_owners = OutputOwners{v->locktime(), v->threshold(), v->address_list().all()};
+    out->out_owners = OutputOwners{v.Locktime(), v.Threshold(), wire::addresses(v)};
     return out;
 }
 
 Bytes OwnedOutput::bytes() const {
-    return wire::new_owned_output(wire::OwnedOutputInput{kTypeKind, out_owners.locktime,
-                                                         out_owners.threshold, out_owners.addrs});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::OwnedOutput,
+        wire::NewOutputOwners(wire::OutputOwnersInput{out_owners.locktime, out_owners.threshold,
+                                                      out_owners.addrs}));
 }
 
 Result<std::shared_ptr<OwnedOutput>> wrap_owned_output(ByteView b) {
-    auto v = wire::wrap_owned_output(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::OwnedOutput, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::OutputOwners v(*o);
     auto out = std::make_shared<OwnedOutput>();
-    out->out_owners = OutputOwners{v->locktime(), v->threshold(), v->address_list().all()};
+    out->out_owners = OutputOwners{v.Locktime(), v.Threshold(), wire::addresses(v)};
     return out;
 }
 
@@ -412,35 +440,39 @@ Result<void> MintOperation::verify() const {
 }
 
 Bytes MintOperation::bytes() const {
-    return wire::new_mint_operation(wire::MintOperationInput{
-        kTypeKind, mint_input.sig_indices, mint_output.bytes(), owned_output.bytes()});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::MintOperation,
+        wire::NewMintOperation(wire::MintOperationInput{
+            mint_input.sig_indices, mint_output.bytes(), owned_output.bytes()}));
 }
 
 Result<std::shared_ptr<MintOperation>> wrap_mint_operation(ByteView b) {
-    auto v = wire::wrap_mint_operation(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
-    auto mo = wrap_mint_output(v->mint_output_bytes());
+    auto o = wire::payload(b, wire::ShapeKind::MintOperation, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::MintOperation v(*o);
+    auto mo = wrap_mint_output(v.MintOutput());
     if (!mo) return std::unexpected(mo.error());
-    auto oo = wrap_owned_output(v->transfer_output_bytes());
+    auto oo = wrap_owned_output(v.TransferOutput());
     if (!oo) return std::unexpected(oo.error());
     auto op = std::make_shared<MintOperation>();
-    op->mint_input.sig_indices = v->sig_indices();
+    op->mint_input.sig_indices = wire::sig_indices(v.SigIndices());
     op->mint_output = **mo;
     op->owned_output = **oo;
     return op;
 }
 
 Bytes BurnOperation::bytes() const {
-    return wire::new_burn_operation(wire::BurnOperationInput{kTypeKind, input.sig_indices});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::BurnOperation,
+        wire::NewBurnOperation(wire::BurnOperationInput{input.sig_indices}));
 }
 
 Result<std::shared_ptr<BurnOperation>> wrap_burn_operation(ByteView b) {
-    auto v = wire::wrap_burn_operation(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::BurnOperation, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::BurnOperation v(*o);
     auto op = std::make_shared<BurnOperation>();
-    op->input.sig_indices = v->sig_indices();
+    op->input.sig_indices = wire::sig_indices(v.SigIndices());
     return op;
 }
 
@@ -448,18 +480,20 @@ Bytes Credential::bytes() const {
     Bytes concat;
     concat.reserve(signatures.size() * kSignatureLen);
     for (const auto& s : signatures) concat.insert(concat.end(), s.begin(), s.end());
-    return wire::new_credential(wire::CredentialInput{kTypeKind, 0, concat, {}});
+    return wire::write_envelope_prefix(
+        kTypeKind, wire::ShapeKind::Credential,
+        wire::NewCredential(wire::CredentialInput{0, concat, {}}));
 }
 
 Result<std::shared_ptr<Credential>> wrap_credential(ByteView b) {
-    auto v = wire::wrap_credential(b);
-    if (!v) return std::unexpected(v.error());
-    if (v->type_kind() != kTypeKind) return std::unexpected(wire::kErrWrongTypeKind);
+    auto o = wire::payload(b, wire::ShapeKind::Credential, kTypeKind);
+    if (!o) return std::unexpected(o.error());
+    const wire::Credential v(*o);
     auto c = std::make_shared<Credential>();
-    int n = v->signature_count(kSignatureLen);
+    int n = wire::signature_count(v, kSignatureLen);
     c->signatures.resize(std::size_t(n));
     for (int i = 0; i < n; ++i) {
-        Bytes raw = v->signature_at(i, kSignatureLen);
+        Bytes raw = wire::signature_at(v, i, kSignatureLen);
         std::copy(raw.begin(), raw.end(), c->signatures[std::size_t(i)].begin());
     }
     return c;
