@@ -15,6 +15,7 @@
 
 namespace lux::platformvm::warpmsg::wire {
 
+class Tag;
 class Digest;
 class Call;
 class Register;
@@ -23,6 +24,34 @@ class Reweight;
 class Conversion;
 class Validator;
 class Conversions;
+
+// Field byte offsets for Tag, and the size of its fixed section.
+inline constexpr std::int64_t kTagKindOff = 0;
+inline constexpr std::int64_t kTagSize = 1;
+
+// Tag is a zero-copy view into a ZAP-encoded Tag message. It borrows the
+// bytes it was built over, which must outlive it, and copies no field.
+class Tag {
+  public:
+    Tag() = default;
+    explicit Tag(zap::Object o) : o_(o) {}
+
+    bool is_null() const { return o_.is_null(); }
+    zap::Object object() const { return o_; }
+
+    std::uint8_t Kind() const { return o_.u8(kTagKindOff); }
+
+  private:
+    zap::Object o_;
+};
+
+// WrapTag parses b and returns a typed view over it, or says why b is not a
+// message. The view borrows b.
+inline std::expected<Tag, zap::Error> WrapTag(std::span<const std::uint8_t> b) {
+    auto m = zap::Message::parse(b);
+    if (!m) return std::unexpected(m.error());
+    return Tag(m->root());
+}
 
 // Field byte offsets for Digest, and the size of its fixed section.
 inline constexpr std::int64_t kDigestKindOff = 0;
@@ -350,6 +379,7 @@ inline std::expected<Conversions, zap::Error> WrapConversions(std::span<const st
 inline ::lux::platformvm::warpmsg::wire::Validator Conversions::ValidatorsAt(std::int64_t i) const { return ::lux::platformvm::warpmsg::wire::Validator(Validators().object(i, 64)); }
 
 // The value records, declared before they are defined.
+struct TagInput;
 struct DigestInput;
 struct CallInput;
 struct RegisterInput;
@@ -358,6 +388,12 @@ struct ReweightInput;
 struct ConversionInput;
 struct ValidatorInput;
 struct ConversionsInput;
+
+// TagInput collects the field values for NewTag. A borrowed field is a view:
+// it must outlive the call, not the buffer the call returns.
+struct TagInput {
+    std::uint8_t Kind{};
+};
 
 // DigestInput collects the field values for NewDigest. A borrowed field is a view:
 // it must outlive the call, not the buffer the call returns.
@@ -434,6 +470,9 @@ struct ConversionsInput {
 
 // The write side, declared before it is defined so a struct may point at
 // one that comes later in the schema.
+inline std::vector<std::uint8_t> NewTag(const TagInput& in);
+inline std::int64_t AppendTag(zap::Builder& b, const TagInput& in);
+inline std::array<std::uint8_t, static_cast<std::size_t>(kTagSize)> EncodeTag(const TagInput& in);
 inline std::vector<std::uint8_t> NewDigest(const DigestInput& in);
 inline std::int64_t AppendDigest(zap::Builder& b, const DigestInput& in);
 inline std::array<std::uint8_t, static_cast<std::size_t>(kDigestSize)> EncodeDigest(const DigestInput& in);
@@ -455,6 +494,31 @@ inline std::int64_t AppendValidator(zap::Builder& b, const ValidatorInput& in);
 inline std::array<std::uint8_t, static_cast<std::size_t>(kValidatorSize)> EncodeValidator(const ValidatorInput& in);
 inline std::vector<std::uint8_t> NewConversions(const ConversionsInput& in);
 inline std::int64_t AppendConversions(zap::Builder& b, const ConversionsInput& in);
+
+// EncodeTag lays one Tag payload out as an inline list element:
+// the fixed section alone, unaligned, exactly as wide as the stride.
+inline std::array<std::uint8_t, static_cast<std::size_t>(kTagSize)> EncodeTag(const TagInput& in) {
+    std::array<std::uint8_t, static_cast<std::size_t>(kTagSize)> e{};
+    *(e.data() + kTagKindOff) = in.Kind;
+    return e;
+}
+
+// AppendTag writes one Tag object into b — every payload it points at first,
+// then the object itself — and returns the object's offset.
+inline std::int64_t AppendTag(zap::Builder& b, const TagInput& in) {
+    auto ob = b.start_object(kTagSize);
+    ob.set_u8(kTagKindOff, in.Kind);
+    return ob.finish();
+}
+
+// NewTag writes a ZAP-encoded Tag message into a fresh buffer and returns it.
+inline std::vector<std::uint8_t> NewTag(const TagInput& in) {
+    zap::Builder b(256, zap::kVersion2);
+    auto ob = b.start_object(kTagSize);
+    ob.set_u8(kTagKindOff, in.Kind);
+    ob.finish_as_root();
+    return b.finish();
+}
 
 // EncodeDigest lays one Digest payload out as an inline list element:
 // the fixed section alone, unaligned, exactly as wide as the stride.

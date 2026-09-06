@@ -80,6 +80,8 @@ Result<std::vector<std::uint8_t>> build(Kind k, const Id& parent, std::uint64_t 
 }
 
 // Re-split the blob by the stored lengths and hand each slice to txs::parse.
+// A proposal block's list is at a standard block's offsets — that is what the
+// shared prefix means — so one reader answers for both.
 Result<std::vector<txs::Tx>> read_tx_list(const zap::Object& obj) {
     const wire::Standard b(obj);
     const auto lengths = b.TxLengths();
@@ -120,6 +122,8 @@ zap::Object Block::root() const {
     return msg ? msg->root() : zap::Object{};
 }
 
+// The four fields every kind opens with, read through the shortest kind that
+// has them: the prefix is where all three shapes agree.
 Id Block::parent() const { return Id::from(wire::Decided(root()).Parent()); }
 std::uint64_t Block::height() const { return wire::Decided(root()).Height(); }
 std::uint64_t Block::timestamp() const { return wire::Decided(root()).Time(); }
