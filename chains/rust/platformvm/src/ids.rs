@@ -52,6 +52,27 @@ impl ShortId {
     }
 }
 
+/// The 32 bytes at `field`, as an id.
+///
+/// Short reads answer zeros, for the same reason every ZAP accessor does: a
+/// truncated buffer has to decode to a value that fails verification, not to a
+/// panic — a hostile transaction that could crash the reader would never reach
+/// the check that refuses it.
+pub fn id_at(o: lux_zap::zap::Object<'_>, field: usize) -> Id {
+    let mut id = EMPTY;
+    let src = o.bytes_fixed(field, 32);
+    id[..src.len()].copy_from_slice(src);
+    id
+}
+
+/// The twenty bytes at `field`, as an address.
+pub fn short_at(o: lux_zap::zap::Object<'_>, field: usize) -> ShortId {
+    let mut a = [0u8; SHORT_ID_LEN];
+    let src = o.bytes_fixed(field, SHORT_ID_LEN);
+    a[..src.len()].copy_from_slice(src);
+    ShortId(a)
+}
+
 /// `sha256` — what names a transaction and what names a block.
 pub fn hash256(bytes: &[u8]) -> Id {
     use sha2::{Digest, Sha256};

@@ -32,7 +32,7 @@ use std::collections::BTreeMap;
 use crate::gas::Wide;
 use crate::ids::{hash256, Id, NodeId};
 use crate::signer::{self, PUBLIC_KEY_LEN, SIGNATURE_LEN};
-use crate::zap;
+use lux_zap::zap;
 
 // UnsignedMessage: NetworkID u32 @0, SourceChainID 32B @4, Payload bytes @36.
 const UM_OFF_NETWORK_ID: usize = 0;
@@ -123,12 +123,12 @@ pub struct Unsigned {
 
 impl Unsigned {
     pub fn build(network_id: u32, source_chain_id: Id, payload: &[u8]) -> Unsigned {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + UM_SIZE + payload.len() + 16);
-        let ob = b.start_object(UM_SIZE);
-        b.set_u32(&ob, UM_OFF_NETWORK_ID, network_id);
-        b.set_bytes_fixed(&ob, UM_OFF_SOURCE, &source_chain_id);
-        b.set_bytes(&ob, UM_OFF_PAYLOAD, payload);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + UM_SIZE + payload.len() + 16);
+        let mut ob = b.start_object(UM_SIZE);
+        ob.set_u32(&mut b, UM_OFF_NETWORK_ID, network_id);
+        ob.set_bytes_fixed(&mut b, UM_OFF_SOURCE, &source_chain_id);
+        ob.set_bytes(&mut b, UM_OFF_PAYLOAD, payload);
+        ob.finish_as_root(&mut b);
         Unsigned {
             network_id,
             source_chain_id,
@@ -143,7 +143,7 @@ impl Unsigned {
         let root = msg.root();
         Ok(Unsigned {
             network_id: root.u32(UM_OFF_NETWORK_ID),
-            source_chain_id: root.id(UM_OFF_SOURCE),
+            source_chain_id: crate::ids::id_at(root, UM_OFF_SOURCE),
             payload: root.bytes(UM_OFF_PAYLOAD).to_vec(),
             bytes: raw.to_vec(),
         })
@@ -186,21 +186,21 @@ pub struct Message {
 
 impl Message {
     pub fn build(unsigned: &Unsigned, signature: &BitSet) -> Message {
-        let mut sb = zap::Builder::new(zap::HEADER_SIZE + BSS_SIZE + signature.signers.len() + 16);
-        let sob = sb.start_object(BSS_SIZE);
-        sb.set_u8(&sob, OFF_KIND, KIND_BITSET);
-        sb.set_bytes_fixed(&sob, BSS_OFF_SIGNATURE, &signature.signature);
-        sb.set_bytes(&sob, BSS_OFF_SIGNERS, &signature.signers);
-        sb.finish_as_root(&sob);
+        let mut sb = zap::Builder::new_v2(zap::HEADER_SIZE + BSS_SIZE + signature.signers.len() + 16);
+        let mut sob = sb.start_object(BSS_SIZE);
+        sob.set_u8(&mut sb, OFF_KIND, KIND_BITSET);
+        sob.set_bytes_fixed(&mut sb, BSS_OFF_SIGNATURE, &signature.signature);
+        sob.set_bytes(&mut sb, BSS_OFF_SIGNERS, &signature.signers);
+        sob.finish_as_root(&mut sb);
         let sig_bytes = sb.finish();
 
-        let mut b = zap::Builder::new(
+        let mut b = zap::Builder::new_v2(
             zap::HEADER_SIZE + MSG_SIZE + unsigned.bytes.len() + sig_bytes.len() + 32,
         );
-        let ob = b.start_object(MSG_SIZE);
-        b.set_bytes(&ob, MSG_OFF_UNSIGNED, &unsigned.bytes);
-        b.set_bytes(&ob, MSG_OFF_SIGNATURE, &sig_bytes);
-        b.finish_as_root(&ob);
+        let mut ob = b.start_object(MSG_SIZE);
+        ob.set_bytes(&mut b, MSG_OFF_UNSIGNED, &unsigned.bytes);
+        ob.set_bytes(&mut b, MSG_OFF_SIGNATURE, &sig_bytes);
+        ob.finish_as_root(&mut b);
 
         Message {
             unsigned: unsigned.clone(),
@@ -495,18 +495,18 @@ mod tests {
         // The alternative — parsing an unknown kind to an empty BitSet — is a
         // signature that verifies against nothing.
         let unsigned = Unsigned::build(1, [1; 32], b"x");
-        let mut sb = zap::Builder::new(zap::HEADER_SIZE + BSS_SIZE + 16);
-        let sob = sb.start_object(BSS_SIZE);
-        sb.set_u8(&sob, OFF_KIND, 0x01); // Corona
-        sb.set_bytes_fixed(&sob, BSS_OFF_SIGNATURE, &[9u8; SIGNATURE_LEN]);
-        sb.finish_as_root(&sob);
+        let mut sb = zap::Builder::new_v2(zap::HEADER_SIZE + BSS_SIZE + 16);
+        let mut sob = sb.start_object(BSS_SIZE);
+        sob.set_u8(&mut sb, OFF_KIND, 0x01); // Corona
+        sob.set_bytes_fixed(&mut sb, BSS_OFF_SIGNATURE, &[9u8; SIGNATURE_LEN]);
+        sob.finish_as_root(&mut sb);
         let sig_bytes = sb.finish();
 
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + MSG_SIZE + unsigned.bytes.len() + sig_bytes.len() + 32);
-        let ob = b.start_object(MSG_SIZE);
-        b.set_bytes(&ob, MSG_OFF_UNSIGNED, &unsigned.bytes);
-        b.set_bytes(&ob, MSG_OFF_SIGNATURE, &sig_bytes);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + MSG_SIZE + unsigned.bytes.len() + sig_bytes.len() + 32);
+        let mut ob = b.start_object(MSG_SIZE);
+        ob.set_bytes(&mut b, MSG_OFF_UNSIGNED, &unsigned.bytes);
+        ob.set_bytes(&mut b, MSG_OFF_SIGNATURE, &sig_bytes);
+        ob.finish_as_root(&mut b);
 
         assert_eq!(Message::parse(&b.finish()), Err(Error::UnknownSignature(1)));
     }

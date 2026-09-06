@@ -16,7 +16,7 @@
 //! of a representation and an encoding of it.
 
 use crate::ids::{Id, ShortId};
-use crate::zap;
+use lux_zap::zap;
 
 /// Who may spend an output.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -84,13 +84,17 @@ impl Owners {
         const ADDRS: usize = 12;
         const SIZE: usize = 20;
 
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + 128);
-        let (addr_off, addr_count) = write_addrs(&mut b, &self.addrs);
-        let ob = b.start_object(SIZE);
-        b.set_u32(&ob, THRESHOLD, self.threshold);
-        b.set_u64(&ob, LOCKTIME, self.locktime);
-        b.set_list(&ob, ADDRS, addr_off, addr_count);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + 128);
+        let mut lb = b.start_list();
+        for a in &self.addrs {
+            lb.add_bytes(&mut b, &a.0);
+        }
+        let (addr_off, addr_count) = (lb.finish_offset(), self.addrs.len());
+        let mut ob = b.start_object(SIZE);
+        ob.set_u32(&mut b, THRESHOLD, self.threshold);
+        ob.set_u64(&mut b, LOCKTIME, self.locktime);
+        ob.set_list(&mut b, ADDRS, addr_off, addr_count);
+        ob.finish_as_root(&mut b);
         b.finish()
     }
 
@@ -101,7 +105,7 @@ impl Owners {
         Ok(Owners {
             threshold: o.u32(0),
             locktime: o.u64(4),
-            addrs: read_addrs(o.list(12, crate::ids::SHORT_ID_LEN)),
+            addrs: read_addrs(o.list_stride(12, crate::ids::SHORT_ID_LEN)),
         })
     }
 
@@ -289,17 +293,6 @@ pub fn sort_inputs(ins: &mut [Input]) {
 
 // ---- the address array shared by every owner on a transaction ----
 
-pub(crate) fn write_addrs(b: &mut zap::Builder, addrs: &[ShortId]) -> (usize, usize) {
-    if addrs.is_empty() {
-        return (0, 0);
-    }
-    let mut lb = b.start_list();
-    for a in addrs {
-        b.list_bytes(&mut lb, &a.0);
-    }
-    (lb.offset(), addrs.len())
-}
-
 pub(crate) fn read_addrs(list: zap::List<'_>) -> Vec<ShortId> {
     slice_addrs(list, 0, list.len() as u32)
 }
@@ -313,8 +306,12 @@ pub(crate) fn slice_addrs(list: zap::List<'_>, start: u32, count: u32) -> Vec<Sh
     }
     (0..count)
         .map(|i| {
-            let o = list.object((start + i) as usize, crate::ids::SHORT_ID_LEN);
-            ShortId(o.short_id(0))
+            let mut a = [0u8; crate::ids::SHORT_ID_LEN];
+            let src = list
+                .object((start + i) as usize, crate::ids::SHORT_ID_LEN)
+                .bytes_fixed(0, crate::ids::SHORT_ID_LEN);
+            a[..src.len()].copy_from_slice(src);
+            ShortId(a)
         })
         .collect()
 }
@@ -641,23 +638,27 @@ impl Output {
     /// envelope around the first rather than a field, so a reader that does
     /// not know about locks cannot read a locked output as an unlocked one.
     pub fn wire_bytes(&self) -> Vec<u8> {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + 128);
-        let (addr_off, addr_count) = write_addrs(&mut b, &self.owners.addrs);
-        let ob = b.start_object(TO_SIZE);
-        b.set_u64(&ob, TO_AMOUNT, self.amount);
-        b.set_u64(&ob, TO_LOCKTIME, self.owners.locktime);
-        b.set_u32(&ob, TO_THRESHOLD, self.owners.threshold);
-        b.set_list(&ob, TO_ADDRS, addr_off, addr_count);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + 128);
+        let mut lb = b.start_list();
+        for a in &self.owners.addrs {
+            lb.add_bytes(&mut b, &a.0);
+        }
+        let (addr_off, addr_count) = (lb.finish_offset(), self.owners.addrs.len());
+        let mut ob = b.start_object(TO_SIZE);
+        ob.set_u64(&mut b, TO_AMOUNT, self.amount);
+        ob.set_u64(&mut b, TO_LOCKTIME, self.owners.locktime);
+        ob.set_u32(&mut b, TO_THRESHOLD, self.owners.threshold);
+        ob.set_list(&mut b, TO_ADDRS, addr_off, addr_count);
+        ob.finish_as_root(&mut b);
         let transfer = seal(TYPE_SECP256K1, SHAPE_TRANSFER_OUTPUT, b.finish());
         if self.stake_lock == 0 {
             return transfer;
         }
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + 64 + transfer.len());
-        let ob = b.start_object(LO_SIZE);
-        b.set_u64(&ob, LO_LOCKTIME, self.stake_lock);
-        b.set_bytes(&ob, LO_INNER, &transfer);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + 64 + transfer.len());
+        let mut ob = b.start_object(LO_SIZE);
+        ob.set_u64(&mut b, LO_LOCKTIME, self.stake_lock);
+        ob.set_bytes(&mut b, LO_INNER, &transfer);
+        ob.finish_as_root(&mut b);
         seal(TYPE_RESERVED, SHAPE_LOCKED_OUTPUT, b.finish())
     }
 
@@ -694,7 +695,7 @@ impl Output {
             owners: Owners {
                 locktime: o.u64(TO_LOCKTIME),
                 threshold: o.u32(TO_THRESHOLD),
-                addrs: read_addrs(o.list(TO_ADDRS, crate::ids::SHORT_ID_LEN)),
+                addrs: read_addrs(o.list_stride(TO_ADDRS, crate::ids::SHORT_ID_LEN)),
             },
         })
     }
@@ -704,13 +705,13 @@ impl Utxo {
     /// The envelope an unspent output travels in.
     pub fn wire_bytes(&self) -> Vec<u8> {
         let output = self.output.wire_bytes();
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + UTXO_SIZE + output.len() + 32);
-        let ob = b.start_object(UTXO_SIZE);
-        b.set_bytes_fixed(&ob, UTXO_TX_ID, &self.id.tx_id);
-        b.set_u32(&ob, UTXO_OUTPUT_INDEX, self.id.output_index);
-        b.set_bytes_fixed(&ob, UTXO_ASSET, &self.output.asset);
-        b.set_bytes(&ob, UTXO_OUTPUT, &output);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + UTXO_SIZE + output.len() + 32);
+        let mut ob = b.start_object(UTXO_SIZE);
+        ob.set_bytes_fixed(&mut b, UTXO_TX_ID, &self.id.tx_id);
+        ob.set_u32(&mut b, UTXO_OUTPUT_INDEX, self.id.output_index);
+        ob.set_bytes_fixed(&mut b, UTXO_ASSET, &self.output.asset);
+        ob.set_bytes(&mut b, UTXO_OUTPUT, &output);
+        ob.finish_as_root(&mut b);
         seal(TYPE_RESERVED, SHAPE_UTXO, b.finish())
     }
 
@@ -722,10 +723,10 @@ impl Utxo {
             return Err(WireError::TrailingBytes);
         }
         let o = msg.root();
-        let asset = o.id(UTXO_ASSET);
+        let asset = crate::ids::id_at(o, UTXO_ASSET);
         Ok(Utxo {
             id: UtxoId {
-                tx_id: o.id(UTXO_TX_ID),
+                tx_id: crate::ids::id_at(o, UTXO_TX_ID),
                 output_index: o.u32(UTXO_OUTPUT_INDEX),
             },
             output: Output::parse_wire(o.bytes(UTXO_OUTPUT), asset)?,

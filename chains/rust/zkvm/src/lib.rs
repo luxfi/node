@@ -38,7 +38,7 @@ pub mod verifier;
 pub mod vertex;
 pub mod vm;
 pub mod wire;
-pub mod zap;
+pub mod zchain_zap;
 
 pub use block::Block;
 pub use config::Config;
