@@ -28,7 +28,7 @@ It holds no ciphertext body, no FHE secret key and no decryption share.
 
 Reused, not vendored: `luxcpp/pqclean` + `luxcpp/crypto/mldsa` (FIPS 204),
 `lux-cpp/node` (the seam), `lux-cpp/consensus` (the `Id` type), and
-`chains/cpp/zap` (the codec).
+`zap-proto/cpp` (the codec, pinned in `chains/cpp/zap.cmake`).
 
 ## Building and testing
 
@@ -163,12 +163,12 @@ Go's rule and the reason is stated there: the first says one record cannot be
 trusted, the second says nothing can. `VM::skipped()` counts the rows that did
 not decode, so a node knows what it is serving.
 
-**The codec has one home.** `chains/cpp/zap` is the chain-neutral port of the Go
-ZAP codec. The four in-tree copies under `chains/cpp/{platformvm,xvm,quantumvm,
-zkvm}/include` predate it and differ from it only by namespace (verified
-byte-identical modulo the namespace line); they should fold into this one as each
-of those ports next moves. This port added `set_i64`/`i64`, which the F-Chain's
-block timestamp needs and which are Go's `SetInt64`/`Int64` exactly.
+**The codec has one home, and it is not in this tree.** Every C++ chain reads
+and writes through the published `zap-proto/cpp`, pinned in
+`chains/cpp/zap.cmake`. The in-tree copies are gone. The wire has no signed
+type, so the block timestamp is written with `set_u64` and read back through a
+cast — eight bytes, two's complement, the same eight bytes Go's `SetInt64`
+writes.
 
 ## Open, and named rather than hidden
 

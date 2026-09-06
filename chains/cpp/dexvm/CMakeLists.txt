@@ -20,7 +20,7 @@
 #   manifest   the per-network declaration, and how it becomes a live registry
 #   embedded   the committed manifests, carried in the binary
 #   runtime    the node-side verifier: manifest ids bound to running ids
-#   zap        the zero-copy structural codec (header-only)
+#   zap-proto/cpp  the ZAP protocol SDK (published, pinned in zap.cmake)
 #   store      the durable log the set rests on
 #   tx/state   what a block carries, and what executing it produces
 #   vm         the seam implementation
@@ -30,6 +30,10 @@
 
 cmake_minimum_required(VERSION 3.20)
 project(dexvm LANGUAGES C CXX)
+
+
+# The wire this chain speaks comes from the published SDK, not from here.
+include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -143,7 +147,7 @@ target_include_directories(dexvm PUBLIC
   ${_node}/include
   ${_consensus}/include
 )
-target_link_libraries(dexvm PUBLIC dexvm_crypto)
+target_link_libraries(dexvm PUBLIC zap::zap dexvm_crypto)
 target_compile_options(dexvm PRIVATE -Wall -Wextra)
 
 # ── tests ────────────────────────────────────────────────────────────────────

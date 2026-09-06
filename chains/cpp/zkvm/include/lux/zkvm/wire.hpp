@@ -24,7 +24,7 @@
 #pragma once
 
 #include "lux/zkvm/id.hpp"
-#include "lux/zkvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <expected>
 #include <functional>
@@ -50,8 +50,9 @@ inline constexpr const char* kErrLength =
 // not account for every byte handed in. Every parser in this port goes through
 // it, so canonicality is decided in one place rather than per type.
 inline Result<zap::Object> parse_frame(ByteView data, zap::Message* keep) {
-    std::string err;
-    if (!zap::Message::parse(data, keep, &err)) return std::unexpected(err);
+    auto msg = zap::Message::parse(data);
+    if (!msg) return std::unexpected(std::string(zap::describe(msg.error())));
+    *keep = *msg;
     if (keep->size() != data.size()) return std::unexpected(kErrTrailingBytes);
     return keep->root();
 }
@@ -64,8 +65,8 @@ inline int write_u32_list(zap::Builder& b, const std::vector<std::uint32_t>& xs)
 
 inline std::vector<std::uint32_t> read_u32_list(const zap::Object& o, int ptr_off) {
     auto l = o.list_stride(ptr_off, 4);
-    std::vector<std::uint32_t> out(std::size_t(l.len()));
-    for (int i = 0; i < l.len(); ++i) out[std::size_t(i)] = l.u32(i);
+    std::vector<std::uint32_t> out(std::size_t(l.size()));
+    for (int i = 0; i < l.size(); ++i) out[std::size_t(i)] = l.u32(i);
     return out;
 }
 
@@ -73,7 +74,7 @@ inline Bytes cp(ByteView b) { return bytes_of(b); }
 
 inline Id read_id(const zap::Object& o, int off) {
     Id id{};
-    auto s = o.bytes_fixed_slice(off, 32);
+    auto s = o.bytes_fixed(off, 32);
     if (s.size() == 32) std::copy(s.begin(), s.end(), id.begin());
     return id;
 }

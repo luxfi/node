@@ -10,7 +10,7 @@
 #   luxcpp/crypto/mldsa  the C++ surface over it — how F knows who asked
 #   lux-cpp/consensus    the Id type the seam speaks (header-only here)
 #   lux-cpp/node         include/lux/node/vm.hpp — the VM seam itself
-#   chains/cpp/zap       the zero-copy structural codec (header-only)
+#   zap-proto/cpp        the ZAP protocol SDK (published, pinned in zap.cmake)
 #   ─────────────────────────── NEW in fhevm ───────────────────────────
 #   id          identifiers, sha256, and the cb58/base64 renderings
 #   json        JSON as Go's encoding/json does it — a consensus question here
@@ -31,6 +31,10 @@
 
 cmake_minimum_required(VERSION 3.20)
 project(fhevm LANGUAGES C CXX)
+
+
+# The wire this chain speaks comes from the published SDK, not from here.
+include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 23)
@@ -131,11 +135,10 @@ add_library(fhevm STATIC
 )
 target_include_directories(fhevm PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../zap/include
   ${_node}/include
   ${_consensus}/include
 )
-target_link_libraries(fhevm PUBLIC fhevm_mldsa)
+target_link_libraries(fhevm PUBLIC zap::zap fhevm_mldsa)
 target_compile_options(fhevm PRIVATE -Wall -Wextra)
 
 # ── tests ────────────────────────────────────────────────────────────────────

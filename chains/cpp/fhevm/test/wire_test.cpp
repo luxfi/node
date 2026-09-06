@@ -13,11 +13,10 @@
 
 #include "lux/fhevm/block.hpp"
 #include "lux/fhevm/transaction.hpp"
-#include "lux/zap/zap.hpp"
+#include <zap/zap.hpp>
 
 using namespace lux::fhevm;
 using namespace lux::fhevm::test;
-namespace zap = lux::zap;
 
 namespace {
 
@@ -47,10 +46,10 @@ Transaction sample_tx() {
 constexpr int kTxPayer = 1;
 constexpr int kTxSubject = 21;
 
-std::size_t declared_len(const Bytes& b) { return zap::get_u32(b.data() + 12); }
+std::size_t declared_len(const Bytes& b) { return zap::load_u32(b.data() + 12); }
 
 void set_declared_len(Bytes& b, std::size_t at, std::uint32_t n) {
-    zap::put_u32(b.data() + at + 12, n);
+    zap::store_u32(b.data() + at + 12, n);
 }
 
 // wire_vm is the least VM a block needs to name itself: a chain id. A block id
@@ -158,7 +157,7 @@ void non_canonical_is_refused() {
 
     Bytes sig(data.begin() + std::int64_t(n), data.end());
     sig.insert(sig.end(), 8, 0);
-    zap::put_u32(sig.data() + 12, std::uint32_t(sig.size()));
+    zap::store_u32(sig.data() + 12, std::uint32_t(sig.size()));
     Bytes twin(data.begin(), data.begin() + std::int64_t(n));
     twin.insert(twin.end(), sig.begin(), sig.end());
 
@@ -186,7 +185,7 @@ void a_transaction_must_carry_both_messages() {
     // there. A declared length covering the whole buffer leaves nothing for the
     // auth/sig object, and an empty remainder is not a message.
     Bytes data = sample_tx().bytes();
-    zap::put_u32(data.data() + 12, std::uint32_t(data.size()));
+    zap::store_u32(data.data() + 12, std::uint32_t(data.size()));
     refused(parse_transaction(view(data)), Err::InvalidPayload,
             "a transaction with no auth/sig object");
 
@@ -213,7 +212,7 @@ void the_leading_message_is_held_to_more_than_its_length() {
     }
     {
         Bytes bad = sound;
-        zap::put_u16(bad.data() + 4, 0xbeef);
+        zap::store_u16(bad.data() + 4, 0xbeef);
         refused(parse_transaction(view(bad)), Err::InvalidPayload, "a version we do not speak");
     }
     accepted(parse_transaction(view(sound)), "the control");
@@ -230,7 +229,7 @@ void a_truncated_fixed_field_is_refused_not_zero_filled() {
         Bytes truncated = sound;
         std::size_t size = std::size_t(zap::kHeaderSize + cut);
         check(size < n, "the cut falls inside the message");
-        zap::put_u32(truncated.data() + 12, std::uint32_t(size));
+        zap::store_u32(truncated.data() + 12, std::uint32_t(size));
         refused(parse_transaction(view(truncated)), Err::InvalidPayload,
                 "a fixed field cut at " + std::to_string(cut) + " refuses rather than zero-fills");
     }
@@ -318,7 +317,7 @@ Bytes block_bytes_with_tx_lens(const Id& parent, std::uint64_t height, std::int6
     auto ob = bld.start_object(64);
     ob.set_bytes_fixed(0, view(parent));
     ob.set_u64(32, height);
-    ob.set_i64(40, ts);
+    ob.set_u64(40, static_cast<std::uint64_t>(ts));
     ob.set_list(48, off, len);
     ob.set_bytes(56, view(blob));
     ob.finish_as_root();
@@ -333,7 +332,7 @@ void every_malformed_block_is_refused() {
 
     // A header that is not a ZAP message at all.
     Bytes garbage(std::size_t(zap::kHeaderSize + 16), 0);
-    zap::put_u32(garbage.data() + 12, std::uint32_t(garbage.size()));
+    zap::store_u32(garbage.data() + 12, std::uint32_t(garbage.size()));
     refused(w.vm->parse_block(view(garbage)), Err::InvalidPayload,
             "a message that decodes to nothing");
 
@@ -366,7 +365,7 @@ void every_malformed_block_is_refused() {
     // the padding, so every field still decodes identically.
     Bytes grown = sound;
     grown.insert(grown.end(), 16, 0);
-    zap::put_u32(grown.data() + 12, std::uint32_t(grown.size()));
+    zap::store_u32(grown.data() + 12, std::uint32_t(grown.size()));
     refused(w.vm->parse_block(view(grown)), Err::InvalidPayload,
             "a block with two encodings is a block with none");
 
