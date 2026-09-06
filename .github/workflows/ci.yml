@@ -1,8 +1,13 @@
 name: Tests
 
-# The repo's tests, on the native runners (git.hanzo.ai → git-runner).
+# The repo's tests, on our own runners: evo (x86_64) and spark (arm64),
+# self-hosted and registered to GitHub. Nothing runs on a GitHub-hosted machine.
 #
-# This replaces .github/workflows/ci.yml, whose `Unit` job ran a matrix of
+# The file sits in .github/workflows because BOTH planes read that path —
+# github.com reads only this one, git.hanzo.ai reads it too — so one file is the
+# whole definition and there is no second copy to drift.
+#
+# This IS .github/workflows/ci.yml. It replaced an earlier one whose `Unit` job ran a matrix of
 # macos-13, ubuntu-22.04, ubuntu-24.04 and windows-2022. No runner on this forge
 # carries `macos-13` or `windows-2022`, and an unclaimable job does not fail —
 # it waits. Every push therefore left two jobs queued forever, and they
