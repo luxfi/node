@@ -14,7 +14,7 @@ require (
 	github.com/luxfi/node v1.36.184
 	github.com/luxfi/runtime v1.3.1
 	github.com/luxfi/timer v1.1.1
-	github.com/luxfi/utils v1.3.1
+	github.com/luxfi/util v1.3.4
 	github.com/luxfi/utxo v0.5.10
 	github.com/luxfi/validators v1.3.3
 	github.com/luxfi/vm v1.3.16
@@ -69,6 +69,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/ethereum/c-kzg-4844/v2 v2.1.7 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
 	github.com/getsentry/sentry-go v0.46.2 // indirect
@@ -144,6 +145,7 @@ require (
 	github.com/luxfi/sys v0.1.0 // indirect
 	github.com/luxfi/threshold v1.12.6 // indirect
 	github.com/luxfi/tls v1.1.1 // indirect
+	github.com/luxfi/utils v1.3.1 // indirect
 	github.com/luxfi/version v1.0.1 // indirect
 	github.com/luxfi/warp v1.24.1 // indirect
 	github.com/luxfi/zapdb v1.10.6 // indirect
