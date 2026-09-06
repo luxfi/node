@@ -17,6 +17,8 @@
 
 #include "lux/xvm/txs.hpp"
 
+#include <type_traits>
+
 using namespace lux::xvm;
 using namespace lux::xvm::test;
 
@@ -509,10 +511,72 @@ void produced_utxos() {
     }
 }
 
+// ================= a transaction is not a UTXO's payload =================
+//
+// Ported from TestBaseTxNotState, TestCreateAssetTxNotState, TestOperationTxNotState,
+// TestImportTxNotState and TestExportTxNotState — five Go tests that all ask one
+// question: `intf.(verify.State)` must be false for every transaction type.
+//
+// verify.State in Go is the interface a UTXO's PAYLOAD implements. In this port
+// that role is fx::FxOutput (fx.hpp says so in as many words: "FxOutput is Go's
+// verify.State"), and a UTXO holds a shared_ptr<fx::FxOutput>. So the same
+// question is: can a transaction be put where an output belongs?
+//
+// It is asked twice, because the two answers can come apart. The static assert is
+// the strong form — a transaction that inherited FxOutput would not compile past
+// it, so the mistake is unrepresentable rather than merely untaken. The runtime
+// cast is the form that survives a refactor into some future common base: if one
+// day a tx and an output shared an ancestor, the static test would still hold
+// while the cast would start succeeding, and it is the CAST that decides whether
+// state.hpp's UTXO can be handed a transaction.
+static_assert(!std::is_base_of_v<fx::FxOutput, txs::BaseTx>,
+              "a BaseTx is not a UTXO payload");
+static_assert(!std::is_base_of_v<fx::FxOutput, txs::CreateAssetTx>,
+              "a CreateAssetTx is not a UTXO payload");
+static_assert(!std::is_base_of_v<fx::FxOutput, txs::OperationTx>,
+              "an OperationTx is not a UTXO payload");
+static_assert(!std::is_base_of_v<fx::FxOutput, txs::ImportTx>,
+              "an ImportTx is not a UTXO payload");
+static_assert(!std::is_base_of_v<fx::FxOutput, txs::ExportTx>,
+              "an ExportTx is not a UTXO payload");
+static_assert(!std::is_base_of_v<fx::FxValue, txs::UnsignedTx>,
+              "no transaction is an fx value of any kind");
+
+void no_transaction_is_state() {
+    std::printf("\n  -- a transaction is not a UTXO payload --\n");
+
+    txs::BaseTx base;
+    txs::CreateAssetTx create;
+    txs::OperationTx op;
+    txs::ImportTx imp;
+    txs::ExportTx exp;
+
+    auto not_state = [](txs::UnsignedTx& tx, const std::string& what) {
+        // The cross-cast a caller would have to make to smuggle a transaction into
+        // a UTXO. Both directions are asked: a tx is neither an output nor any
+        // other fx value, so neither an output slot nor a credential slot can hold
+        // one.
+        check(dynamic_cast<fx::FxOutput*>(&tx) == nullptr, what + " is not state");
+        check(dynamic_cast<fx::FxValue*>(&tx) == nullptr, "…nor any other fx value");
+    };
+    not_state(base, "a BaseTx");
+    not_state(create, "a CreateAssetTx");
+    not_state(op, "an OperationTx");
+    not_state(imp, "an ImportTx");
+    not_state(exp, "an ExportTx");
+
+    // The converse, so the two assertions above cannot both hold because the cast
+    // never succeeds for anything: a real fx output IS state.
+    auto out = std::make_shared<fx::secp256k1fx::TransferOutput>();
+    check(dynamic_cast<fx::FxOutput*>(out.get()) != nullptr,
+          "…while an fx transfer output is");
+}
+
 }  // namespace
 
 int main() {
     std::printf("xvm — the transaction vocabulary, ported from the Go txs tests\n");
+    no_transaction_is_state();
     base_tx_round_trip();
     create_asset_round_trip();
     create_asset_no_states_round_trip();
