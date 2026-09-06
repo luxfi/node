@@ -64,12 +64,14 @@ constexpr std::uint32_t kNetworkID = 1;
 // set all verified, because nothing was checking.
 config::Config qconfig() { return config::default_config(); }
 
-// A refusal Q reached without looking anything up.
+// Whether verify reached its refusal BEFORE it read the store.
 //
-// The Q-chain's Verify runs the chain binding and the block's own
-// well-formedness before it goes looking for a parent, so which sentinel came
-// back says which layer answered. The words are the port's own, and they are
-// the Go chain's own, because the port raises Go's sentinels.
+// The question is the corpus's and is defined once, in conformance/README.md
+// under "`syntactic` where verify is one pass". This is only where THIS port
+// puts that boundary: the chain binding and the block's own well-formedness,
+// which its verify settles before it goes looking for a parent. The words are
+// the port's own, and they are also the Go chain's, because the port raises Go's
+// sentinels.
 bool block_alone(const std::string& msg, std::uint64_t height) {
     auto has = [&](const char* w) { return msg.find(w) != std::string::npos; };
     if (has("belongs to another chain")) return true;
@@ -121,11 +123,9 @@ conf::Row eval_block(const std::string& id, const std::string& wire) {
     const Id blk_id = blk->id();
     r.hash = conf::hex(blk_id.data(), blk_id.size());
 
-    // One call, both layers, exactly as the Go evaluator does it: Verify runs
-    // the chain binding and the block's own well-formedness before it looks for
-    // a parent, so where the refusal came from is what says which layer
-    // answered. Splitting it here would be this file deciding the layering
-    // rather than reading it.
+    // One call, both layers: verify has no second entry point to ask, so where
+    // its refusal came from is what says which layer answered. Splitting it here
+    // would be this file deciding the layering rather than reading it.
     auto st = blk->verify();
     if (st) {
         r.syntactic = conf::kOk;

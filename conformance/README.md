@@ -173,6 +173,54 @@ implementation does not run that kind of transaction. A chain that refuses a
 kind by name answers `UNSUPPORTED` where a chain that tries to execute it
 answers `LEDGER`. That difference is the shape of a fork.
 
+### `syntactic` where verify is one pass
+
+`syntactic` and `exec` name two passes, and most of the corpus has two to read.
+P and X run `SyntacticVerify` and then execute. F runs `SyntacticVerify` — well
+formed and priceable, without state — and then `SubmitTx`. D's vectors are not
+blocks at all but pure functions, and its two fields are whether the inputs were
+admissible and what the function returned. On those there is nothing here to
+decide.
+
+Q and Z have ONE. `Verify` runs the block's own rules, then the transactions,
+then the parent, and returns the first refusal — there is no second entry point
+to call, so an evaluator that wants two answers has to find the seam itself.
+Three of them did, and each found it somewhere else. That is not a fork in any
+chain; it is a question the corpus was asking without ever having defined it.
+
+**The definition, for any chain whose verify is one pass:**
+
+> `syntactic` is the verdict that pass reached **before it read the chain**.
+> The boundary is that implementation's first read of the store. A refusal
+> ahead of it answers BOTH fields — the block never got far enough for the two
+> to differ. A refusal past it answers `exec`, and `syntactic` is `OK`.
+
+The boundary is a place in the code, not a category of rule. Q reads its parent
+and only then checks the clock; Z checks the clock first. So the same rule is
+`exec` on one chain and `syntactic` on the other, and that is the answer, not a
+wrinkle to iron out — it is the difference between two verifies, and this field
+is what says so. An implementation that moved a rule across its own first read
+answers differently and fails the run, which is the whole point of asking.
+
+**Each implementation answers for itself, out of its own code.** A port that
+owns its source names the boundary there and the evaluator calls it:
+`Block::syntactic_verify` in the C++ Z-chain, `on_chain` then `well_formed` in
+the Rust Q-chain — the same two the Rust VM's own `verify` runs before it looks
+for a parent. Where the reference is a published module nobody here can add a
+method to, the evaluator names the refusals instead: `zBlockAlone` and
+`qBlockAlone` quote `luxfi/chains`' own sentinels, because that package keeps
+every one of them unexported and there is no symbol to name. Nothing is copied
+between languages. Each list is a walk of one `Verify`, in the order that
+`Verify` runs.
+
+**Not by counting reads.** A store that counted its own reads would answer "did
+this run touch the chain" exactly, in every language, with no list of words
+anywhere. It answers a different question. A block whose transactions carry
+nullifiers reads the spent set long before it reaches the state root, and a
+block carrying none never reads it at all — so one rule refusing in one way
+would land in a different class depending on what the block happened to hold. A
+class that moves with the payload is not a class.
+
 ### `SKIPPED` is never a pass
 
 A field an implementation declines to answer prints `SKIPPED`, and the runner
@@ -500,6 +548,22 @@ normalises every other unset field to its default and leaves that one alone.
 A Q-chain configured by omission checks no post-quantum signature, and nothing
 downstream says so.
 
+The Rust Q-chain became the third voice on those 81 later than the other two,
+and it arrived with the SAME hole the Z-chain had just closed. Its evaluator
+read `syntactic` off `well_formed()` alone, so `Q_BLOCK_FOREIGN_CHAIN` and
+`Q_BLOCK_FOREIGN_NETWORK` came back `OK` where Go and C++ both answered
+`SYNTACTIC` — a block naming another chain, waved through the field that is
+supposed to catch exactly that. The Rust chain was never wrong: `on_chain` is
+right there, and `Vm::verify` calls it first, ahead of `well_formed` and well
+ahead of the parent lookup. Only the evaluator had stopped one call short. Two
+readers can invent the seam in two places; three can invent it in three, which
+is why the definition is written down now instead of inferred a fourth time.
+
+It also declined the `identity` vector outright — `unknown op identity`, five
+INTERNAL fields — so the one row that would report a Rust evaluator built for
+the wrong chain was the row it did not print. It prints the pair it serves now,
+and derives it from nothing the corpus hands it.
+
 **D — 35 of 35 agree.** Every asset id, every market id, the kind and mode
 parsers, the network class and the value-activation guard.
 
@@ -507,33 +571,36 @@ parsers, the network class and the value-activation guard.
 ways a signature can fail to be the payer's, and the id the genesis block
 takes.
 
-**Z — 137 vectors, all 137 agree.** It took the first of the two fixes the
-paragraph that used to sit here proposed.
+**Z — 137 of 137 agree.** This is where the field got its definition.
 
 `Z_BLOCK_TIME_AHEAD`, `Z_BLOCK_GENESIS_WITH_PARENT`,
 `Z_BLOCK_DUPLICATE_NULLIFIER` and `Z_TX_EXPIRED` answered `syntactic OK` in
 C++ and `syntactic SYNTACTIC` in Go. Both refused the block, both gave the
-same reason, and `exec` agreed on all four — they disagreed about which phase
-caught it.
+same reason, and `exec` agreed on all four. They disagreed about which phase
+caught it, and neither of them was wrong, because nothing said what the phases
+were. Three of the four rules are block-level besides, so no per-transaction
+pass could have held them however the two readers had split it.
 
-The cause was that neither implementation had a syntactic pass to read. The
-Z-chain reference has ONE: `Block.Verify` runs the shape rules, then the
-proofs, then the parent lookup, and returns the first refusal. So each
-evaluator invented the split, and they invented it differently — Go by
-matching the sentinels it knew were decided before any lookup, C++ by calling
-the per-transaction `validate_basic` the port happened to have, which could
-not hold a block-level rule at all.
+The Z-chain reference has ONE verify. So Go matched the sentinels it knew were
+decided before any lookup, C++ called the per-transaction `validate_basic` its
+port happened to expose, and the two inferences did not coincide. The fix is
+the definition above — `syntactic` is what verify decided before it read the
+chain — plus one change per implementation to answer THAT.
 
-The boundary existed inside `Block::check()` the whole time, as an unnamed
-ordering property: the point after which every statement dereferences the VM
-for something durable. Having no name is what let two readers infer it and
-disagree. It is `Block::syntactic_verify()` now, which is the name the C++
-P-chain already uses at twenty sites, and the evaluator asks the chain for
-that verdict instead of holding a second opinion about the port under test.
-Five rules sit above the line, each decidable from the block in hand: the
+C++ could name the boundary in its own source, and does:
+`Block::syntactic_verify()`, the name the C++ P-chain already uses at twenty
+sites, holding the five rules that are settled from the block in hand — the
 genesis/parent pairing, the transaction cap, the clock, a nullifier repeated
-inside the block, and per transaction `ValidateBasic` and `expiry < height` —
-where the height is the block's own, on the wire, not the chain's.
+inside the block, and per transaction `ValidateBasic` and `expiry < height`,
+where the height is the block's own, on the wire, not the chain's. `check()`
+calls it first and then asks `admit` per transaction as before, so the evaluator
+asks the chain rather than holding an opinion about it.
+
+Go cannot: its reference is a published module, and `luxfi/chains/zkvm` keeps
+every sentinel unexported, so there is no symbol to name and no method to add.
+`zBlockAlone` quotes the words instead, matched whole rather than by substring
+— the proof verifier raises `transaction missing proof` too, from the far side
+of the boundary, and a `Contains` would have called that one syntactic.
 
 One thing the corpus cannot prove: that the pass really avoids the ledger.
 Every vector names the genesis block as its parent, and genesis exists, so a
