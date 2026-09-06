@@ -18,9 +18,9 @@ func Report(runs []*Run) {
 	fmt.Println("== what each implementation could do ==")
 	for _, r := range runs {
 		if r.Ready {
-			fmt.Printf("  %-5s %-14s market at %s\n", r.Node.Lang, r.Node.Net, r.Contract.Hex())
+			fmt.Printf("  %-5s market at %s\n", r.Node.Lang, r.Contract.Hex())
 		} else {
-			fmt.Printf("  %-5s %-14s COULD NOT: %s\n", r.Node.Lang, r.Node.Net, r.Why)
+			fmt.Printf("  %-5s COULD NOT: %s\n", r.Node.Lang, r.Why)
 		}
 	}
 

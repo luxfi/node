@@ -25,15 +25,14 @@ import (
 // Node is one running implementation, named by the language that wrote it.
 type Node struct {
 	Lang    string // go, cpp, rust
-	Net     string // the testnet it serves
 	URL     string
 	ChainID *big.Int
 	http    *http.Client
 }
 
 // NewNode dials nothing; the first call proves the node is there.
-func NewNode(lang, net, url string) *Node {
-	return &Node{Lang: lang, Net: net, URL: url,
+func NewNode(lang, url string) *Node {
+	return &Node{Lang: lang, URL: url,
 		http: &http.Client{Timeout: 20 * time.Second}}
 }
 

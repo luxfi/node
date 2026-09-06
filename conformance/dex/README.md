@@ -8,7 +8,19 @@ script by the same three keys, with the resulting book put side by side.
 go build ./conformance/dex && ./dex          # probe, run, and run the control
 ./dex -probe                                 # only report what each node admits to
 ./dex -only go,rust                          # a subset
+./dex -fleet rust=http://127.0.0.1:23620/v1/chain/C   # where a node actually is
 ```
+
+`-fleet` takes `lang=url`, comma separated, and replaces the URL of each
+language named. A port is where a node happened to be started, not a property
+of the implementation, so the defaults are a convenience and not a fact; a
+language the fleet does not carry is refused rather than added, since a typo
+would otherwise quietly run two of something.
+
+Each node must have the signing key funded — see **the keys** below. Two of
+the three ship a genesis that funds only a treasury Safe, and a chain that
+cannot execute a transaction reports `includes=false` here and never leaves
+height 0. `LLM.md` has the genesis that fixes it.
 
 ## what is compared, and why it is not the state root
 
