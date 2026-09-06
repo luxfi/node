@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+
+[package]
+name = "lux-zap"
+version = "0.1.0"
+edition = "2021"
+description = "The ZAP wire runtime the Lux chains read and write, emitted by zapgen"
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node2"
+publish = false
+
+# None. A message is a byte buffer and every accessor is an index into it.
+[dependencies]
