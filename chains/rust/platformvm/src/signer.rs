@@ -354,6 +354,24 @@ mod tests {
         assert_eq!(signer.verify(), Err(Error::MalformedSignature));
     }
 
+    /// Go's `TestNewProofOfPossessionDeterministic`.
+    ///
+    /// The proof is a BLS signature, and BLS signing is deterministic — no
+    /// nonce, no randomness. Two proofs made from one key must be the same
+    /// bytes, because the proof rides inside the transaction and a second
+    /// spelling of it is a second transaction id for one registration.
+    #[test]
+    fn a_proof_of_possession_is_deterministic() {
+        let sk = key(b"a validator");
+        let first = Signer::prove(&sk);
+        let second = Signer::prove(&sk);
+        assert_eq!(first, second);
+        assert_eq!(first.public_key(), second.public_key());
+        // And it is the key's own signature, not a re-derivation that merely
+        // happens to match: a different key gives a different proof.
+        assert_ne!(first, Signer::prove(&key(b"another validator")));
+    }
+
     #[test]
     fn a_signer_occupies_the_bytes_the_wire_reserves() {
         // 1 tag + 48 key + 96 signature. The offsets of everything after the
