@@ -1,7 +1,7 @@
 // The AMM/DEX differential. Its own module for the same reason
 // conformance/gen is: it links an EVM ABI and signer, which the node host
 // must not carry.
-module github.com/luxfi/node2/conformance/dex
+module github.com/luxfi/node/conformance/dex
 
 go 1.26.4
 
