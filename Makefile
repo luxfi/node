@@ -214,6 +214,7 @@ CONF_WANT   := $(CONF)/corpus/expected.tsv
 PVM_RUST    := $(ROOT)/chains/rust/platformvm/target/release/conformance
 XVM_RUST    := $(ROOT)/chains/rust/xvm/target/release/conformance
 QVM_RUST    := $(ROOT)/chains/rust/quantumvm/target/release/conformance
+DVM_RUST    := $(ROOT)/chains/rust/dexvm/target/release/conformance
 PVM_CPP     := $(ROOT)/chains/cpp/platformvm/build/pvm_conformance
 XVM_CPP     := $(ROOT)/chains/cpp/xvm/build/xvm_conformance
 QVM_CPP     := $(ROOT)/chains/cpp/quantumvm/build/qvm_conformance
@@ -233,6 +234,7 @@ chains: chains-build
 		-eval "rust=$(PVM_RUST)" \
 		-eval "rust=$(XVM_RUST)" \
 		-eval "rust=$(QVM_RUST)" \
+		-eval "rust=$(DVM_RUST)" \
 		-eval "cpp=$(PVM_CPP)" \
 		-eval "cpp=$(XVM_CPP)" \
 		-eval "cpp=$(QVM_CPP)" \
@@ -256,6 +258,7 @@ chains-build:
 	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/quantumvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(ROOT)/chains/cpp/platformvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release
@@ -268,7 +271,7 @@ chains-build:
 	cmake --build $(ROOT)/chains/cpp/dexvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/fhevm -B $(ROOT)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(ROOT)/chains/cpp/fhevm/build -j$(NPROC)
-	@for f in $(CONF_GEN) $(PVM_RUST) $(XVM_RUST) $(QVM_RUST) $(CPP_EVALS); do \
+	@for f in $(CONF_GEN) $(PVM_RUST) $(XVM_RUST) $(QVM_RUST) $(DVM_RUST) $(CPP_EVALS); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
 	done
 
@@ -290,6 +293,7 @@ bench: chains-build
 		-eval "rust=$(PVM_RUST)" \
 		-eval "rust=$(XVM_RUST)" \
 		-eval "rust=$(QVM_RUST)" \
+		-eval "rust=$(DVM_RUST)" \
 		-eval "cpp=$(PVM_CPP)" \
 		-eval "cpp=$(XVM_CPP)"
 
