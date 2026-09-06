@@ -53,7 +53,19 @@ wire::Result<void> NullifierDb::reload() {
 }
 
 wire::Result<void> NullifierDb::mark_spent(ByteView nullifier, std::uint64_t height) {
-    if (spent_.count(nullifier)) return std::unexpected(kErrNullifierSpent);
+    // The LAST refusal in front of a note being spent twice, so it asks the same
+    // question the read path asks — records included, and a failed read reported
+    // as a failure rather than as "not spent".
+    //
+    // It used to consult the in-memory set alone, which is strictly weaker than
+    // the read beside it: a set that is not a superset of the records answers
+    // "unspent" for a note the records already hold, and this then OVERWRITES
+    // that record with a new height and returns success. The note is spent
+    // twice and nothing anywhere says so. Two answers to one question is one
+    // answer too many; there is one now.
+    auto spend = spent_at(nullifier);
+    if (!spend) return std::unexpected(spend.error());
+    if (spend->spent) return std::unexpected(kErrNullifierSpent);
 
     const Bytes record = be64(height);
     const Bytes db_key = make_nullifier_key(nullifier);

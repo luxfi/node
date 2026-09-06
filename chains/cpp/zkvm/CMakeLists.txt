@@ -135,6 +135,8 @@ target_link_libraries(zkvm PUBLIC Threads::Threads)
 #   txs         the identity, and every field it commits to
 #   groth16     point encodings, the field, and the pairing verdict
 #   verifier    the classical path's refusals and its one acceptance
+#   tamper      proofs that DECODE and are still not proofs of this statement —
+#               the verdicts only the pairing can reach
 #   strictpq    the profile gate: what a strict-PQ chain will and will not judge
 #   starkfri    the strict-PQ seam: unbound refuses, bound decides
 #   store       the durable log, the view, and what survives a restart
@@ -144,7 +146,7 @@ target_link_libraries(zkvm PUBLIC Threads::Threads)
 #   vertex      the DAG shape, its conflicts and its wire
 #   vm          the whole chain: genesis, build, verify, accept, restart
 enable_testing()
-set(ZKVM_TESTS golden wire txs groth16 verifier strictpq starkfri store state mempool block
+set(ZKVM_TESTS golden wire txs groth16 verifier tamper strictpq starkfri store state mempool block
                vertex vm)
 foreach(_t ${ZKVM_TESTS})
   add_executable(${_t}_test test/${_t}_test.cpp)
