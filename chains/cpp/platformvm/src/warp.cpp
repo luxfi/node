@@ -7,26 +7,15 @@
 
 #include "lux/platformvm/warp.hpp"
 
+#include "lux/platformvm/gen/warp_zap.hpp"
 #include "lux/platformvm/safemath.hpp"
 #include "lux/platformvm/sha256.hpp"
-#include <zap/zap.hpp>
 
 #include <algorithm>
 #include <cstring>
 
 namespace lux::platformvm::warp {
 namespace {
-
-// UnsignedMessage: NetworkID u32 @0, SourceChainID 32B @4, Payload bytes @36.
-constexpr std::int64_t kUmOffNetworkId = 0;
-constexpr std::int64_t kUmOffSource = 4;
-constexpr std::int64_t kUmOffPayload = 36;
-constexpr std::int64_t kUmSize = 44;
-
-// Message: unsigned bytes @0, signature bytes @8.
-constexpr std::int64_t kMsgOffUnsigned = 0;
-constexpr std::int64_t kMsgOffSignature = 8;
-constexpr std::int64_t kMsgSize = 16;
 
 // The wire kinds a signature can be. Only the first is a scheme this port
 // implements; the rest are named so a refusal can say WHICH one it met.
@@ -39,12 +28,6 @@ enum class WKind : std::uint8_t {
     TeleportTransferPayload = 0x05,
     TeleportAttestPayload = 0x06,
 };
-
-// BitSetSignature: kind u8 @0, Signature 96B @1, Signers bytes @97.
-constexpr std::int64_t kOffWKind = 0;
-constexpr std::int64_t kBssOffSignature = 1;
-constexpr std::int64_t kBssOffSigners = 97;
-constexpr std::int64_t kBssSize = 105;
 
 // The bit vector is a big-endian big integer. Bit i of it is bit (i % 8) of the
 // byte (n - 1 - i / 8), which is what Go's big.Int.Bit does over big.Int.Bytes.
@@ -81,30 +64,23 @@ bool canonical_bits(std::span<const std::uint8_t> b) { return b.empty() || b[0] 
 
 Result<UnsignedMessage> UnsignedMessage::build(std::uint32_t network_id, const Id& source_chain_id,
                                                std::span<const std::uint8_t> payload) {
-    zap::Builder b(zap::kHeaderSize + kUmSize + payload.size() + 16);
-    auto ob = b.start_object(kUmSize);
-    ob.set_u32(kUmOffNetworkId, network_id);
-    ob.set_bytes_fixed(kUmOffSource, source_chain_id.span());
-    ob.set_bytes(kUmOffPayload, payload);
-    ob.finish_as_root();
-
     UnsignedMessage m;
     m.network_id = network_id;
     m.source_chain_id = source_chain_id;
     m.payload.assign(payload.begin(), payload.end());
-    m.bytes = b.finish();
+    m.bytes = wire::NewUnsigned(wire::UnsignedInput{
+        .NetworkID = network_id, .Source = source_chain_id.b, .Payload = payload});
     m.id = id_from_hash(sha256(m.bytes));
     return m;
 }
 
 Result<UnsignedMessage> UnsignedMessage::parse(std::span<const std::uint8_t> b) {
-    const auto zm = zap::Message::parse(b);
+    const auto zm = wire::WrapUnsigned(b);
     if (!zm) return fail(Err::BufferTooSmall, "warp: unsigned message is not a zap message");
-    const auto root = zm->root();
     UnsignedMessage m;
-    m.network_id = root.u32(kUmOffNetworkId);
-    m.source_chain_id = Id::from(root.bytes_fixed(kUmOffSource, kIdLen));
-    const auto payload = root.bytes(kUmOffPayload);
+    m.network_id = zm->NetworkID();
+    m.source_chain_id = Id::from(zm->Source());
+    const auto payload = zm->Payload();
     m.payload.assign(payload.begin(), payload.end());
     m.bytes.assign(b.begin(), b.end());
     m.id = id_from_hash(sha256(m.bytes));
@@ -117,52 +93,47 @@ Result<int> BitSetSignature::num_signers() const {
 }
 
 Result<Message> Message::build(const UnsignedMessage& unsigned_message, const BitSetSignature& sig) {
-    zap::Builder sb(zap::kHeaderSize + kBssSize + sig.signers.size() + 16);
-    auto sob = sb.start_object(kBssSize);
-    sob.set_u8(kOffWKind, static_cast<std::uint8_t>(WKind::BitSetSignature));
-    sob.set_bytes_fixed(kBssOffSignature, {sig.signature.data(), sig.signature.size()});
-    sob.set_bytes(kBssOffSigners, sig.signers);
-    sob.finish_as_root();
-    const auto sig_bytes = sb.finish();
-
-    zap::Builder b(zap::kHeaderSize + kMsgSize + unsigned_message.bytes.size() + sig_bytes.size() + 32);
-    auto ob = b.start_object(kMsgSize);
-    ob.set_bytes(kMsgOffUnsigned, unsigned_message.bytes);
-    ob.set_bytes(kMsgOffSignature, sig_bytes);
-    ob.finish_as_root();
+    const auto sig_bytes = wire::NewBitSet(
+        wire::BitSetInput{.Kind = static_cast<std::uint8_t>(WKind::BitSetSignature),
+                          .Signature = sig.signature,
+                          .Signers = {sig.signers.data(), sig.signers.size()}});
 
     Message m;
     m.unsigned_message = unsigned_message;
     m.signature = sig;
-    m.bytes = b.finish();
+    m.bytes = wire::NewSigned(wire::SignedInput{
+        .Unsigned = {unsigned_message.bytes.data(), unsigned_message.bytes.size()},
+        .Signature = {sig_bytes.data(), sig_bytes.size()}});
     return m;
 }
 
 Result<Message> Message::parse(std::span<const std::uint8_t> b) {
-    const auto zm = zap::Message::parse(b);
+    const auto zm = wire::WrapSigned(b);
     if (!zm) return fail(Err::BufferTooSmall, "warp: message is not a zap message");
-    const auto root = zm->root();
 
-    auto unsigned_message = UnsignedMessage::parse(root.bytes(kMsgOffUnsigned));
+    auto unsigned_message = UnsignedMessage::parse(zm->Unsigned());
     if (!unsigned_message) return std::unexpected(unsigned_message.error());
 
-    const auto sig_bytes = root.bytes(kMsgOffSignature);
-    const auto sig_zm = zap::Message::parse(sig_bytes);
+    const auto sig_zm = wire::WrapBitSet(zm->Signature());
     if (!sig_zm) return fail(Err::BufferTooSmall, "warp: signature is not a zap message");
-    const auto sig_root = sig_zm->root();
 
-    const auto kind = static_cast<WKind>(sig_root.u8(kOffWKind));
+    const auto kind = static_cast<WKind>(sig_zm->Kind());
     if (kind != WKind::BitSetSignature)
         return fail(Err::UnknownWarpSignature,
                     "warp signature kind " + std::to_string(static_cast<int>(kind)) +
                         " is a scheme this port does not implement");
 
     BitSetSignature sig;
-    const auto raw = sig_root.bytes_fixed(kBssOffSignature, signer::kSignatureLen);
+    // The typed accessor is TOTAL — a field the buffer is too short to hold
+    // reads as zero rather than faulting. Here that would turn a truncated
+    // message into a signature of ninety-six zeros, and this is the one place
+    // that answered a short field with a refusal. It still does: the raw read
+    // is short exactly when the buffer cannot hold the field.
+    const auto raw = sig_zm->object().bytes_fixed(wire::kBitSetSignatureOff, signer::kSignatureLen);
     if (raw.size() != signer::kSignatureLen)
         return fail(Err::BufferTooSmall, "warp: the signature field is short");
     std::memcpy(sig.signature.data(), raw.data(), signer::kSignatureLen);
-    const auto signers = sig_root.bytes(kBssOffSigners);
+    const auto signers = sig_zm->Signers();
     sig.signers.assign(signers.begin(), signers.end());
 
     Message m;

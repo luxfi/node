@@ -14,7 +14,7 @@
 #include "lux/zkvm/block.hpp"
 #include "lux/zkvm/txs.hpp"
 #include "lux/zkvm/utxo.hpp"
-#include "lux/zkvm/zap.hpp"
+#include <zap/zap.hpp>
 
 using namespace lux::zkvm;
 using namespace lux::zkvm::test;

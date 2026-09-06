@@ -1,131 +1,85 @@
 // Copyright (C) 2026, Lux Industries, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
-// txs_wire.hpp — the offsets and the readers/writers every transaction shares.
+// txs_wire.hpp — arranging this chain's values into the runs the wire holds
+// them in, and reading them back out.
 //
-// Rendered from Go vms/platformvm/txs/spending.go and delta.go. Kept beside the
-// transaction types rather than inside them because the envelope is composed by
-// nineteen types and defined by none of them.
+// There is not an offset in this file. Every offset, every stride and every
+// accessor the P-chain has comes out of schema/wire.zap through zapgen and
+// lands in gen/wire_zap.hpp, in this same namespace. What is left here is the
+// ARRANGEMENT, which is a fact about this chain rather than about the format:
+// an output's owner addresses do not live in the output, they live in one run
+// shared by the whole transaction, and the output names a slice of it. That is
+// what lets a transaction be read without walking it, and it is a decision
+// this chain made — so it is stated here, once, rather than repeated at the
+// nineteen places a transaction is built.
+//
+// Each concept has one name and two directions: outs() takes outputs and gives
+// the run, or takes the run and gives the outputs.
 
 #pragma once
 
+#include "lux/platformvm/gen/wire_zap.hpp"
 #include "lux/platformvm/txs.hpp"
-#include <zap/zap.hpp>
 
-#include <cstring>
+#include <array>
+#include <cstdint>
+#include <span>
 #include <vector>
 
-namespace lux::platformvm::txs::wire {
+namespace lux::platformvm::wire {
 
-// Output entry, 72-byte stride: asset, stake lock, amount, owner header, and a
-// slice into the shared owner-address array.
-inline constexpr std::int64_t kOutAssetId = 0;
-inline constexpr std::int64_t kOutStakeLock = 32;
-inline constexpr std::int64_t kOutAmount = 40;
-inline constexpr std::int64_t kOutThreshold = 48;
-inline constexpr std::int64_t kOutOwnerLock = 52;
-inline constexpr std::int64_t kOutAddrStart = 60;
-inline constexpr std::int64_t kOutAddrCount = 64;
-inline constexpr std::int64_t kOutStride = 72;
+using Addr = std::array<std::uint8_t, kShortIdLen>;
 
-// Input entry, 96-byte stride: utxo id, asset, stake lock, amount, and a slice
-// into the shared signature-index array.
-inline constexpr std::int64_t kInTxId = 0;
-inline constexpr std::int64_t kInOutputIndex = 32;
-inline constexpr std::int64_t kInAssetId = 36;
-inline constexpr std::int64_t kInStakeLock = 68;
-inline constexpr std::int64_t kInAmount = 76;
-inline constexpr std::int64_t kInSigStart = 84;
-inline constexpr std::int64_t kInSigCount = 88;
-inline constexpr std::int64_t kInStride = 96;
-
-inline constexpr std::int64_t kAddrStride = 20;
-inline constexpr std::int64_t kSigStride = 4;
-
-// NetworkValidator entry, 192-byte stride.
-inline constexpr std::int64_t kNvWeight = 0;
-inline constexpr std::int64_t kNvBalance = 8;
-inline constexpr std::int64_t kNvSignerPub = 16;
-inline constexpr std::int64_t kNvSignerPop = 64;
-inline constexpr std::int64_t kNvNodeIdStart = 160;
-inline constexpr std::int64_t kNvNodeIdLen = 164;
-inline constexpr std::int64_t kNvRemThreshold = 168;
-inline constexpr std::int64_t kNvRemAddrStart = 172;
-inline constexpr std::int64_t kNvRemAddrCount = 176;
-inline constexpr std::int64_t kNvDeacThreshold = 180;
-inline constexpr std::int64_t kNvDeacAddrStart = 184;
-inline constexpr std::int64_t kNvDeacAddrCount = 188;
-inline constexpr std::int64_t kNvStride = 192;
-
-struct SpendPtrs {
-    std::int64_t outs_off = 0, outs_count = 0;
-    std::int64_t addr_off = 0, addr_count = 0;
-    std::int64_t ins_off = 0, ins_count = 0;
-    std::int64_t sig_off = 0, sig_count = 0;
+// An output list and the address run its owners were pooled into.
+struct OutRun {
+    std::vector<OutInput> list;
+    std::vector<Addr> addrs;
 };
 
-struct OutListPtrs {
-    std::int64_t list_off = 0, list_count = 0, addr_off = 0, addr_count = 0;
-};
-struct InListPtrs {
-    std::int64_t list_off = 0, list_count = 0, sig_off = 0, sig_count = 0;
-};
-struct OwnerPtrs {
-    std::uint32_t threshold = 0;
-    std::uint64_t locktime = 0;
-    std::int64_t addr_off = 0, addr_count = 0;
-};
-struct AuthPtrs {
-    std::int64_t off = 0, count = 0;
-};
-struct IdListPtrs {
-    std::int64_t off = 0, count = 0;
-};
-struct NetworkValidatorPtrs {
-    std::int64_t list_off = 0, list_count = 0;
+// An input list and the signature-index run its inputs were pooled into.
+struct InRun {
+    std::vector<InInput> list;
+    std::vector<std::uint32_t> sigs;
 };
 
-Id read_id(const zap::Object& o, std::int64_t off);
-NodeId read_node_id(const zap::Object& o, std::int64_t off);
-void set_id(zap::ObjectBuilder& ob, std::int64_t off, const Id& id);
-void set_node_id(zap::ObjectBuilder& ob, std::int64_t off, const NodeId& id);
+// A genesis validator list and the two pools it names runs in: one blob of
+// node ids, whose lengths differ, and one array of owner addresses.
+struct ValidatorRun {
+    std::vector<NetworkValidatorInput> list;
+    std::vector<std::uint8_t> node_ids;
+    std::vector<Addr> addrs;
+};
 
-std::vector<ShortId> slice_addrs(const zap::List& arr, std::uint32_t start, std::uint32_t count);
-std::vector<std::uint32_t> slice_sigs(const zap::List& arr, std::uint32_t start, std::uint32_t count);
+// The four spending fields every envelope opens with.
+struct Spend {
+    std::vector<OutInput> outs;
+    std::vector<Addr> owner_addrs;
+    std::vector<InInput> ins;
+    std::vector<std::uint32_t> sig_indices;
+};
 
-OutListPtrs write_outputs(zap::Builder& b, const std::vector<TransferableOutput>& outs);
-InListPtrs write_inputs(zap::Builder& b, const std::vector<TransferableInput>& ins);
-SpendPtrs write_spending(zap::Builder& b, const BaseTx& base);
-void set_envelope(zap::ObjectBuilder& ob, std::uint8_t kind, const BaseTx& base, const SpendPtrs& p);
+// ── this chain's values, arranged for the wire
 
-std::vector<TransferableOutput> read_outputs(const zap::Object& obj, std::int64_t list_off,
-                                             std::int64_t addr_off);
-std::vector<TransferableInput> read_inputs(const zap::Object& obj, std::int64_t list_off,
-                                           std::int64_t sig_off);
+std::vector<Addr> addrs(const std::vector<ShortId>& in);
+OutRun outs(const std::vector<TransferableOutput>& in);
+InRun ins(const std::vector<TransferableInput>& in);
+ValidatorRun validators(const std::vector<txs::NetworkValidator>& in);
+Spend spend(const BaseTx& base);
 
-OwnerPtrs write_owner(zap::Builder& b, const Owner& o);
-void set_owner(zap::ObjectBuilder& ob, std::int64_t threshold_off, std::int64_t locktime_off,
-               std::int64_t addr_ptr_off, const OwnerPtrs& p);
-Owner read_owner(const zap::Object& obj, std::int64_t threshold_off, std::int64_t locktime_off,
-                 std::int64_t addr_ptr_off);
+// ── the wire's runs, read back as this chain's values
+//
+// A run a record names is clamped to the run that is actually there: a record
+// claiming addresses past the end of the array holds none, which is the same
+// answer a reader gives for any other read past the end.
 
-AuthPtrs write_auth(zap::Builder& b, const Auth& a);
-Auth read_auth(const zap::Object& obj, std::int64_t ptr_off);
+std::vector<TransferableOutput> outs(const zap::List& list, const zap::List& pool);
+std::vector<TransferableInput> ins(const zap::List& list, const zap::List& pool);
+std::vector<txs::NetworkValidator> validators(const zap::List& list, std::span<const std::uint8_t> node_ids,
+                                              const zap::List& pool);
+txs::Owner owner(std::uint32_t threshold, std::uint64_t locktime, const zap::List& pool);
+txs::Auth auth(const zap::List& pool);
+txs::Validator validator(std::span<const std::uint8_t> node_id, std::uint64_t start, std::uint64_t end,
+                         std::uint64_t weight);
 
-void set_validator(zap::ObjectBuilder& ob, std::int64_t off, const Validator& v);
-Validator read_validator(const zap::Object& obj, std::int64_t off);
-
-void set_signer(zap::ObjectBuilder& ob, std::int64_t off, const signer::Signer& s);
-signer::Signer read_signer(const zap::Object& obj, std::int64_t off);
-
-IdListPtrs write_id_list(zap::Builder& b, const std::vector<Id>& list);
-std::vector<Id> read_id_list(const zap::Object& obj, std::int64_t ptr_off);
-
-NetworkValidatorPtrs write_network_validators(zap::Builder& b, const std::vector<NetworkValidator>& vdrs,
-                                              std::vector<std::uint8_t>& node_ids,
-                                              std::vector<ShortId>& addrs);
-std::vector<NetworkValidator> read_network_validators(const zap::Object& obj, std::int64_t list_off,
-                                                      std::int64_t node_id_pool_off,
-                                                      std::int64_t addr_pool_off);
-
-}  // namespace lux::platformvm::txs::wire
+}  // namespace lux::platformvm::wire

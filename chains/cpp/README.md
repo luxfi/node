@@ -23,6 +23,27 @@ voices would report agreement among whoever was left.
 verdict words and the error-word table. It lives once because a table that
 differed between two of them reported its own difference as a chain's.
 
+## The wire
+
+There is ONE ZAP implementation here and it is not here: `zap.cmake` pins the
+published `zap-proto/cpp` and every chain links `zap::zap`. The four in-tree
+copies are gone. A chain that carries its own copy of the wire is a chain that
+can drift from it, which is what had happened.
+
+What sits on top of that runtime — the offsets, the strides, the readers and
+the builders — is generated, one chain at a time, from a `.zap` schema beside
+the chain. `zapgen` prints the header; what is left beside it holds only what
+the bytes MEAN.
+
+Three chains read their wire out of a schema: `xvm`, `quantumvm`, and
+`platformvm`, whose four schemas cover every shape the P-chain puts on a wire
+or in a store — nineteen transactions, three blocks, the credentials, the two
+fx envelopes an output is ordered by, the genesis blob, and the warp messages
+an L1 and the P-chain say to each other.
+
+Three still state their offsets by hand, and are named here rather than left
+to be discovered: `zkvm` (1,452 lines), `fhevm` (913), `dexvm` (585).
+
 ## platformvm
 
 The validator set, the staking rules that admit and pay it, and the blocks that

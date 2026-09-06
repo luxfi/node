@@ -3,7 +3,7 @@
 
 #include "lux/quantumvm/store.hpp"
 
-#include "lux/quantumvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -33,7 +33,7 @@ Bytes to_bytes(ByteView v) { return Bytes(v.begin(), v.end()); }
 std::int64_t write_u32_list(zap::Builder& b, const std::vector<std::uint32_t>& xs) {
     auto lb = b.start_list(4);
     for (std::uint32_t x : xs) lb.add_u32(x);
-    return lb.offset();
+    return lb.finish().first;
 }
 
 std::vector<std::uint32_t> read_u32_list(const zap::Object& o, std::int64_t field) {

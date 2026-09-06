@@ -18,7 +18,7 @@
 
 #include "lux/platformvm/components.hpp"
 
-#include <zap/zap.hpp>
+#include "lux/platformvm/gen/wire_zap.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -32,20 +32,6 @@ constexpr std::uint8_t kTypeKindSecp256k1 = 0x01;
 constexpr std::uint8_t kShapeKindTransferOutput = 0x01;
 constexpr std::uint8_t kShapeKindLockedOutput = 0x0F;
 
-// wire.TransferOutput fixed section.
-constexpr std::int64_t kTOAmount = 0;
-constexpr std::int64_t kTOLocktime = 8;
-constexpr std::int64_t kTOThreshold = 16;
-constexpr std::int64_t kTOAddressList = 20;
-constexpr std::int64_t kTOSize = 28;
-
-// wire.LockedOutput fixed section.
-constexpr std::int64_t kLOLocktime = 0;
-constexpr std::int64_t kLOTransferOutBytes = 8;
-constexpr std::int64_t kLOSize = 16;
-
-constexpr std::int64_t kAddressStride = static_cast<std::int64_t>(kShortIdLen);
-
 std::vector<std::uint8_t> with_prefix(std::uint8_t tk, std::uint8_t sk, const std::vector<std::uint8_t>& body) {
     std::vector<std::uint8_t> out;
     out.reserve(2 + body.size());
@@ -56,42 +42,24 @@ std::vector<std::uint8_t> with_prefix(std::uint8_t tk, std::uint8_t sk, const st
 }
 
 std::vector<std::uint8_t> secp_transfer_output_envelope(const TransferOutput& o) {
-    zap::Builder b(512);
-    std::int64_t addr_off = 0;
-    std::int64_t addr_count = 0;
-    if (!o.owners.addrs.empty()) {
-        auto lb = b.start_list(kAddressStride);
-        for (const auto& a : o.owners.addrs) lb.add_bytes(a.span());
-        const auto [lb_off, _] = lb.finish();
-        addr_off = lb_off;
-        addr_count = static_cast<std::int64_t>(o.owners.addrs.size());
-    }
-    auto ob = b.start_object(kTOSize);
-    ob.set_u64(kTOAmount, o.amt);
-    ob.set_u64(kTOLocktime, o.owners.locktime);
-    ob.set_u32(kTOThreshold, o.owners.threshold);
-    ob.set_list(kTOAddressList, addr_off, addr_count);
-    ob.finish_as_root();
-    return with_prefix(kTypeKindSecp256k1, kShapeKindTransferOutput, b.finish());
+    std::vector<std::array<std::uint8_t, kShortIdLen>> addrs;
+    addrs.reserve(o.owners.addrs.size());
+    for (const auto& a : o.owners.addrs) addrs.push_back(a.b);
+    return with_prefix(kTypeKindSecp256k1, kShapeKindTransferOutput,
+                       wire::NewTransfer(wire::TransferInput{.Amount = o.amt,
+                                                             .Locktime = o.owners.locktime,
+                                                             .Threshold = o.owners.threshold,
+                                                             .Addrs = std::move(addrs)}));
 }
 
 std::vector<std::uint8_t> locked_output_envelope(std::uint64_t locktime,
                                                  const std::vector<std::uint8_t>& inner) {
-    zap::Builder b(512);
-    auto ob = b.start_object(kLOSize);
-    ob.set_u64(kLOLocktime, locktime);
-    ob.set_bytes(kLOTransferOutBytes, {inner.data(), inner.size()});
-    ob.finish_as_root();
-    return with_prefix(kTypeKindReserved, kShapeKindLockedOutput, b.finish());
+    return with_prefix(
+        kTypeKindReserved, kShapeKindLockedOutput,
+        wire::NewLocked(wire::LockedInput{.Locktime = locktime, .Output = {inner.data(), inner.size()}}));
 }
 
-// wire.UTXO fixed section.
 constexpr std::uint8_t kShapeKindUTXO = 0x0A;
-constexpr std::int64_t kUTxID = 0;
-constexpr std::int64_t kUOutputIndex = 32;
-constexpr std::int64_t kUAssetID = 36;
-constexpr std::int64_t kUOutput = 68;
-constexpr std::int64_t kUSize = 76;
 
 int bytes_compare(const std::vector<std::uint8_t>& a, const std::vector<std::uint8_t>& b) {
     const std::size_t n = std::min(a.size(), b.size());
@@ -123,11 +91,10 @@ Result<TransferableOutput> TransferableOutput::from_wire_bytes(std::span<const s
     const auto body = b.subspan(2);
 
     if (tk == kTypeKindReserved && sk == kShapeKindLockedOutput) {
-        const auto m = zap::Message::parse(body);
+        const auto m = wire::WrapLocked(body);
         if (!m) return fail(Err::BufferTooSmall, "the locked-output envelope is malformed");
-        const auto root = m->root();
-        const std::uint64_t locktime = root.u64(kLOLocktime);
-        auto inner = TransferableOutput::from_wire_bytes(root.bytes(kLOTransferOutBytes), asset);
+        const std::uint64_t locktime = m->Locktime();
+        auto inner = TransferableOutput::from_wire_bytes(m->Output(), asset);
         if (!inner) return inner;
         // A lock is a value here, not a second type; a lock inside a lock has
         // no meaning and is refused rather than flattened.
@@ -141,46 +108,39 @@ Result<TransferableOutput> TransferableOutput::from_wire_bytes(std::span<const s
         return fail(Err::UnsupportedFxOutput, "fx envelope (" + std::to_string(tk) + ", " +
                                                   std::to_string(sk) + ") is not an output this chain spends");
 
-    const auto m = zap::Message::parse(body);
+    const auto m = wire::WrapTransfer(body);
     if (!m) return fail(Err::BufferTooSmall, "the transfer-output envelope is malformed");
-    const auto root = m->root();
     TransferableOutput out;
     out.asset = asset;
-    out.out.amt = root.u64(kTOAmount);
-    out.out.owners.locktime = root.u64(kTOLocktime);
-    out.out.owners.threshold = root.u32(kTOThreshold);
-    const auto addrs = root.list_stride(kTOAddressList, static_cast<std::uint32_t>(kAddressStride));
-    for (int i = 0; i < addrs.size(); ++i)
-        out.out.owners.addrs.push_back(
-            ShortId::from(addrs.object(i, kAddressStride).bytes_fixed(0, kAddressStride)));
+    out.out.amt = m->Amount();
+    out.out.owners.locktime = m->Locktime();
+    out.out.owners.threshold = m->Threshold();
+    for (int i = 0; i < m->Addrs().size(); ++i)
+        out.out.owners.addrs.push_back(ShortId::from(m->AddrsAt(i)));
     return out;
 }
 
 std::vector<std::uint8_t> UTXO::wire_bytes() const {
     const TransferableOutput as_output{asset, stake_lock, out};
     const auto inner = as_output.wire_bytes();
-    zap::Builder b(zap::kHeaderSize + kUSize + static_cast<std::int64_t>(inner.size()) + 32);
-    auto ob = b.start_object(kUSize);
-    ob.set_bytes_fixed(kUTxID, utxo.tx_id.span());
-    ob.set_u32(kUOutputIndex, utxo.output_index);
-    ob.set_bytes_fixed(kUAssetID, asset.span());
-    ob.set_bytes(kUOutput, inner);
-    ob.finish_as_root();
-    return with_prefix(kTypeKindReserved, kShapeKindUTXO, b.finish());
+    return with_prefix(kTypeKindReserved, kShapeKindUTXO,
+                       wire::NewUtxo(wire::UtxoInput{.TxID = utxo.tx_id.b,
+                                                     .Index = utxo.output_index,
+                                                     .Asset = asset.b,
+                                                     .Output = {inner.data(), inner.size()}}));
 }
 
 Result<UTXO> UTXO::from_wire_bytes(std::span<const std::uint8_t> b) {
     if (b.size() < 2) return fail(Err::BufferTooSmall, "a utxo envelope is at least two bytes");
     if (b[1] != kShapeKindUTXO) return fail(Err::UnsupportedFxOutput, "not a utxo envelope");
-    const auto m = zap::Message::parse(b.subspan(2));
+    const auto m = wire::WrapUtxo(b.subspan(2));
     if (!m) return fail(Err::BufferTooSmall, "the utxo envelope is malformed");
-    const auto root = m->root();
 
     UTXO u;
-    u.utxo.tx_id = Id::from(root.bytes_fixed(kUTxID, kIdLen));
-    u.utxo.output_index = root.u32(kUOutputIndex);
-    u.asset = Id::from(root.bytes_fixed(kUAssetID, kIdLen));
-    auto out = TransferableOutput::from_wire_bytes(root.bytes(kUOutput), u.asset);
+    u.utxo.tx_id = Id::from(m->TxID());
+    u.utxo.output_index = m->Index();
+    u.asset = Id::from(m->Asset());
+    auto out = TransferableOutput::from_wire_bytes(m->Output(), u.asset);
     if (!out) return std::unexpected(out.error());
     u.stake_lock = out.value().stake_lock;
     u.out = out.value().out;

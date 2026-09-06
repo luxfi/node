@@ -39,6 +39,11 @@ set(XVM_SANITIZE "" CACHE STRING "Sanitizer for xvm's own code (e.g. address,und
 # The wire this chain speaks comes from the published SDK, not from here.
 include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
 
+# The wire's accessors: schema/wire.zap in, include/lux/xvm/gen out.
+zap_schema(wire-schema
+  ${CMAKE_CURRENT_SOURCE_DIR}/schema/wire.zap
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/lux/xvm/gen)
+
 # find_checkout(VAR MARKER candidate...) — first candidate holding MARKER wins.
 # The marker is a FILE, not a directory name, because names are ambiguous here:
 # `consensus` beside node in the lux checkout is the GO implementation, and only
