@@ -80,8 +80,8 @@ struct Import {
     SigIndices   list<u32>  @61
     Memo         bytes      @69
     Source      id32       @77
-    Ins         list<In>   @109
-    SigIndices  list<u32>  @117
+    Imported    list<In>   @109
+    ImportedSigs list<u32> @117
 }
 
 # Sending value out to another chain.
@@ -95,8 +95,8 @@ struct Export {
     SigIndices   list<u32>  @61
     Memo         bytes      @69
     Destination id32       @77
-    Outs        list<Out>  @109
-    OwnerAddrs  list<addr> @117
+    Exported    list<Out>  @109
+    ExportedAddrs list<addr> @117
 }
 
 # A new chain on a network this transaction is authorized over.
@@ -129,9 +129,12 @@ struct TransferChainOwnership {
     Memo         bytes      @69
     Chain     id32       @77
     Auth      list<u32>  @109
-    OwnerThreshold u32        @117
-    OwnerLocktime  u64        @121
-    OwnerAddrs     list<addr> @129
+    # Whom the chain belongs to from here on. The envelope's OwnerAddrs above
+    # is a different array — the pool every OUTPUT's owners index into — so
+    # this one is named for whose it is.
+    NewOwnerThreshold u32        @117
+    NewOwnerLocktime  u64        @121
+    NewOwnerAddrs     list<addr> @129
 }
 
 # Taking a validator off a permissioned chain.
@@ -379,9 +382,11 @@ struct CreateNetwork {
     SigIndices   list<u32>  @61
     Memo         bytes      @69
     Parent    id32 @77
-    OwnerThreshold u32        @109
-    OwnerLocktime  u64        @113
-    OwnerAddrs     list<addr> @121
+    # Whom the new network belongs to. Named apart from the envelope's
+    # OwnerAddrs above, which is the pool every OUTPUT's owners index into.
+    NetworkOwnerThreshold u32        @109
+    NetworkOwnerLocktime  u64        @113
+    NetworkOwnerAddrs     list<addr> @121
     RestakeParent  u8                     @129
     Admission      u8                     @130
     Manager        u8                     @131

@@ -181,7 +181,7 @@ conformance-cpp:
 # The generator is named by the exact commit that wrote these files. A moving
 # reference would let the accessors change without the schema changing.
 
-ZAPGEN := github.com/zap-proto/go/cmd/zapgen@v1.8.3-0.20260906161840-5648be21f1ab
+ZAPGEN := github.com/zap-proto/go/cmd/zapgen@v1.8.3-0.20260906203114-6d0e886cebc9
 
 wire: ## rewrite the chain accessors from chains/schema
 	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -runtime -out chains/rust/zap/src
@@ -191,6 +191,10 @@ wire: ## rewrite the chain accessors from chains/schema
 	  -out chains/rust/xvm/src        chains/schema/xchain.zap
 	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
 	  -out chains/rust/quantumvm/src  chains/schema/qchain.zap
+	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
+	  -out chains/rust/zkvm/src       chains/schema/zchain.zap
+	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
+	  -out chains/rust/fhevm/src      chains/schema/fchain.zap
 
 # ---- make chains: the cross-language chain differential ----------------------
 #

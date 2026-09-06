@@ -18,7 +18,7 @@
 use crate::ids::{hash256, Id, NodeId, ShortId, PRIMARY_NETWORK_ID, SHORT_ID_LEN};
 use crate::signer::PUBLIC_KEY_LEN;
 use crate::txs::PChainOwner;
-use crate::zap;
+use lux_zap::zap;
 
 // ── the envelope (Go: warp/payload)
 
@@ -118,11 +118,11 @@ pub struct Hash {
 
 impl Hash {
     pub fn build(hash: Id) -> Hash {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + HASH_SIZE);
-        let ob = b.start_object(HASH_SIZE);
-        b.set_u8(&ob, OFF_PKIND, KIND_HASH);
-        b.set_bytes_fixed(&ob, HASH_OFF_HASH, &hash);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + HASH_SIZE);
+        let mut ob = b.start_object(HASH_SIZE);
+        ob.set_u8(&mut b, OFF_PKIND, KIND_HASH);
+        ob.set_bytes_fixed(&mut b, HASH_OFF_HASH, &hash);
+        ob.finish_as_root(&mut b);
         Hash {
             hash,
             bytes: b.finish(),
@@ -142,14 +142,14 @@ pub struct Call {
 
 impl Call {
     pub fn build(source_address: &[u8], payload: &[u8]) -> Call {
-        let mut b = zap::Builder::new(
+        let mut b = zap::Builder::new_v2(
             zap::HEADER_SIZE + AC_SIZE + source_address.len() + payload.len() + 64,
         );
-        let ob = b.start_object(AC_SIZE);
-        b.set_u8(&ob, OFF_PKIND, KIND_ADDRESSED_CALL);
-        b.set_bytes(&ob, AC_OFF_SOURCE, source_address);
-        b.set_bytes(&ob, AC_OFF_PAYLOAD, payload);
-        b.finish_as_root(&ob);
+        let mut ob = b.start_object(AC_SIZE);
+        ob.set_u8(&mut b, OFF_PKIND, KIND_ADDRESSED_CALL);
+        ob.set_bytes(&mut b, AC_OFF_SOURCE, source_address);
+        ob.set_bytes(&mut b, AC_OFF_PAYLOAD, payload);
+        ob.finish_as_root(&mut b);
         Call {
             source_address: source_address.to_vec(),
             payload: payload.to_vec(),
@@ -171,7 +171,7 @@ pub fn parse_envelope(raw: &[u8]) -> Result<Envelope, Error> {
     let root = msg.root();
     match root.u8(OFF_PKIND) {
         KIND_HASH => Ok(Envelope::Hash(Hash {
-            hash: root.id(HASH_OFF_HASH),
+            hash: crate::ids::id_at(root, HASH_OFF_HASH),
             bytes: raw.to_vec(),
         })),
         KIND_ADDRESSED_CALL => Ok(Envelope::Call(Call {
@@ -210,21 +210,21 @@ impl Register {
         weight: u64,
     ) -> Register {
         let addrs = remaining_balance_owner.addresses.len() + disable_owner.addresses.len();
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + RV_SIZE + addrs * ADDR_STRIDE + 64);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + RV_SIZE + addrs * ADDR_STRIDE + 64);
         let (rem_off, rem_count) = write_addrs(&mut b, &remaining_balance_owner.addresses);
         let (dis_off, dis_count) = write_addrs(&mut b, &disable_owner.addresses);
-        let ob = b.start_object(RV_SIZE);
-        b.set_u8(&ob, OFF_MKIND, KIND_REGISTER);
-        b.set_bytes_fixed(&ob, RV_OFF_CHAIN_ID, &chain_id);
-        b.set_bytes_fixed(&ob, RV_OFF_BLS_KEY, key);
-        b.set_u64(&ob, RV_OFF_EXPIRY, expiry);
-        b.set_u64(&ob, RV_OFF_WEIGHT, weight);
-        b.set_bytes(&ob, RV_OFF_NODE_ID, node_id.as_bytes());
-        b.set_u32(&ob, RV_OFF_REM_THRESHOLD, remaining_balance_owner.threshold);
-        b.set_list(&ob, RV_OFF_REM_ADDRS, rem_off, rem_count);
-        b.set_u32(&ob, RV_OFF_DIS_THRESHOLD, disable_owner.threshold);
-        b.set_list(&ob, RV_OFF_DIS_ADDRS, dis_off, dis_count);
-        b.finish_as_root(&ob);
+        let mut ob = b.start_object(RV_SIZE);
+        ob.set_u8(&mut b, OFF_MKIND, KIND_REGISTER);
+        ob.set_bytes_fixed(&mut b, RV_OFF_CHAIN_ID, &chain_id);
+        ob.set_bytes_fixed(&mut b, RV_OFF_BLS_KEY, key);
+        ob.set_u64(&mut b, RV_OFF_EXPIRY, expiry);
+        ob.set_u64(&mut b, RV_OFF_WEIGHT, weight);
+        ob.set_bytes(&mut b, RV_OFF_NODE_ID, node_id.as_bytes());
+        ob.set_u32(&mut b, RV_OFF_REM_THRESHOLD, remaining_balance_owner.threshold);
+        ob.set_list(&mut b, RV_OFF_REM_ADDRS, rem_off, rem_count);
+        ob.set_u32(&mut b, RV_OFF_DIS_THRESHOLD, disable_owner.threshold);
+        ob.set_list(&mut b, RV_OFF_DIS_ADDRS, dis_off, dis_count);
+        ob.finish_as_root(&mut b);
 
         Register {
             chain_id,
@@ -278,12 +278,12 @@ pub struct Registration {
 
 impl Registration {
     pub fn build(validation_id: Id, registered: bool) -> Registration {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + REG_SIZE);
-        let ob = b.start_object(REG_SIZE);
-        b.set_u8(&ob, OFF_MKIND, KIND_REGISTRATION);
-        b.set_bytes_fixed(&ob, REG_OFF_VALIDATION_ID, &validation_id);
-        b.set_u8(&ob, REG_OFF_REGISTERED, u8::from(registered));
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + REG_SIZE);
+        let mut ob = b.start_object(REG_SIZE);
+        ob.set_u8(&mut b, OFF_MKIND, KIND_REGISTRATION);
+        ob.set_bytes_fixed(&mut b, REG_OFF_VALIDATION_ID, &validation_id);
+        ob.set_u8(&mut b, REG_OFF_REGISTERED, u8::from(registered));
+        ob.finish_as_root(&mut b);
         Registration {
             validation_id,
             registered,
@@ -304,13 +304,13 @@ pub struct Weight {
 
 impl Weight {
     pub fn build(validation_id: Id, nonce: u64, weight: u64) -> Weight {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + VW_SIZE);
-        let ob = b.start_object(VW_SIZE);
-        b.set_u8(&ob, OFF_MKIND, KIND_WEIGHT);
-        b.set_bytes_fixed(&ob, VW_OFF_VALIDATION_ID, &validation_id);
-        b.set_u64(&ob, VW_OFF_NONCE, nonce);
-        b.set_u64(&ob, VW_OFF_WEIGHT, weight);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + VW_SIZE);
+        let mut ob = b.start_object(VW_SIZE);
+        ob.set_u8(&mut b, OFF_MKIND, KIND_WEIGHT);
+        ob.set_bytes_fixed(&mut b, VW_OFF_VALIDATION_ID, &validation_id);
+        ob.set_u64(&mut b, VW_OFF_NONCE, nonce);
+        ob.set_u64(&mut b, VW_OFF_WEIGHT, weight);
+        ob.finish_as_root(&mut b);
         Weight {
             validation_id,
             nonce,
@@ -331,11 +331,11 @@ pub struct Conversion {
 
 impl Conversion {
     pub fn build(id: Id) -> Conversion {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + CONV_SIZE);
-        let ob = b.start_object(CONV_SIZE);
-        b.set_u8(&ob, OFF_MKIND, KIND_CONVERSION);
-        b.set_bytes_fixed(&ob, CONV_OFF_ID, &id);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + CONV_SIZE);
+        let mut ob = b.start_object(CONV_SIZE);
+        ob.set_u8(&mut b, OFF_MKIND, KIND_CONVERSION);
+        ob.set_bytes_fixed(&mut b, CONV_OFF_ID, &id);
+        ob.finish_as_root(&mut b);
         Conversion {
             id,
             bytes: b.finish(),
@@ -358,7 +358,7 @@ pub fn parse_message(raw: &[u8]) -> Result<Message, Error> {
     let root = msg.root();
     match root.u8(OFF_MKIND) {
         KIND_CONVERSION => Ok(Message::Conversion(Conversion {
-            id: root.id(CONV_OFF_ID),
+            id: crate::ids::id_at(root, CONV_OFF_ID),
             bytes: raw.to_vec(),
         })),
         KIND_REGISTER => {
@@ -366,7 +366,7 @@ pub fn parse_message(raw: &[u8]) -> Result<Message, Error> {
             let key = root.bytes_fixed(RV_OFF_BLS_KEY, PUBLIC_KEY_LEN);
             bls_public_key[..key.len()].copy_from_slice(key);
             Ok(Message::Register(Register {
-                chain_id: root.id(RV_OFF_CHAIN_ID),
+                chain_id: crate::ids::id_at(root, RV_OFF_CHAIN_ID),
                 node_id: root.bytes(RV_OFF_NODE_ID).to_vec(),
                 bls_public_key,
                 expiry: root.u64(RV_OFF_EXPIRY),
@@ -381,12 +381,12 @@ pub fn parse_message(raw: &[u8]) -> Result<Message, Error> {
             }))
         }
         KIND_REGISTRATION => Ok(Message::Registration(Registration {
-            validation_id: root.id(REG_OFF_VALIDATION_ID),
+            validation_id: crate::ids::id_at(root, REG_OFF_VALIDATION_ID),
             registered: root.bool(REG_OFF_REGISTERED),
             bytes: raw.to_vec(),
         })),
         KIND_WEIGHT => Ok(Message::Weight(Weight {
-            validation_id: root.id(VW_OFF_VALIDATION_ID),
+            validation_id: crate::ids::id_at(root, VW_OFF_VALIDATION_ID),
             nonce: root.u64(VW_OFF_NONCE),
             weight: root.u64(VW_OFF_WEIGHT),
             bytes: raw.to_vec(),
@@ -417,7 +417,7 @@ impl ConversionData {
     /// The one canonical encoding, which is also the preimage of the id — so
     /// the id and the bytes can never diverge.
     pub fn encode(&self) -> Vec<u8> {
-        let mut b = zap::Builder::new(
+        let mut b = zap::Builder::new_v2(
             zap::HEADER_SIZE
                 + CD_SIZE
                 + self.validators.len() * CV_STRIDE
@@ -439,18 +439,18 @@ impl ConversionData {
                 node_id_pool.extend_from_slice(&v.node_id);
                 e[CV_BLS_KEY..CV_BLS_KEY + PUBLIC_KEY_LEN].copy_from_slice(&v.bls_public_key);
                 e[CV_WEIGHT..CV_WEIGHT + 8].copy_from_slice(&v.weight.to_le_bytes());
-                b.list_bytes(&mut lb, &e);
+                lb.add_bytes(&mut b, &e);
             }
-            (lb.offset(), self.validators.len())
+            (lb.finish_offset(), self.validators.len())
         };
 
-        let ob = b.start_object(CD_SIZE);
-        b.set_bytes_fixed(&ob, CD_OFF_CHAIN_ID, &self.chain_id);
-        b.set_bytes_fixed(&ob, CD_OFF_MANAGER_ID, &self.manager_chain_id);
-        b.set_bytes(&ob, CD_OFF_MANAGER_ADDR, &self.manager_address);
-        b.set_list(&ob, CD_OFF_VALIDATORS, vdr_off, vdr_count);
-        b.set_bytes(&ob, CD_OFF_NODE_ID_POOL, &node_id_pool);
-        b.finish_as_root(&ob);
+        let mut ob = b.start_object(CD_SIZE);
+        ob.set_bytes_fixed(&mut b, CD_OFF_CHAIN_ID, &self.chain_id);
+        ob.set_bytes_fixed(&mut b, CD_OFF_MANAGER_ID, &self.manager_chain_id);
+        ob.set_bytes(&mut b, CD_OFF_MANAGER_ADDR, &self.manager_address);
+        ob.set_list(&mut b, CD_OFF_VALIDATORS, vdr_off, vdr_count);
+        ob.set_bytes(&mut b, CD_OFF_NODE_ID_POOL, &node_id_pool);
+        ob.finish_as_root(&mut b);
         b.finish()
     }
 
@@ -466,14 +466,14 @@ fn write_addrs(b: &mut zap::Builder, addrs: &[ShortId]) -> (usize, usize) {
     }
     let mut lb = b.start_list();
     for a in addrs {
-        b.list_bytes(&mut lb, a.as_bytes());
+        lb.add_bytes(b, a.as_bytes());
     }
     // `list_bytes` counts bytes, so the element count is the caller's to give.
-    (lb.offset(), addrs.len())
+    (lb.finish_offset(), addrs.len())
 }
 
 fn read_owner(root: &zap::Object<'_>, threshold_off: usize, addrs_off: usize) -> PChainOwner {
-    let list = root.list(addrs_off, ADDR_STRIDE);
+    let list = root.list_stride(addrs_off, ADDR_STRIDE);
     let mut addresses = Vec::with_capacity(list.len());
     for i in 0..list.len() {
         let mut a = [0u8; SHORT_ID_LEN];
@@ -521,10 +521,10 @@ mod tests {
 
     #[test]
     fn an_envelope_kind_naming_nothing_is_refused() {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + HASH_SIZE);
-        let ob = b.start_object(HASH_SIZE);
-        b.set_u8(&ob, OFF_PKIND, 7);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + HASH_SIZE);
+        let mut ob = b.start_object(HASH_SIZE);
+        ob.set_u8(&mut b, OFF_PKIND, 7);
+        ob.finish_as_root(&mut b);
         assert_eq!(parse_envelope(&b.finish()), Err(Error::UnknownKind(7)));
     }
 
@@ -547,10 +547,10 @@ mod tests {
 
     #[test]
     fn a_message_kind_naming_nothing_is_refused() {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + VW_SIZE);
-        let ob = b.start_object(VW_SIZE);
-        b.set_u8(&ob, OFF_MKIND, 9);
-        b.finish_as_root(&ob);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + VW_SIZE);
+        let mut ob = b.start_object(VW_SIZE);
+        ob.set_u8(&mut b, OFF_MKIND, 9);
+        ob.finish_as_root(&mut b);
         assert_eq!(parse_message(&b.finish()), Err(Error::UnknownKind(9)));
     }
 

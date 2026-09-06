@@ -169,8 +169,8 @@ impl std::fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
-impl From<crate::zap::Error> for Error {
-    fn from(e: crate::zap::Error) -> Error {
+impl From<lux_zap::zap::Error> for Error {
+    fn from(e: lux_zap::zap::Error) -> Error {
         Error { code: Code::Zap, detail: e.to_string() }
     }
 }

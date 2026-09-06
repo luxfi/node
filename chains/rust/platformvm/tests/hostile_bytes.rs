@@ -24,7 +24,8 @@ use lux_platformvm::genesis::Genesis;
 use lux_platformvm::ids::{NodeId, ShortId};
 use lux_platformvm::signer::Signer;
 use lux_platformvm::txs::{Envelope, Tx, Unsigned, Validator};
-use lux_platformvm::{block, txs, zap};
+use lux_platformvm::{block, txs};
+use lux_zap::zap;
 
 fn id(b: u8) -> [u8; 32] {
     [b; 32]
@@ -145,13 +146,13 @@ fn read_every_way(buffer: &[u8]) {
             let _ = root.u8(field);
             let _ = root.u32(field);
             let _ = root.u64(field);
-            let _ = root.id(field);
-            let _ = root.short_id(field);
+            let _ = lux_platformvm::ids::id_at(root, field);
+            let _ = lux_platformvm::ids::short_at(root, field);
             let _ = root.bytes(field);
             let _ = root.text(field);
             let _ = root.bytes_fixed(field, 96);
             let _ = root.object(field);
-            let list = root.list(field, 4);
+            let list = root.list_stride(field, 4);
             for i in [0usize, 1, 7, 1_000] {
                 let _ = list.u8(i);
                 let _ = list.u32(i);

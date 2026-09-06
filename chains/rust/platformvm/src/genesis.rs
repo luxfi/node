@@ -22,7 +22,7 @@ use crate::ids::{hash256, Id, PRIMARY_NETWORK_ID};
 use crate::reward;
 use crate::state::{Staker, State};
 use crate::txs::{Tx, Unsigned};
-use crate::zap;
+use lux_zap::zap;
 use std::time::Duration;
 
 /// One unspent output at genesis, and the note that came with it.
@@ -128,11 +128,11 @@ impl Allocation {
     fn to_bytes(&self) -> Vec<u8> {
         let wire = self.utxo.wire_bytes();
         let mut b =
-            zap::Builder::new(zap::HEADER_SIZE + ALLOC_SIZE + wire.len() + self.message.len());
-        let ob = b.start_object(ALLOC_SIZE);
-        b.set_bytes(&ob, ALLOC_UTXO, &wire);
-        b.set_bytes(&ob, ALLOC_MESSAGE, &self.message);
-        b.finish_as_root(&ob);
+            zap::Builder::new_v2(zap::HEADER_SIZE + ALLOC_SIZE + wire.len() + self.message.len());
+        let mut ob = b.start_object(ALLOC_SIZE);
+        ob.set_bytes(&mut b, ALLOC_UTXO, &wire);
+        ob.set_bytes(&mut b, ALLOC_MESSAGE, &self.message);
+        ob.finish_as_root(&mut b);
         b.finish()
     }
 
@@ -157,10 +157,10 @@ fn write_blobs(b: &mut zap::Builder, blobs: &[Vec<u8>]) -> ((usize, usize), Vec<
     let mut blob = Vec::new();
     let mut lb = b.start_list();
     for raw in blobs {
-        b.list_u32(&mut lb, raw.len() as u32);
+        lb.add_u32(b, raw.len() as u32);
         blob.extend_from_slice(raw);
     }
-    ((lb.offset(), lb.count()), blob)
+    ((lb.finish_offset(), lb.count()), blob)
 }
 
 fn read_blobs<'a>(
@@ -168,7 +168,7 @@ fn read_blobs<'a>(
     len_off: usize,
     blob_off: usize,
 ) -> Result<Vec<&'a [u8]>, Error> {
-    let lengths = o.list(len_off, LEN_STRIDE);
+    let lengths = o.list_stride(len_off, LEN_STRIDE);
     let n = lengths.len();
     if n == 0 {
         return Ok(Vec::new());
@@ -198,22 +198,22 @@ impl Genesis {
         let vdr_blobs: Vec<Vec<u8>> = self.validators.iter().map(|t| t.bytes().to_vec()).collect();
         let chain_blobs: Vec<Vec<u8>> = self.chains.iter().map(|t| t.bytes().to_vec()).collect();
 
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + SIZE + 1024);
+        let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + SIZE + 1024);
         let (utxo_lens, utxo_blob) = write_blobs(&mut b, &utxo_blobs);
         let (vdr_lens, vdr_blob) = write_blobs(&mut b, &vdr_blobs);
         let (chain_lens, chain_blob) = write_blobs(&mut b, &chain_blobs);
 
-        let ob = b.start_object(SIZE);
-        b.set_u64(&ob, TIMESTAMP, self.timestamp);
-        b.set_u64(&ob, INITIAL_SUPPLY, self.initial_supply);
-        b.set_bytes(&ob, MESSAGE, self.message.as_bytes());
-        b.set_list(&ob, UTXO_LENS, utxo_lens.0, utxo_lens.1);
-        b.set_bytes(&ob, UTXO_BLOB, &utxo_blob);
-        b.set_list(&ob, VDR_LENS, vdr_lens.0, vdr_lens.1);
-        b.set_bytes(&ob, VDR_BLOB, &vdr_blob);
-        b.set_list(&ob, CHAIN_LENS, chain_lens.0, chain_lens.1);
-        b.set_bytes(&ob, CHAIN_BLOB, &chain_blob);
-        b.finish_as_root(&ob);
+        let mut ob = b.start_object(SIZE);
+        ob.set_u64(&mut b, TIMESTAMP, self.timestamp);
+        ob.set_u64(&mut b, INITIAL_SUPPLY, self.initial_supply);
+        ob.set_bytes(&mut b, MESSAGE, self.message.as_bytes());
+        ob.set_list(&mut b, UTXO_LENS, utxo_lens.0, utxo_lens.1);
+        ob.set_bytes(&mut b, UTXO_BLOB, &utxo_blob);
+        ob.set_list(&mut b, VDR_LENS, vdr_lens.0, vdr_lens.1);
+        ob.set_bytes(&mut b, VDR_BLOB, &vdr_blob);
+        ob.set_list(&mut b, CHAIN_LENS, chain_lens.0, chain_lens.1);
+        ob.set_bytes(&mut b, CHAIN_BLOB, &chain_blob);
+        ob.finish_as_root(&mut b);
         b.finish()
     }
 
@@ -502,7 +502,7 @@ mod tests {
         // Find the u32 length of the first validator blob and make it huge.
         let msg = zap::Message::parse(&bytes).unwrap();
         let root = msg.root();
-        let lens = root.list(VDR_LENS, LEN_STRIDE);
+        let lens = root.list_stride(VDR_LENS, LEN_STRIDE);
         assert_eq!(lens.len(), 1);
         let real = lens.u32(0);
         let at = bytes
@@ -611,11 +611,11 @@ mod tests {
     fn a_lock_at_time_zero_is_no_lock() {
         let locked_at_zero = {
             let plain = output(50, 0).wire_bytes();
-            let mut b = zap::Builder::new(zap::HEADER_SIZE + 64 + plain.len());
-            let ob = b.start_object(16);
-            b.set_u64(&ob, 0, 0);
-            b.set_bytes(&ob, 8, &plain);
-            b.finish_as_root(&ob);
+            let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + 64 + plain.len());
+            let mut ob = b.start_object(16);
+            ob.set_u64(&mut b, 0, 0);
+            ob.set_bytes(&mut b, 8, &plain);
+            ob.finish_as_root(&mut b);
             let mut out = vec![
                 crate::components::TYPE_RESERVED,
                 crate::components::SHAPE_LOCKED_OUTPUT,

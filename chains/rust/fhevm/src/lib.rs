@@ -25,6 +25,7 @@
 pub mod batch;
 pub mod block;
 pub mod error;
+pub mod fchain_zap;
 pub mod fee;
 pub mod gas;
 pub mod host;
@@ -36,7 +37,6 @@ pub mod store;
 pub mod tx;
 pub mod vm;
 pub mod wire;
-pub mod zap;
 
 pub use error::{Error, Result};
 pub use tx::Transaction;

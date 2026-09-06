@@ -8,6 +8,13 @@ repository = "https://github.com/luxfi/node2"
 publish = false
 
 [dependencies]
+# The ZAP runtime, emitted by zapgen into `chains/rust/zap` — one copy for
+# every chain here, so the reader a chain calls is the reader the Go and C++
+# chains call. A path dependency because it is generated in this tree from
+# `chains/schema`, and a version between them would be a way to disagree
+# about what a byte means.
+lux-zap = { path = "../zap" }
+
 # The host. `host::Vm` and `host::Block` are the node's OWN trait definitions,
 # not a copy of them: a chain that restated the seam would compile against a
 # shape the node never sees, and the day the node changed a method the chain
