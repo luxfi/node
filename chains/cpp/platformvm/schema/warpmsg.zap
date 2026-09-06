@@ -10,6 +10,14 @@ type id32 = bytes_fixed[32]
 type addr = bytes_fixed[20]
 type key = bytes_fixed[48]
 
+# The one byte both tables open with. It is a struct of its own because that
+# is what it is — the question a reader asks before it knows which of the
+# answers below it is holding — and reading it through whichever answer
+# happens to be listed first would only look like an answer.
+struct Tag {
+    Kind u8 @0
+}
+
 # ---- the payload envelope
 
 struct Digest {
