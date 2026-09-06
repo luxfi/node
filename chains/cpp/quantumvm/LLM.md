@@ -10,7 +10,9 @@ implementation, 2,745 of tests) — the behavioural source of truth. Where the t
 differ, the Go one is right and this is a bug.
 
 ```
-include/lux/quantumvm/  zap wire · sha256 · sha512 · id · error · config
+schema/wire.zap         the wire, as a schema — the offsets, once, for every language
+include/lux/quantumvm/gen/  what zapgen writes from it: the readers and the builders
+include/lux/quantumvm/  wire meaning · sha256 · sha512 · id · error · config
                         signer (ML-DSA) · transaction · block · store
                         quasar (finality) · vm · service
 src/                    their implementations

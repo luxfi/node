@@ -27,3 +27,21 @@ if(NOT Zap_FOUND)
 else()
   message(STATUS "zap: installed package ${Zap_VERSION}")
 endif()
+
+# zap_schema(NAME SCHEMA OUTDIR) declares the target that regenerates a chain's
+# wire accessors from its schema.
+#
+# The output is committed beside the schema, so a build needs neither Go nor the
+# generator; this target is for after an edit to the schema:
+#
+#   cmake --build build --target <name>
+#
+# The generator is fetched at the same tag the runtime is pinned to, so the code
+# and the runtime it calls are one version.
+function(zap_schema name schema outdir)
+  add_custom_target(${name}
+    COMMAND ${CMAKE_COMMAND} -E env GOFLAGS=-mod=mod
+            go run github.com/zap-proto/go/cmd/zapgen@${ZAP_TAG}
+            -lang cpp -single -out ${outdir} ${schema}
+    COMMENT "zapgen: ${schema} -> ${outdir}")
+endfunction()
