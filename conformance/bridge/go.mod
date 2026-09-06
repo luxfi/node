@@ -1,4 +1,4 @@
-module github.com/luxfi/node2/conformance/bridge
+module github.com/luxfi/node/conformance/bridge
 
 go 1.26.4
 
