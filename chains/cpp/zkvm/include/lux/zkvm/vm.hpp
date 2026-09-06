@@ -111,8 +111,18 @@ public:
     // directly and bypasses the gate, as it does in the reference.
     wire::Result<Id> issue(Transaction tx);
 
-    // admit is the ONE predicate. Assembly and consensus both ask it.
+    // admit is the ONE predicate. Assembly and consensus both ask it. It is the
+    // two halves below, in this order, and it is where the ledger read begins:
+    // everything syntactic_verify decides comes off the transaction's own
+    // fields and the height it would sit at, and everything after it needs the
+    // chain.
     wire::Result<void> admit(const Transaction& tx, std::uint64_t height) const;
+
+    // syntactic_verify is the half a node can decide from the bytes in hand:
+    // the transaction's own shape, and whether it has expired at the height it
+    // is offered for. The height is the block's, not the chain's, so a block
+    // off the wire answers this before its parent is looked up.
+    wire::Result<void> syntactic_verify(const Transaction& tx, std::uint64_t height) const;
 
     // verify_transaction is the spent-set check and the proof. A spent-set read
     // that FAILED refuses the transaction: reporting "not spent" for a set that

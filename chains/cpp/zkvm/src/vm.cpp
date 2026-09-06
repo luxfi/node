@@ -119,9 +119,14 @@ Id Vm::compute_state_root(const std::vector<Transaction>& txs) const {
 }
 
 wire::Result<void> Vm::admit(const Transaction& tx, std::uint64_t height) const {
+    if (auto r = syntactic_verify(tx, height); !r) return r;
+    return verify_transaction(tx);
+}
+
+wire::Result<void> Vm::syntactic_verify(const Transaction& tx, std::uint64_t height) const {
     if (auto r = tx.validate_basic(); !r) return r;
     if (tx.expiry < height) return std::unexpected(kErrExpired);
-    return verify_transaction(tx);
+    return {};
 }
 
 wire::Result<void> Vm::verify_transaction(const Transaction& tx) const {
