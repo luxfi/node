@@ -165,6 +165,17 @@ this corpus asks, it serves the final layout where Go serves the draft. There
 is no revision at which a port can express the layout the C-Chain runs, which
 is the gap itself and not an artifact of how the question was put.
 
+One of the three has since closed. cevm dispatched precompiles through a dense
+array keyed on the last two bytes of an address, bounded by a full-address
+comparison, so no Lux address could be reached at all: inference at
+`0x0300…0003` shares its last two bytes with ripemd160, and the whole
+`0x…0122xx` post-quantum block was equally unreachable. It matches the whole
+address now for anything outside the stock range, and inference is registered
+where Go serves it. Go and C++ return the same fourteen tokens and the same
+600000 gas for the generate call both were written against, and the corpus
+carries that vector. Rust answers ABSENT, because `lux-evm` is revm's
+`EthPrecompiles` plus a profile gate and registers no Lux module anywhere.
+
 Two smaller ones. At `0x…0100` the Lux `secp256r1` module would charge 3450
 where the stock table charges 6900, and the module would win because
 `LuxPrecompileOverrider` is consulted first — but its key is enabled on no
