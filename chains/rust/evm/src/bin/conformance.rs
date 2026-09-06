@@ -174,6 +174,11 @@ impl std::fmt::Display for Row {
 fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vector) -> Row {
     let who = name(&v.address);
     let call = inputs(v);
+    // Whether a refusal here has a charge that can be reported. A Lux module
+    // splits price from body the way Go's does, so it knows what a call cost
+    // even when it refused; revm computes the price inside the work and an
+    // error carries none. Asked before the run, because the run borrows.
+    let priced = precompiles.module(&v.address).is_some();
 
     match PrecompileProvider::<CTX>::run(precompiles, context, &call) {
         // Nothing at this address. revm says so by declining to produce a
@@ -185,7 +190,7 @@ fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vec
             output: Bytes::new(),
             note: "no precompile at this address".into(),
         },
-        Ok(Some(r)) => verdict(v, r, context, who),
+        Ok(Some(r)) => verdict(v, r, context, who, priced),
         // A precompile that could not run at all — revm's `PrecompileError::
         // Fatal`, which is a missing trusted setup rather than a bad input.
         // It refused, so it is reported as a refusal, and the note says which
@@ -205,6 +210,7 @@ fn verdict<CTX: ContextTr>(
     r: InterpreterResult,
     context: &mut CTX,
     who: &str,
+    priced: bool,
 ) -> Row {
     let id = v.id.clone();
     // `limit - remaining`. The conversion happens here, at the edge, and once.
@@ -233,8 +239,13 @@ fn verdict<CTX: ContextTr>(
                 .unwrap_or_else(|| format!("{other:?}"));
             Row {
                 id,
+                // A Lux module charged for reading the input it then refused,
+                // and can say how much. Everything else is revm's, where the
+                // price lives inside the function that does the work and an
+                // error records nothing — SKIPPED there, because zero would be
+                // an answer and the wrong one.
                 status: FAILED,
-                gas: None,
+                gas: if priced { Some(charged) } else { None },
                 output: Bytes::new(),
                 note: format!("revm:{who}: {why}"),
             }
