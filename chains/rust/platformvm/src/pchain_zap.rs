@@ -5207,3 +5207,588 @@ pub fn new_credentials(input: &CredentialsInput<'_>) -> Vec<u8> {
     b.finish()
 }
 
+// TransferOutput — field offsets, in bytes, and the fixed section's size.
+pub const TRANSFER_OUTPUT_AMOUNT: usize = 0;
+pub const TRANSFER_OUTPUT_LOCKTIME: usize = 8;
+pub const TRANSFER_OUTPUT_THRESHOLD: usize = 16;
+pub const TRANSFER_OUTPUT_ADDRESSES: usize = 20;
+pub const TRANSFER_OUTPUT_SIZE: usize = 28;
+
+/// A view of a ZAP-encoded TransferOutput. Reading a field costs a bounds check.
+#[derive(Clone, Copy, Debug)]
+pub struct TransferOutput<'a> {
+    o: zap::Object<'a>,
+}
+
+impl<'a> TransferOutput<'a> {
+    /// Take `data` as a TransferOutput message. Fails only on the wire-level
+    /// checks — magic, version, declared size.
+    pub fn wrap(data: &'a [u8]) -> Result<Self, zap::Error> {
+        Ok(TransferOutput {
+            o: zap::Message::parse(data)?.root(),
+        })
+    }
+
+    /// A view of an object already located in a message — a nested
+    /// field, or one element of a list.
+    pub fn new(o: zap::Object<'a>) -> Self {
+        TransferOutput { o }
+    }
+
+    /// The object this view reads.
+    pub fn object(&self) -> zap::Object<'a> {
+        self.o
+    }
+
+    pub fn amount(&self) -> u64 {
+        self.o.u64(TRANSFER_OUTPUT_AMOUNT)
+    }
+
+    pub fn locktime(&self) -> u64 {
+        self.o.u64(TRANSFER_OUTPUT_LOCKTIME)
+    }
+
+    pub fn threshold(&self) -> u32 {
+        self.o.u32(TRANSFER_OUTPUT_THRESHOLD)
+    }
+
+    pub fn addresses(&self) -> zap::List<'a> {
+        self.o.list_stride(TRANSFER_OUTPUT_ADDRESSES, 20)
+    }
+}
+
+/// The field values [`new_transfer_output`] writes.
+#[derive(Clone, Copy, Debug)]
+pub struct TransferOutputInput<'a> {
+    pub amount: u64,
+    pub locktime: u64,
+    pub threshold: u32,
+    pub addresses: &'a [[u8; 20]],
+}
+
+impl<'a> Default for TransferOutputInput<'a> {
+    fn default() -> Self {
+        TransferOutputInput {
+            amount: 0,
+            locktime: 0,
+            threshold: 0,
+            addresses: &[],
+        }
+    }
+}
+
+/// Write a TransferOutput into `b` and answer where its object landed.
+///
+/// What a field points AT is written first, in field order, and the
+/// fixed section last: a pointer always leads backward, to bytes
+/// already placed.
+pub fn put_transfer_output(b: &mut zap::Builder, input: &TransferOutputInput<'_>) -> usize {
+    let mut list_addresses = b.start_list();
+    for elem in input.addresses {
+        list_addresses.add_bytes(b, elem);
+    }
+    let at_addresses = list_addresses.finish_offset();
+    let mut ob = b.start_object(TRANSFER_OUTPUT_SIZE);
+    ob.set_u64(b, TRANSFER_OUTPUT_AMOUNT, input.amount);
+    ob.set_u64(b, TRANSFER_OUTPUT_LOCKTIME, input.locktime);
+    ob.set_u32(b, TRANSFER_OUTPUT_THRESHOLD, input.threshold);
+    ob.set_list(b, TRANSFER_OUTPUT_ADDRESSES, at_addresses, input.addresses.len());
+    ob.finish(b)
+}
+
+/// Write a TransferOutput message and answer its bytes.
+pub fn new_transfer_output(input: &TransferOutputInput<'_>) -> Vec<u8> {
+    let mut b = zap::Builder::new_v2(256);
+    let at = put_transfer_output(&mut b, input);
+    b.set_root(at);
+    b.finish()
+}
+
+// LockedOutput — field offsets, in bytes, and the fixed section's size.
+pub const LOCKED_OUTPUT_LOCKTIME: usize = 0;
+pub const LOCKED_OUTPUT_INNER: usize = 8;
+pub const LOCKED_OUTPUT_SIZE: usize = 16;
+
+/// A view of a ZAP-encoded LockedOutput. Reading a field costs a bounds check.
+#[derive(Clone, Copy, Debug)]
+pub struct LockedOutput<'a> {
+    o: zap::Object<'a>,
+}
+
+impl<'a> LockedOutput<'a> {
+    /// Take `data` as a LockedOutput message. Fails only on the wire-level
+    /// checks — magic, version, declared size.
+    pub fn wrap(data: &'a [u8]) -> Result<Self, zap::Error> {
+        Ok(LockedOutput {
+            o: zap::Message::parse(data)?.root(),
+        })
+    }
+
+    /// A view of an object already located in a message — a nested
+    /// field, or one element of a list.
+    pub fn new(o: zap::Object<'a>) -> Self {
+        LockedOutput { o }
+    }
+
+    /// The object this view reads.
+    pub fn object(&self) -> zap::Object<'a> {
+        self.o
+    }
+
+    pub fn locktime(&self) -> u64 {
+        self.o.u64(LOCKED_OUTPUT_LOCKTIME)
+    }
+
+    pub fn inner(&self) -> &'a [u8] {
+        self.o.bytes(LOCKED_OUTPUT_INNER)
+    }
+}
+
+/// The field values [`new_locked_output`] writes.
+#[derive(Clone, Copy, Debug)]
+pub struct LockedOutputInput<'a> {
+    pub locktime: u64,
+    pub inner: &'a [u8],
+}
+
+impl<'a> Default for LockedOutputInput<'a> {
+    fn default() -> Self {
+        LockedOutputInput {
+            locktime: 0,
+            inner: &[],
+        }
+    }
+}
+
+/// Write a LockedOutput into `b` and answer where its object landed.
+///
+/// What a field points AT is written first, in field order, and the
+/// fixed section last: a pointer always leads backward, to bytes
+/// already placed.
+pub fn put_locked_output(b: &mut zap::Builder, input: &LockedOutputInput<'_>) -> usize {
+    let mut ob = b.start_object(LOCKED_OUTPUT_SIZE);
+    ob.set_u64(b, LOCKED_OUTPUT_LOCKTIME, input.locktime);
+    ob.set_bytes(b, LOCKED_OUTPUT_INNER, input.inner);
+    ob.finish(b)
+}
+
+/// Write a LockedOutput message and answer its bytes.
+pub fn new_locked_output(input: &LockedOutputInput<'_>) -> Vec<u8> {
+    let mut b = zap::Builder::new_v2(256);
+    let at = put_locked_output(&mut b, input);
+    b.set_root(at);
+    b.finish()
+}
+
+// Utxo — field offsets, in bytes, and the fixed section's size.
+pub const UTXO_TX_ID: usize = 0;
+pub const UTXO_INDEX: usize = 32;
+pub const UTXO_ASSET: usize = 36;
+pub const UTXO_OUTPUT: usize = 68;
+pub const UTXO_SIZE: usize = 76;
+
+/// A view of a ZAP-encoded Utxo. Reading a field costs a bounds check.
+#[derive(Clone, Copy, Debug)]
+pub struct Utxo<'a> {
+    o: zap::Object<'a>,
+}
+
+impl<'a> Utxo<'a> {
+    /// Take `data` as a Utxo message. Fails only on the wire-level
+    /// checks — magic, version, declared size.
+    pub fn wrap(data: &'a [u8]) -> Result<Self, zap::Error> {
+        Ok(Utxo {
+            o: zap::Message::parse(data)?.root(),
+        })
+    }
+
+    /// A view of an object already located in a message — a nested
+    /// field, or one element of a list.
+    pub fn new(o: zap::Object<'a>) -> Self {
+        Utxo { o }
+    }
+
+    /// The object this view reads.
+    pub fn object(&self) -> zap::Object<'a> {
+        self.o
+    }
+
+    /// The 32 inline bytes at `UTXO_TX_ID`; zeros if the span runs off the buffer.
+    pub fn tx_id(&self) -> &'a [u8; 32] {
+        self.o
+            .bytes_fixed(UTXO_TX_ID, 32)
+            .try_into()
+            .unwrap_or(&[0u8; 32])
+    }
+
+    pub fn index(&self) -> u32 {
+        self.o.u32(UTXO_INDEX)
+    }
+
+    /// The 32 inline bytes at `UTXO_ASSET`; zeros if the span runs off the buffer.
+    pub fn asset(&self) -> &'a [u8; 32] {
+        self.o
+            .bytes_fixed(UTXO_ASSET, 32)
+            .try_into()
+            .unwrap_or(&[0u8; 32])
+    }
+
+    pub fn output(&self) -> &'a [u8] {
+        self.o.bytes(UTXO_OUTPUT)
+    }
+}
+
+/// The field values [`new_utxo`] writes.
+#[derive(Clone, Copy, Debug)]
+pub struct UtxoInput<'a> {
+    pub tx_id: &'a [u8; 32],
+    pub index: u32,
+    pub asset: &'a [u8; 32],
+    pub output: &'a [u8],
+}
+
+impl<'a> Default for UtxoInput<'a> {
+    fn default() -> Self {
+        UtxoInput {
+            tx_id: &[0u8; 32],
+            index: 0,
+            asset: &[0u8; 32],
+            output: &[],
+        }
+    }
+}
+
+/// Write a Utxo into `b` and answer where its object landed.
+///
+/// What a field points AT is written first, in field order, and the
+/// fixed section last: a pointer always leads backward, to bytes
+/// already placed.
+pub fn put_utxo(b: &mut zap::Builder, input: &UtxoInput<'_>) -> usize {
+    let mut ob = b.start_object(UTXO_SIZE);
+    ob.set_bytes_fixed(b, UTXO_TX_ID, input.tx_id);
+    ob.set_u32(b, UTXO_INDEX, input.index);
+    ob.set_bytes_fixed(b, UTXO_ASSET, input.asset);
+    ob.set_bytes(b, UTXO_OUTPUT, input.output);
+    ob.finish(b)
+}
+
+/// Write a Utxo message and answer its bytes.
+pub fn new_utxo(input: &UtxoInput<'_>) -> Vec<u8> {
+    let mut b = zap::Builder::new_v2(256);
+    let at = put_utxo(&mut b, input);
+    b.set_root(at);
+    b.finish()
+}
+
+// OwnerKey — field offsets, in bytes, and the fixed section's size.
+pub const OWNER_KEY_THRESHOLD: usize = 0;
+pub const OWNER_KEY_LOCKTIME: usize = 4;
+pub const OWNER_KEY_ADDRESSES: usize = 12;
+pub const OWNER_KEY_SIZE: usize = 20;
+
+/// A view of a ZAP-encoded OwnerKey. Reading a field costs a bounds check.
+#[derive(Clone, Copy, Debug)]
+pub struct OwnerKey<'a> {
+    o: zap::Object<'a>,
+}
+
+impl<'a> OwnerKey<'a> {
+    /// Take `data` as a OwnerKey message. Fails only on the wire-level
+    /// checks — magic, version, declared size.
+    pub fn wrap(data: &'a [u8]) -> Result<Self, zap::Error> {
+        Ok(OwnerKey {
+            o: zap::Message::parse(data)?.root(),
+        })
+    }
+
+    /// A view of an object already located in a message — a nested
+    /// field, or one element of a list.
+    pub fn new(o: zap::Object<'a>) -> Self {
+        OwnerKey { o }
+    }
+
+    /// The object this view reads.
+    pub fn object(&self) -> zap::Object<'a> {
+        self.o
+    }
+
+    pub fn threshold(&self) -> u32 {
+        self.o.u32(OWNER_KEY_THRESHOLD)
+    }
+
+    pub fn locktime(&self) -> u64 {
+        self.o.u64(OWNER_KEY_LOCKTIME)
+    }
+
+    pub fn addresses(&self) -> zap::List<'a> {
+        self.o.list_stride(OWNER_KEY_ADDRESSES, 20)
+    }
+}
+
+/// The field values [`new_owner_key`] writes.
+#[derive(Clone, Copy, Debug)]
+pub struct OwnerKeyInput<'a> {
+    pub threshold: u32,
+    pub locktime: u64,
+    pub addresses: &'a [[u8; 20]],
+}
+
+impl<'a> Default for OwnerKeyInput<'a> {
+    fn default() -> Self {
+        OwnerKeyInput {
+            threshold: 0,
+            locktime: 0,
+            addresses: &[],
+        }
+    }
+}
+
+/// Write a OwnerKey into `b` and answer where its object landed.
+///
+/// What a field points AT is written first, in field order, and the
+/// fixed section last: a pointer always leads backward, to bytes
+/// already placed.
+pub fn put_owner_key(b: &mut zap::Builder, input: &OwnerKeyInput<'_>) -> usize {
+    let mut list_addresses = b.start_list();
+    for elem in input.addresses {
+        list_addresses.add_bytes(b, elem);
+    }
+    let at_addresses = list_addresses.finish_offset();
+    let mut ob = b.start_object(OWNER_KEY_SIZE);
+    ob.set_u32(b, OWNER_KEY_THRESHOLD, input.threshold);
+    ob.set_u64(b, OWNER_KEY_LOCKTIME, input.locktime);
+    ob.set_list(b, OWNER_KEY_ADDRESSES, at_addresses, input.addresses.len());
+    ob.finish(b)
+}
+
+/// Write a OwnerKey message and answer its bytes.
+pub fn new_owner_key(input: &OwnerKeyInput<'_>) -> Vec<u8> {
+    let mut b = zap::Builder::new_v2(256);
+    let at = put_owner_key(&mut b, input);
+    b.set_root(at);
+    b.finish()
+}
+
+// Allocation — field offsets, in bytes, and the fixed section's size.
+pub const ALLOCATION_UTXO: usize = 0;
+pub const ALLOCATION_MESSAGE: usize = 8;
+pub const ALLOCATION_SIZE: usize = 16;
+
+/// A view of a ZAP-encoded Allocation. Reading a field costs a bounds check.
+#[derive(Clone, Copy, Debug)]
+pub struct Allocation<'a> {
+    o: zap::Object<'a>,
+}
+
+impl<'a> Allocation<'a> {
+    /// Take `data` as a Allocation message. Fails only on the wire-level
+    /// checks — magic, version, declared size.
+    pub fn wrap(data: &'a [u8]) -> Result<Self, zap::Error> {
+        Ok(Allocation {
+            o: zap::Message::parse(data)?.root(),
+        })
+    }
+
+    /// A view of an object already located in a message — a nested
+    /// field, or one element of a list.
+    pub fn new(o: zap::Object<'a>) -> Self {
+        Allocation { o }
+    }
+
+    /// The object this view reads.
+    pub fn object(&self) -> zap::Object<'a> {
+        self.o
+    }
+
+    pub fn utxo(&self) -> &'a [u8] {
+        self.o.bytes(ALLOCATION_UTXO)
+    }
+
+    pub fn message(&self) -> &'a [u8] {
+        self.o.bytes(ALLOCATION_MESSAGE)
+    }
+}
+
+/// The field values [`new_allocation`] writes.
+#[derive(Clone, Copy, Debug)]
+pub struct AllocationInput<'a> {
+    pub utxo: &'a [u8],
+    pub message: &'a [u8],
+}
+
+impl<'a> Default for AllocationInput<'a> {
+    fn default() -> Self {
+        AllocationInput {
+            utxo: &[],
+            message: &[],
+        }
+    }
+}
+
+/// Write a Allocation into `b` and answer where its object landed.
+///
+/// What a field points AT is written first, in field order, and the
+/// fixed section last: a pointer always leads backward, to bytes
+/// already placed.
+pub fn put_allocation(b: &mut zap::Builder, input: &AllocationInput<'_>) -> usize {
+    let mut ob = b.start_object(ALLOCATION_SIZE);
+    ob.set_bytes(b, ALLOCATION_UTXO, input.utxo);
+    ob.set_bytes(b, ALLOCATION_MESSAGE, input.message);
+    ob.finish(b)
+}
+
+/// Write a Allocation message and answer its bytes.
+pub fn new_allocation(input: &AllocationInput<'_>) -> Vec<u8> {
+    let mut b = zap::Builder::new_v2(256);
+    let at = put_allocation(&mut b, input);
+    b.set_root(at);
+    b.finish()
+}
+
+// Genesis — field offsets, in bytes, and the fixed section's size.
+pub const GENESIS_TIMESTAMP: usize = 0;
+pub const GENESIS_INITIAL_SUPPLY: usize = 8;
+pub const GENESIS_MESSAGE: usize = 16;
+pub const GENESIS_UTXO_LENS: usize = 24;
+pub const GENESIS_UTXO_BLOB: usize = 32;
+pub const GENESIS_VALIDATOR_LENS: usize = 40;
+pub const GENESIS_VALIDATOR_BLOB: usize = 48;
+pub const GENESIS_CHAIN_LENS: usize = 56;
+pub const GENESIS_CHAIN_BLOB: usize = 64;
+pub const GENESIS_SIZE: usize = 72;
+
+/// A view of a ZAP-encoded Genesis. Reading a field costs a bounds check.
+#[derive(Clone, Copy, Debug)]
+pub struct Genesis<'a> {
+    o: zap::Object<'a>,
+}
+
+impl<'a> Genesis<'a> {
+    /// Take `data` as a Genesis message. Fails only on the wire-level
+    /// checks — magic, version, declared size.
+    pub fn wrap(data: &'a [u8]) -> Result<Self, zap::Error> {
+        Ok(Genesis {
+            o: zap::Message::parse(data)?.root(),
+        })
+    }
+
+    /// A view of an object already located in a message — a nested
+    /// field, or one element of a list.
+    pub fn new(o: zap::Object<'a>) -> Self {
+        Genesis { o }
+    }
+
+    /// The object this view reads.
+    pub fn object(&self) -> zap::Object<'a> {
+        self.o
+    }
+
+    pub fn timestamp(&self) -> u64 {
+        self.o.u64(GENESIS_TIMESTAMP)
+    }
+
+    pub fn initial_supply(&self) -> u64 {
+        self.o.u64(GENESIS_INITIAL_SUPPLY)
+    }
+
+    pub fn message(&self) -> &'a [u8] {
+        self.o.bytes(GENESIS_MESSAGE)
+    }
+
+    pub fn utxo_lens(&self) -> zap::List<'a> {
+        self.o.list_stride(GENESIS_UTXO_LENS, 4)
+    }
+
+    pub fn utxo_blob(&self) -> &'a [u8] {
+        self.o.bytes(GENESIS_UTXO_BLOB)
+    }
+
+    pub fn validator_lens(&self) -> zap::List<'a> {
+        self.o.list_stride(GENESIS_VALIDATOR_LENS, 4)
+    }
+
+    pub fn validator_blob(&self) -> &'a [u8] {
+        self.o.bytes(GENESIS_VALIDATOR_BLOB)
+    }
+
+    pub fn chain_lens(&self) -> zap::List<'a> {
+        self.o.list_stride(GENESIS_CHAIN_LENS, 4)
+    }
+
+    pub fn chain_blob(&self) -> &'a [u8] {
+        self.o.bytes(GENESIS_CHAIN_BLOB)
+    }
+}
+
+/// The field values [`new_genesis`] writes.
+#[derive(Clone, Copy, Debug)]
+pub struct GenesisInput<'a> {
+    pub timestamp: u64,
+    pub initial_supply: u64,
+    pub message: &'a [u8],
+    pub utxo_lens: &'a [u32],
+    pub utxo_blob: &'a [u8],
+    pub validator_lens: &'a [u32],
+    pub validator_blob: &'a [u8],
+    pub chain_lens: &'a [u32],
+    pub chain_blob: &'a [u8],
+}
+
+impl<'a> Default for GenesisInput<'a> {
+    fn default() -> Self {
+        GenesisInput {
+            timestamp: 0,
+            initial_supply: 0,
+            message: &[],
+            utxo_lens: &[],
+            utxo_blob: &[],
+            validator_lens: &[],
+            validator_blob: &[],
+            chain_lens: &[],
+            chain_blob: &[],
+        }
+    }
+}
+
+/// Write a Genesis into `b` and answer where its object landed.
+///
+/// What a field points AT is written first, in field order, and the
+/// fixed section last: a pointer always leads backward, to bytes
+/// already placed.
+pub fn put_genesis(b: &mut zap::Builder, input: &GenesisInput<'_>) -> usize {
+    let mut list_utxo_lens = b.start_list();
+    for elem in input.utxo_lens {
+        list_utxo_lens.add_u32(b, *elem);
+    }
+    let at_utxo_lens = list_utxo_lens.finish_offset();
+    let mut list_validator_lens = b.start_list();
+    for elem in input.validator_lens {
+        list_validator_lens.add_u32(b, *elem);
+    }
+    let at_validator_lens = list_validator_lens.finish_offset();
+    let mut list_chain_lens = b.start_list();
+    for elem in input.chain_lens {
+        list_chain_lens.add_u32(b, *elem);
+    }
+    let at_chain_lens = list_chain_lens.finish_offset();
+    let mut ob = b.start_object(GENESIS_SIZE);
+    ob.set_u64(b, GENESIS_TIMESTAMP, input.timestamp);
+    ob.set_u64(b, GENESIS_INITIAL_SUPPLY, input.initial_supply);
+    ob.set_bytes(b, GENESIS_MESSAGE, input.message);
+    ob.set_list(b, GENESIS_UTXO_LENS, at_utxo_lens, input.utxo_lens.len());
+    ob.set_bytes(b, GENESIS_UTXO_BLOB, input.utxo_blob);
+    ob.set_list(b, GENESIS_VALIDATOR_LENS, at_validator_lens, input.validator_lens.len());
+    ob.set_bytes(b, GENESIS_VALIDATOR_BLOB, input.validator_blob);
+    ob.set_list(b, GENESIS_CHAIN_LENS, at_chain_lens, input.chain_lens.len());
+    ob.set_bytes(b, GENESIS_CHAIN_BLOB, input.chain_blob);
+    ob.finish(b)
+}
+
+/// Write a Genesis message and answer its bytes.
+pub fn new_genesis(input: &GenesisInput<'_>) -> Vec<u8> {
+    let mut b = zap::Builder::new_v2(256);
+    let at = put_genesis(&mut b, input);
+    b.set_root(at);
+    b.finish()
+}
+

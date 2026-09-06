@@ -470,3 +470,73 @@ struct Credentials {
     Runs       list<CredentialRun> @0
     Signatures list<sig>           @8
 }
+
+# ---- what a transaction spends, as it travels alone ---------------------
+#
+# An unspent output does not always ride inside a transaction: it crosses the
+# atomic boundary between chains, it sits in the genesis blob, and it is what
+# a UTXO set stores. Then it travels behind the same two-byte prefix an fx
+# primitive does — the family that owns it and the shape within that family —
+# which the caller strips before a reader sees these bytes.
+#
+# TransferOutput and Utxo are the same offsets `xchain.zap` states, because
+# they are the same bytes: the X-chain makes these outputs and the P-chain
+# spends them. Two files saying it is two statements of one format, which is
+# what `chains/rust/zap/tests/one_format.rs` is there to catch — the honest
+# fix is one statement both schemas name, and that needs an import across
+# schemas the generator does not have yet.
+
+struct TransferOutput {
+    Amount    u64        @0
+    Locktime  u64        @8
+    Threshold u32        @16
+    Addresses list<addr> @20
+}
+
+# A stakeable lock is not a kind of output, it is a time on one — so it wraps
+# an output rather than adding a field, and a reader that does not know about
+# locks cannot read a locked output as an unlocked one.
+struct LockedOutput {
+    Locktime u64   @0
+    Inner    bytes @8
+}
+
+struct Utxo {
+    TxID   id32  @0
+    Index  u32   @32
+    Asset  id32  @36
+    Output bytes @68
+}
+
+# The identity a locked balance is tallied under. Go calls this
+# `txs.MarshalOwner`. It is NOT the fx owner shape above — the two fields are
+# in the other order — because this one is a key and that one is a wire.
+struct OwnerKey {
+    Threshold u32        @0
+    Locktime  u64        @4
+    Addresses list<addr> @12
+}
+
+# ---- what a network starts from -----------------------------------------
+
+# One genesis allocation: an unspent output in its envelope, and whatever note
+# came with it.
+struct Allocation {
+    Utxo    bytes @0
+    Message bytes @8
+}
+
+# Every run here is a length list beside one blob, the same framing a block
+# uses for its transactions and for the same reason: each element already says
+# how long it is, so one length list cuts them apart without parsing any.
+struct Genesis {
+    Timestamp     u64       @0
+    InitialSupply u64       @8
+    Message       bytes     @16
+    UtxoLens      list<u32> @24
+    UtxoBlob      bytes     @32
+    ValidatorLens list<u32> @40
+    ValidatorBlob bytes     @48
+    ChainLens     list<u32> @56
+    ChainBlob     bytes     @64
+}

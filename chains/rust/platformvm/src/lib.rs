@@ -57,12 +57,14 @@ pub mod stakingparams;
 pub mod pchain_zap;
 pub mod persist;
 pub mod state;
+pub mod state_zap;
 pub mod store;
 pub mod txs;
 pub mod uptime;
 pub mod validators;
 pub mod vm;
 pub mod warp;
+pub mod warp_zap;
 pub mod warpmsg;
 
 pub use ids::Id;

@@ -180,6 +180,11 @@ conformance-cpp:
 #
 # The generator is named by the exact commit that wrote these files. A moving
 # reference would let the accessors change without the schema changing.
+#
+# Seven schemas: one per chain, plus the two the P-chain has beyond its
+# transactions — the warp messages it sends, and what it writes to its own
+# disk. They are separate files because they are separate consequences: a
+# change to a wire schema is a fork, a change to state.zap is a migration.
 
 ZAPGEN := github.com/zap-proto/go/cmd/zapgen@v1.8.3-0.20260906203114-6d0e886cebc9
 
@@ -187,6 +192,10 @@ wire: ## rewrite the chain accessors from chains/schema
 	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -runtime -out chains/rust/zap/src
 	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
 	  -out chains/rust/platformvm/src chains/schema/pchain.zap
+	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
+	  -out chains/rust/platformvm/src chains/schema/warp.zap
+	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
+	  -out chains/rust/platformvm/src chains/schema/state.zap
 	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
 	  -out chains/rust/xvm/src        chains/schema/xchain.zap
 	cd $(ROOT) && GOWORK=off go run $(ZAPGEN) -lang rust -rust-runtime lux_zap \
