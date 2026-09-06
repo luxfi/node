@@ -124,7 +124,14 @@ Result<Message> Message::parse(std::span<const std::uint8_t> b) {
                         " is a scheme this port does not implement");
 
     BitSetSignature sig;
-    const auto raw = sig_zm->Signature();
+    // The typed accessor is TOTAL — a field the buffer is too short to hold
+    // reads as zero rather than faulting. Here that would turn a truncated
+    // message into a signature of ninety-six zeros, and this is the one place
+    // that answered a short field with a refusal. It still does: the raw read
+    // is short exactly when the buffer cannot hold the field.
+    const auto raw = sig_zm->object().bytes_fixed(wire::kBitSetSignatureOff, signer::kSignatureLen);
+    if (raw.size() != signer::kSignatureLen)
+        return fail(Err::BufferTooSmall, "warp: the signature field is short");
     std::memcpy(sig.signature.data(), raw.data(), signer::kSignatureLen);
     const auto signers = sig_zm->Signers();
     sig.signers.assign(signers.begin(), signers.end());
