@@ -9,24 +9,12 @@
 namespace lux::quantumvm::wire {
 namespace {
 
-std::int64_t write_u32_list(zap::Builder& b, const std::vector<std::uint32_t>& xs) {
-    auto lb = b.start_list(4);
-    for (std::uint32_t x : xs) lb.add_u32(x);
-    return lb.finish().first;
-}
-
 void append(Bytes& dst, ByteView src) { dst.insert(dst.end(), src.begin(), src.end()); }
 
 }  // namespace
 
 Bytes tx_body_bytes(Seconds timestamp, std::uint64_t nonce, ByteView data) {
-    zap::Builder b(zap::kHeaderSize + kTxSize + data.size() + 32);
-    auto ob = b.start_object(kTxSize);
-    ob.set_u64(kTxTime, static_cast<std::uint64_t>(timestamp));
-    ob.set_u64(kTxNonce, nonce);
-    ob.set_bytes(kTxData, data);
-    ob.finish_as_root();
-    return b.finish();
+    return NewTxBody(TxBodyInput{timestamp, nonce, data});
 }
 
 Bytes marshal_tx(const Transaction& tx) {
@@ -45,17 +33,9 @@ Bytes marshal_tx(const Transaction& tx) {
     }();
     if (sig == nullptr) sig = &kNone;
 
-    zap::Builder b(zap::kHeaderSize + kEnvSize + body.size() + sig->public_key.size() +
-                   sig->signature.size() + sig->quantum_stamp.size() + 64);
-    auto ob = b.start_object(kEnvSize);
-    ob.set_bytes(kEnvBody, body);
-    ob.set_u32(kEnvAlg, sig->algorithm);
-    ob.set_u64(kEnvTime, static_cast<std::uint64_t>(sig->timestamp));
-    ob.set_bytes(kEnvKey, view(sig->public_key));
-    ob.set_bytes(kEnvSig, view(sig->signature));
-    ob.set_bytes(kEnvStamp, view(sig->quantum_stamp));
-    ob.finish_as_root();
-    return b.finish();
+    return NewTxEnvelope(TxEnvelopeInput{body, sig->algorithm, sig->timestamp,
+                                        view(sig->public_key), view(sig->signature),
+                                        view(sig->quantum_stamp)});
 }
 
 Result<std::shared_ptr<BaseTransaction>> parse_tx_body(ByteView body) {
@@ -63,14 +43,15 @@ Result<std::shared_ptr<BaseTransaction>> parse_tx_body(ByteView body) {
     if (!msg) return fail(Err::NotAMessage, "transaction body");
     if (msg->size() != body.size()) return fail(Err::TrailingBytes, "transaction body");
     const zap::Object o = msg->root();
-    if (o.offset() + kTxSize > static_cast<std::int64_t>(msg->size()))
+    if (o.offset() + kTxBodySize > static_cast<std::int64_t>(msg->size()))
         return fail(Err::ShortHeader,
                     "transaction body ends " +
                         std::to_string(static_cast<std::int64_t>(msg->size()) - o.offset()) +
-                        " bytes into a " + std::to_string(kTxSize) + "-byte header");
+                        " bytes into a " + std::to_string(kTxBodySize) + "-byte header");
 
-    const auto data = o.bytes(kTxData);
-    return std::make_shared<BaseTransaction>(static_cast<Seconds>(o.u64(kTxTime)), o.u64(kTxNonce),
+    const TxBody v(o);
+    const auto data = v.Data();
+    return std::make_shared<BaseTransaction>(v.Timestamp(), v.Nonce(),
                                              Bytes(data.begin(), data.end()));
 }
 
@@ -79,22 +60,23 @@ Result<std::shared_ptr<BaseTransaction>> unmarshal_tx(ByteView data) {
     if (!msg) return fail(Err::NotAMessage, "transaction");
     if (msg->size() != data.size()) return fail(Err::TrailingBytes, "transaction");
     const zap::Object o = msg->root();
-    if (o.offset() + kEnvSize > static_cast<std::int64_t>(msg->size()))
+    if (o.offset() + kTxEnvelopeSize > static_cast<std::int64_t>(msg->size()))
         return fail(Err::ShortHeader,
                     "transaction wire ends " +
                         std::to_string(static_cast<std::int64_t>(msg->size()) - o.offset()) +
-                        " bytes into a " + std::to_string(kEnvSize) + "-byte header");
+                        " bytes into a " + std::to_string(kTxEnvelopeSize) + "-byte header");
 
-    auto tx = parse_tx_body(o.bytes(kEnvBody));
+    const TxEnvelope v(o);
+    auto tx = parse_tx_body(v.Body());
     if (!tx) return std::unexpected(tx.error());
 
-    const auto key = o.bytes(kEnvKey);
-    const auto sig = o.bytes(kEnvSig);
-    const auto stamp = o.bytes(kEnvStamp);
+    const auto key = v.PublicKey();
+    const auto sig = v.Signature();
+    const auto stamp = v.Stamp();
 
     quantum::QuantumSignature qs;
-    qs.algorithm = o.u32(kEnvAlg);
-    qs.timestamp = static_cast<Nanos>(o.u64(kEnvTime));
+    qs.algorithm = v.Algorithm();
+    qs.timestamp = static_cast<Nanos>(v.Stamped());
     qs.public_key.assign(key.begin(), key.end());
     qs.signature.assign(sig.begin(), sig.end());
     qs.corona_key = qs.public_key;
@@ -113,28 +95,23 @@ Bytes block_bytes(const BlockFields& b) {
         append(tx_blob, view(txb));
     }
 
-    zap::Builder bld(zap::kHeaderSize + kBlkSize + tx_blob.size() + 4 * tx_lens.size() + 128);
-    const std::int64_t tx_lens_off = write_u32_list(bld, tx_lens);
-
-    auto ob = bld.start_object(kBlkSize);
-    ob.set_u64(kBlkTime, static_cast<std::uint64_t>(b.timestamp));
-    ob.set_u64(kBlkHeight, b.height);
-    ob.set_bytes_fixed(kBlkParent, view(b.parent_id));
-    ob.set_bytes_fixed(kBlkChain, view(b.chain_id));
-    ob.set_u32(kBlkNetwork, b.network_id);
-    ob.set_list(kBlkTxLens, tx_lens_off, static_cast<std::int64_t>(tx_lens.size()));
-    ob.set_bytes(kBlkTxBlob, view(tx_blob));
-    ob.finish_as_root();
-
-    return bld.finish();
+    return NewBlock(BlockInput{b.timestamp, b.height, b.parent_id, b.chain_id, b.network_id,
+                               tx_lens, view(tx_blob)});
 }
 
 Result<std::vector<TxPtr>> parse_tx_set(const zap::List& lens, ByteView blob) {
-    const int n = lens.size();
+    // Two bounds on one attacker-chosen count, and each says its own thing.
+    // The schema knows the stride, so the wire layer already refused a count
+    // the MESSAGE cannot hold — it answers the absent list, which is a refusal
+    // and not an empty block whenever there is a blob to account for.
+    if (lens.is_null() && !blob.empty())
+        return fail(Err::TxCountAbsurd, "a count the message cannot hold");
+
+    const std::int64_t n = lens.size();
     if (n <= 0) return std::vector<TxPtr>{};
 
-    // A list length is attacker-chosen and only clamped to the message size, so
-    // bound it by what the blob can actually hold before allocating for it.
+    // The second bound is this chain's: a count the BLOB cannot back, refused
+    // before anything is allocated for it.
     if (static_cast<std::size_t>(n) > blob.size() / kMinTxWire)
         return fail(Err::TxCountAbsurd,
                     std::to_string(n) + " in " + std::to_string(blob.size()) + " bytes");
@@ -142,7 +119,7 @@ Result<std::vector<TxPtr>> parse_tx_set(const zap::List& lens, ByteView blob) {
     std::vector<TxPtr> txs;
     txs.reserve(static_cast<std::size_t>(n));
     std::size_t off = 0;
-    for (int i = 0; i < n; ++i) {
+    for (std::int64_t i = 0; i < n; ++i) {
         const std::size_t size = lens.u32(i);
         if (size < kMinTxWire || off + size > blob.size())
             return fail(Err::TxBlobMismatch,
@@ -176,20 +153,21 @@ Result<BlockFields> parse_block_bytes(ByteView data) {
     // decodes to height 0, time 0 and the empty parent. Every truncation would
     // name that one value, under as many different ids as there are ways to
     // truncate.
-    if (o.offset() + kBlkSize > static_cast<std::int64_t>(msg->size()))
+    if (o.offset() + kBlockSize > static_cast<std::int64_t>(msg->size()))
         return fail(Err::ShortHeader,
                     "block wire ends " +
                         std::to_string(static_cast<std::int64_t>(msg->size()) - o.offset()) +
-                        " bytes into a " + std::to_string(kBlkSize) + "-byte header");
+                        " bytes into a " + std::to_string(kBlockSize) + "-byte header");
 
+    const Block v(o);
     BlockFields b;
-    b.timestamp = static_cast<Seconds>(o.u64(kBlkTime));
-    b.height = o.u64(kBlkHeight);
-    b.parent_id = id_from(o.bytes_fixed(kBlkParent, 32));
-    b.chain_id = id_from(o.bytes_fixed(kBlkChain, 32));
-    b.network_id = o.u32(kBlkNetwork);
+    b.timestamp = v.Timestamp();
+    b.height = v.Height();
+    b.parent_id = id_from(v.ParentID());
+    b.chain_id = id_from(v.ChainID());
+    b.network_id = v.NetworkID();
 
-    auto txs = parse_tx_set(o.list(kBlkTxLens), o.bytes(kBlkTxBlob));
+    auto txs = parse_tx_set(v.TxLens(), v.TxBlob());
     if (!txs) return std::unexpected(txs.error());
     b.transactions = std::move(*txs);
 

@@ -25,6 +25,11 @@ project(lux_quantumvm LANGUAGES C CXX ASM)
 # The wire this chain speaks comes from the published SDK, not from here.
 include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
 
+# The wire's accessors: schema/wire.zap in, include/lux/quantumvm/gen out.
+zap_schema(wire-schema
+  ${CMAKE_CURRENT_SOURCE_DIR}/schema/wire.zap
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/lux/quantumvm/gen)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
