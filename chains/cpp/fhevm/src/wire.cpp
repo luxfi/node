@@ -9,7 +9,7 @@
 
 #include "lux/fhevm/block.hpp"
 #include "lux/fhevm/transaction.hpp"
-#include "lux/zap/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <cstring>
 
@@ -56,7 +56,7 @@ Result<std::size_t> zap_len(ByteView b) {
     if (b.size() < std::size_t(zap::kHeaderSize)) {
         return fail(Err::InvalidPayload, "short buffer");
     }
-    std::size_t n = zap::get_u32(b.data() + 12);
+    std::size_t n = zap::load_u32(b.data() + 12);
     if (n < std::size_t(zap::kHeaderSize) || n > b.size()) {
         return fail(Err::InvalidPayload, "bad zap length");
     }
@@ -118,21 +118,20 @@ Result<Transaction> parse_transaction(ByteView data) {
     auto n = zap_len(data);
     if (!n) return std::unexpected(n.error());
 
-    zap::Message sm;
-    std::string err;
-    if (!zap::Message::parse(data.subspan(0, *n), &sm, &err)) {
-        return fail(Err::InvalidPayload, err);
+    auto sm = zap::Message::parse(data.subspan(0, *n));
+    if (!sm) {
+        return fail(Err::InvalidPayload, std::string(zap::describe(sm.error())));
     }
-    zap::Message gm;
-    if (!zap::Message::parse(data.subspan(*n), &gm, &err)) {
-        return fail(Err::InvalidPayload, err);
+    auto gm = zap::Message::parse(data.subspan(*n));
+    if (!gm) {
+        return fail(Err::InvalidPayload, std::string(zap::describe(gm.error())));
     }
-    if (*n + gm.size() != data.size()) {
+    if (*n + gm->size() != data.size()) {
         return fail(Err::InvalidPayload, "trailing bytes");
     }
 
-    zap::Object so = sm.root();
-    zap::Object sg = gm.root();
+    zap::Object so = sm->root();
+    zap::Object sg = gm->root();
     Transaction tx;
     tx.type = so.u8(kTxType);
     auto scheme_bytes = so.bytes(kTxScheme);
@@ -142,9 +141,9 @@ Result<Transaction> parse_transaction(ByteView data) {
     tx.payload = to_bytes(so.bytes(kTxPayld));
     tx.auth = to_bytes(sg.bytes(kSgAuth));
     tx.sig = to_bytes(sg.bytes(kSgSig));
-    auto payer = so.bytes_fixed_slice(kTxPayer, int(tx.payer.size()));
+    auto payer = so.bytes_fixed(kTxPayer, int(tx.payer.size()));
     std::copy(payer.begin(), payer.end(), tx.payer.begin());
-    auto subject = so.bytes_fixed_slice(kTxSubject, int(tx.subject.size()));
+    auto subject = so.bytes_fixed(kTxSubject, int(tx.subject.size()));
     std::copy(subject.begin(), subject.end(), tx.subject.begin());
 
     // Canonical wire: ZAP follows the root offset and ignores unreferenced
@@ -195,7 +194,7 @@ Bytes block_bytes(const Id& parent, std::uint64_t height, std::int64_t timestamp
     auto ob = bld.start_object(kBlkSize);
     ob.set_bytes_fixed(kBlkParent, view(parent));
     ob.set_u64(kBlkHeight, height);
-    ob.set_i64(kBlkTime, timestamp);
+    ob.set_u64(kBlkTime, static_cast<std::uint64_t>(timestamp));
     ob.set_list(kBlkTxLens, lens_off, lens_len);
     ob.set_bytes(kBlkTxBlob, view(blob));
     ob.finish_as_root();
@@ -206,26 +205,25 @@ Result<BlockHeader> parse_block_bytes(ByteView data) {
     if (data.size() > kMaxBlockSize) {
         return fail(Err::InvalidPayload, "block is over the size bound");
     }
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(data, &msg, &err)) return fail(Err::InvalidPayload, err);
-    if (msg.size() != data.size()) return fail(Err::InvalidPayload, "block trailing bytes");
+    auto msg = zap::Message::parse(data);
+    if (!msg) return fail(Err::InvalidPayload, std::string(zap::describe(msg.error())));
+    if (msg->size() != data.size()) return fail(Err::InvalidPayload, "block trailing bytes");
 
-    zap::Object o = msg.root();
+    zap::Object o = msg->root();
     BlockHeader h;
-    auto parent = o.bytes_fixed_slice(kBlkParent, int(h.parent.size()));
+    auto parent = o.bytes_fixed(kBlkParent, int(h.parent.size()));
     std::copy(parent.begin(), parent.end(), h.parent.begin());
     h.height = o.u64(kBlkHeight);
-    h.timestamp = o.i64(kBlkTime);
+    h.timestamp = static_cast<std::int64_t>(o.u64(kBlkTime));
 
     zap::List lens = o.list_stride(kBlkTxLens, 4);
-    if (lens.len() < 0 || std::size_t(lens.len()) > kMaxBlockTxs) {
+    if (lens.size() < 0 || std::size_t(lens.size()) > kMaxBlockTxs) {
         return fail(Err::InvalidPayload, "block declares more transactions than may be verified");
     }
     auto blob = o.bytes(kBlkTxBlob);
-    h.transactions.reserve(std::size_t(lens.len()));
+    h.transactions.reserve(std::size_t(lens.size()));
     std::size_t pos = 0;
-    for (int i = 0; i < lens.len(); ++i) {
+    for (int i = 0; i < lens.size(); ++i) {
         std::size_t l = lens.u32(i);
         if (pos + l > blob.size()) return fail(Err::InvalidPayload, "tx blob out of bounds");
         auto tx = parse_transaction(blob.subspan(pos, l));

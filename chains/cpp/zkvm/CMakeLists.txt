@@ -11,7 +11,7 @@
 #   lux-cpp/consensus    the Id type the seam speaks (header-only here)
 #   lux-cpp/node         include/lux/node/vm.hpp — the VM seam itself
 #   ─────────────────────────── NEW in zkvm ────────────────────────────
-#   zap        the zero-copy structural codec (header-only)
+#   zap-proto/cpp  the ZAP protocol SDK (published, pinned in zap.cmake)
 #   wire       the canonical/agreement rules every frame is held to
 #   txs        the shielded transaction and the identity it is decided by
 #   store      the durable map, and the view a decision writes through
@@ -32,6 +32,10 @@
 
 cmake_minimum_required(VERSION 3.20)
 project(zkvm LANGUAGES CXX)
+
+
+# The wire this chain speaks comes from the published SDK, not from here.
+include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -124,7 +128,7 @@ target_include_directories(zkvm PUBLIC
   ${_node}/include
   ${_consensus}/include
 )
-target_link_libraries(zkvm PUBLIC zkvm_crypto)
+target_link_libraries(zkvm PUBLIC zap::zap zkvm_crypto)
 target_compile_options(zkvm PRIVATE -Wall -Wextra)
 find_package(Threads REQUIRED)
 target_link_libraries(zkvm PUBLIC Threads::Threads)

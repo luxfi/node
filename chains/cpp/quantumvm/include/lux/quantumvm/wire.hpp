@@ -1,11 +1,11 @@
 // Copyright (C) 2026, Lux Industries, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
-// wire.hpp — native-ZAP struct-is-wire for the Q-chain.
-//
-// Rendered from Go chains/quantumvm/wire.go, field offset for field offset. A
-// block written here parses there and hashes to the same id, because both are
-// the same arithmetic over the same layout.
+// wire.hpp — what the Q-chain's bytes MEAN. What they SAY is in
+// gen/wire_zap.hpp, which zapgen writes from schema/wire.zap: the offsets, the
+// strides, the readers and the builders. A block written here parses in Go and
+// hashes to the same id, because both are the same arithmetic over the same
+// layout — and now over the same written-down layout.
 //
 // The wire is CANONICAL, and canonical means one byte string per block, not
 // "the encoder emits one shape". Parse re-serializes what it decoded and
@@ -26,8 +26,8 @@
 
 #include "lux/quantumvm/error.hpp"
 #include "lux/quantumvm/id.hpp"
+#include "lux/quantumvm/gen/wire_zap.hpp"
 #include "lux/quantumvm/transaction.hpp"
-#include "lux/quantumvm/zap.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -40,53 +40,9 @@ namespace lux::quantumvm::wire {
 // commit each walked whatever arrived.
 inline constexpr std::size_t kMaxBlockSize = 2u << 20;  // 2 MiB
 
-// ---- Block ----
-//
-//  Timestamp i64   @ 0    (Unix seconds — Q-Chain block-time resolution)
-//  Height    u64   @ 8
-//  ParentID  32B   @ 16
-//  ChainID   32B   @ 48   (the chain this block belongs to)
-//  NetworkID u32   @ 80   (the network that chain belongs to)
-//  TxLens    list  @ 88   (u32 per transaction wire length)
-//  TxBlob    bytes @ 96   (concatenated transaction wire bytes)
-inline constexpr std::int64_t kBlkTime = 0;
-inline constexpr std::int64_t kBlkHeight = 8;
-inline constexpr std::int64_t kBlkParent = 16;
-inline constexpr std::int64_t kBlkChain = 48;
-inline constexpr std::int64_t kBlkNetwork = 80;
-inline constexpr std::int64_t kBlkTxLens = 88;
-inline constexpr std::int64_t kBlkTxBlob = 96;
-inline constexpr std::int64_t kBlkSize = 104;
-
-// ---- BaseTransaction, the signature preimage ----
-//
-//  Timestamp i64   @ 0   (Unix seconds)
-//  Nonce     u64   @ 8
-//  Data      bytes @ 16
-inline constexpr std::int64_t kTxTime = 0;
-inline constexpr std::int64_t kTxNonce = 8;
-inline constexpr std::int64_t kTxData = 16;
-inline constexpr std::int64_t kTxSize = 24;
-
-// ---- transaction envelope: the preimage plus the signature over it ----
-//
-//  Body      bytes @ 0
-//  Algorithm u32   @ 8
-//  Stamped   i64   @ 16   (signature time, Unix nanoseconds)
-//  PublicKey bytes @ 24   (ML-DSA public key)
-//  Signature bytes @ 32   (ML-DSA signature over body ‖ stamp ‖ stamped)
-//  Stamp     bytes @ 40   (quantum stamp)
-inline constexpr std::int64_t kEnvBody = 0;
-inline constexpr std::int64_t kEnvAlg = 8;
-inline constexpr std::int64_t kEnvTime = 16;
-inline constexpr std::int64_t kEnvKey = 24;
-inline constexpr std::int64_t kEnvSig = 32;
-inline constexpr std::int64_t kEnvStamp = 40;
-inline constexpr std::int64_t kEnvSize = 48;
-
 // The smallest an envelope can be: the zap header plus the fixed section, with
 // every variable field null.
-inline constexpr std::size_t kMinTxWire = zap::kHeaderSize + kEnvSize;
+inline constexpr std::size_t kMinTxWire = zap::kHeaderSize + kTxEnvelopeSize;
 
 // The signature preimage of a transaction: what its id is taken over and what
 // its signature covers. It excludes the signature.

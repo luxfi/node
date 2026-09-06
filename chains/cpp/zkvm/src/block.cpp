@@ -4,7 +4,7 @@
 #include "lux/zkvm/block.hpp"
 
 #include "lux/zkvm/vm.hpp"
-#include "lux/zkvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <set>
 

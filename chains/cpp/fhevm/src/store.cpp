@@ -3,7 +3,7 @@
 
 #include "lux/fhevm/store.hpp"
 
-#include "lux/zap/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -131,14 +131,13 @@ Bytes encode_batch(const Staged& batch) {
 }
 
 Result<Staged> decode_batch(ByteView record) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(record, &msg, &err)) return fail(Err::Database, err);
-    if (msg.size() != record.size()) return fail(Err::Database, "store record trailing bytes");
-    zap::Object root = msg.root();
+    auto msg = zap::Message::parse(record);
+    if (!msg) return fail(Err::Database, std::string(zap::describe(msg.error())));
+    if (msg->size() != record.size()) return fail(Err::Database, "store record trailing bytes");
+    zap::Object root = msg->root();
     zap::List entries = root.list(kBatchEntries);
     Staged out;
-    for (int i = 0; i < entries.len(); ++i) {
+    for (int i = 0; i < entries.size(); ++i) {
         zap::Object e = entries.object_ptr(i);
         if (e.is_null()) return fail(Err::Database, "store record does not parse");
         Bytes k = to_bytes(e.bytes(kEntryKey));
@@ -182,7 +181,7 @@ Result<void> File::replay() {
 
     std::size_t pos = 0;
     while (pos + std::size_t(zap::kHeaderSize) <= all.size()) {
-        std::uint32_t len = zap::get_u32(all.data() + pos + 12);
+        std::uint32_t len = zap::load_u32(all.data() + pos + 12);
         // A record that does not fit is the tail of a commit that never
         // finished: it never happened, so the log is truncated to before it.
         if (len < std::uint32_t(zap::kHeaderSize) || pos + len > all.size()) break;

@@ -26,8 +26,8 @@
 #include "lux/platformvm/ids.hpp"
 #include "lux/platformvm/priority.hpp"
 #include "lux/platformvm/security.hpp"
+#include "lux/platformvm/gen/wire_zap.hpp"
 #include "lux/platformvm/signer.hpp"
-#include <zap/zap.hpp>
 
 #include <array>
 #include <cstdint>
@@ -63,23 +63,10 @@ enum class Kind : std::uint8_t {
     ConvertNetwork = 20,
 };
 
-// ── the shared envelope, offsets fixed by the wire
-
-inline constexpr std::int64_t kOffKind = 0;
-inline constexpr std::int64_t kOffNetworkId = 1;
-inline constexpr std::int64_t kOffBlockchainId = 5;
-inline constexpr std::int64_t kOffOuts = 37;
-inline constexpr std::int64_t kOffOwnerAddrs = 45;
-inline constexpr std::int64_t kOffIns = 53;
-inline constexpr std::int64_t kOffSigIndices = 61;
-inline constexpr std::int64_t kOffMemo = 69;
-inline constexpr std::int64_t kSpendSize = 77;
-
-inline constexpr std::int64_t kValidatorSize = 44;
-inline constexpr std::int64_t kBlsPubLen = 48;
-inline constexpr std::int64_t kBlsSigLen = 96;
-inline constexpr std::int64_t kSignerSize = 1 + kBlsPubLen + kBlsSigLen;  // 145
-inline constexpr std::size_t kSigLen = 65;                                // secp256k1 signature
+// The width of one secp256k1 signature. It is not an offset — nothing in the
+// P-chain's own message layout says it — it is what the curve produces, and
+// the credential array is a run of them.
+inline constexpr std::size_t kSigLen = 65;
 
 // Names on the blockchain a CreateChainTx spawns.
 inline constexpr std::size_t kMaxNameLen = 128;
@@ -197,7 +184,7 @@ class UnsignedTx {
 // Everything except the reward proposal carries the spending envelope.
 class SpendingTx : public UnsignedTx {
   public:
-    std::uint32_t network_id() const { return root().u32(kOffNetworkId); }
+    std::uint32_t network_id() const { return root().u32(wire::kBaseNetworkIDOff); }
     Id blockchain_id() const;
     std::vector<TransferableOutput> outputs() const override;
     std::vector<TransferableInput> inputs() const;
@@ -227,11 +214,6 @@ class BaseTxUnsigned final : public SpendingTx {
 // Consumes funds produced on another chain.
 class ImportTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffSourceChain = kSpendSize;  // 77
-    static constexpr std::int64_t kOffInputs = 109;
-    static constexpr std::int64_t kOffSigIdx = 117;
-    static constexpr std::int64_t kSize = 125;
-
     static Result<std::shared_ptr<ImportTx>> create(const BaseTx& base, const Id& source_chain,
                                                     const std::vector<TransferableInput>& imported);
     static std::shared_ptr<ImportTx> wrap(Buffer b) {
@@ -253,11 +235,6 @@ class ImportTx final : public SpendingTx {
 // Sends funds to another chain.
 class ExportTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffDestChain = kSpendSize;  // 77
-    static constexpr std::int64_t kOffOutputs = 109;
-    static constexpr std::int64_t kOffAddrs = 117;
-    static constexpr std::int64_t kSize = 125;
-
     static Result<std::shared_ptr<ExportTx>> create(const BaseTx& base, const Id& destination_chain,
                                                     const std::vector<TransferableOutput>& exported);
     static std::shared_ptr<ExportTx> wrap(Buffer b) {
@@ -278,21 +255,6 @@ class ExportTx final : public SpendingTx {
 // hierarchy. Only Parent differs between an L1, an L2 and an L3.
 class CreateNetworkTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffParent = kSpendSize;
-    static constexpr std::int64_t kOffOwnerThreshold = kSpendSize + 32;
-    static constexpr std::int64_t kOffOwnerLocktime = kSpendSize + 36;
-    static constexpr std::int64_t kOffOwnerAddrPtr = kSpendSize + 44;
-    static constexpr std::int64_t kOffRestakeParent = kSpendSize + 52;
-    static constexpr std::int64_t kOffAdmission = kSpendSize + 53;
-    static constexpr std::int64_t kOffManager = kSpendSize + 54;
-    static constexpr std::int64_t kOffThreshold = kSpendSize + 55;
-    static constexpr std::int64_t kOffValidators = kSpendSize + 63;
-    static constexpr std::int64_t kOffValNodeIdPool = kSpendSize + 71;
-    static constexpr std::int64_t kOffValAddrPool = kSpendSize + 79;
-    static constexpr std::int64_t kOffManagerChainId = kSpendSize + 87;
-    static constexpr std::int64_t kOffManagerAddress = kSpendSize + 119;
-    static constexpr std::int64_t kSize = kSpendSize + 127;
-
     static Result<std::shared_ptr<CreateNetworkTx>> create(const BaseTx& base, const Id& parent,
                                                            const Owner& owner, const security::Mode& sec,
                                                            const std::vector<NetworkValidator>& validators,
@@ -321,20 +283,6 @@ class CreateNetworkTx final : public SpendingTx {
 // its parent. The endomorphism Network → Network.
 class ConvertNetworkTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffNetwork = kSpendSize;
-    static constexpr std::int64_t kOffParent = kSpendSize + 32;
-    static constexpr std::int64_t kOffManagerChainId = kSpendSize + 64;
-    static constexpr std::int64_t kOffManagerAddress = kSpendSize + 96;
-    static constexpr std::int64_t kOffValidators = kSpendSize + 104;
-    static constexpr std::int64_t kOffValNodeIdPool = kSpendSize + 112;
-    static constexpr std::int64_t kOffValAddrPool = kSpendSize + 120;
-    static constexpr std::int64_t kOffAuthPtr = kSpendSize + 128;
-    static constexpr std::int64_t kOffRestakeParent = kSpendSize + 136;
-    static constexpr std::int64_t kOffAdmission = kSpendSize + 137;
-    static constexpr std::int64_t kOffManager = kSpendSize + 138;
-    static constexpr std::int64_t kOffThreshold = kSpendSize + 139;
-    static constexpr std::int64_t kSize = kSpendSize + 147;
-
     static Result<std::shared_ptr<ConvertNetworkTx>> create(
         const BaseTx& base, const Id& network, const Id& parent, const Id& manager_chain_id,
         const security::Mode& sec, std::span<const std::uint8_t> manager_address,
@@ -362,14 +310,6 @@ class ConvertNetworkTx final : public SpendingTx {
 // Creates a blockchain on a network. The sole chain constructor.
 class CreateChainTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffChainId = kSpendSize;  // 77
-    static constexpr std::int64_t kOffVmId = 109;
-    static constexpr std::int64_t kOffName = 141;
-    static constexpr std::int64_t kOffFxIds = 149;
-    static constexpr std::int64_t kOffGenesis = 157;
-    static constexpr std::int64_t kOffAuth = 165;
-    static constexpr std::int64_t kSize = 173;
-
     static Result<std::shared_ptr<CreateChainTx>> create(const BaseTx& base, const Id& chain_id,
                                                           const std::string& blockchain_name, const Id& vm_id,
                                                           const std::vector<Id>& fx_ids,
@@ -396,13 +336,6 @@ class CreateChainTx final : public SpendingTx {
 // Re-owns a network.
 class TransferChainOwnershipTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffChain = kSpendSize;  // 77
-    static constexpr std::int64_t kOffChainAuth = 109;
-    static constexpr std::int64_t kOffOwnerThreshold = 117;
-    static constexpr std::int64_t kOffOwnerLocktime = 121;
-    static constexpr std::int64_t kOffOwnerAddrs = 129;
-    static constexpr std::int64_t kSize = 137;
-
     static Result<std::shared_ptr<TransferChainOwnershipTx>> create(const BaseTx& base, const Id& chain,
                                                                      const Auth& chain_auth,
                                                                      const Owner& owner);
@@ -424,11 +357,6 @@ class TransferChainOwnershipTx final : public SpendingTx {
 // Removes a permissioned validator from a network.
 class RemoveChainValidatorTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffNodeId = kSpendSize;  // 77
-    static constexpr std::int64_t kOffChain = 97;
-    static constexpr std::int64_t kOffChainAuth = 129;
-    static constexpr std::int64_t kSize = 137;
-
     static Result<std::shared_ptr<RemoveChainValidatorTx>> create(const BaseTx& base, const NodeId& node_id,
                                                                    const Id& chain, const Auth& chain_auth);
     static std::shared_ptr<RemoveChainValidatorTx> wrap(Buffer b) {
@@ -449,23 +377,6 @@ class RemoveChainValidatorTx final : public SpendingTx {
 // Transforms a network into a permissionless one.
 class TransformChainTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffChain = kSpendSize;  // 77
-    static constexpr std::int64_t kOffAssetId = 109;
-    static constexpr std::int64_t kOffInitialSupply = 141;
-    static constexpr std::int64_t kOffMaximumSupply = 149;
-    static constexpr std::int64_t kOffMinConsumptionRate = 157;
-    static constexpr std::int64_t kOffMaxConsumptionRate = 165;
-    static constexpr std::int64_t kOffMinValidatorStake = 173;
-    static constexpr std::int64_t kOffMaxValidatorStake = 181;
-    static constexpr std::int64_t kOffMinStakeDuration = 189;
-    static constexpr std::int64_t kOffMaxStakeDuration = 193;
-    static constexpr std::int64_t kOffMinDelegationFee = 197;
-    static constexpr std::int64_t kOffMinDelegatorStake = 201;
-    static constexpr std::int64_t kOffMaxValidatorWeightFactor = 209;
-    static constexpr std::int64_t kOffUptimeRequirement = 210;
-    static constexpr std::int64_t kOffChainAuth = 214;
-    static constexpr std::int64_t kSize = 222;
-
     struct Params {
         Id chain{};
         Id asset_id{};
@@ -516,15 +427,6 @@ class TransformChainTx final : public SpendingTx {
 // still decodes and replays; the executor refuses to run it.
 class AddValidatorTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffValidator = kSpendSize;                    // 77
-    static constexpr std::int64_t kOffStakeOuts = kOffValidator + kValidatorSize; // 121
-    static constexpr std::int64_t kOffStakeAddrs = kOffStakeOuts + 8;             // 129
-    static constexpr std::int64_t kOffRewardsThreshold = kOffStakeAddrs + 8;      // 137
-    static constexpr std::int64_t kOffRewardsLocktime = kOffRewardsThreshold + 4; // 141
-    static constexpr std::int64_t kOffRewardsAddrs = kOffRewardsLocktime + 8;     // 149
-    static constexpr std::int64_t kOffDelegationShares = kOffRewardsAddrs + 8;    // 157
-    static constexpr std::int64_t kSize = kOffDelegationShares + 4;               // 161
-
     static Result<std::shared_ptr<AddValidatorTx>> create(const BaseTx& base, const Validator& validator,
                                                            const std::vector<TransferableOutput>& stake_outs,
                                                            const Owner& rewards_owner,
@@ -556,14 +458,6 @@ class AddValidatorTx final : public SpendingTx {
 // The legacy primary-network delegation entry. Same status as AddValidatorTx.
 class AddDelegatorTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffValidator = kSpendSize;                    // 77
-    static constexpr std::int64_t kOffStakeOuts = kOffValidator + kValidatorSize; // 121
-    static constexpr std::int64_t kOffStakeAddrs = kOffStakeOuts + 8;             // 129
-    static constexpr std::int64_t kOffRewardsThreshold = kOffStakeAddrs + 8;      // 137
-    static constexpr std::int64_t kOffRewardsLocktime = kOffRewardsThreshold + 4; // 141
-    static constexpr std::int64_t kOffRewardsAddrs = kOffRewardsLocktime + 8;     // 149
-    static constexpr std::int64_t kSize = kOffRewardsAddrs + 8;                   // 157
-
     static Result<std::shared_ptr<AddDelegatorTx>> create(const BaseTx& base, const Validator& validator,
                                                            const std::vector<TransferableOutput>& stake_outs,
                                                            const Owner& rewards_owner);
@@ -593,11 +487,6 @@ class AddDelegatorTx final : public SpendingTx {
 // The legacy per-chain (permissioned) validator registration.
 class AddChainValidatorTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffValidator = kSpendSize;                     // 77
-    static constexpr std::int64_t kOffChain = kOffValidator + kValidatorSize;      // 121
-    static constexpr std::int64_t kOffChainAuth = kOffChain + 32;                  // 153
-    static constexpr std::int64_t kSize = kOffChainAuth + 8;                       // 161
-
     static Result<std::shared_ptr<AddChainValidatorTx>> create(const BaseTx& base, const Validator& validator,
                                                                 const Id& chain, const Auth& chain_auth);
     static std::shared_ptr<AddChainValidatorTx> wrap(Buffer b) {
@@ -627,20 +516,6 @@ class AddChainValidatorTx final : public SpendingTx {
 // good. No allowlist, no admin key: a node joins by staking.
 class AddPermissionlessValidatorTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffValidator = kSpendSize;                          // 77
-    static constexpr std::int64_t kOffChain = kOffValidator + kValidatorSize;           // 121
-    static constexpr std::int64_t kOffSigner = kOffChain + 32;                          // 153
-    static constexpr std::int64_t kOffStakeOuts = kOffSigner + kSignerSize;             // 298
-    static constexpr std::int64_t kOffStakeAddrs = kOffStakeOuts + 8;                   // 306
-    static constexpr std::int64_t kOffValRewardsThreshold = kOffStakeAddrs + 8;         // 314
-    static constexpr std::int64_t kOffValRewardsLocktime = kOffValRewardsThreshold + 4; // 318
-    static constexpr std::int64_t kOffValRewardsAddrs = kOffValRewardsLocktime + 8;     // 326
-    static constexpr std::int64_t kOffDelRewardsThreshold = kOffValRewardsAddrs + 8;    // 334
-    static constexpr std::int64_t kOffDelRewardsLocktime = kOffDelRewardsThreshold + 4; // 338
-    static constexpr std::int64_t kOffDelRewardsAddrs = kOffDelRewardsLocktime + 8;     // 346
-    static constexpr std::int64_t kOffDelegationShares = kOffDelRewardsAddrs + 8;       // 354
-    static constexpr std::int64_t kSize = kOffDelegationShares + 4;                     // 358
-
     static Result<std::shared_ptr<AddPermissionlessValidatorTx>> create(
         const BaseTx& base, const Validator& validator, const Id& chain, const signer::Signer& sig,
         const std::vector<TransferableOutput>& stake_outs, const Owner& validator_rewards_owner,
@@ -677,15 +552,6 @@ class AddPermissionlessValidatorTx final : public SpendingTx {
 // The permissionless delegation entry.
 class AddPermissionlessDelegatorTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffValidator = kSpendSize;                     // 77
-    static constexpr std::int64_t kOffChain = kOffValidator + kValidatorSize;      // 121
-    static constexpr std::int64_t kOffStakeOuts = kOffChain + 32;                  // 153
-    static constexpr std::int64_t kOffStakeAddrs = kOffStakeOuts + 8;              // 161
-    static constexpr std::int64_t kOffRewardsThreshold = kOffStakeAddrs + 8;       // 169
-    static constexpr std::int64_t kOffRewardsLocktime = kOffRewardsThreshold + 4;  // 173
-    static constexpr std::int64_t kOffRewardsAddrs = kOffRewardsLocktime + 8;      // 181
-    static constexpr std::int64_t kSize = kOffRewardsAddrs + 8;                    // 189
-
     static Result<std::shared_ptr<AddPermissionlessDelegatorTx>> create(
         const BaseTx& base, const Validator& validator, const Id& chain,
         const std::vector<TransferableOutput>& stake_outs, const Owner& delegation_rewards_owner);
@@ -716,11 +582,6 @@ class AddPermissionlessDelegatorTx final : public SpendingTx {
 // Registers an L1 validator from a signed cross-chain message.
 class RegisterL1ValidatorTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffBalance = kSpendSize;  // 77
-    static constexpr std::int64_t kOffPop = 85;
-    static constexpr std::int64_t kOffMessage = 181;
-    static constexpr std::int64_t kSize = 189;
-
     static Result<std::shared_ptr<RegisterL1ValidatorTx>> create(
         const BaseTx& base, std::uint64_t balance, const signer::SignatureBytes& proof_of_possession,
         std::span<const std::uint8_t> message);
@@ -742,9 +603,6 @@ class RegisterL1ValidatorTx final : public SpendingTx {
 // Sets an L1 validator's weight from a signed cross-chain message.
 class SetL1ValidatorWeightTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffMessage = kSpendSize;  // 77
-    static constexpr std::int64_t kSize = 85;
-
     static Result<std::shared_ptr<SetL1ValidatorWeightTx>> create(const BaseTx& base,
                                                                    std::span<const std::uint8_t> message);
     static std::shared_ptr<SetL1ValidatorWeightTx> wrap(Buffer b) {
@@ -763,10 +621,6 @@ class SetL1ValidatorWeightTx final : public SpendingTx {
 // Tops up an L1 validator's continuous-fee balance.
 class IncreaseL1ValidatorBalanceTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffValidationId = kSpendSize;  // 77
-    static constexpr std::int64_t kOffBalance = 109;
-    static constexpr std::int64_t kSize = 117;
-
     static Result<std::shared_ptr<IncreaseL1ValidatorBalanceTx>> create(const BaseTx& base,
                                                                          const Id& validation_id,
                                                                          std::uint64_t balance);
@@ -787,10 +641,6 @@ class IncreaseL1ValidatorBalanceTx final : public SpendingTx {
 // Disables an L1 validator, proving authorization with a credential.
 class DisableL1ValidatorTx final : public SpendingTx {
   public:
-    static constexpr std::int64_t kOffValidationId = kSpendSize;  // 77
-    static constexpr std::int64_t kOffAuth = 109;
-    static constexpr std::int64_t kSize = 117;
-
     static Result<std::shared_ptr<DisableL1ValidatorTx>> create(const BaseTx& base, const Id& validation_id,
                                                                  const Auth& disable_auth);
     static std::shared_ptr<DisableL1ValidatorTx> wrap(Buffer b) {
@@ -811,9 +661,6 @@ class DisableL1ValidatorTx final : public SpendingTx {
 // with a commit block the staker is rewarded; with an abort block it is not.
 class RewardValidatorTx final : public UnsignedTx {
   public:
-    static constexpr std::int64_t kOffTxId = 1;  // 32B, after kind@0
-    static constexpr std::int64_t kSize = 33;
-
     static std::shared_ptr<RewardValidatorTx> create(const Id& tx_id);
     static std::shared_ptr<RewardValidatorTx> wrap(Buffer b) {
         return std::shared_ptr<RewardValidatorTx>(new RewardValidatorTx(std::move(b)));

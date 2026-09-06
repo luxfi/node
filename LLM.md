@@ -307,6 +307,74 @@ The wire-format suite that used to sit in `chains/cpp/platformvm/test/` moved
 to the SDK with the implementation, case for case. A wire rule belongs in one
 place, and its test belongs beside it.
 
+Four more copies followed: `chains/cpp/zap` (which fhevm read), and
+quantumvm's, zkvm's and dexvm's. 2,198 lines. Every C++ chain now links
+`zap::zap` and nothing else.
+
+### A nuance about `set_bytes`, since the paragraph above is half the story
+
+There are two Go runtimes, and they differ here. `zap-proto/go` holds a byte
+tail until `Finish()`; `github.com/luxfi/zap`, the hardened runtime the chain
+corpus was generated through, appends it on the spot. They produce the same
+bytes for exactly one write order — every payload first, then the object, then
+nothing but field setters — and every builder in this tree happens to write
+that way, which is why nothing ever caught it.
+
+That is now a property of the code rather than an accident: zapgen EMITS that
+order, and a test in the generator pins it.
+
+## The wire's accessors come out of a schema
+
+The runtime is one implementation. What sits on top of it — the offsets, the
+strides, the readers and the builders — was written by hand, per chain, per
+language, and that is what a generator is for.
+
+`zapgen` has a C++ backend, so a chain states its wire once in a `.zap` schema
+beside it and the accessors are printed:
+
+```
+chains/cpp/xvm/schema/wire.zap             ->  include/lux/xvm/gen/wire_zap.hpp
+chains/cpp/quantumvm/schema/wire.zap       ->  include/lux/quantumvm/gen/wire_zap.hpp
+chains/cpp/platformvm/schema/wire.zap      ->  include/lux/platformvm/gen/wire_zap.hpp
+chains/cpp/platformvm/schema/genesis.zap   ->  include/lux/platformvm/gen/genesis_zap.hpp
+chains/cpp/platformvm/schema/warp.zap      ->  include/lux/platformvm/gen/warp_zap.hpp
+chains/cpp/platformvm/schema/warpmsg.zap   ->  include/lux/platformvm/gen/warpmsg_zap.hpp
+```
+
+One schema per namespace, because a package name is what a backend renders as
+a namespace and a file declares one. The P-chain's four cover every shape it
+puts on a wire or in a store: nineteen transactions, three blocks, the
+credentials, an owner set, the two fx envelopes an output is ordered by, the
+genesis blob, and the six warp messages.
+
+`cmake --build build --target wire-schema` regenerates (`genesis-schema`,
+`warp-schema`, `warpmsg-schema` for the others); the output is committed, so a
+build needs neither Go nor the generator. The generator has its own published
+pin, `ZAPGEN_TAG` in `chains/cpp/zap.cmake`, separate from the runtime's
+`ZAP_TAG` — they are different repositories, and one tag naming both is how
+that target came to point at a version that was never published.
+
+The four list shapes the Lux wire actually has are DERIVED from the element
+type, never declared — a run of numbers at its own width, a run of fixed-width
+byte records, a run of struct payloads back to back, and a run of relative
+pointers when the element carries a tail and cannot sit inline. A schema
+therefore cannot spell one list two ways.
+
+What is left in each chain's `wire.hpp` is what the bytes MEAN: the X-chain's
+(TypeKind, ShapeKind) discriminator and its quorum gate, the Q-chain's
+canonicality rule and its bound on a transaction count. Neither spells an
+offset.
+
+The P-chain kept 283 lines beside its four schemas, and not one of them is an
+offset. What is there is the ARRANGEMENT, which is a fact about the chain
+rather than about the format: an output's owner addresses do not live in the
+output, they live in one run shared by the whole transaction, and the output
+names a slice of it. That decision is stated once instead of at the nineteen
+places a transaction is built.
+
+Still by hand, and named rather than left to be found: zkvm (1,452 lines),
+fhevm (913), dexvm (585).
+
 ### Why Rust cannot just do the same thing
 
 `chains/rust/{xvm,quantumvm,platformvm}/src/zap.rs` are the same drift on the

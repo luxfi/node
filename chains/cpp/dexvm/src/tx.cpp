@@ -3,7 +3,7 @@
 
 #include "lux/dexvm/tx.hpp"
 
-#include "lux/dexvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <string>
 
@@ -174,10 +174,9 @@ Id Tx::id() const {
 }
 
 Result<Tx> decode_tx(ByteView b) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(b, &msg, &err)) return fail(std::string(kErrTx) + ": " + err);
-    return read_tx(msg.root());
+    auto msg = zap::Message::parse(b);
+    if (!msg) return fail(std::string(kErrTx) + ": " + std::string(zap::describe(msg.error())));
+    return read_tx(msg->root());
 }
 
 Bytes BlockBody::encode() const {
@@ -216,10 +215,9 @@ Id BlockBody::id() const {
 }
 
 Result<BlockBody> decode_block(ByteView b) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(b, &msg, &err)) return fail(std::string(kErrBlock) + ": " + err);
-    const zap::Object root = msg.root();
+    auto msg = zap::Message::parse(b);
+    if (!msg) return fail(std::string(kErrBlock) + ": " + std::string(zap::describe(msg.error())));
+    const zap::Object root = msg->root();
 
     BlockBody body;
     body.height = root.u64(kBlockHeight);
@@ -230,7 +228,7 @@ Result<BlockBody> decode_block(ByteView b) {
     // The stride clamp rejects an attacker-set element count up front rather
     // than at every accessor: each element is a 4-byte pointer.
     const zap::List txs = root.list_stride(kBlockTxs, 4);
-    for (int i = 0; i < txs.len(); ++i) {
+    for (int i = 0; i < txs.size(); ++i) {
         auto tx = read_tx(txs.object_ptr(i));
         if (!tx) return std::unexpected(tx.error().wrap("block tx[" + std::to_string(i) + "]"));
         body.txs.push_back(std::move(*tx));

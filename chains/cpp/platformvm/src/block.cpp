@@ -1,14 +1,20 @@
 // Copyright (C) 2026, Lux Industries, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
-// block.cpp — building and reading the block wire.
+// block.cpp — what a block MEANS, over the wire the schema states.
 //
-// Rendered from Go vms/platformvm/block/blockwire.go. The tx list is written
-// into the builder's variable section BEFORE the object, so the object's list
-// pointer is a backward reference — the same order the transaction package
-// writes its lists in, and the reason both produce identical bytes.
+// Three shapes share one prefix, and the kind byte says which was written:
+// a decided block stops at its timestamp, a standard block carries the
+// transactions it applies, and a proposal block carries one more of its own.
+// The offsets are not here — they are in schema/wire.zap, through zapgen.
+//
+// A transaction is already self-describing, so a block stores the per-tx
+// LENGTHS beside one concatenated blob rather than re-encoding anything: the
+// bytes a signer signed are the bytes the block carries.
 
 #include "lux/platformvm/block.hpp"
+
+#include "lux/platformvm/txs_wire.hpp"
 
 #include <cstring>
 
@@ -22,75 +28,66 @@ struct Wire {
 
 namespace {
 
-// The per-tx byte lengths as a u32 list, plus their bytes concatenated. A tx is
-// already self-describing, so the block stores lengths rather than re-encoding.
-Result<std::pair<std::pair<std::int64_t, std::int64_t>, std::vector<std::uint8_t>>> write_tx_list(
-    zap::Builder& b, const std::vector<txs::Tx>& decision_txs) {
-    if (decision_txs.empty()) return std::make_pair(std::make_pair(std::int64_t{0}, std::int64_t{0}),
-                                                    std::vector<std::uint8_t>{});
+// The per-tx byte lengths and their bytes concatenated.
+struct TxList {
+    std::vector<std::uint32_t> lengths;
     std::vector<std::uint8_t> blob;
-    auto lb = b.start_list(kTxLenStride);
+};
+
+Result<TxList> tx_list(const std::vector<txs::Tx>& decision_txs) {
+    TxList l;
+    l.lengths.reserve(decision_txs.size());
     for (std::size_t i = 0; i < decision_txs.size(); ++i) {
         const auto& raw = decision_txs[i].bytes;
         if (raw.empty()) return fail(Err::NilBlockTx, "tx " + std::to_string(i) + " carries no bytes");
-        lb.add_u32(static_cast<std::uint32_t>(raw.size()));
-        blob.insert(blob.end(), raw.begin(), raw.end());
+        l.lengths.push_back(static_cast<std::uint32_t>(raw.size()));
+        l.blob.insert(l.blob.end(), raw.begin(), raw.end());
     }
-    return std::make_pair(lb.finish(), std::move(blob));
-}
-
-std::int64_t size_of(Kind k) {
-    switch (k) {
-        case Kind::Standard: return kSizeStandard;
-        case Kind::Proposal: return kSizeProposal;
-        case Kind::Abort:
-        case Kind::Commit: return kSizeDecided;
-    }
-    return kSizeDecided;
+    return l;
 }
 
 // The one place block fields become bytes.
 Result<std::vector<std::uint8_t>> build(Kind k, const Id& parent, std::uint64_t height, std::uint64_t ts,
                                         const std::vector<txs::Tx>& decision_txs, const txs::Tx* proposal_tx) {
-    zap::Builder b(zap::kHeaderSize + 256);
+    const auto kind = static_cast<std::uint8_t>(k);
+    if (k == Kind::Abort || k == Kind::Commit)
+        return wire::NewDecided(wire::DecidedInput{
+            .Kind = kind, .Parent = parent.b, .Height = height, .Time = ts});
 
-    std::int64_t len_off = 0, len_count = 0;
-    std::vector<std::uint8_t> blob;
-    const bool has_tx_list = k == Kind::Standard || k == Kind::Proposal;
-    if (has_tx_list) {
-        auto w = write_tx_list(b, decision_txs);
-        if (!w) return std::unexpected(w.error());
-        len_off = w->first.first;
-        len_count = w->first.second;
-        blob = std::move(w->second);
-    }
+    auto l = tx_list(decision_txs);
+    if (!l) return std::unexpected(l.error());
 
-    auto ob = b.start_object(size_of(k));
-    ob.set_u8(kOffKind, static_cast<std::uint8_t>(k));
-    ob.set_bytes_fixed(kOffParent, parent.span());
-    ob.set_u64(kOffHeight, height);
-    ob.set_u64(kOffTime, ts);
-    if (has_tx_list) {
-        ob.set_list(kOffTxLengths, len_off, len_count);
-        ob.set_bytes(kOffTxBlob, blob);
-    }
-    if (k == Kind::Proposal) {
-        // The slot must carry BYTES, not merely a non-null pointer: a reader of
-        // an empty slot sees nothing there, so the question is asked here, where
-        // the block is made, rather than at the dereference.
-        if (proposal_tx == nullptr || proposal_tx->bytes.empty()) return fail(Err::NoProposalTx);
-        ob.set_bytes(kOffProposalTx, proposal_tx->bytes);
-    }
-    ob.finish_as_root();
-    return b.finish();
+    if (k == Kind::Standard)
+        return wire::NewStandard(wire::StandardInput{.Kind = kind,
+                                                     .Parent = parent.b,
+                                                     .Height = height,
+                                                     .Time = ts,
+                                                     .TxLengths = std::move(l->lengths),
+                                                     .TxBlob = {l->blob.data(), l->blob.size()}});
+
+    // The proposal slot must carry BYTES, not merely a non-null pointer: a
+    // reader of an empty slot sees nothing there, so the question is asked
+    // here, where the block is made, rather than at the dereference.
+    if (proposal_tx == nullptr || proposal_tx->bytes.empty()) return fail(Err::NoProposalTx);
+    return wire::NewProposal(wire::ProposalInput{
+        .Kind = kind,
+        .Parent = parent.b,
+        .Height = height,
+        .Time = ts,
+        .TxLengths = std::move(l->lengths),
+        .TxBlob = {l->blob.data(), l->blob.size()},
+        .ProposalTx = {proposal_tx->bytes.data(), proposal_tx->bytes.size()}});
 }
 
 // Re-split the blob by the stored lengths and hand each slice to txs::parse.
+// A proposal block's list is at a standard block's offsets — that is what the
+// shared prefix means — so one reader answers for both.
 Result<std::vector<txs::Tx>> read_tx_list(const zap::Object& obj) {
-    const auto lengths = obj.list_stride(kOffTxLengths, kTxLenStride);
+    const wire::Standard b(obj);
+    const auto lengths = b.TxLengths();
     const int n = lengths.size();
     if (n == 0) return std::vector<txs::Tx>{};
-    const auto blob = obj.bytes(kOffTxBlob);
+    const auto blob = b.TxBlob();
     std::vector<txs::Tx> out;
     out.reserve(static_cast<std::size_t>(n));
     std::size_t cursor = 0;
@@ -125,11 +122,11 @@ zap::Object Block::root() const {
     return msg ? msg->root() : zap::Object{};
 }
 
-Id Block::parent() const {
-    return Id::from(root().bytes_fixed(kOffParent, kIdLen));
-}
-std::uint64_t Block::height() const { return root().u64(kOffHeight); }
-std::uint64_t Block::timestamp() const { return root().u64(kOffTime); }
+// The four fields every kind opens with, read through the shortest kind that
+// has them: the prefix is where all three shapes agree.
+Id Block::parent() const { return Id::from(wire::Decided(root()).Parent()); }
+std::uint64_t Block::height() const { return wire::Decided(root()).Height(); }
+std::uint64_t Block::timestamp() const { return wire::Decided(root()).Time(); }
 
 namespace {
 // One shape for all four constructors: build, then bind bytes and id.
@@ -178,7 +175,7 @@ std::vector<txs::Tx> ProposalBlock::decision_txs() const {
 }
 
 Result<txs::Tx> ProposalBlock::tx() const {
-    const auto raw = root().bytes(kOffProposalTx);
+    const auto raw = wire::Proposal(root()).ProposalTx();
     if (raw.empty()) return fail(Err::NoProposalTx);
     return txs::parse(raw);
 }
@@ -192,7 +189,7 @@ Result<std::shared_ptr<Block>> parse(std::span<const std::uint8_t> b) {
     const auto msg = zap::Message::parse(b);
     if (!msg) return fail(Err::BufferTooSmall, "block buffer is not a zap message");
     std::vector<std::uint8_t> owned(b.begin(), b.end());
-    switch (static_cast<Kind>(msg->root().u8(kOffKind))) {
+    switch (static_cast<Kind>(wire::Decided(msg->root()).Kind())) {
         case Kind::Abort: {
             auto blk = std::make_shared<AbortBlock>();
             if (auto s = Wire::bind(*blk, std::move(owned)); !s)
@@ -223,7 +220,7 @@ Result<std::shared_ptr<Block>> parse(std::span<const std::uint8_t> b) {
         }
     }
     return fail(Err::UnknownBlockKind,
-                "block kind " + std::to_string(static_cast<int>(msg->root().u8(kOffKind))));
+                "block kind " + std::to_string(static_cast<int>(wire::Decided(msg->root()).Kind())));
 }
 
 }  // namespace lux::platformvm::block

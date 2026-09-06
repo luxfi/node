@@ -3,7 +3,7 @@
 
 #include "lux/dexvm/store.hpp"
 
-#include "lux/dexvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -46,8 +46,8 @@ int write_u32_list(zap::Builder& b, const std::vector<std::uint32_t>& xs) {
 
 std::vector<std::uint32_t> read_u32_list(const zap::Object& o, int ptr_off) {
     auto l = o.list_stride(ptr_off, kU32Stride);
-    std::vector<std::uint32_t> out(std::size_t(l.len()));
-    for (int i = 0; i < l.len(); ++i) out[std::size_t(i)] = l.u32(i);
+    std::vector<std::uint32_t> out(std::size_t(l.size()));
+    for (int i = 0; i < l.size(); ++i) out[std::size_t(i)] = l.u32(i);
     return out;
 }
 
@@ -87,12 +87,12 @@ Bytes encode_batch(const std::map<Bytes, std::optional<Bytes>>& batch) {
 }
 
 Result<std::map<Bytes, std::optional<Bytes>>> decode_batch(ByteView record) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(record, &msg, &err))
-        return fail(std::string(kErrCorruptRecord) + ": " + err);
+    auto msg = zap::Message::parse(record);
+    if (!msg)
+        return fail(std::string(kErrCorruptRecord) + ": " +
+                    std::string(zap::describe(msg.error())));
 
-    const zap::Object root = msg.root();
+    const zap::Object root = msg->root();
     const auto ops = root.bytes(kOffOps);
     const auto key_lens = read_u32_list(root, kOffKeyLens);
     const auto key_blob = root.bytes(kOffKeyBlob);
@@ -187,13 +187,12 @@ Result<void> File::replay() {
     std::size_t cursor = 0;
     while (cursor < buf.size()) {
         ByteView rest(buf.data() + cursor, buf.size() - cursor);
-        zap::Message msg;
-        std::string err;
         // A trailing record that does not parse is a commit that was
         // interrupted. It never happened, so the log is cut back to the last
         // record that did.
-        if (!zap::Message::parse(rest, &msg, &err)) break;
-        const std::size_t len = msg.size();
+        auto msg = zap::Message::parse(rest);
+        if (!msg) break;
+        const std::size_t len = msg->size();
         if (len == 0 || len > rest.size()) break;
         auto batch = decode_batch(rest.subspan(0, len));
         if (!batch) break;
