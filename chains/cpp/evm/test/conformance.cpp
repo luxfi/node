@@ -33,6 +33,7 @@
 #include <vector>
 
 using namespace cevm::state;
+using namespace evmc::literals;  // the _address literal, for whole addresses
 
 namespace {
 
@@ -63,32 +64,39 @@ constexpr const char* kAbsent = "ABSENT";
 // second thing to keep in step, and this one is kept in step by the compiler
 // and by check_table() below rather than by whoever edits cevm next.
 struct Price {
-    // The last two bytes of the address, which is how cevm's dispatcher keys
-    // its own table.
-    std::uint16_t address;
+    // The WHOLE address. cevm's dispatcher keys the stock range on the last two
+    // bytes and matches everything else on all twenty, and a Lux precompile is
+    // everything else: inference is at 0x0300…0003, whose last two bytes are
+    // ripemd160's. Keying on two bytes here priced a call to that address at
+    // ripemd160's 720 gas and named it ripemd160, with no sign anything was
+    // wrong.
+    evmc::address address;
     const char* name;
     decltype(identity_analyze)* analyze;
 };
 
 constexpr auto kPrices = std::to_array<Price>({
-    {0x0001, "ecrecover", ecrecover_analyze},
-    {0x0002, "sha256", sha256_analyze},
-    {0x0003, "ripemd160", ripemd160_analyze},
-    {0x0004, "identity", identity_analyze},
-    {0x0005, "expmod", expmod_analyze},
-    {0x0006, "ecadd", ecadd_analyze},
-    {0x0007, "ecmul", ecmul_analyze},
-    {0x0008, "ecpairing", ecpairing_analyze},
-    {0x0009, "blake2bf", blake2bf_analyze},
-    {0x000a, "point_evaluation", point_evaluation_analyze},
-    {0x000b, "bls12_g1add", bls12_g1add_analyze},
-    {0x000c, "bls12_g1msm", bls12_g1msm_analyze},
-    {0x000d, "bls12_g2add", bls12_g2add_analyze},
-    {0x000e, "bls12_g2msm", bls12_g2msm_analyze},
-    {0x000f, "bls12_pairing_check", bls12_pairing_check_analyze},
-    {0x0010, "bls12_map_fp_to_g1", bls12_map_fp_to_g1_analyze},
-    {0x0011, "bls12_map_fp2_to_g2", bls12_map_fp2_to_g2_analyze},
-    {0x0100, "p256verify", p256verify_analyze},
+    {0x0000000000000000000000000000000000000001_address, "ecrecover", ecrecover_analyze},
+    {0x0000000000000000000000000000000000000002_address, "sha256", sha256_analyze},
+    {0x0000000000000000000000000000000000000003_address, "ripemd160", ripemd160_analyze},
+    {0x0000000000000000000000000000000000000004_address, "identity", identity_analyze},
+    {0x0000000000000000000000000000000000000005_address, "expmod", expmod_analyze},
+    {0x0000000000000000000000000000000000000006_address, "ecadd", ecadd_analyze},
+    {0x0000000000000000000000000000000000000007_address, "ecmul", ecmul_analyze},
+    {0x0000000000000000000000000000000000000008_address, "ecpairing", ecpairing_analyze},
+    {0x0000000000000000000000000000000000000009_address, "blake2bf", blake2bf_analyze},
+    {0x000000000000000000000000000000000000000a_address, "point_evaluation", point_evaluation_analyze},
+    {0x000000000000000000000000000000000000000b_address, "bls12_g1add", bls12_g1add_analyze},
+    {0x000000000000000000000000000000000000000c_address, "bls12_g1msm", bls12_g1msm_analyze},
+    {0x000000000000000000000000000000000000000d_address, "bls12_g2add", bls12_g2add_analyze},
+    {0x000000000000000000000000000000000000000e_address, "bls12_g2msm", bls12_g2msm_analyze},
+    {0x000000000000000000000000000000000000000f_address, "bls12_pairing_check", bls12_pairing_check_analyze},
+    {0x0000000000000000000000000000000000000010_address, "bls12_map_fp_to_g1", bls12_map_fp_to_g1_analyze},
+    {0x0000000000000000000000000000000000000011_address, "bls12_map_fp2_to_g2", bls12_map_fp2_to_g2_analyze},
+    {0x0000000000000000000000000000000000000100_address, "p256verify", p256verify_analyze},
+    // Lux's, outside the stock range. Go serves inference here
+    // (luxfi/precompile/inference) and cevm does now too.
+    {0x0300000000000000000000000000000000000003_address, "aivm", aivm_analyze},
 });
 
 // The widest address cevm's availability table can hold, so the scan below
@@ -105,9 +113,8 @@ evmc::address address_of(std::uint32_t index) noexcept
 
 const Price* price_of(const evmc::address& addr) noexcept
 {
-    const auto index = static_cast<std::uint16_t>((addr.bytes[18] << 8) | addr.bytes[19]);
     for (const auto& p : kPrices)
-        if (p.address == index) return &p;
+        if (p.address == addr) return &p;
     return nullptr;
 }
 
@@ -128,6 +135,17 @@ bool check_table()
             std::fprintf(stderr,
                 "evm_conformance: cevm %s a precompile at %04x and this evaluator %s it\n",
                 served ? "serves" : "does not serve", i, priced ? "prices" : "does not price");
+            return false;
+        }
+    }
+    // And every address this evaluator prices that the scan above cannot
+    // reach. A price for an address cevm does not serve is the same silent
+    // mistake as the reverse, and the loop's range is the stock one.
+    for (const auto& p : kPrices) {
+        if (!is_precompile(kRevision, p.address)) {
+            std::fprintf(stderr,
+                "evm_conformance: this evaluator prices %s at an address cevm does not serve\n",
+                p.name);
             return false;
         }
     }

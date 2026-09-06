@@ -107,6 +107,15 @@ func own() []Vector {
 		{ID: "UNCLAIMED_FF", Address: addr(0xff), Gas: plenty},
 		{ID: "UNCLAIMED_0101", Address: addr(0x01, 0x01), Gas: plenty},
 
+		// Lux's own, at the address Go serves. C++ reaches it only since
+		// cevm learned to dispatch on a whole address rather than on the last
+		// two bytes — 0x0300…0003 and ripemd160 share those. Rust serves no
+		// Lux precompile at all, and says so.
+		{ID: "AIVM_GENERATE", Address: addr(0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x03),
+			Gas: 1 << 20, Input: aivmGenerate(10, 1, 7, 13, 2)},
+		{ID: "AIVM_BAD_SELECTOR", Address: addr(0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x03),
+			Gas: 1 << 20, Input: []byte{0x02, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1}},
+
 		// 0x0100. Two implementations claim this address in Go alone: the
 		// stock table charges 6900 and the Lux module charges 3450, and the
 		// module wins because it is consulted first. Whether the other two
@@ -138,6 +147,19 @@ func own() []Vector {
 		)
 	}
 	return v
+}
+
+// aivmGenerate builds the inference precompile's calldata: the generate
+// selector, how many tokens to produce, and the prompt — each a big-endian
+// uint32, which is also how the answer comes back.
+func aivmGenerate(nNew uint32, prompt ...uint32) []byte {
+	out := []byte{0x01, 0x00, 0x00, 0x00}
+	be := func(v uint32) { out = append(out, byte(v>>24), byte(v>>16), byte(v>>8), byte(v)) }
+	be(nNew)
+	for _, t := range prompt {
+		be(t)
+	}
+	return out
 }
 
 // Kept so `emit` fails rather than writing a corpus with a name in it twice.
