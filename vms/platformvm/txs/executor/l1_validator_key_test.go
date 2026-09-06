@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 
