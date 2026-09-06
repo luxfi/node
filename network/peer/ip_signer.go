@@ -12,7 +12,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/mldsa"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 const (

@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 const pChainHeight uint64 = 1337

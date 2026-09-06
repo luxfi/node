@@ -32,7 +32,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 	validators "github.com/luxfi/validators"

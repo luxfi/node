@@ -19,7 +19,7 @@ import (
 	"github.com/luxfi/node/network/dialer"
 	"github.com/luxfi/node/network/throttling"
 	"github.com/luxfi/node/network/tracker"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/validators/uptime"
 )

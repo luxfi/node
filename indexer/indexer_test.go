@@ -21,7 +21,7 @@ import (
 	nodeconsensus "github.com/luxfi/node/consensus"
 	"github.com/luxfi/node/server/http"
 	"github.com/luxfi/runtime"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	"github.com/luxfi/vm"
 )
 

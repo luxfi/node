@@ -81,7 +81,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/registry"
 	"github.com/luxfi/resource"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	lux "github.com/luxfi/utxo"
 
 	databasefactory "github.com/luxfi/database/factory"

@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luxfi/runtime"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/zap"
 )

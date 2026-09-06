@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/container/linked"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 var _ Cacher[struct{}, struct{}] = (*LRU[struct{}, struct{}])(nil)

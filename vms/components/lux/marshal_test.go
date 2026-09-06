@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 

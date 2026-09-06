@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 
 	"github.com/luxfi/node/vms/xvm/txs"
 

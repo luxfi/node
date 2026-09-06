@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/wallet/chain/p/wallet"
 	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/node/wallet/network/primary/common/utxotest"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )

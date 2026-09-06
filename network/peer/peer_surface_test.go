@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 // ---------------------------------------------------------------------------

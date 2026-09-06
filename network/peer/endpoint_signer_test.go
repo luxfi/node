@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/staking"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 // endpointSigners returns a staker cert with its TLS signer plus a BLS signer,

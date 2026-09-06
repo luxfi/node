@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/trace"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 const (

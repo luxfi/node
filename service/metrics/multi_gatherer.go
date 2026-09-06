@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/luxfi/metric"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 // MultiGatherer extends the Gatherer interface by allowing additional gatherers

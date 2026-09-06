@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 // testRuntime creates a minimal runtime.Runtime for testing

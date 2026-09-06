@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/utxo"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	"github.com/luxfi/node/vms/platformvm/fx"
 )
 

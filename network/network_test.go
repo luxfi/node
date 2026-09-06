@@ -31,7 +31,7 @@ import (
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	"github.com/luxfi/node/utils/bloom"
 	compression "github.com/luxfi/compress"
 	"github.com/luxfi/net/endpoints"

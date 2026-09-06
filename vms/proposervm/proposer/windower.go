@@ -15,7 +15,7 @@ import (
 	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	validators "github.com/luxfi/validators"
 )
 

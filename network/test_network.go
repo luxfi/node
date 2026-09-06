@@ -32,7 +32,7 @@ import (
 	"github.com/luxfi/node/network/tracker"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	compression "github.com/luxfi/compress"
 )
 

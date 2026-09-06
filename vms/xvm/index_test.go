@@ -19,7 +19,7 @@ import (
 
 	"github.com/luxfi/ids"
 
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 
 	"github.com/luxfi/constants"
 

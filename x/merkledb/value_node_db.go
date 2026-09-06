@@ -9,7 +9,7 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 var (

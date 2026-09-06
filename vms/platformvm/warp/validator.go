@@ -18,7 +18,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/node/upgrade"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	"github.com/luxfi/math"
 )
 

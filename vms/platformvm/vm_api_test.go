@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/log"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 
 	server "github.com/luxfi/node/server/http"
 )

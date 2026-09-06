@@ -11,7 +11,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/gas"
 	"github.com/luxfi/node/vms/platformvm/block"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/util/wrappers"
 )
 
 const (

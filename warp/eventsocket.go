@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/node/utils/wrappers"
 	"github.com/luxfi/node/warp/socket"
 	"github.com/luxfi/runtime"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 )
 
 var (

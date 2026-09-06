@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/node/vms/platformvm/signer"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	validators "github.com/luxfi/validators"
 )
 

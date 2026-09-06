@@ -27,7 +27,7 @@ import (
 	"github.com/luxfi/node/vms/xvm/txs/txsmock"
 	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/utils"
+	"github.com/luxfi/util"
 	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/vm/chains/atomic/atomicmock"
 )

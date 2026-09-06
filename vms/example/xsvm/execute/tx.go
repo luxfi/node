@@ -14,7 +14,7 @@ import (
 	"github.com/luxfi/node/vms/example/xsvm/tx"
 	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/runtime"
-	"github.com/luxfi/utils/wrappers"
+	"github.com/luxfi/util/wrappers"
 	validators "github.com/luxfi/validators"
 )
 
