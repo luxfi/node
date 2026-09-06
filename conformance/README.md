@@ -498,27 +498,38 @@ parsers, the network class and the value-activation guard.
 ways a signature can fail to be the payer's, and the id the genesis block
 takes.
 
-**Z — 137 vectors, 133 fully agree, 4 disagree on one field.**
+**Z — 137 vectors, all 137 agree.** It took the first of the two fixes the
+paragraph that used to sit here proposed.
 
 `Z_BLOCK_TIME_AHEAD`, `Z_BLOCK_GENESIS_WITH_PARENT`,
-`Z_BLOCK_DUPLICATE_NULLIFIER` and `Z_TX_EXPIRED`: Go answers `syntactic
-SYNTACTIC`, C++ answers `syntactic OK`. Both refuse the block, both give the
-same reason, and `exec` agrees on all four.
+`Z_BLOCK_DUPLICATE_NULLIFIER` and `Z_TX_EXPIRED` answered `syntactic OK` in
+C++ and `syntactic SYNTACTIC` in Go. Both refused the block, both gave the
+same reason, and `exec` agreed on all four — they disagreed about which phase
+caught it.
 
-This one is the corpus's, not either chain's, and it is left visible rather
-than tuned away. The Z-chain reference has ONE pass: `Block.Verify` runs the
-shape rules, then the proofs, then the parent lookup, and returns the first
-refusal. There is no syntactic pass to read, so each evaluator invented the
-split and they invented it differently — Go by matching the sentinels it knows
-are decided before any lookup, C++ by calling the per-transaction
-`validate_basic` the port happens to have. Three of the four rules are
-BLOCK-level (a height-0 block with a parent, the clock, a nullifier repeated
-across two transactions) and could not live in a per-transaction pass at all.
+The cause was that neither implementation had a syntactic pass to read. The
+Z-chain reference has ONE: `Block.Verify` runs the shape rules, then the
+proofs, then the parent lookup, and returns the first refusal. So each
+evaluator invented the split, and they invented it differently — Go by
+matching the sentinels it knew were decided before any lookup, C++ by calling
+the per-transaction `validate_basic` the port happened to have, which could
+not hold a block-level rule at all.
 
-The fix belongs above this cell: either `syntactic` is defined once for Z as
-"what Verify decided before it read the chain" and both evaluators answer that
-question, or Z declares the field `SKIPPED` and it appears under NOT COMPARED —
-which is honest, and is not a pass.
+The boundary existed inside `Block::check()` the whole time, as an unnamed
+ordering property: the point after which every statement dereferences the VM
+for something durable. Having no name is what let two readers infer it and
+disagree. It is `Block::syntactic_verify()` now, which is the name the C++
+P-chain already uses at twenty sites, and the evaluator asks the chain for
+that verdict instead of holding a second opinion about the port under test.
+Five rules sit above the line, each decidable from the block in hand: the
+genesis/parent pairing, the transaction cap, the clock, a nullifier repeated
+inside the block, and per transaction `ValidateBasic` and `expiry < height` —
+where the height is the block's own, on the wire, not the chain's.
+
+One thing the corpus cannot prove: that the pass really avoids the ledger.
+Every vector names the genesis block as its parent, and genesis exists, so a
+`syntactic_verify` that secretly did a lookup would pass all 137. That is
+asserted in `block_test.cpp` instead, on a block whose parent no chain holds.
 
 ## What it found on P and X, and how each one closed
 
