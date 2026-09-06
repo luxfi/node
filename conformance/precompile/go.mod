@@ -1,4 +1,4 @@
-module github.com/luxfi/node2/conformance/precompile
+module github.com/luxfi/node/conformance/precompile
 
 go 1.26.5
 

@@ -4,7 +4,7 @@
 // github.com/luxfi/node and of lux-private. That is checked at build time, not
 // assumed: `make luxd RUNTIME=go` greps the dependency closure and fails if
 // either name appears. See LLM.md.
-module github.com/luxfi/node2
+module github.com/luxfi/node
 
 go 1.26.4
 
