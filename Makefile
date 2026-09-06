@@ -201,12 +201,15 @@ PVM_RUST    := $(ROOT)/chains/rust/platformvm/target/release/conformance
 XVM_RUST    := $(ROOT)/chains/rust/xvm/target/release/conformance
 QVM_RUST    := $(ROOT)/chains/rust/quantumvm/target/release/conformance
 DVM_RUST    := $(ROOT)/chains/rust/dexvm/target/release/conformance
+ZVM_RUST    := $(ROOT)/chains/rust/zkvm/target/release/conformance
+FVM_RUST    := $(ROOT)/chains/rust/fhevm/target/release/conformance
 PVM_CPP     := $(ROOT)/chains/cpp/platformvm/build/pvm_conformance
 XVM_CPP     := $(ROOT)/chains/cpp/xvm/build/xvm_conformance
 QVM_CPP     := $(ROOT)/chains/cpp/quantumvm/build/qvm_conformance
 ZVM_CPP     := $(ROOT)/chains/cpp/zkvm/build/zkvm_conformance
 DVM_CPP     := $(ROOT)/chains/cpp/dexvm/build/dexvm_conformance
 FVM_CPP     := $(ROOT)/chains/cpp/fhevm/build/fhevm_conformance
+RUST_EVALS  := $(PVM_RUST) $(XVM_RUST) $(QVM_RUST) $(DVM_RUST) $(ZVM_RUST) $(FVM_RUST)
 CPP_EVALS   := $(PVM_CPP) $(XVM_CPP) $(QVM_CPP) $(ZVM_CPP) $(DVM_CPP) $(FVM_CPP)
 
 chains: chains-build ## run the chain differential in all three languages
@@ -221,6 +224,8 @@ chains: chains-build ## run the chain differential in all three languages
 		-eval "rust=$(XVM_RUST)" \
 		-eval "rust=$(QVM_RUST)" \
 		-eval "rust=$(DVM_RUST)" \
+		-eval "rust=$(ZVM_RUST)" \
+		-eval "rust=$(FVM_RUST)" \
 		-eval "cpp=$(PVM_CPP)" \
 		-eval "cpp=$(XVM_CPP)" \
 		-eval "cpp=$(QVM_CPP)" \
@@ -239,12 +244,14 @@ chains: chains-build ## run the chain differential in all three languages
 # green. A gate that builds less than what it measures is how the thing it was
 # built to catch gets past it. It costs a few minutes on a cold tree.
 chains-build:
-	@echo "==> chain differential: building nine evaluators"
+	@echo "==> chain differential: building twelve evaluators"
 	cd $(CONF)/gen && GOWORK=off go build -o gen .
 	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/quantumvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/zkvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/fhevm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(ROOT)/chains/cpp/platformvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release
@@ -257,7 +264,7 @@ chains-build:
 	cmake --build $(ROOT)/chains/cpp/dexvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/fhevm -B $(ROOT)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(ROOT)/chains/cpp/fhevm/build -j$(NPROC)
-	@for f in $(CONF_GEN) $(PVM_RUST) $(XVM_RUST) $(QVM_RUST) $(DVM_RUST) $(CPP_EVALS); do \
+	@for f in $(CONF_GEN) $(RUST_EVALS) $(CPP_EVALS); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
 	done
 
