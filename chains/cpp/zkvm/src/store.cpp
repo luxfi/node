@@ -3,7 +3,7 @@
 
 #include "lux/zkvm/store.hpp"
 
-#include "lux/zkvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -75,12 +75,12 @@ Bytes encode_batch(const ByteMap<std::optional<Bytes>>& batch) {
 }
 
 Result<ByteMap<std::optional<Bytes>>> decode_batch(ByteView record) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(record, &msg, &err))
-        return std::unexpected(std::string(kErrCorruptRecord) + ": " + err);
+    auto parsed = zap::Message::parse(record);
+    if (!parsed)
+        return std::unexpected(std::string(kErrCorruptRecord) + ": " +
+                               std::string(zap::describe(parsed.error())));
 
-    const zap::Object root = msg.root();
+    const zap::Object root = parsed->root();
     const auto ops = root.bytes(kOffOps);
     const auto key_lens = wire::read_u32_list(root, kOffKeyLens);
     const auto key_blob = root.bytes(kOffKeyBlob);
@@ -236,13 +236,12 @@ Result<void> File::replay() {
     std::size_t cursor = 0;
     while (cursor < buf.size()) {
         ByteView rest(buf.data() + cursor, buf.size() - cursor);
-        zap::Message msg;
-        std::string err;
         // A trailing record that does not parse is a commit that was
         // interrupted. It never happened, so the log is cut back to the last
         // record that did.
-        if (!zap::Message::parse(rest, &msg, &err)) break;
-        const std::size_t len = msg.size();
+        auto parsed = zap::Message::parse(rest);
+        if (!parsed) break;
+        const std::size_t len = parsed->size();
         if (len == 0 || len > rest.size()) break;
         auto batch = decode_batch(rest.subspan(0, len));
         if (!batch) break;
