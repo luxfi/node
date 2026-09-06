@@ -87,25 +87,30 @@ wire::Result<void> parse_block_bytes(ByteView data, Block& blk) {
     return {};
 }
 
-wire::Result<void> Block::check() {
+wire::Result<void> Block::syntactic_verify() const {
     if (vm_ == nullptr) return std::unexpected("zkvm: block is not bound to a chain");
 
+    // Height 0 is genesis, and genesis has no parent. A height-0 block that
+    // names one makes two claims about which block it is.
     if (block_height == 0 && parent_id != kEmptyId) return std::unexpected(kErrInvalidBlock);
 
     // A block off the wire is held to the bound a block this node builds is held
-    // to, so a proposer cannot produce one its own peers refuse.
+    // to, so a proposer cannot produce one its own peers refuse. The bound is
+    // configuration, fixed at genesis — no block moves it.
     if (txs.size() > vm_->z_config().max_tx_per_block)
         return std::unexpected(std::string(kErrInvalidBlock) + ": " +
                                std::to_string(txs.size()) + " transactions over the " +
                                std::to_string(vm_->z_config().max_tx_per_block) + " cap");
 
+    // The node's own clock, not the ledger. Held against the parent's timestamp
+    // too, but that is a different rule and it lives below with the parent.
     if (block_timestamp > vm_->now() + kMaxClockSkew) return std::unexpected(kErrFutureBlock);
 
     // Block-level shape: every nullifier in the block must be distinct.
-    // verify_transaction below only sees nullifiers already spent in ACCEPTED
-    // state, so without this two transactions in one block — or one transaction
-    // listing a nullifier twice — spend the same shielded note and inflate
-    // supply. Checked before the proofs because it is the cheaper gate.
+    // verify_transaction only sees nullifiers already spent in ACCEPTED state,
+    // so without this two transactions in one block — or one transaction listing
+    // a nullifier twice — spend the same shielded note and inflate supply. The
+    // block's transactions against each other, so the spent set is not consulted.
     ByteSet spent_here;
     for (const auto& tx : txs) {
         for (const auto& n : tx.nullifiers) {
@@ -113,6 +118,26 @@ wire::Result<void> Block::check() {
         }
     }
 
+    // Each transaction's own shape, and its expiry against the height THIS block
+    // claims — which is on the wire in front of us, so no parent is needed to
+    // know a transaction has outlived its window.
+    for (const auto& tx : txs) {
+        if (auto r = vm_->syntactic_verify(tx, block_height); !r) return r;
+    }
+    return {};
+}
+
+wire::Result<void> Block::check() {
+    // Everything decidable from the block in hand goes first. A peer's block
+    // that cannot be true of any chain is refused before this node reads a
+    // single key, and the mempool asks the same question of a transaction
+    // before one is ever assembled.
+    if (auto r = syntactic_verify(); !r) return r;
+
+    // Then the ledger. admit re-asks the shape half above, which has already
+    // passed: a handful of size comparisons next to a STARK, and the price of
+    // check asking assembly's predicate VERBATIM rather than a copy of its two
+    // halves that a later edit could let drift.
     for (const auto& tx : txs) {
         if (auto r = vm_->admit(tx, block_height); !r) return r;
     }
