@@ -20,7 +20,7 @@ constexpr std::uint32_t kTxLenStride = 4;
 
 Id id_at(const zap::Object& obj, int off) {
     Id out{};
-    auto s = obj.bytes_fixed_slice(off, 32);
+    auto s = obj.bytes_fixed(off, 32);
     if (s.size() == 32) std::memcpy(out.data(), s.data(), 32);
     return out;
 }
@@ -75,11 +75,10 @@ Result<std::shared_ptr<StandardBlock>> build(const Id& parent_id, std::uint64_t 
 }
 
 Result<std::shared_ptr<StandardBlock>> parse(ByteView bytes) {
-    zap::Message msg;
-    std::string err;
-    if (!zap::Message::parse(bytes, &msg, &err))
-        return std::unexpected("couldn't parse block: " + err);
-    auto obj = msg.root();
+    const auto msg = zap::Message::parse(bytes);
+    if (!msg)
+        return std::unexpected("couldn't parse block: " + std::string(zap::describe(msg.error())));
+    auto obj = msg->root();
 
     auto blk = std::make_shared<StandardBlock>();
     blk->parent_id = id_at(obj, kOffParent);
@@ -90,7 +89,7 @@ Result<std::shared_ptr<StandardBlock>> parse(ByteView bytes) {
     auto lengths = obj.list_stride(kOffTxLen, kTxLenStride);
     ByteView blob = obj.bytes(kOffTxBlob);
     std::size_t cursor = 0;
-    for (int i = 0; i < lengths.len(); ++i) {
+    for (int i = 0; i < lengths.size(); ++i) {
         std::size_t size = std::size_t(lengths.u32(i));
         if (cursor + size > blob.size())
             return std::unexpected("block: tx " + std::to_string(i) + " length overruns blob");

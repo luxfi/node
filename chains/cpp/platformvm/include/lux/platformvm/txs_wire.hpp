@@ -10,7 +10,7 @@
 #pragma once
 
 #include "lux/platformvm/txs.hpp"
-#include "lux/platformvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <cstring>
 #include <vector>

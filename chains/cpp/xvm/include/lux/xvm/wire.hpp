@@ -17,7 +17,7 @@
 #pragma once
 
 #include "lux/xvm/id.hpp"
-#include "lux/xvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <expected>
 #include <string>
@@ -122,7 +122,7 @@ public:
     AddressList() = default;
     explicit AddressList(zap::List l) : list_(l) {}
 
-    int len() const { return list_.len(); }
+    int len() const { return int(list_.size()); }
     bool is_null() const { return list_.is_null(); }
     ShortId at(int i) const;
     std::vector<ShortId> all() const;
@@ -430,11 +430,11 @@ public:
     std::uint32_t network_id() const { return obj_.u32(kOffXVMBaseTxNetworkID); }
     Id blockchain_id() const;
     std::uint32_t outs_count() const {
-        return std::uint32_t(obj_.list_stride(kOffXVMBaseTxOuts, kObjPtrStride).len());
+        return std::uint32_t(obj_.list_stride(kOffXVMBaseTxOuts, kObjPtrStride).size());
     }
     Result<TransferableOut> out_at(std::uint32_t i) const;
     std::uint32_t ins_count() const {
-        return std::uint32_t(obj_.list_stride(kOffXVMBaseTxIns, kObjPtrStride).len());
+        return std::uint32_t(obj_.list_stride(kOffXVMBaseTxIns, kObjPtrStride).size());
     }
     Result<TransferableIn> in_at(std::uint32_t i) const;
     ByteView memo() const { return obj_.bytes(kOffXVMBaseTxMemo); }

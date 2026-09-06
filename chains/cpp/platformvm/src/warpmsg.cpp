@@ -8,7 +8,7 @@
 #include "lux/platformvm/warpmsg.hpp"
 
 #include "lux/platformvm/sha256.hpp"
-#include "lux/platformvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <cstring>
 
@@ -85,7 +85,9 @@ std::pair<std::int64_t, std::int64_t> write_owner_addrs(zap::Builder& b,
     auto lb = b.start_list(kAddrStride);
     for (const auto& a : addrs) lb.add_bytes(a.span());
     // add_bytes counts BYTES, so the element count is the caller's to supply.
-    return {lb.offset(), static_cast<std::int64_t>(addrs.size())};
+    // add_bytes counts BYTES; the list length on the wire is the element count.
+    const auto [off, _] = lb.finish();
+    return {off, static_cast<std::int64_t>(addrs.size())};
 }
 
 PChainOwner read_owner(const zap::Object& root, std::int64_t threshold_off, std::int64_t addrs_off) {
@@ -274,7 +276,9 @@ Result<std::vector<std::uint8_t>> ConversionData::encode() const {
             put_u64(e + kCvWeight, v.weight);
             lb.add_bytes({e, sizeof(e)});
         }
-        vdr_off = lb.offset();
+        // add_bytes counts BYTES; the wire length is the element count.
+        const auto [lb_off, _] = lb.finish();
+        vdr_off = lb_off;
         vdr_count = static_cast<std::int64_t>(validators.size());
     }
 
