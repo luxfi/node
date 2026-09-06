@@ -1096,6 +1096,36 @@ mod tests {
         ));
     }
 
+    /// The chain binding is settled before the store is read.
+    ///
+    /// `verify` runs `on_chain` and `well_formed` and only then looks for the
+    /// parent, and the conformance evaluator reads `syntactic` off exactly those
+    /// two — see conformance/README.md, "`syntactic` where verify is one pass".
+    /// Every corpus vector names a parent the chain holds, so the corpus can
+    /// never show the ordering. This can: the parent here is a block no chain
+    /// has, and the answer is still the chain binding rather than a missing
+    /// parent.
+    #[test]
+    fn the_chain_binding_is_answered_before_the_parent_is_looked_for() {
+        let vm = vm();
+        let stranger = Arc::new(Block::new(
+            vm.clock.now(),
+            1,
+            ids::filled(9),
+            ids::filled(31),
+            1,
+            vec![stamped(&vm, 1)],
+        ));
+        vm.proposed
+            .lock()
+            .unwrap()
+            .insert(stranger.id(), Arc::clone(&stranger));
+        assert!(matches!(
+            vm.verify(&stranger.id()),
+            Err(Error::ForeignChain { .. })
+        ));
+    }
+
     #[test]
     fn a_node_whose_clock_trails_its_own_tip_says_so_rather_than_building() {
         let vm = vm();
