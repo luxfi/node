@@ -130,38 +130,41 @@ Id id_at(const zap::Object& obj, int off) {
 // ---- the BaseTx wire envelope, both directions ----
 
 Result<TransferableOutput> output_from_wire(const wire::TransferableOut& w) {
-    auto out = fx::wrap_transfer_out(w.output_bytes());
+    auto out = fx::wrap_transfer_out(w.Output());
     if (!out) return std::unexpected(out.error());
-    return TransferableOutput{w.asset_id(), *out};
+    return TransferableOutput{wire::to_id(w.AssetID()), *out};
 }
 
 Result<TransferableInput> input_from_wire(const wire::TransferableIn& w) {
-    auto in = fx::wrap_transfer_in(w.input_bytes());
+    auto in = fx::wrap_transfer_in(w.Input());
     if (!in) return std::unexpected(in.error());
-    return TransferableInput{UTXOID{w.tx_id(), w.output_index(), false}, w.asset_id(), *in};
+    return TransferableInput{UTXOID{wire::to_id(w.TxID()), w.OutputIndex(), false},
+                             wire::to_id(w.AssetID()), *in};
 }
 
 Result<BaseTxFields> decode_base_tx_wire(const zap::Object& obj) {
-    auto w = wire::wrap_xvm_base_tx(obj.bytes(kOffBaseTx));
-    if (!w) return std::unexpected(w.error());
+    auto o = wire::payload(obj.bytes(kOffBaseTx), wire::ShapeKind::XVMBaseTx,
+                           wire::TypeKind::Reserved);
+    if (!o) return std::unexpected(o.error());
+    const wire::XVMBaseTx w(*o);
     BaseTxFields base;
-    base.network_id = w->network_id();
-    base.blockchain_id = w->blockchain_id();
-    for (std::uint32_t i = 0; i < w->outs_count(); ++i) {
-        auto wo = w->out_at(i);
-        if (!wo) return std::unexpected(wo.error());
-        auto out = output_from_wire(*wo);
+    base.network_id = w.NetworkID();
+    base.blockchain_id = wire::to_id(w.BlockchainID());
+    for (std::int64_t i = 0; i < w.Outs().size(); ++i) {
+        const wire::TransferableOut wo = w.OutsAt(i);
+        if (wo.is_null()) return std::unexpected(wire::kErrShortEnvelope);
+        auto out = output_from_wire(wo);
         if (!out) return std::unexpected(out.error());
         base.outs.push_back(*out);
     }
-    for (std::uint32_t i = 0; i < w->ins_count(); ++i) {
-        auto wi = w->in_at(i);
-        if (!wi) return std::unexpected(wi.error());
-        auto in = input_from_wire(*wi);
+    for (std::int64_t i = 0; i < w.Ins().size(); ++i) {
+        const wire::TransferableIn wi = w.InsAt(i);
+        if (wi.is_null()) return std::unexpected(wire::kErrShortEnvelope);
+        auto in = input_from_wire(wi);
         if (!in) return std::unexpected(in.error());
         base.ins.push_back(*in);
     }
-    auto m = w->memo();
+    const auto m = w.Memo();
     base.memo.assign(m.begin(), m.end());
     return base;
 }
@@ -198,16 +201,20 @@ Result<void> UTXO::verify() const {
 
 Result<Bytes> UTXO::wire_bytes() const {
     if (out == nullptr) return std::unexpected("empty utxo is not valid");
-    return wire::new_utxo(
-        wire::UTXOInput{utxo_id.tx_id, utxo_id.output_index, asset_id, out->bytes()});
+    return wire::write_envelope_prefix(
+        wire::TypeKind::Reserved, wire::ShapeKind::UTXO,
+        wire::NewUTXO(wire::UTXOInput{utxo_id.tx_id, utxo_id.output_index, asset_id,
+                                      out->bytes()}));
 }
 
 Result<UTXO> parse_utxo(ByteView b) {
-    auto w = wire::wrap_utxo(b);
-    if (!w) return std::unexpected(w.error());
-    auto out = fx::wrap_output(w->output_bytes());
+    auto o = wire::payload(b, wire::ShapeKind::UTXO, wire::TypeKind::Reserved);
+    if (!o) return std::unexpected(o.error());
+    const wire::UTXO w(*o);
+    auto out = fx::wrap_output(w.Output());
     if (!out) return std::unexpected(out.error());
-    return UTXO{UTXOID{w->tx_id(), w->output_index(), false}, w->asset_id(), *out};
+    return UTXO{UTXOID{wire::to_id(w.TxID()), w.OutputIndex(), false},
+                wire::to_id(w.AssetID()), *out};
 }
 
 namespace {
@@ -415,18 +422,27 @@ Result<void> BaseTxFields::verify(std::uint32_t expect_network_id, const Id& exp
 }
 
 Bytes BaseTxFields::wire_envelope() const {
+    // Each inner fx envelope is held while the message is built: the Input
+    // borrows it, and the buffer it returns is what owns the copy.
+    std::vector<Bytes> inner;
+    inner.reserve(outs.size() + ins.size());
     wire::XVMBaseTxInput in;
-    in.network_id = network_id;
-    in.blockchain_id = blockchain_id;
-    in.outs.reserve(outs.size());
-    for (const auto& o : outs)
-        in.outs.push_back(wire::XVMTransferOut{o.asset_id, o.out ? o.out->bytes() : Bytes{}});
-    in.ins.reserve(ins.size());
-    for (const auto& i : ins)
-        in.ins.push_back(wire::XVMTransferIn{i.utxo_id.tx_id, i.utxo_id.output_index, i.asset_id,
-                                             i.in ? i.in->bytes() : Bytes{}});
-    in.memo = memo;
-    return wire::new_xvm_base_tx(in);
+    in.NetworkID = network_id;
+    in.BlockchainID = blockchain_id;
+    in.Outs.reserve(outs.size());
+    for (const auto& o : outs) {
+        inner.push_back(o.out ? o.out->bytes() : Bytes{});
+        in.Outs.push_back(wire::TransferableOutInput{o.asset_id, inner.back()});
+    }
+    in.Ins.reserve(ins.size());
+    for (const auto& i : ins) {
+        inner.push_back(i.in ? i.in->bytes() : Bytes{});
+        in.Ins.push_back(wire::TransferableInInput{i.utxo_id.tx_id, i.utxo_id.output_index,
+                                                   i.asset_id, inner.back()});
+    }
+    in.Memo = memo;
+    return wire::write_envelope_prefix(wire::TypeKind::Reserved, wire::ShapeKind::XVMBaseTx,
+                                       wire::NewXVMBaseTx(in));
 }
 
 // ================= UnsignedTx =================
@@ -523,8 +539,9 @@ Bytes ImportTx::serialize() const {
     for (std::size_t i = 0; i < imported_ins.size(); ++i) {
         const auto& in = imported_ins[i];
         Bytes inner = in.in ? in.in->bytes() : Bytes{};
-        offs[i] = wire::append_transferable_in(b, in.utxo_id.tx_id, in.utxo_id.output_index,
-                                               in.asset_id, view(inner));
+        offs[i] = wire::AppendTransferableIn(
+            b, wire::TransferableInInput{in.utxo_id.tx_id, in.utxo_id.output_index, in.asset_id,
+                                         view(inner)});
     }
     auto lb = b.start_list(4);
     for (int off : offs) lb.add_object_ptr(off);
@@ -546,7 +563,8 @@ Bytes ExportTx::serialize() const {
     for (std::size_t i = 0; i < exported_outs.size(); ++i) {
         const auto& o = exported_outs[i];
         Bytes inner = o.out ? o.out->bytes() : Bytes{};
-        offs[i] = wire::append_transferable_out(b, o.asset_id, view(inner));
+        offs[i] = wire::AppendTransferableOut(
+            b, wire::TransferableOutInput{o.asset_id, view(inner)});
     }
     auto lb = b.start_list(4);
     for (int off : offs) lb.add_object_ptr(off);
@@ -674,16 +692,17 @@ Result<std::shared_ptr<UnsignedTx>> parse_unsigned(ByteView unsigned_bytes) {
 }
 
 Result<std::shared_ptr<Tx>> parse(ByteView signed_bytes) {
-    auto st = wire::wrap_signed_tx(signed_bytes);
-    if (!st) return std::unexpected("couldn't parse signed tx: " + st.error());
-    auto unsigned_tx = parse_unsigned(st->unsigned_bytes());
+    auto o = wire::payload(signed_bytes, wire::ShapeKind::SignedTx, wire::TypeKind::Reserved);
+    if (!o) return std::unexpected("couldn't parse signed tx: " + o.error());
+    const wire::SignedTx st(*o);
+    auto unsigned_tx = parse_unsigned(st.UnsignedBytes());
     if (!unsigned_tx) return std::unexpected("couldn't parse unsigned tx: " + unsigned_tx.error());
 
     auto tx = std::make_shared<Tx>();
     tx->unsigned_tx = *unsigned_tx;
 
-    std::uint32_t n = st->credential_count();
-    ByteView blob = st->credential_bytes();
+    const std::uint32_t n = st.CredentialCount();
+    ByteView blob = st.CredentialBytes();
     for (std::uint32_t i = 0; i < n; ++i) {
         auto split = wire::next_envelope(blob);
         if (!split) return std::unexpected("couldn't parse credentials: " + split.error());
@@ -709,13 +728,19 @@ void Tx::set_bytes(Bytes unsigned_bytes, Bytes signed_bytes) {
 Result<void> Tx::initialize() {
     if (unsigned_tx == nullptr) return std::unexpected(kErrNilTx);
     Bytes unsigned_bytes = unsigned_tx->bytes();
-    std::vector<Bytes> cred_envelopes;
-    cred_envelopes.reserve(creds.size());
+    // The credentials travel as one packed run: each is a whole envelope,
+    // self-delimiting by its own ZAP size word, so the count rides beside it.
+    Bytes cred_run;
     for (const auto& c : creds) {
         if (c == nullptr) return std::unexpected("problem creating transaction: nil credential");
-        cred_envelopes.push_back(c->bytes());
+        const Bytes one = c->bytes();
+        cred_run.insert(cred_run.end(), one.begin(), one.end());
     }
-    Bytes signed_bytes = wire::new_signed_tx(wire::SignedTxInput{unsigned_bytes, cred_envelopes});
+    Bytes signed_bytes = wire::write_envelope_prefix(
+        wire::TypeKind::Reserved, wire::ShapeKind::SignedTx,
+        wire::NewSignedTx(wire::SignedTxInput{unsigned_bytes,
+                                              static_cast<std::uint32_t>(creds.size()),
+                                              cred_run}));
     set_bytes(std::move(unsigned_bytes), std::move(signed_bytes));
     return {};
 }
