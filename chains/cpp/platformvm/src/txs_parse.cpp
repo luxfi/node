@@ -31,17 +31,11 @@
 namespace lux::platformvm::txs {
 namespace {
 
-// credential wire: object{ credsList ptr @0, sigArray ptr @8 } (size 16).
-constexpr std::int64_t kOffCredsList = 0;
-constexpr std::int64_t kOffSigArray = 8;
-constexpr std::int64_t kCredsObjSize = 16;
-constexpr std::int64_t kCredEntry = 8;
-
 Result<std::shared_ptr<UnsignedTx>> parse_unsigned(std::span<const std::uint8_t> buf) {
     const auto m = zap::Message::parse(buf);
     if (!m) return fail(Err::BufferTooSmall);
     auto owned = std::make_shared<const std::vector<std::uint8_t>>(buf.begin(), buf.end());
-    switch (static_cast<Kind>(m->root().u8(kOffKind))) {
+    switch (static_cast<Kind>(wire::Base(m->root()).Kind())) {
         case Kind::RewardValidator: return RewardValidatorTx::wrap(owned);
         case Kind::Base: return BaseTxUnsigned::wrap(owned);
         case Kind::Import: return ImportTx::wrap(owned);
@@ -68,60 +62,36 @@ Result<std::shared_ptr<UnsignedTx>> parse_unsigned(std::span<const std::uint8_t>
 }  // namespace
 
 Result<std::vector<std::uint8_t>> write_creds(const std::vector<Credential>& creds) {
-    zap::Builder b(zap::kHeaderSize + 128 + creds.size() * kCredEntry);
-    std::vector<std::array<std::uint8_t, kSigLen>> blobs;
-    auto clb = b.start_list(kCredEntry);
+    wire::CredentialsInput in;
+    in.Runs.reserve(creds.size());
     std::uint32_t cursor = 0;
     for (const auto& cred : creds) {
-        std::uint8_t e[kCredEntry] = {};
-        zap::store_u32(e, cursor);
-        zap::store_u32(e + 4, static_cast<std::uint32_t>(cred.sigs.size()));
-        clb.add_bytes({e, kCredEntry});
-        blobs.insert(blobs.end(), cred.sigs.begin(), cred.sigs.end());
-        cursor += static_cast<std::uint32_t>(cred.sigs.size());
+        const auto count = static_cast<std::uint32_t>(cred.sigs.size());
+        in.Runs.push_back(wire::CredentialRunInput{.Start = cursor, .Count = count});
+        in.Signatures.insert(in.Signatures.end(), cred.sigs.begin(), cred.sigs.end());
+        cursor += count;
     }
-    // add_bytes counts BYTES; the wire length is the element count.
-    const auto [clb_off, _] = clb.finish();
-    const std::int64_t creds_off = clb_off;
-    const std::int64_t creds_count = static_cast<std::int64_t>(creds.size());
-
-    std::int64_t sig_off = 0, sig_count = 0;
-    if (!blobs.empty()) {
-        auto slb = b.start_list(static_cast<std::int64_t>(kSigLen));
-        for (const auto& s : blobs) slb.add_bytes({s.data(), s.size()});
-        const auto [slb_off, _] = slb.finish();
-        sig_off = slb_off;
-        sig_count = static_cast<std::int64_t>(blobs.size());
-    }
-
-    auto ob = b.start_object(kCredsObjSize);
-    ob.set_list(kOffCredsList, creds_off, creds_count);
-    ob.set_list(kOffSigArray, sig_off, sig_count);
-    ob.finish_as_root();
-    return b.finish();
+    return wire::NewCredentials(in);
 }
 
 Result<std::vector<Credential>> parse_creds(std::span<const std::uint8_t> b) {
-    const auto m = zap::Message::parse(b);
-    if (!m) return fail(Err::BufferTooSmall);
-    const auto obj = m->root();
-    const auto creds_list = obj.list_stride(kOffCredsList, kCredEntry);
-    const auto sig_arr = obj.list_stride(kOffSigArray, static_cast<std::uint32_t>(kSigLen));
-    const int n = creds_list.size();
-    const std::uint32_t total = static_cast<std::uint32_t>(sig_arr.size());
+    const auto w = wire::WrapCredentials(b);
+    if (!w) return fail(Err::BufferTooSmall);
+    const int n = w->Runs().size();
+    const auto total = static_cast<std::uint32_t>(w->Signatures().size());
     std::vector<Credential> creds(static_cast<std::size_t>(n));
     for (int i = 0; i < n; ++i) {
-        const auto e = creds_list.object(i, kCredEntry);
-        const std::uint32_t start = e.u32(0);
-        const std::uint32_t count = e.u32(4);
+        const auto run = w->RunsAt(i);
+        const std::uint32_t start = run.Start();
+        const std::uint32_t count = run.Count();
         // Both bounds come off the wire. start <= total makes total-start safe;
         // an out-of-range claim is refused rather than silently truncated.
         if (start > total || count > total - start) return fail(Err::CredSigsOutOfRange);
         auto& c = creds[static_cast<std::size_t>(i)];
         c.sigs.resize(count);
         for (std::uint32_t j = 0; j < count; ++j) {
-            const auto blob = sig_arr.object(static_cast<int>(start + j), static_cast<std::int64_t>(kSigLen));
-            for (std::size_t k = 0; k < kSigLen; ++k) c.sigs[j][k] = blob.u8(static_cast<std::int64_t>(k));
+            const auto blob = w->SignaturesAt(static_cast<int>(start + j));
+            std::memcpy(c.sigs[j].data(), blob.data(), kSigLen);
         }
     }
     return creds;

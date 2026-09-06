@@ -261,7 +261,7 @@ TEST(ParseRejectsTxLengthOverrunningBlob) {
         static_cast<std::uint32_t>(b[8]) | (static_cast<std::uint32_t>(b[9]) << 8) |
         (static_cast<std::uint32_t>(b[10]) << 16) | (static_cast<std::uint32_t>(b[11]) << 24));
     // The length list is a backward pointer from the object's tx_lengths slot.
-    const std::int64_t slot = root + blk::kOffTxLengths;
+    const std::int64_t slot = root + wire::kStandardTxLengthsOff;
     const std::int32_t rel = static_cast<std::int32_t>(
         static_cast<std::uint32_t>(b[slot]) | (static_cast<std::uint32_t>(b[slot + 1]) << 8) |
         (static_cast<std::uint32_t>(b[slot + 2]) << 16) | (static_cast<std::uint32_t>(b[slot + 3]) << 24));
