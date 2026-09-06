@@ -82,12 +82,14 @@ OutListPtrs write_outputs(zap::Builder& b, const std::vector<TransferableOutput>
         addrs.insert(addrs.end(), o.out.owners.addrs.begin(), o.out.owners.addrs.end());
     }
     // add_bytes counts BYTES; the list length on the wire is the element count.
-    p.list_off = lb.offset();
+    const auto [lb_off, lb_count] = lb.finish();
+    p.list_off = lb_off;
     p.list_count = static_cast<std::int64_t>(outs.size());
     if (!addrs.empty()) {
         auto alb = b.start_list(kAddrStride);
         for (const auto& a : addrs) alb.add_bytes(a.span());
-        p.addr_off = alb.offset();
+        const auto [alb_off, _] = alb.finish();
+        p.addr_off = alb_off;
         p.addr_count = static_cast<std::int64_t>(addrs.size());
     }
     return p;
@@ -110,13 +112,15 @@ InListPtrs write_inputs(zap::Builder& b, const std::vector<TransferableInput>& i
         lb.add_bytes({e, kInStride});
         sigs.insert(sigs.end(), in.in.sig_indices.begin(), in.in.sig_indices.end());
     }
-    p.list_off = lb.offset();
+    const auto [lb_off, lb_count] = lb.finish();
+    p.list_off = lb_off;
     p.list_count = static_cast<std::int64_t>(ins.size());
     if (!sigs.empty()) {
         auto slb = b.start_list(kSigStride);
         for (auto s : sigs) slb.add_u32(s);
-        p.sig_off = slb.offset();
-        p.sig_count = slb.count();
+        const auto [slb_off, slb_count] = slb.finish();
+        p.sig_off = slb_off;
+        p.sig_count = slb_count;
     }
     return p;
 }
@@ -196,7 +200,8 @@ OwnerPtrs write_owner(zap::Builder& b, const Owner& o) {
     if (!o.addrs.empty()) {
         auto lb = b.start_list(kAddrStride);
         for (const auto& a : o.addrs) lb.add_bytes(a.span());
-        p.addr_off = lb.offset();
+        const auto [lb_off, lb_count] = lb.finish();
+        p.addr_off = lb_off;
         p.addr_count = static_cast<std::int64_t>(o.addrs.size());
     }
     return p;
@@ -226,8 +231,9 @@ AuthPtrs write_auth(zap::Builder& b, const Auth& a) {
     if (a.empty()) return p;
     auto lb = b.start_list(kSigStride);
     for (auto s : a) lb.add_u32(s);
-    p.off = lb.offset();
-    p.count = lb.count();
+    const auto [lb_off, lb_count] = lb.finish();
+    p.off = lb_off;
+    p.count = lb_count;
     return p;
 }
 
@@ -281,7 +287,8 @@ IdListPtrs write_id_list(zap::Builder& b, const std::vector<Id>& list) {
     if (list.empty()) return p;
     auto lb = b.start_list(static_cast<std::int64_t>(kIdLen));
     for (const auto& id : list) lb.add_bytes(id.span());
-    p.off = lb.offset();
+    const auto [lb_off, lb_count] = lb.finish();
+    p.off = lb_off;
     p.count = static_cast<std::int64_t>(list.size());
     return p;
 }
@@ -324,7 +331,8 @@ NetworkValidatorPtrs write_network_validators(zap::Builder& b, const std::vector
                      v.deactivation_owner.addresses.end());
         lb.add_bytes({e, kNvStride});
     }
-    p.list_off = lb.offset();
+    const auto [lb_off, lb_count] = lb.finish();
+    p.list_off = lb_off;
     p.list_count = static_cast<std::int64_t>(vdrs.size());
     return p;
 }

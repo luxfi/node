@@ -81,14 +81,16 @@ Result<std::vector<std::uint8_t>> write_creds(const std::vector<Credential>& cre
         cursor += static_cast<std::uint32_t>(cred.sigs.size());
     }
     // add_bytes counts BYTES; the wire length is the element count.
-    const std::int64_t creds_off = clb.offset();
+    const auto [clb_off, _] = clb.finish();
+    const std::int64_t creds_off = clb_off;
     const std::int64_t creds_count = static_cast<std::int64_t>(creds.size());
 
     std::int64_t sig_off = 0, sig_count = 0;
     if (!blobs.empty()) {
         auto slb = b.start_list(static_cast<std::int64_t>(kSigLen));
         for (const auto& s : blobs) slb.add_bytes({s.data(), s.size()});
-        sig_off = slb.offset();
+        const auto [slb_off, _] = slb.finish();
+        sig_off = slb_off;
         sig_count = static_cast<std::int64_t>(blobs.size());
     }
 

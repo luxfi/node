@@ -27,7 +27,7 @@
 #include "lux/platformvm/priority.hpp"
 #include "lux/platformvm/security.hpp"
 #include "lux/platformvm/signer.hpp"
-#include "lux/platformvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <array>
 #include <cstdint>

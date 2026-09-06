@@ -18,7 +18,7 @@
 
 #include "lux/platformvm/components.hpp"
 
-#include "lux/platformvm/zap.hpp"
+#include <zap/zap.hpp>
 
 #include <algorithm>
 #include <cstring>
@@ -62,7 +62,8 @@ std::vector<std::uint8_t> secp_transfer_output_envelope(const TransferOutput& o)
     if (!o.owners.addrs.empty()) {
         auto lb = b.start_list(kAddressStride);
         for (const auto& a : o.owners.addrs) lb.add_bytes(a.span());
-        addr_off = lb.offset();
+        const auto [lb_off, _] = lb.finish();
+        addr_off = lb_off;
         addr_count = static_cast<std::int64_t>(o.owners.addrs.size());
     }
     auto ob = b.start_object(kTOSize);

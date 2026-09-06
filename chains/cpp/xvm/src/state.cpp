@@ -3,7 +3,7 @@
 
 #include "lux/xvm/state.hpp"
 
-#include "lux/xvm/zap.hpp"
+#include <zap/zap.hpp>
 
 namespace lux::xvm::state {
 namespace {
@@ -113,14 +113,13 @@ Result<void> State::load() {
     if (!fail.empty()) return std::unexpected(fail);
 
     if (auto meta = store_->get(view(key_of(kTagMeta)))) {
-        zap::Message msg;
-        std::string err;
-        if (!zap::Message::parse(view(*meta), &msg, &err))
-            return std::unexpected("load state metadata: " + err);
-        const zap::Object root = msg.root();
+        const auto msg = zap::Message::parse(view(*meta));
+        if (!msg)
+            return std::unexpected("load state metadata: " + std::string(zap::describe(msg.error())));
+        const zap::Object root = msg->root();
         timestamp_ = root.u64(kMetaOffTimestamp);
         initialized_ = root.u8(kMetaOffInitialized) != 0;
-        const auto la = root.bytes_fixed_slice(kMetaOffLastAccepted, 32);
+        const auto la = root.bytes_fixed(kMetaOffLastAccepted, 32);
         if (la.size() != 32) return std::unexpected("load state metadata: truncated last accepted");
         std::copy(la.begin(), la.end(), last_accepted_.begin());
     }
