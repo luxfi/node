@@ -1,68 +1,42 @@
 // Copyright (C) 2026, Lux Industries, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
-// genesis.cpp — the genesis blob's wire, and what makes one valid.
+// genesis.cpp — what a genesis blob MEANS, over the wire the schema states.
 //
-// Rendered from Go vms/platformvm/genesis/genesiswire.go and genesis.go.
+// The offsets are in schema/genesis.zap, through zapgen. Three lists of things
+// that are already self-describing, so the container stores a u32 LENGTH per
+// element beside one concatenated blob and re-encodes nothing.
 
 #include "lux/platformvm/genesis.hpp"
 
-#include <zap/zap.hpp>
+#include "lux/platformvm/gen/genesis_zap.hpp"
 
 namespace lux::platformvm::genesis {
 namespace {
 
-// Genesis object layout (size 72).
-constexpr std::int64_t kTimestamp = 0;
-constexpr std::int64_t kInitialSupply = 8;
-constexpr std::int64_t kMessage = 16;
-constexpr std::int64_t kUTXOLens = 24;
-constexpr std::int64_t kUTXOBlob = 32;
-constexpr std::int64_t kVdrLens = 40;
-constexpr std::int64_t kVdrBlob = 48;
-constexpr std::int64_t kChainLens = 56;
-constexpr std::int64_t kChainBlob = 64;
-constexpr std::int64_t kSize = 72;
-constexpr std::int64_t kLenStride = 4;
-
-// The genesis UTXO sub-object (size 16): the UTXO's own envelope, and the
-// message the allocation carried.
-constexpr std::int64_t kGutxoWire = 0;
-constexpr std::int64_t kGutxoMsg = 8;
-constexpr std::int64_t kGutxoSize = 16;
-
-// The shared framing: a u32 length per element, plus their bytes concatenated.
-// The same framing a block uses for its transactions, for the same reason —
-// every element is already self-describing, so the container only has to say
-// where each one ends.
+// The shared framing, written: a u32 length per element, plus their bytes
+// concatenated. The same framing a block uses for its transactions.
 struct BlobList {
-    std::int64_t len_off = 0;
-    std::int64_t len_count = 0;
+    std::vector<std::uint32_t> lengths;
     std::vector<std::uint8_t> blob;
 };
 
-BlobList write_blob_list(zap::Builder& b, const std::vector<std::vector<std::uint8_t>>& blobs) {
+BlobList blob_list(const std::vector<std::vector<std::uint8_t>>& blobs) {
     BlobList out;
-    if (blobs.empty()) return out;
-    auto lb = b.start_list(kLenStride);
+    out.lengths.reserve(blobs.size());
     for (const auto& raw : blobs) {
-        lb.add_u32(static_cast<std::uint32_t>(raw.size()));
+        out.lengths.push_back(static_cast<std::uint32_t>(raw.size()));
         out.blob.insert(out.blob.end(), raw.begin(), raw.end());
     }
-    const auto [lb_off, lb_count] = lb.finish();
-    out.len_off = lb_off;
-    out.len_count = lb_count;
     return out;
 }
 
-Result<std::vector<std::span<const std::uint8_t>>> read_blob_list(const zap::Object& obj,
-                                                                  std::int64_t len_off,
-                                                                  std::int64_t blob_off) {
-    const auto lengths = obj.list_stride(len_off, kLenStride);
+// The same framing, read: re-split the blob by the lengths beside it.
+Result<std::vector<std::span<const std::uint8_t>>> read_blob_list(const zap::List& lengths,
+                                                                  std::span<const std::uint8_t> blob) {
     const int n = lengths.size();
     std::vector<std::span<const std::uint8_t>> out;
     if (n == 0) return out;
-    const auto blob = obj.bytes(blob_off);
     std::size_t cursor = 0;
     for (int i = 0; i < n; ++i) {
         const std::size_t size = lengths.u32(i);
@@ -76,25 +50,19 @@ Result<std::vector<std::span<const std::uint8_t>>> read_blob_list(const zap::Obj
 }
 
 std::vector<std::uint8_t> encode_allocation(const Allocation& a) {
-    const auto wire = a.utxo.wire_bytes();
-    zap::Builder b(zap::kHeaderSize + kGutxoSize + static_cast<std::int64_t>(wire.size() + a.message.size()) +
-                   32);
-    auto ob = b.start_object(kGutxoSize);
-    ob.set_bytes(kGutxoWire, wire);
-    ob.set_bytes(kGutxoMsg, a.message);
-    ob.finish_as_root();
-    return b.finish();
+    const auto utxo = a.utxo.wire_bytes();
+    return wire::NewAllocation(wire::AllocationInput{.Utxo = {utxo.data(), utxo.size()},
+                                                     .Message = {a.message.data(), a.message.size()}});
 }
 
 Result<Allocation> parse_allocation(std::span<const std::uint8_t> b) {
-    const auto m = zap::Message::parse(b);
+    const auto m = wire::WrapAllocation(b);
     if (!m) return fail(Err::BadGenesis, "a genesis allocation is not a zap message");
-    const auto root = m->root();
-    auto utxo = UTXO::from_wire_bytes(root.bytes(kGutxoWire));
+    auto utxo = UTXO::from_wire_bytes(m->Utxo());
     if (!utxo) return std::unexpected(utxo.error());
     Allocation a;
     a.utxo = utxo.value();
-    const auto msg = root.bytes(kGutxoMsg);
+    const auto msg = m->Message();
     a.message.assign(msg.begin(), msg.end());
     return a;
 }
@@ -114,36 +82,32 @@ std::vector<std::uint8_t> Genesis::encode() const {
     chain_blobs.reserve(chains.size());
     for (const auto& tx : chains) chain_blobs.push_back(tx.bytes);
 
-    zap::Builder b(zap::kHeaderSize + kSize + 1024);
-    const auto utxo_list = write_blob_list(b, utxo_blobs);
-    const auto vdr_list = write_blob_list(b, vdr_blobs);
-    const auto chain_list = write_blob_list(b, chain_blobs);
+    const auto utxo_list = blob_list(utxo_blobs);
+    const auto vdr_list = blob_list(vdr_blobs);
+    const auto chain_list = blob_list(chain_blobs);
 
-    auto ob = b.start_object(kSize);
-    ob.set_u64(kTimestamp, timestamp);
-    ob.set_u64(kInitialSupply, initial_supply);
-    ob.set_text(kMessage, message);
-    ob.set_list(kUTXOLens, utxo_list.len_off, utxo_list.len_count);
-    ob.set_bytes(kUTXOBlob, utxo_list.blob);
-    ob.set_list(kVdrLens, vdr_list.len_off, vdr_list.len_count);
-    ob.set_bytes(kVdrBlob, vdr_list.blob);
-    ob.set_list(kChainLens, chain_list.len_off, chain_list.len_count);
-    ob.set_bytes(kChainBlob, chain_list.blob);
-    ob.finish_as_root();
-    return b.finish();
+    return wire::NewGenesis(wire::GenesisInput{
+        .Timestamp = timestamp,
+        .InitialSupply = initial_supply,
+        .Message = message,
+        .UtxoLengths = utxo_list.lengths,
+        .UtxoBlob = {utxo_list.blob.data(), utxo_list.blob.size()},
+        .ValidatorLengths = vdr_list.lengths,
+        .ValidatorBlob = {vdr_list.blob.data(), vdr_list.blob.size()},
+        .ChainLengths = chain_list.lengths,
+        .ChainBlob = {chain_list.blob.data(), chain_list.blob.size()}});
 }
 
 Result<Genesis> Genesis::parse(std::span<const std::uint8_t> b) {
-    const auto m = zap::Message::parse(b);
+    const auto m = wire::WrapGenesis(b);
     if (!m) return fail(Err::BadGenesis, "the genesis blob is not a zap message");
-    const auto root = m->root();
 
     Genesis g;
-    g.timestamp = root.u64(kTimestamp);
-    g.initial_supply = root.u64(kInitialSupply);
-    g.message = std::string(root.text(kMessage));
+    g.timestamp = m->Timestamp();
+    g.initial_supply = m->InitialSupply();
+    g.message = std::string(m->Message());
 
-    auto utxo_blobs = read_blob_list(root, kUTXOLens, kUTXOBlob);
+    auto utxo_blobs = read_blob_list(m->UtxoLengths(), m->UtxoBlob());
     if (!utxo_blobs) return std::unexpected(utxo_blobs.error());
     for (std::size_t i = 0; i < utxo_blobs.value().size(); ++i) {
         auto a = parse_allocation(utxo_blobs.value()[i]);
@@ -151,7 +115,7 @@ Result<Genesis> Genesis::parse(std::span<const std::uint8_t> b) {
         g.utxos.push_back(std::move(a.value()));
     }
 
-    auto vdr_blobs = read_blob_list(root, kVdrLens, kVdrBlob);
+    auto vdr_blobs = read_blob_list(m->ValidatorLengths(), m->ValidatorBlob());
     if (!vdr_blobs) return std::unexpected(vdr_blobs.error());
     for (std::size_t i = 0; i < vdr_blobs.value().size(); ++i) {
         // Re-parsed from their own SIGNED bytes, so every id is what it was
@@ -161,7 +125,7 @@ Result<Genesis> Genesis::parse(std::span<const std::uint8_t> b) {
         g.validators.push_back(std::move(tx.value()));
     }
 
-    auto chain_blobs = read_blob_list(root, kChainLens, kChainBlob);
+    auto chain_blobs = read_blob_list(m->ChainLengths(), m->ChainBlob());
     if (!chain_blobs) return std::unexpected(chain_blobs.error());
     for (std::size_t i = 0; i < chain_blobs.value().size(); ++i) {
         auto tx = txs::parse(chain_blobs.value()[i]);

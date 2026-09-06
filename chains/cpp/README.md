@@ -32,11 +32,17 @@ can drift from it, which is what had happened.
 
 What sits on top of that runtime — the offsets, the strides, the readers and
 the builders — is generated, one chain at a time, from a `.zap` schema beside
-the chain. `xvm/schema/wire.zap` is the first: `zapgen` prints
-`xvm/include/lux/xvm/gen/wire_zap.hpp` from it, and `xvm/include/lux/xvm/wire.hpp`
-is left holding only what the bytes MEAN. The other five still state their
-offsets by hand — 5,717 lines of them, most in `platformvm` — and are named
-here rather than left to be discovered.
+the chain. `zapgen` prints the header; what is left beside it holds only what
+the bytes MEAN.
+
+Three chains read their wire out of a schema: `xvm`, `quantumvm`, and
+`platformvm`, whose four schemas cover every shape the P-chain puts on a wire
+or in a store — nineteen transactions, three blocks, the credentials, the two
+fx envelopes an output is ordered by, the genesis blob, and the warp messages
+an L1 and the P-chain say to each other.
+
+Three still state their offsets by hand, and are named here rather than left
+to be discovered: `zkvm` (1,452 lines), `fhevm` (913), `dexvm` (585).
 
 ## platformvm
 
