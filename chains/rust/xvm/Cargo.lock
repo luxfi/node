@@ -1912,11 +1912,16 @@ dependencies = [
  "lux-consensus",
  "lux-node",
  "lux-pq",
+ "lux-zap",
  "ripemd",
  "serde_json",
  "sha2",
  "sha3 0.10.9",
 ]
+
+[[package]]
+name = "lux-zap"
+version = "0.1.0"
 
 [[package]]
 name = "memchr"

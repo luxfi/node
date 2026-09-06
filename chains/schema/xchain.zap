@@ -120,7 +120,7 @@ struct UtxoId {
 # and inputs are pointer runs into this same buffer, not a concatenation of
 # separately framed blobs: one buffer, one pass, and each leaf read where it
 # lies.
-struct Base {
+struct Envelope {
     Network u32                     @0
     Chain   id32                    @8
     Outs    list<ptr<TransferableOut>> @40
@@ -139,7 +139,7 @@ struct Signed {
 # Each opens with the kind byte and the spending envelope's bytes, at the same
 # two offsets, and then says its own thing.
 
-struct Transfer {
+struct Base {
     Kind u8    @0
     Base bytes @8
 }
