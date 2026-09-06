@@ -213,9 +213,11 @@ impl Utxo {
     pub fn from_wire(b: &[u8]) -> Result<Utxo> {
         let v = containers::wrap_utxo(b)?;
         Ok(Utxo {
-            utxo_id: UtxoId::new(v.tx_id(), v.output_index()),
-            asset: Asset { id: v.asset_id() },
-            out: State::from_envelope(v.output_bytes())?,
+            utxo_id: UtxoId::new(crate::ids::prefixed(v.tx_id()), v.index()),
+            asset: Asset {
+                id: crate::ids::prefixed(v.asset()),
+            },
+            out: State::from_envelope(v.output())?,
         })
     }
 }
