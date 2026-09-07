@@ -37,6 +37,43 @@ A run fails if any implementation printed no row at all. Silence is not
 agreement — with four voices, three answering is still a comparison, it
 agrees, and the fourth's absence would read as a pass.
 
+## The chains, and where each language stands
+
+Six chains, three languages. The differential compares all three against a
+corpus the Go reference itself generated, so a row here is a measurement, not
+a claim.
+
+| chain | vectors | Go | Rust | C++ |
+|---|---:|---:|---:|---:|
+| P — platformvm | 159 | 42,398 | 33,859 | 31,217 |
+| X — xvm | 49 | 13,306 | 18,894 | 17,148 |
+| Q — quantumvm | 81 | 2,919 | 7,071 | 9,239 |
+| Z — zkvm | 137 | 8,047 | 10,814 | 9,284 |
+| D — dexvm | 35 | 1,966 | 6,303 | 7,200 |
+| F — fhevm | 264 | 3,497 | 15,834 | 13,208 |
+
+Source lines, non-test. All six exist in all three languages, and `make chains`
+agrees on every compared field of all 725 vectors with no implementation
+silent.
+
+Read the line counts as shape, not as progress: a port is larger than its
+reference where the reference leans on a runtime the port has to state for
+itself, and smaller where the reference carries history the port does not.
+Agreement on the corpus is the measurement that means something.
+
+### What the three are, and are not
+
+`luxd-rust` and `luxd-cpp` are full node hosts — they take a committee and
+serve. `luxd-go` is the C-Chain VM plugin, not a daemon: the Go node host that
+`luxfi/node` ships is not part of this repository's clean cut, and no
+replacement for it has been built here yet. Until one is, the three cannot
+stand up as peers on one network, and the differential compares them as
+libraries rather than as validators.
+
+The wire is no longer written by hand in any of them. Thirteen `.zap` schemas
+generate the readers and builders for all three languages; the five
+hand-written implementations that preceded them are deleted.
+
 ## Build
 
 ```sh
