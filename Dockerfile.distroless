@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1
+# Copyright (C) 2026, Lux Industries, Inc. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+#
+# Pure Go Distroless Container for luxd
+# Zero Debian, zero shell, zero package manager.
+# Runs statically as nonroot user (65532:65532).
+
+# Stage 1: Builder
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /src
+
+# Install git and ca-certificates for fetching dependencies
+RUN apk add --no-cache git ca-certificates
+
+# Cache dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source tree
+COPY . .
+
+# Build pure static binary (no cgo, stripped symbols, trimpath)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -trimpath \
+    -ldflags="-s -w -X main.version=v2.0.0-distroless" \
+    -o /bin/luxd \
+    ./cmd/luxd
+
+# Stage 2: Distroless Static Non-Root
+ARG BASE_IMAGE=hanzoai/distroless:static
+FROM ${BASE_IMAGE}
+
+LABEL org.opencontainers.image.title="luxd" \
+      org.opencontainers.image.description="Lux Node Daemon - Hanzo Distroless" \
+      org.opencontainers.image.vendor="Hanzo AI & Lux Industries, Inc." \
+      org.opencontainers.image.licenses="BSD-3-Clause-Eco"
+
+WORKDIR /data
+
+# Copy CA certs and binary from builder
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /bin/luxd /bin/luxd
+
+# Non-privileged default ports
+EXPOSE 9650 9651
+
+# Run as nonroot
+USER 65532:65532
+
+VOLUME ["/data"]
+
+ENTRYPOINT ["/bin/luxd"]
+CMD ["--data", "/data", "--rpc", "0.0.0.0:9650", "--stake", "0.0.0.0:9651", "--network", "mainnet"]
