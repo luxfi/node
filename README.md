@@ -61,6 +61,32 @@ reference where the reference leans on a runtime the port has to state for
 itself, and smaller where the reference carries history the port does not.
 Agreement on the corpus is the measurement that means something.
 
+### What stops the three sharing one network
+
+Measured, not assumed:
+
+`luxd-rust` and `luxd-cpp` are both hosts, but they form a committee
+differently. The Rust host publishes a validator line — a post-quantum identity
+and its BLS key — and takes a committee file plus `--peers`. The C++ host takes
+`--index I --n N --base-port P` and derives its peers positionally. Neither can
+read the other's committee, so they do not yet meet on one mesh.
+
+`luxd-go` is not a host at all. It is the C-Chain VM plugin, so it cannot be a
+third validator until a Go host exists to run it.
+
+Two things have to land before three implementations can co-finalise a block:
+one committee format both hosts read, and a Go host. Everything else the
+differential needs already agrees.
+
+### On the clean cut
+
+`node`'s reason for existing says `luxfi/node` carries ava-labs lineage. That
+was true of its history and is no longer true of its dependency closure: a
+`go list -deps ./main` over `luxfi/node` returns 1,051 packages and **zero**
+matching ava-labs or avalanche. The lineage claim is about where the code came
+from; the closure is clean today, and the two are different questions worth
+keeping apart when deciding what this repository may import.
+
 ### What the three are, and are not
 
 `luxd-rust` and `luxd-cpp` are full node hosts — they take a committee and
