@@ -466,3 +466,54 @@ verification half is there; what is missing is a frame to carry a certificate
 (the link defines only `kTxMsgType` and `kBlockMsgType`) and a path into the VM
 that accepts a block without voting on it. That is a real addition, not a patch,
 and it is not attempted here.
+
+## What a Rust validator does after it restarts
+
+Three faults sat between a restarted validator and the cluster it could see.
+Two are fixed in `lux-rs/node` (branch `fin/cluster-revive`); the third is
+named here because it is a real addition and guessing at it would be worse
+than saying where it is.
+
+**It refused to sign, and stopped.** The signing journal is durable on
+purpose: it is written before the key is used, so a node that comes back
+cannot contradict the run before it. That guard is right. What was wrong is
+what followed it — `certify` turned the refusal into a returned error, so the
+node rebuilt at that height, was refused for the same reason, and never moved.
+One line in a file retired a validator, and the log filled with `already
+signed at this height` while the height stayed at 0. Now the refusal means
+what it should: this node does not vote *here*. It re-sends the statement it
+stands by — the journal was already handing it back for exactly that, and it
+was being dropped — and then stays silent and keeps collecting, because a
+certificate is checked by a rule that does not ask whether the checker voted.
+Quorum is three of four, so the others certify without it and it accepts their
+block. `anchor` already relied on that; the equivocation case now does too.
+
+**The mesh only ever formed at boot.** `connect` is the opening rendezvous and
+it returns; nothing accepted an inbound link afterwards. A validator that
+restarted dialed into a backlog no one was reading — `peers 0 of 3` while the
+three peers it could see carried on, each still holding a socket that had
+already died. It is worth seeing how that reads from outside: the node serves
+RPC the whole time. Up, and not in the cluster. Now the rendezvous runs once a
+round for as long as the node runs, under the same rule about who dials, so a
+pair still ends with one link. A whole mesh pays nothing, because every peer
+is already held and no dial is attempted.
+
+**It still cannot catch up, and that one is not fixed.** The journal outlives
+the chain: votes are on disk, the C-chain is not — `Evm::new(genesis)` builds
+the world in memory. So a restarted node is at height 0 holding a journal that
+names heights 1 to N, and the loop only handles blocks that arrive at the
+current height. Rejoined and caught up are different things, and the log says
+which one this is:
+
+    peers         3 of 3
+    following a peer's block: the chain refused the block: no state for the parent
+
+repeating while the cluster moves on without it. Closing it means either
+keeping the chain across a restart or fetching the history from a peer, and
+both are additions. Note the two fixes above are still what makes that work
+reachable: a node cannot rejoin on a certificate that arrives over a link it
+does not have.
+
+A caution that outlives all three. Every one of these looked healthy from
+outside — the RPC answers `eth_chainId` and `eth_blockNumber` from a chain
+that has decided nothing. Ask twice, a minute apart, and compare.
