@@ -1,0 +1,31 @@
+{
+  "_comment": "Max memory profile for production/high-performance. Target: ~512MB per node",
+  "_targets": {
+    "memory_per_node": "512MB"
+  },
+
+  "db-cache-size": 67108864,
+  "db-memtable-size": 67108864,
+  "state-cache-size": 268435456,
+  "block-cache-size": 134217728,
+
+  "network-peer-read-buffer-size": 16384,
+  "network-peer-write-buffer-size": 16384,
+
+  "throttler-inbound-at-large-alloc-size": 16777216,
+  "throttler-inbound-validator-alloc-size": 16777216,
+  "throttler-inbound-node-max-at-large-bytes": 8388608,
+  "throttler-inbound-bandwidth-max-burst-size": 8388608,
+
+  "throttler-outbound-at-large-alloc-size": 16777216,
+  "throttler-outbound-validator-alloc-size": 16777216,
+  "throttler-outbound-node-max-at-large-bytes": 8388608,
+
+  "consensus-app-concurrency": 4,
+
+  "log-level": "info",
+  "log-rotater-max-size": 100,
+  "log-rotater-max-files": 10,
+
+  "fd-limit": 65536
+}
