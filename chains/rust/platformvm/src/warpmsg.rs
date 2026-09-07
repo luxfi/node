@@ -18,65 +18,20 @@
 use crate::ids::{hash256, Id, NodeId, ShortId, PRIMARY_NETWORK_ID, SHORT_ID_LEN};
 use crate::signer::PUBLIC_KEY_LEN;
 use crate::txs::PChainOwner;
-use crate::zap;
+use crate::warp_zap as w;
+use lux_zap::zap;
 
 // ── the envelope (Go: warp/payload)
 
 const KIND_HASH: u8 = 0;
 const KIND_ADDRESSED_CALL: u8 = 1;
 
-const OFF_PKIND: usize = 0;
-const HASH_OFF_HASH: usize = 1;
-const HASH_SIZE: usize = 33;
-const AC_OFF_SOURCE: usize = 1;
-const AC_OFF_PAYLOAD: usize = 9;
-const AC_SIZE: usize = 17;
-
-// ── the messages (Go: warp/message)
-
+// The offsets are in `chains/schema/warp.zap`, and `warp_zap` is what came
+// out of it. What is left here is which byte names which struct.
 const KIND_CONVERSION: u8 = 0;
 const KIND_REGISTER: u8 = 1;
 const KIND_REGISTRATION: u8 = 2;
 const KIND_WEIGHT: u8 = 3;
-
-const OFF_MKIND: usize = 0;
-
-const RV_OFF_CHAIN_ID: usize = 1;
-const RV_OFF_BLS_KEY: usize = 33;
-const RV_OFF_EXPIRY: usize = 81;
-const RV_OFF_WEIGHT: usize = 89;
-const RV_OFF_NODE_ID: usize = 97;
-const RV_OFF_REM_THRESHOLD: usize = 105;
-const RV_OFF_REM_ADDRS: usize = 109;
-const RV_OFF_DIS_THRESHOLD: usize = 117;
-const RV_OFF_DIS_ADDRS: usize = 121;
-const RV_SIZE: usize = 129;
-const ADDR_STRIDE: usize = SHORT_ID_LEN;
-
-const CONV_OFF_ID: usize = 1;
-const CONV_SIZE: usize = 33;
-const REG_OFF_VALIDATION_ID: usize = 1;
-const REG_OFF_REGISTERED: usize = 33;
-const REG_SIZE: usize = 34;
-const VW_OFF_VALIDATION_ID: usize = 1;
-const VW_OFF_NONCE: usize = 33;
-const VW_OFF_WEIGHT: usize = 41;
-const VW_SIZE: usize = 49;
-
-// The conversion preimage: no kind byte, because it is never dispatched — it is
-// only ever hashed.
-const CD_OFF_CHAIN_ID: usize = 0;
-const CD_OFF_MANAGER_ID: usize = 32;
-const CD_OFF_MANAGER_ADDR: usize = 64;
-const CD_OFF_VALIDATORS: usize = 72;
-const CD_OFF_NODE_ID_POOL: usize = 80;
-const CD_SIZE: usize = 88;
-
-const CV_NODE_ID_START: usize = 0;
-const CV_NODE_ID_LEN: usize = 4;
-const CV_BLS_KEY: usize = 8;
-const CV_WEIGHT: usize = 56;
-const CV_STRIDE: usize = 64;
 
 /// Why a payload is not one.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -118,14 +73,12 @@ pub struct Hash {
 
 impl Hash {
     pub fn build(hash: Id) -> Hash {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + HASH_SIZE);
-        let ob = b.start_object(HASH_SIZE);
-        b.set_u8(&ob, OFF_PKIND, KIND_HASH);
-        b.set_bytes_fixed(&ob, HASH_OFF_HASH, &hash);
-        b.finish_as_root(&ob);
         Hash {
             hash,
-            bytes: b.finish(),
+            bytes: w::new_hash(&w::HashInput {
+                kind: KIND_HASH,
+                hash: &hash,
+            }),
         }
     }
 }
@@ -142,18 +95,14 @@ pub struct Call {
 
 impl Call {
     pub fn build(source_address: &[u8], payload: &[u8]) -> Call {
-        let mut b = zap::Builder::new(
-            zap::HEADER_SIZE + AC_SIZE + source_address.len() + payload.len() + 64,
-        );
-        let ob = b.start_object(AC_SIZE);
-        b.set_u8(&ob, OFF_PKIND, KIND_ADDRESSED_CALL);
-        b.set_bytes(&ob, AC_OFF_SOURCE, source_address);
-        b.set_bytes(&ob, AC_OFF_PAYLOAD, payload);
-        b.finish_as_root(&ob);
         Call {
             source_address: source_address.to_vec(),
             payload: payload.to_vec(),
-            bytes: b.finish(),
+            bytes: w::new_addressed_call(&w::AddressedCallInput {
+                kind: KIND_ADDRESSED_CALL,
+                source: source_address,
+                payload,
+            }),
         }
     }
 }
@@ -169,16 +118,19 @@ pub fn parse_envelope(raw: &[u8]) -> Result<Envelope, Error> {
     let msg = zap::Message::parse(raw)
         .map_err(|_| Error::Malformed("the envelope is not a zap message"))?;
     let root = msg.root();
-    match root.u8(OFF_PKIND) {
+    match root.u8(w::HASH_KIND) {
         KIND_HASH => Ok(Envelope::Hash(Hash {
-            hash: root.id(HASH_OFF_HASH),
+            hash: *w::Hash::new(root).hash(),
             bytes: raw.to_vec(),
         })),
-        KIND_ADDRESSED_CALL => Ok(Envelope::Call(Call {
-            source_address: root.bytes(AC_OFF_SOURCE).to_vec(),
-            payload: root.bytes(AC_OFF_PAYLOAD).to_vec(),
-            bytes: raw.to_vec(),
-        })),
+        KIND_ADDRESSED_CALL => {
+            let v = w::AddressedCall::new(root);
+            Ok(Envelope::Call(Call {
+                source_address: v.source().to_vec(),
+                payload: v.payload().to_vec(),
+                bytes: raw.to_vec(),
+            }))
+        }
         other => Err(Error::UnknownKind(other)),
     }
 }
@@ -209,23 +161,18 @@ impl Register {
         disable_owner: &PChainOwner,
         weight: u64,
     ) -> Register {
-        let addrs = remaining_balance_owner.addresses.len() + disable_owner.addresses.len();
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + RV_SIZE + addrs * ADDR_STRIDE + 64);
-        let (rem_off, rem_count) = write_addrs(&mut b, &remaining_balance_owner.addresses);
-        let (dis_off, dis_count) = write_addrs(&mut b, &disable_owner.addresses);
-        let ob = b.start_object(RV_SIZE);
-        b.set_u8(&ob, OFF_MKIND, KIND_REGISTER);
-        b.set_bytes_fixed(&ob, RV_OFF_CHAIN_ID, &chain_id);
-        b.set_bytes_fixed(&ob, RV_OFF_BLS_KEY, key);
-        b.set_u64(&ob, RV_OFF_EXPIRY, expiry);
-        b.set_u64(&ob, RV_OFF_WEIGHT, weight);
-        b.set_bytes(&ob, RV_OFF_NODE_ID, node_id.as_bytes());
-        b.set_u32(&ob, RV_OFF_REM_THRESHOLD, remaining_balance_owner.threshold);
-        b.set_list(&ob, RV_OFF_REM_ADDRS, rem_off, rem_count);
-        b.set_u32(&ob, RV_OFF_DIS_THRESHOLD, disable_owner.threshold);
-        b.set_list(&ob, RV_OFF_DIS_ADDRS, dis_off, dis_count);
-        b.finish_as_root(&ob);
-
+        let bytes = w::new_register_validator(&w::RegisterValidatorInput {
+            kind: KIND_REGISTER,
+            chain: &chain_id,
+            bls_key: key,
+            expiry,
+            weight,
+            node_id: node_id.as_bytes(),
+            remove_threshold: remaining_balance_owner.threshold,
+            remove_addrs: &flat(&remaining_balance_owner.addresses),
+            disable_threshold: disable_owner.threshold,
+            disable_addrs: &flat(&disable_owner.addresses),
+        });
         Register {
             chain_id,
             node_id: node_id.as_bytes().to_vec(),
@@ -234,7 +181,7 @@ impl Register {
             remaining_balance_owner: remaining_balance_owner.clone(),
             disable_owner: disable_owner.clone(),
             weight,
-            bytes: b.finish(),
+            bytes,
         }
     }
 
@@ -278,16 +225,14 @@ pub struct Registration {
 
 impl Registration {
     pub fn build(validation_id: Id, registered: bool) -> Registration {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + REG_SIZE);
-        let ob = b.start_object(REG_SIZE);
-        b.set_u8(&ob, OFF_MKIND, KIND_REGISTRATION);
-        b.set_bytes_fixed(&ob, REG_OFF_VALIDATION_ID, &validation_id);
-        b.set_u8(&ob, REG_OFF_REGISTERED, u8::from(registered));
-        b.finish_as_root(&ob);
         Registration {
             validation_id,
             registered,
-            bytes: b.finish(),
+            bytes: w::new_registration(&w::RegistrationInput {
+                kind: KIND_REGISTRATION,
+                validation_id: &validation_id,
+                registered: u8::from(registered),
+            }),
         }
     }
 }
@@ -304,18 +249,16 @@ pub struct Weight {
 
 impl Weight {
     pub fn build(validation_id: Id, nonce: u64, weight: u64) -> Weight {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + VW_SIZE);
-        let ob = b.start_object(VW_SIZE);
-        b.set_u8(&ob, OFF_MKIND, KIND_WEIGHT);
-        b.set_bytes_fixed(&ob, VW_OFF_VALIDATION_ID, &validation_id);
-        b.set_u64(&ob, VW_OFF_NONCE, nonce);
-        b.set_u64(&ob, VW_OFF_WEIGHT, weight);
-        b.finish_as_root(&ob);
         Weight {
             validation_id,
             nonce,
             weight,
-            bytes: b.finish(),
+            bytes: w::new_validator_weight(&w::ValidatorWeightInput {
+                kind: KIND_WEIGHT,
+                validation_id: &validation_id,
+                nonce,
+                weight,
+            }),
         }
     }
 }
@@ -331,14 +274,12 @@ pub struct Conversion {
 
 impl Conversion {
     pub fn build(id: Id) -> Conversion {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + CONV_SIZE);
-        let ob = b.start_object(CONV_SIZE);
-        b.set_u8(&ob, OFF_MKIND, KIND_CONVERSION);
-        b.set_bytes_fixed(&ob, CONV_OFF_ID, &id);
-        b.finish_as_root(&ob);
         Conversion {
             id,
-            bytes: b.finish(),
+            bytes: w::new_conversion(&w::ConversionInput {
+                kind: KIND_CONVERSION,
+                id: &id,
+            }),
         }
     }
 }
@@ -356,41 +297,41 @@ pub fn parse_message(raw: &[u8]) -> Result<Message, Error> {
     let msg =
         zap::Message::parse(raw).map_err(|_| Error::Malformed("the message is not a zap message"))?;
     let root = msg.root();
-    match root.u8(OFF_MKIND) {
+    match root.u8(w::CONVERSION_KIND) {
         KIND_CONVERSION => Ok(Message::Conversion(Conversion {
-            id: root.id(CONV_OFF_ID),
+            id: *w::Conversion::new(root).id(),
             bytes: raw.to_vec(),
         })),
         KIND_REGISTER => {
-            let mut bls_public_key = [0u8; PUBLIC_KEY_LEN];
-            let key = root.bytes_fixed(RV_OFF_BLS_KEY, PUBLIC_KEY_LEN);
-            bls_public_key[..key.len()].copy_from_slice(key);
+            let v = w::RegisterValidator::new(root);
             Ok(Message::Register(Register {
-                chain_id: root.id(RV_OFF_CHAIN_ID),
-                node_id: root.bytes(RV_OFF_NODE_ID).to_vec(),
-                bls_public_key,
-                expiry: root.u64(RV_OFF_EXPIRY),
-                weight: root.u64(RV_OFF_WEIGHT),
-                remaining_balance_owner: read_owner(
-                    &root,
-                    RV_OFF_REM_THRESHOLD,
-                    RV_OFF_REM_ADDRS,
-                ),
-                disable_owner: read_owner(&root, RV_OFF_DIS_THRESHOLD, RV_OFF_DIS_ADDRS),
+                chain_id: *v.chain(),
+                node_id: v.node_id().to_vec(),
+                bls_public_key: *v.bls_key(),
+                expiry: v.expiry(),
+                weight: v.weight(),
+                remaining_balance_owner: owner(v.remove_threshold(), v.remove_addrs()),
+                disable_owner: owner(v.disable_threshold(), v.disable_addrs()),
                 bytes: raw.to_vec(),
             }))
         }
-        KIND_REGISTRATION => Ok(Message::Registration(Registration {
-            validation_id: root.id(REG_OFF_VALIDATION_ID),
-            registered: root.bool(REG_OFF_REGISTERED),
-            bytes: raw.to_vec(),
-        })),
-        KIND_WEIGHT => Ok(Message::Weight(Weight {
-            validation_id: root.id(VW_OFF_VALIDATION_ID),
-            nonce: root.u64(VW_OFF_NONCE),
-            weight: root.u64(VW_OFF_WEIGHT),
-            bytes: raw.to_vec(),
-        })),
+        KIND_REGISTRATION => {
+            let v = w::Registration::new(root);
+            Ok(Message::Registration(Registration {
+                validation_id: *v.validation_id(),
+                registered: v.registered() != 0,
+                bytes: raw.to_vec(),
+            }))
+        }
+        KIND_WEIGHT => {
+            let v = w::ValidatorWeight::new(root);
+            Ok(Message::Weight(Weight {
+                validation_id: *v.validation_id(),
+                nonce: v.nonce(),
+                weight: v.weight(),
+                bytes: raw.to_vec(),
+            }))
+        }
         other => Err(Error::UnknownKind(other)),
     }
 }
@@ -417,41 +358,24 @@ impl ConversionData {
     /// The one canonical encoding, which is also the preimage of the id — so
     /// the id and the bytes can never diverge.
     pub fn encode(&self) -> Vec<u8> {
-        let mut b = zap::Builder::new(
-            zap::HEADER_SIZE
-                + CD_SIZE
-                + self.validators.len() * CV_STRIDE
-                + self.manager_address.len()
-                + 256,
-        );
-
         let mut node_id_pool: Vec<u8> = Vec::new();
-        let (vdr_off, vdr_count) = if self.validators.is_empty() {
-            (0, 0)
-        } else {
-            let mut lb = b.start_list();
-            for v in &self.validators {
-                let mut e = [0u8; CV_STRIDE];
-                e[CV_NODE_ID_START..CV_NODE_ID_START + 4]
-                    .copy_from_slice(&(node_id_pool.len() as u32).to_le_bytes());
-                e[CV_NODE_ID_LEN..CV_NODE_ID_LEN + 4]
-                    .copy_from_slice(&(v.node_id.len() as u32).to_le_bytes());
-                node_id_pool.extend_from_slice(&v.node_id);
-                e[CV_BLS_KEY..CV_BLS_KEY + PUBLIC_KEY_LEN].copy_from_slice(&v.bls_public_key);
-                e[CV_WEIGHT..CV_WEIGHT + 8].copy_from_slice(&v.weight.to_le_bytes());
-                b.list_bytes(&mut lb, &e);
-            }
-            (lb.offset(), self.validators.len())
-        };
-
-        let ob = b.start_object(CD_SIZE);
-        b.set_bytes_fixed(&ob, CD_OFF_CHAIN_ID, &self.chain_id);
-        b.set_bytes_fixed(&ob, CD_OFF_MANAGER_ID, &self.manager_chain_id);
-        b.set_bytes(&ob, CD_OFF_MANAGER_ADDR, &self.manager_address);
-        b.set_list(&ob, CD_OFF_VALIDATORS, vdr_off, vdr_count);
-        b.set_bytes(&ob, CD_OFF_NODE_ID_POOL, &node_id_pool);
-        b.finish_as_root(&ob);
-        b.finish()
+        let mut validators = Vec::with_capacity(self.validators.len());
+        for v in &self.validators {
+            validators.push(w::pack_conversion_validator(&w::ConversionValidatorInput {
+                node_id_start: node_id_pool.len() as u32,
+                node_id_len: v.node_id.len() as u32,
+                bls_key: &v.bls_public_key,
+                weight: v.weight,
+            }));
+            node_id_pool.extend_from_slice(&v.node_id);
+        }
+        w::new_conversion_data(&w::ConversionDataInput {
+            chain: &self.chain_id,
+            manager_id: &self.manager_chain_id,
+            manager_adr: &self.manager_address,
+            validators: &validators.iter().map(|e| &e[..]).collect::<Vec<_>>(),
+            node_id_pool: &node_id_pool,
+        })
     }
 
     /// The id every later message about this L1 refers to.
@@ -460,30 +384,23 @@ impl ConversionData {
     }
 }
 
-fn write_addrs(b: &mut zap::Builder, addrs: &[ShortId]) -> (usize, usize) {
-    if addrs.is_empty() {
-        return (0, 0);
-    }
-    let mut lb = b.start_list();
-    for a in addrs {
-        b.list_bytes(&mut lb, a.as_bytes());
-    }
-    // `list_bytes` counts bytes, so the element count is the caller's to give.
-    (lb.offset(), addrs.len())
+/// Addresses as the flat elements a list of them is made of.
+fn flat(addrs: &[ShortId]) -> Vec<[u8; SHORT_ID_LEN]> {
+    addrs.iter().map(|a| a.0).collect()
 }
 
-fn read_owner(root: &zap::Object<'_>, threshold_off: usize, addrs_off: usize) -> PChainOwner {
-    let list = root.list(addrs_off, ADDR_STRIDE);
-    let mut addresses = Vec::with_capacity(list.len());
-    for i in 0..list.len() {
-        let mut a = [0u8; SHORT_ID_LEN];
-        let raw = list.object(i, ADDR_STRIDE).bytes_fixed(0, ADDR_STRIDE);
-        a[..raw.len()].copy_from_slice(raw);
-        addresses.push(ShortId(a));
-    }
+/// An owner group, out of the threshold and the address run beside it.
+fn owner(threshold: u32, list: zap::List<'_>) -> PChainOwner {
     PChainOwner {
-        threshold: root.u32(threshold_off),
-        addresses,
+        threshold,
+        addresses: (0..list.len())
+            .map(|i| {
+                let mut a = [0u8; SHORT_ID_LEN];
+                let raw = list.object(i, SHORT_ID_LEN).bytes_fixed(0, SHORT_ID_LEN);
+                a[..raw.len()].copy_from_slice(raw);
+                ShortId(a)
+            })
+            .collect(),
     }
 }
 
@@ -521,11 +438,14 @@ mod tests {
 
     #[test]
     fn an_envelope_kind_naming_nothing_is_refused() {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + HASH_SIZE);
-        let ob = b.start_object(HASH_SIZE);
-        b.set_u8(&ob, OFF_PKIND, 7);
-        b.finish_as_root(&ob);
-        assert_eq!(parse_envelope(&b.finish()), Err(Error::UnknownKind(7)));
+        // A well-formed envelope of a kind nobody declared: the byte the
+        // dispatch reads is 7 and everything after it is a hash payload's
+        // zeros.
+        let raw = w::new_hash(&w::HashInput {
+            kind: 7,
+            hash: &[0u8; 32],
+        });
+        assert_eq!(parse_envelope(&raw), Err(Error::UnknownKind(7)));
     }
 
     #[test]
@@ -547,11 +467,16 @@ mod tests {
 
     #[test]
     fn a_message_kind_naming_nothing_is_refused() {
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + VW_SIZE);
-        let ob = b.start_object(VW_SIZE);
-        b.set_u8(&ob, OFF_MKIND, 9);
-        b.finish_as_root(&ob);
-        assert_eq!(parse_message(&b.finish()), Err(Error::UnknownKind(9)));
+        // A well-formed message of a kind nobody declared: the byte the
+        // dispatch reads is 9, and every other field is whatever a zero
+        // validator-weight message holds.
+        let raw = w::new_validator_weight(&w::ValidatorWeightInput {
+            kind: 9,
+            validation_id: &[0u8; 32],
+            nonce: 0,
+            weight: 0,
+        });
+        assert_eq!(parse_message(&raw), Err(Error::UnknownKind(9)));
     }
 
     #[test]

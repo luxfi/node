@@ -2,7 +2,7 @@
 // Copyright (C) 2019-2026, Lux Industries Inc. All rights reserved.
 
 //! Struct-is-wire for the F-Chain: no hand-rolled big-endian, no cursor codec.
-//! A transaction and a block each own their encoding over [`crate::zap`]
+//! A transaction and a block each own their encoding over [`crate::fchain_zap`]
 //! objects at FIXED field offsets, and the on-wire format is exactly those
 //! offsets.
 //!
@@ -39,47 +39,12 @@
 use crate::error::{Code, Error, Result};
 use crate::id::Id;
 use crate::tx::{Transaction, TX_DOMAIN};
-use crate::zap;
+use crate::fchain_zap as w;
+use lux_zap::zap;
 
-// ---- the transaction's content object ----
-//
-//  Type     u8    @ 0
-//  Payer    20B   @ 1
-//  Subject  32B   @ 21
-//  GasLimit u64   @ 53
-//  Nonce    u64   @ 61
-//  Scheme   bytes @ 69
-//  Payload  bytes @ 77
-const TX_TYPE: usize = 0;
-const TX_PAYER: usize = 1;
-const TX_SUBJECT: usize = 21;
-const TX_GAS: usize = 53;
-const TX_NONCE: usize = 61;
-const TX_SCHEME: usize = 69;
-const TX_PAYLOAD: usize = 77;
-const TX_SIZE: usize = 85;
-
-// ---- the appended auth object ----
-//
-//  Auth bytes @ 0
-//  Sig  bytes @ 8
-const SG_AUTH: usize = 0;
-const SG_SIG: usize = 8;
-const SG_SIZE: usize = 16;
-
-// ---- the block ----
-//
-//  ParentID  32B   @ 0
-//  Height    u64   @ 32
-//  Timestamp i64   @ 40   Unix seconds — F's block-time resolution
-//  TxLens    list  @ 48   one u32 per transaction wire length
-//  TxBlob    bytes @ 56   the concatenated transaction objects
-const BLK_PARENT: usize = 0;
-const BLK_HEIGHT: usize = 32;
-const BLK_TIME: usize = 40;
-const BLK_TX_LENS: usize = 48;
-const BLK_TX_BLOB: usize = 56;
-const BLK_SIZE: usize = 64;
+// The offsets were here. They are in `chains/schema/fchain.zap` now, one
+// table for three languages, and `fchain_zap` — the module `zapgen` writes out
+// of it — is what this file reads and writes through.
 
 /// What a block may occupy on the wire.
 ///
@@ -108,17 +73,15 @@ pub const TX_ENTRY: usize = 8;
 /// The deterministic encoding of the transaction's semantic fields — including
 /// payer and subject, excluding auth and signature.
 pub fn content(tx: &Transaction) -> Vec<u8> {
-    let mut b = zap::Builder::new(zap::HEADER_SIZE + TX_SIZE + tx.scheme.len() + tx.payload.len() + 64);
-    let o = b.start_object(TX_SIZE);
-    o.set_u8(&mut b, TX_TYPE, tx.tx_type);
-    o.set_bytes_fixed(&mut b, TX_PAYER, &tx.payer);
-    o.set_bytes_fixed(&mut b, TX_SUBJECT, &tx.subject);
-    o.set_u64(&mut b, TX_GAS, tx.gas_limit);
-    o.set_u64(&mut b, TX_NONCE, tx.nonce);
-    o.set_bytes(&mut b, TX_SCHEME, &tx.scheme);
-    o.set_bytes(&mut b, TX_PAYLOAD, &tx.payload);
-    let root = o.offset();
-    b.finish(root)
+    w::new_tx(&w::TxInput {
+        r#type: tx.tx_type,
+        payer: &tx.payer,
+        subject: &tx.subject,
+        gas: tx.gas_limit,
+        nonce: tx.nonce,
+        scheme: &tx.scheme,
+        payload: &tx.payload,
+    })
 }
 
 /// The preimage the payer signs: the content, bound to the chain it is for.
@@ -134,13 +97,10 @@ pub fn signing_bytes(tx: &Transaction, chain: &Id) -> Vec<u8> {
 /// The full wire encoding: the content object, then the auth object.
 pub fn bytes(tx: &Transaction) -> Vec<u8> {
     let mut out = content(tx);
-
-    let mut b = zap::Builder::new(zap::HEADER_SIZE + SG_SIZE + tx.auth.len() + tx.sig.len() + 32);
-    let o = b.start_object(SG_SIZE);
-    o.set_bytes(&mut b, SG_AUTH, &tx.auth);
-    o.set_bytes(&mut b, SG_SIG, &tx.sig);
-    let root = o.offset();
-    out.extend_from_slice(&b.finish(root));
+    out.extend_from_slice(&w::new_auth(&w::AuthInput {
+        auth: &tx.auth,
+        signature: &tx.sig,
+    }));
     out
 }
 
@@ -148,27 +108,23 @@ pub fn bytes(tx: &Transaction) -> Vec<u8> {
 /// object, then the canonical check.
 pub fn parse_transaction(data: &[u8]) -> Result<Transaction> {
     let n = split(data)?;
-    let content_msg = zap::parse(&data[..n])?;
-    let auth_msg = zap::parse(&data[n..])?;
+    let c = w::Tx::wrap(&data[..n])?;
+    let auth_msg = zap::Message::parse(&data[n..])?;
     if n + auth_msg.size() != data.len() {
         return Err(Error::detail(Code::InvalidPayload, "trailing bytes"));
     }
-
-    let c = content_msg.root();
-    let a = auth_msg.root();
-    let mut tx = Transaction {
-        tx_type: c.u8(TX_TYPE),
-        scheme: c.bytes(TX_SCHEME).to_vec(),
-        payer: [0u8; 20],
-        subject: [0u8; 32],
-        gas_limit: c.u64(TX_GAS),
-        nonce: c.u64(TX_NONCE),
-        payload: c.bytes(TX_PAYLOAD).to_vec(),
-        auth: a.bytes(SG_AUTH).to_vec(),
-        sig: a.bytes(SG_SIG).to_vec(),
+    let a = w::Auth::new(auth_msg.root());
+    let tx = Transaction {
+        tx_type: c.r#type(),
+        scheme: c.scheme().to_vec(),
+        payer: *c.payer(),
+        subject: *c.subject(),
+        gas_limit: c.gas(),
+        nonce: c.nonce(),
+        payload: c.payload().to_vec(),
+        auth: a.auth().to_vec(),
+        sig: a.signature().to_vec(),
     };
-    tx.payer.copy_from_slice(&pad::<20>(c.bytes_fixed(TX_PAYER, 20)));
-    tx.subject.copy_from_slice(&pad::<32>(c.bytes_fixed(TX_SUBJECT, 32)));
 
     // Canonical wire, and it is what the id is bound to. Anything that is not
     // already the form these fields re-serialize to is refused, so exactly one
@@ -200,25 +156,17 @@ pub fn block_bytes(parent: &Id, height: u64, timestamp: i64, txs: &[Transaction]
         blob.extend_from_slice(&b);
     }
 
-    let mut b = zap::Builder::new(
-        zap::HEADER_SIZE + BLK_SIZE + blob.len() + 4 * lens.len() + 128,
-    );
     // The length list is written BEFORE the object that points at it, which is
-    // what makes that pointer backwards and the encoding deterministic.
-    let mut list = b.start_list();
-    for l in &lens {
-        list.add_u32(&mut b, *l);
-    }
-    let (list_off, list_len) = list.finish();
-
-    let o = b.start_object(BLK_SIZE);
-    o.set_bytes_fixed(&mut b, BLK_PARENT, parent);
-    o.set_u64(&mut b, BLK_HEIGHT, height);
-    o.set_i64(&mut b, BLK_TIME, timestamp);
-    o.set_list(&mut b, BLK_TX_LENS, list_off, list_len);
-    o.set_bytes(&mut b, BLK_TX_BLOB, &blob);
-    let root = o.offset();
-    b.finish(root)
+    // what makes that pointer backwards and the encoding deterministic. The
+    // emitted builder writes what a field points at first, in field order, so
+    // that ordering is the schema's now and not this function's.
+    w::new_block(&w::BlockInput {
+        parent,
+        height,
+        time: timestamp,
+        tx_lens: &lens,
+        tx_blob: &blob,
+    })
 }
 
 /// Decode a block. Bounded at the first byte, then canonical like a
@@ -230,23 +178,23 @@ pub fn parse_block(data: &[u8]) -> Result<BlockFields> {
             format!("block is {} bytes, over {}", data.len(), MAX_BLOCK_SIZE),
         ));
     }
-    let msg = zap::parse(data)?;
+    let msg = zap::Message::parse(data)?;
     if msg.size() != data.len() {
         return Err(Error::detail(Code::InvalidPayload, "block trailing bytes"));
     }
-    let o = msg.root();
-    let parent: Id = pad::<32>(o.bytes_fixed(BLK_PARENT, 32));
-    let height = o.u64(BLK_HEIGHT);
-    let timestamp = o.i64(BLK_TIME);
+    let v = w::Block::new(msg.root());
+    let parent: Id = *v.parent();
+    let height = v.height();
+    let timestamp = v.time();
 
-    let lens = o.list(BLK_TX_LENS, 4);
+    let lens = v.tx_lens();
     if lens.len() > MAX_BLOCK_TXS {
         return Err(Error::detail(
             Code::InvalidPayload,
             format!("block declares {} transactions, over {}", lens.len(), MAX_BLOCK_TXS),
         ));
     }
-    let blob = o.bytes(BLK_TX_BLOB);
+    let blob = v.tx_blob();
     let mut transactions = Vec::with_capacity(lens.len());
     let mut at = 0usize;
     for i in 0..lens.len() {
@@ -280,17 +228,9 @@ fn split(b: &[u8]) -> Result<usize> {
     if b.len() < zap::HEADER_SIZE {
         return Err(Error::detail(Code::InvalidPayload, "short buffer"));
     }
-    zap::message_len(b).ok_or_else(|| Error::detail(Code::InvalidPayload, "bad zap length"))
-}
-
-/// A fixed-width field read back from a buffer that may be short. zap answers
-/// an empty slice for a span it cannot cover, and the zero value is what an
-/// absent inline field means.
-fn pad<const N: usize>(b: &[u8]) -> [u8; N] {
-    let mut out = [0u8; N];
-    let n = b.len().min(N);
-    out[..n].copy_from_slice(&b[..n]);
-    out
+    zap::Message::parse(b)
+        .map(|m| m.size())
+        .map_err(|_| Error::detail(Code::InvalidPayload, "bad zap length"))
 }
 
 #[cfg(test)]
@@ -327,7 +267,7 @@ mod tests {
         assert_eq!(&w[..c.len()], &c[..]);
         assert_eq!(split(&w).unwrap(), c.len());
         // The whole encoding is exactly the two messages.
-        let auth = zap::parse(&w[c.len()..]).unwrap();
+        let auth = zap::Message::parse(&w[c.len()..]).unwrap();
         assert_eq!(c.len() + auth.size(), w.len());
     }
 
@@ -407,7 +347,7 @@ mod tests {
         let w = bytes(&t);
         assert_eq!(parse_transaction(&w).expect("parses"), t);
         // The auth object is a bare header plus its fixed section.
-        assert_eq!(w.len(), content(&t).len() + zap::HEADER_SIZE + SG_SIZE);
+        assert_eq!(w.len(), content(&t).len() + zap::HEADER_SIZE + w::AUTH_SIZE);
     }
 
     #[test]
@@ -439,7 +379,7 @@ mod tests {
 
     #[test]
     fn an_empty_block_is_the_header_the_object_and_a_null_list() {
-        assert_eq!(empty_block_size(), zap::HEADER_SIZE + BLK_SIZE);
+        assert_eq!(empty_block_size(), zap::HEADER_SIZE + w::BLOCK_SIZE);
         let w = block_bytes(&[0u8; 32], 0, 0, &[]);
         let b = parse_block(&w).expect("parses");
         assert!(b.transactions.is_empty());
@@ -455,12 +395,12 @@ mod tests {
         // Grow the blob in place: append to the buffer and widen the declared
         // sizes so the reader accepts the span.
         let blob_len_at = {
-            let msg = zap::parse(&w).unwrap();
+            let msg = zap::Message::parse(&w).unwrap();
             let root = msg.root();
             let _ = root;
             // The blob's (offset, length) pair sits at the root's field 56.
             let root_off = u32::from_le_bytes(w[8..12].try_into().unwrap()) as usize;
-            root_off + BLK_TX_BLOB + 4
+            root_off + w::BLOCK_TX_BLOB + 4
         };
         let old = u32::from_le_bytes(w[blob_len_at..blob_len_at + 4].try_into().unwrap());
         w.extend_from_slice(&extra);
