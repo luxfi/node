@@ -24,7 +24,7 @@ namespace {
 
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 NodeId node_of(std::uint8_t b) {
@@ -93,8 +93,8 @@ ex::Backend backend() {
 OutputOwners mine() { return OutputOwners{0, 1, {key().address()}}; }
 
 // A funded state: one big UTXO owned by the test key, and a supply to mint from.
-state::MemState funded(std::uint64_t amount) {
-    state::MemState s;
+state::State funded(std::uint64_t amount) {
+    state::State s;
     s.set_timestamp(kChainTime);
     s.set_current_supply(kPrimaryNetworkId, kSupply);
     UTXO u;
@@ -424,7 +424,7 @@ TEST(APermissionlessValidatorCannotBeRemoved) {
 
 // Go: executor.VerifyNewChainTime — three refusals and an acceptance.
 TEST(VerifyNewChainTime) {
-    state::MemState s;
+    state::State s;
     s.set_timestamp(kChainTime);
 
     // Backwards.
@@ -453,7 +453,7 @@ TEST(VerifyNewChainTime) {
 // permissionless one does NOT — it leaves by the transaction that pays it, and
 // dropping it here would take its stake without paying for it.
 TEST(AdvanceTimeRemovesOnlyPermissionedValidators) {
-    state::MemState s;
+    state::State s;
     s.set_timestamp(kChainTime);
     s.set_current_supply(kPrimaryNetworkId, kSupply);
     const auto b = backend();
@@ -489,7 +489,7 @@ TEST(AdvanceTimeRemovesOnlyPermissionedValidators) {
 // A pending staker whose start time has arrived moves into the current set, and
 // its reward is fixed at that moment.
 TEST(AdvanceTimePromotesPendingStakers) {
-    state::MemState s;
+    state::State s;
     s.set_timestamp(kChainTime);
     s.set_current_supply(kPrimaryNetworkId, kSupply);
     const auto b = backend();

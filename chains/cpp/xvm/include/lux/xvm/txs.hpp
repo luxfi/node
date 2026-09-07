@@ -85,7 +85,7 @@ struct UTXOID {
 
     // input_id is the unique id of the UTXO being spent: sha256 of the output
     // index as a big-endian prefix over the tx id.
-    Id input_id() const { return id_prefix(tx_id, std::uint64_t(output_index)); }
+    Id input_id() const { return prefix_id(tx_id, std::uint64_t(output_index)); }
     int compare(const UTXOID& other) const;
     bool operator==(const UTXOID& o) const {
         return tx_id == o.tx_id && output_index == o.output_index;
@@ -312,5 +312,12 @@ struct Tx {
 // on its own envelope discriminator. TxID = sha256(signed bytes).
 Result<std::shared_ptr<Tx>> parse(ByteView signed_bytes);
 Result<std::shared_ptr<UnsignedTx>> parse_unsigned(ByteView unsigned_bytes);
+
+// The three questions the node's pool asks about a transaction, and all it may
+// ask. They are declared beside the transaction rather than beside the pool
+// because the pool must not know what an X-Chain transaction is.
+inline Id pool_id(const std::shared_ptr<Tx>& tx) { return tx->id(); }
+inline std::size_t pool_size(const std::shared_ptr<Tx>& tx) { return tx->size(); }
+inline std::set<Id> pool_inputs(const std::shared_ptr<Tx>& tx) { return tx->input_ids(); }
 
 }  // namespace lux::xvm::txs

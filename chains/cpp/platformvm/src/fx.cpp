@@ -23,15 +23,15 @@ constexpr std::size_t kSigLen = 65;
 }  // namespace
 
 ShortId address_of_compressed_key(std::span<const std::uint8_t> compressed) {
-    const Hash256 h = sha256(compressed);
+    const Id h = sha256(compressed);
     std::byte out[cevm::crypto::RIPEMD160_HASH_SIZE];
     cevm::crypto::ripemd160(out, reinterpret_cast<const std::byte*>(h.data()), h.size());
     ShortId addr{};
-    std::memcpy(addr.b.data(), out, kShortIdLen);
+    std::memcpy(addr.data(), out, kShortIdLen);
     return addr;
 }
 
-Result<ShortId> recover_address(const Hash256& hash, std::span<const std::uint8_t> sig65) {
+Result<ShortId> recover_address(const Id& hash, std::span<const std::uint8_t> sig65) {
     if (sig65.size() != kSigLen) return fail(Err::UnrecoverableSignature, "signature is not 65 bytes");
     const std::uint8_t v = sig65[64];
     if (v > 1) return fail(Err::UnrecoverableSignature, "recovery id is not 0 or 1");
@@ -61,15 +61,15 @@ Status Fx::verify_credentials(std::span<const std::uint8_t> tx_bytes,
     // same way and for the same reason.
     if (!bootstrapped_) return ok();
 
-    const Hash256 tx_hash = sha256(tx_bytes);
+    const Id tx_hash = sha256(tx_bytes);
     for (std::size_t i = 0; i < num_sigs; ++i) {
         const std::uint32_t index = sig_indices[i];
         if (index >= owners.addrs.size()) return fail(Err::InputOutputIndexOutOfBounds);
         auto addr = recover_address(tx_hash, {cred.sigs[i].data(), cred.sigs[i].size()});
         if (!addr) return std::unexpected(addr.error());
         if (!(owners.addrs[index] == addr.value()))
-            return fail(Err::WrongSig, "signature is from " + addr.value().hex() + ", not " +
-                                           owners.addrs[index].hex());
+            return fail(Err::WrongSig, "signature is from " + hex(addr.value()) + ", not " +
+                                           hex(owners.addrs[index]));
     }
     return ok();
 }

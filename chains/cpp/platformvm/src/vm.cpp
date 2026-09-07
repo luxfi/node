@@ -22,13 +22,13 @@ namespace {
 lux::node::Id to_node_id(const Id& id) {
     lux::node::Id out{};
     static_assert(std::tuple_size<lux::node::Id>::value == kIdLen, "the node's id is 32 bytes");
-    std::memcpy(out.data(), id.b.data(), kIdLen);
+    std::memcpy(out.data(), id.data(), kIdLen);
     return out;
 }
 
 Id from_node_id(const lux::node::Id& id) {
     Id out{};
-    std::memcpy(out.b.data(), id.data(), kIdLen);
+    std::memcpy(out.data(), id.data(), kIdLen);
     return out;
 }
 
@@ -147,7 +147,7 @@ state::Chain* PlatformVM::state_after(const Id& parent_id) {
 
 Result<std::uint64_t> PlatformVM::height_of(const Id& id) const {
     const auto it = blocks_.find(id);
-    if (it == blocks_.end()) return fail(Err::ParentNotFound, id.hex());
+    if (it == blocks_.end()) return fail(Err::ParentNotFound, hex(id));
     return it->second->height();
 }
 
@@ -181,7 +181,7 @@ Status PlatformVM::verify_block(const block::Block& b, Verified& out) {
 
         case block::Kind::Standard: {
             state::Chain* parent_state = state_after(parent_id);
-            if (parent_state == nullptr) return fail(Err::ParentNotFound, parent_id.hex());
+            if (parent_state == nullptr) return fail(Err::ParentNotFound, hex(parent_id));
             if (auto st = executor::verify_new_chain_time(b.timestamp(), wall_clock_, *parent_state); !st)
                 return st;
 
@@ -224,7 +224,7 @@ Status PlatformVM::verify_block(const block::Block& b, Verified& out) {
 
         case block::Kind::Proposal: {
             state::Chain* parent_state = state_after(parent_id);
-            if (parent_state == nullptr) return fail(Err::ParentNotFound, parent_id.hex());
+            if (parent_state == nullptr) return fail(Err::ParentNotFound, hex(parent_id));
             if (auto st = executor::verify_new_chain_time(b.timestamp(), wall_clock_, *parent_state); !st)
                 return st;
 
@@ -366,7 +366,7 @@ Status PlatformVM::reject_block(const block::Block& b) {
         // rivals this for the same outputs. Remembered, the way every other
         // refusal here is, so whoever submitted it can be told rather than left
         // with silence.
-        if (auto st = mempool_.add(tx); !st) mempool_.mark_dropped(tx.id(), st.error());
+        (void)submit(tx);
     }
 
     return ok();
@@ -494,7 +494,7 @@ std::shared_ptr<lux::node::Block> PlatformVM::build() {
 
     std::vector<txs::Tx> included;
     std::set<Id> inputs;
-    for (const auto& tx : mempool_.peek(mempool_.size())) {
+    for (const auto& tx : mempool::oldest(mempool_, mempool_.size())) {
         bool overlaps = false;
         for (const auto& in : tx.input_ids())
             if (inputs.count(in) != 0) overlaps = true;

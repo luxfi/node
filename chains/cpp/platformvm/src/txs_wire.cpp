@@ -29,7 +29,7 @@ std::vector<ShortId> slice_addrs(const zap::List& pool, std::uint32_t start, std
     std::vector<ShortId> out(count);
     for (std::uint32_t i = 0; i < count; ++i) {
         const auto o = pool.object(static_cast<int>(start + i), kShortIdLen);
-        out[i] = ShortId::from(o.bytes_fixed(0, static_cast<std::int64_t>(kShortIdLen)));
+        out[i] = short_id_from(o.bytes_fixed(0, static_cast<std::int64_t>(kShortIdLen)));
     }
     return out;
 }
@@ -47,7 +47,7 @@ std::vector<std::uint32_t> slice_sigs(const zap::List& pool, std::uint32_t start
 std::vector<Addr> addrs(const std::vector<ShortId>& in) {
     std::vector<Addr> out;
     out.reserve(in.size());
-    for (const auto& a : in) out.push_back(a.b);
+    for (const auto& a : in) out.push_back(a);
     return out;
 }
 
@@ -56,7 +56,7 @@ OutRun outs(const std::vector<TransferableOutput>& in) {
     r.list.reserve(in.size());
     for (const auto& o : in) {
         r.list.push_back(OutInput{
-            .Asset = o.asset.b,
+            .Asset = o.asset,
             .StakeLock = o.stake_lock,
             .Amount = o.out.amt,
             .Threshold = o.out.owners.threshold,
@@ -64,7 +64,7 @@ OutRun outs(const std::vector<TransferableOutput>& in) {
             .AddrStart = static_cast<std::uint32_t>(r.addrs.size()),
             .AddrCount = static_cast<std::uint32_t>(o.out.owners.addrs.size()),
         });
-        for (const auto& a : o.out.owners.addrs) r.addrs.push_back(a.b);
+        for (const auto& a : o.out.owners.addrs) r.addrs.push_back(a);
     }
     return r;
 }
@@ -74,9 +74,9 @@ InRun ins(const std::vector<TransferableInput>& in) {
     r.list.reserve(in.size());
     for (const auto& i : in) {
         r.list.push_back(InInput{
-            .TxID = i.utxo.tx_id.b,
+            .TxID = i.utxo.tx_id,
             .Index = i.utxo.output_index,
-            .Asset = i.asset.b,
+            .Asset = i.asset,
             .StakeLock = i.stake_lock,
             .Amount = i.in.amt,
             .SigStart = static_cast<std::uint32_t>(r.sigs.size()),
@@ -102,11 +102,11 @@ ValidatorRun validators(const std::vector<txs::NetworkValidator>& in) {
         e.RemoveThreshold = v.remaining_balance_owner.threshold;
         e.RemoveAddrStart = static_cast<std::uint32_t>(r.addrs.size());
         e.RemoveAddrCount = static_cast<std::uint32_t>(v.remaining_balance_owner.addresses.size());
-        for (const auto& a : v.remaining_balance_owner.addresses) r.addrs.push_back(a.b);
+        for (const auto& a : v.remaining_balance_owner.addresses) r.addrs.push_back(a);
         e.DisableThreshold = v.deactivation_owner.threshold;
         e.DisableAddrStart = static_cast<std::uint32_t>(r.addrs.size());
         e.DisableAddrCount = static_cast<std::uint32_t>(v.deactivation_owner.addresses.size());
-        for (const auto& a : v.deactivation_owner.addresses) r.addrs.push_back(a.b);
+        for (const auto& a : v.deactivation_owner.addresses) r.addrs.push_back(a);
         r.list.push_back(e);
     }
     return r;
@@ -125,7 +125,7 @@ std::vector<TransferableOutput> outs(const zap::List& list, const zap::List& poo
     for (int i = 0; i < n; ++i) {
         const Out e(list.object(i, kOutSize));
         auto& o = out[static_cast<std::size_t>(i)];
-        o.asset = Id::from(e.Asset());
+        o.asset = id_from(e.Asset());
         o.stake_lock = e.StakeLock();
         o.out.amt = e.Amount();
         o.out.owners.threshold = e.Threshold();
@@ -142,9 +142,9 @@ std::vector<TransferableInput> ins(const zap::List& list, const zap::List& pool)
     for (int i = 0; i < n; ++i) {
         const In e(list.object(i, kInSize));
         auto& in = out[static_cast<std::size_t>(i)];
-        in.utxo.tx_id = Id::from(e.TxID());
+        in.utxo.tx_id = id_from(e.TxID());
         in.utxo.output_index = e.Index();
-        in.asset = Id::from(e.Asset());
+        in.asset = id_from(e.Asset());
         in.stake_lock = e.StakeLock();
         in.in.amt = e.Amount();
         in.in.sig_indices = slice_sigs(pool, e.SigStart(), e.SigCount());
@@ -192,7 +192,7 @@ txs::Auth auth(const zap::List& pool) {
 
 txs::Validator validator(std::span<const std::uint8_t> node_id, std::uint64_t start, std::uint64_t end,
                          std::uint64_t weight) {
-    return txs::Validator{NodeId::from(node_id), start, end, weight};
+    return txs::Validator{node_id_from(node_id), start, end, weight};
 }
 
 }  // namespace lux::platformvm::wire

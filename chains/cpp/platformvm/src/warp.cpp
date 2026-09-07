@@ -9,7 +9,6 @@
 
 #include "lux/platformvm/gen/warp_zap.hpp"
 #include "lux/platformvm/safemath.hpp"
-#include "lux/platformvm/sha256.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -69,8 +68,8 @@ Result<UnsignedMessage> UnsignedMessage::build(std::uint32_t network_id, const I
     m.source_chain_id = source_chain_id;
     m.payload.assign(payload.begin(), payload.end());
     m.bytes = wire::NewUnsigned(wire::UnsignedInput{
-        .NetworkID = network_id, .Source = source_chain_id.b, .Payload = payload});
-    m.id = id_from_hash(sha256(m.bytes));
+        .NetworkID = network_id, .Source = source_chain_id, .Payload = payload});
+    m.id = sha256(m.bytes);
     return m;
 }
 
@@ -79,11 +78,11 @@ Result<UnsignedMessage> UnsignedMessage::parse(std::span<const std::uint8_t> b) 
     if (!zm) return fail(Err::BufferTooSmall, "warp: unsigned message is not a zap message");
     UnsignedMessage m;
     m.network_id = zm->NetworkID();
-    m.source_chain_id = Id::from(zm->Source());
+    m.source_chain_id = id_from(zm->Source());
     const auto payload = zm->Payload();
     m.payload.assign(payload.begin(), payload.end());
     m.bytes.assign(b.begin(), b.end());
-    m.id = id_from_hash(sha256(m.bytes));
+    m.id = sha256(m.bytes);
     return m;
 }
 

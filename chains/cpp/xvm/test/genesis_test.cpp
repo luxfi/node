@@ -11,7 +11,7 @@
 // Go's buffer and re-emitting it byte for byte is the only way to know they do
 // not.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 #include "golden.hpp"
 #include "keys.hpp"
@@ -25,6 +25,7 @@
 #include <vector>
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {

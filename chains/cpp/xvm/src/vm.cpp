@@ -161,7 +161,7 @@ wire::Result<void> Vm::issue(std::shared_ptr<txs::Tx> tx) {
 
 std::shared_ptr<lux::node::Block> Vm::build() {
     last_error_.clear();
-    if (pool_.len() == 0) {
+    if (pool_.size() == 0) {
         // Nothing to build is "no", not a failure — the house form for the whole
         // seam.
         last_error_ = kErrEmptyBlock;
@@ -196,12 +196,13 @@ std::shared_ptr<lux::node::Block> Vm::build() {
     std::set<Id> imported;
     std::size_t remaining = kTargetBlockSize;
     while (true) {
-        auto tx = pool_.peek();
-        if (tx == nullptr || tx->size() > remaining) break;
+        const auto* head = pool_.peek();
+        if (head == nullptr || (*head)->size() > remaining) break;
+        auto tx = *head;
         // Taken out of the pool BEFORE it is tried: a transaction that fails
         // here is finished, and one that succeeds is in the block. Either way
         // the next round must not meet it again at the head of the queue.
-        pool_.remove(tx);
+        pool_.remove({tx});
 
         // Its own diff, so a transaction that fails halfway leaves nothing
         // behind in the block's. Go: state.NewDiffOn.
@@ -209,12 +210,12 @@ std::shared_ptr<lux::node::Block> Vm::build() {
 
         executor::SemanticVerifier sem(backend_, *tx_diff, *tx);
         if (auto r = tx->unsigned_tx->visit(sem); !r) {
-            pool_.mark_dropped(tx->id(), r.error());
+            gossip_.mark_dropped(tx->id(), r.error());
             continue;
         }
         executor::Executor exec(*tx_diff, *tx);
         if (auto r = tx->unsigned_tx->visit(exec); !r) {
-            pool_.mark_dropped(tx->id(), r.error());
+            gossip_.mark_dropped(tx->id(), r.error());
             continue;
         }
 
@@ -223,11 +224,11 @@ std::shared_ptr<lux::node::Block> Vm::build() {
             if (imported.count(in) != 0) conflicts = true;
         }
         if (conflicts) {
-            pool_.mark_dropped(tx->id(), kErrConflictingBlockTxs);
+            gossip_.mark_dropped(tx->id(), kErrConflictingBlockTxs);
             continue;
         }
         if (auto r = verify_unique_inputs(preferred_, exec.inputs); !r) {
-            pool_.mark_dropped(tx->id(), r.error());
+            gossip_.mark_dropped(tx->id(), r.error());
             continue;
         }
         for (const auto& in : exec.inputs) imported.insert(in);
@@ -314,7 +315,7 @@ wire::Result<void> Vm::verify_block(const std::shared_ptr<block::StandardBlock>&
     for (const auto& tx : blk->transactions) {
         executor::SyntacticVerifier syn(backend_, *tx);
         if (auto r = tx->unsigned_tx->visit(syn); !r) {
-            pool_.mark_dropped(tx->id(), r.error());
+            gossip_.mark_dropped(tx->id(), r.error());
             return std::unexpected("failed to syntactically verify tx " + hex(tx->id()) + ": " +
                                    r.error());
         }
@@ -341,20 +342,20 @@ wire::Result<void> Vm::verify_block(const std::shared_ptr<block::StandardBlock>&
     for (const auto& tx : blk->transactions) {
         executor::SemanticVerifier sem(backend_, **diff, *tx);
         if (auto r = tx->unsigned_tx->visit(sem); !r) {
-            pool_.mark_dropped(tx->id(), r.error());
+            gossip_.mark_dropped(tx->id(), r.error());
             return std::unexpected("failed to semantically verify tx " + hex(tx->id()) + ": " +
                                    r.error());
         }
 
         executor::Executor exec(**diff, *tx);
         if (auto r = tx->unsigned_tx->visit(exec); !r) {
-            pool_.mark_dropped(tx->id(), r.error());
+            gossip_.mark_dropped(tx->id(), r.error());
             return std::unexpected("failed to execute tx " + hex(tx->id()) + ": " + r.error());
         }
 
         for (const auto& in : exec.inputs) {
             if (pending.imported_inputs.count(in) != 0) {
-                pool_.mark_dropped(tx->id(), kErrConflictingBlockTxs);
+                gossip_.mark_dropped(tx->id(), kErrConflictingBlockTxs);
                 return std::unexpected(kErrConflictingBlockTxs);
             }
         }
@@ -452,7 +453,9 @@ void Vm::reject_block(const Id& blk_id) {
         // MarkDropped belongs to the admission gate (gossipMempool.Add) and to
         // the builder, where a refusal really is about the transaction.
         if (auto r = verify_tx(*tx); !r) continue;
-        (void)pool_.add(tx);
+        // Back through the gate rather than into the pool behind it, so the
+        // filter a peer samples says this node holds it again.
+        (void)gossip_.add_unverified(tx);
     }
 }
 

@@ -36,6 +36,7 @@
 #include "lux/platformvm/signer.hpp"
 #include "lux/platformvm/status.hpp"
 #include "lux/platformvm/txs.hpp"
+#include "lux/core/store.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -45,6 +46,11 @@
 #include <set>
 #include <unordered_map>
 #include <vector>
+
+namespace lux::platformvm {
+// The store belongs to the node: one durable map, shared with every chain.
+namespace store = lux::core::store;
+}  // namespace lux::platformvm
 
 namespace lux::platformvm::state {
 
@@ -360,9 +366,38 @@ class Chain {
     virtual void delete_expiry(const l1::ExpiryEntry& e) = 0;
 };
 
-// The materialised state: what the chain remembers once a block is accepted.
-class MemState final : public Chain {
+// The materialised state: what the chain remembers once a block is accepted,
+// and — through the store beneath it — what it still remembers after the
+// process that accepted it is gone.
+//
+// The store is the node's one store (lux/core/store.hpp). A State built with no
+// store gets a Memory of its OWN, not a shared one: two chains that
+// accidentally share a store are one chain with two opinions.
+//
+// The maps here are the whole state. `load` reads them out of the store on
+// boot; `commit` writes them back, and is the ONE durability point — a block is
+// accepted when its changes are in the store, not when they are in these maps,
+// because only the store survives a restart.
+class State final : public Chain {
   public:
+    State() : own_(std::make_unique<store::Memory>()), store_(own_.get()) {}
+    explicit State(store::Store& store) : store_(&store) {}
+
+    // load rebuilds this state from the store. It is what a boot does, and the
+    // only read of the store's whole contents.
+    Status load();
+
+    // commit makes everything accepted since the last commit durable.
+    //
+    // It writes the WHOLE state and erases whatever is no longer in it, rather
+    // than a set of deltas gathered by each mutator. That is deliberate: a
+    // delta scheme is only as durable as its least-remembered mutator, and a
+    // forgotten one is a row that silently stops surviving. It costs a walk of
+    // the state per commit, which is the walk state_root already does on every
+    // block — so the order of growth is one the chain was paying anyway. Only
+    // the rows that actually differ reach the disk.
+    Status commit();
+
     std::uint64_t timestamp() const override { return timestamp_; }
     void set_timestamp(std::uint64_t t) override { timestamp_ = t; }
     std::uint64_t accrued_fees() const override { return accrued_fees_; }
@@ -468,6 +503,13 @@ class MemState final : public Chain {
     void load_pending_delegator(const Staker& s) { pending_.load_delegator(s); }
 
   private:
+    // rows renders the whole state as the store's byte-keyed map. It is the one
+    // place the on-disk shape is spelled, and `load` is its inverse.
+    std::map<Bytes, Bytes> rows() const;
+
+    std::unique_ptr<store::Memory> own_;
+    store::Store* store_ = nullptr;
+
     std::uint64_t timestamp_ = 0;
     std::uint64_t accrued_fees_ = 0;
     gas::State fee_state_{};

@@ -39,10 +39,17 @@ sanitizers (blst's assembly stays clean). The suite passes under them.
 ## Layout
 
 ```
+../core/include/lux/core/     shared with every chain here, and ONE of each
+  id.hpp           Id (32B) = lux::consensus::Id, ShortId (20B), NodeId
+  store.hpp        the durable byte-keyed map the state rests on
+  mempool.hpp      the pool: order, conflicts, byte budget, refusals
+  zap.hpp          the ZAP codec (the store's records; see the note below)
+
 include/lux/platformvm/
-  zap.hpp          the ZAP v1.2.7 zero-copy codec — builder and reader
-  ids.hpp          Id (32B), ShortId (20B), NodeId — three distinct types
-  sha256.hpp       the hash every id and every signature is over
+  zap.hpp          the ZAP v1.2.7 codec THIS CHAIN'S TX WIRE uses — a second
+                   implementation of the same format, and the next thing to
+                   collapse; core/zap.hpp writes identical bytes
+  ids.hpp          adopts core's names; adds only kPrimaryNetworkId
   safemath.hpp     u64 arithmetic that refuses to wrap, + the 512-bit integer
   components.hpp   what a transaction spends and produces
   security.hpp     a network's security mode, as two orthogonal axes
@@ -65,7 +72,9 @@ include/lux/platformvm/
   l1.hpp           a validator of a sovereign network, and the fee it pays
   staking.hpp      the terms of validating, and what may change them
   adopt.hpp        the register of networks Lux did not create
-  mempool.hpp      what is waiting to go into a block
+  mempool.hpp      the chain's ONE door onto core's pool: who may submit,
+                   and what a bond too late to start means
+  persist.cpp      (src) the state as store rows, and its inverse
   genesis.hpp      the state the network starts in
   vm.hpp           the chain, as the node's VM seam sees it
 ```
@@ -159,14 +168,17 @@ a success it has not earned:
   checked against nothing would verify whatever it was given.
 - **`TransformChainTx` execution** — refused here, as in the reference, which
   refuses it permanently.
-- **State persistence** — `state::MemState` is the accepted state in memory. The
-  reference's on-disk layout (~2,000 lines of key encodings, height diffs and
-  batched commits) is not ported. Nothing above it assumes memory: `Chain` is an
-  interface and a disk-backed implementation is a sibling of `MemState`. What
-  each height CHANGED about the validator sets is here — recorded as blocks are
+- **The validator-set HISTORY across a restart** — the state itself is durable
+  now (`state::State` over `core::store`; `src/persist.cpp` is the on-disk
+  shape, and `test/durability_test.cpp` proves it by having the kernel SIGKILL
+  the writer and demanding the same state root back). What each height CHANGED
+  about the validator sets is still memory-only: it is recorded as blocks are
   accepted, so the set at any past height is the set now with everything since
-  undone — but it lives in memory with the state, and a node that restarts
-  starts that record again.
+  undone, but a node that restarts starts that record again and can answer
+  "who validated at height H" only for heights it has seen this run.
+- **The reference's on-disk LAYOUT** — its ~2,000 lines of key encodings,
+  height diffs and batched commits are not ported. The shape here is the
+  chain's own: whole-state rows, written by `rows()` and read by `load()`.
 - **The JSON-RPC service and client** (~3,200 lines) and the warp signature
   transport — the node's seam does not ask for them, and both are how a node is
   TALKED TO rather than what it decides.

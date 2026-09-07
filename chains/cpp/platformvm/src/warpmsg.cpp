@@ -8,7 +8,6 @@
 #include "lux/platformvm/warpmsg.hpp"
 
 #include "lux/platformvm/gen/warpmsg_zap.hpp"
-#include "lux/platformvm/sha256.hpp"
 
 #include <cstring>
 
@@ -29,7 +28,7 @@ enum class MKind : std::uint8_t {
 std::vector<std::array<std::uint8_t, kShortIdLen>> owner_addrs(const std::vector<ShortId>& addrs) {
     std::vector<std::array<std::uint8_t, kShortIdLen>> out;
     out.reserve(addrs.size());
-    for (const auto& a : addrs) out.push_back(a.b);
+    for (const auto& a : addrs) out.push_back(a);
     return out;
 }
 
@@ -37,7 +36,7 @@ PChainOwner read_owner(std::uint32_t threshold, const zap::List& addrs) {
     PChainOwner o;
     o.threshold = threshold;
     for (int i = 0; i < addrs.size(); ++i)
-        o.addresses.push_back(ShortId::from(addrs.object(i, kShortIdLen).bytes_fixed(0, kShortIdLen)));
+        o.addresses.push_back(short_id_from(addrs.object(i, kShortIdLen).bytes_fixed(0, kShortIdLen)));
     return o;
 }
 
@@ -49,7 +48,7 @@ Result<Hash> Hash::build(const Id& hash) {
     Hash h;
     h.hash = hash;
     h.bytes = wire::NewDigest(
-        wire::DigestInput{.Kind = static_cast<std::uint8_t>(PKind::Hash), .Hash = hash.b});
+        wire::DigestInput{.Kind = static_cast<std::uint8_t>(PKind::Hash), .Hash = hash});
     return h;
 }
 
@@ -70,7 +69,7 @@ Result<Envelope> parse_envelope(std::span<const std::uint8_t> b) {
     switch (static_cast<PKind>(msg->Kind())) {
         case PKind::Hash: {
             Hash h;
-            h.hash = Id::from(wire::Digest(msg->object()).Hash());
+            h.hash = id_from(wire::Digest(msg->object()).Hash());
             h.bytes.assign(b.begin(), b.end());
             return Envelope{std::move(h)};
         }
@@ -107,11 +106,11 @@ Result<RegisterL1Validator> RegisterL1Validator::build(const Id& chain_id, const
     m.weight = weight;
     m.bytes = wire::NewRegister(
         wire::RegisterInput{.Kind = static_cast<std::uint8_t>(MKind::RegisterL1Validator),
-                            .ChainID = chain_id.b,
+                            .ChainID = chain_id,
                             .BLSKey = key,
                             .Expiry = expiry,
                             .Weight = weight,
-                            .NodeID = node_id.span(),
+                            .NodeID = view(node_id),
                             .RemoveThreshold = remaining_balance_owner.threshold,
                             .RemoveAddrs = owner_addrs(remaining_balance_owner.addresses),
                             .DisableThreshold = disable_owner.threshold,
@@ -135,7 +134,7 @@ Status RegisterL1Validator::verify() const {
     return ok();
 }
 
-Id RegisterL1Validator::validation_id() const { return id_from_hash(sha256(bytes)); }
+Id RegisterL1Validator::validation_id() const { return sha256(bytes); }
 
 Result<L1ValidatorRegistration> L1ValidatorRegistration::build(const Id& validation_id, bool registered) {
     L1ValidatorRegistration m;
@@ -143,7 +142,7 @@ Result<L1ValidatorRegistration> L1ValidatorRegistration::build(const Id& validat
     m.registered = registered;
     m.bytes = wire::NewRegistration(
         wire::RegistrationInput{.Kind = static_cast<std::uint8_t>(MKind::L1ValidatorRegistration),
-                                .ValidationID = validation_id.b,
+                                .ValidationID = validation_id,
                                 .Registered = registered});
     return m;
 }
@@ -155,7 +154,7 @@ Result<L1ValidatorWeight> L1ValidatorWeight::build(const Id& validation_id, std:
     m.nonce = nonce;
     m.weight = weight;
     m.bytes = wire::NewReweight(wire::ReweightInput{.Kind = static_cast<std::uint8_t>(MKind::L1ValidatorWeight),
-                                                .ValidationID = validation_id.b,
+                                                .ValidationID = validation_id,
                                                 .Nonce = nonce,
                                                 .Weight = weight});
     return m;
@@ -165,7 +164,7 @@ Result<ChainToL1Conversion> ChainToL1Conversion::build(const Id& id) {
     ChainToL1Conversion m;
     m.id = id;
     m.bytes = wire::NewConversion(wire::ConversionInput{
-        .Kind = static_cast<std::uint8_t>(MKind::ChainToL1Conversion), .ID = id.b});
+        .Kind = static_cast<std::uint8_t>(MKind::ChainToL1Conversion), .ID = id});
     return m;
 }
 
@@ -185,8 +184,8 @@ Result<std::vector<std::uint8_t>> ConversionData::encode() const {
     }
 
     return wire::NewConversions(
-        wire::ConversionsInput{.ChainID = chain_id.b,
-                               .ManagerChainID = manager_chain_id.b,
+        wire::ConversionsInput{.ChainID = chain_id,
+                               .ManagerChainID = manager_chain_id,
                                .ManagerAddress = manager_address,
                                .Validators = std::move(entries),
                                .NodeIDPool = {node_id_pool.data(), node_id_pool.size()}});
@@ -195,7 +194,7 @@ Result<std::vector<std::uint8_t>> ConversionData::encode() const {
 Result<Id> ConversionData::conversion_id() const {
     auto bytes = encode();
     if (!bytes) return std::unexpected(bytes.error());
-    return id_from_hash(sha256(bytes.value()));
+    return sha256(bytes.value());
 }
 
 Result<Message> parse_message(std::span<const std::uint8_t> b) {
@@ -205,14 +204,14 @@ Result<Message> parse_message(std::span<const std::uint8_t> b) {
     switch (static_cast<MKind>(msg->Kind())) {
         case MKind::ChainToL1Conversion: {
             ChainToL1Conversion m;
-            m.id = Id::from(wire::Conversion(root).ID());
+            m.id = id_from(wire::Conversion(root).ID());
             m.bytes.assign(b.begin(), b.end());
             return Message{std::move(m)};
         }
         case MKind::RegisterL1Validator: {
             const wire::Register r(root);
             RegisterL1Validator m;
-            m.chain_id = Id::from(r.ChainID());
+            m.chain_id = id_from(r.ChainID());
             const auto node = r.NodeID();
             m.node_id.assign(node.begin(), node.end());
             const auto key = r.BLSKey();
@@ -227,7 +226,7 @@ Result<Message> parse_message(std::span<const std::uint8_t> b) {
         case MKind::L1ValidatorRegistration: {
             const wire::Registration g(root);
             L1ValidatorRegistration m;
-            m.validation_id = Id::from(g.ValidationID());
+            m.validation_id = id_from(g.ValidationID());
             m.registered = g.Registered();
             m.bytes.assign(b.begin(), b.end());
             return Message{std::move(m)};
@@ -235,7 +234,7 @@ Result<Message> parse_message(std::span<const std::uint8_t> b) {
         case MKind::L1ValidatorWeight: {
             const wire::Reweight w(root);
             L1ValidatorWeight m;
-            m.validation_id = Id::from(w.ValidationID());
+            m.validation_id = id_from(w.ValidationID());
             m.nonce = w.Nonce();
             m.weight = w.Weight();
             m.bytes.assign(b.begin(), b.end());

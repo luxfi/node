@@ -39,7 +39,7 @@ Result<std::vector<UTXO>> read_utxos(const state::Chain& s, const std::vector<Tr
     out.reserve(ins.size());
     for (const auto& in : ins) {
         auto u = s.get_utxo(in.input_id());
-        if (!u) return fail(Err::NotFound, "consumed utxo " + in.input_id().hex() + " is not there");
+        if (!u) return fail(Err::NotFound, "consumed utxo " + hex(in.input_id()) + " is not there");
         out.push_back(u.value());
     }
     return out;
@@ -76,7 +76,7 @@ Result<std::vector<txs::Credential>> verify_chain_authorization(const Backend& b
                                                                 const txs::Tx& tx, const Id& chain_id,
                                                                 const txs::Auth& auth) {
     auto owner = s.network_owner(chain_id);
-    if (!owner) return fail(Err::ChainNotFound, "network " + chain_id.hex() + " has no owner");
+    if (!owner) return fail(Err::ChainNotFound, "network " + hex(chain_id) + " has no owner");
     return verify_authorization(backend, tx, owner.value(), auth);
 }
 
@@ -88,8 +88,8 @@ Result<std::vector<txs::Credential>> verify_poa_chain_authorization(const Backen
                                                                     const txs::Auth& auth) {
     auto creds = verify_chain_authorization(backend, s, tx, chain_id, auth);
     if (!creds) return creds;
-    if (s.network_transformation(chain_id)) return fail(Err::NotAuthorized, chain_id.hex() + " is immutable");
-    if (s.network_conversion(chain_id)) return fail(Err::NotAuthorized, chain_id.hex() + " is immutable");
+    if (s.network_transformation(chain_id)) return fail(Err::NotAuthorized, hex(chain_id) + " is immutable");
+    if (s.network_conversion(chain_id)) return fail(Err::NotAuthorized, hex(chain_id) + " is immutable");
     return creds;
 }
 
@@ -129,7 +129,7 @@ Result<ValidatorRules> validator_rules(const Backend& backend, const state::Chai
                               p.max_stake_duration,          p.min_delegation_fee};
     }
     auto t = s.network_transformation(chain_id);
-    if (!t) return fail(Err::ChainNotFound, "network " + chain_id.hex() + " was never transformed");
+    if (!t) return fail(Err::ChainNotFound, "network " + hex(chain_id) + " was never transformed");
     const auto* tt = dynamic_cast<const txs::TransformChainTx*>(t.value().unsigned_tx.get());
     if (tt == nullptr) return fail(Err::IsNotTransformChainTx);
     return ValidatorRules{tt->asset_id(),          tt->min_validator_stake(), tt->max_validator_stake(),
@@ -155,7 +155,7 @@ Result<DelegatorRules> delegator_rules(const Backend& backend, const state::Chai
                               p.max_stake_duration,          kMaxValidatorWeightFactor};
     }
     auto t = s.network_transformation(chain_id);
-    if (!t) return fail(Err::ChainNotFound, "network " + chain_id.hex() + " was never transformed");
+    if (!t) return fail(Err::ChainNotFound, "network " + hex(chain_id) + " was never transformed");
     const auto* tt = dynamic_cast<const txs::TransformChainTx*>(t.value().unsigned_tx.get());
     if (tt == nullptr) return fail(Err::IsNotTransformChainTx);
     return DelegatorRules{tt->asset_id(),           tt->min_delegator_stake(),
@@ -167,7 +167,7 @@ Result<DelegatorRules> delegator_rules(const Backend& backend, const state::Chai
 // a network for a window inside the one it validates the primary network for.
 Status verify_primary_network_requirements(const state::Chain& s, const txs::Validator& v) {
     auto primary = get_validator(s, kPrimaryNetworkId, v.node_id);
-    if (!primary) return fail(Err::NotValidator, v.node_id.hex() + " is not a primary network validator");
+    if (!primary) return fail(Err::NotValidator, hex(v.node_id) + " is not a primary network validator");
     if (!txs::bounded_by(s.timestamp(), v.end, primary.value().start_time, primary.value().end_time))
         return fail(Err::PeriodMismatch);
     return ok();
@@ -179,10 +179,10 @@ Status verify_primary_network_requirements(const state::Chain& s, const txs::Val
 Status verify_l1_conversion(const state::Chain& s, const Id& chain_id, const Id& source_chain,
                             std::span<const std::uint8_t> source_address) {
     auto conv = s.network_conversion(chain_id);
-    if (!conv) return fail(Err::CouldNotLoadConversion, chain_id.hex());
+    if (!conv) return fail(Err::CouldNotLoadConversion, hex(chain_id));
     if (!(conv.value().chain_id == source_chain))
         return fail(Err::WrongWarpSourceChain,
-                    "expected " + conv.value().chain_id.hex() + ", got " + source_chain.hex());
+                    "expected " + hex(conv.value().chain_id) + ", got " + hex(source_chain));
     if (conv.value().addr.size() != source_address.size() ||
         !std::equal(conv.value().addr.begin(), conv.value().addr.end(), source_address.begin()))
         return fail(Err::WrongWarpSourceAddress);
@@ -327,8 +327,8 @@ class Standard final : public txs::Visitor {
 
         if (b_.bootstrapped) {
             if (get_validator(s_, t.chain(), t.validator().node_id))
-                return fail(Err::DuplicateValidator, t.validator().node_id.hex() + " already validates " +
-                                                         t.chain().hex());
+                return fail(Err::DuplicateValidator, hex(t.validator().node_id) + " already validates " +
+                                                         hex(t.chain()));
             if (auto st = verify_primary_network_requirements(s_, t.validator()); !st) return st;
             auto creds = verify_chain_authorization(b_, s_, tx_, t.chain(), t.chain_auth());
             if (!creds) return std::unexpected(creds.error());
@@ -350,7 +350,7 @@ class Standard final : public txs::Visitor {
             vdr = s_.get_pending_validator(t.chain(), t.node_id());
             is_current = false;
         }
-        if (!vdr) return fail(Err::NotValidator, t.node_id().hex() + " does not validate " + t.chain().hex());
+        if (!vdr) return fail(Err::NotValidator, hex(t.node_id()) + " does not validate " + hex(t.chain()));
         // Only a PERMISSIONED validator can be removed by its network's owner. A
         // permissionless one leaves by being paid, which is the whole difference.
         if (!txs::is_permissioned_validator(vdr.value().priority))
@@ -391,11 +391,11 @@ class Standard final : public txs::Visitor {
             if (duration < r.min_stake_duration) return fail(Err::StakeTooShort);
             if (duration > r.max_stake_duration) return fail(Err::StakeTooLong);
             if (!(staked_asset == r.asset_id))
-                return fail(Err::WrongStakedAssetID, r.asset_id.hex() + " != " + staked_asset.hex());
+                return fail(Err::WrongStakedAssetID, hex(r.asset_id) + " != " + hex(staked_asset));
 
             if (get_validator(s_, t.chain(), t.validator().node_id))
                 return fail(Err::DuplicateValidator,
-                            t.validator().node_id.hex() + " already validates " + t.chain().hex());
+                            hex(t.validator().node_id) + " already validates " + hex(t.chain()));
             if (!(t.chain() == kPrimaryNetworkId))
                 if (auto st = verify_primary_network_requirements(s_, t.validator()); !st) return st;
 
@@ -427,11 +427,11 @@ class Standard final : public txs::Visitor {
             if (duration < r.min_stake_duration) return fail(Err::StakeTooShort);
             if (duration > r.max_stake_duration) return fail(Err::StakeTooLong);
             if (!(staked_asset == r.asset_id))
-                return fail(Err::WrongStakedAssetID, r.asset_id.hex() + " != " + staked_asset.hex());
+                return fail(Err::WrongStakedAssetID, hex(r.asset_id) + " != " + hex(staked_asset));
 
             auto vdr = get_validator(s_, t.chain(), t.validator().node_id);
-            if (!vdr) return fail(Err::NotValidator, t.validator().node_id.hex() + " does not validate " +
-                                                         t.chain().hex());
+            if (!vdr) return fail(Err::NotValidator, hex(t.validator().node_id) + " does not validate " +
+                                                         hex(t.chain()));
             auto limit = mul64(r.max_validator_weight_factor, vdr.value().weight);
             const std::uint64_t maximum_weight =
                 std::min(limit ? limit.value() : UINT64_MAX, r.max_validator_stake);
@@ -633,7 +633,7 @@ class Standard final : public txs::Visitor {
         const l1::ExpiryEntry expiry{msg->expiry, validation_id};
         // The whole replay defence: the chain remembers every registration it
         // has seen until the moment that registration could no longer be issued.
-        if (s_.has_expiry(expiry)) return fail(Err::WarpMessageAlreadyIssued, validation_id.hex());
+        if (s_.has_expiry(expiry)) return fail(Err::WarpMessageAlreadyIssued, hex(validation_id));
 
         // The message says which key; the TRANSACTION proves whoever sent it
         // holds that key. Neither alone is enough.
@@ -645,7 +645,7 @@ class Standard final : public txs::Visitor {
         l1::Validator v;
         v.validation_id = validation_id;
         v.chain_id = msg->chain_id;
-        v.node_id = NodeId::from(msg->node_id);
+        v.node_id = node_id_from(msg->node_id);
         auto uncompressed = signer::uncompress_for_set(msg->bls_public_key);
         if (!uncompressed) return std::unexpected(uncompressed.error());
         v.public_key = uncompressed.value();
@@ -694,7 +694,7 @@ class Standard final : public txs::Visitor {
         if (msg->nonce == UINT64_MAX && msg->weight != 0) return fail(Err::NonceReservedForRemoval);
 
         auto found = s_.get_l1_validator(msg->validation_id);
-        if (!found) return fail(Err::CouldNotLoadL1Validator, msg->validation_id.hex());
+        if (!found) return fail(Err::CouldNotLoadL1Validator, hex(msg->validation_id));
         l1::Validator v = found.value();
 
         // The nonce is the whole replay defence for weight: an old message
@@ -739,7 +739,7 @@ class Standard final : public txs::Visitor {
             return st;
 
         auto found = s_.get_l1_validator(t.validation_id());
-        if (!found) return fail(Err::CouldNotLoadL1Validator, t.validation_id().hex());
+        if (!found) return fail(Err::CouldNotLoadL1Validator, hex(t.validation_id()));
         l1::Validator v = found.value();
 
         // A top-up of an inactive validator activates it, and there is only so
@@ -764,7 +764,7 @@ class Standard final : public txs::Visitor {
         if (auto st = shape(t); !st) return st;
 
         auto found = s_.get_l1_validator(t.validation_id());
-        if (!found) return fail(Err::CouldNotLoadL1Validator, t.validation_id().hex());
+        if (!found) return fail(Err::CouldNotLoadL1Validator, hex(t.validation_id()));
         l1::Validator v = found.value();
 
         auto owner = txs::unmarshal_owner(v.deactivation_owner);
@@ -831,7 +831,7 @@ class Standard final : public txs::Visitor {
             // rather than assigned, so genesis validators need nothing agreed.
             record.validation_id = append_id(network_id, static_cast<std::uint32_t>(i));
             record.chain_id = network_id;
-            record.node_id = NodeId::from(v.node_id);
+            record.node_id = node_id_from(v.node_id);
             record.public_key = uncompressed.value();
             record.remaining_balance_owner = txs::marshal_owner(
                 txs::Owner{0, v.remaining_balance_owner.threshold, v.remaining_balance_owner.addresses});
@@ -900,7 +900,7 @@ class Proposal final : public txs::Visitor {
         : b_(backend), tx_(tx), commit_(on_commit), abort_(on_abort) {}
 
     Status reward_validator_tx(const txs::RewardValidatorTx& t) override {
-        if (t.tx_id().empty()) return fail(Err::InvalidID);
+        if (t.tx_id() == kEmptyId) return fail(Err::InvalidID);
         // The chain emits this about itself; nobody signs it.
         if (!tx_.creds.empty()) return fail(Err::WrongNumberOfCredentials);
 
@@ -911,7 +911,7 @@ class Proposal final : public txs::Visitor {
         // The proposal must name the staker that is actually next, or a
         // proposer could choose whom to pay.
         if (!(to_reward.tx_id == t.tx_id()))
-            return fail(Err::RemoveWrongStaker, to_reward.tx_id.hex() + " != " + t.tx_id().hex());
+            return fail(Err::RemoveWrongStaker, hex(to_reward.tx_id) + " != " + hex(t.tx_id()));
         if (to_reward.end_time != commit_.timestamp())
             return fail(Err::RemoveStakerTooEarly,
                         std::to_string(commit_.timestamp()) + " < " + std::to_string(to_reward.end_time));

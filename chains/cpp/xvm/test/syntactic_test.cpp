@@ -11,7 +11,7 @@
 // so a case that passes here and fails there is a real divergence, not a
 // different setup.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 #include "keys.hpp"
 
@@ -21,6 +21,7 @@
 #include <limits>
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {

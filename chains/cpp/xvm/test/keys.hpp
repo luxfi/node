@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 
 #include "lux/crypto/secp256k1.h"
 #include "lux/xvm/fx.hpp"
@@ -24,6 +24,10 @@
 #include "ecdsa.hpp"
 
 namespace lux::xvm::test {
+
+// The harness — check, check_eq, hex_of, from_hex — is the node's, in core.
+using namespace lux::core::test;
+
 
 using PrivateKey = std::array<std::uint8_t, 32>;
 

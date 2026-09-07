@@ -11,7 +11,7 @@
 // written at the wrong index is a UTXO nobody can spend, and no amount of
 // balance arithmetic notices.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 #include "keys.hpp"
 
@@ -20,6 +20,7 @@
 #include "lux/xvm/txs.hpp"
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {

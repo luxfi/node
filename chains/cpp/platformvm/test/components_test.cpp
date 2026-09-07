@@ -22,24 +22,14 @@ namespace {
 
 ShortId short_id(std::uint8_t b) {
     ShortId s{};
-    for (std::size_t i = 0; i < kShortIdLen; ++i) s.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kShortIdLen; ++i) s[i] = static_cast<std::uint8_t>(b + i);
     return s;
 }
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
-std::string hex(const std::vector<std::uint8_t>& v) {
-    static const char* d = "0123456789abcdef";
-    std::string s;
-    for (auto b : v) {
-        s.push_back(d[b >> 4]);
-        s.push_back(d[b & 0xf]);
-    }
-    return s;
-}
-
 }  // namespace
 
 // Go: secp256k1fx TestOutputOwnersVerify — the four refusals, in order.

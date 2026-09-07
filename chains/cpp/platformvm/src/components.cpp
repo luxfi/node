@@ -44,7 +44,7 @@ std::vector<std::uint8_t> with_prefix(std::uint8_t tk, std::uint8_t sk, const st
 std::vector<std::uint8_t> secp_transfer_output_envelope(const TransferOutput& o) {
     std::vector<std::array<std::uint8_t, kShortIdLen>> addrs;
     addrs.reserve(o.owners.addrs.size());
-    for (const auto& a : o.owners.addrs) addrs.push_back(a.b);
+    for (const auto& a : o.owners.addrs) addrs.push_back(a);
     return with_prefix(kTypeKindSecp256k1, kShapeKindTransferOutput,
                        wire::NewTransfer(wire::TransferInput{.Amount = o.amt,
                                                              .Locktime = o.owners.locktime,
@@ -116,7 +116,7 @@ Result<TransferableOutput> TransferableOutput::from_wire_bytes(std::span<const s
     out.out.owners.locktime = m->Locktime();
     out.out.owners.threshold = m->Threshold();
     for (int i = 0; i < m->Addrs().size(); ++i)
-        out.out.owners.addrs.push_back(ShortId::from(m->AddrsAt(i)));
+        out.out.owners.addrs.push_back(short_id_from(m->AddrsAt(i)));
     return out;
 }
 
@@ -124,9 +124,9 @@ std::vector<std::uint8_t> UTXO::wire_bytes() const {
     const TransferableOutput as_output{asset, stake_lock, out};
     const auto inner = as_output.wire_bytes();
     return with_prefix(kTypeKindReserved, kShapeKindUTXO,
-                       wire::NewUtxo(wire::UtxoInput{.TxID = utxo.tx_id.b,
+                       wire::NewUtxo(wire::UtxoInput{.TxID = utxo.tx_id,
                                                      .Index = utxo.output_index,
-                                                     .Asset = asset.b,
+                                                     .Asset = asset,
                                                      .Output = {inner.data(), inner.size()}}));
 }
 
@@ -137,9 +137,9 @@ Result<UTXO> UTXO::from_wire_bytes(std::span<const std::uint8_t> b) {
     if (!m) return fail(Err::BufferTooSmall, "the utxo envelope is malformed");
 
     UTXO u;
-    u.utxo.tx_id = Id::from(m->TxID());
+    u.utxo.tx_id = id_from(m->TxID());
     u.utxo.output_index = m->Index();
-    u.asset = Id::from(m->Asset());
+    u.asset = id_from(m->Asset());
     auto out = TransferableOutput::from_wire_bytes(m->Output(), u.asset);
     if (!out) return std::unexpected(out.error());
     u.stake_lock = out.value().stake_lock;

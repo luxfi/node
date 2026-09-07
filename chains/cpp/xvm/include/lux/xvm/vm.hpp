@@ -23,7 +23,7 @@
 #include "lux/xvm/mempool.hpp"
 #include "lux/xvm/root.hpp"
 #include "lux/xvm/state.hpp"
-#include "lux/xvm/store.hpp"
+#include "lux/core/store.hpp"
 #include "lux/xvm/txs.hpp"
 
 #include <map>
@@ -109,11 +109,10 @@ private:
 
 class Vm final : public lux::node::VM, public state::Versions, public mempool::Verifier {
 public:
-    // The store is where this chain's state rests, and it is a constructor
-    // argument rather than something the VM makes for itself: whether this node
-    // survives a restart is the host's decision, and the VM must not be able to
-    // quietly answer it with "no".
-    Vm(VmConfig config, std::vector<executor::ParsedFx> fxs, store::Store& store = state::State::default_store());
+    // The store is where this chain's state rests, and it is REQUIRED: whether
+    // this node survives a restart is the host's decision, and a VM that
+    // defaulted the argument could quietly answer it with "no".
+    Vm(VmConfig config, std::vector<executor::ParsedFx> fxs, store::Store& store);
 
     // ---- lifecycle ----
 
@@ -177,7 +176,7 @@ public:
     // to the pool. Go: block/executor.manager.VerifyTx.
     wire::Result<void> verify_tx(txs::Tx& tx) override;
 
-    std::size_t mempool_size() const { return pool_.len(); }
+    std::size_t mempool_size() const { return pool_.size(); }
     mempool::Pool& pool() { return pool_; }
     mempool::Gossip& gossip() { return gossip_; }
 
@@ -193,11 +192,12 @@ public:
     lux::node::Id last_accepted() const override { return last_accepted_; }
     std::uint64_t last_accepted_height() const override;
 
-    // The highest height this node itself decided. This chain advances only
-    // through accept() — there is no import path that moves the tip without a
-    // certificate under it — so the decided frontier IS the accepted tip. A
-    // chain that grows one must stop answering with this and start answering
-    // with what it certified.
+    // The highest height THIS node decided. Every height this chain holds
+    // arrived through accept(), because there is no path that moves the tip
+    // without one: the chain reads its store on boot and otherwise advances
+    // only when a block is accepted. So the frontier is the tip, and it stops
+    // being the tip the day an import lands — at which point the import moves
+    // this and accept() alone must not.
     std::uint64_t frontier() const override { return last_accepted_height(); }
 
     // ---- what the port exposes beyond the seam ----
