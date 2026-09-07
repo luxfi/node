@@ -29,16 +29,17 @@ Id Block::execution_root() const {
     // the block is accepted — which is what a validator needs, since this is
     // what it signs — and it is arithmetic over the block's own content rather
     // than a number a proposer supplied.
-    Sha256 h;
+    // SHA-256 of the concatenation, which is what a run of updates was.
     const Id block_id = id();
-    h.update(view(block_id));                          // the block, stored under its id
-    const Bytes hk = height_key(f_.height);            // its height index entry
-    h.update(view(hk));
-    h.update(view(block_id));                          // the tip the chain moves to
-    std::uint8_t be[8];
-    for (int i = 0; i < 8; ++i) be[i] = static_cast<std::uint8_t>(f_.height >> (56 - 8 * i));
-    h.update(ByteView(be, sizeof(be)));                // and the height it moves to
-    return h.finish();
+    const Bytes hk = height_key(f_.height);
+    Bytes pre;
+    pre.reserve(block_id.size() * 2 + hk.size() + 8);
+    pre.insert(pre.end(), block_id.begin(), block_id.end());  // the block, stored under its id
+    pre.insert(pre.end(), hk.begin(), hk.end());              // its height index entry
+    pre.insert(pre.end(), block_id.begin(), block_id.end());  // the tip the chain moves to
+    for (int i = 0; i < 8; ++i)                               // and the height it moves to
+        pre.push_back(static_cast<std::uint8_t>(f_.height >> (56 - 8 * i)));
+    return sha256(view(pre));
 }
 
 Status Block::on_this_chain() const {

@@ -34,18 +34,18 @@ lux-pq = { path = "../../../../../lux-rs/sdk/lux-pq" }
 # node that certifies it names it, with nothing in between to translate.
 lux-consensus = "1.23.0"
 
-# The three hashes the chain is defined over, and nothing else does them.
-# A tx id is SHA-256 of its signed bytes; an address is RIPEMD-160 of the
-# SHA-256 of a public key; every state-root leaf is Ethereum Keccak-256.
-# Writing any of the three by hand would be a second implementation to keep
-# in step with Go and C++.
-sha2 = "0.10"
-ripemd = "0.1"
-sha3 = "0.10"
+# Every primitive the chain is defined over — the three hashes, the RFC 6962
+# fold, and public-key recovery — comes from here, and from nowhere else. A tx
+# id is SHA-256 of its signed bytes; an address is RIPEMD-160 of the SHA-256 of
+# a public key; every state-root leaf is Ethereum Keccak-256; a transfer is
+# spendable because the sender is RECOVERED from the signature. This crate is
+# also where the choice between computing those and handing them to an installed
+# kernel library is made — see gpu/README.md.
+lux-gpu = { path = "../../../gpu/rust" }
 
-# What makes a signature spendable: the sender is RECOVERED from it, so a
-# node that cannot recover a public key cannot verify a transfer. Same curve
-# the Go node signs with.
+# Signing. A node never signs a transfer — a wallet does — so this is the test
+# and tooling half of the same curve, and is deliberately not behind the
+# primitive seam, which exists to make VERIFICATION agree across backends.
 k256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
 
 # The one boundary where a chain answers a caller in a shape it did not

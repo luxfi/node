@@ -15,9 +15,10 @@
 # chain is, which is the test of whether it belongs here: a P-chain concept
 # that leaked in would make the X-chain link the P-chain's opinions.
 #
-# It carries the two hashes a NAME is made of (sha256, ripemd160) so that a
-# binary compiles them once. A chain that also needs signature recovery
-# compiles that itself — it is a different question, asked by fewer callers.
+# The hashes a NAME is made of are not compiled here either. Every primitive
+# comes from the one seam a chain asks through (gpu/cpp), which is also where
+# the choice between computing one and handing it to an installed kernel
+# library is made. Core links it, so a chain that links core has the seam.
 
 cmake_minimum_required(VERSION 3.20)
 
@@ -29,48 +30,18 @@ if(NOT TARGET lux_core)
   set(CMAKE_CXX_EXTENSIONS OFF)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-  # find_checkout(VAR MARKER candidate...) — first candidate holding MARKER
-  # wins. The marker is a FILE, not a directory name, because names are
-  # ambiguous here and only the header tells two same-named trees apart.
-  function(lux_core_find out marker)
-    foreach(_root ${ARGN})
-      get_filename_component(_abs "${_root}" ABSOLUTE)
-      if(EXISTS "${_abs}/${marker}")
-        set(${out} "${_abs}" PARENT_SCOPE)
-        return()
-      endif()
-    endforeach()
-    set(${out} "${out}-NOTFOUND" PARENT_SCOPE)
-  endfunction()
-
-  lux_core_find(_crypto "include/lux/crypto/secp256k1.h"
-    "${LUXCPP_CRYPTO_DIR}"
-    "${CMAKE_CURRENT_LIST_DIR}/../../../../luxcpp/crypto"
-    "$ENV{HOME}/work/luxcpp/crypto")
-  if(NOT _crypto)
-    message(FATAL_ERROR
-      "core: luxcpp/crypto not found (looked for include/lux/crypto/secp256k1.h). "
-      "Pass -DLUXCPP_CRYPTO_DIR=/path/to/luxcpp/crypto.")
-  endif()
-  message(STATUS "core: hashes from ${_crypto}")
-
+  # The primitive seam. LUXCPP_CRYPTO_DIR, if a chain set it, is what the seam
+  # uses to find the reused first-party crypto it compiles once.
   include(${CMAKE_CURRENT_LIST_DIR}/../zap.cmake)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../../gpu/cpp ${CMAKE_CURRENT_BINARY_DIR}/lux_gpu)
 
   add_library(lux_core STATIC
     ${CMAKE_CURRENT_LIST_DIR}/src/id.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/store.cpp
-    ${_crypto}/sha256/cpp/sha256.cpp
-    ${_crypto}/ripemd160/cpp/ripemd160.cpp
   )
-  target_link_libraries(lux_core PUBLIC zap::zap)
-  target_include_directories(lux_core PUBLIC
-    ${CMAKE_CURRENT_LIST_DIR}/include
-    ${_crypto}/include
-    ${_crypto}/sha256/cpp
-    ${_crypto}/ripemd160/cpp
-  )
+  target_link_libraries(lux_core PUBLIC zap::zap lux_gpu)
+  target_include_directories(lux_core PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
   target_compile_options(lux_core PRIVATE -Wall -Wextra)
-  set(LUX_CORE_CRYPTO_DIR "${_crypto}" CACHE INTERNAL "luxcpp/crypto used by lux_core")
 
   # The store's own suite, built once and registered with whichever chain build
   # added this directory. The store is the thing a chain trusts to remember

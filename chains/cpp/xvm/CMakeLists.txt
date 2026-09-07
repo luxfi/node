@@ -88,26 +88,15 @@ if(NOT _node OR NOT _consensus)
 endif()
 message(STATUS "xvm: VM seam at ${_node}, Id from ${_consensus}")
 
-# ── core: the names, the codec and the store, shared with every other chain ──
+# ── core: the names, the store and the primitive seam, shared with every other
+# chain here ─────────────────────────────────────────────────────────────────
 #
-# It carries sha256 and ripemd160, which is why they are not below: a binary
-# compiles each hash once, or it has two of them.
+# Core links gpu/cpp, so the hashes, keccak and signature recovery all arrive
+# through the one interface a chain asks a primitive through. They used to be
+# compiled here and again in platformvm; a primitive with two builds has two
+# places to drift.
 set(LUXCPP_CRYPTO_DIR "${_crypto}" CACHE PATH "luxcpp/crypto checkout")
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core ${CMAKE_CURRENT_BINARY_DIR}/core)
-
-# ── the reused crypto this chain needs on top of core's hashes ───────────────
-add_library(xvm_crypto STATIC
-  ${_crypto}/keccak/cpp/keccak.cpp
-  ${_crypto}/secp256k1/cpp/ecrecover.cpp
-  ${_crypto}/secp256k1/cpp/batch_inv.cpp
-  ${_crypto}/secp256k1/cpp/ecdsa.cpp
-)
-target_include_directories(xvm_crypto PUBLIC
-  ${_crypto}/include
-  ${_crypto}/keccak/cpp
-  ${_crypto}/secp256k1/cpp
-)
-target_link_libraries(xvm_crypto PUBLIC lux_core)
 
 # ── xvm itself ───────────────────────────────────────────────────────────────
 add_library(xvm STATIC
@@ -128,7 +117,7 @@ target_include_directories(xvm PUBLIC
   ${_node}/include
   ${_consensus}/include
 )
-target_link_libraries(xvm PUBLIC xvm_crypto zap::zap lux_core)
+target_link_libraries(xvm PUBLIC zap::zap lux_core)
 target_compile_options(xvm PRIVATE -Wall -Wextra)
 
 # ── tests ────────────────────────────────────────────────────────────────────
