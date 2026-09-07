@@ -3,8 +3,10 @@
 
 #include "lux/core/id.hpp"
 
-#include "ripemd160.hpp"
-#include "sha256.hpp"
+// Every primitive a chain is defined over is asked for HERE, and the seam is
+// where the choice between computing one and handing it to an installed kernel
+// library is made. See gpu/README.md.
+#include "lux/gpu/gpu.hpp"
 
 namespace lux::core {
 namespace {
@@ -17,12 +19,7 @@ void put_be(std::uint8_t* p, std::uint64_t v, int width) {
 
 }  // namespace
 
-Id sha256(ByteView data) {
-    Id out{};
-    cevm::crypto::sha256(reinterpret_cast<std::byte*>(out.data()),
-                         reinterpret_cast<const std::byte*>(data.data()), data.size());
-    return out;
-}
+Id sha256(ByteView data) { return lux::gpu::sha256(data); }
 
 Id prefix_id(const Id& id, std::uint64_t prefix) {
     std::array<std::uint8_t, 8 + kIdLen> buf{};
@@ -39,11 +36,7 @@ Id append_id(const Id& id, std::uint32_t suffix) {
 }
 
 ShortId pubkey_to_address(ByteView compressed_pubkey) {
-    const Id h = sha256(compressed_pubkey);
-    ShortId out{};
-    cevm::crypto::ripemd160(reinterpret_cast<std::byte*>(out.data()),
-                            reinterpret_cast<const std::byte*>(h.data()), h.size());
-    return out;
+    return lux::gpu::pubkey_to_address(compressed_pubkey);
 }
 
 std::string hex(ByteView b) {

@@ -10,8 +10,10 @@
 
 #include "lux/platformvm/fx.hpp"
 
-#include "lux/crypto/secp256k1.h"
-#include "ripemd160.hpp"
+// Recovery and the address hash are primitives, and a primitive comes from one
+// place — see gpu/README.md. Neither has a device path today and the seam says
+// so there.
+#include "lux/gpu/gpu.hpp"
 
 #include <cstring>
 
@@ -23,29 +25,21 @@ constexpr std::size_t kSigLen = 65;
 }  // namespace
 
 ShortId address_of_compressed_key(std::span<const std::uint8_t> compressed) {
-    const Id h = sha256(compressed);
-    std::byte out[cevm::crypto::RIPEMD160_HASH_SIZE];
-    cevm::crypto::ripemd160(out, reinterpret_cast<const std::byte*>(h.data()), h.size());
+    const auto a = lux::gpu::pubkey_to_address(compressed);
     ShortId addr{};
-    std::memcpy(addr.data(), out, kShortIdLen);
+    std::memcpy(addr.data(), a.data(), kShortIdLen);
     return addr;
 }
 
 Result<ShortId> recover_address(const Id& hash, std::span<const std::uint8_t> sig65) {
     if (sig65.size() != kSigLen) return fail(Err::UnrecoverableSignature, "signature is not 65 bytes");
-    const std::uint8_t v = sig65[64];
-    if (v > 1) return fail(Err::UnrecoverableSignature, "recovery id is not 0 or 1");
-
-    std::uint8_t pub[64];
-    const auto st = secp256k1_ecrecover(hash.data(), sig65.data(), sig65.data() + 32, v, pub);
-    if (st != SECP256K1_OK) return fail(Err::UnrecoverableSignature, "public key recovery failed");
-
-    // The address is taken over the COMPRESSED key: 0x02/0x03 by the parity of
-    // y, then x. Recovery hands back x ‖ y, so the parity is the last byte of y.
-    std::uint8_t compressed[33];
-    compressed[0] = static_cast<std::uint8_t>(0x02 | (pub[63] & 1));
-    std::memcpy(compressed + 1, pub, 32);
-    return address_of_compressed_key({compressed, sizeof(compressed)});
+    lux::gpu::Signature sig{};
+    std::memcpy(sig.data(), sig65.data(), kSigLen);
+    // The seam takes the COMPRESSED key back: 0x02/0x03 by the parity of y,
+    // then x, which is what a Lux address commits to.
+    const auto compressed = lux::gpu::recover(hash, sig);
+    if (!compressed) return fail(Err::UnrecoverableSignature, "public key recovery failed");
+    return address_of_compressed_key(*compressed);
 }
 
 Status Fx::verify_credentials(std::span<const std::uint8_t> tx_bytes,
