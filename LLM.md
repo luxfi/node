@@ -549,3 +549,107 @@ What it says, and the honest caveats, are in `conformance/README.md` under
 **Timing it** — the sharpest being that `chains/cpp/xvm` answers `SKIPPED` for
 `exec` and is therefore the fastest thing in the table because it is the only
 one that stops after the syntactic pass.
+
+## Running the three, and why two of them sit at height 0
+
+`make luxd RUNTIME={go,rust,cpp}` builds; nothing here starts a cluster. Three
+things have to hold before a height moves, and only the first is obvious.
+
+**Up is not producing.** All three answer `eth_chainId` and `eth_blockNumber`
+the moment their listener opens, from a chain that has decided nothing. A fleet
+was found in exactly that state: the Rust cluster had served RPC for eleven
+hours at height 0, and the read-only RPC benchmark that had been run against it
+could not have noticed, because every question it asks is answerable at height
+0. Ask for the height twice, a minute apart, and compare — a single sample
+cannot tell a live chain from a frozen one.
+
+**The Rust and Go nodes build a block only when there is one to build.** Rust
+says so in its own loop: `Error::Empty` is not an error there but *a chain with
+no transactions is a chain at rest*. Go reaches the same place from the other
+end — `--automine` is documented as anvil-like, auto-producing *on
+transactions*. So both idle at height 0 forever with nothing wrong, and neither
+logs anything while doing it. The C++ node does the opposite and produces empty
+blocks, which is why it is the only one of the three that ever looks alive on
+its own. Neither policy is a bug; the difference between them is worth knowing
+before reading a height.
+
+**The shipped genesis funds nobody who holds a key.** `configs/localnet`
+allocates the C-chain to one treasury address, which is a Safe. There is no key
+here for it, so out of the box neither Go nor Rust can execute a single
+transaction, and by the paragraph above that means neither can leave height 0.
+Feeding work to them takes a genesis that funds a key the caller holds — the
+first Anvil account is the one the C++ node's built-in genesis already funds and
+the one `conformance/dex` signs with, so funding it on the other two makes one
+key drive all three. Rust takes such a document with `--genesis`, and its parser
+reads a Go *network* genesis by descending into `cChainGenesis`, so the single
+file Go is given with `--genesis-file` serves both.
+
+**The C++ node cannot catch up, and that halts the cluster.** Leadership is
+`height % n == index` and a follower waits for that leader's block, deliberately
+never building a sibling. But certification needs live votes, and a proposer
+certifies on a quorum without waiting for the last follower — so a node that is
+slow once is left a height behind with no way back, because its peers have moved
+on and will not vote at an old height again. It stays behind until the rotation
+reaches its turn to lead, and then the whole cluster stops: observed at height
+533, with node 1 stuck on 532 and nodes 0, 2 and 3 waiting on node 1 to lead.
+The logs say `timeout — retrying` forever and the RPC keeps answering, so the
+cluster reads as up.
+
+Closing it needs a block a node can accept on a certificate it verifies rather
+than on votes it collects. `Node2Host::verifyCert` already exists, so the
+verification half is there; what is missing is a frame to carry a certificate
+(the link defines only `kTxMsgType` and `kBlockMsgType`) and a path into the VM
+that accepts a block without voting on it. That is a real addition, not a patch,
+and it is not attempted here.
+
+## What a Rust validator does after it restarts
+
+Three faults sat between a restarted validator and the cluster it could see.
+Two are fixed in `lux-rs/node` (branch `fin/cluster-revive`); the third is
+named here because it is a real addition and guessing at it would be worse
+than saying where it is.
+
+**It refused to sign, and stopped.** The signing journal is durable on
+purpose: it is written before the key is used, so a node that comes back
+cannot contradict the run before it. That guard is right. What was wrong is
+what followed it — `certify` turned the refusal into a returned error, so the
+node rebuilt at that height, was refused for the same reason, and never moved.
+One line in a file retired a validator, and the log filled with `already
+signed at this height` while the height stayed at 0. Now the refusal means
+what it should: this node does not vote *here*. It re-sends the statement it
+stands by — the journal was already handing it back for exactly that, and it
+was being dropped — and then stays silent and keeps collecting, because a
+certificate is checked by a rule that does not ask whether the checker voted.
+Quorum is three of four, so the others certify without it and it accepts their
+block. `anchor` already relied on that; the equivocation case now does too.
+
+**The mesh only ever formed at boot.** `connect` is the opening rendezvous and
+it returns; nothing accepted an inbound link afterwards. A validator that
+restarted dialed into a backlog no one was reading — `peers 0 of 3` while the
+three peers it could see carried on, each still holding a socket that had
+already died. It is worth seeing how that reads from outside: the node serves
+RPC the whole time. Up, and not in the cluster. Now the rendezvous runs once a
+round for as long as the node runs, under the same rule about who dials, so a
+pair still ends with one link. A whole mesh pays nothing, because every peer
+is already held and no dial is attempted.
+
+**It still cannot catch up, and that one is not fixed.** The journal outlives
+the chain: votes are on disk, the C-chain is not — `Evm::new(genesis)` builds
+the world in memory. So a restarted node is at height 0 holding a journal that
+names heights 1 to N. Blocks do reach it — it is in the mesh — but a node can
+only accept one whose parent it already holds, and nothing asks a peer for the
+ones in between. Rejoined and caught up are different things, and the log says
+which one this is:
+
+    peers         3 of 3
+    following a peer's block: the chain refused the block: no state for the parent
+
+repeating while the cluster moves on without it. Closing it means either
+keeping the chain across a restart or fetching the history from a peer, and
+both are additions. Note the two fixes above are still what makes that work
+reachable: a node cannot rejoin on a certificate that arrives over a link it
+does not have.
+
+A caution that outlives all three. Every one of these looked healthy from
+outside — the RPC answers `eth_chainId` and `eth_blockNumber` from a chain
+that has decided nothing. Ask twice, a minute apart, and compare.
