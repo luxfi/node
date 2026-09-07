@@ -501,8 +501,9 @@ is already held and no dial is attempted.
 **It still cannot catch up, and that one is not fixed.** The journal outlives
 the chain: votes are on disk, the C-chain is not — `Evm::new(genesis)` builds
 the world in memory. So a restarted node is at height 0 holding a journal that
-names heights 1 to N, and the loop only handles blocks that arrive at the
-current height. Rejoined and caught up are different things, and the log says
+names heights 1 to N. Blocks do reach it — it is in the mesh — but a node can
+only accept one whose parent it already holds, and nothing asks a peer for the
+ones in between. Rejoined and caught up are different things, and the log says
 which one this is:
 
     peers         3 of 3
