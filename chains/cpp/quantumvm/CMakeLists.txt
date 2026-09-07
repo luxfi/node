@@ -25,6 +25,12 @@ project(lux_quantumvm LANGUAGES C CXX ASM)
 # The wire this chain speaks comes from the published SDK, not from here.
 include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
 
+# The primitive seam. The Q-chain identifies a transaction and a UTXO by
+# SHA-256, and it asks for that hash the same way every other chain here does —
+# see gpu/README.md. Carrying its own copy would be a third implementation of
+# one hash in one C++ tree.
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../gpu/cpp ${CMAKE_CURRENT_BINARY_DIR}/lux_gpu)
+
 # The wire's accessors: schema/wire.zap in, include/lux/quantumvm/gen out.
 zap_schema(wire-schema
   ${CMAKE_CURRENT_SOURCE_DIR}/schema/wire.zap
@@ -162,7 +168,7 @@ add_library(lux_quantumvm STATIC
   src/vm.cpp
   src/service.cpp)
 target_include_directories(lux_quantumvm PUBLIC include "${CRYPTO_DIR}/ed25519/cpp")
-target_link_libraries(lux_quantumvm PUBLIC zap::zap blst lux_qvm_mldsa)
+target_link_libraries(lux_quantumvm PUBLIC zap::zap blst lux_qvm_mldsa lux_gpu)
 target_compile_options(lux_quantumvm PRIVATE -Wall -Wextra)
 find_package(Threads REQUIRED)
 target_link_libraries(lux_quantumvm PUBLIC Threads::Threads)

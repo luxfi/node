@@ -30,23 +30,23 @@ lux-consensus = "1.23.0"
 # what a block is.
 lux-node = { path = "../../../../../lux-rs/node" }
 
-# SHA-256. A tx id is `sha256(signed bytes)` and a block id is `sha256(bytes)`;
-# a second implementation of that would be a second answer to "which block".
-sha2 = "0.10"
+# Every primitive the chain is defined over — SHA-256, which names a tx and a
+# block; RIPEMD-160 over it, which is the second half of an address; and
+# public-key recovery, which is how a transaction that carries signatures and
+# no keys can be checked at all. A second implementation of any of them would be
+# a second answer to "which block". This crate is also where the choice between
+# computing them and handing them to an installed kernel library is made — see
+# gpu/README.md.
+lux-gpu = { path = "../../../gpu/rust" }
 
 # The signature a validator proves possession of. Same curve, same domain tag as
 # the Go P-Chain's proof of possession — a second BLS is a second network.
 blst = "0.3"
 
-# Recovering the address that authorised a spend. secp256k1, the same curve
-# the C-Chain already recovers with, and the only way a transaction that
-# carries signatures and no keys can be checked at all.
+# Signing. A chain verifies signatures and never makes them, so this is the
+# test and tooling half of the same curve, deliberately outside the primitive
+# seam — that seam exists to make VERIFICATION agree across backends.
 k256 = { version = "0.13", features = ["ecdsa"] }
-
-# The second half of a P-Chain address: ripemd160 over sha256 of the
-# compressed key. Naming it here rather than reimplementing it is the
-# difference between one address for a key and two.
-ripemd = "0.1"
 
 # JSON-RPC is the shape the seam's `call` speaks in. Hand-parsing at a boundary
 # is a vulnerability with a schedule.
@@ -58,3 +58,8 @@ serde_json = "1"
 blst = "0.3"
 serde = { version = "1", features = ["derive"] }
 
+# An independent second opinion, only in tests: the address check recomputes
+# ripemd160(sha256(key)) by hand rather than asking the seam whether the seam
+# is right.
+ripemd = "0.1"
+sha2 = "0.10"

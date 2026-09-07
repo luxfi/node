@@ -3,7 +3,9 @@
 
 #include "lux/xvm/fx.hpp"
 
-#include "lux/crypto/secp256k1.h"
+// Recovery is a primitive, and a primitive comes from one place — see
+// gpu/README.md. It has no device path today and says so there.
+#include "lux/gpu/gpu.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -46,26 +48,20 @@ bool sorted_and_unique(const std::vector<ShortId>& v) {
 // Masking the byte — v & 1 — would read 2 as 0 and recover the SAME address the
 // untouched signature recovers. Editing one byte of any valid credential would
 // then produce a transaction this node accepts and Go and Rust reject, which is
-// a chain split, and one that costs an attacker a single XOR. The rule is
-// enforced here because the C recovery routine below normalizes its v argument
-// rather than refusing it, so the caller is the only place that can hold it.
+// a chain split, and one that costs an attacker a single XOR. The seam holds
+// that rule for every chain: 2 and 3 are named and refused rather than masked.
+//
+// The seam answers with a key or with nothing, which is all a chain needs to
+// decide. It is not all a chain needs to SAY: the reference gives two different
+// refusals here, and a byte that is not a recovery id at all is a different
+// complaint from a recovery that was attempted and failed. So the id is checked
+// for its own message before the curve is asked; the curve's rule stays in the
+// seam and only the wording is here.
 Result<ShortId> recover_address(const Id& hash, const Signature& sig) {
-    std::uint8_t uncompressed[64];
-    const std::uint8_t v = sig[64];
-    if (v >= 4) return std::unexpected("invalid signature recovery id");
-    // 2 and 3 name the wrapped-x recovery. This curve arithmetic cannot express
-    // it — secp256k1_ecrecover refuses an r that is not below n, which is
-    // exactly what the wrapped case has — and the reference fails it for every
-    // reachable signature, so failing it here is the same answer, reached
-    // honestly rather than by dropping the bit that says so.
-    if (v > 1) return std::unexpected("recovery failed");
-    secp256k1_status st =
-        secp256k1_ecrecover(hash.data(), sig.data(), sig.data() + 32, v, uncompressed);
-    if (st != SECP256K1_OK) return std::unexpected("recovery failed");
-    std::array<std::uint8_t, 33> compressed{};
-    compressed[0] = std::uint8_t(0x02 | (uncompressed[63] & 1));
-    std::memcpy(compressed.data() + 1, uncompressed, 32);
-    return pubkey_to_address(view(compressed));
+    if (sig[64] >= 4) return std::unexpected("invalid signature recovery id");
+    const auto compressed = lux::gpu::recover(hash, sig);
+    if (!compressed) return std::unexpected("recovery failed");
+    return pubkey_to_address(view(*compressed));
 }
 
 }  // namespace

@@ -50,11 +50,7 @@ inline bool empty(const Id& id) {
 // The content id of a byte string: sha256 over exactly those bytes. Every id
 // this chain produces comes from here, so `id == sha256(bytes)` holds for a
 // block and a transaction alike.
-inline Id of(ByteView data) {
-    Sha256 h;
-    h.update(data);
-    return h.finish();
-}
+inline Id of(ByteView data) { return sha256(data); }
 
 // An id read off the wire. Fewer than 32 bytes is not an id: the caller checked
 // the width, and a short read that silently zero-padded would name a different

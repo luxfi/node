@@ -111,23 +111,14 @@ foreach(_p "${CRYPTO_DIR}/secp256k1/cpp/ecrecover.cpp" "${CRYPTO_DIR}/ripemd160/
   endif()
 endforeach()
 
-# core — the names, the codec and the store this chain shares with every other
-# one here. It also carries sha256 and ripemd160, which is why they are absent
-# from lux_pvm_crypto below: a binary compiles each hash once, or it has two.
+# core — the names, the store and the primitive seam this chain shares with
+# every other one here. Core links gpu/cpp, so the hashes, keccak and signature
+# recovery all arrive through the one interface a chain asks a primitive
+# through; they used to be compiled here and again in xvm, and the P-chain
+# carried a third SHA-256 of its own in a header. A primitive with three builds
+# has three places to drift.
 set(LUXCPP_CRYPTO_DIR "${CRYPTO_DIR}" CACHE PATH "luxcpp/crypto checkout")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../core" "${CMAKE_CURRENT_BINARY_DIR}/core")
-
-if(NOT TARGET lux_pvm_crypto)
-  add_library(lux_pvm_crypto STATIC
-    "${CRYPTO_DIR}/secp256k1/cpp/ecrecover.cpp"
-    "${CRYPTO_DIR}/secp256k1/cpp/batch_inv.cpp"
-    "${CRYPTO_DIR}/secp256k1/cpp/ecdsa.cpp"
-    "${CRYPTO_DIR}/keccak/cpp/keccak.cpp")
-  target_include_directories(lux_pvm_crypto PUBLIC
-    "${CRYPTO_DIR}/include" "${CRYPTO_DIR}/secp256k1/cpp" "${CRYPTO_DIR}/keccak/cpp")
-  target_link_libraries(lux_pvm_crypto PUBLIC lux_core)
-  target_compile_options(lux_pvm_crypto PRIVATE -O2)
-endif()
 
 if(NOT TARGET blst)
   add_library(blst STATIC "${BLST_DIR}/src/server.c" "${BLST_DIR}/build/assembly.S")
@@ -159,7 +150,7 @@ add_library(lux_platformvm STATIC
   src/mempool.cpp
   src/persist.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
-target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto zap::zap lux_core)
+target_link_libraries(lux_platformvm PUBLIC blst zap::zap lux_core)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
 # __int128, a compiler extension every target this ships on has.
 target_compile_options(lux_platformvm PRIVATE -Wall -Wextra)
@@ -185,7 +176,11 @@ endif()
 # check this chain's answer against the NODE's rather than against itself. Two
 # implementations of one hash that only agree with themselves is exactly the
 # failure the commitment exists to prevent.
-if(NOT TARGET lux_node_validators AND EXISTS "${NODE_DIR}/src/validators.cpp")
+if(NOT TARGET lux_node_validators AND EXISTS "${NODE_DIR}/src/validators.cpp"
+   AND EXISTS "${CRYPTO_DIR}/sha256/cpp/sha256.cpp")
+  # SHA-256 comes from the seam, not from a second compile of the same file:
+  # two objects for one hash in one link is a duplicate symbol at best and two
+  # answers at worst.
   add_library(lux_node_validators STATIC "${NODE_DIR}/src/validators.cpp")
   target_include_directories(lux_node_validators PUBLIC
     "${NODE_DIR}/include" "${CONSENSUS_DIR}/include" "${CRYPTO_DIR}")

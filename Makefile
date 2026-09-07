@@ -31,7 +31,7 @@ CONSENSUS_GO   := $(HOME)/work/lux/consensus
 CONSENSUS_RUST := $(HOME)/work/lux/consensus/pkg/rust
 CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
 
-.PHONY: chains-build all luxd gpu conformance conformance-go conformance-rust conformance-cpp \
+.PHONY: chains-build all luxd gpu gpu-differential conformance conformance-go conformance-rust conformance-cpp \
         chains chains-corpus bench precompiles precompiles-build precompiles-corpus \
         dex dex-test luxd-go luxd-rust luxd-cpp wire clean help
 
@@ -144,6 +144,40 @@ gpu: ## build the GPU kernel library
 	cmake --build $(GPU_DIR)/build --target luxgpu_core_static -j$(NPROC)
 	@test -f $(GPU_DIR)/build/libluxgpu.a
 	@ls -lh $(GPU_DIR)/build/libluxgpu.a
+
+# ---- gpu-differential -------------------------------------------------------
+#
+# The seam, in all three languages, asked the same question twice: once with no
+# kernel library visible, once with one installed and LUX_GPU=verify, which
+# computes BOTH answers and stops on the first byte that differs.
+#
+# The no-library half is the one that matters most: it is the proof that a node
+# built and run with nothing installed is a whole node and not a degraded one.
+# It runs first, and it runs with LUX_GPU_LIB deliberately unset.
+#
+# LUX_GPU_LIB points at the SHARED object; `make gpu` builds the static one, and
+# the two are produced by the same configure step.
+
+GPU_LIB := $(GPU_DIR)/build/libluxgpu.so
+
+gpu-differential:
+	@echo "=== gpu seam: CPU alone, no kernel library visible ==="
+	cd $(ROOT) && GOWORK=off CGO_ENABLED=0 LUX_GPU= LUX_GPU_LIB= go test -count=1 ./gpu/
+	cd $(ROOT)/gpu/rust && PATH="$(HOME)/.cargo/bin:$$PATH" env -u LUX_GPU -u LUX_GPU_LIB cargo test --release
+	cmake -S $(ROOT)/gpu/cpp -B $(ROOT)/gpu/cpp/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(ROOT)/gpu/cpp/build --target lux_gpu_test -j$(NPROC)
+	cd $(ROOT)/gpu/cpp && env -u LUX_GPU -u LUX_GPU_LIB ./build/lux_gpu_test
+	@echo
+	@if [ ! -f $(GPU_LIB) ]; then \
+		echo "=== no kernel library at $(GPU_LIB) — run 'make gpu' first ==="; \
+		echo "The CPU half above is the whole node; the half below is the overlay."; \
+		exit 1; \
+	fi
+	@echo "=== gpu seam: CPU against the plugin, every answer compared ==="
+	cd $(ROOT) && GOWORK=off CGO_ENABLED=1 LUX_GPU=verify LUX_GPU_LIB=$(GPU_LIB) go test -count=1 -v -run TestBothBackendsGiveTheSameAnswer ./gpu/
+	cd $(ROOT) && GOWORK=off CGO_ENABLED=1 LUX_GPU=verify LUX_GPU_LIB=$(GPU_LIB) go test -count=1 ./gpu/
+	cd $(ROOT)/gpu/rust && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_GPU=verify LUX_GPU_LIB=$(GPU_LIB) cargo test --release -- --nocapture
+	cd $(ROOT)/gpu/cpp && LUX_GPU=verify LUX_GPU_LIB=$(GPU_LIB) ./build/lux_gpu_test
 
 # ---- conformance ------------------------------------------------------------
 

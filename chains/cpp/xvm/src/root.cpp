@@ -3,7 +3,11 @@
 
 #include "lux/xvm/root.hpp"
 
-#include "lux/crypto/keccak.h"
+// Keccak, the tagged leaf and node, and the fold itself all come from the one
+// place a chain asks for a primitive. The fold is there rather than here for a
+// reason: a level of the tree is a batch of independent hashes, which is the
+// only shape a device can help with — see gpu/README.md.
+#include "lux/gpu/gpu.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -19,58 +23,24 @@ void le64(Bytes& b, std::uint64_t v) {
 }
 void append(Bytes& b, const Id& v) { b.insert(b.end(), v.begin(), v.end()); }
 
-Digest keccak_of(const Bytes& b) {
-    Digest out{};
-    keccak256(b.data(), b.size(), out.data());
-    return out;
-}
+// One leaf preimage, one hash. A single hash is not a batch — the shape that
+// has somewhere else to go is a whole LEVEL of the fold, and that is where the
+// seam dispatches.
+Digest keccak_of(const Bytes& b) { return lux::gpu::keccak256(lux::gpu::Bytes(b.data(), b.size())); }
 
 }  // namespace
 
 Digest keccak(const std::vector<ByteView>& parts) {
-    Bytes joined;
-    for (const auto& p : parts) joined.insert(joined.end(), p.begin(), p.end());
-    return keccak_of(joined);
+    return lux::gpu::keccak256(std::span<const lux::gpu::Bytes>(parts.data(), parts.size()));
 }
 
-Digest leaf_hash(const Digest& d) {
-    Bytes b;
-    b.push_back(kLeafTag);
-    append(b, d);
-    return keccak_of(b);
-}
+Digest leaf_hash(const Digest& d) { return lux::gpu::leaf_hash(d); }
 
-Digest node_hash(const Digest& l, const Digest& r) {
-    Bytes b;
-    b.push_back(kNodeTag);
-    append(b, l);
-    append(b, r);
-    return keccak_of(b);
-}
+Digest node_hash(const Digest& l, const Digest& r) { return lux::gpu::node_hash(l, r); }
 
-Digest empty_root() { return keccak_of(Bytes{}); }
+Digest empty_root() { return lux::gpu::empty_root(); }
 
-Digest merkle_root(const std::vector<Digest>& leaves) {
-    if (leaves.empty()) return empty_root();
-
-    std::vector<Digest> level;
-    level.reserve(leaves.size());
-    for (const auto& d : leaves) level.push_back(leaf_hash(d));
-
-    while (level.size() > 1) {
-        const std::size_t cnt = level.size();
-        const std::size_t parents = (cnt + 1) / 2;
-        const std::size_t pairs = cnt / 2;
-        std::vector<Digest> next(parents);
-        for (std::size_t j = 0; j < pairs; ++j) next[j] = node_hash(level[2 * j], level[2 * j + 1]);
-        // RFC 6962 lone-right promotion: an odd last node moves up unchanged
-        // rather than being paired with itself, which would make two distinct
-        // trees share a root.
-        if (cnt % 2 == 1) next[parents - 1] = level[cnt - 1];
-        level = std::move(next);
-    }
-    return level[0];
-}
+Digest merkle_root(const std::vector<Digest>& leaves) { return lux::gpu::merkle_root(leaves); }
 
 Digest utxo_leaf_digest(const UTXOLeaf& u, std::uint32_t i) {
     Bytes b;
