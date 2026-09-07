@@ -1,0 +1,131 @@
+// Copyright (C) 2019-2026, Lux Industries, Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+// quorum_params_test.go — the node must NEVER wire a non-BFT consensus param set
+// for a multi-validator (sybil-protected) chain. LocalParams() is K=3/α=2 → f=0,
+// merely crash-fault-tolerant: a single Byzantine validator forks it. These tests
+// pin selectConsensusParams to a BFT-safe set for every multi-node network and
+// prove the value-network backstop (ValidateForValueNetwork) accepts the selected
+// params.
+package chains
+
+import (
+	"testing"
+
+	consensusconfig "github.com/luxfi/consensus/config"
+	"github.com/luxfi/constants"
+)
+
+// TestSelectConsensusParams_MultiNodeIsBFT proves that for EVERY multi-validator
+// (sybilProtection==true) network the node selects a Byzantine-fault-tolerant
+// param set (f≥1, i.e. K≥4) that also clears the value-network validator — and
+// that it is NEVER LocalParams (K=3) or any K<4 set. This is the node half of the
+// rule; the consensus half is config.ValidateForValueNetwork, tested in the
+// consensus module.
+func TestSelectConsensusParams_MultiNodeIsBFT(t *testing.T) {
+	local := consensusconfig.LocalParams()
+
+	cases := []struct {
+		name      string
+		networkID uint32
+	}{
+		{"mainnet", constants.MainnetID},
+		{"testnet", constants.TestnetID},
+		{"localnet-multinode", constants.LocalID},
+		{"unittest-multinode", constants.UnitTestID},
+		{"arbitrary-multinode", 424242},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := selectConsensusParams(true /* sybilProtection */, tc.networkID)
+
+			// MUST be Byzantine-fault-tolerant: f≥1 ⟹ K≥4.
+			if p.ByzantineFaultTolerance() < 1 {
+				t.Fatalf("multi-node net %q got non-BFT params K=%d f=%d — a single faulty validator forks",
+					tc.name, p.K, p.ByzantineFaultTolerance())
+			}
+			// MUST NOT be the crash-fault-tolerant LocalParams (K=3/α=2).
+			if p.K == local.K && p.AlphaPreference == local.AlphaPreference && p.K == 3 {
+				t.Fatalf("multi-node net %q selected LocalParams (K=3/α=2) — the fork config", tc.name)
+			}
+			// The selected params MUST themselves pass Valid() (the BFT α-floor:
+			// 2·AlphaPreference − K ≥ f+1).
+			if err := p.Valid(); err != nil {
+				t.Fatalf("multi-node net %q selected params fail Valid(): %v (K=%d α=%d)",
+					tc.name, err, p.K, p.AlphaPreference)
+			}
+		})
+	}
+}
+
+// TestSelectConsensusParams_LocalDevIsSatisfiableBFT proves that an explicitly-
+// local dev network (devnet 3 / localnet 1337) selects the MINIMAL real-BFT set
+// (LocalBFTParams: K=4/α=3, f=1) — satisfiable by a handful of localhost
+// validators — and NOT the large Default (K=20/α=14), whose α=14 quorum is
+// unreachable with 3-4 validators, which freezes the chain at height 0. It must still be
+// genuinely BFT (f≥1) and pass the value backstop (K=4 ≥ 4), so a value network's
+// safety is untouched: a custom VALUE L1 (high networkID) still gets
+// the large Default set, never the local one.
+func TestSelectConsensusParams_LocalDevIsSatisfiableBFT(t *testing.T) {
+	for _, networkID := range []uint32{constants.DevnetID, constants.LocalID} {
+		p := selectConsensusParams(true /* sybilProtection */, networkID)
+
+		// Satisfiable on a small committee: α must be small (K=4 → α=3), NOT 14.
+		if p.K != 4 || p.AlphaPreference != 3 {
+			t.Fatalf("local dev net %d: want minimal-BFT K=4/α=3, got K=%d/α=%d (Default K=20 is unsatisfiable on localhost)",
+				networkID, p.K, p.AlphaPreference)
+		}
+		// Still genuinely BFT (f≥1).
+		if p.ByzantineFaultTolerance() < 1 {
+			t.Fatalf("local dev net %d: K=%d is not BFT (f=%d)", networkID, p.K, p.ByzantineFaultTolerance())
+		}
+		// Must clear the value backstop the manager asserts before engine start.
+		if err := p.ValidateForValueNetwork(networkID); err != nil {
+			t.Fatalf("local dev net %d: minimal-BFT params must pass the value backstop, got %v", networkID, err)
+		}
+	}
+
+	// A custom value L1 with a high networkID is NOT a local dev network: it must
+	// keep the large Default set (the isLocalDevNetwork predicate is EXACT, not a
+	// >=1337 range that would wrongly catch value L1s).
+	const customValueL1 = uint32(909090)
+	if p := selectConsensusParams(true, customValueL1); p.K != consensusconfig.DefaultParams().K {
+		t.Fatalf("custom value L1 %d must get Default K=%d, got K=%d (must NOT match the local-dev path)",
+			customValueL1, consensusconfig.DefaultParams().K, p.K)
+	}
+}
+
+// TestSelectConsensusParams_SingleNodeIsK1 proves --dev / sybil-disabled selects
+// the K=1 single-validator regime (the sole validator's accept is the 1-of-1
+// quorum) — and NOT a multi-node BFT set.
+func TestSelectConsensusParams_SingleNodeIsK1(t *testing.T) {
+	p := selectConsensusParams(false /* sybilProtection */, constants.LocalID)
+	if p.K != 1 {
+		t.Fatalf("sybil-disabled (single-node) must select K=1, got K=%d", p.K)
+	}
+}
+
+// TestSelectConsensusParams_ValueBackstop proves the params selected for a
+// multi-node net pass the STRICTER value-network validator for that net — the
+// fail-closed backstop asserted at the manager call site before starting the
+// engine. (Mainnet enforces K≥11, so MainnetParams K=21 passes; Default K=20
+// passes for an arbitrary value net.)
+func TestSelectConsensusParams_ValueBackstop(t *testing.T) {
+	cases := []struct {
+		name      string
+		networkID uint32
+	}{
+		{"mainnet", constants.MainnetID},
+		{"arbitrary-value-net", 909090},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := selectConsensusParams(true, tc.networkID)
+			if err := p.ValidateForValueNetwork(tc.networkID); err != nil {
+				t.Fatalf("selected params for value net %q must pass the value backstop, got %v (K=%d)",
+					tc.name, err, p.K)
+			}
+		})
+	}
+}

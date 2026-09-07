@@ -1,0 +1,1013 @@
+// Copyright (C) 2019-2025, Lux Industries Inc. All rights reserved.
+// See the file LICENSE for licensing terms.
+
+package xvm
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"sync"
+	"time"
+
+	"github.com/luxfi/log"
+	"github.com/luxfi/metric"
+	metrics "github.com/luxfi/metric"
+	"github.com/zap-proto/zip"
+
+	"github.com/luxfi/address"
+	consensusconfig "github.com/luxfi/consensus/config"
+	consensuschain "github.com/luxfi/consensus/engine/chain"
+	"github.com/luxfi/constants"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/versiondb"
+	"github.com/luxfi/ids"
+	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/cache"
+	"github.com/luxfi/node/pubsub"
+	server "github.com/luxfi/node/server/http"
+	"github.com/luxfi/node/upgrade"
+	"github.com/luxfi/node/version"
+	"github.com/luxfi/node/vms/components/index"
+	"github.com/luxfi/node/vms/txs/auth"
+	"github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/block"
+	"github.com/luxfi/node/vms/xvm/config"
+	"github.com/luxfi/node/vms/xvm/network"
+	"github.com/luxfi/node/vms/xvm/state"
+	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/runtime"
+	"github.com/luxfi/timer/mockable"
+	lux "github.com/luxfi/utxo"
+	validators "github.com/luxfi/validators"
+	consensusversion "github.com/luxfi/version"
+	vmcore "github.com/luxfi/vm"
+	chain "github.com/luxfi/vm/chain"
+	"github.com/luxfi/warp"
+
+	blockbuilder "github.com/luxfi/node/vms/xvm/block/builder"
+	blockexecutor "github.com/luxfi/node/vms/xvm/block/executor"
+	extensions "github.com/luxfi/node/vms/xvm/fxs"
+	xvmmetrics "github.com/luxfi/node/vms/xvm/metrics"
+	txexecutor "github.com/luxfi/node/vms/xvm/txs/executor"
+	xmempool "github.com/luxfi/node/vms/xvm/txs/mempool"
+)
+
+const assetToFxCacheSize = 1024
+
+var (
+	errIncompatibleFx            = errors.New("incompatible feature extension")
+	errUnknownFx                 = errors.New("unknown feature extension")
+	errGenesisAssetMustHaveState = errors.New("genesis asset must have non-empty state")
+
+	// Compile-time check that *VM satisfies chain.ChainVM (= block.ChainVM)
+	// AND the consensus engine's BlockBuilder. Together these prove X-Chain
+	// takes the LINEAR ⅔-stake cert path in the chain manager (buildChain →
+	// consensuschain.NewRuntime), not the DAG path. BuildBlock is promoted
+	// from the embedded blockbuilder.Builder (the real linear builder: parent
+	// = preferred, height = parent+1, real timestamp). Do NOT add a
+	// GetEngine() dag.Engine method: that routes the manager's type switch
+	// back to createDAG and bypasses the certificate.
+	_ chain.ChainVM               = (*VM)(nil)
+	_ consensuschain.BlockBuilder = (*VM)(nil)
+)
+
+// BCLookup provides blockchain alias lookup
+type BCLookup interface {
+	Lookup(string) (ids.ID, error)
+	PrimaryAlias(ids.ID) (string, error)
+}
+
+// SharedMemory provides cross-chain shared memory
+type SharedMemory interface {
+	Get(peerChainID ids.ID, keys [][]byte) ([][]byte, error)
+	Apply(map[ids.ID]interface{}, ...interface{}) error
+}
+
+type VM struct {
+	network.Atomic
+
+	config.Config
+
+	metrics xvmmetrics.Metrics
+
+	lux.AddressManager
+	ids.Aliaser
+
+	// Consensus context
+	consensusRuntime *runtime.Runtime
+
+	// Logger for this VM
+	log log.Logger
+
+	// Lock for thread safety (exposed for tests)
+	Lock sync.RWMutex
+
+	// Chain information
+	ChainID  ids.ID
+	XChainID ids.ID
+
+	// BCLookup provides blockchain alias lookup
+	bcLookup BCLookup
+
+	// SharedMemory for cross-chain operations
+	SharedMemory SharedMemory
+
+	// Used to check local time
+	clock mockable.Clock
+
+	registerer metrics.Registerer
+
+	connectedPeers map[ids.NodeID]*consensusversion.Application
+
+	parser block.Parser
+
+	pubsub *pubsub.Server
+
+	sender warp.Sender
+
+	// State management
+	state state.State
+
+	// Set to true once this VM is marked as `Bootstrapped` by the engine
+	bootstrapped bool
+
+	// asset id that will be used for fees
+	feeAssetID ids.ID
+
+	// Asset ID --> Bit set with fx IDs the asset supports
+	assetToFxCache *cache.LRU[ids.ID, set.Bits64]
+
+	baseDB database.Database
+	db     *versiondb.Database
+
+	fxIndex *txs.FxIndex
+	fxs     []*extensions.ParsedFx
+
+	// ops is the chain's operations, served at /ops. Held so shutdown can stop
+	// the listener it runs on.
+	ops *zip.App
+
+	addressTxsIndexer index.AddressTxsIndexer
+
+	txBackend *txexecutor.Backend
+
+	// Cancelled on shutdown
+	onShutdownCtx context.Context
+	// Call [onShutdownCtxCancel] to cancel [onShutdownCtx] during Shutdown()
+	onShutdownCtxCancel context.CancelFunc
+	awaitShutdown       sync.WaitGroup
+
+	networkConfig network.Config
+	// These values are only initialized after the chain has been linearized.
+	blockbuilder.Builder
+	chainManager blockexecutor.Manager
+	network      *network.Network
+
+	// Channel for receiving messages from mempool
+	toEngine chan vmcore.Message
+
+	// F102 close-out: chain-wide credential-admission policy resolved
+	// from genesis at node bootstrap. The mempool builder installs this
+	// via SetAuthPolicy so strict-PQ chains refuse classical secp256k1
+	// credentials at gossip time.
+	securityProfile         *consensusconfig.ChainSecurityProfile
+	classicalCompatRegistry auth.ClassicalCompatRegistry
+}
+
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *consensusversion.Application) error {
+	// If the chain isn't linearized yet, we must track the peers externally
+	// until the network is initialized.
+	if vm.network == nil {
+		vm.connectedPeers[nodeID] = nodeVersion
+		return nil
+	}
+	return vm.network.Connected(ctx, nodeID, nodeVersion)
+}
+
+func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
+	// If the chain isn't linearized yet, we must track the peers externally
+	// until the network is initialized.
+	if vm.network == nil {
+		delete(vm.connectedPeers, nodeID)
+		return nil
+	}
+	return vm.network.Disconnected(ctx, nodeID)
+}
+
+/*
+ ******************************************************************************
+ ********************************* Core VM **********************************
+ ******************************************************************************
+ */
+
+func (vm *VM) Initialize(
+	ctx context.Context,
+	init vmcore.Init,
+) error {
+	_ = ctx
+	// Try to get Runtime for chain info
+	if init.Runtime != nil {
+		// Store chain-specific info from Runtime
+		vm.consensusRuntime = init.Runtime
+		vm.ChainID = init.Runtime.ChainID
+		vm.XChainID = init.Runtime.ChainID // For XVM, this is the same
+
+		// SharedMemory will be set by the chains manager when the VM is created
+	}
+
+	db := init.DB
+	if db == nil {
+		return errors.New("invalid database: nil")
+	}
+
+	// Fx types are canonical: require *vmcore.Fx.
+	fxs := init.Fx
+	coreFxs := make([]*vmcore.Fx, len(fxs))
+	for i, fx := range fxs {
+		if fx == nil {
+			continue
+		}
+		fxTyped, ok := fx.(*vmcore.Fx)
+		if !ok {
+			return fmt.Errorf("unexpected fx type %T", fx)
+		}
+		coreFxs[i] = fxTyped
+	}
+
+	// Check sender type
+	appSender := init.Sender
+	if appSender == nil {
+		// In single-node mode, we can work without a Sender
+		// Create a no-op Sender
+		appSender = &noOpSender{}
+	}
+
+	return vm.initialize(ctx, ctx, db, init.Genesis, init.Upgrade, init.Config, coreFxs, appSender)
+}
+
+// Original Initialize method renamed to initialize
+func (vm *VM) initialize(
+	_ context.Context,
+	ctx context.Context,
+	db database.Database,
+	genesisBytes []byte,
+	_ []byte,
+	configBytes []byte,
+	fxs []*vmcore.Fx,
+	sender warp.Sender,
+) error {
+	// Initialize logger first
+	vm.log = log.Noop()
+
+	// Create a simple no-op handler for warp.Handler
+	noopMessageHandler := &noOpHandler{}
+	vm.Atomic = network.NewAtomic(noopMessageHandler)
+
+	xvmConfig, err := ParseConfig(configBytes)
+	if err != nil {
+		return err
+	}
+
+	// Assign parsed config to VM
+	vm.Config = xvmConfig.Config
+
+	vm.log.Info("VM config initialized",
+		log.Reflect("config", xvmConfig),
+	)
+
+	// Get metrics from a global registry or create new one
+	vm.registerer = metric.NewRegistry()
+
+	vm.connectedPeers = make(map[ids.NodeID]*consensusversion.Application)
+
+	// Initialize metrics as soon as possible
+	vm.metrics, err = xvmmetrics.New(vm.registerer)
+	if err != nil {
+		return fmt.Errorf("failed to initialize metrics: %w", err)
+	}
+
+	vm.AddressManager = lux.NewAddressManager(vm.consensusRuntime)
+	vm.Aliaser = ids.NewAliaser()
+
+	vm.sender = sender
+	vm.baseDB = db
+	vm.db = versiondb.New(db)
+	vm.assetToFxCache = &cache.LRU[ids.ID, set.Bits64]{Size: assetToFxCacheSize}
+
+	vm.pubsub = pubsub.New(vm.log)
+
+	typedFxs := make([]extensions.Fx, len(fxs))
+	vm.fxs = make([]*extensions.ParsedFx, len(fxs))
+	for i, fxContainer := range fxs {
+		if fxContainer == nil {
+			return errIncompatibleFx
+		}
+
+		// Type assert to extensions.Fx
+		fx, ok := fxContainer.Fx.(extensions.Fx)
+		if !ok {
+			return errIncompatibleFx
+		}
+
+		typedFxs[i] = fx
+		vm.fxs[i] = &extensions.ParsedFx{
+			ID: fxContainer.ID,
+			Fx: fx,
+		}
+	}
+
+	vm.fxIndex = txs.NewFxIndex()
+	vm.parser, err = block.NewCustomParser(
+		vm.fxIndex,
+		&vm.clock,
+		vm.log,
+		typedFxs,
+	)
+	if err != nil {
+		return err
+	}
+
+	state, err := state.New(
+		vm.db,
+		vm.parser,
+		vm.registerer,
+		xvmConfig.ChecksumsEnabled,
+	)
+	if err != nil {
+		return err
+	}
+
+	vm.state = state
+
+	if err := vm.initGenesis(genesisBytes); err != nil {
+		return err
+	}
+
+	// Initialize transaction indexer based on config
+	// Note: The indexer uses baseDB directly to avoid versiondb batching issues.
+	// Indexer writes need to be immediately visible and not subject to versiondb rollback.
+	if vm.Config.IndexTransactions {
+		vm.log.Info("address transaction indexing is enabled")
+		vm.addressTxsIndexer, err = index.NewIndexer(vm.baseDB, vm.log, "", vm.registerer, true)
+		if err != nil {
+			return fmt.Errorf("failed to initialize indexer: %w", err)
+		}
+	} else {
+		vm.log.Info("address transaction indexing is disabled")
+		vm.addressTxsIndexer, err = index.NewNoIndexer(vm.baseDB, false)
+		if err != nil {
+			return fmt.Errorf("failed to initialize disabled indexer: %w", err)
+		}
+	}
+
+	vm.txBackend = &txexecutor.Backend{
+		Ctx:          ctx,
+		Runtime:      vm.consensusRuntime,
+		Config:       &vm.Config,
+		Fxs:          vm.fxs,
+		FxIndex:      vm.fxIndex,
+		FeeAssetID:   vm.feeAssetID,
+		Bootstrapped: false,
+		SharedMemory: vm.SharedMemory,
+		Log:          vm.log,
+	}
+
+	vm.onShutdownCtx, vm.onShutdownCtxCancel = context.WithCancel(context.Background())
+	vm.networkConfig = xvmConfig.Network
+	return vm.state.Commit()
+}
+
+// onBootstrapStarted is called by the consensus engine when it starts bootstrapping this chain
+func (vm *VM) onBootstrapStarted() error {
+	vm.txBackend.Bootstrapped = false
+	for _, fx := range vm.fxs {
+		if err := fx.Fx.Bootstrapping(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (vm *VM) onReady() error {
+	vm.txBackend.Bootstrapped = true
+	for _, fx := range vm.fxs {
+		if err := fx.Fx.Bootstrapped(); err != nil {
+			return err
+		}
+	}
+
+	vm.bootstrapped = true
+	return nil
+}
+
+func (vm *VM) SetState(_ context.Context, stateNum uint32) error {
+	switch vmcore.State(stateNum) {
+	case vmcore.Bootstrapping:
+		return vm.onBootstrapStarted()
+	case vmcore.Ready:
+		return vm.onReady()
+	default:
+		return nil
+	}
+}
+
+func (vm *VM) Shutdown(context.Context) error {
+	if vm.state == nil {
+		return nil
+	}
+
+	vm.onShutdownCtxCancel()
+	vm.awaitShutdown.Wait()
+
+	if vm.ops != nil {
+		if err := vm.ops.Shutdown(); err != nil {
+			vm.log.Warn("stopping the chain's operations", log.Err(err))
+		}
+	}
+
+	return errors.Join(
+		vm.state.Close(),
+		vm.baseDB.Close(),
+	)
+}
+
+func (*VM) Version(context.Context) (string, error) {
+	return version.Current.String(), nil
+}
+
+func (vm *VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, error) {
+	// Return static handlers (if any)
+	return nil, nil
+}
+
+func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
+	app := (&Service{vm: vm}).ops(vm.log)
+	handler, err := server.Mount(app)
+	if err != nil {
+		return nil, err
+	}
+	vm.ops = app
+
+	return map[string]http.Handler{
+		"/ops":    handler,
+		"/events": vm.pubsub,
+	}, nil
+}
+
+/*
+ ******************************************************************************
+ ********************************** Chain VM **********************************
+ ******************************************************************************
+ */
+
+func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (chain.Block, error) {
+	return vm.chainManager.GetBlock(blkID)
+}
+
+func (vm *VM) ParseBlock(_ context.Context, blkBytes []byte) (chain.Block, error) {
+	blk, err := vm.parser.ParseBlock(blkBytes)
+	if err != nil {
+		return nil, err
+	}
+	return vm.chainManager.NewBlock(blk), nil
+}
+
+func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
+	if vm.chainManager != nil {
+		vm.chainManager.SetPreference(blkID)
+	}
+	return nil
+}
+
+func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
+	return vm.chainManager.LastAccepted(), nil
+}
+
+func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {
+	return vm.state.GetBlockIDAtHeight(height)
+}
+
+/*
+ ******************************************************************************
+ *********************************** DAG VM ***********************************
+ ******************************************************************************
+ */
+
+// ParseAddress resolves chain aliases (like "X") via BCLookup before parsing.
+// This overrides the embedded AddressManager which can't resolve aliases.
+func (vm *VM) ParseAddress(addrStr string) (ids.ID, ids.ShortID, error) {
+	chainAlias, hrp, addrBytes, err := address.Parse(addrStr)
+	if err != nil {
+		return ids.Empty, ids.ShortID{}, err
+	}
+
+	// Try BCLookup first (resolves "X" → actual blockchain ID)
+	var chainID ids.ID
+	if vm.consensusRuntime != nil && vm.consensusRuntime.BCLookup != nil {
+		chainID, err = vm.consensusRuntime.BCLookup.Lookup(chainAlias)
+	}
+	if err != nil || chainID == ids.Empty {
+		// Fallback: try parsing as raw ID
+		chainID, err = ids.FromString(chainAlias)
+		if err != nil {
+			return ids.Empty, ids.ShortID{}, fmt.Errorf("unknown chain alias %q: %w", chainAlias, err)
+		}
+	}
+
+	expectedHRP := constants.GetHRP(vm.consensusRuntime.NetworkID)
+	if hrp != expectedHRP {
+		return ids.Empty, ids.ShortID{}, fmt.Errorf("expected hrp %q but got %q", expectedHRP, hrp)
+	}
+
+	addr, err := ids.ToShortID(addrBytes)
+	return chainID, addr, err
+}
+
+func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- vmcore.Message) error {
+	// Chain state initialization timestamp under activate-all-implicitly is
+	// the canonical Lux InitiallyActiveTime (Dec 5, 2020).
+	err := vm.state.InitializeChainState(stopVertexID, upgrade.InitiallyActiveTime)
+	if err != nil {
+		return err
+	}
+
+	// Note: toEngine parameter is for compatibility with LinearizableVMWithEngine interface
+	// The XVM uses its own internal channel for mempool communication
+	_ = toEngine
+
+	// Create a channel for mempool to engine communication
+	vm.toEngine = make(chan vmcore.Message, 1)
+	mempool, err := xmempool.New("mempool", vm.registerer)
+	if err != nil {
+		return fmt.Errorf("failed to create mempool: %w", err)
+	}
+
+	// F102 close-out: install the chain-wide credential-admission
+	// policy. Nil profile is a no-op gate (legacy/classical-compat
+	// networks); strict-PQ chains receive a non-nil profile from
+	// the node bootstrap via xvm.Factory.
+	mempool.SetAuthPolicy(vm.securityProfile, vm.classicalCompatRegistry)
+
+	vm.chainManager = blockexecutor.NewManager(
+		mempool,
+		vm.metrics,
+		vm.state,
+		vm.txBackend,
+		&vm.clock,
+		vm.onAccept,
+	)
+
+	vm.Builder = blockbuilder.New(
+		vm.txBackend,
+		vm.chainManager,
+		&vm.clock,
+		mempool,
+	)
+
+	// Invariant: The context lock is not held when calling network.IssueTx.
+	// Create a wrapper for ValidatorState to match the expected interface
+	// Get ValidatorState from Runtime
+	if vm.consensusRuntime.ValidatorState == nil {
+		return fmt.Errorf("validator state not available in Runtime")
+	}
+	vs, ok := vm.consensusRuntime.ValidatorState.(runtime.ValidatorState)
+	if !ok {
+		return fmt.Errorf("validator state has incorrect type")
+	}
+	validatorStateWrapper := &validatorStateWrapper{vs: vs}
+
+	vm.network, err = network.New(
+		vm.log,
+		vm.consensusRuntime.NodeID,
+		vm.consensusRuntime.ChainID,
+		validatorStateWrapper,
+		vm.parser,
+		network.NewLockedTxVerifier(
+			&vm.Lock,
+			vm.chainManager,
+		),
+		mempool,
+		vm.sender,
+		vm.registerer,
+		vm.networkConfig,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to initialize network: %w", err)
+	}
+
+	// Notify the network of our current peers
+	for nodeID, nodeVersion := range vm.connectedPeers {
+		if err := vm.network.Connected(ctx, nodeID, nodeVersion); err != nil {
+			return err
+		}
+	}
+	vm.connectedPeers = nil
+
+	// Note: It's important only to switch the networking stack after the full
+	// chainVM has been initialized. Traffic will immediately start being
+	// handled asynchronously.
+	vm.Atomic.Set(vm.network)
+
+	// Only start gossip goroutines if network is properly initialized
+	// (avoids panics in test environments)
+	if vm.network != nil {
+		vm.awaitShutdown.Add(2)
+		go func() {
+			defer vm.awaitShutdown.Done()
+
+			// Invariant: PushGossip must never grab the context lock.
+			vm.network.PushGossip(vm.onShutdownCtx)
+		}()
+		go func() {
+			defer vm.awaitShutdown.Done()
+
+			// Invariant: PullGossip must never grab the context lock.
+			vm.network.PullGossip(vm.onShutdownCtx)
+		}()
+	}
+
+	return nil
+}
+
+/*
+ ******************************************************************************
+ ********************************** JSON API **********************************
+ ******************************************************************************
+ */
+
+// issueTxFromRPC attempts to send a transaction to consensus.
+//
+// Invariant: The context lock is not held
+// Invariant: This function is only called after Linearize has been called.
+func (vm *VM) issueTxFromRPC(tx *txs.Tx) (ids.ID, error) {
+	txID := tx.ID()
+	err := vm.network.IssueTxFromRPC(tx)
+	if err != nil && !errors.Is(err, mempool.ErrDuplicateTx) {
+		vm.log.Debug("failed to add tx to mempool",
+			log.Stringer("txID", txID),
+			log.String("error", err.Error()),
+		)
+		return txID, err
+	}
+	return txID, nil
+}
+
+/*
+ ******************************************************************************
+ ********************************** Helpers ***********************************
+ ******************************************************************************
+ */
+
+func (vm *VM) initGenesis(genesisBytes []byte) error {
+	parsed, err := parseGenesis(genesisBytes)
+	if err != nil {
+		return err
+	}
+	genesis := *parsed
+
+	stateInitialized, err := vm.state.IsInitialized()
+	if err != nil {
+		return err
+	}
+
+	// secure this by defaulting to xAsset
+	// Use empty ID as default, will be set by first genesis asset
+	vm.feeAssetID = ids.Empty
+
+	for index, genesisTx := range genesis.Txs {
+		if len(genesisTx.Outs) != 0 {
+			return errGenesisAssetMustHaveState
+		}
+
+		tx := &txs.Tx{
+			Unsigned: &genesisTx.CreateAssetTx,
+		}
+		if err := tx.Initialize(); err != nil {
+			return err
+		}
+
+		txID := tx.ID()
+		if err := vm.Alias(txID, genesisTx.Alias); err != nil {
+			return err
+		}
+
+		if !stateInitialized {
+			vm.initState(tx)
+		}
+		if index == 0 {
+			vm.log.Info("fee asset is established",
+				log.String("alias", genesisTx.Alias),
+				log.Stringer("assetID", txID),
+			)
+			vm.feeAssetID = txID
+		}
+	}
+
+	if !stateInitialized {
+		return vm.state.SetInitialized()
+	}
+
+	return nil
+}
+
+func (vm *VM) initState(tx *txs.Tx) {
+	txID := tx.ID()
+	vm.log.Info("initializing genesis asset",
+		log.Stringer("txID", txID),
+	)
+	vm.state.AddTx(tx)
+	for _, utxo := range tx.UTXOs() {
+		vm.state.AddUTXO(utxo)
+	}
+}
+
+// GetUTXOs returns every UTXO this chain's state holds that is owned by at
+// least one address in [addrs]. This is the in-process (no-HTTP) counterpart
+// to Service.GetUTXOs: the chain manager's NFT-authorization gate calls it to
+// decide whether a validator's staking X-address holds a chain-activation NFT.
+//
+// GetAllUTXOs is a multi-step UTXOIDs-then-GetUTXO walk over vm.state, so it
+// acquires vm.Lock for read to take a consistent snapshot — mirroring
+// Service.GetUTXOs, which locks for its own GetUTXOs walk. The lock is taken
+// HERE (not left to callers) so the snapshot guarantee is part of the method's
+// contract and no caller can violate it; a read lock is sufficient and lets
+// concurrent readers proceed. Safe against deadlock: the sole in-process caller
+// is the chain manager's NFT gate (chains/manager_authz.go), which holds only
+// its own chainsLock when resolving this reader and never vm.Lock.
+// Returns an empty slice (never nil error) when [addrs] is empty.
+func (vm *VM) GetUTXOs(addrs set.Set[ids.ShortID]) ([]*lux.UTXO, error) {
+	if addrs.Len() == 0 {
+		return nil, nil
+	}
+	vm.Lock.RLock()
+	defer vm.Lock.RUnlock()
+	return lux.GetAllUTXOs(vm.state, addrs)
+}
+
+// selectChangeAddr returns the change address to be used for [kc] when [changeAddr] is given
+// as the optional change address argument
+func (vm *VM) selectChangeAddr(defaultAddr ids.ShortID, changeAddr string) (ids.ShortID, error) {
+	if changeAddr == "" {
+		return defaultAddr, nil
+	}
+	addr, err := lux.ParseServiceAddress(vm, changeAddr)
+	if err != nil {
+		return ids.ShortID{}, fmt.Errorf("couldn't parse changeAddr: %w", err)
+	}
+	return addr, nil
+}
+
+// lookupAssetID looks for an ID aliased by [asset] and if it fails
+// attempts to parse [asset] into an ID
+func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
+	if assetID, err := vm.Lookup(asset); err == nil {
+		return assetID, nil
+	}
+	if assetID, err := ids.FromString(asset); err == nil {
+		return assetID, nil
+	}
+	return ids.Empty, fmt.Errorf("asset '%s' not found", asset)
+}
+
+// Invariant: onAccept is called when [tx] is being marked as accepted, but
+// before its state changes are applied.
+// Note: errors are logged but not returned as this callback must not fail.
+func (vm *VM) onAccept(tx *txs.Tx) {
+	// Fetch the input UTXOs
+	txID := tx.ID()
+	vm.log.Info("onAccept called", log.Stringer("txID", txID))
+	inputUTXOIDs := tx.Unsigned.InputUTXOs()
+	inputUTXOs := make([]*lux.UTXO, 0, len(inputUTXOIDs))
+	for _, utxoID := range inputUTXOIDs {
+		// Don't bother fetching the input UTXO if its symbolic
+		if utxoID.Symbolic() {
+			continue
+		}
+
+		utxo, err := vm.state.GetUTXO(utxoID.InputID())
+		if err == database.ErrNotFound {
+			vm.log.Debug("dropping utxo from index",
+				log.Stringer("txID", txID),
+				log.Stringer("utxoTxID", utxoID.TxID),
+				log.Uint32("utxoOutputIndex", utxoID.OutputIndex),
+			)
+			continue
+		}
+		if err != nil {
+			// should never happen because the UTXO was previously verified to exist
+			vm.log.Error("error finding UTXO on accept",
+				log.Stringer("utxoID", utxoID),
+				log.Err(err),
+			)
+			continue
+		}
+		inputUTXOs = append(inputUTXOs, utxo)
+	}
+
+	outputUTXOs := tx.UTXOs()
+	// index input and output UTXOs
+	if err := vm.addressTxsIndexer.Accept(txID, inputUTXOs, outputUTXOs); err != nil {
+		vm.log.Error("error indexing tx",
+			log.Stringer("txID", txID),
+			log.Err(err),
+		)
+	} else {
+		vm.log.Debug("indexed tx successfully",
+			log.Stringer("txID", txID),
+			log.Int("inputs", len(inputUTXOs)),
+			log.Int("outputs", len(outputUTXOs)),
+		)
+	}
+
+	vm.pubsub.Publish(NewPubSubFilterer(tx))
+}
+
+// WaitForEvent blocks until the VM has work for the consensus engine (a
+// pending-tx event) or ctx is cancelled. It returns a vmcore.Message
+// (= block.Message) so *VM satisfies the linear chain.ChainVM interface used by
+// the certificate path.
+func (vm *VM) WaitForEvent(ctx context.Context) (vmcore.Message, error) {
+	if vm.toEngine == nil {
+		// Before linearization, no events to wait for.
+		<-ctx.Done()
+		return vmcore.Message{}, ctx.Err()
+	}
+
+	select {
+	case msg := <-vm.toEngine:
+		return msg, nil
+	case <-ctx.Done():
+		return vmcore.Message{}, ctx.Err()
+	}
+}
+
+// NewHTTPHandler implements the engine.VM interface
+func (vm *VM) NewHTTPHandler(ctx context.Context) (http.Handler, error) {
+	// XVM doesn't provide a single HTTP handler, it uses CreateHandlers instead
+	return nil, nil
+}
+
+// noOpHandler is a simple no-op implementation of warp.Handler
+type noOpHandler struct{}
+
+var _ warp.Handler = (*noOpHandler)(nil)
+
+func (n *noOpHandler) Request(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, msg []byte) ([]byte, *warp.Error) {
+	return nil, nil
+}
+
+func (n *noOpHandler) Response(ctx context.Context, nodeID ids.NodeID, requestID uint32, msg []byte) error {
+	return nil
+}
+
+func (n *noOpHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
+	return nil
+}
+
+func (n *noOpHandler) RequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, err *warp.Error) error {
+	return nil
+}
+
+// GetCurrentValidatorOutput represents current validator info
+type GetCurrentValidatorOutput struct {
+	NodeID    ids.NodeID
+	PublicKey interface{}
+	Weight    uint64
+}
+
+// validatorStateWrapper wraps validator state
+type validatorStateWrapper struct {
+	vs runtime.ValidatorState
+}
+
+func (v *validatorStateWrapper) GetCurrentHeight(ctx context.Context) (uint64, error) {
+	return v.vs.GetCurrentHeight(ctx)
+}
+
+func (v *validatorStateWrapper) GetValidatorSet(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Get the validator set from consensus ValidatorState
+	return v.vs.GetValidatorSet(ctx, height, netID)
+}
+
+func (v *validatorStateWrapper) GetCurrentValidatorSet(ctx context.Context, netID ids.ID) (map[ids.ID]*GetCurrentValidatorOutput, uint64, error) {
+	// Get current height
+	height, err := v.vs.GetCurrentHeight(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get validators at current height
+	valSet, err := v.vs.GetValidatorSet(ctx, height, netID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Convert to GetCurrentValidatorOutput format
+	result := make(map[ids.ID]*GetCurrentValidatorOutput, len(valSet))
+	for nodeID, validator := range valSet {
+		// Convert NodeID to ID by copying the bytes
+		var id ids.ID
+		copy(id[:], nodeID[:])
+		result[id] = &GetCurrentValidatorOutput{
+			NodeID: nodeID,
+			Weight: validator.Weight,
+		}
+	}
+
+	return result, height, nil
+}
+
+func (v *validatorStateWrapper) GetMinimumHeight(ctx context.Context) (uint64, error) {
+	return v.vs.GetMinimumHeight(ctx)
+}
+
+func (v *validatorStateWrapper) GetChainID(netID ids.ID) (ids.ID, error) {
+	return v.vs.GetChainID(netID)
+}
+
+func (v *validatorStateWrapper) GetNetworkID(chainID ids.ID) (ids.ID, error) {
+	return v.vs.GetNetworkID(chainID)
+}
+
+func (v *validatorStateWrapper) GetCurrentValidators(ctx context.Context, height uint64, netID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+	// Get validators at specified height - now directly returns *validators.GetValidatorOutput
+	return v.vs.GetValidatorSet(ctx, height, netID)
+}
+
+func (v *validatorStateWrapper) GetWarpValidatorSet(ctx context.Context, height uint64, netID ids.ID) (*validators.WarpSet, error) {
+	// Get the validator set at the requested height
+	vdrSet, err := v.GetValidatorSet(ctx, height, netID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to WarpSet format (Height + Validators map)
+	warpValidators := make(map[ids.NodeID]*validators.WarpValidator, len(vdrSet))
+	for nodeID, vdr := range vdrSet {
+		// Only include validators with BLS public keys
+		if len(vdr.PublicKey) > 0 {
+			warpValidators[nodeID] = &validators.WarpValidator{
+				NodeID:    nodeID,
+				PublicKey: vdr.PublicKey,
+				Weight:    vdr.Weight,
+			}
+		}
+	}
+
+	return &validators.WarpSet{
+		Height:     height,
+		Validators: warpValidators,
+	}, nil
+}
+
+func (v *validatorStateWrapper) GetWarpValidatorSets(ctx context.Context, heights []uint64, netIDs []ids.ID) (map[ids.ID]map[uint64]*validators.WarpSet, error) {
+	result := make(map[ids.ID]map[uint64]*validators.WarpSet)
+
+	// For each netID, get validator sets for all requested heights
+	for _, netID := range netIDs {
+		heightMap := make(map[uint64]*validators.WarpSet)
+		for _, height := range heights {
+			warpSet, err := v.GetWarpValidatorSet(ctx, height, netID)
+			if err != nil {
+				return nil, err
+			}
+			heightMap[height] = warpSet
+		}
+		result[netID] = heightMap
+	}
+
+	return result, nil
+}
+
+// Clock returns the VM's clock for time-related operations
+func (vm *VM) Clock() *mockable.Clock {
+	return &vm.clock
+}
+
+// Logger returns the VM's logger
+func (vm *VM) Logger() log.Logger {
+	return vm.log
+}
+
+// noOpSender is a minimal implementation of warp.Sender for single-node mode
+type noOpSender struct{}
+
+var _ warp.Sender = (*noOpSender)(nil)
+
+func (n *noOpSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
+	return nil
+}
+
+func (n *noOpSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, responseBytes []byte) error {
+	return nil
+}
+
+func (n *noOpSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	return nil
+}
+
+func (n *noOpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
+	return nil
+}
