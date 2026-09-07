@@ -22,11 +22,15 @@
 
 use crate::components::{
     is_sorted_outputs, is_sorted_unique_inputs, read_addrs, slice_addrs, slice_sigs, verify_memo,
-    write_addrs, Credential, Input, Output, Owners, UtxoId,
+    Credential, Input, Output, Owners, UtxoId,
 };
-use crate::ids::{hash256, Id, NodeId, ShortId, PRIMARY_NETWORK_ID};
+use crate::ids::{hash256, Id, NodeId, ShortId, SHORT_ID_LEN, PRIMARY_NETWORK_ID};
+use crate::pchain_zap as w;
 use crate::signer::Signer;
-use crate::zap;
+use lux_zap::zap;
+
+/// Bytes in one secp256k1 signature — the width of a credential's element.
+const SIG_LEN: usize = 65;
 
 /// How much of a reward a delegator's fee is measured against.
 pub const PERCENT_DENOMINATOR: u32 = 1_000_000;
@@ -93,44 +97,12 @@ impl Kind {
 }
 
 // ---- the shared envelope ----
-
-const OFF_KIND: usize = 0;
-const OFF_NETWORK_ID: usize = 1;
-const OFF_BLOCKCHAIN_ID: usize = 5;
-const OFF_OUTS: usize = 37;
-const OFF_OWNER_ADDRS: usize = 45;
-const OFF_INS: usize = 53;
-const OFF_SIG_INDICES: usize = 61;
-const OFF_MEMO: usize = 69;
-const SPEND_SIZE: usize = 77;
-
-// One output, inline in the output list.
-const OUT_ASSET: usize = 0;
-const OUT_STAKE_LOCK: usize = 32;
-const OUT_AMOUNT: usize = 40;
-const OUT_THRESHOLD: usize = 48;
-const OUT_OWNER_LOCK: usize = 52;
-const OUT_ADDR_START: usize = 60;
-const OUT_ADDR_COUNT: usize = 64;
-const OUT_STRIDE: usize = 72;
-
-// One input, inline in the input list.
-const IN_TX_ID: usize = 0;
-const IN_OUTPUT_INDEX: usize = 32;
-const IN_ASSET: usize = 36;
-const IN_STAKE_LOCK: usize = 68;
-const IN_AMOUNT: usize = 76;
-const IN_SIG_START: usize = 84;
-const IN_SIG_COUNT: usize = 88;
-const IN_STRIDE: usize = 96;
-
-const ADDR_STRIDE: usize = 20;
-const SIG_STRIDE: usize = 4;
-const SIG_LEN: usize = 65;
-const ID_STRIDE: usize = 32;
-
-/// The 44 bytes that say who is staking, for how long, and how much.
-const VALIDATOR_SIZE: usize = 44;
+//
+// The offsets were here. They are in `chains/schema/pchain.zap` now, one
+// table for three languages, and `pchain_zap` — the module `zapgen` writes
+// out of it — is what this file reads and writes through. A number in this
+// file would be a second statement of the format, and two statements of a
+// format are two formats.
 
 /// What every spending transaction carries.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -1014,536 +986,253 @@ impl Priority {
     }
 }
 
-// ---- writing ----
+// ---- the runs a transaction points at ----
+//
+// Where the offsets used to be. They are in `chains/schema/pchain.zap` now,
+// and `pchain_zap` is what came out of it: a view per kind whose accessors are
+// those offsets, and a builder per kind that writes them back. Nothing below
+// names a number.
 
-struct SpendPtrs {
-    outs: (usize, usize),
-    addrs: (usize, usize),
-    ins: (usize, usize),
-    sigs: (usize, usize),
-}
-
-fn write_outputs(b: &mut zap::Builder, outs: &[Output]) -> ((usize, usize), (usize, usize)) {
-    if outs.is_empty() {
-        return ((0, 0), (0, 0));
-    }
-    let mut addrs: Vec<ShortId> = Vec::new();
-    let mut lb = b.start_list();
-    for o in outs {
-        let mut e = [0u8; OUT_STRIDE];
-        e[OUT_ASSET..OUT_ASSET + 32].copy_from_slice(&o.asset);
-        e[OUT_STAKE_LOCK..OUT_STAKE_LOCK + 8].copy_from_slice(&o.stake_lock.to_le_bytes());
-        e[OUT_AMOUNT..OUT_AMOUNT + 8].copy_from_slice(&o.amount.to_le_bytes());
-        e[OUT_THRESHOLD..OUT_THRESHOLD + 4].copy_from_slice(&o.owners.threshold.to_le_bytes());
-        e[OUT_OWNER_LOCK..OUT_OWNER_LOCK + 8].copy_from_slice(&o.owners.locktime.to_le_bytes());
-        e[OUT_ADDR_START..OUT_ADDR_START + 4].copy_from_slice(&(addrs.len() as u32).to_le_bytes());
-        e[OUT_ADDR_COUNT..OUT_ADDR_COUNT + 4]
-            .copy_from_slice(&(o.owners.addrs.len() as u32).to_le_bytes());
-        b.list_bytes(&mut lb, &e);
-        addrs.extend_from_slice(&o.owners.addrs);
-    }
-    let list = (lb.offset(), outs.len());
-    let addr_list = write_addrs(b, &addrs);
-    (list, addr_list)
-}
-
-fn write_inputs(b: &mut zap::Builder, ins: &[Input]) -> ((usize, usize), (usize, usize)) {
-    if ins.is_empty() {
-        return ((0, 0), (0, 0));
-    }
-    let mut sigs: Vec<u32> = Vec::new();
-    let mut lb = b.start_list();
-    for i in ins {
-        let mut e = [0u8; IN_STRIDE];
-        e[IN_TX_ID..IN_TX_ID + 32].copy_from_slice(&i.utxo.tx_id);
-        e[IN_OUTPUT_INDEX..IN_OUTPUT_INDEX + 4].copy_from_slice(&i.utxo.output_index.to_le_bytes());
-        e[IN_ASSET..IN_ASSET + 32].copy_from_slice(&i.asset);
-        e[IN_STAKE_LOCK..IN_STAKE_LOCK + 8].copy_from_slice(&i.stake_lock.to_le_bytes());
-        e[IN_AMOUNT..IN_AMOUNT + 8].copy_from_slice(&i.amount.to_le_bytes());
-        e[IN_SIG_START..IN_SIG_START + 4].copy_from_slice(&(sigs.len() as u32).to_le_bytes());
-        e[IN_SIG_COUNT..IN_SIG_COUNT + 4]
-            .copy_from_slice(&(i.sig_indices.len() as u32).to_le_bytes());
-        b.list_bytes(&mut lb, &e);
-        sigs.extend_from_slice(&i.sig_indices);
-    }
-    let list = (lb.offset(), ins.len());
-    let sig_list = write_u32_list(b, &sigs);
-    (list, sig_list)
-}
-
-fn write_u32_list(b: &mut zap::Builder, xs: &[u32]) -> (usize, usize) {
-    if xs.is_empty() {
-        return (0, 0);
-    }
-    let mut lb = b.start_list();
-    for x in xs {
-        b.list_u32(&mut lb, *x);
-    }
-    (lb.offset(), lb.count())
-}
-
-fn write_id_list(b: &mut zap::Builder, xs: &[Id]) -> (usize, usize) {
-    if xs.is_empty() {
-        return (0, 0);
-    }
-    let mut lb = b.start_list();
-    for x in xs {
-        b.list_bytes(&mut lb, x);
-    }
-    (lb.offset(), xs.len())
-}
-
-fn write_spending(b: &mut zap::Builder, base: &Envelope) -> SpendPtrs {
-    let (outs, addrs) = write_outputs(b, &base.outs);
-    let (ins, sigs) = write_inputs(b, &base.ins);
-    SpendPtrs {
-        outs,
-        addrs,
-        ins,
-        sigs,
-    }
-}
-
-fn set_envelope(
-    b: &mut zap::Builder,
-    ob: &zap::ObjectBuilder,
-    k: Kind,
-    base: &Envelope,
-    p: &SpendPtrs,
-) {
-    b.set_u8(ob, OFF_KIND, k as u8);
-    b.set_u32(ob, OFF_NETWORK_ID, base.network_id);
-    b.set_bytes_fixed(ob, OFF_BLOCKCHAIN_ID, &base.blockchain_id);
-    b.set_list(ob, OFF_OUTS, p.outs.0, p.outs.1);
-    b.set_list(ob, OFF_OWNER_ADDRS, p.addrs.0, p.addrs.1);
-    b.set_list(ob, OFF_INS, p.ins.0, p.ins.1);
-    b.set_list(ob, OFF_SIG_INDICES, p.sigs.0, p.sigs.1);
-    b.set_bytes(ob, OFF_MEMO, &base.memo);
-}
-
-fn set_validator(b: &mut zap::Builder, ob: &zap::ObjectBuilder, off: usize, v: &Validator) {
-    b.set_bytes_fixed(ob, off, &v.node_id.0);
-    b.set_u64(ob, off + 20, v.start);
-    b.set_u64(ob, off + 28, v.end);
-    b.set_u64(ob, off + 36, v.weight);
-}
-
-fn set_owner(
-    b: &mut zap::Builder,
-    ob: &zap::ObjectBuilder,
-    threshold_off: usize,
-    locktime_off: usize,
-    addrs_off: usize,
-    o: &Owners,
-    written: (usize, usize),
-) {
-    b.set_u32(ob, threshold_off, o.threshold);
-    b.set_u64(ob, locktime_off, o.locktime);
-    b.set_list(ob, addrs_off, written.0, written.1);
-}
-
-// ---- reading ----
-
-fn read_outputs(o: zap::Object<'_>, list_off: usize, addr_off: usize) -> Vec<Output> {
-    let list = o.list(list_off, OUT_STRIDE);
-    let addrs = o.list(addr_off, ADDR_STRIDE);
-    (0..list.len())
-        .map(|i| {
-            let e = list.object(i, OUT_STRIDE);
-            Output {
-                asset: e.id(OUT_ASSET),
-                stake_lock: e.u64(OUT_STAKE_LOCK),
-                amount: e.u64(OUT_AMOUNT),
-                owners: Owners {
-                    locktime: e.u64(OUT_OWNER_LOCK),
-                    threshold: e.u32(OUT_THRESHOLD),
-                    addrs: slice_addrs(addrs, e.u32(OUT_ADDR_START), e.u32(OUT_ADDR_COUNT)),
-                },
-            }
-        })
-        .collect()
-}
-
-fn read_inputs(o: zap::Object<'_>, list_off: usize, sig_off: usize) -> Vec<Input> {
-    let list = o.list(list_off, IN_STRIDE);
-    let sigs = o.list(sig_off, SIG_STRIDE);
-    (0..list.len())
-        .map(|i| {
-            let e = list.object(i, IN_STRIDE);
-            Input {
-                utxo: UtxoId {
-                    tx_id: e.id(IN_TX_ID),
-                    output_index: e.u32(IN_OUTPUT_INDEX),
-                },
-                asset: e.id(IN_ASSET),
-                stake_lock: e.u64(IN_STAKE_LOCK),
-                amount: e.u64(IN_AMOUNT),
-                sig_indices: slice_sigs(sigs, e.u32(IN_SIG_START), e.u32(IN_SIG_COUNT)),
-            }
-        })
-        .collect()
-}
-
-fn read_envelope(o: zap::Object<'_>) -> Envelope {
-    Envelope {
-        network_id: o.u32(OFF_NETWORK_ID),
-        blockchain_id: o.id(OFF_BLOCKCHAIN_ID),
-        outs: read_outputs(o, OFF_OUTS, OFF_OWNER_ADDRS),
-        ins: read_inputs(o, OFF_INS, OFF_SIG_INDICES),
-        memo: o.bytes(OFF_MEMO).to_vec(),
-    }
-}
-
-fn read_validator(o: zap::Object<'_>, off: usize) -> Validator {
-    Validator {
-        node_id: NodeId(o.short_id(off)),
-        start: o.u64(off + 20),
-        end: o.u64(off + 28),
-        weight: o.u64(off + 36),
-    }
-}
-
-fn read_owner(
-    o: zap::Object<'_>,
-    threshold_off: usize,
-    locktime_off: usize,
-    addrs_off: usize,
-) -> Owners {
-    Owners {
-        locktime: o.u64(locktime_off),
-        threshold: o.u32(threshold_off),
-        addrs: read_addrs(o.list(addrs_off, ADDR_STRIDE)),
-    }
-}
-
-fn read_u32_list(o: zap::Object<'_>, off: usize) -> Vec<u32> {
-    let l = o.list(off, SIG_STRIDE);
-    (0..l.len()).map(|i| l.u32(i)).collect()
-}
-
-fn read_id_list(o: zap::Object<'_>, off: usize) -> Vec<Id> {
-    let l = o.list(off, ID_STRIDE);
-    (0..l.len()).map(|i| l.object(i, ID_STRIDE).id(0)).collect()
-}
-
-// ---- per-kind wire layouts ----
-
-// AddValidator
-const OFF_AV_VALIDATOR: usize = SPEND_SIZE;
-const OFF_AV_STAKE_OUTS: usize = OFF_AV_VALIDATOR + VALIDATOR_SIZE;
-const OFF_AV_STAKE_ADDRS: usize = OFF_AV_STAKE_OUTS + 8;
-const OFF_AV_REWARDS_THRESHOLD: usize = OFF_AV_STAKE_ADDRS + 8;
-const OFF_AV_REWARDS_LOCKTIME: usize = OFF_AV_REWARDS_THRESHOLD + 4;
-const OFF_AV_REWARDS_ADDRS: usize = OFF_AV_REWARDS_LOCKTIME + 8;
-const OFF_AV_DELEGATION_SHARES: usize = OFF_AV_REWARDS_ADDRS + 8;
-const SIZE_ADD_VALIDATOR: usize = OFF_AV_DELEGATION_SHARES + 4;
-
-// AddDelegator
-const OFF_AD_VALIDATOR: usize = SPEND_SIZE;
-const OFF_AD_STAKE_OUTS: usize = OFF_AD_VALIDATOR + VALIDATOR_SIZE;
-const OFF_AD_STAKE_ADDRS: usize = OFF_AD_STAKE_OUTS + 8;
-const OFF_AD_REWARDS_THRESHOLD: usize = OFF_AD_STAKE_ADDRS + 8;
-const OFF_AD_REWARDS_LOCKTIME: usize = OFF_AD_REWARDS_THRESHOLD + 4;
-const OFF_AD_REWARDS_ADDRS: usize = OFF_AD_REWARDS_LOCKTIME + 8;
-const SIZE_ADD_DELEGATOR: usize = OFF_AD_REWARDS_ADDRS + 8;
-
-// AddChainValidator
-const OFF_ACV_VALIDATOR: usize = SPEND_SIZE;
-const OFF_ACV_CHAIN: usize = OFF_ACV_VALIDATOR + VALIDATOR_SIZE;
-const OFF_ACV_CHAIN_AUTH: usize = OFF_ACV_CHAIN + 32;
-const SIZE_ADD_CHAIN_VALIDATOR: usize = OFF_ACV_CHAIN_AUTH + 8;
-
-// AddPermissionlessValidator
-const OFF_APV_VALIDATOR: usize = SPEND_SIZE;
-const OFF_APV_CHAIN: usize = OFF_APV_VALIDATOR + VALIDATOR_SIZE;
-const OFF_APV_SIGNER: usize = OFF_APV_CHAIN + 32;
-const OFF_APV_STAKE_OUTS: usize = OFF_APV_SIGNER + crate::signer::SIGNER_SIZE;
-const OFF_APV_STAKE_ADDRS: usize = OFF_APV_STAKE_OUTS + 8;
-const OFF_APV_VAL_REWARDS_THRESHOLD: usize = OFF_APV_STAKE_ADDRS + 8;
-const OFF_APV_VAL_REWARDS_LOCKTIME: usize = OFF_APV_VAL_REWARDS_THRESHOLD + 4;
-const OFF_APV_VAL_REWARDS_ADDRS: usize = OFF_APV_VAL_REWARDS_LOCKTIME + 8;
-const OFF_APV_DEL_REWARDS_THRESHOLD: usize = OFF_APV_VAL_REWARDS_ADDRS + 8;
-const OFF_APV_DEL_REWARDS_LOCKTIME: usize = OFF_APV_DEL_REWARDS_THRESHOLD + 4;
-const OFF_APV_DEL_REWARDS_ADDRS: usize = OFF_APV_DEL_REWARDS_LOCKTIME + 8;
-const OFF_APV_DELEGATION_SHARES: usize = OFF_APV_DEL_REWARDS_ADDRS + 8;
-const SIZE_ADD_PERMISSIONLESS_VALIDATOR: usize = OFF_APV_DELEGATION_SHARES + 4;
-
-// AddPermissionlessDelegator
-const OFF_APD_VALIDATOR: usize = SPEND_SIZE;
-const OFF_APD_CHAIN: usize = OFF_APD_VALIDATOR + VALIDATOR_SIZE;
-const OFF_APD_STAKE_OUTS: usize = OFF_APD_CHAIN + 32;
-const OFF_APD_STAKE_ADDRS: usize = OFF_APD_STAKE_OUTS + 8;
-const OFF_APD_REWARDS_THRESHOLD: usize = OFF_APD_STAKE_ADDRS + 8;
-const OFF_APD_REWARDS_LOCKTIME: usize = OFF_APD_REWARDS_THRESHOLD + 4;
-const OFF_APD_REWARDS_ADDRS: usize = OFF_APD_REWARDS_LOCKTIME + 8;
-const SIZE_ADD_PERMISSIONLESS_DELEGATOR: usize = OFF_APD_REWARDS_ADDRS + 8;
-
-// CreateChain
-const OFF_CC_CHAIN: usize = SPEND_SIZE;
-const OFF_CC_VM_ID: usize = 109;
-const OFF_CC_NAME: usize = 141;
-const OFF_CC_FX_IDS: usize = 149;
-const OFF_CC_GENESIS: usize = 157;
-const OFF_CC_AUTH: usize = 165;
-const SIZE_CREATE_CHAIN: usize = 173;
-
-// Import
-const OFF_IMPORT_SOURCE_CHAIN: usize = SPEND_SIZE;
-const OFF_IMPORT_INPUTS: usize = 109;
-const OFF_IMPORT_SIG_INDICES: usize = 117;
-const SIZE_IMPORT: usize = 125;
-
-// Export
-const OFF_EXPORT_DEST_CHAIN: usize = SPEND_SIZE;
-const OFF_EXPORT_OUTPUTS: usize = 109;
-const OFF_EXPORT_ADDRS: usize = 117;
-const SIZE_EXPORT: usize = 125;
-
-// RemoveChainValidator
-const OFF_REMOVE_NODE_ID: usize = SPEND_SIZE;
-const OFF_REMOVE_CHAIN: usize = 97;
-const OFF_REMOVE_CHAIN_AUTH: usize = 129;
-const SIZE_REMOVE: usize = 137;
-
-// TransferChainOwnership
-const OFF_TCO_CHAIN: usize = SPEND_SIZE;
-const OFF_TCO_CHAIN_AUTH: usize = 109;
-const OFF_TCO_OWNER_THRESHOLD: usize = 117;
-const OFF_TCO_OWNER_LOCKTIME: usize = 121;
-const OFF_TCO_OWNER_ADDRS: usize = 129;
-const SIZE_TRANSFER_CHAIN_OWNERSHIP: usize = 137;
-
-// IncreaseL1ValidatorBalance
-const OFF_INCREASE_VALIDATION_ID: usize = SPEND_SIZE;
-const OFF_INCREASE_BALANCE: usize = 109;
-const SIZE_INCREASE: usize = 117;
-
-// DisableL1Validator
-const OFF_DISABLE_VALIDATION_ID: usize = SPEND_SIZE;
-const OFF_DISABLE_AUTH: usize = 109;
-const SIZE_DISABLE: usize = 117;
-
-// RewardValidator
-const OFF_REWARD_TX_ID: usize = 1;
-const SIZE_REWARD: usize = 33;
-
-// A genesis validator, inline at a fixed stride. The node id and the two
-// owners' addresses do not fit a fixed slot, so each entry carries a run into
-// one transaction-wide blob and one transaction-wide address array — the same
-// shape the envelope uses for its outputs' owners.
-const NV_WEIGHT: usize = 0;
-const NV_BALANCE: usize = 8;
-const NV_SIGNER_PUB: usize = 16;
-const NV_SIGNER_POP: usize = 64;
-const NV_NODE_ID_START: usize = 160;
-const NV_NODE_ID_LEN: usize = 164;
-const NV_REM_THRESHOLD: usize = 168;
-const NV_REM_ADDR_START: usize = 172;
-const NV_REM_ADDR_COUNT: usize = 176;
-const NV_DEAC_THRESHOLD: usize = 180;
-const NV_DEAC_ADDR_START: usize = 184;
-const NV_DEAC_ADDR_COUNT: usize = 188;
-const NV_STRIDE: usize = 192;
-
-// CreateNetwork
-const OFF_CN_PARENT: usize = SPEND_SIZE;
-const OFF_CN_OWNER_THRESHOLD: usize = SPEND_SIZE + 32;
-const OFF_CN_OWNER_LOCKTIME: usize = SPEND_SIZE + 36;
-const OFF_CN_OWNER_ADDRS: usize = SPEND_SIZE + 44;
-const OFF_CN_RESTAKE_PARENT: usize = SPEND_SIZE + 52;
-const OFF_CN_ADMISSION: usize = SPEND_SIZE + 53;
-const OFF_CN_MANAGER: usize = SPEND_SIZE + 54;
-const OFF_CN_THRESHOLD: usize = SPEND_SIZE + 55;
-const OFF_CN_VALIDATORS: usize = SPEND_SIZE + 63;
-const OFF_CN_NODE_ID_POOL: usize = SPEND_SIZE + 71;
-const OFF_CN_ADDR_POOL: usize = SPEND_SIZE + 79;
-const OFF_CN_MANAGER_CHAIN_ID: usize = SPEND_SIZE + 87;
-const OFF_CN_MANAGER_ADDRESS: usize = SPEND_SIZE + 119;
-const SIZE_CREATE_NETWORK: usize = SPEND_SIZE + 127;
-
-// ConvertNetwork
-const OFF_CV_NETWORK: usize = SPEND_SIZE;
-const OFF_CV_PARENT: usize = SPEND_SIZE + 32;
-const OFF_CV_MANAGER_CHAIN_ID: usize = SPEND_SIZE + 64;
-const OFF_CV_MANAGER_ADDRESS: usize = SPEND_SIZE + 96;
-const OFF_CV_VALIDATORS: usize = SPEND_SIZE + 104;
-const OFF_CV_NODE_ID_POOL: usize = SPEND_SIZE + 112;
-const OFF_CV_ADDR_POOL: usize = SPEND_SIZE + 120;
-const OFF_CV_AUTH: usize = SPEND_SIZE + 128;
-const OFF_CV_RESTAKE_PARENT: usize = SPEND_SIZE + 136;
-const OFF_CV_ADMISSION: usize = SPEND_SIZE + 137;
-const OFF_CV_MANAGER: usize = SPEND_SIZE + 138;
-const OFF_CV_THRESHOLD: usize = SPEND_SIZE + 139;
-const SIZE_CONVERT_NETWORK: usize = SPEND_SIZE + 147;
-
-// TransformChain
-const OFF_TC_CHAIN: usize = SPEND_SIZE;
-const OFF_TC_ASSET_ID: usize = 109;
-const OFF_TC_INITIAL_SUPPLY: usize = 141;
-const OFF_TC_MAXIMUM_SUPPLY: usize = 149;
-const OFF_TC_MIN_CONSUMPTION_RATE: usize = 157;
-const OFF_TC_MAX_CONSUMPTION_RATE: usize = 165;
-const OFF_TC_MIN_VALIDATOR_STAKE: usize = 173;
-const OFF_TC_MAX_VALIDATOR_STAKE: usize = 181;
-const OFF_TC_MIN_STAKE_DURATION: usize = 189;
-const OFF_TC_MAX_STAKE_DURATION: usize = 193;
-const OFF_TC_MIN_DELEGATION_FEE: usize = 197;
-const OFF_TC_MIN_DELEGATOR_STAKE: usize = 201;
-const OFF_TC_MAX_VALIDATOR_WEIGHT_FACTOR: usize = 209;
-const OFF_TC_UPTIME_REQUIREMENT: usize = 210;
-const OFF_TC_CHAIN_AUTH: usize = 214;
-const SIZE_TRANSFORM_CHAIN: usize = 222;
-
-// RegisterL1Validator
-const OFF_RL_BALANCE: usize = SPEND_SIZE;
-const OFF_RL_POP: usize = 85;
-const OFF_RL_MESSAGE: usize = 181;
-const SIZE_REGISTER_L1_VALIDATOR: usize = 189;
-
-// SetL1ValidatorWeight
-const OFF_SW_MESSAGE: usize = SPEND_SIZE;
-const SIZE_SET_L1_VALIDATOR_WEIGHT: usize = 85;
-
-/// Write a genesis set into the variable section.
+/// The four runs an envelope points at, packed as the elements a builder takes.
 ///
-/// Returns the list pointer plus the two pools the entries slice into. The
-/// caller writes those pools, because where they live is per-transaction: the
-/// two kinds that carry a genesis set write their other variable fields in a
-/// different order, and the order is the wire.
-fn write_network_validators(
-    b: &mut zap::Builder,
-    vdrs: &[NetworkValidator],
-) -> ((usize, usize), Vec<u8>, Vec<ShortId>) {
-    if vdrs.is_empty() {
-        return ((0, 0), Vec::new(), Vec::new());
+/// A list element is its own bytes, so `pack_out` and `pack_in` lay one out at
+/// the offsets the schema states and the builder copies the run in. An output
+/// carries the START and COUNT of its owners in a transaction-wide address
+/// array rather than the addresses themselves, which is why packing an output
+/// list produces two runs and not one; inputs and their signature indices are
+/// the same shape.
+#[derive(Default)]
+struct Runs {
+    outs: Vec<[u8; w::OUT_SIZE]>,
+    addrs: Vec<ShortId>,
+    ins: Vec<[u8; w::IN_SIZE]>,
+    sigs: Vec<u32>,
+}
+
+impl Runs {
+    /// An output list and the address array its owners index into.
+    fn outputs(outs: &[Output]) -> Runs {
+        let mut r = Runs::default();
+        for o in outs {
+            r.outs.push(w::pack_out(&w::OutInput {
+                asset: &o.asset,
+                stake_lock: o.stake_lock,
+                amount: o.amount,
+                threshold: o.owners.threshold,
+                owner_lock: o.owners.locktime,
+                addr_start: r.addrs.len() as u32,
+                addr_count: o.owners.addrs.len() as u32,
+                ..Default::default()
+            }));
+            r.addrs.extend_from_slice(&o.owners.addrs);
+        }
+        r
     }
+
+    /// An input list and the signature-index array its inputs slice.
+    fn inputs(ins: &[Input]) -> Runs {
+        let mut r = Runs::default();
+        for i in ins {
+            r.ins.push(w::pack_in(&w::InInput {
+                tx_id: &i.utxo.tx_id,
+                index: i.utxo.output_index,
+                asset: &i.asset,
+                stake_lock: i.stake_lock,
+                amount: i.amount,
+                sig_start: r.sigs.len() as u32,
+                sig_count: i.sig_indices.len() as u32,
+                ..Default::default()
+            }));
+            r.sigs.extend_from_slice(&i.sig_indices);
+        }
+        r
+    }
+
+    /// Everything the shared envelope points at.
+    fn envelope(base: &Envelope) -> Runs {
+        let o = Runs::outputs(&base.outs);
+        let i = Runs::inputs(&base.ins);
+        Runs {
+            outs: o.outs,
+            addrs: o.addrs,
+            ins: i.ins,
+            sigs: i.sigs,
+        }
+    }
+
+    fn out_bytes(&self) -> Vec<&[u8]> {
+        self.outs.iter().map(|e| &e[..]).collect()
+    }
+
+    fn in_bytes(&self) -> Vec<&[u8]> {
+        self.ins.iter().map(|e| &e[..]).collect()
+    }
+}
+
+/// Addresses as the flat elements a list of them is made of.
+fn flat(addrs: &[ShortId]) -> Vec<[u8; SHORT_ID_LEN]> {
+    addrs.iter().map(|a| a.0).collect()
+}
+
+/// Ids as the flat elements a list of them is made of.
+fn flat_ids(ids: &[Id]) -> Vec<[u8; 32]> {
+    ids.to_vec()
+}
+
+/// A genesis validator set, packed, with the two pools its entries slice into.
+fn pack_network_validators(
+    vdrs: &[NetworkValidator],
+) -> (Vec<[u8; w::NETWORK_VALIDATOR_SIZE]>, Vec<u8>, Vec<ShortId>) {
+    let mut packed = Vec::with_capacity(vdrs.len());
     let mut node_ids: Vec<u8> = Vec::new();
     let mut addrs: Vec<ShortId> = Vec::new();
-    let mut lb = b.start_list();
     for v in vdrs {
-        let mut e = [0u8; NV_STRIDE];
-        e[NV_WEIGHT..NV_WEIGHT + 8].copy_from_slice(&v.weight.to_le_bytes());
-        e[NV_BALANCE..NV_BALANCE + 8].copy_from_slice(&v.balance.to_le_bytes());
-        let (pk, pop) = match v.signer {
+        let (key, proof) = match v.signer {
             Signer::ProofOfPossession { public_key, proof } => (public_key, proof),
             Signer::Empty => (
                 [0u8; crate::signer::PUBLIC_KEY_LEN],
                 [0u8; crate::signer::SIGNATURE_LEN],
             ),
         };
-        e[NV_SIGNER_PUB..NV_SIGNER_PUB + crate::signer::PUBLIC_KEY_LEN].copy_from_slice(&pk);
-        e[NV_SIGNER_POP..NV_SIGNER_POP + crate::signer::SIGNATURE_LEN].copy_from_slice(&pop);
-        e[NV_NODE_ID_START..NV_NODE_ID_START + 4]
-            .copy_from_slice(&(node_ids.len() as u32).to_le_bytes());
-        e[NV_NODE_ID_LEN..NV_NODE_ID_LEN + 4]
-            .copy_from_slice(&(v.node_id.len() as u32).to_le_bytes());
+        packed.push(w::pack_network_validator(&w::NetworkValidatorInput {
+            weight: v.weight,
+            balance: v.balance,
+            signer_key: &key,
+            signer_proof: &proof,
+            node_id_start: node_ids.len() as u32,
+            node_id_len: v.node_id.len() as u32,
+            remove_threshold: v.remaining_balance_owner.threshold,
+            remove_addr_start: addrs.len() as u32,
+            remove_addr_count: v.remaining_balance_owner.addresses.len() as u32,
+            disable_threshold: v.deactivation_owner.threshold,
+            disable_addr_start: (addrs.len() + v.remaining_balance_owner.addresses.len()) as u32,
+            disable_addr_count: v.deactivation_owner.addresses.len() as u32,
+        }));
         node_ids.extend_from_slice(&v.node_id);
-        e[NV_REM_THRESHOLD..NV_REM_THRESHOLD + 4]
-            .copy_from_slice(&v.remaining_balance_owner.threshold.to_le_bytes());
-        e[NV_REM_ADDR_START..NV_REM_ADDR_START + 4]
-            .copy_from_slice(&(addrs.len() as u32).to_le_bytes());
-        e[NV_REM_ADDR_COUNT..NV_REM_ADDR_COUNT + 4]
-            .copy_from_slice(&(v.remaining_balance_owner.addresses.len() as u32).to_le_bytes());
         addrs.extend_from_slice(&v.remaining_balance_owner.addresses);
-        e[NV_DEAC_THRESHOLD..NV_DEAC_THRESHOLD + 4]
-            .copy_from_slice(&v.deactivation_owner.threshold.to_le_bytes());
-        e[NV_DEAC_ADDR_START..NV_DEAC_ADDR_START + 4]
-            .copy_from_slice(&(addrs.len() as u32).to_le_bytes());
-        e[NV_DEAC_ADDR_COUNT..NV_DEAC_ADDR_COUNT + 4]
-            .copy_from_slice(&(v.deactivation_owner.addresses.len() as u32).to_le_bytes());
         addrs.extend_from_slice(&v.deactivation_owner.addresses);
-        b.list_bytes(&mut lb, &e);
     }
-    ((lb.offset(), vdrs.len()), node_ids, addrs)
+    (packed, node_ids, addrs)
 }
 
-/// A fixed blob out of an object's payload, short-read as zeros.
+// ---- reading ----
+
+/// The eight fields every kind opens with.
 ///
-/// Missing bytes read as zero for the same reason [`zap::Object::id`] does:
-/// a truncated buffer must decode to a value that fails verification, not to
-/// a panic — a hostile transaction that could crash the reader would never
-/// reach the check that refuses it.
-fn read_public_key(o: zap::Object<'_>, off: usize) -> [u8; crate::signer::PUBLIC_KEY_LEN] {
-    let mut out = [0u8; crate::signer::PUBLIC_KEY_LEN];
-    let src = o.bytes_fixed(off, crate::signer::PUBLIC_KEY_LEN);
-    out[..src.len()].copy_from_slice(src);
-    out
+/// Read through `Base`'s accessors whatever kind the byte at 0 names, because
+/// the schema gives every kind those eight at those offsets — which is not a
+/// convention to remember but a thing
+/// [`the_envelope_is_the_same_eight_fields_in_every_kind`] checks, struct by
+/// struct, against the emitted constants.
+fn read_envelope(o: zap::Object<'_>) -> Envelope {
+    let v = w::Base::new(o);
+    Envelope {
+        network_id: v.network_id(),
+        blockchain_id: *v.blockchain_id(),
+        outs: read_outputs(v.outs(), v.owner_addrs()),
+        ins: read_inputs(v.ins(), v.sig_indices()),
+        memo: v.memo().to_vec(),
+    }
 }
 
-fn read_proof(o: zap::Object<'_>, off: usize) -> [u8; crate::signer::SIGNATURE_LEN] {
-    let mut out = [0u8; crate::signer::SIGNATURE_LEN];
-    let src = o.bytes_fixed(off, crate::signer::SIGNATURE_LEN);
-    out[..src.len()].copy_from_slice(src);
-    out
-}
-
-fn read_network_validators(
-    o: zap::Object<'_>,
-    list_off: usize,
-    node_id_pool_off: usize,
-    addr_pool_off: usize,
-) -> Vec<NetworkValidator> {
-    let list = o.list(list_off, NV_STRIDE);
-    let blob = o.bytes(node_id_pool_off);
-    let addrs = o.list(addr_pool_off, ADDR_STRIDE);
+fn read_outputs(list: zap::List<'_>, addrs: zap::List<'_>) -> Vec<Output> {
     (0..list.len())
         .map(|i| {
-            let e = list.object(i, NV_STRIDE);
-            let public_key = read_public_key(e, NV_SIGNER_PUB);
-            let proof = read_proof(e, NV_SIGNER_POP);
-            let (start, len) = (
-                e.u32(NV_NODE_ID_START) as usize,
-                e.u32(NV_NODE_ID_LEN) as usize,
-            );
-            let node_id = if len > 0 && start + len <= blob.len() {
-                blob[start..start + len].to_vec()
-            } else {
-                Vec::new()
-            };
-            NetworkValidator {
-                node_id,
-                weight: e.u64(NV_WEIGHT),
-                balance: e.u64(NV_BALANCE),
-                signer: Signer::ProofOfPossession { public_key, proof },
-                remaining_balance_owner: PChainOwner {
-                    threshold: e.u32(NV_REM_THRESHOLD),
-                    addresses: slice_addrs(
-                        addrs,
-                        e.u32(NV_REM_ADDR_START),
-                        e.u32(NV_REM_ADDR_COUNT),
-                    ),
-                },
-                deactivation_owner: PChainOwner {
-                    threshold: e.u32(NV_DEAC_THRESHOLD),
-                    addresses: slice_addrs(
-                        addrs,
-                        e.u32(NV_DEAC_ADDR_START),
-                        e.u32(NV_DEAC_ADDR_COUNT),
-                    ),
+            let e = w::Out::new(list.object(i, w::OUT_SIZE));
+            Output {
+                asset: *e.asset(),
+                stake_lock: e.stake_lock(),
+                amount: e.amount(),
+                owners: Owners {
+                    locktime: e.owner_lock(),
+                    threshold: e.threshold(),
+                    addrs: slice_addrs(addrs, e.addr_start(), e.addr_count()),
                 },
             }
         })
         .collect()
 }
 
-/// The two security axes, across four fixed fields. Shared by both network
-/// transactions — one encoding, written once.
-fn set_security(
-    b: &mut zap::Builder,
-    ob: &zap::ObjectBuilder,
-    restake_off: usize,
-    admission_off: usize,
-    manager_off: usize,
-    threshold_off: usize,
-    m: &crate::security::Mode,
-) {
-    b.set_u8(ob, restake_off, u8::from(m.restake_parent));
-    b.set_u8(ob, admission_off, m.admission as u8);
-    b.set_u8(ob, manager_off, m.manager as u8);
-    b.set_u64(ob, threshold_off, m.threshold);
+fn read_inputs(list: zap::List<'_>, sigs: zap::List<'_>) -> Vec<Input> {
+    (0..list.len())
+        .map(|i| {
+            let e = w::In::new(list.object(i, w::IN_SIZE));
+            Input {
+                utxo: UtxoId {
+                    tx_id: *e.tx_id(),
+                    output_index: e.index(),
+                },
+                asset: *e.asset(),
+                stake_lock: e.stake_lock(),
+                amount: e.amount(),
+                sig_indices: slice_sigs(sigs, e.sig_start(), e.sig_count()),
+            }
+        })
+        .collect()
 }
 
-/// Read the two axes back.
+fn read_owners(threshold: u32, locktime: u64, addrs: zap::List<'_>) -> Owners {
+    Owners {
+        locktime,
+        threshold,
+        addrs: read_addrs(addrs),
+    }
+}
+
+fn read_u32_list(l: zap::List<'_>) -> Vec<u32> {
+    (0..l.len()).map(|i| l.u32(i)).collect()
+}
+
+fn read_id_list(l: zap::List<'_>) -> Vec<Id> {
+    (0..l.len())
+        .map(|i| {
+            let mut id = [0u8; 32];
+            let src = l.object(i, 32).bytes_fixed(0, 32);
+            id[..src.len()].copy_from_slice(src);
+            id
+        })
+        .collect()
+}
+
+/// A genesis validator set, read back out of the list and its two pools.
+fn read_network_validators(
+    list: zap::List<'_>,
+    node_ids: &[u8],
+    addrs: zap::List<'_>,
+) -> Vec<NetworkValidator> {
+    (0..list.len())
+        .map(|i| {
+            let e = w::NetworkValidator::new(list.object(i, w::NETWORK_VALIDATOR_SIZE));
+            let (start, len) = (e.node_id_start() as usize, e.node_id_len() as usize);
+            // A claimed run that is not inside the pool reads as nothing, for
+            // the same reason a short buffer reads as zeros: a hostile
+            // transaction has to reach the check that refuses it.
+            let node_id = match start.checked_add(len) {
+                Some(end) if len > 0 && end <= node_ids.len() => node_ids[start..end].to_vec(),
+                _ => Vec::new(),
+            };
+            NetworkValidator {
+                node_id,
+                weight: e.weight(),
+                balance: e.balance(),
+                signer: Signer::ProofOfPossession {
+                    public_key: *e.signer_key(),
+                    proof: *e.signer_proof(),
+                },
+                remaining_balance_owner: PChainOwner {
+                    threshold: e.remove_threshold(),
+                    addresses: slice_addrs(addrs, e.remove_addr_start(), e.remove_addr_count()),
+                },
+                deactivation_owner: PChainOwner {
+                    threshold: e.disable_threshold(),
+                    addresses: slice_addrs(addrs, e.disable_addr_start(), e.disable_addr_count()),
+                },
+            }
+        })
+        .collect()
+}
+
+/// The two security axes, out of the four bytes that carry them.
 ///
 /// A byte that names no admission or manager is carried as the refusal it will
 /// become: the mode is returned with the closest safe reading and
@@ -1552,21 +1241,20 @@ fn set_security(
 /// malformed byte unparseable rather than invalid, and a transaction that
 /// cannot be parsed cannot be reported on.
 fn read_security(
-    o: zap::Object<'_>,
-    restake_off: usize,
-    admission_off: usize,
-    manager_off: usize,
-    threshold_off: usize,
+    restake_parent: u8,
+    admission: u8,
+    manager: u8,
+    threshold: u64,
 ) -> Result<crate::security::Mode, Error> {
-    let admission = crate::security::Admission::from_u8(o.u8(admission_off))
+    let admission = crate::security::Admission::from_u8(admission)
         .map_err(|v| Error::Security(crate::security::Error::UnknownAdmission(v)))?;
-    let manager = crate::security::Manager::from_u8(o.u8(manager_off))
+    let manager = crate::security::Manager::from_u8(manager)
         .map_err(|v| Error::Security(crate::security::Error::UnknownManager(v)))?;
     Ok(crate::security::Mode {
-        restake_parent: o.u8(restake_off) != 0,
+        restake_parent: restake_parent != 0,
         admission,
         manager,
-        threshold: o.u64(threshold_off),
+        threshold,
     })
 }
 
@@ -1575,55 +1263,75 @@ impl Unsigned {
     ///
     /// This is construction, not serialization: nothing is cached and nothing
     /// is re-encoded later. The bytes a signature covers are these.
+    ///
+    /// One arm per kind, and each arm is the schema's field list read straight
+    /// down. What a field points at is written before the fixed section, in
+    /// field order, which is the order the Go chain writes it in — so these
+    /// bytes and a Go peer's are the same bytes, which is what
+    /// `tests/corpus_bytes.rs` checks against the corpus the Go chain
+    /// generated.
     pub fn to_bytes(&self) -> Vec<u8> {
         match self {
             Unsigned::RewardValidator { staker_tx_id } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 16 + SIZE_REWARD);
-                let ob = b.start_object(SIZE_REWARD);
-                b.set_u8(&ob, OFF_KIND, Kind::RewardValidator as u8);
-                b.set_bytes_fixed(&ob, OFF_REWARD_TX_ID, staker_tx_id);
-                b.finish_as_root(&ob);
-                b.finish()
+                w::new_reward_validator(&w::RewardValidatorInput {
+                    kind: Kind::RewardValidator as u8,
+                    staker_tx_id,
+                })
             }
             Unsigned::Base(base) => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 256 + SPEND_SIZE);
-                let p = write_spending(&mut b, base);
-                let ob = b.start_object(SPEND_SIZE);
-                set_envelope(&mut b, &ob, Kind::Base, base, &p);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_base(&w::BaseInput {
+                    kind: Kind::Base as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                })
             }
             Unsigned::Import {
                 base,
                 source_chain,
                 imported,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 1024 + SIZE_IMPORT);
-                let p = write_spending(&mut b, base);
-                let (ins, sigs) = write_inputs(&mut b, imported);
-                let ob = b.start_object(SIZE_IMPORT);
-                set_envelope(&mut b, &ob, Kind::Import, base, &p);
-                b.set_bytes_fixed(&ob, OFF_IMPORT_SOURCE_CHAIN, source_chain);
-                b.set_list(&ob, OFF_IMPORT_INPUTS, ins.0, ins.1);
-                b.set_list(&ob, OFF_IMPORT_SIG_INDICES, sigs.0, sigs.1);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                let i = Runs::inputs(imported);
+                w::new_import(&w::ImportInput {
+                    kind: Kind::Import as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    source: source_chain,
+                    imported: &i.in_bytes(),
+                    imported_sigs: &i.sigs,
+                })
             }
             Unsigned::Export {
                 base,
                 destination_chain,
                 exported,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 1024 + SIZE_EXPORT);
-                let p = write_spending(&mut b, base);
-                let (outs, addrs) = write_outputs(&mut b, exported);
-                let ob = b.start_object(SIZE_EXPORT);
-                set_envelope(&mut b, &ob, Kind::Export, base, &p);
-                b.set_bytes_fixed(&ob, OFF_EXPORT_DEST_CHAIN, destination_chain);
-                b.set_list(&ob, OFF_EXPORT_OUTPUTS, outs.0, outs.1);
-                b.set_list(&ob, OFF_EXPORT_ADDRS, addrs.0, addrs.1);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                let e = Runs::outputs(exported);
+                w::new_export(&w::ExportInput {
+                    kind: Kind::Export as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    destination: destination_chain,
+                    exported: &e.out_bytes(),
+                    exported_addrs: &flat(&e.addrs),
+                })
             }
             Unsigned::CreateChain {
                 base,
@@ -1634,20 +1342,23 @@ impl Unsigned {
                 genesis,
                 chain_auth,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 1024 + SIZE_CREATE_CHAIN);
-                let p = write_spending(&mut b, base);
-                let fx = write_id_list(&mut b, fx_ids);
-                let auth = write_u32_list(&mut b, chain_auth);
-                let ob = b.start_object(SIZE_CREATE_CHAIN);
-                set_envelope(&mut b, &ob, Kind::CreateChain, base, &p);
-                b.set_bytes_fixed(&ob, OFF_CC_CHAIN, chain);
-                b.set_bytes_fixed(&ob, OFF_CC_VM_ID, vm_id);
-                b.set_list(&ob, OFF_CC_FX_IDS, fx.0, fx.1);
-                b.set_list(&ob, OFF_CC_AUTH, auth.0, auth.1);
-                b.set_bytes(&ob, OFF_CC_NAME, name.as_bytes());
-                b.set_bytes(&ob, OFF_CC_GENESIS, genesis);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_create_chain(&w::CreateChainInput {
+                    kind: Kind::CreateChain as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    chain,
+                    vm_id,
+                    name: name.as_bytes(),
+                    fx_ids: &flat_ids(fx_ids),
+                    genesis,
+                    auth: chain_auth,
+                })
             }
             Unsigned::AddValidator {
                 base,
@@ -1656,27 +1367,28 @@ impl Unsigned {
                 rewards_owner,
                 delegation_shares,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 1024 + SIZE_ADD_VALIDATOR);
-                let p = write_spending(&mut b, base);
-                let (souts, saddrs) = write_outputs(&mut b, stake);
-                let owner_addrs = write_addrs(&mut b, &rewards_owner.addrs);
-                let ob = b.start_object(SIZE_ADD_VALIDATOR);
-                set_envelope(&mut b, &ob, Kind::AddValidator, base, &p);
-                set_validator(&mut b, &ob, OFF_AV_VALIDATOR, validator);
-                b.set_list(&ob, OFF_AV_STAKE_OUTS, souts.0, souts.1);
-                b.set_list(&ob, OFF_AV_STAKE_ADDRS, saddrs.0, saddrs.1);
-                set_owner(
-                    &mut b,
-                    &ob,
-                    OFF_AV_REWARDS_THRESHOLD,
-                    OFF_AV_REWARDS_LOCKTIME,
-                    OFF_AV_REWARDS_ADDRS,
-                    rewards_owner,
-                    owner_addrs,
-                );
-                b.set_u32(&ob, OFF_AV_DELEGATION_SHARES, *delegation_shares);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                let s = Runs::outputs(stake);
+                w::new_add_validator(&w::AddValidatorInput {
+                    kind: Kind::AddValidator as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    node_id: &validator.node_id.0,
+                    start: validator.start,
+                    end: validator.end,
+                    weight: validator.weight,
+                    stake_outs: &s.out_bytes(),
+                    stake_addrs: &flat(&s.addrs),
+                    rewards_threshold: rewards_owner.threshold,
+                    rewards_locktime: rewards_owner.locktime,
+                    rewards_addrs: &flat(&rewards_owner.addrs),
+                    delegation_shares: *delegation_shares,
+                })
             }
             Unsigned::AddDelegator {
                 base,
@@ -1684,26 +1396,27 @@ impl Unsigned {
                 stake,
                 rewards_owner,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 1024 + SIZE_ADD_DELEGATOR);
-                let p = write_spending(&mut b, base);
-                let (souts, saddrs) = write_outputs(&mut b, stake);
-                let owner_addrs = write_addrs(&mut b, &rewards_owner.addrs);
-                let ob = b.start_object(SIZE_ADD_DELEGATOR);
-                set_envelope(&mut b, &ob, Kind::AddDelegator, base, &p);
-                set_validator(&mut b, &ob, OFF_AD_VALIDATOR, validator);
-                b.set_list(&ob, OFF_AD_STAKE_OUTS, souts.0, souts.1);
-                b.set_list(&ob, OFF_AD_STAKE_ADDRS, saddrs.0, saddrs.1);
-                set_owner(
-                    &mut b,
-                    &ob,
-                    OFF_AD_REWARDS_THRESHOLD,
-                    OFF_AD_REWARDS_LOCKTIME,
-                    OFF_AD_REWARDS_ADDRS,
-                    rewards_owner,
-                    owner_addrs,
-                );
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                let s = Runs::outputs(stake);
+                w::new_add_delegator(&w::AddDelegatorInput {
+                    kind: Kind::AddDelegator as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    node_id: &validator.node_id.0,
+                    start: validator.start,
+                    end: validator.end,
+                    weight: validator.weight,
+                    stake_outs: &s.out_bytes(),
+                    stake_addrs: &flat(&s.addrs),
+                    rewards_threshold: rewards_owner.threshold,
+                    rewards_locktime: rewards_owner.locktime,
+                    rewards_addrs: &flat(&rewards_owner.addrs),
+                })
             }
             Unsigned::AddChainValidator {
                 base,
@@ -1711,16 +1424,23 @@ impl Unsigned {
                 chain,
                 chain_auth,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 512 + SIZE_ADD_CHAIN_VALIDATOR);
-                let p = write_spending(&mut b, base);
-                let auth = write_u32_list(&mut b, chain_auth);
-                let ob = b.start_object(SIZE_ADD_CHAIN_VALIDATOR);
-                set_envelope(&mut b, &ob, Kind::AddChainValidator, base, &p);
-                set_validator(&mut b, &ob, OFF_ACV_VALIDATOR, validator);
-                b.set_bytes_fixed(&ob, OFF_ACV_CHAIN, chain);
-                b.set_list(&ob, OFF_ACV_CHAIN_AUTH, auth.0, auth.1);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_add_chain_validator(&w::AddChainValidatorInput {
+                    kind: Kind::AddChainValidator as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    node_id: &validator.node_id.0,
+                    start: validator.start,
+                    end: validator.end,
+                    weight: validator.weight,
+                    chain,
+                    auth: chain_auth,
+                })
             }
             Unsigned::AddPermissionlessValidator {
                 base,
@@ -1732,40 +1452,36 @@ impl Unsigned {
                 delegator_rewards_owner,
                 delegation_shares,
             } => {
-                let mut b =
-                    zap::Builder::new(zap::HEADER_SIZE + 1024 + SIZE_ADD_PERMISSIONLESS_VALIDATOR);
-                let p = write_spending(&mut b, base);
-                let (souts, saddrs) = write_outputs(&mut b, stake);
-                let val_addrs = write_addrs(&mut b, &validator_rewards_owner.addrs);
-                let del_addrs = write_addrs(&mut b, &delegator_rewards_owner.addrs);
-                let ob = b.start_object(SIZE_ADD_PERMISSIONLESS_VALIDATOR);
-                set_envelope(&mut b, &ob, Kind::AddPermissionlessValidator, base, &p);
-                set_validator(&mut b, &ob, OFF_APV_VALIDATOR, validator);
-                b.set_bytes_fixed(&ob, OFF_APV_CHAIN, chain);
-                signer.write(&mut b, &ob, OFF_APV_SIGNER);
-                b.set_list(&ob, OFF_APV_STAKE_OUTS, souts.0, souts.1);
-                b.set_list(&ob, OFF_APV_STAKE_ADDRS, saddrs.0, saddrs.1);
-                set_owner(
-                    &mut b,
-                    &ob,
-                    OFF_APV_VAL_REWARDS_THRESHOLD,
-                    OFF_APV_VAL_REWARDS_LOCKTIME,
-                    OFF_APV_VAL_REWARDS_ADDRS,
-                    validator_rewards_owner,
-                    val_addrs,
-                );
-                set_owner(
-                    &mut b,
-                    &ob,
-                    OFF_APV_DEL_REWARDS_THRESHOLD,
-                    OFF_APV_DEL_REWARDS_LOCKTIME,
-                    OFF_APV_DEL_REWARDS_ADDRS,
-                    delegator_rewards_owner,
-                    del_addrs,
-                );
-                b.set_u32(&ob, OFF_APV_DELEGATION_SHARES, *delegation_shares);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                let s = Runs::outputs(stake);
+                let (kind, key, proof) = signer.parts();
+                w::new_add_permissionless_validator(&w::AddPermissionlessValidatorInput {
+                    kind: Kind::AddPermissionlessValidator as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    node_id: &validator.node_id.0,
+                    start: validator.start,
+                    end: validator.end,
+                    weight: validator.weight,
+                    chain,
+                    signer_kind: kind,
+                    signer_key: &key,
+                    signer_proof: &proof,
+                    stake_outs: &s.out_bytes(),
+                    stake_addrs: &flat(&s.addrs),
+                    validator_rewards_threshold: validator_rewards_owner.threshold,
+                    validator_rewards_locktime: validator_rewards_owner.locktime,
+                    validator_rewards_addrs: &flat(&validator_rewards_owner.addrs),
+                    delegator_rewards_threshold: delegator_rewards_owner.threshold,
+                    delegator_rewards_locktime: delegator_rewards_owner.locktime,
+                    delegator_rewards_addrs: &flat(&delegator_rewards_owner.addrs),
+                    delegation_shares: *delegation_shares,
+                })
             }
             Unsigned::AddPermissionlessDelegator {
                 base,
@@ -1774,28 +1490,28 @@ impl Unsigned {
                 stake,
                 rewards_owner,
             } => {
-                let mut b =
-                    zap::Builder::new(zap::HEADER_SIZE + 1024 + SIZE_ADD_PERMISSIONLESS_DELEGATOR);
-                let p = write_spending(&mut b, base);
-                let (souts, saddrs) = write_outputs(&mut b, stake);
-                let owner_addrs = write_addrs(&mut b, &rewards_owner.addrs);
-                let ob = b.start_object(SIZE_ADD_PERMISSIONLESS_DELEGATOR);
-                set_envelope(&mut b, &ob, Kind::AddPermissionlessDelegator, base, &p);
-                set_validator(&mut b, &ob, OFF_APD_VALIDATOR, validator);
-                b.set_bytes_fixed(&ob, OFF_APD_CHAIN, chain);
-                b.set_list(&ob, OFF_APD_STAKE_OUTS, souts.0, souts.1);
-                b.set_list(&ob, OFF_APD_STAKE_ADDRS, saddrs.0, saddrs.1);
-                set_owner(
-                    &mut b,
-                    &ob,
-                    OFF_APD_REWARDS_THRESHOLD,
-                    OFF_APD_REWARDS_LOCKTIME,
-                    OFF_APD_REWARDS_ADDRS,
-                    rewards_owner,
-                    owner_addrs,
-                );
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                let s = Runs::outputs(stake);
+                w::new_add_permissionless_delegator(&w::AddPermissionlessDelegatorInput {
+                    kind: Kind::AddPermissionlessDelegator as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    node_id: &validator.node_id.0,
+                    start: validator.start,
+                    end: validator.end,
+                    weight: validator.weight,
+                    chain,
+                    stake_outs: &s.out_bytes(),
+                    stake_addrs: &flat(&s.addrs),
+                    rewards_threshold: rewards_owner.threshold,
+                    rewards_locktime: rewards_owner.locktime,
+                    rewards_addrs: &flat(&rewards_owner.addrs),
+                })
             }
             Unsigned::RemoveChainValidator {
                 base,
@@ -1803,16 +1519,20 @@ impl Unsigned {
                 chain,
                 chain_auth,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 512 + SIZE_REMOVE);
-                let p = write_spending(&mut b, base);
-                let auth = write_u32_list(&mut b, chain_auth);
-                let ob = b.start_object(SIZE_REMOVE);
-                set_envelope(&mut b, &ob, Kind::RemoveChainValidator, base, &p);
-                b.set_bytes_fixed(&ob, OFF_REMOVE_NODE_ID, &node_id.0);
-                b.set_bytes_fixed(&ob, OFF_REMOVE_CHAIN, chain);
-                b.set_list(&ob, OFF_REMOVE_CHAIN_AUTH, auth.0, auth.1);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_remove_chain_validator(&w::RemoveChainValidatorInput {
+                    kind: Kind::RemoveChainValidator as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    node_id: &node_id.0,
+                    chain,
+                    auth: chain_auth,
+                })
             }
             Unsigned::TransferChainOwnership {
                 base,
@@ -1820,55 +1540,60 @@ impl Unsigned {
                 chain_auth,
                 owner,
             } => {
-                let mut b =
-                    zap::Builder::new(zap::HEADER_SIZE + 512 + SIZE_TRANSFER_CHAIN_OWNERSHIP);
-                let p = write_spending(&mut b, base);
-                let auth = write_u32_list(&mut b, chain_auth);
-                let owner_addrs = write_addrs(&mut b, &owner.addrs);
-                let ob = b.start_object(SIZE_TRANSFER_CHAIN_OWNERSHIP);
-                set_envelope(&mut b, &ob, Kind::TransferChainOwnership, base, &p);
-                b.set_bytes_fixed(&ob, OFF_TCO_CHAIN, chain);
-                b.set_list(&ob, OFF_TCO_CHAIN_AUTH, auth.0, auth.1);
-                set_owner(
-                    &mut b,
-                    &ob,
-                    OFF_TCO_OWNER_THRESHOLD,
-                    OFF_TCO_OWNER_LOCKTIME,
-                    OFF_TCO_OWNER_ADDRS,
-                    owner,
-                    owner_addrs,
-                );
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_transfer_chain_ownership(&w::TransferChainOwnershipInput {
+                    kind: Kind::TransferChainOwnership as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    chain,
+                    auth: chain_auth,
+                    new_owner_threshold: owner.threshold,
+                    new_owner_locktime: owner.locktime,
+                    new_owner_addrs: &flat(&owner.addrs),
+                })
             }
             Unsigned::IncreaseL1ValidatorBalance {
                 base,
                 validation_id,
                 balance,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 512 + SIZE_INCREASE);
-                let p = write_spending(&mut b, base);
-                let ob = b.start_object(SIZE_INCREASE);
-                set_envelope(&mut b, &ob, Kind::IncreaseL1ValidatorBalance, base, &p);
-                b.set_bytes_fixed(&ob, OFF_INCREASE_VALIDATION_ID, validation_id);
-                b.set_u64(&ob, OFF_INCREASE_BALANCE, *balance);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_increase_l1_validator_balance(&w::IncreaseL1ValidatorBalanceInput {
+                    kind: Kind::IncreaseL1ValidatorBalance as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    validation_id,
+                    balance: *balance,
+                })
             }
             Unsigned::DisableL1Validator {
                 base,
                 validation_id,
                 auth,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 512 + SIZE_DISABLE);
-                let p = write_spending(&mut b, base);
-                let a = write_u32_list(&mut b, auth);
-                let ob = b.start_object(SIZE_DISABLE);
-                set_envelope(&mut b, &ob, Kind::DisableL1Validator, base, &p);
-                b.set_bytes_fixed(&ob, OFF_DISABLE_VALIDATION_ID, validation_id);
-                b.set_list(&ob, OFF_DISABLE_AUTH, a.0, a.1);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_disable_l1_validator(&w::DisableL1ValidatorInput {
+                    kind: Kind::DisableL1Validator as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    validation_id,
+                    auth,
+                })
             }
             Unsigned::CreateNetwork {
                 base,
@@ -1879,41 +1604,31 @@ impl Unsigned {
                 manager_chain_id,
                 manager_address,
             } => {
-                let mut b = zap::Builder::new(
-                    zap::HEADER_SIZE + 1024 + SIZE_CREATE_NETWORK + validators.len() * NV_STRIDE,
-                );
-                let p = write_spending(&mut b, base);
-                let owner_addrs = write_addrs(&mut b, &owner.addrs);
-                let (vdrs, node_id_pool, addr_pool) = write_network_validators(&mut b, validators);
-                let val_addrs = write_addrs(&mut b, &addr_pool);
-                let ob = b.start_object(SIZE_CREATE_NETWORK);
-                set_envelope(&mut b, &ob, Kind::CreateNetwork, base, &p);
-                b.set_bytes_fixed(&ob, OFF_CN_PARENT, parent);
-                set_owner(
-                    &mut b,
-                    &ob,
-                    OFF_CN_OWNER_THRESHOLD,
-                    OFF_CN_OWNER_LOCKTIME,
-                    OFF_CN_OWNER_ADDRS,
-                    owner,
-                    owner_addrs,
-                );
-                set_security(
-                    &mut b,
-                    &ob,
-                    OFF_CN_RESTAKE_PARENT,
-                    OFF_CN_ADMISSION,
-                    OFF_CN_MANAGER,
-                    OFF_CN_THRESHOLD,
-                    security,
-                );
-                b.set_list(&ob, OFF_CN_VALIDATORS, vdrs.0, vdrs.1);
-                b.set_bytes(&ob, OFF_CN_NODE_ID_POOL, &node_id_pool);
-                b.set_list(&ob, OFF_CN_ADDR_POOL, val_addrs.0, val_addrs.1);
-                b.set_bytes_fixed(&ob, OFF_CN_MANAGER_CHAIN_ID, manager_chain_id);
-                b.set_bytes(&ob, OFF_CN_MANAGER_ADDRESS, manager_address);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                let (vdrs, node_ids, pool) = pack_network_validators(validators);
+                w::new_create_network(&w::CreateNetworkInput {
+                    kind: Kind::CreateNetwork as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    parent,
+                    network_owner_threshold: owner.threshold,
+                    network_owner_locktime: owner.locktime,
+                    network_owner_addrs: &flat(&owner.addrs),
+                    restake_parent: u8::from(security.restake_parent),
+                    admission: security.admission as u8,
+                    manager: security.manager as u8,
+                    threshold: security.threshold,
+                    validators: &vdrs.iter().map(|e| &e[..]).collect::<Vec<_>>(),
+                    node_id_pool: &node_ids,
+                    addr_pool: &flat(&pool),
+                    manager_chain_id,
+                    manager_address,
+                })
             }
             Unsigned::ConvertNetwork {
                 base,
@@ -1925,34 +1640,30 @@ impl Unsigned {
                 auth,
                 security,
             } => {
-                let mut b = zap::Builder::new(
-                    zap::HEADER_SIZE + 512 + SIZE_CONVERT_NETWORK + validators.len() * NV_STRIDE,
-                );
-                let p = write_spending(&mut b, base);
-                let (vdrs, node_id_pool, addr_pool) = write_network_validators(&mut b, validators);
-                let val_addrs = write_addrs(&mut b, &addr_pool);
-                let a = write_u32_list(&mut b, auth);
-                let ob = b.start_object(SIZE_CONVERT_NETWORK);
-                set_envelope(&mut b, &ob, Kind::ConvertNetwork, base, &p);
-                b.set_bytes_fixed(&ob, OFF_CV_NETWORK, network);
-                b.set_bytes_fixed(&ob, OFF_CV_PARENT, parent);
-                b.set_bytes_fixed(&ob, OFF_CV_MANAGER_CHAIN_ID, manager_chain_id);
-                b.set_bytes(&ob, OFF_CV_MANAGER_ADDRESS, manager_address);
-                b.set_list(&ob, OFF_CV_VALIDATORS, vdrs.0, vdrs.1);
-                b.set_bytes(&ob, OFF_CV_NODE_ID_POOL, &node_id_pool);
-                b.set_list(&ob, OFF_CV_ADDR_POOL, val_addrs.0, val_addrs.1);
-                b.set_list(&ob, OFF_CV_AUTH, a.0, a.1);
-                set_security(
-                    &mut b,
-                    &ob,
-                    OFF_CV_RESTAKE_PARENT,
-                    OFF_CV_ADMISSION,
-                    OFF_CV_MANAGER,
-                    OFF_CV_THRESHOLD,
-                    security,
-                );
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                let (vdrs, node_ids, pool) = pack_network_validators(validators);
+                w::new_convert_network(&w::ConvertNetworkInput {
+                    kind: Kind::ConvertNetwork as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    network,
+                    parent,
+                    manager_chain_id,
+                    manager_address,
+                    validators: &vdrs.iter().map(|e| &e[..]).collect::<Vec<_>>(),
+                    node_id_pool: &node_ids,
+                    addr_pool: &flat(&pool),
+                    auth,
+                    restake_parent: u8::from(security.restake_parent),
+                    admission: security.admission as u8,
+                    manager: security.manager as u8,
+                    threshold: security.threshold,
+                })
             }
             Unsigned::TransformChain {
                 base,
@@ -1972,32 +1683,32 @@ impl Unsigned {
                 uptime_requirement,
                 chain_auth,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 512 + SIZE_TRANSFORM_CHAIN);
-                let p = write_spending(&mut b, base);
-                let a = write_u32_list(&mut b, chain_auth);
-                let ob = b.start_object(SIZE_TRANSFORM_CHAIN);
-                set_envelope(&mut b, &ob, Kind::TransformChain, base, &p);
-                b.set_bytes_fixed(&ob, OFF_TC_CHAIN, chain);
-                b.set_bytes_fixed(&ob, OFF_TC_ASSET_ID, asset_id);
-                b.set_u64(&ob, OFF_TC_INITIAL_SUPPLY, *initial_supply);
-                b.set_u64(&ob, OFF_TC_MAXIMUM_SUPPLY, *maximum_supply);
-                b.set_u64(&ob, OFF_TC_MIN_CONSUMPTION_RATE, *min_consumption_rate);
-                b.set_u64(&ob, OFF_TC_MAX_CONSUMPTION_RATE, *max_consumption_rate);
-                b.set_u64(&ob, OFF_TC_MIN_VALIDATOR_STAKE, *min_validator_stake);
-                b.set_u64(&ob, OFF_TC_MAX_VALIDATOR_STAKE, *max_validator_stake);
-                b.set_u32(&ob, OFF_TC_MIN_STAKE_DURATION, *min_stake_duration);
-                b.set_u32(&ob, OFF_TC_MAX_STAKE_DURATION, *max_stake_duration);
-                b.set_u32(&ob, OFF_TC_MIN_DELEGATION_FEE, *min_delegation_fee);
-                b.set_u64(&ob, OFF_TC_MIN_DELEGATOR_STAKE, *min_delegator_stake);
-                b.set_u8(
-                    &ob,
-                    OFF_TC_MAX_VALIDATOR_WEIGHT_FACTOR,
-                    *max_validator_weight_factor,
-                );
-                b.set_u32(&ob, OFF_TC_UPTIME_REQUIREMENT, *uptime_requirement);
-                b.set_list(&ob, OFF_TC_CHAIN_AUTH, a.0, a.1);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_transform_chain(&w::TransformChainInput {
+                    kind: Kind::TransformChain as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    chain,
+                    asset: asset_id,
+                    initial_supply: *initial_supply,
+                    maximum_supply: *maximum_supply,
+                    min_consumption_rate: *min_consumption_rate,
+                    max_consumption_rate: *max_consumption_rate,
+                    min_validator_stake: *min_validator_stake,
+                    max_validator_stake: *max_validator_stake,
+                    min_stake_duration: *min_stake_duration,
+                    max_stake_duration: *max_stake_duration,
+                    min_delegation_fee: *min_delegation_fee,
+                    min_delegator_stake: *min_delegator_stake,
+                    max_validator_weight_factor: *max_validator_weight_factor,
+                    uptime_requirement: *uptime_requirement,
+                    auth: chain_auth,
+                })
             }
             Unsigned::RegisterL1Validator {
                 base,
@@ -2005,25 +1716,34 @@ impl Unsigned {
                 proof_of_possession,
                 message,
             } => {
-                let mut b = zap::Builder::new(zap::HEADER_SIZE + 512 + SIZE_REGISTER_L1_VALIDATOR);
-                let p = write_spending(&mut b, base);
-                let ob = b.start_object(SIZE_REGISTER_L1_VALIDATOR);
-                set_envelope(&mut b, &ob, Kind::RegisterL1Validator, base, &p);
-                b.set_u64(&ob, OFF_RL_BALANCE, *balance);
-                b.set_bytes_fixed(&ob, OFF_RL_POP, proof_of_possession);
-                b.set_bytes(&ob, OFF_RL_MESSAGE, message);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_register_l1_validator(&w::RegisterL1ValidatorInput {
+                    kind: Kind::RegisterL1Validator as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    balance: *balance,
+                    proof: proof_of_possession,
+                    message,
+                })
             }
             Unsigned::SetL1ValidatorWeight { base, message } => {
-                let mut b =
-                    zap::Builder::new(zap::HEADER_SIZE + 256 + SIZE_SET_L1_VALIDATOR_WEIGHT);
-                let p = write_spending(&mut b, base);
-                let ob = b.start_object(SIZE_SET_L1_VALIDATOR_WEIGHT);
-                set_envelope(&mut b, &ob, Kind::SetL1ValidatorWeight, base, &p);
-                b.set_bytes(&ob, OFF_SW_MESSAGE, message);
-                b.finish_as_root(&ob);
-                b.finish()
+                let r = Runs::envelope(base);
+                w::new_set_l1_validator_weight(&w::SetL1ValidatorWeightInput {
+                    kind: Kind::SetL1ValidatorWeight as u8,
+                    network_id: base.network_id,
+                    blockchain_id: &base.blockchain_id,
+                    outs: &r.out_bytes(),
+                    owner_addrs: &flat(&r.addrs),
+                    ins: &r.in_bytes(),
+                    sig_indices: &r.sigs,
+                    memo: &base.memo,
+                    message,
+                })
             }
         }
     }
@@ -2036,194 +1756,262 @@ impl Unsigned {
     pub fn parse(bytes: &[u8]) -> Result<Unsigned, Error> {
         let msg = zap::Message::parse(bytes)?;
         let o = msg.root();
-        let raw = o.u8(OFF_KIND);
+        let raw = o.u8(w::BASE_KIND);
         let kind = Kind::from_u8(raw).ok_or(Error::UnknownKind(raw))?;
         Ok(match kind {
-            Kind::RewardValidator => Unsigned::RewardValidator {
-                staker_tx_id: o.id(OFF_REWARD_TX_ID),
-            },
+            Kind::RewardValidator => {
+                let v = w::RewardValidator::new(o);
+                Unsigned::RewardValidator {
+                    staker_tx_id: *v.staker_tx_id(),
+                }
+            }
             Kind::Base => Unsigned::Base(read_envelope(o)),
-            Kind::Import => Unsigned::Import {
-                base: read_envelope(o),
-                source_chain: o.id(OFF_IMPORT_SOURCE_CHAIN),
-                imported: read_inputs(o, OFF_IMPORT_INPUTS, OFF_IMPORT_SIG_INDICES),
-            },
-            Kind::Export => Unsigned::Export {
-                base: read_envelope(o),
-                destination_chain: o.id(OFF_EXPORT_DEST_CHAIN),
-                exported: read_outputs(o, OFF_EXPORT_OUTPUTS, OFF_EXPORT_ADDRS),
-            },
-            Kind::CreateChain => Unsigned::CreateChain {
-                base: read_envelope(o),
-                chain: o.id(OFF_CC_CHAIN),
-                vm_id: o.id(OFF_CC_VM_ID),
-                name: o.text(OFF_CC_NAME).to_string(),
-                fx_ids: read_id_list(o, OFF_CC_FX_IDS),
-                genesis: o.bytes(OFF_CC_GENESIS).to_vec(),
-                chain_auth: read_u32_list(o, OFF_CC_AUTH),
-            },
-            Kind::AddValidator => Unsigned::AddValidator {
-                base: read_envelope(o),
-                validator: read_validator(o, OFF_AV_VALIDATOR),
-                stake: read_outputs(o, OFF_AV_STAKE_OUTS, OFF_AV_STAKE_ADDRS),
-                rewards_owner: read_owner(
-                    o,
-                    OFF_AV_REWARDS_THRESHOLD,
-                    OFF_AV_REWARDS_LOCKTIME,
-                    OFF_AV_REWARDS_ADDRS,
-                ),
-                delegation_shares: o.u32(OFF_AV_DELEGATION_SHARES),
-            },
-            Kind::AddDelegator => Unsigned::AddDelegator {
-                base: read_envelope(o),
-                validator: read_validator(o, OFF_AD_VALIDATOR),
-                stake: read_outputs(o, OFF_AD_STAKE_OUTS, OFF_AD_STAKE_ADDRS),
-                rewards_owner: read_owner(
-                    o,
-                    OFF_AD_REWARDS_THRESHOLD,
-                    OFF_AD_REWARDS_LOCKTIME,
-                    OFF_AD_REWARDS_ADDRS,
-                ),
-            },
-            Kind::AddChainValidator => Unsigned::AddChainValidator {
-                base: read_envelope(o),
-                validator: read_validator(o, OFF_ACV_VALIDATOR),
-                chain: o.id(OFF_ACV_CHAIN),
-                chain_auth: read_u32_list(o, OFF_ACV_CHAIN_AUTH),
-            },
-            Kind::AddPermissionlessValidator => Unsigned::AddPermissionlessValidator {
-                base: read_envelope(o),
-                validator: read_validator(o, OFF_APV_VALIDATOR),
-                chain: o.id(OFF_APV_CHAIN),
-                signer: Signer::read(o, OFF_APV_SIGNER),
-                stake: read_outputs(o, OFF_APV_STAKE_OUTS, OFF_APV_STAKE_ADDRS),
-                validator_rewards_owner: read_owner(
-                    o,
-                    OFF_APV_VAL_REWARDS_THRESHOLD,
-                    OFF_APV_VAL_REWARDS_LOCKTIME,
-                    OFF_APV_VAL_REWARDS_ADDRS,
-                ),
-                delegator_rewards_owner: read_owner(
-                    o,
-                    OFF_APV_DEL_REWARDS_THRESHOLD,
-                    OFF_APV_DEL_REWARDS_LOCKTIME,
-                    OFF_APV_DEL_REWARDS_ADDRS,
-                ),
-                delegation_shares: o.u32(OFF_APV_DELEGATION_SHARES),
-            },
-            Kind::AddPermissionlessDelegator => Unsigned::AddPermissionlessDelegator {
-                base: read_envelope(o),
-                validator: read_validator(o, OFF_APD_VALIDATOR),
-                chain: o.id(OFF_APD_CHAIN),
-                stake: read_outputs(o, OFF_APD_STAKE_OUTS, OFF_APD_STAKE_ADDRS),
-                rewards_owner: read_owner(
-                    o,
-                    OFF_APD_REWARDS_THRESHOLD,
-                    OFF_APD_REWARDS_LOCKTIME,
-                    OFF_APD_REWARDS_ADDRS,
-                ),
-            },
-            Kind::RemoveChainValidator => Unsigned::RemoveChainValidator {
-                base: read_envelope(o),
-                node_id: NodeId(o.short_id(OFF_REMOVE_NODE_ID)),
-                chain: o.id(OFF_REMOVE_CHAIN),
-                chain_auth: read_u32_list(o, OFF_REMOVE_CHAIN_AUTH),
-            },
-            Kind::TransferChainOwnership => Unsigned::TransferChainOwnership {
-                base: read_envelope(o),
-                chain: o.id(OFF_TCO_CHAIN),
-                chain_auth: read_u32_list(o, OFF_TCO_CHAIN_AUTH),
-                owner: read_owner(
-                    o,
-                    OFF_TCO_OWNER_THRESHOLD,
-                    OFF_TCO_OWNER_LOCKTIME,
-                    OFF_TCO_OWNER_ADDRS,
-                ),
-            },
-            Kind::IncreaseL1ValidatorBalance => Unsigned::IncreaseL1ValidatorBalance {
-                base: read_envelope(o),
-                validation_id: o.id(OFF_INCREASE_VALIDATION_ID),
-                balance: o.u64(OFF_INCREASE_BALANCE),
-            },
-            Kind::DisableL1Validator => Unsigned::DisableL1Validator {
-                base: read_envelope(o),
-                validation_id: o.id(OFF_DISABLE_VALIDATION_ID),
-                auth: read_u32_list(o, OFF_DISABLE_AUTH),
-            },
-            Kind::CreateNetwork => Unsigned::CreateNetwork {
-                base: read_envelope(o),
-                parent: o.id(OFF_CN_PARENT),
-                owner: read_owner(
-                    o,
-                    OFF_CN_OWNER_THRESHOLD,
-                    OFF_CN_OWNER_LOCKTIME,
-                    OFF_CN_OWNER_ADDRS,
-                ),
-                security: read_security(
-                    o,
-                    OFF_CN_RESTAKE_PARENT,
-                    OFF_CN_ADMISSION,
-                    OFF_CN_MANAGER,
-                    OFF_CN_THRESHOLD,
-                )?,
-                validators: read_network_validators(
-                    o,
-                    OFF_CN_VALIDATORS,
-                    OFF_CN_NODE_ID_POOL,
-                    OFF_CN_ADDR_POOL,
-                ),
-                manager_chain_id: o.id(OFF_CN_MANAGER_CHAIN_ID),
-                manager_address: o.bytes(OFF_CN_MANAGER_ADDRESS).to_vec(),
-            },
-            Kind::ConvertNetwork => Unsigned::ConvertNetwork {
-                base: read_envelope(o),
-                network: o.id(OFF_CV_NETWORK),
-                parent: o.id(OFF_CV_PARENT),
-                manager_chain_id: o.id(OFF_CV_MANAGER_CHAIN_ID),
-                manager_address: o.bytes(OFF_CV_MANAGER_ADDRESS).to_vec(),
-                validators: read_network_validators(
-                    o,
-                    OFF_CV_VALIDATORS,
-                    OFF_CV_NODE_ID_POOL,
-                    OFF_CV_ADDR_POOL,
-                ),
-                auth: read_u32_list(o, OFF_CV_AUTH),
-                security: read_security(
-                    o,
-                    OFF_CV_RESTAKE_PARENT,
-                    OFF_CV_ADMISSION,
-                    OFF_CV_MANAGER,
-                    OFF_CV_THRESHOLD,
-                )?,
-            },
-            Kind::TransformChain => Unsigned::TransformChain {
-                base: read_envelope(o),
-                chain: o.id(OFF_TC_CHAIN),
-                asset_id: o.id(OFF_TC_ASSET_ID),
-                initial_supply: o.u64(OFF_TC_INITIAL_SUPPLY),
-                maximum_supply: o.u64(OFF_TC_MAXIMUM_SUPPLY),
-                min_consumption_rate: o.u64(OFF_TC_MIN_CONSUMPTION_RATE),
-                max_consumption_rate: o.u64(OFF_TC_MAX_CONSUMPTION_RATE),
-                min_validator_stake: o.u64(OFF_TC_MIN_VALIDATOR_STAKE),
-                max_validator_stake: o.u64(OFF_TC_MAX_VALIDATOR_STAKE),
-                min_stake_duration: o.u32(OFF_TC_MIN_STAKE_DURATION),
-                max_stake_duration: o.u32(OFF_TC_MAX_STAKE_DURATION),
-                min_delegation_fee: o.u32(OFF_TC_MIN_DELEGATION_FEE),
-                min_delegator_stake: o.u64(OFF_TC_MIN_DELEGATOR_STAKE),
-                max_validator_weight_factor: o.u8(OFF_TC_MAX_VALIDATOR_WEIGHT_FACTOR),
-                uptime_requirement: o.u32(OFF_TC_UPTIME_REQUIREMENT),
-                chain_auth: read_u32_list(o, OFF_TC_CHAIN_AUTH),
-            },
-            Kind::RegisterL1Validator => Unsigned::RegisterL1Validator {
-                base: read_envelope(o),
-                balance: o.u64(OFF_RL_BALANCE),
-                proof_of_possession: read_proof(o, OFF_RL_POP),
-                message: o.bytes(OFF_RL_MESSAGE).to_vec(),
-            },
-            Kind::SetL1ValidatorWeight => Unsigned::SetL1ValidatorWeight {
-                base: read_envelope(o),
-                message: o.bytes(OFF_SW_MESSAGE).to_vec(),
-            },
+            Kind::Import => {
+                let v = w::Import::new(o);
+                Unsigned::Import {
+                    base: read_envelope(o),
+                    source_chain: *v.source(),
+                    imported: read_inputs(v.imported(), v.imported_sigs()),
+                }
+            }
+            Kind::Export => {
+                let v = w::Export::new(o);
+                Unsigned::Export {
+                    base: read_envelope(o),
+                    destination_chain: *v.destination(),
+                    exported: read_outputs(v.exported(), v.exported_addrs()),
+                }
+            }
+            Kind::CreateChain => {
+                let v = w::CreateChain::new(o);
+                Unsigned::CreateChain {
+                    base: read_envelope(o),
+                    chain: *v.chain(),
+                    vm_id: *v.vm_id(),
+                    name: String::from_utf8_lossy(v.name()).into_owned(),
+                    fx_ids: read_id_list(v.fx_ids()),
+                    genesis: v.genesis().to_vec(),
+                    chain_auth: read_u32_list(v.auth()),
+                }
+            }
+            Kind::AddValidator => {
+                let v = w::AddValidator::new(o);
+                Unsigned::AddValidator {
+                    base: read_envelope(o),
+                    validator: Validator {
+                        node_id: NodeId(*v.node_id()),
+                        start: v.start(),
+                        end: v.end(),
+                        weight: v.weight(),
+                    },
+                    stake: read_outputs(v.stake_outs(), v.stake_addrs()),
+                    rewards_owner: read_owners(
+                        v.rewards_threshold(),
+                        v.rewards_locktime(),
+                        v.rewards_addrs(),
+                    ),
+                    delegation_shares: v.delegation_shares(),
+                }
+            }
+            Kind::AddDelegator => {
+                let v = w::AddDelegator::new(o);
+                Unsigned::AddDelegator {
+                    base: read_envelope(o),
+                    validator: Validator {
+                        node_id: NodeId(*v.node_id()),
+                        start: v.start(),
+                        end: v.end(),
+                        weight: v.weight(),
+                    },
+                    stake: read_outputs(v.stake_outs(), v.stake_addrs()),
+                    rewards_owner: read_owners(
+                        v.rewards_threshold(),
+                        v.rewards_locktime(),
+                        v.rewards_addrs(),
+                    ),
+                }
+            }
+            Kind::AddChainValidator => {
+                let v = w::AddChainValidator::new(o);
+                Unsigned::AddChainValidator {
+                    base: read_envelope(o),
+                    validator: Validator {
+                        node_id: NodeId(*v.node_id()),
+                        start: v.start(),
+                        end: v.end(),
+                        weight: v.weight(),
+                    },
+                    chain: *v.chain(),
+                    chain_auth: read_u32_list(v.auth()),
+                }
+            }
+            Kind::AddPermissionlessValidator => {
+                let v = w::AddPermissionlessValidator::new(o);
+                Unsigned::AddPermissionlessValidator {
+                    base: read_envelope(o),
+                    validator: Validator {
+                        node_id: NodeId(*v.node_id()),
+                        start: v.start(),
+                        end: v.end(),
+                        weight: v.weight(),
+                    },
+                    chain: *v.chain(),
+                    signer: Signer::of(v.signer_kind(), v.signer_key(), v.signer_proof()),
+                    stake: read_outputs(v.stake_outs(), v.stake_addrs()),
+                    validator_rewards_owner: read_owners(
+                        v.validator_rewards_threshold(),
+                        v.validator_rewards_locktime(),
+                        v.validator_rewards_addrs(),
+                    ),
+                    delegator_rewards_owner: read_owners(
+                        v.delegator_rewards_threshold(),
+                        v.delegator_rewards_locktime(),
+                        v.delegator_rewards_addrs(),
+                    ),
+                    delegation_shares: v.delegation_shares(),
+                }
+            }
+            Kind::AddPermissionlessDelegator => {
+                let v = w::AddPermissionlessDelegator::new(o);
+                Unsigned::AddPermissionlessDelegator {
+                    base: read_envelope(o),
+                    validator: Validator {
+                        node_id: NodeId(*v.node_id()),
+                        start: v.start(),
+                        end: v.end(),
+                        weight: v.weight(),
+                    },
+                    chain: *v.chain(),
+                    stake: read_outputs(v.stake_outs(), v.stake_addrs()),
+                    rewards_owner: read_owners(
+                        v.rewards_threshold(),
+                        v.rewards_locktime(),
+                        v.rewards_addrs(),
+                    ),
+                }
+            }
+            Kind::RemoveChainValidator => {
+                let v = w::RemoveChainValidator::new(o);
+                Unsigned::RemoveChainValidator {
+                    base: read_envelope(o),
+                    node_id: NodeId(*v.node_id()),
+                    chain: *v.chain(),
+                    chain_auth: read_u32_list(v.auth()),
+                }
+            }
+            Kind::TransferChainOwnership => {
+                let v = w::TransferChainOwnership::new(o);
+                Unsigned::TransferChainOwnership {
+                    base: read_envelope(o),
+                    chain: *v.chain(),
+                    chain_auth: read_u32_list(v.auth()),
+                    owner: read_owners(
+                        v.new_owner_threshold(),
+                        v.new_owner_locktime(),
+                        v.new_owner_addrs(),
+                    ),
+                }
+            }
+            Kind::IncreaseL1ValidatorBalance => {
+                let v = w::IncreaseL1ValidatorBalance::new(o);
+                Unsigned::IncreaseL1ValidatorBalance {
+                    base: read_envelope(o),
+                    validation_id: *v.validation_id(),
+                    balance: v.balance(),
+                }
+            }
+            Kind::DisableL1Validator => {
+                let v = w::DisableL1Validator::new(o);
+                Unsigned::DisableL1Validator {
+                    base: read_envelope(o),
+                    validation_id: *v.validation_id(),
+                    auth: read_u32_list(v.auth()),
+                }
+            }
+            Kind::CreateNetwork => {
+                let v = w::CreateNetwork::new(o);
+                Unsigned::CreateNetwork {
+                    base: read_envelope(o),
+                    parent: *v.parent(),
+                    owner: read_owners(
+                        v.network_owner_threshold(),
+                        v.network_owner_locktime(),
+                        v.network_owner_addrs(),
+                    ),
+                    security: read_security(
+                        v.restake_parent(),
+                        v.admission(),
+                        v.manager(),
+                        v.threshold(),
+                    )?,
+                    validators: read_network_validators(
+                        v.validators(),
+                        v.node_id_pool(),
+                        v.addr_pool(),
+                    ),
+                    manager_chain_id: *v.manager_chain_id(),
+                    manager_address: v.manager_address().to_vec(),
+                }
+            }
+            Kind::ConvertNetwork => {
+                let v = w::ConvertNetwork::new(o);
+                Unsigned::ConvertNetwork {
+                    base: read_envelope(o),
+                    network: *v.network(),
+                    parent: *v.parent(),
+                    manager_chain_id: *v.manager_chain_id(),
+                    manager_address: v.manager_address().to_vec(),
+                    validators: read_network_validators(
+                        v.validators(),
+                        v.node_id_pool(),
+                        v.addr_pool(),
+                    ),
+                    auth: read_u32_list(v.auth()),
+                    security: read_security(
+                        v.restake_parent(),
+                        v.admission(),
+                        v.manager(),
+                        v.threshold(),
+                    )?,
+                }
+            }
+            Kind::TransformChain => {
+                let v = w::TransformChain::new(o);
+                Unsigned::TransformChain {
+                    base: read_envelope(o),
+                    chain: *v.chain(),
+                    asset_id: *v.asset(),
+                    initial_supply: v.initial_supply(),
+                    maximum_supply: v.maximum_supply(),
+                    min_consumption_rate: v.min_consumption_rate(),
+                    max_consumption_rate: v.max_consumption_rate(),
+                    min_validator_stake: v.min_validator_stake(),
+                    max_validator_stake: v.max_validator_stake(),
+                    min_stake_duration: v.min_stake_duration(),
+                    max_stake_duration: v.max_stake_duration(),
+                    min_delegation_fee: v.min_delegation_fee(),
+                    min_delegator_stake: v.min_delegator_stake(),
+                    max_validator_weight_factor: v.max_validator_weight_factor(),
+                    uptime_requirement: v.uptime_requirement(),
+                    chain_auth: read_u32_list(v.auth()),
+                }
+            }
+            Kind::RegisterL1Validator => {
+                let v = w::RegisterL1Validator::new(o);
+                Unsigned::RegisterL1Validator {
+                    base: read_envelope(o),
+                    balance: v.balance(),
+                    proof_of_possession: *v.proof(),
+                    message: v.message().to_vec(),
+                }
+            }
+            Kind::SetL1ValidatorWeight => {
+                let v = w::SetL1ValidatorWeight::new(o);
+                Unsigned::SetL1ValidatorWeight {
+                    base: read_envelope(o),
+                    message: v.message().to_vec(),
+                }
+            }
         })
     }
 
@@ -2650,42 +2438,25 @@ fn verify_stake(stake: &[Output], weight: u64, required: Option<Id>) -> Result<(
 
 // ---- credentials ----
 
-const OFF_CREDS_LIST: usize = 0;
-const OFF_SIG_ARRAY: usize = 8;
-const CREDS_OBJ_SIZE: usize = 16;
-const CRED_ENTRY: usize = 8;
-
 /// Encode a transaction's credentials as their own message.
+///
+/// One entry per credential naming a run in one shared signature array, which
+/// is why a credential is two numbers and not a nested list: the signatures
+/// are one contiguous stretch of the buffer whatever the credentials do.
 pub fn write_credentials(creds: &[Credential]) -> Vec<u8> {
-    let mut b = zap::Builder::new(zap::HEADER_SIZE + 128 + creds.len() * CRED_ENTRY);
-    let mut blobs: Vec<[u8; SIG_LEN]> = Vec::new();
-    let mut clb = b.start_list();
-    let mut cursor: u32 = 0;
+    let mut runs = Vec::with_capacity(creds.len());
+    let mut sigs: Vec<[u8; SIG_LEN]> = Vec::new();
     for c in creds {
-        let mut e = [0u8; CRED_ENTRY];
-        e[0..4].copy_from_slice(&cursor.to_le_bytes());
-        e[4..8].copy_from_slice(&(c.sigs.len() as u32).to_le_bytes());
-        b.list_bytes(&mut clb, &e);
-        blobs.extend_from_slice(&c.sigs);
-        cursor += c.sigs.len() as u32;
+        runs.push(w::pack_credential_run(&w::CredentialRunInput {
+            start: sigs.len() as u32,
+            count: c.sigs.len() as u32,
+        }));
+        sigs.extend_from_slice(&c.sigs);
     }
-    let creds_off = clb.offset();
-
-    let (sig_off, sig_count) = if blobs.is_empty() {
-        (0, 0)
-    } else {
-        let mut slb = b.start_list();
-        for s in &blobs {
-            b.list_bytes(&mut slb, s);
-        }
-        (slb.offset(), blobs.len())
-    };
-
-    let ob = b.start_object(CREDS_OBJ_SIZE);
-    b.set_list(&ob, OFF_CREDS_LIST, creds_off, creds.len());
-    b.set_list(&ob, OFF_SIG_ARRAY, sig_off, sig_count);
-    b.finish_as_root(&ob);
-    b.finish()
+    w::new_credentials(&w::CredentialsInput {
+        runs: &runs.iter().map(|e| &e[..]).collect::<Vec<_>>(),
+        signatures: &sigs,
+    })
 }
 
 /// Read credentials back.
@@ -2694,15 +2465,13 @@ pub fn write_credentials(creds: &[Credential]) -> Vec<u8> {
 /// than clamped: a claimed range that is not there is a transaction asserting
 /// authority it did not bring.
 pub fn parse_credentials(bytes: &[u8]) -> Result<Vec<Credential>, Error> {
-    let msg = zap::Message::parse(bytes)?;
-    let o = msg.root();
-    let creds = o.list(OFF_CREDS_LIST, CRED_ENTRY);
-    let sigs = o.list(OFF_SIG_ARRAY, SIG_LEN);
+    let v = w::Credentials::wrap(bytes)?;
+    let sigs = v.signatures();
     let total = sigs.len() as u32;
-    let mut out = Vec::with_capacity(creds.len());
-    for i in 0..creds.len() {
-        let e = creds.object(i, CRED_ENTRY);
-        let (start, count) = (e.u32(0), e.u32(4));
+    let mut out = Vec::with_capacity(v.runs().len());
+    for i in 0..v.runs().len() {
+        let run = v.runs_at(i);
+        let (start, count) = (run.start(), run.count());
         if start > total || count > total - start {
             return Err(Error::CredentialRangeOutOfBounds);
         }
@@ -2710,9 +2479,9 @@ pub fn parse_credentials(bytes: &[u8]) -> Result<Vec<Credential>, Error> {
             sigs: Vec::with_capacity(count as usize),
         };
         for j in 0..count {
-            let blob = sigs.object((start + j) as usize, SIG_LEN);
             let mut s = [0u8; SIG_LEN];
-            s.copy_from_slice(blob.bytes_fixed(0, SIG_LEN));
+            let src = sigs.object((start + j) as usize, SIG_LEN).bytes_fixed(0, SIG_LEN);
+            s[..src.len()].copy_from_slice(src);
             c.sigs.push(s);
         }
         out.push(c);
@@ -2754,7 +2523,7 @@ impl Tx {
     /// Read a signed transaction. The bytes are kept verbatim and the name is
     /// derived from them, so nothing that arrives is ever re-encoded.
     pub fn parse(signed: &[u8]) -> Result<Tx, Error> {
-        let n = zap::message_len(signed)?;
+        let n = zap::Message::parse(signed)?.size();
         let unsigned = Unsigned::parse(&signed[..n])?;
         let creds = if signed.len() > n {
             parse_credentials(&signed[n..])?
@@ -2779,7 +2548,9 @@ impl Tx {
 
     /// What a signature covers: the body's bytes alone.
     pub fn unsigned_bytes(&self) -> &[u8] {
-        let n = zap::message_len(&self.bytes).unwrap_or(self.bytes.len());
+        let n = zap::Message::parse(&self.bytes)
+            .map(|m| m.size())
+            .unwrap_or(self.bytes.len());
         &self.bytes[..n]
     }
 
@@ -3106,7 +2877,7 @@ mod tests {
         for tx in all {
             let bytes = tx.to_bytes();
             let msg = zap::Message::parse(&bytes).expect("a built tx is a message");
-            assert_eq!(msg.root().u8(OFF_KIND), tx.kind() as u8, "kind byte");
+            assert_eq!(msg.root().u8(w::BASE_KIND), tx.kind() as u8, "kind byte");
             let back = Unsigned::parse(&bytes).expect("parse");
             assert_eq!(back, tx, "round trip for {:?}", tx.kind());
             // Building the same value twice gives the same bytes; that is what
@@ -4600,32 +4371,27 @@ mod tests {
         // A buffer whose single entry claims `declared` signatures while the
         // array holds `actual`. It is what `write_credentials` writes, with
         // the two counts decoupled.
+        //
+        // The builder is the generated one, so what is crafted is a WELL
+        // FORMED credentials message whose one entry lies about its run — the
+        // shape a remote sender can actually produce, not a shape only a
+        // hand-written writer could make.
         let crafted = |declared: u32, actual: usize| -> Vec<u8> {
-            let mut b = zap::Builder::new(zap::HEADER_SIZE + 128 + CRED_ENTRY + actual * 65);
-            let mut lb = b.start_list();
-            let mut e = [0u8; CRED_ENTRY];
-            e[0..4].copy_from_slice(&0u32.to_le_bytes());
-            e[4..8].copy_from_slice(&declared.to_le_bytes());
-            b.list_bytes(&mut lb, &e);
-            let creds_off = lb.offset();
-
-            let (sig_off, sig_count) = if actual > 0 {
-                let mut slb = b.start_list();
-                for i in 0..actual {
-                    let mut sig = [0u8; 65];
+            let run = w::pack_credential_run(&w::CredentialRunInput {
+                start: 0,
+                count: declared,
+            });
+            let sigs: Vec<[u8; SIG_LEN]> = (0..actual)
+                .map(|i| {
+                    let mut sig = [0u8; SIG_LEN];
                     sig[0] = (i + 1) as u8;
-                    b.list_bytes(&mut slb, &sig);
-                }
-                (slb.offset(), actual)
-            } else {
-                (0, 0)
-            };
-
-            let ob = b.start_object(CREDS_OBJ_SIZE);
-            b.set_list(&ob, OFF_CREDS_LIST, creds_off, 1);
-            b.set_list(&ob, OFF_SIG_ARRAY, sig_off, sig_count);
-            b.finish_as_root(&ob);
-            b.finish()
+                    sig
+                })
+                .collect();
+            w::new_credentials(&w::CredentialsInput {
+                runs: &[&run[..]],
+                signatures: &sigs,
+            })
         };
 
         // A count past the end of the array.
@@ -4649,5 +4415,159 @@ mod tests {
         // credential that carries no signature.
         assert_eq!(parse_credentials(&crafted(1, 1)).map(|c| c.len()), Ok(1));
         assert_eq!(parse_credentials(&crafted(0, 0)).map(|c| c.len()), Ok(1));
+    }
+}
+
+#[cfg(test)]
+mod the_envelope {
+    //! Every kind opens with the same eight fields at the same offsets.
+    //!
+    //! [`read_envelope`] reads them through `Base`'s accessors whatever kind
+    //! the byte at 0 names, which is only true because the schema declares
+    //! that prefix identically in every struct. Here it is checked, kind by
+    //! kind, against the emitted constants — schema against schema, with no
+    //! number written down a second time to be checked against.
+    use crate::pchain_zap as w;
+
+    /// The eight offsets Base puts them at.
+    const BASE: [usize; 8] = [
+        w::BASE_KIND,
+        w::BASE_NETWORK_ID,
+        w::BASE_BLOCKCHAIN_ID,
+        w::BASE_OUTS,
+        w::BASE_OWNER_ADDRS,
+        w::BASE_INS,
+        w::BASE_SIG_INDICES,
+        w::BASE_MEMO,
+    ];
+
+    #[test]
+    fn the_envelope_is_the_same_eight_fields_in_every_kind() {
+        // Written out rather than generated, because a macro that built the
+        // constant names could only build them from the same string the
+        // constants came from — and would agree with itself no matter what
+        // the schema said.
+        let kinds: [(&str, [usize; 8]); 19] = [
+            ("Import", [
+                w::IMPORT_KIND, w::IMPORT_NETWORK_ID, w::IMPORT_BLOCKCHAIN_ID, w::IMPORT_OUTS,
+                w::IMPORT_OWNER_ADDRS, w::IMPORT_INS, w::IMPORT_SIG_INDICES, w::IMPORT_MEMO,
+            ]),
+            ("Export", [
+                w::EXPORT_KIND, w::EXPORT_NETWORK_ID, w::EXPORT_BLOCKCHAIN_ID, w::EXPORT_OUTS,
+                w::EXPORT_OWNER_ADDRS, w::EXPORT_INS, w::EXPORT_SIG_INDICES, w::EXPORT_MEMO,
+            ]),
+            ("CreateChain", [
+                w::CREATE_CHAIN_KIND, w::CREATE_CHAIN_NETWORK_ID, w::CREATE_CHAIN_BLOCKCHAIN_ID,
+                w::CREATE_CHAIN_OUTS, w::CREATE_CHAIN_OWNER_ADDRS, w::CREATE_CHAIN_INS,
+                w::CREATE_CHAIN_SIG_INDICES, w::CREATE_CHAIN_MEMO,
+            ]),
+            ("TransferChainOwnership", [
+                w::TRANSFER_CHAIN_OWNERSHIP_KIND, w::TRANSFER_CHAIN_OWNERSHIP_NETWORK_ID,
+                w::TRANSFER_CHAIN_OWNERSHIP_BLOCKCHAIN_ID, w::TRANSFER_CHAIN_OWNERSHIP_OUTS,
+                w::TRANSFER_CHAIN_OWNERSHIP_OWNER_ADDRS, w::TRANSFER_CHAIN_OWNERSHIP_INS,
+                w::TRANSFER_CHAIN_OWNERSHIP_SIG_INDICES, w::TRANSFER_CHAIN_OWNERSHIP_MEMO,
+            ]),
+            ("RemoveChainValidator", [
+                w::REMOVE_CHAIN_VALIDATOR_KIND, w::REMOVE_CHAIN_VALIDATOR_NETWORK_ID,
+                w::REMOVE_CHAIN_VALIDATOR_BLOCKCHAIN_ID, w::REMOVE_CHAIN_VALIDATOR_OUTS,
+                w::REMOVE_CHAIN_VALIDATOR_OWNER_ADDRS, w::REMOVE_CHAIN_VALIDATOR_INS,
+                w::REMOVE_CHAIN_VALIDATOR_SIG_INDICES, w::REMOVE_CHAIN_VALIDATOR_MEMO,
+            ]),
+            ("AddValidator", [
+                w::ADD_VALIDATOR_KIND, w::ADD_VALIDATOR_NETWORK_ID, w::ADD_VALIDATOR_BLOCKCHAIN_ID,
+                w::ADD_VALIDATOR_OUTS, w::ADD_VALIDATOR_OWNER_ADDRS, w::ADD_VALIDATOR_INS,
+                w::ADD_VALIDATOR_SIG_INDICES, w::ADD_VALIDATOR_MEMO,
+            ]),
+            ("AddDelegator", [
+                w::ADD_DELEGATOR_KIND, w::ADD_DELEGATOR_NETWORK_ID, w::ADD_DELEGATOR_BLOCKCHAIN_ID,
+                w::ADD_DELEGATOR_OUTS, w::ADD_DELEGATOR_OWNER_ADDRS, w::ADD_DELEGATOR_INS,
+                w::ADD_DELEGATOR_SIG_INDICES, w::ADD_DELEGATOR_MEMO,
+            ]),
+            ("AddChainValidator", [
+                w::ADD_CHAIN_VALIDATOR_KIND, w::ADD_CHAIN_VALIDATOR_NETWORK_ID,
+                w::ADD_CHAIN_VALIDATOR_BLOCKCHAIN_ID, w::ADD_CHAIN_VALIDATOR_OUTS,
+                w::ADD_CHAIN_VALIDATOR_OWNER_ADDRS, w::ADD_CHAIN_VALIDATOR_INS,
+                w::ADD_CHAIN_VALIDATOR_SIG_INDICES, w::ADD_CHAIN_VALIDATOR_MEMO,
+            ]),
+            ("AddPermissionlessValidator", [
+                w::ADD_PERMISSIONLESS_VALIDATOR_KIND, w::ADD_PERMISSIONLESS_VALIDATOR_NETWORK_ID,
+                w::ADD_PERMISSIONLESS_VALIDATOR_BLOCKCHAIN_ID, w::ADD_PERMISSIONLESS_VALIDATOR_OUTS,
+                w::ADD_PERMISSIONLESS_VALIDATOR_OWNER_ADDRS, w::ADD_PERMISSIONLESS_VALIDATOR_INS,
+                w::ADD_PERMISSIONLESS_VALIDATOR_SIG_INDICES, w::ADD_PERMISSIONLESS_VALIDATOR_MEMO,
+            ]),
+            ("AddPermissionlessDelegator", [
+                w::ADD_PERMISSIONLESS_DELEGATOR_KIND, w::ADD_PERMISSIONLESS_DELEGATOR_NETWORK_ID,
+                w::ADD_PERMISSIONLESS_DELEGATOR_BLOCKCHAIN_ID, w::ADD_PERMISSIONLESS_DELEGATOR_OUTS,
+                w::ADD_PERMISSIONLESS_DELEGATOR_OWNER_ADDRS, w::ADD_PERMISSIONLESS_DELEGATOR_INS,
+                w::ADD_PERMISSIONLESS_DELEGATOR_SIG_INDICES, w::ADD_PERMISSIONLESS_DELEGATOR_MEMO,
+            ]),
+            ("IncreaseL1ValidatorBalance", [
+                w::INCREASE_L1_VALIDATOR_BALANCE_KIND, w::INCREASE_L1_VALIDATOR_BALANCE_NETWORK_ID,
+                w::INCREASE_L1_VALIDATOR_BALANCE_BLOCKCHAIN_ID, w::INCREASE_L1_VALIDATOR_BALANCE_OUTS,
+                w::INCREASE_L1_VALIDATOR_BALANCE_OWNER_ADDRS, w::INCREASE_L1_VALIDATOR_BALANCE_INS,
+                w::INCREASE_L1_VALIDATOR_BALANCE_SIG_INDICES, w::INCREASE_L1_VALIDATOR_BALANCE_MEMO,
+            ]),
+            ("DisableL1Validator", [
+                w::DISABLE_L1_VALIDATOR_KIND, w::DISABLE_L1_VALIDATOR_NETWORK_ID,
+                w::DISABLE_L1_VALIDATOR_BLOCKCHAIN_ID, w::DISABLE_L1_VALIDATOR_OUTS,
+                w::DISABLE_L1_VALIDATOR_OWNER_ADDRS, w::DISABLE_L1_VALIDATOR_INS,
+                w::DISABLE_L1_VALIDATOR_SIG_INDICES, w::DISABLE_L1_VALIDATOR_MEMO,
+            ]),
+            ("RegisterL1Validator", [
+                w::REGISTER_L1_VALIDATOR_KIND, w::REGISTER_L1_VALIDATOR_NETWORK_ID,
+                w::REGISTER_L1_VALIDATOR_BLOCKCHAIN_ID, w::REGISTER_L1_VALIDATOR_OUTS,
+                w::REGISTER_L1_VALIDATOR_OWNER_ADDRS, w::REGISTER_L1_VALIDATOR_INS,
+                w::REGISTER_L1_VALIDATOR_SIG_INDICES, w::REGISTER_L1_VALIDATOR_MEMO,
+            ]),
+            ("SetL1ValidatorWeight", [
+                w::SET_L1_VALIDATOR_WEIGHT_KIND, w::SET_L1_VALIDATOR_WEIGHT_NETWORK_ID,
+                w::SET_L1_VALIDATOR_WEIGHT_BLOCKCHAIN_ID, w::SET_L1_VALIDATOR_WEIGHT_OUTS,
+                w::SET_L1_VALIDATOR_WEIGHT_OWNER_ADDRS, w::SET_L1_VALIDATOR_WEIGHT_INS,
+                w::SET_L1_VALIDATOR_WEIGHT_SIG_INDICES, w::SET_L1_VALIDATOR_WEIGHT_MEMO,
+            ]),
+            ("TransformChain", [
+                w::TRANSFORM_CHAIN_KIND, w::TRANSFORM_CHAIN_NETWORK_ID,
+                w::TRANSFORM_CHAIN_BLOCKCHAIN_ID, w::TRANSFORM_CHAIN_OUTS,
+                w::TRANSFORM_CHAIN_OWNER_ADDRS, w::TRANSFORM_CHAIN_INS,
+                w::TRANSFORM_CHAIN_SIG_INDICES, w::TRANSFORM_CHAIN_MEMO,
+            ]),
+            ("CreateNetwork", [
+                w::CREATE_NETWORK_KIND, w::CREATE_NETWORK_NETWORK_ID,
+                w::CREATE_NETWORK_BLOCKCHAIN_ID, w::CREATE_NETWORK_OUTS,
+                w::CREATE_NETWORK_OWNER_ADDRS, w::CREATE_NETWORK_INS,
+                w::CREATE_NETWORK_SIG_INDICES, w::CREATE_NETWORK_MEMO,
+            ]),
+            ("ConvertNetwork", [
+                w::CONVERT_NETWORK_KIND, w::CONVERT_NETWORK_NETWORK_ID,
+                w::CONVERT_NETWORK_BLOCKCHAIN_ID, w::CONVERT_NETWORK_OUTS,
+                w::CONVERT_NETWORK_OWNER_ADDRS, w::CONVERT_NETWORK_INS,
+                w::CONVERT_NETWORK_SIG_INDICES, w::CONVERT_NETWORK_MEMO,
+            ]),
+            // Base against itself, so a corrupted BASE constant cannot make
+            // the whole table pass by moving the thing it is compared to.
+            ("Base", BASE),
+            // And the one kind that has NO envelope, to say so: it opens with
+            // the kind byte and then goes its own way.
+            ("RewardValidator", [
+                w::REWARD_VALIDATOR_KIND, BASE[1], BASE[2], BASE[3],
+                BASE[4], BASE[5], BASE[6], BASE[7],
+            ]),
+        ];
+
+        for (name, offsets) in kinds {
+            assert_eq!(offsets, BASE, "{name} does not open with Base's envelope");
+        }
+
+        // The kind byte is where every reader looks first, and it is the same
+        // byte for a transaction with no envelope at all.
+        assert_eq!(w::REWARD_VALIDATOR_KIND, w::BASE_KIND);
+    }
+
+    #[test]
+    fn a_transaction_that_spends_nothing_is_shorter_than_one_that_does() {
+        // RewardValidator is the one kind with no envelope: 1 + 32 and done.
+        // If it ever grew to the envelope's size, the shape would be a lie.
+        assert!(w::REWARD_VALIDATOR_SIZE < w::BASE_SIZE);
+        assert_eq!(w::REWARD_VALIDATOR_SIZE, w::REWARD_VALIDATOR_STAKER_TX_ID + 32);
     }
 }

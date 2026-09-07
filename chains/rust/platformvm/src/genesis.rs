@@ -22,7 +22,8 @@ use crate::ids::{hash256, Id, PRIMARY_NETWORK_ID};
 use crate::reward;
 use crate::state::{Staker, State};
 use crate::txs::{Tx, Unsigned};
-use crate::zap;
+use crate::pchain_zap as w;
+use lux_zap::zap;
 use std::time::Duration;
 
 /// One unspent output at genesis, and the note that came with it.
@@ -106,42 +107,22 @@ impl From<zap::Error> for Error {
 }
 
 // The genesis object.
-const TIMESTAMP: usize = 0;
-const INITIAL_SUPPLY: usize = 8;
-const MESSAGE: usize = 16;
-const UTXO_LENS: usize = 24;
-const UTXO_BLOB: usize = 32;
-const VDR_LENS: usize = 40;
-const VDR_BLOB: usize = 48;
-const CHAIN_LENS: usize = 56;
-const CHAIN_BLOB: usize = 64;
-const SIZE: usize = 72;
-/// One `u32` per element, saying how long it is.
-const LEN_STRIDE: usize = 4;
-
-// One allocation: the unspent output's envelope, and the note.
-const ALLOC_UTXO: usize = 0;
-const ALLOC_MESSAGE: usize = 8;
-const ALLOC_SIZE: usize = 16;
+// The offsets are in `chains/schema/pchain.zap`, and `pchain_zap` is what
+// came out of it.
 
 impl Allocation {
     fn to_bytes(&self) -> Vec<u8> {
-        let wire = self.utxo.wire_bytes();
-        let mut b =
-            zap::Builder::new(zap::HEADER_SIZE + ALLOC_SIZE + wire.len() + self.message.len());
-        let ob = b.start_object(ALLOC_SIZE);
-        b.set_bytes(&ob, ALLOC_UTXO, &wire);
-        b.set_bytes(&ob, ALLOC_MESSAGE, &self.message);
-        b.finish_as_root(&ob);
-        b.finish()
+        w::new_allocation(&w::AllocationInput {
+            utxo: &self.utxo.wire_bytes(),
+            message: &self.message,
+        })
     }
 
     fn parse(b: &[u8]) -> Result<Allocation, WireError> {
-        let msg = zap::Message::parse(b)?;
-        let o = msg.root();
+        let v = w::Allocation::wrap(b)?;
         Ok(Allocation {
-            utxo: Utxo::parse_wire(o.bytes(ALLOC_UTXO))?,
-            message: o.bytes(ALLOC_MESSAGE).to_vec(),
+            utxo: Utxo::parse_wire(v.utxo())?,
+            message: v.message().to_vec(),
         })
     }
 }
@@ -150,30 +131,21 @@ impl Allocation {
 /// end to end. It is the framing a block uses for its transactions, for the
 /// same reason: each element already says how long it is, and one length list
 /// lets a reader cut them apart without parsing any of them.
-fn write_blobs(b: &mut zap::Builder, blobs: &[Vec<u8>]) -> ((usize, usize), Vec<u8>) {
-    if blobs.is_empty() {
-        return ((0, 0), Vec::new());
-    }
+fn write_blobs(blobs: &[Vec<u8>]) -> (Vec<u32>, Vec<u8>) {
+    let mut lens = Vec::with_capacity(blobs.len());
     let mut blob = Vec::new();
-    let mut lb = b.start_list();
     for raw in blobs {
-        b.list_u32(&mut lb, raw.len() as u32);
+        lens.push(raw.len() as u32);
         blob.extend_from_slice(raw);
     }
-    ((lb.offset(), lb.count()), blob)
+    (lens, blob)
 }
 
-fn read_blobs<'a>(
-    o: zap::Object<'a>,
-    len_off: usize,
-    blob_off: usize,
-) -> Result<Vec<&'a [u8]>, Error> {
-    let lengths = o.list(len_off, LEN_STRIDE);
+fn read_blobs<'a>(lengths: zap::List<'a>, blob: &'a [u8]) -> Result<Vec<&'a [u8]>, Error> {
     let n = lengths.len();
     if n == 0 {
         return Ok(Vec::new());
     }
-    let blob = o.bytes(blob_off);
     let mut out = Vec::with_capacity(n);
     let mut cursor = 0usize;
     for i in 0..n {
@@ -198,32 +170,32 @@ impl Genesis {
         let vdr_blobs: Vec<Vec<u8>> = self.validators.iter().map(|t| t.bytes().to_vec()).collect();
         let chain_blobs: Vec<Vec<u8>> = self.chains.iter().map(|t| t.bytes().to_vec()).collect();
 
-        let mut b = zap::Builder::new(zap::HEADER_SIZE + SIZE + 1024);
-        let (utxo_lens, utxo_blob) = write_blobs(&mut b, &utxo_blobs);
-        let (vdr_lens, vdr_blob) = write_blobs(&mut b, &vdr_blobs);
-        let (chain_lens, chain_blob) = write_blobs(&mut b, &chain_blobs);
+        let (utxo_lens, utxo_blob) = write_blobs(&utxo_blobs);
+        let (vdr_lens, vdr_blob) = write_blobs(&vdr_blobs);
+        let (chain_lens, chain_blob) = write_blobs(&chain_blobs);
 
-        let ob = b.start_object(SIZE);
-        b.set_u64(&ob, TIMESTAMP, self.timestamp);
-        b.set_u64(&ob, INITIAL_SUPPLY, self.initial_supply);
-        b.set_bytes(&ob, MESSAGE, self.message.as_bytes());
-        b.set_list(&ob, UTXO_LENS, utxo_lens.0, utxo_lens.1);
-        b.set_bytes(&ob, UTXO_BLOB, &utxo_blob);
-        b.set_list(&ob, VDR_LENS, vdr_lens.0, vdr_lens.1);
-        b.set_bytes(&ob, VDR_BLOB, &vdr_blob);
-        b.set_list(&ob, CHAIN_LENS, chain_lens.0, chain_lens.1);
-        b.set_bytes(&ob, CHAIN_BLOB, &chain_blob);
-        b.finish_as_root(&ob);
-        b.finish()
+        w::new_genesis(&w::GenesisInput {
+            timestamp: self.timestamp,
+            initial_supply: self.initial_supply,
+            message: self.message.as_bytes(),
+            utxo_lens: &utxo_lens,
+            utxo_blob: &utxo_blob,
+            validator_lens: &vdr_lens,
+            validator_blob: &vdr_blob,
+            chain_lens: &chain_lens,
+            chain_blob: &chain_blob,
+        })
     }
 
     /// Read a network's genesis.
     pub fn parse(bytes: &[u8]) -> Result<Genesis, Error> {
-        let msg = zap::Message::parse(bytes)?;
-        let o = msg.root();
+        let v = w::Genesis::wrap(bytes)?;
 
         let mut utxos = Vec::new();
-        for (i, raw) in read_blobs(o, UTXO_LENS, UTXO_BLOB)?.into_iter().enumerate() {
+        for (i, raw) in read_blobs(v.utxo_lens(), v.utxo_blob())?
+            .into_iter()
+            .enumerate()
+        {
             utxos.push(Allocation::parse(raw).map_err(|why| Error::Utxo { index: i, why })?);
         }
         let parse_txs = |blobs: Vec<&[u8]>| -> Result<Vec<Tx>, Error> {
@@ -235,11 +207,11 @@ impl Genesis {
         };
         Ok(Genesis {
             utxos,
-            validators: parse_txs(read_blobs(o, VDR_LENS, VDR_BLOB)?)?,
-            chains: parse_txs(read_blobs(o, CHAIN_LENS, CHAIN_BLOB)?)?,
-            timestamp: o.u64(TIMESTAMP),
-            initial_supply: o.u64(INITIAL_SUPPLY),
-            message: o.text(MESSAGE).to_string(),
+            validators: parse_txs(read_blobs(v.validator_lens(), v.validator_blob())?)?,
+            chains: parse_txs(read_blobs(v.chain_lens(), v.chain_blob())?)?,
+            timestamp: v.timestamp(),
+            initial_supply: v.initial_supply(),
+            message: String::from_utf8_lossy(v.message()).into_owned(),
         })
     }
 
@@ -500,9 +472,7 @@ mod tests {
         let g = genesis();
         let mut bytes = g.to_bytes();
         // Find the u32 length of the first validator blob and make it huge.
-        let msg = zap::Message::parse(&bytes).unwrap();
-        let root = msg.root();
-        let lens = root.list(VDR_LENS, LEN_STRIDE);
+        let lens = w::Genesis::wrap(&bytes).unwrap().validator_lens();
         assert_eq!(lens.len(), 1);
         let real = lens.u32(0);
         let at = bytes
@@ -611,11 +581,11 @@ mod tests {
     fn a_lock_at_time_zero_is_no_lock() {
         let locked_at_zero = {
             let plain = output(50, 0).wire_bytes();
-            let mut b = zap::Builder::new(zap::HEADER_SIZE + 64 + plain.len());
-            let ob = b.start_object(16);
-            b.set_u64(&ob, 0, 0);
-            b.set_bytes(&ob, 8, &plain);
-            b.finish_as_root(&ob);
+            let mut b = zap::Builder::new_v2(zap::HEADER_SIZE + 64 + plain.len());
+            let mut ob = b.start_object(16);
+            ob.set_u64(&mut b, 0, 0);
+            ob.set_bytes(&mut b, 8, &plain);
+            ob.finish_as_root(&mut b);
             let mut out = vec![
                 crate::components::TYPE_RESERVED,
                 crate::components::SHAPE_LOCKED_OUTPUT,

@@ -10,6 +10,13 @@ repository = "https://github.com/luxfi/node2"
 publish = false
 
 [dependencies]
+# The ZAP runtime, emitted by zapgen into `chains/rust/zap` — one copy for
+# every chain here, so the reader a chain calls is the reader the Go and C++
+# chains call. A path dependency because it is generated in this tree from
+# `chains/schema`, and a version between them would be a way to disagree
+# about what a byte means.
+lux-zap = { path = "../zap" }
+
 # `Id` is the host seam's own id type — `lux_consensus::finality::Id`, which is
 # `[u8; 32]`. Naming it from the same crate the host names it from is what makes
 # a chain here plug into `lux-rs/node`'s `Vm` with no conversion at the join.

@@ -42,16 +42,16 @@ impl MintOutput {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<MintOutput> {
-        let v = shapes::wrap_nft_mint_output(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_nft_mint_output(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(MintOutput {
-            group_id: v.group_id(),
+            group_id: v.group(),
             owners: Owners {
                 locktime: v.locktime(),
                 threshold: v.threshold(),
-                addrs: v.addresses().all(),
+                addrs: shapes::addrs(v.addresses()),
             },
         })
     }
@@ -85,17 +85,17 @@ impl TransferOutput {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<TransferOutput> {
-        let v = shapes::wrap_nft_transfer_output(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_nft_transfer_output(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(TransferOutput {
-            group_id: v.group_id(),
+            group_id: v.group(),
             payload: v.payload().to_vec(),
             owners: Owners {
                 locktime: v.locktime(),
                 threshold: v.threshold(),
-                addrs: v.addresses().all(),
+                addrs: shapes::addrs(v.addresses()),
             },
         })
     }
@@ -149,8 +149,8 @@ impl MintOperation {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<MintOperation> {
-        let v = shapes::wrap_nft_mint_operation(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_nft_mint_operation(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         let n = v.owners_count() as usize;
@@ -163,9 +163,9 @@ impl MintOperation {
         }
         Ok(MintOperation {
             mint_input: Input {
-                sig_indices: v.sig_indices(),
+                sig_indices: shapes::indices(v.sig_indices()),
             },
-            group_id: v.group_id(),
+            group_id: v.group(),
             payload: v.payload().to_vec(),
             outputs,
         })
@@ -198,15 +198,15 @@ impl TransferOperation {
     }
 
     pub fn from_envelope(b: &[u8]) -> Result<TransferOperation> {
-        let v = shapes::wrap_nft_transfer_operation(b)?;
-        if v.type_kind() != TYPE_KIND {
+        let (tk, v) = shapes::wrap_nft_transfer_operation(b)?;
+        if tk != TYPE_KIND {
             return Err(wire::Error::WrongTypeKind.into());
         }
         Ok(TransferOperation {
             input: Input {
-                sig_indices: v.sig_indices(),
+                sig_indices: shapes::indices(v.sig_indices()),
             },
-            output: TransferOutput::from_envelope(v.output_bytes())?,
+            output: TransferOutput::from_envelope(v.output())?,
         })
     }
 }

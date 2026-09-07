@@ -12,9 +12,11 @@
 //!
 //! ## What is where
 //!
-//! - [`zap`] — the serialization. Every byte this chain puts on a wire or a
-//!   disk is a ZAP object: a fixed section of known offsets plus a tail. There
-//!   is no codec, no version negotiation and no reflection.
+//! - [`xchain_zap`] — the shapes, emitted by `zapgen` from
+//!   `chains/schema/xchain.zap`. Every byte this chain puts on a wire or a
+//!   disk is a ZAP object: a fixed section of known offsets plus a tail, read
+//!   through `lux_zap`, the one runtime all three chains call. There is no
+//!   codec, no version negotiation and no reflection.
 //! - [`wire`] — the envelopes. A polymorphic value names itself on the wire
 //!   with two bytes, `(family, shape)`, and is reconstructed by matching on
 //!   that pair. Adding a primitive is a new arm, checked by the compiler.
@@ -53,7 +55,7 @@ pub mod txs;
 pub mod utxo;
 pub mod vm;
 pub mod wire;
-pub mod zap;
+pub mod xchain_zap;
 
 /// The node's seam, from the node.
 ///

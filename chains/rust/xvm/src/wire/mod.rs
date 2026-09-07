@@ -21,7 +21,7 @@
 pub mod containers;
 pub mod shapes;
 
-use crate::zap;
+use lux_zap::zap;
 
 /// The fx family that owns a primitive. `0x00` is reserved and refused by every
 /// fx-owned shape.

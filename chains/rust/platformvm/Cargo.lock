@@ -1886,6 +1886,7 @@ dependencies = [
  "k256",
  "lux-consensus",
  "lux-node",
+ "lux-zap",
  "ripemd",
  "serde",
  "serde_json",
@@ -1899,6 +1900,10 @@ dependencies = [
  "lux-crypto-sys",
  "thiserror",
 ]
+
+[[package]]
+name = "lux-zap"
+version = "0.1.0"
 
 [[package]]
 name = "memchr"
