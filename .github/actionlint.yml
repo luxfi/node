@@ -10,3 +10,4 @@
 self-hosted-runner:
   labels:
     - lux-build-linux-amd64
+    - lux-build-linux-arm64
