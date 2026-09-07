@@ -17,15 +17,51 @@ import (
 )
 
 // Fleet is the set of live nodes. Each entry names the language that wrote the
-// implementation, the testnet it serves, and the path it serves the C-chain's
-// Ethereum RPC on — the three differ, and that is the only per-node knowledge
-// the harness carries.
-type Endpoint struct{ Lang, Net, URL string }
+// implementation and the path it serves the C-chain's Ethereum RPC on — the
+// two differ, and that is the only per-node knowledge the harness carries.
+//
+// There is deliberately no network name here. A name is an assertion about a
+// chain made without asking it, and the probe already asks: eth_chainId is
+// reported for every node on every run. Carrying both invites the failure
+// where the label and the chain disagree and the label is believed.
+type Endpoint struct{ Lang, URL string }
 
+// The fleet this harness reaches when told nothing. A port is where a node
+// happened to be started, not a property of the implementation, so -fleet
+// replaces an entry rather than the harness carrying a second list.
 var fleet = []Endpoint{
-	{"go", "lux-1337", "http://127.0.0.1:21610/v1/chain/C"},
-	{"cpp", "zoo-200201", "http://127.0.0.1:21730/"},
-	{"rust", "hanzo-36962", "http://127.0.0.1:21780/v1/chain/hanzo"},
+	{"go", "http://127.0.0.1:21610/v1/chain/C"},
+	{"cpp", "http://127.0.0.1:21730/"},
+	{"rust", "http://127.0.0.1:21780/v1/chain/hanzo"},
+}
+
+// retarget rewrites the URL of each named language. The argument is
+// `lang=url` repeated, comma separated: `-fleet go=http://…,rust=http://…`.
+// A language the fleet does not carry is an error rather than a silent
+// addition, because the whole point is a differential across known
+// implementations and a typo would otherwise quietly run two.
+func retarget(spec string) error {
+	for _, one := range strings.Split(spec, ",") {
+		one = strings.TrimSpace(one)
+		if one == "" {
+			continue
+		}
+		lang, url, ok := strings.Cut(one, "=")
+		if !ok || url == "" {
+			return fmt.Errorf("fleet entry %q is not lang=url", one)
+		}
+		found := false
+		for i := range fleet {
+			if fleet[i].Lang == lang {
+				fleet[i].URL, found = url, true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("fleet has no language %q", lang)
+		}
+	}
+	return nil
 }
 
 func main() {
@@ -33,15 +69,21 @@ func main() {
 		only   = flag.String("only", "", "comma-separated languages to run")
 		probe  = flag.Bool("probe", false, "only report what each node admits to")
 		settle = flag.Duration("settle", 3*time.Second, "how long to watch for the height to move on its own")
+		target = flag.String("fleet", "", "override node URLs: lang=url[,lang=url...]")
 	)
 	flag.Parse()
+
+	if err := retarget(*target); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
 
 	var nodes []*Node
 	for _, e := range fleet {
 		if *only != "" && !strings.Contains(","+*only+",", ","+e.Lang+",") {
 			continue
 		}
-		nodes = append(nodes, NewNode(e.Lang, e.Net, e.URL))
+		nodes = append(nodes, NewNode(e.Lang, e.URL))
 	}
 	if len(nodes) == 0 {
 		fmt.Fprintln(os.Stderr, "no nodes selected")
