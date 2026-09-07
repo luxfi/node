@@ -33,7 +33,7 @@
 // Go's exact occupancy mix, so a promotion or compaction bug moves the answer here
 // just as it would move it there.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 
 #include "lux/xvm/root.hpp"

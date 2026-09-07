@@ -35,7 +35,7 @@ template <class T>
 void envelope(T& in, Kind k, const BaseTx& base, wire::Spend s) {
     in.Kind = static_cast<std::uint8_t>(k);
     in.NetworkID = base.network_id;
-    in.BlockchainID = base.blockchain_id.b;
+    in.BlockchainID = base.blockchain_id;
     in.Outs = std::move(s.outs);
     in.OwnerAddrs = std::move(s.owner_addrs);
     in.Ins = std::move(s.ins);
@@ -78,7 +78,7 @@ int NetworkValidator::compare(const NetworkValidator& o) const {
 Status NetworkValidator::verify() const {
     if (weight == 0) return fail(Err::ZeroWeight);
     if (node_id.size() != kNodeIdLen) return fail(Err::InvalidNodeIDLength);
-    if (NodeId::from(node_id) == kEmptyNodeId) return fail(Err::EmptyNodeID);
+    if (node_id_from(node_id) == kEmptyNodeId) return fail(Err::EmptyNodeID);
     if (auto s = pop.verify(); !s) return s;
     if (auto s = remaining_balance_owner.verify(); !s) return s;
     return deactivation_owner.verify();
@@ -86,7 +86,7 @@ Status NetworkValidator::verify() const {
 
 // ── SpendingTx: the shared envelope surface
 
-Id SpendingTx::blockchain_id() const { return Id::from(wire::Base(root()).BlockchainID()); }
+Id SpendingTx::blockchain_id() const { return id_from(wire::Base(root()).BlockchainID()); }
 
 std::vector<TransferableOutput> SpendingTx::outputs() const {
     const wire::Base e(root());
@@ -113,7 +113,7 @@ BaseTx SpendingTx::base_tx() const {
     const wire::Base e(root());
     BaseTx b;
     b.network_id = e.NetworkID();
-    b.blockchain_id = Id::from(e.BlockchainID());
+    b.blockchain_id = id_from(e.BlockchainID());
     b.outs = wire::outs(e.Outs(), e.OwnerAddrs());
     b.ins = wire::ins(e.Ins(), e.SigIndices());
     b.memo = memo();
@@ -139,7 +139,7 @@ Result<std::shared_ptr<ImportTx>> ImportTx::create(const BaseTx& base, const Id&
                                                    const std::vector<TransferableInput>& imported) {
     wire::ImportInput in;
     envelope(in, Kind::Import, base, wire::spend(base));
-    in.Source = source_chain.b;
+    in.Source = source_chain;
     auto extra = wire::ins(imported);
     in.Imported = std::move(extra.list);
     in.ImportedSigs = std::move(extra.sigs);
@@ -148,7 +148,7 @@ Result<std::shared_ptr<ImportTx>> ImportTx::create(const BaseTx& base, const Id&
     return wrap(buf);
 }
 
-Id ImportTx::source_chain() const { return Id::from(wire::Import(root()).Source()); }
+Id ImportTx::source_chain() const { return id_from(wire::Import(root()).Source()); }
 
 std::vector<TransferableInput> ImportTx::imported_inputs() const {
     const wire::Import t(root());
@@ -186,7 +186,7 @@ Result<std::shared_ptr<ExportTx>> ExportTx::create(const BaseTx& base, const Id&
                                                    const std::vector<TransferableOutput>& exported) {
     wire::ExportInput in;
     envelope(in, Kind::Export, base, wire::spend(base));
-    in.Destination = destination_chain.b;
+    in.Destination = destination_chain;
     auto extra = wire::outs(exported);
     in.Exported = std::move(extra.list);
     in.ExportedAddrs = std::move(extra.addrs);
@@ -195,7 +195,7 @@ Result<std::shared_ptr<ExportTx>> ExportTx::create(const BaseTx& base, const Id&
     return wrap(buf);
 }
 
-Id ExportTx::destination_chain() const { return Id::from(wire::Export(root()).Destination()); }
+Id ExportTx::destination_chain() const { return id_from(wire::Export(root()).Destination()); }
 
 std::vector<TransferableOutput> ExportTx::exported_outputs() const {
     const wire::Export t(root());
@@ -226,7 +226,7 @@ Result<std::shared_ptr<CreateNetworkTx>> CreateNetworkTx::create(
     std::span<const std::uint8_t> manager_address) {
     wire::CreateNetworkInput in;
     envelope(in, Kind::CreateNetwork, base, wire::spend(base));
-    in.Parent = parent.b;
+    in.Parent = parent;
     in.OwnerThreshold = owner.threshold;
     in.OwnerLocktime = owner.locktime;
     in.NewOwnerAddrs = wire::addrs(owner.addrs);
@@ -238,14 +238,14 @@ Result<std::shared_ptr<CreateNetworkTx>> CreateNetworkTx::create(
     in.Validators = std::move(vp.list);
     in.NodeIDPool = {vp.node_ids.data(), vp.node_ids.size()};
     in.AddrPool = std::move(vp.addrs);
-    in.ManagerChainID = manager_chain_id.b;
+    in.ManagerChainID = manager_chain_id;
     in.ManagerAddress = manager_address;
     auto buf = own(wire::NewCreateNetwork(in));
     if (!parses(buf)) return fail(Err::BufferTooSmall);
     return wrap(buf);
 }
 
-Id CreateNetworkTx::parent() const { return Id::from(wire::CreateNetwork(root()).Parent()); }
+Id CreateNetworkTx::parent() const { return id_from(wire::CreateNetwork(root()).Parent()); }
 Owner CreateNetworkTx::owner() const {
     const wire::CreateNetwork t(root());
     return wire::owner(t.OwnerThreshold(), t.OwnerLocktime(), t.NewOwnerAddrs());
@@ -263,7 +263,7 @@ std::vector<NetworkValidator> CreateNetworkTx::validators() const {
     const wire::CreateNetwork t(root());
     return wire::validators(t.Validators(), t.NodeIDPool(), t.AddrPool());
 }
-Id CreateNetworkTx::manager_chain_id() const { return Id::from(wire::CreateNetwork(root()).ManagerChainID()); }
+Id CreateNetworkTx::manager_chain_id() const { return id_from(wire::CreateNetwork(root()).ManagerChainID()); }
 std::vector<std::uint8_t> CreateNetworkTx::manager_address() const {
     const auto a = wire::CreateNetwork(root()).ManagerAddress();
     return std::vector<std::uint8_t>(a.begin(), a.end());
@@ -298,9 +298,9 @@ Result<std::shared_ptr<ConvertNetworkTx>> ConvertNetworkTx::create(
     const std::vector<NetworkValidator>& validators, const Auth& auth) {
     wire::ConvertNetworkInput in;
     envelope(in, Kind::ConvertNetwork, base, wire::spend(base));
-    in.Network = network.b;
-    in.Parent = parent.b;
-    in.ManagerChainID = manager_chain_id.b;
+    in.Network = network;
+    in.Parent = parent;
+    in.ManagerChainID = manager_chain_id;
     in.ManagerAddress = manager_address;
     auto vp = wire::validators(validators);
     in.Validators = std::move(vp.list);
@@ -316,10 +316,10 @@ Result<std::shared_ptr<ConvertNetworkTx>> ConvertNetworkTx::create(
     return wrap(buf);
 }
 
-Id ConvertNetworkTx::network() const { return Id::from(wire::ConvertNetwork(root()).Network()); }
-Id ConvertNetworkTx::parent() const { return Id::from(wire::ConvertNetwork(root()).Parent()); }
+Id ConvertNetworkTx::network() const { return id_from(wire::ConvertNetwork(root()).Network()); }
+Id ConvertNetworkTx::parent() const { return id_from(wire::ConvertNetwork(root()).Parent()); }
 Id ConvertNetworkTx::manager_chain_id() const {
-    return Id::from(wire::ConvertNetwork(root()).ManagerChainID());
+    return id_from(wire::ConvertNetwork(root()).ManagerChainID());
 }
 std::vector<std::uint8_t> ConvertNetworkTx::manager_address() const {
     const auto a = wire::ConvertNetwork(root()).ManagerAddress();
@@ -370,11 +370,11 @@ Result<std::shared_ptr<CreateChainTx>> CreateChainTx::create(const BaseTx& base,
                                                               const Auth& chain_auth) {
     wire::CreateChainInput in;
     envelope(in, Kind::CreateChain, base, wire::spend(base));
-    in.Chain = chain_id.b;
-    in.VmID = vm_id.b;
+    in.Chain = chain_id;
+    in.VmID = vm_id;
     in.Name = blockchain_name;
     in.FxIds.reserve(fx_ids.size());
-    for (const auto& id : fx_ids) in.FxIds.push_back(id.b);
+    for (const auto& id : fx_ids) in.FxIds.push_back(id);
     in.Genesis = genesis_data;
     in.Auth = chain_auth;
     auto buf = own(wire::NewCreateChain(in));
@@ -382,8 +382,8 @@ Result<std::shared_ptr<CreateChainTx>> CreateChainTx::create(const BaseTx& base,
     return wrap(buf);
 }
 
-Id CreateChainTx::chain_id() const { return Id::from(wire::CreateChain(root()).Chain()); }
-Id CreateChainTx::vm_id() const { return Id::from(wire::CreateChain(root()).VmID()); }
+Id CreateChainTx::chain_id() const { return id_from(wire::CreateChain(root()).Chain()); }
+Id CreateChainTx::vm_id() const { return id_from(wire::CreateChain(root()).VmID()); }
 std::string CreateChainTx::blockchain_name() const {
     return std::string(wire::CreateChain(root()).Name());
 }
@@ -391,7 +391,7 @@ std::vector<Id> CreateChainTx::fx_ids() const {
     const wire::CreateChain t(root());
     const int n = t.FxIds().size();
     std::vector<Id> out(static_cast<std::size_t>(n));
-    for (int i = 0; i < n; ++i) out[static_cast<std::size_t>(i)] = Id::from(t.FxIdsAt(i));
+    for (int i = 0; i < n; ++i) out[static_cast<std::size_t>(i)] = id_from(t.FxIdsAt(i));
     return out;
 }
 std::vector<std::uint8_t> CreateChainTx::genesis_data() const {
@@ -405,7 +405,7 @@ Status CreateChainTx::syntactic_verify(const Runtime& rt) const {
     const auto fx = fx_ids();
     if (chain_id() == kPrimaryNetworkId) return fail(Err::CantValidatePrimaryNetwork);
     if (name.size() > kMaxNameLen) return fail(Err::NameTooLong);
-    if (vm_id().empty()) return fail(Err::InvalidVMID);
+    if (vm_id() == kEmptyId) return fail(Err::InvalidVMID);
     for (std::size_t i = 0; i + 1 < fx.size(); ++i)
         if (!(fx[i] < fx[i + 1])) return fail(Err::FxIDsNotSortedAndUnique);
     if (genesis_data().size() > kMaxGenesisLen) return fail(Err::GenesisTooLong);
@@ -425,7 +425,7 @@ Result<std::shared_ptr<TransferChainOwnershipTx>> TransferChainOwnershipTx::crea
                                                                                     const Owner& owner) {
     wire::TransferChainOwnershipInput in;
     envelope(in, Kind::TransferChainOwnership, base, wire::spend(base));
-    in.Chain = chain.b;
+    in.Chain = chain;
     in.Auth = chain_auth;
     in.OwnerThreshold = owner.threshold;
     in.OwnerLocktime = owner.locktime;
@@ -436,7 +436,7 @@ Result<std::shared_ptr<TransferChainOwnershipTx>> TransferChainOwnershipTx::crea
 }
 
 Id TransferChainOwnershipTx::chain() const {
-    return Id::from(wire::TransferChainOwnership(root()).Chain());
+    return id_from(wire::TransferChainOwnership(root()).Chain());
 }
 Auth TransferChainOwnershipTx::chain_auth() const {
     return wire::auth(wire::TransferChainOwnership(root()).Auth());
@@ -464,7 +464,7 @@ Result<std::shared_ptr<RemoveChainValidatorTx>> RemoveChainValidatorTx::create(c
     wire::RemoveChainValidatorInput in;
     envelope(in, Kind::RemoveChainValidator, base, wire::spend(base));
     in.NodeID = node_id.b;
-    in.Chain = chain.b;
+    in.Chain = chain;
     in.Auth = chain_auth;
     auto buf = own(wire::NewRemoveChainValidator(in));
     if (!parses(buf)) return fail(Err::BufferTooSmall);
@@ -472,9 +472,9 @@ Result<std::shared_ptr<RemoveChainValidatorTx>> RemoveChainValidatorTx::create(c
 }
 
 NodeId RemoveChainValidatorTx::node_id() const {
-    return NodeId::from(wire::RemoveChainValidator(root()).NodeID());
+    return node_id_from(wire::RemoveChainValidator(root()).NodeID());
 }
-Id RemoveChainValidatorTx::chain() const { return Id::from(wire::RemoveChainValidator(root()).Chain()); }
+Id RemoveChainValidatorTx::chain() const { return id_from(wire::RemoveChainValidator(root()).Chain()); }
 Auth RemoveChainValidatorTx::chain_auth() const {
     return wire::auth(wire::RemoveChainValidator(root()).Auth());
 }
@@ -493,8 +493,8 @@ Result<std::shared_ptr<TransformChainTx>> TransformChainTx::create(const BaseTx&
                                                                     const Auth& chain_auth) {
     wire::TransformChainInput in;
     envelope(in, Kind::TransformChain, base, wire::spend(base));
-    in.Chain = q.chain.b;
-    in.Asset = q.asset_id.b;
+    in.Chain = q.chain;
+    in.Asset = q.asset_id;
     in.InitialSupply = q.initial_supply;
     in.MaximumSupply = q.maximum_supply;
     in.MinConsumptionRate = q.min_consumption_rate;
@@ -513,8 +513,8 @@ Result<std::shared_ptr<TransformChainTx>> TransformChainTx::create(const BaseTx&
     return wrap(buf);
 }
 
-Id TransformChainTx::chain() const { return Id::from(wire::TransformChain(root()).Chain()); }
-Id TransformChainTx::asset_id() const { return Id::from(wire::TransformChain(root()).Asset()); }
+Id TransformChainTx::chain() const { return id_from(wire::TransformChain(root()).Chain()); }
+Id TransformChainTx::asset_id() const { return id_from(wire::TransformChain(root()).Asset()); }
 std::uint64_t TransformChainTx::initial_supply() const { return wire::TransformChain(root()).InitialSupply(); }
 std::uint64_t TransformChainTx::maximum_supply() const { return wire::TransformChain(root()).MaximumSupply(); }
 std::uint64_t TransformChainTx::min_consumption_rate() const {
@@ -551,7 +551,7 @@ Auth TransformChainTx::chain_auth() const { return wire::auth(wire::TransformCha
 
 Status TransformChainTx::syntactic_verify(const Runtime& rt) const {
     if (chain() == kPrimaryNetworkId) return fail(Err::CantTransformPrimaryNetwork);
-    if (asset_id().empty()) return fail(Err::TransformEmptyAssetID);
+    if (asset_id() == kEmptyId) return fail(Err::TransformEmptyAssetID);
     if (asset_id() == rt.utxo_asset_id) return fail(Err::AssetIDCantBeLUX);
     if (initial_supply() == 0) return fail(Err::InitialSupplyZero);
     if (initial_supply() > maximum_supply()) return fail(Err::InitialSupplyGreaterThanMaxSupply);
@@ -704,7 +704,7 @@ Result<std::shared_ptr<AddChainValidatorTx>> AddChainValidatorTx::create(const B
     in.Start = validator.start;
     in.End = validator.end;
     in.Weight = validator.weight;
-    in.Chain = chain.b;
+    in.Chain = chain;
     in.Auth = chain_auth;
     auto buf = own(wire::NewAddChainValidator(in));
     if (!parses(buf)) return fail(Err::BufferTooSmall);
@@ -715,7 +715,7 @@ Validator AddChainValidatorTx::validator() const {
     const wire::AddChainValidator t(root());
     return wire::validator(t.NodeID(), t.Start(), t.End(), t.Weight());
 }
-Id AddChainValidatorTx::chain() const { return Id::from(wire::AddChainValidator(root()).Chain()); }
+Id AddChainValidatorTx::chain() const { return id_from(wire::AddChainValidator(root()).Chain()); }
 Auth AddChainValidatorTx::chain_auth() const {
     return wire::auth(wire::AddChainValidator(root()).Auth());
 }
@@ -741,7 +741,7 @@ Result<std::shared_ptr<AddPermissionlessValidatorTx>> AddPermissionlessValidator
     in.Start = validator.start;
     in.End = validator.end;
     in.Weight = validator.weight;
-    in.Chain = chain.b;
+    in.Chain = chain;
     if (const auto* pop = std::get_if<signer::ProofOfPossession>(&sig)) {
         in.SignerKind = 1;
         in.SignerKey = pop->public_key;
@@ -767,7 +767,7 @@ Validator AddPermissionlessValidatorTx::validator() const {
     return wire::validator(t.NodeID(), t.Start(), t.End(), t.Weight());
 }
 Id AddPermissionlessValidatorTx::chain() const {
-    return Id::from(wire::AddPermissionlessValidator(root()).Chain());
+    return id_from(wire::AddPermissionlessValidator(root()).Chain());
 }
 signer::Signer AddPermissionlessValidatorTx::signer_value() const {
     const wire::AddPermissionlessValidator t(root());
@@ -864,7 +864,7 @@ Result<std::shared_ptr<AddPermissionlessDelegatorTx>> AddPermissionlessDelegator
     in.Start = validator.start;
     in.End = validator.end;
     in.Weight = validator.weight;
-    in.Chain = chain.b;
+    in.Chain = chain;
     auto so = wire::outs(stake_outs);
     in.StakeOuts = std::move(so.list);
     in.StakeAddrs = std::move(so.addrs);
@@ -881,7 +881,7 @@ Validator AddPermissionlessDelegatorTx::validator() const {
     return wire::validator(t.NodeID(), t.Start(), t.End(), t.Weight());
 }
 Id AddPermissionlessDelegatorTx::chain() const {
-    return Id::from(wire::AddPermissionlessDelegator(root()).Chain());
+    return id_from(wire::AddPermissionlessDelegator(root()).Chain());
 }
 std::vector<TransferableOutput> AddPermissionlessDelegatorTx::stake_outs() const {
     const wire::AddPermissionlessDelegator t(root());
@@ -991,7 +991,7 @@ Result<std::shared_ptr<IncreaseL1ValidatorBalanceTx>> IncreaseL1ValidatorBalance
     const BaseTx& base, const Id& validation_id, std::uint64_t balance) {
     wire::IncreaseL1ValidatorBalanceInput in;
     envelope(in, Kind::IncreaseL1ValidatorBalance, base, wire::spend(base));
-    in.ValidationID = validation_id.b;
+    in.ValidationID = validation_id;
     in.Balance = balance;
     auto buf = own(wire::NewIncreaseL1ValidatorBalance(in));
     if (!parses(buf)) return fail(Err::BufferTooSmall);
@@ -999,7 +999,7 @@ Result<std::shared_ptr<IncreaseL1ValidatorBalanceTx>> IncreaseL1ValidatorBalance
 }
 
 Id IncreaseL1ValidatorBalanceTx::validation_id() const {
-    return Id::from(wire::IncreaseL1ValidatorBalance(root()).ValidationID());
+    return id_from(wire::IncreaseL1ValidatorBalance(root()).ValidationID());
 }
 std::uint64_t IncreaseL1ValidatorBalanceTx::balance() const {
     return wire::IncreaseL1ValidatorBalance(root()).Balance();
@@ -1020,7 +1020,7 @@ Result<std::shared_ptr<DisableL1ValidatorTx>> DisableL1ValidatorTx::create(const
                                                                             const Auth& disable_auth) {
     wire::DisableL1ValidatorInput in;
     envelope(in, Kind::DisableL1Validator, base, wire::spend(base));
-    in.ValidationID = validation_id.b;
+    in.ValidationID = validation_id;
     in.Auth = disable_auth;
     auto buf = own(wire::NewDisableL1Validator(in));
     if (!parses(buf)) return fail(Err::BufferTooSmall);
@@ -1028,7 +1028,7 @@ Result<std::shared_ptr<DisableL1ValidatorTx>> DisableL1ValidatorTx::create(const
 }
 
 Id DisableL1ValidatorTx::validation_id() const {
-    return Id::from(wire::DisableL1Validator(root()).ValidationID());
+    return id_from(wire::DisableL1Validator(root()).ValidationID());
 }
 Auth DisableL1ValidatorTx::disable_auth() const {
     return wire::auth(wire::DisableL1Validator(root()).Auth());
@@ -1045,11 +1045,11 @@ Status DisableL1ValidatorTx::visit(Visitor& v) const { return v.disable_l1_valid
 std::shared_ptr<RewardValidatorTx> RewardValidatorTx::create(const Id& tx_id) {
     return wrap(own(wire::NewRewardValidator(wire::RewardValidatorInput{
         .Kind = static_cast<std::uint8_t>(Kind::RewardValidator),
-        .StakerTxID = tx_id.b,
+        .StakerTxID = tx_id,
     })));
 }
 
-Id RewardValidatorTx::tx_id() const { return Id::from(wire::RewardValidator(root()).StakerTxID()); }
+Id RewardValidatorTx::tx_id() const { return id_from(wire::RewardValidator(root()).StakerTxID()); }
 Status RewardValidatorTx::visit(Visitor& v) const { return v.reward_validator_tx(*this); }
 
 // ── the staker view

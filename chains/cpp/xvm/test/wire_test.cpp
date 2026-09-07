@@ -12,7 +12,7 @@
 // Both directions are checked: C++ writes what Go writes, AND C++ reads what Go
 // wrote back into the same values.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 #include "golden.hpp"
 
@@ -20,6 +20,7 @@
 #include "lux/xvm/txs.hpp"
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 int main() {

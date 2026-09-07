@@ -19,7 +19,7 @@ using LockedLedger = std::map<Id, std::map<std::uint64_t, std::map<Id, std::uint
 // The owner's stable name: sha256 of the ONE canonical owner encoding, which is
 // the same layout a transaction carries. Two spellings of an owner would be two
 // owners, so there is only one spelling.
-Id owner_id(const OutputOwners& o) { return id_from_hash(sha256(txs::marshal_owner(o))); }
+Id owner_id(const OutputOwners& o) { return sha256(txs::marshal_owner(o)); }
 
 Status accumulate(std::uint64_t& slot, std::uint64_t amount) {
     auto sum = add64(slot, amount);
@@ -51,7 +51,7 @@ Status verify_spend_utxos(const fx::Fx& f, std::span<const std::uint8_t> tx_byte
         const UTXO& utxo = utxos[i];
 
         if (!(utxo.asset == in.asset))
-            return fail(Err::AssetIDMismatch, in.asset.hex() + " != " + utxo.asset.hex());
+            return fail(Err::AssetIDMismatch, hex(in.asset) + " != " + hex(utxo.asset));
 
         const std::uint64_t locktime = utxo.stake_lock;
         // The UTXO says it is locked until `locktime` and this input, which
@@ -106,8 +106,8 @@ Status verify_spend_utxos(const fx::Fx& f, std::span<const std::uint8_t> tx_byte
                 std::uint64_t& unlocked = unlocked_consumed[asset];
                 if (increase > unlocked)
                     return fail(Err::InsufficientLockedFunds,
-                                owner.hex() + " needs " + std::to_string(increase - unlocked) + " more " +
-                                    asset.hex() + " for locktime " + std::to_string(locktime));
+                                hex(owner) + " needs " + std::to_string(increase - unlocked) + " more " +
+                                    hex(asset) + " for locktime " + std::to_string(locktime));
                 unlocked -= increase;
             }
         }
@@ -118,7 +118,7 @@ Status verify_spend_utxos(const fx::Fx& f, std::span<const std::uint8_t> tx_byte
         const std::uint64_t consumed = it == unlocked_consumed.end() ? 0 : it->second;
         if (produced > consumed)
             return fail(Err::InsufficientUnlockedFunds,
-                        "needs " + std::to_string(produced - consumed) + " more " + asset.hex());
+                        "needs " + std::to_string(produced - consumed) + " more " + hex(asset));
     }
     return ok();
 }

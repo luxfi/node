@@ -23,7 +23,7 @@ namespace {
 
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 NodeId node_of(std::uint8_t b) {
@@ -42,16 +42,6 @@ std::vector<std::uint8_t> unhex(const char* s) {
     for (std::size_t i = 0; s[i] != 0 && s[i + 1] != 0; i += 2)
         out.push_back(static_cast<std::uint8_t>(nib(s[i]) * 16 + nib(s[i + 1])));
     return out;
-}
-
-std::string hex(std::span<const std::uint8_t> v) {
-    static const char* d = "0123456789abcdef";
-    std::string s;
-    for (auto b : v) {
-        s.push_back(d[b >> 4]);
-        s.push_back(d[b & 0xf]);
-    }
-    return s;
 }
 
 std::vector<std::uint8_t> payload() {
@@ -86,7 +76,7 @@ TEST(UnsignedMessageWire) {
     auto m = warp::UnsignedMessage::build(96369, id_of(0xC0), payload());
     REQUIRE_OK(m);
     REQUIRE_EQ(std::string(pvmgold::warp_unsigned), hex(m.value().bytes));
-    REQUIRE_EQ(std::string(pvmgold::warp_unsigned_id), m.value().id.hex());
+    REQUIRE_EQ(std::string(pvmgold::warp_unsigned_id), hex(m.value().id));
 
     auto back = warp::UnsignedMessage::parse(m.value().bytes);
     REQUIRE_OK(back);
@@ -287,7 +277,7 @@ namespace {
 
 ShortId short_of(std::uint8_t b) {
     ShortId v{};
-    for (std::size_t i = 0; i < kShortIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kShortIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 
@@ -344,7 +334,7 @@ TEST(RegisterL1ValidatorWire) {
         warpmsg::PChainOwner{2, {short_of(0x40), short_of(0x50)}}, 9000);
     REQUIRE_OK(m);
     REQUIRE_EQ(std::string(pvmgold::msg_register_l1_validator), hex(m.value().bytes));
-    REQUIRE_EQ(std::string(pvmgold::msg_register_l1_validator_id), m.value().validation_id().hex());
+    REQUIRE_EQ(std::string(pvmgold::msg_register_l1_validator_id), hex(m.value().validation_id()));
     REQUIRE_OK(m.value().verify());
 
     auto back = warpmsg::parse_message(m.value().bytes);
@@ -457,7 +447,7 @@ TEST(ConversionWire) {
 
     auto cid = d.conversion_id();
     REQUIRE_OK(cid);
-    REQUIRE_EQ(std::string(pvmgold::conversion_id), cid.value().hex());
+    REQUIRE_EQ(std::string(pvmgold::conversion_id), hex(cid.value()));
 
     auto m = warpmsg::ChainToL1Conversion::build(cid.value());
     REQUIRE_OK(m);

@@ -23,7 +23,6 @@
 
 #include "lux/platformvm/txs.hpp"
 
-#include "lux/platformvm/sha256.hpp"
 #include "lux/platformvm/txs_wire.hpp"
 
 #include <cstring>
@@ -99,7 +98,7 @@ Result<std::vector<Credential>> parse_creds(std::span<const std::uint8_t> b) {
 
 void Tx::set_bytes(std::vector<std::uint8_t> signed_bytes) {
     bytes = std::move(signed_bytes);
-    tx_id = id_from_hash(sha256(bytes));
+    tx_id = sha256(bytes);
 }
 
 Status Tx::initialize() {
@@ -146,7 +145,7 @@ Result<Tx> parse(std::span<const std::uint8_t> signed_bytes) {
     Tx tx;
     tx.unsigned_tx = *u;
     tx.bytes.assign(signed_bytes.begin(), signed_bytes.end());
-    tx.tx_id = id_from_hash(sha256(signed_bytes));
+    tx.tx_id = sha256(signed_bytes);
     if (signed_bytes.size() > *n) {
         auto c = parse_creds(signed_bytes.subspan(*n));
         if (!c) return std::unexpected(c.error());

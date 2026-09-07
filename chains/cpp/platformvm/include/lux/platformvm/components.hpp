@@ -122,7 +122,7 @@ struct TransferableOutput {
     std::uint64_t amount() const { return out.amount(); }
 
     Status verify() const {
-        if (asset.empty()) return fail(Err::EmptyAssetID);
+        if (asset == kEmptyId) return fail(Err::EmptyAssetID);
         // A lock is only reconstructed when non-zero, so the reference's
         // zero-locktime and nesting refusals are unreachable from the wire; the
         // inner output's own verification is what remains.
@@ -151,7 +151,7 @@ struct TransferableInput {
     std::uint64_t amount() const { return in.amount(); }
 
     Status verify() const {
-        if (asset.empty()) return fail(Err::EmptyAssetID);
+        if (asset == kEmptyId) return fail(Err::EmptyAssetID);
         return in.verify();
     }
 

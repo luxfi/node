@@ -25,29 +25,18 @@ namespace {
 
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 ShortId short_of(std::uint8_t b) {
     ShortId v{};
-    for (std::size_t i = 0; i < kShortIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kShortIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 NodeId node_of(std::uint8_t b) {
     NodeId v{};
     for (std::size_t i = 0; i < kNodeIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
     return v;
-}
-
-std::string hex(std::span<const std::uint8_t> v) {
-    static const char* d = "0123456789abcdef";
-    std::string s;
-    s.reserve(2 * v.size());
-    for (auto b : v) {
-        s.push_back(d[b >> 4]);
-        s.push_back(d[b & 0xf]);
-    }
-    return s;
 }
 
 // Go goldgen base(): the same envelope under every transaction below.
@@ -264,7 +253,7 @@ TEST(SignedTxWireAndID) {
     REQUIRE_OK(tx.initialize());
 
     REQUIRE_EQ(std::string(pvmgold::signed_base_tx), hex(tx.bytes));
-    REQUIRE_EQ(std::string(pvmgold::signed_base_tx_id), tx.tx_id.hex());
+    REQUIRE_EQ(std::string(pvmgold::signed_base_tx_id), hex(tx.tx_id));
 
     // The unsigned buffer is a genuine byte PREFIX of the signed buffer: that
     // is what removes the "which spelling did we sign" question.

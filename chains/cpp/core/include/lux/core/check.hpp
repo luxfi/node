@@ -1,18 +1,18 @@
 // Copyright (C) 2026, Lux Industries Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 //
-// check.hpp — the whole test harness: a counter, a line per assertion, and a
+// check.hpp — the whole test harness for the chain suite: a counter, a line per assertion, and a
 // non-zero exit when something failed. A test that cannot run prints SKIP and
 // still fails the run, because a silent skip reads as a pass.
 
 #pragma once
 
-#include "lux/xvm/id.hpp"
+#include "lux/core/id.hpp"
 
 #include <cstdio>
 #include <string>
 
-namespace lux::xvm::test {
+namespace lux::core::test {
 
 inline int g_fail = 0;
 inline int g_pass = 0;
@@ -83,4 +83,4 @@ inline Bytes from_hex(const std::string& s) {
     return out;
 }
 
-}  // namespace lux::xvm::test
+}  // namespace lux::core::test

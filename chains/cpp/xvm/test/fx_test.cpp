@@ -11,12 +11,13 @@
 // recovery and its address derivation are the SAME three functions Go's are —
 // every later "the signature is accepted" case rests on it.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "keys.hpp"
 
 #include "lux/xvm/fx.hpp"
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {
