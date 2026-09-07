@@ -55,9 +55,9 @@ std::optional<Record> Registry::get(const Id& id) const {
 
 Status Registry::adopt(const Record& r) {
     if (auto st = r.valid(); !st) return st;
-    if (by_id_.count(r.key()) != 0) return fail(Err::AlreadyAdopted, r.key().hex());
+    if (by_id_.count(r.key()) != 0) return fail(Err::AlreadyAdopted, hex(r.key()));
     if (!r.sovereign() && by_id_.count(r.parent) == 0)
-        return fail(Err::NoParent, r.parent.hex() + " is not adopted");
+        return fail(Err::NoParent, hex(r.parent) + " is not adopted");
     by_id_[r.key()] = r;
     return ok();
 }
@@ -65,10 +65,10 @@ Status Registry::adopt(const Record& r) {
 Status Registry::revise(const Record& r) {
     if (auto st = r.valid(); !st) return st;
     const auto it = by_id_.find(r.key());
-    if (it == by_id_.end()) return fail(Err::NotAdopted, r.key().hex());
+    if (it == by_id_.end()) return fail(Err::NotAdopted, hex(r.key()));
     if (!(r.parent == it->second.parent))
         return fail(Err::SourceNotRevisable,
-                    "where " + r.key().hex() + " takes its security from does not change");
+                    "where " + hex(r.key()) + " takes its security from does not change");
     if (r.anchor < it->second.anchor)
         return fail(Err::WeakerAnchor, std::string(anchor_name(it->second.anchor)) + " -> " +
                                            std::string(anchor_name(r.anchor)));
@@ -78,7 +78,7 @@ Status Registry::revise(const Record& r) {
 
 Status Registry::weaken(const Id& id, Anchor to) {
     const auto it = by_id_.find(id);
-    if (it == by_id_.end()) return fail(Err::NotAdopted, id.hex());
+    if (it == by_id_.end()) return fail(Err::NotAdopted, hex(id));
     if (to < Anchor::Declared || to > Anchor::Proven)
         return fail(Err::BadAnchor, "a basis for belief nobody defined");
     if (to >= it->second.anchor)
@@ -94,10 +94,10 @@ Status Registry::weaken(const Id& id, Anchor to) {
 }
 
 Status Registry::release(const Id& id) {
-    if (by_id_.count(id) == 0) return fail(Err::NotAdopted, id.hex());
+    if (by_id_.count(id) == 0) return fail(Err::NotAdopted, hex(id));
     for (const auto& [key, r] : by_id_) {
         (void)key;
-        if (r.parent == id) return fail(Err::ParentHeld, r.key().hex() + " still takes security from it");
+        if (r.parent == id) return fail(Err::ParentHeld, hex(r.key()) + " still takes security from it");
     }
     by_id_.erase(id);
     return ok();

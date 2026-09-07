@@ -111,16 +111,21 @@ foreach(_p "${CRYPTO_DIR}/secp256k1/cpp/ecrecover.cpp" "${CRYPTO_DIR}/ripemd160/
   endif()
 endforeach()
 
+# core — the names, the codec and the store this chain shares with every other
+# one here. It also carries sha256 and ripemd160, which is why they are absent
+# from lux_pvm_crypto below: a binary compiles each hash once, or it has two.
+set(LUXCPP_CRYPTO_DIR "${CRYPTO_DIR}" CACHE PATH "luxcpp/crypto checkout")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../core" "${CMAKE_CURRENT_BINARY_DIR}/core")
+
 if(NOT TARGET lux_pvm_crypto)
   add_library(lux_pvm_crypto STATIC
     "${CRYPTO_DIR}/secp256k1/cpp/ecrecover.cpp"
     "${CRYPTO_DIR}/secp256k1/cpp/batch_inv.cpp"
     "${CRYPTO_DIR}/secp256k1/cpp/ecdsa.cpp"
-    "${CRYPTO_DIR}/ripemd160/cpp/ripemd160.cpp"
     "${CRYPTO_DIR}/keccak/cpp/keccak.cpp")
   target_include_directories(lux_pvm_crypto PUBLIC
-    "${CRYPTO_DIR}/include" "${CRYPTO_DIR}/secp256k1/cpp" "${CRYPTO_DIR}/ripemd160/cpp"
-    "${CRYPTO_DIR}/keccak/cpp")
+    "${CRYPTO_DIR}/include" "${CRYPTO_DIR}/secp256k1/cpp" "${CRYPTO_DIR}/keccak/cpp")
+  target_link_libraries(lux_pvm_crypto PUBLIC lux_core)
   target_compile_options(lux_pvm_crypto PRIVATE -O2)
 endif()
 
@@ -151,9 +156,10 @@ add_library(lux_platformvm STATIC
   src/genesis.cpp
   src/staking.cpp
   src/adopt.cpp
-  src/mempool.cpp)
+  src/mempool.cpp
+  src/persist.cpp)
 target_include_directories(lux_platformvm PUBLIC include)
-target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto zap::zap)
+target_link_libraries(lux_platformvm PUBLIC blst lux_pvm_crypto zap::zap lux_core)
 # -Wpedantic is deliberately absent: the wide integer the reward curve needs is
 # __int128, a compiler extension every target this ships on has.
 target_compile_options(lux_platformvm PRIVATE -Wall -Wextra)
@@ -179,12 +185,11 @@ endif()
 # check this chain's answer against the NODE's rather than against itself. Two
 # implementations of one hash that only agree with themselves is exactly the
 # failure the commitment exists to prevent.
-if(NOT TARGET lux_node_validators AND EXISTS "${NODE_DIR}/src/validators.cpp"
-   AND EXISTS "${CRYPTO_DIR}/sha256/cpp/sha256.cpp")
-  add_library(lux_node_validators STATIC
-    "${NODE_DIR}/src/validators.cpp" "${CRYPTO_DIR}/sha256/cpp/sha256.cpp")
+if(NOT TARGET lux_node_validators AND EXISTS "${NODE_DIR}/src/validators.cpp")
+  add_library(lux_node_validators STATIC "${NODE_DIR}/src/validators.cpp")
   target_include_directories(lux_node_validators PUBLIC
     "${NODE_DIR}/include" "${CONSENSUS_DIR}/include" "${CRYPTO_DIR}")
+  target_link_libraries(lux_node_validators PUBLIC lux_core)
   target_compile_options(lux_node_validators PRIVATE -O2)
 endif()
 
@@ -199,12 +204,20 @@ if(PLATFORMVM_BUILD_TESTS)
     target_compile_definitions(pvm_test_main PUBLIC LUX_PLATFORMVM_HAS_NODE_SET_ROOT=1)
   endif()
 
-  foreach(_t sha256 reward components txs syntactic block state flow fee warp genesis staking adopt mempool executor l1 validators vm)
+  foreach(_t ids reward components txs syntactic block state flow fee warp genesis staking adopt mempool executor l1 validators vm)
     add_executable(pvm_${_t}_test test/${_t}_test.cpp)
     target_link_libraries(pvm_${_t}_test PRIVATE pvm_test_main)
     target_compile_options(pvm_${_t}_test PRIVATE -Wall -Wextra)
     add_test(NAME pvm_${_t} COMMAND pvm_${_t}_test)
   endforeach()
+
+  # The durability proof stands apart from the ported suite: it needs argv,
+  # because the process that writes the state is this same binary re-EXECed and
+  # then killed where it stands. See the source.
+  add_executable(pvm_durability_test test/durability_test.cpp)
+  target_link_libraries(pvm_durability_test PRIVATE lux_platformvm)
+  target_compile_options(pvm_durability_test PRIVATE -Wall -Wextra)
+  add_test(NAME pvm_durability COMMAND pvm_durability_test)
 endif()
 
 # The C++ P-chain's evaluator for the cross-language chain differential. It is

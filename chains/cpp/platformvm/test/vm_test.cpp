@@ -20,7 +20,7 @@ namespace {
 
 Id id_of(std::uint8_t b) {
     Id v{};
-    for (std::size_t i = 0; i < kIdLen; ++i) v.b[i] = static_cast<std::uint8_t>(b + i);
+    for (std::size_t i = 0; i < kIdLen; ++i) v[i] = static_cast<std::uint8_t>(b + i);
     return v;
 }
 NodeId node_of(std::uint8_t b) {
@@ -142,7 +142,7 @@ txs::Tx pay_tx(const Id& src, std::uint64_t amount, std::uint64_t fee) {
 TEST(TheChainIdentifiesItself) {
     vm::PlatformVM chain(kPChain, make_backend(), genesis());
     lux::node::Id want{};
-    std::memcpy(want.data(), kPChain.b.data(), kIdLen);
+    std::memcpy(want.data(), kPChain.data(), kIdLen);
     REQUIRE(chain.chain_id() == want);
     REQUIRE_EQ(std::string("P"), chain.alias());
     REQUIRE_U64(0u, chain.last_accepted_height());
@@ -289,7 +289,7 @@ TEST(HeightMustFollowItsParent) {
     vm::PlatformVM chain(kPChain, make_backend(), genesis());
     const auto genesis_id = chain.last_accepted();
     Id parent{};
-    std::memcpy(parent.b.data(), genesis_id.data(), kIdLen);
+    std::memcpy(parent.data(), genesis_id.data(), kIdLen);
 
     auto wrong = block::StandardBlock::create(kGenesisTime, parent, 7, {});
     REQUIRE_OK(wrong);
@@ -338,7 +338,7 @@ TEST(TheRewardDecision) {
                     "the proposal removed the staker before the vote");
 
         Id proposal_id{};
-        std::memcpy(proposal_id.b.data(), proposal->id().data(), kIdLen);
+        std::memcpy(proposal_id.data(), proposal->id().data(), kIdLen);
         auto option = commit ? std::static_pointer_cast<block::Block>(
                                    block::CommitBlock::create(end, proposal_id, proposal->height() + 1).value())
                              : std::static_pointer_cast<block::Block>(
@@ -373,7 +373,7 @@ TEST(TheClockIsBounded) {
     vm::PlatformVM chain(kPChain, make_backend(), genesis());
     const auto genesis_id = chain.last_accepted();
     Id parent{};
-    std::memcpy(parent.b.data(), genesis_id.data(), kIdLen);
+    std::memcpy(parent.data(), genesis_id.data(), kIdLen);
 
     auto backwards = block::StandardBlock::create(kGenesisTime - 1, parent, 1, {});
     REQUIRE_OK(backwards);
@@ -393,7 +393,7 @@ TEST(AnEmptyBlockIsRefused) {
     vm::PlatformVM chain(kPChain, make_backend(), genesis());
     const auto genesis_id = chain.last_accepted();
     Id parent{};
-    std::memcpy(parent.b.data(), genesis_id.data(), kIdLen);
+    std::memcpy(parent.data(), genesis_id.data(), kIdLen);
 
     auto empty = block::StandardBlock::create(kGenesisTime, parent, 1, {});
     REQUIRE_OK(empty);
@@ -419,7 +419,7 @@ TEST(ConflictingTxsCannotShareABlock) {
 
     auto blk = block::StandardBlock::create(kGenesisTime, [&] {
         Id p{};
-        std::memcpy(p.b.data(), chain.last_accepted().data(), kIdLen);
+        std::memcpy(p.data(), chain.last_accepted().data(), kIdLen);
         return p;
     }(), 1, {a, b});
     REQUIRE_OK(blk);
@@ -485,7 +485,7 @@ TEST(ABlockBeyondCapacityIsRefused) {
     const auto tx = join_tx(10'000'000'000, 5'000'000'000, end);
 
     Id parent{};
-    std::memcpy(parent.b.data(), chain.last_accepted().data(), kIdLen);
+    std::memcpy(parent.data(), chain.last_accepted().data(), kIdLen);
     auto blk = block::StandardBlock::create(kGenesisTime, parent, 1, {tx});
     REQUIRE_OK(blk);
     const std::vector<std::uint8_t> wire(blk.value()->bytes().begin(), blk.value()->bytes().end());
@@ -639,7 +639,7 @@ TEST(TheChainAnswersWhoValidatedThen) {
     proposal->accept();
 
     Id proposal_id{};
-    std::memcpy(proposal_id.b.data(), proposal->id().data(), kIdLen);
+    std::memcpy(proposal_id.data(), proposal->id().data(), kIdLen);
     auto commit = block::CommitBlock::create(end, proposal_id, proposal->height() + 1);
     REQUIRE_OK(commit);
     const std::vector<std::uint8_t> wire(commit.value()->bytes().begin(), commit.value()->bytes().end());

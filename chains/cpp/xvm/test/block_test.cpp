@@ -9,7 +9,7 @@
 // must be the buffer that went in, or two nodes holding the same block would
 // disagree about its name.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 #include "keys.hpp"
 
@@ -17,6 +17,7 @@
 #include "lux/xvm/txs.hpp"
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {

@@ -105,19 +105,24 @@ class PlatformVM final : public lux::node::VM {
     lux::node::Id last_accepted() const override;
     std::uint64_t last_accepted_height() const override { return last_accepted_height_; }
 
-    // The highest height this node itself decided. This chain advances only
-    // through accept() — there is no import path that moves the tip without a
-    // certificate under it — so the decided frontier IS the accepted tip. A
-    // chain that grows one must stop answering with this and start answering
-    // with what it certified.
-    std::uint64_t frontier() const override { return last_accepted_height(); }
+    // The highest height THIS node decided. Every height this chain holds
+    // arrived through accept(), because there is no path that moves the tip
+    // without one: the chain reads its store on boot and otherwise advances
+    // only when a block is accepted. So the frontier is the tip, and it stops
+    // being the tip the day an import lands — at which point the import moves
+    // this and accept() alone must not.
+    std::uint64_t frontier() const override { return last_accepted_height_; }
 
     // A transaction waiting to go into a block. What is refused HERE is what a
     // node will not spend anything on: a duplicate, an oversized one, one that
     // would overfill the pool, one that rivals something already waiting, and
     // the chain's own reward transaction, which nobody submits. Whether it
     // EXECUTES is decided when a block carrying it is built.
-    Status submit(const txs::Tx& tx) { return mempool_.add(tx); }
+    // ONE door. The submitter's path and the path that puts a rejected block's
+    // transactions back both come through here, so the chain's rule about who
+    // may submit cannot be reached around.
+    Status submit(const txs::Tx& tx) { return mempool::admit(mempool_, dropped_, tx); }
+    std::optional<Error> refusal(const Id& tx_id) const { return dropped_.why(tx_id); }
     std::size_t mempool_size() const { return mempool_.size(); }
     const mempool::Pool& mempool() const { return mempool_; }
 
@@ -157,8 +162,8 @@ class PlatformVM final : public lux::node::VM {
     const validators::History& history() const { return history_; }
 
     // The accepted state — what the chain remembers.
-    const state::MemState& accepted() const { return state_; }
-    state::MemState& accepted() { return state_; }
+    const state::State& accepted() const { return state_; }
+    state::State& accepted() { return state_; }
 
     executor::Backend& backend() { return backend_; }
     const executor::Backend& backend() const { return backend_; }
@@ -215,10 +220,11 @@ class PlatformVM final : public lux::node::VM {
 
     Id chain_id_{};
     executor::Backend backend_;
-    state::MemState state_;
+    state::State state_;
     std::map<Id, std::shared_ptr<block::Block>> blocks_;
     std::map<Id, Verified> verified_;
     mempool::Pool mempool_;
+    mempool::Dropped dropped_;
     Id last_accepted_{};
     std::uint64_t last_accepted_height_ = 0;
     validators::History history_;

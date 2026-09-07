@@ -10,7 +10,7 @@
 // testing the chain. The chain-backed gate is exercised in vm_test, where it
 // belongs.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 
 #include "lux/xvm/mempool.hpp"
@@ -20,6 +20,7 @@
 #include <vector>
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {
@@ -77,8 +78,8 @@ void the_pool_holds_and_orders() {
     auto b = tx_spending(2, 20);
     check(p.add(a).has_value(), "a transaction is admitted");
     check(p.add(b).has_value(), "and a second one");
-    check(p.len() == 2, "the pool holds two");
-    check(p.peek() != nullptr && p.peek()->id() == a->id(),
+    check(p.size() == 2, "the pool holds two");
+    check(p.peek() != nullptr && (*p.peek())->id() == a->id(),
           "peek gives the OLDEST — the order the builder takes them in");
     check(p.get(b->id()) != nullptr, "either can be looked up by id");
     check(p.get(id(0xEE)) == nullptr, "and an id nobody issued is simply absent");
@@ -98,8 +99,7 @@ void a_duplicate_is_refused() {
     auto again = p.add(a);
     check(!again.has_value(), "the same transaction twice is refused");
     if (!again)
-        check(again.error().find(mempool::kErrDuplicateTx) != std::string::npos,
-              "and refused as a duplicate");
+        check(again.error() == mempool::Refusal::Duplicate, "and refused as a duplicate");
 }
 
 void a_conflict_is_refused() {
@@ -113,8 +113,7 @@ void a_conflict_is_refused() {
     auto second = p.add(b);
     check(!second.has_value(), "the second, which spends the same output, is not");
     if (!second)
-        check(second.error().find(mempool::kErrConflictsWithOtherTx) != std::string::npos,
-              "and is refused as a conflict");
+        check(second.error() == mempool::Refusal::Conflict, "and is refused as a conflict");
 }
 
 void size_and_space_are_bounded() {
@@ -124,9 +123,9 @@ void size_and_space_are_bounded() {
     check(p.add(a).has_value(), "admit one");
     check(p.bytes_available() == mempool::kMaxPoolSize - a->size(),
           "the space it takes is exactly its own bytes");
-    p.remove(a);
+    p.remove({a});
     check(p.bytes_available() == mempool::kMaxPoolSize, "and comes back when it leaves");
-    check(p.len() == 0, "the pool is empty again");
+    check(p.size() == 0, "the pool is empty again");
 }
 
 // The two bounds themselves, and the reason each gives. Byte accounting alone
@@ -149,7 +148,7 @@ void the_two_bounds_are_enforced() {
         check(!r, "an oversize transaction is refused");
         check(!r && r.error().find(mempool::kErrTxTooLarge) != std::string::npos,
               "…as too large");
-        check(p.len() == 0, "…and never enters the pool");
+        check(p.size() == 0, "…and never enters the pool");
         check(p.bytes_available() == mempool::kMaxPoolSize, "…so it costs no space");
         check(v.asked == 1,
               "the chain was still asked first — size is the pool's rule, not the chain's");
@@ -187,12 +186,12 @@ void the_two_bounds_are_enforced() {
               "…and the transaction that would overflow it is refused as full");
         check(p.bytes_available() < refused->size(),
               "…because what is left is smaller than that transaction");
-        check(p.len() == admitted, "…and the pool still holds exactly what it admitted");
+        check(p.size() == admitted, "…and the pool still holds exactly what it admitted");
 
         // A full pool says nothing about the transaction, so the refusal is NOT
         // remembered as a drop reason: the same transaction offered after a block
         // drained the pool has to get a fresh look.
-        check(p.drop_reason(refused->id()).empty(),
+        check(g.drop_reason(refused->id()).empty(),
               "…and 'full' is not remembered against the transaction");
     }
 }
@@ -205,7 +204,7 @@ void removing_takes_the_conflicts_too() {
     check(p.add(a).has_value() && p.add(other).has_value(), "two unrelated txs are pooled");
 
     // A block accepted `rival`. Everything it conflicts with is dead.
-    p.remove(rival);
+    p.remove({rival});
     check(p.get(a->id()) == nullptr, "the pooled tx it conflicts with is gone");
     check(p.get(other->id()) != nullptr, "the unrelated one is untouched");
     check(p.bytes_available() == mempool::kMaxPoolSize - other->size(),
@@ -213,43 +212,64 @@ void removing_takes_the_conflicts_too() {
 }
 
 void a_drop_reason_is_remembered_but_not_always() {
-    mempool::Pool p;
-    auto a = tx_spending(1, 10);
-    p.mark_dropped(a->id(), "because");
-    check_eq(p.drop_reason(a->id()), "because", "a reason is remembered");
-
-    // A pooled transaction was not dropped.
-    mempool::Pool q;
-    auto b = tx_spending(2, 20);
-    check(q.add(b).has_value(), "pool it");
-    q.mark_dropped(b->id(), "because");
-    check_eq(q.drop_reason(b->id()), "", "a pooled tx is never marked dropped");
-
-    // "The pool is full" says nothing about the transaction, so remembering it
-    // would refuse a good tx forever once space freed up.
-    mempool::Pool r;
-    auto c = tx_spending(3, 30);
-    r.mark_dropped(c->id(), std::string(mempool::kErrPoolFull) + ": whatever");
-    check_eq(r.drop_reason(c->id()), "", "a full pool is not a reason to refuse a tx later");
-
-    // Admitting a tx clears whatever was remembered about it.
-    mempool::Pool s;
-    auto d = tx_spending(4, 40);
-    s.mark_dropped(d->id(), "earlier");
-    check(s.add(d).has_value(), "admit it anyway");
-    check_eq(s.drop_reason(d->id()), "", "a pooled tx is not a dropped tx");
+    // The refusal cache belongs to the GATE, not to the pool: "the pool is
+    // full" is one of the four things a POOL can say, and every other reason a
+    // submitter is told came from an execution the pool knows nothing about.
+    {
+        mempool::Pool p;
+        Verdict v;
+        auto a = tx_spending(1, 10);
+        v.refuse[a->id()] = "because";
+        mempool::Gossip g(p, v);
+        check(!g.add(a).has_value(), "the gate refuses what this node's execution refuses");
+        check_eq(g.drop_reason(a->id()), "because", "and remembers why");
+    }
+    {  // A pooled transaction was not dropped.
+        mempool::Pool p;
+        Verdict v;
+        mempool::Gossip g(p, v);
+        auto b = tx_spending(2, 20);
+        check(g.add(b).has_value(), "pool it");
+        g.mark_dropped(b->id(), "because");
+        check_eq(g.drop_reason(b->id()), "", "a pooled tx is never marked dropped");
+    }
+    {  // "The pool is full" says nothing about the transaction, so remembering
+       // it would refuse a good tx forever once space freed up.
+        mempool::Pool p(10);
+        Verdict v;
+        mempool::Gossip g(p, v);
+        auto c = tx_spending(3, 30);
+        check(!g.add(c).has_value(), "a pool with no room refuses it");
+        check_eq(g.drop_reason(c->id()), "", "a full pool is not a reason to refuse a tx later");
+    }
+    {  // A remembered refusal is what step 2 answers with, so `add` never gets
+       // past it — that is the whole point of remembering. What DOES clear the
+       // record is the transaction actually reaching the pool, which is the
+       // path a caller that has already verified it takes.
+        mempool::Pool p;
+        Verdict v;
+        mempool::Gossip g(p, v);
+        auto d = tx_spending(4, 40);
+        g.mark_dropped(d->id(), "earlier");
+        check_eq(g.drop_reason(d->id()), "earlier", "a refusal is remembered");
+        check(!g.add(d).has_value(), "and the gate answers with it rather than re-verifying");
+        check(g.add_unverified(d).has_value(), "a caller that has verified it admits it");
+        check_eq(g.drop_reason(d->id()), "", "and a pooled tx is not a dropped tx");
+    }
 }
 
 void the_reason_cache_forgets_the_oldest() {
     mempool::Pool p;
+    Verdict v;
+    mempool::Gossip g(p, v);
     std::vector<Id> ids;
-    for (std::size_t i = 0; i < mempool::kDroppedCacheSize + 1; ++i) {
+    for (std::size_t i = 0; i < mempool::kDroppedRemembered + 1; ++i) {
         Id key = id(std::uint8_t(i));
         ids.push_back(key);
-        p.mark_dropped(key, "reason " + std::to_string(i));
+        g.mark_dropped(key, "reason " + std::to_string(i));
     }
-    check_eq(p.drop_reason(ids.front()), "", "the oldest reason has been forgotten");
-    check_eq(p.drop_reason(ids.back()), "reason " + std::to_string(mempool::kDroppedCacheSize),
+    check_eq(g.drop_reason(ids.front()), "", "the oldest reason has been forgotten");
+    check_eq(g.drop_reason(ids.back()), "reason " + std::to_string(mempool::kDroppedRemembered),
              "the newest is still remembered");
 }
 
@@ -312,7 +332,7 @@ void unverified_admission_skips_only_the_chain() {
     // It still had to pass the structural checks.
     auto rival = tx_spending(1, 11);
     check(!g.add_unverified(rival).has_value(), "but a conflict is still refused");
-    check_eq(p.drop_reason(rival->id()).empty() ? "" : "remembered", "remembered",
+    check_eq(g.drop_reason(rival->id()).empty() ? "" : "remembered", "remembered",
              "and the refusal is remembered");
 }
 

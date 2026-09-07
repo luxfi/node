@@ -1,7 +1,7 @@
 // Copyright (C) 2026, Lux Industries Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause-Eco
 
-#include "lux/xvm/store.hpp"
+#include "lux/core/store.hpp"
 
 #include <zap/zap.hpp>
 
@@ -12,7 +12,7 @@
 #include <cstring>
 #include <vector>
 
-namespace lux::xvm::store {
+namespace lux::core::store {
 namespace {
 
 // The log record's object: five sections, all packed lists over one blob — the
@@ -343,4 +343,4 @@ Result<void> File::compact() {
     return {};
 }
 
-}  // namespace lux::xvm::store
+}  // namespace lux::core::store

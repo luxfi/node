@@ -365,19 +365,19 @@ void StakerDiffWalk::release() {
 
 // ── the materialised state
 
-Result<std::uint64_t> MemState::current_supply(const Id& chain_id) const {
+Result<std::uint64_t> State::current_supply(const Id& chain_id) const {
     const auto it = supply_.find(chain_id);
     if (it == supply_.end()) return fail(Err::NotFound);
     return it->second;
 }
 
-Result<UTXO> MemState::get_utxo(const Id& utxo_id) const {
+Result<UTXO> State::get_utxo(const Id& utxo_id) const {
     const auto it = utxos_.find(utxo_id);
     if (it == utxos_.end()) return fail(Err::NotFound);
     return it->second;
 }
 
-std::vector<UTXO> MemState::reward_utxos(const Id& tx_id) const {
+std::vector<UTXO> State::reward_utxos(const Id& tx_id) const {
     const auto it = reward_utxos_.find(tx_id);
     if (it == reward_utxos_.end()) return {};
     return it->second;
@@ -387,7 +387,7 @@ std::vector<UTXO> MemState::reward_utxos(const Id& tx_id) const {
 // in the set has no ledger, and asking about one is a refusal rather than a
 // zero: zero is a real balance, and confusing the two would silently pay a
 // staker that is not there.
-std::vector<UTXO> MemState::utxos() const {
+std::vector<UTXO> State::utxos() const {
     std::vector<UTXO> out;
     out.reserve(utxos_.size());
     for (const auto& [id, u] : utxos_) {
@@ -397,7 +397,7 @@ std::vector<UTXO> MemState::utxos() const {
     return out;
 }
 
-Result<std::uint64_t> MemState::delegatee_reward(const Id& chain_id, const NodeId& node_id) const {
+Result<std::uint64_t> State::delegatee_reward(const Id& chain_id, const NodeId& node_id) const {
     const auto chain = delegatee_rewards_.find(chain_id);
     if (chain == delegatee_rewards_.end()) return fail(Err::NotFound);
     const auto node = chain->second.find(node_id);
@@ -405,7 +405,7 @@ Result<std::uint64_t> MemState::delegatee_reward(const Id& chain_id, const NodeI
     return node->second;
 }
 
-Status MemState::set_delegatee_reward(const Id& chain_id, const NodeId& node_id, std::uint64_t amount) {
+Status State::set_delegatee_reward(const Id& chain_id, const NodeId& node_id, std::uint64_t amount) {
     auto chain = delegatee_rewards_.find(chain_id);
     if (chain == delegatee_rewards_.end()) return fail(Err::NotFound);
     auto node = chain->second.find(node_id);
@@ -414,44 +414,44 @@ Status MemState::set_delegatee_reward(const Id& chain_id, const NodeId& node_id,
     return ok();
 }
 
-Result<txs::Owner> MemState::network_owner(const Id& network_id) const {
+Result<txs::Owner> State::network_owner(const Id& network_id) const {
     const auto it = net_owners_.find(network_id);
     if (it == net_owners_.end()) return fail(Err::NotFound);
     return it->second;
 }
 
-Result<NetToL1Conversion> MemState::network_conversion(const Id& network_id) const {
+Result<NetToL1Conversion> State::network_conversion(const Id& network_id) const {
     const auto it = conversions_.find(network_id);
     if (it == conversions_.end()) return fail(Err::NotFound);
     return it->second;
 }
 
-Result<txs::Tx> MemState::network_transformation(const Id& network_id) const {
+Result<txs::Tx> State::network_transformation(const Id& network_id) const {
     const auto it = transformations_.find(network_id);
     if (it == transformations_.end()) return fail(Err::NotFound);
     return it->second;
 }
 
-void MemState::add_network_transformation(const txs::Tx& tx) {
+void State::add_network_transformation(const txs::Tx& tx) {
     const auto* t = dynamic_cast<const txs::TransformChainTx*>(tx.unsigned_tx.get());
     if (t == nullptr) return;
     transformations_.insert_or_assign(t->chain(), tx);
 }
 
-void MemState::add_chain(const txs::Tx& create_chain_tx) {
+void State::add_chain(const txs::Tx& create_chain_tx) {
     const auto* c = dynamic_cast<const txs::CreateChainTx*>(create_chain_tx.unsigned_tx.get());
     if (c == nullptr) return;
     chains_[c->chain_id()].push_back(create_chain_tx);
     chain_names_.insert(c->blockchain_name());
 }
 
-std::vector<txs::Tx> MemState::chains(const Id& network_id) const {
+std::vector<txs::Tx> State::chains(const Id& network_id) const {
     const auto it = chains_.find(network_id);
     if (it == chains_.end()) return {};
     return it->second;
 }
 
-Result<std::pair<txs::Tx, status::Status>> MemState::get_tx(const Id& tx_id) const {
+Result<std::pair<txs::Tx, status::Status>> State::get_tx(const Id& tx_id) const {
     const auto it = txs_.find(tx_id);
     if (it == txs_.end()) return fail(Err::NotFound);
     return it->second;
@@ -461,10 +461,10 @@ Result<std::pair<txs::Tx, status::Status>> MemState::get_tx(const Id& tx_id) con
 
 // Go: state.PutL1Validator. Three invariants, all of them about a validation id
 // naming ONE validator for its whole life.
-Status MemState::put_l1_validator(const l1::Validator& v) {
+Status State::put_l1_validator(const l1::Validator& v) {
     const auto existing = l1_validators_.find(v.validation_id);
     if (existing != l1_validators_.end() && !existing->second.immutable_fields_unmodified(v))
-        return fail(Err::MutatedL1Validator, "a constant field of " + v.validation_id.hex() + " changed");
+        return fail(Err::MutatedL1Validator, "a constant field of " + hex(v.validation_id) + " changed");
 
     if (v.is_deleted()) {
         l1_validators_.erase(v.validation_id);
@@ -477,7 +477,7 @@ Status MemState::put_l1_validator(const l1::Validator& v) {
         if (id == v.validation_id) continue;
         if (other.chain_id == v.chain_id && other.node_id == v.node_id)
             return fail(Err::DuplicateL1Validator,
-                        v.node_id.hex() + " already validates " + v.chain_id.hex());
+                        hex(v.node_id) + " already validates " + hex(v.chain_id));
     }
 
     // And the chain's total must stay a number.
@@ -495,13 +495,13 @@ Status MemState::put_l1_validator(const l1::Validator& v) {
     return ok();
 }
 
-Result<l1::Validator> MemState::get_l1_validator(const Id& validation_id) const {
+Result<l1::Validator> State::get_l1_validator(const Id& validation_id) const {
     const auto it = l1_validators_.find(validation_id);
     if (it == l1_validators_.end()) return fail(Err::NotFound);
     return it->second;
 }
 
-bool MemState::has_l1_validator(const Id& chain_id, const NodeId& node_id) const {
+bool State::has_l1_validator(const Id& chain_id, const NodeId& node_id) const {
     for (const auto& [id, v] : l1_validators_) {
         (void)id;
         if (v.chain_id == chain_id && v.node_id == node_id) return true;
@@ -511,7 +511,7 @@ bool MemState::has_l1_validator(const Id& chain_id, const NodeId& node_id) const
 
 // In increasing EndAccumulatedFee, so advancing the clock deactivates exactly
 // the prefix that can no longer pay and stops at the first one that can.
-std::vector<l1::Validator> MemState::active_l1_validators() const {
+std::vector<l1::Validator> State::active_l1_validators() const {
     std::vector<l1::Validator> out;
     for (const auto& [id, v] : l1_validators_) {
         (void)id;
@@ -521,7 +521,7 @@ std::vector<l1::Validator> MemState::active_l1_validators() const {
     return out;
 }
 
-std::vector<l1::Validator> MemState::l1_validators(const Id& chain_id) const {
+std::vector<l1::Validator> State::l1_validators(const Id& chain_id) const {
     std::vector<l1::Validator> out;
     for (const auto& [id, v] : l1_validators_) {
         (void)id;
@@ -530,7 +530,7 @@ std::vector<l1::Validator> MemState::l1_validators(const Id& chain_id) const {
     return out;
 }
 
-std::size_t MemState::num_active_l1_validators() const {
+std::size_t State::num_active_l1_validators() const {
     std::size_t n = 0;
     for (const auto& [id, v] : l1_validators_) {
         (void)id;
@@ -540,7 +540,7 @@ std::size_t MemState::num_active_l1_validators() const {
 }
 
 // Active AND inactive: an inactive validator still weighs on the set it is in.
-Result<std::uint64_t> MemState::weight_of_l1_validators(const Id& chain_id) const {
+Result<std::uint64_t> State::weight_of_l1_validators(const Id& chain_id) const {
     std::uint64_t total = 0;
     for (const auto& [id, v] : l1_validators_) {
         (void)id;
@@ -669,7 +669,7 @@ bool Diff::has_l1_validator(const Id& chain_id, const NodeId& node_id) const {
 Status Diff::put_l1_validator(const l1::Validator& v) {
     if (auto existing = get_l1_validator(v.validation_id);
         existing && !existing.value().immutable_fields_unmodified(v))
-        return fail(Err::MutatedL1Validator, "a constant field of " + v.validation_id.hex() + " changed");
+        return fail(Err::MutatedL1Validator, "a constant field of " + hex(v.validation_id) + " changed");
     l1_validators_[v.validation_id] = v;
     return ok();
 }
@@ -947,12 +947,12 @@ struct Fold {
         u64(o.locktime);
         u32(o.threshold);
         u64(o.addrs.size());
-        for (const auto& a : o.addrs) b.insert(b.end(), a.b.begin(), a.b.end());
+        for (const auto& a : o.addrs) b.insert(b.end(), a.begin(), a.end());
     }
     void staker(const Staker& s) {
-        b.insert(b.end(), s.tx_id.b.begin(), s.tx_id.b.end());
+        b.insert(b.end(), s.tx_id.begin(), s.tx_id.end());
         b.insert(b.end(), s.node_id.b.begin(), s.node_id.b.end());
-        b.insert(b.end(), s.chain_id.b.begin(), s.chain_id.b.end());
+        b.insert(b.end(), s.chain_id.begin(), s.chain_id.end());
         u8(s.public_key ? 1 : 0);
         if (s.public_key) b.insert(b.end(), s.public_key->begin(), s.public_key->end());
         u64(s.weight);
@@ -977,7 +977,7 @@ Id state_root(const Chain& chain) {
     const auto nets = chain.networks();
     f.u64(nets.size());
     for (const auto& n : nets) {
-        f.b.insert(f.b.end(), n.b.begin(), n.b.end());
+        f.b.insert(f.b.end(), n.begin(), n.end());
         if (const auto o = chain.network_owner(n); o) {
             f.u8(1);
             f.owners(o.value());
@@ -1013,8 +1013,8 @@ Id state_root(const Chain& chain) {
     const auto l1s = chain.active_l1_validators();
     f.u64(l1s.size());
     for (const auto& v : l1s) {
-        f.b.insert(f.b.end(), v.validation_id.b.begin(), v.validation_id.b.end());
-        f.b.insert(f.b.end(), v.chain_id.b.begin(), v.chain_id.b.end());
+        f.b.insert(f.b.end(), v.validation_id.begin(), v.validation_id.end());
+        f.b.insert(f.b.end(), v.chain_id.begin(), v.chain_id.end());
         f.b.insert(f.b.end(), v.node_id.b.begin(), v.node_id.b.end());
         f.bytes(v.public_key);
         f.bytes(v.remaining_balance_owner);
@@ -1028,20 +1028,20 @@ Id state_root(const Chain& chain) {
     f.u64(exp.size());
     for (const auto& e : exp) {
         f.u64(e.timestamp);
-        f.b.insert(f.b.end(), e.validation_id.b.begin(), e.validation_id.b.end());
+        f.b.insert(f.b.end(), e.validation_id.begin(), e.validation_id.end());
     }
 
     const auto utxos = chain.utxos();
     f.u64(utxos.size());
     for (const auto& u : utxos) {
         const Id id = u.id();
-        f.b.insert(f.b.end(), id.b.begin(), id.b.end());
-        f.b.insert(f.b.end(), u.asset.b.begin(), u.asset.b.end());
+        f.b.insert(f.b.end(), id.begin(), id.end());
+        f.b.insert(f.b.end(), u.asset.begin(), u.asset.end());
         f.u64(u.stake_lock);
         f.u64(u.out.amt);
         f.owners(u.out.owners);
     }
-    return id_from_hash(sha256(f.b));
+    return sha256(f.b);
 }
 
 }  // namespace lux::platformvm::state

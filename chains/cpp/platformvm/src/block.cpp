@@ -52,14 +52,14 @@ Result<std::vector<std::uint8_t>> build(Kind k, const Id& parent, std::uint64_t 
     const auto kind = static_cast<std::uint8_t>(k);
     if (k == Kind::Abort || k == Kind::Commit)
         return wire::NewDecided(wire::DecidedInput{
-            .Kind = kind, .Parent = parent.b, .Height = height, .Time = ts});
+            .Kind = kind, .Parent = parent, .Height = height, .Time = ts});
 
     auto l = tx_list(decision_txs);
     if (!l) return std::unexpected(l.error());
 
     if (k == Kind::Standard)
         return wire::NewStandard(wire::StandardInput{.Kind = kind,
-                                                     .Parent = parent.b,
+                                                     .Parent = parent,
                                                      .Height = height,
                                                      .Time = ts,
                                                      .TxLengths = std::move(l->lengths),
@@ -71,7 +71,7 @@ Result<std::vector<std::uint8_t>> build(Kind k, const Id& parent, std::uint64_t 
     if (proposal_tx == nullptr || proposal_tx->bytes.empty()) return fail(Err::NoProposalTx);
     return wire::NewProposal(wire::ProposalInput{
         .Kind = kind,
-        .Parent = parent.b,
+        .Parent = parent,
         .Height = height,
         .Time = ts,
         .TxLengths = std::move(l->lengths),
@@ -112,7 +112,7 @@ Status Block::set_bytes(std::vector<std::uint8_t> b) {
     // zap::Message truncates to the declared size, so a buffer with a tail wraps
     // the same message under a different id. Refuse it.
     if (msg->size() != b.size()) return fail(Err::BlockExtraSpace);
-    id_ = id_from_hash(sha256(b));
+    id_ = sha256(b);
     buf_ = std::move(b);
     return ok();
 }
@@ -124,7 +124,7 @@ zap::Object Block::root() const {
 
 // The four fields every kind opens with, read through the shortest kind that
 // has them: the prefix is where all three shapes agree.
-Id Block::parent() const { return Id::from(wire::Decided(root()).Parent()); }
+Id Block::parent() const { return id_from(wire::Decided(root()).Parent()); }
 std::uint64_t Block::height() const { return wire::Decided(root()).Height(); }
 std::uint64_t Block::timestamp() const { return wire::Decided(root()).Time(); }
 

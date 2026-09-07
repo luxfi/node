@@ -9,12 +9,13 @@
 // somewhere else, so the strings are asserted verbatim rather than round-tripped
 // against themselves.
 
-#include "check.hpp"
+#include "lux/core/check.hpp"
 #include "fixtures.hpp"
 
 #include "lux/xvm/address.hpp"
 
 using namespace lux::xvm;
+using namespace lux::core::test;
 using namespace lux::xvm::test;
 
 namespace {
