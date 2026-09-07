@@ -119,8 +119,8 @@ func (p *Probe) Line() string {
 	if p.Height1 != nil {
 		h = p.Height1.String()
 	}
-	return fmt.Sprintf("%-5s %-14s chainid=%-8v height=%-8s advances=%-5v includes=%-5v funded=%s bal=%s %s",
-		p.Node.Lang, p.Node.Net, p.ChainID, h, p.Advances, p.Includes, who, bal, p.Note)
+	return fmt.Sprintf("%-5s chainid=%-8v height=%-8s advances=%-5v includes=%-5v funded=%s bal=%s %s",
+		p.Node.Lang, p.ChainID, h, p.Advances, p.Includes, who, bal, p.Note)
 }
 
 func weth(v *big.Int) string {
