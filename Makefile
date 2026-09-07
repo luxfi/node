@@ -45,17 +45,17 @@ luxd: ## build one runtime into bin/luxd-<runtime> (RUNTIME=go|rust|cpp)
 	@test -n "$(RUNTIME)" || { echo "usage: make luxd RUNTIME=go|rust|cpp" >&2; exit 1; }
 	@$(MAKE) --no-print-directory luxd-$(RUNTIME)
 
-# go: github.com/luxfi/node — the node daemon. It already exists and already
-# runs every chain, so the Go column is that, not a second host written here.
-# Pinned by version and fetched as a module: no path into another checkout, so
-# this builds the same binary anywhere.
-NODE_GO ?= v1.36.188
+# go: ./cmd/luxd — this repo's own daemon. This module IS github.com/luxfi/node,
+# so the Go column builds from these sources and fetches nothing: a repo that
+# reaches outside itself for the thing it claims to be has not replaced it.
 luxd-go:
-	@echo "==> go: github.com/luxfi/node@$(NODE_GO) (the node daemon)"
-	@mkdir -p $(BIN)/.go && printf 'module h\ngo 1.24\n' > $(BIN)/.go/go.mod
-	cd $(BIN)/.go && GOWORK=off GOFLAGS=-mod=mod go get github.com/luxfi/node/main@$(NODE_GO) \
-	  && GOWORK=off go build -trimpath -o ../luxd-go github.com/luxfi/node/main
-	@test -x $(BIN)/luxd-go && $(BIN)/luxd-go --version | tail -1
+	@echo "==> go: ./cmd/luxd"
+	@mkdir -p $(BIN)
+	GOWORK=off CGO_ENABLED=0 go build -trimpath -o $(BIN)/luxd-go ./cmd/luxd
+	@test -x $(BIN)/luxd-go
+	@leaked="$$(GOWORK=off go list -deps ./cmd/luxd 2>/dev/null | grep -E 'lux-private' || true)"; \
+	if [ -n "$$leaked" ]; then echo "FAIL: lux-private in the closure:" >&2; echo "$$leaked" >&2; exit 1; fi
+	@echo "    confirmed clean: 0 lux-private in the dependency graph"
 	@ls -lh $(BIN)/luxd-go
 
 # rust: lux-rs/node — a real node host (mesh + BLS quorum finality + revm),
