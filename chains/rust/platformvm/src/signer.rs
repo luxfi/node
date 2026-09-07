@@ -14,15 +14,10 @@
 //! the same one the Go node uses. A different tag would accept proofs the Go
 //! node refuses and refuse ones it accepts, which is a fork.
 
-use crate::zap;
-
 /// Bytes in a compressed BLS public key.
 pub const PUBLIC_KEY_LEN: usize = 48;
 /// Bytes in a BLS signature.
 pub const SIGNATURE_LEN: usize = 96;
-/// Bytes the signer occupies inside a transaction: a tag and the two blobs.
-pub const SIGNER_SIZE: usize = 1 + PUBLIC_KEY_LEN + SIGNATURE_LEN;
-
 /// Bytes in an uncompressed BLS public key. The set commitment hashes this
 /// form; a proof of possession signs the compressed one.
 pub const PUBLIC_KEY_UNCOMPRESSED_LEN: usize = 96;
@@ -195,28 +190,35 @@ impl Signer {
         }
     }
 
-    pub(crate) fn write(&self, b: &mut zap::Builder, ob: &zap::ObjectBuilder, off: usize) {
+    /// The three fields a transaction carries a signer in: the tag, the key,
+    /// and the proof over it.
+    ///
+    /// An empty signer is a zero tag and two runs of zeros, which is what the
+    /// reserved bytes already hold — so the two shapes occupy the same space
+    /// and every offset after the signer is one number whichever it is.
+    pub(crate) fn parts(&self) -> (u8, [u8; PUBLIC_KEY_LEN], [u8; SIGNATURE_LEN]) {
         match self {
-            Signer::Empty => b.set_u8(ob, off, 0),
-            Signer::ProofOfPossession { public_key, proof } => {
-                b.set_u8(ob, off, 1);
-                b.set_bytes_fixed(ob, off + 1, public_key);
-                b.set_bytes_fixed(ob, off + 1 + PUBLIC_KEY_LEN, proof);
-            }
+            Signer::Empty => (0, [0u8; PUBLIC_KEY_LEN], [0u8; SIGNATURE_LEN]),
+            Signer::ProofOfPossession { public_key, proof } => (1, *public_key, *proof),
         }
     }
 
-    pub(crate) fn read(o: zap::Object<'_>, off: usize) -> Signer {
-        if o.u8(off) == 0 {
+    /// The signer those three fields name.
+    ///
+    /// A zero tag is a validator that signs nothing, whatever the two runs
+    /// after it hold: the tag decides, not the bytes.
+    pub(crate) fn of(
+        tag: u8,
+        public_key: &[u8; PUBLIC_KEY_LEN],
+        proof: &[u8; SIGNATURE_LEN],
+    ) -> Signer {
+        if tag == 0 {
             return Signer::Empty;
         }
-        let mut public_key = [0u8; PUBLIC_KEY_LEN];
-        let mut proof = [0u8; SIGNATURE_LEN];
-        let pk = o.bytes_fixed(off + 1, PUBLIC_KEY_LEN);
-        public_key[..pk.len()].copy_from_slice(pk);
-        let p = o.bytes_fixed(off + 1 + PUBLIC_KEY_LEN, SIGNATURE_LEN);
-        proof[..p.len()].copy_from_slice(p);
-        Signer::ProofOfPossession { public_key, proof }
+        Signer::ProofOfPossession {
+            public_key: *public_key,
+            proof: *proof,
+        }
     }
 }
 
@@ -374,21 +376,41 @@ mod tests {
 
     #[test]
     fn a_signer_occupies_the_bytes_the_wire_reserves() {
-        // 1 tag + 48 key + 96 signature. The offsets of everything after the
-        // signer in a transaction depend on this number.
-        assert_eq!(SIGNER_SIZE, 145);
+        // 1 tag + 48 key + 96 signature, and the schema has to agree: every
+        // offset after the signer in a permissionless validator depends on it.
+        use crate::pchain_zap as w;
+        assert_eq!(
+            w::ADD_PERMISSIONLESS_VALIDATOR_STAKE_OUTS
+                - w::ADD_PERMISSIONLESS_VALIDATOR_SIGNER_KIND,
+            1 + PUBLIC_KEY_LEN + SIGNATURE_LEN
+        );
+        assert_eq!(
+            w::ADD_PERMISSIONLESS_VALIDATOR_SIGNER_KEY
+                - w::ADD_PERMISSIONLESS_VALIDATOR_SIGNER_KIND,
+            1
+        );
+        assert_eq!(
+            w::ADD_PERMISSIONLESS_VALIDATOR_SIGNER_PROOF
+                - w::ADD_PERMISSIONLESS_VALIDATOR_SIGNER_KEY,
+            PUBLIC_KEY_LEN
+        );
     }
 
     #[test]
-    fn a_signer_round_trips_through_the_wire() {
+    fn a_signer_round_trips_through_the_three_fields_that_carry_it() {
         for signer in [Signer::Empty, pop(&key(b"round trip"))] {
-            let mut b = zap::Builder::new(zap::HEADER_SIZE + 256);
-            let ob = b.start_object(SIGNER_SIZE);
-            signer.write(&mut b, &ob, 0);
-            b.finish_as_root(&ob);
-            let bytes = b.finish();
-            let msg = zap::Message::parse(&bytes).unwrap();
-            assert_eq!(Signer::read(msg.root(), 0), signer);
+            let (tag, public_key, proof) = signer.parts();
+            assert_eq!(Signer::of(tag, &public_key, &proof), signer);
         }
+    }
+
+    #[test]
+    fn a_zero_tag_is_an_empty_signer_whatever_follows_it() {
+        // The bytes after the tag are reserved, not meaningful: a transaction
+        // that filled them without setting the tag has still registered no key.
+        assert_eq!(
+            Signer::of(0, &[0xAAu8; PUBLIC_KEY_LEN], &[0xBBu8; SIGNATURE_LEN]),
+            Signer::Empty
+        );
     }
 }

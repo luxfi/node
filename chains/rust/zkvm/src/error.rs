@@ -28,7 +28,7 @@
 use std::fmt;
 
 use crate::ids::{self, Id};
-use crate::zap;
+use lux_zap::zap;
 
 /// Why the chain said no.
 #[derive(Clone, Debug, PartialEq, Eq)]
