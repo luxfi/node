@@ -24,6 +24,11 @@ CONAN_TOOLCHAIN := $(firstword $(wildcard \
     $(HOME)/work/luxcpp/cevm/build-node/build/Release/generators/conan_toolchain.cmake \
     $(HOME)/work/lux-cpp/cevm/build-node/build/Release/generators/conan_toolchain.cmake))
 GPU_DIR         := $(HOME)/work/luxcpp/gpu
+# COMPUTE is the licensed half — the matcher, the FHE chain, the kernels. It is
+# a separate private repository for the same reason runtime/rust and runtime/cpp
+# name checkouts rather than vendoring them: this repository is public, and a
+# public repository must not hold a partial copy of a private one.
+COMPUTE         := $(HOME)/work/lux/compute
 LUX_CRYPTO_DIST := $(HOME)/work/lux/crypto/dist
 
 # ---- conformance corpus (also imported) ------------------------------------
@@ -265,15 +270,15 @@ CONF_WANT   := $(CONF)/corpus/expected.tsv
 PVM_RUST    := $(ROOT)/chains/rust/platformvm/target/release/conformance
 XVM_RUST    := $(ROOT)/chains/rust/xvm/target/release/conformance
 QVM_RUST    := $(ROOT)/chains/rust/quantumvm/target/release/conformance
-DVM_RUST    := $(ROOT)/chains/rust/dexvm/target/release/conformance
+DVM_RUST    := $(COMPUTE)/chains/rust/dexvm/target/release/conformance
 ZVM_RUST    := $(ROOT)/chains/rust/zkvm/target/release/conformance
-FVM_RUST    := $(ROOT)/chains/rust/fhevm/target/release/conformance
+FVM_RUST    := $(COMPUTE)/chains/rust/fhevm/target/release/conformance
 PVM_CPP     := $(ROOT)/chains/cpp/platformvm/build/pvm_conformance
 XVM_CPP     := $(ROOT)/chains/cpp/xvm/build/xvm_conformance
 QVM_CPP     := $(ROOT)/chains/cpp/quantumvm/build/qvm_conformance
 ZVM_CPP     := $(ROOT)/chains/cpp/zkvm/build/zkvm_conformance
-DVM_CPP     := $(ROOT)/chains/cpp/dexvm/build/dexvm_conformance
-FVM_CPP     := $(ROOT)/chains/cpp/fhevm/build/fhevm_conformance
+DVM_CPP     := $(COMPUTE)/chains/cpp/dexvm/build/dexvm_conformance
+FVM_CPP     := $(COMPUTE)/chains/cpp/fhevm/build/fhevm_conformance
 RUST_EVALS  := $(PVM_RUST) $(XVM_RUST) $(QVM_RUST) $(DVM_RUST) $(ZVM_RUST) $(FVM_RUST)
 CPP_EVALS   := $(PVM_CPP) $(XVM_CPP) $(QVM_CPP) $(ZVM_CPP) $(DVM_CPP) $(FVM_CPP)
 
@@ -314,9 +319,9 @@ chains-build:
 	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/quantumvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	cd $(ROOT)/chains/rust/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cd $(COMPUTE)/chains/rust/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/zkvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	cd $(ROOT)/chains/rust/fhevm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cd $(COMPUTE)/chains/rust/fhevm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(ROOT)/chains/cpp/platformvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release
@@ -325,10 +330,10 @@ chains-build:
 	cmake --build $(ROOT)/chains/cpp/quantumvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/zkvm -B $(ROOT)/chains/cpp/zkvm/build -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(ROOT)/chains/cpp/zkvm/build -j$(NPROC)
-	cmake -S $(ROOT)/chains/cpp/dexvm -B $(ROOT)/chains/cpp/dexvm/build -DCMAKE_BUILD_TYPE=Release
-	cmake --build $(ROOT)/chains/cpp/dexvm/build -j$(NPROC)
-	cmake -S $(ROOT)/chains/cpp/fhevm -B $(ROOT)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release
-	cmake --build $(ROOT)/chains/cpp/fhevm/build -j$(NPROC)
+	cmake -S $(COMPUTE)/chains/cpp/dexvm -B $(COMPUTE)/chains/cpp/dexvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(COMPUTE)/chains/cpp/dexvm/build -j$(NPROC)
+	cmake -S $(COMPUTE)/chains/cpp/fhevm -B $(COMPUTE)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(COMPUTE)/chains/cpp/fhevm/build -j$(NPROC)
 	@for f in $(CONF_GEN) $(RUST_EVALS) $(CPP_EVALS); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
 	done
