@@ -241,6 +241,16 @@ func oVectors() []Vector {
 		vec("O_BLOCK_ATTESTATION_BARE", "O", "block",
 			oBlockWithAttestations(oParent(), 5, oTime(1000, 0), nil, nil, nil,
 				[]*artifacts.OracleAttestation{oAttestation(0x90, 0, 0, 0)})),
+		// The attestation whose fixed array is ALL ZERO. Without it the
+		// omitempty-on-an-array rule is a claim and not a vector: every other
+		// attestation here carries a non-zero commitment, so a writer that
+		// dropped an empty array would still write all of them and the run
+		// would stay green. Proven, by breaking the Rust writer that way and
+		// watching nothing happen.
+		vec("O_BLOCK_ATTESTATION_ZERO_COMMITMENT", "O", "block",
+			oBlockWithAttestations(oParent(), 5, oTime(1000, 0), nil, nil, nil,
+				[]*artifacts.OracleAttestation{oZeroCommitted()})),
+
 		vec("O_BLOCK_ATTESTATION_TWO", "O", "block",
 			oBlockWithAttestations(oParent(), 5, oTime(1000, 0), nil, nil, nil,
 				[]*artifacts.OracleAttestation{oAttestation(0x90, 8, 16, 24), oAttestation(0xA0, 4, 0, 0)})),
@@ -428,6 +438,15 @@ func oAttestation(seed byte, value, proof, cert int) *artifacts.OracleAttestatio
 	}
 	copy(a.ValueCommitment[:], oBytes(seed+3, 32))
 	copy(a.PolicyHash[:], oBytes(seed+4, 32))
+	return a
+}
+
+// oZeroCommitted is an attestation whose value commitment is all zero and
+// whose byte slices are all empty: everything omitempty could touch is at its
+// zero value at once, so the array is written and the slices are not.
+func oZeroCommitted() *artifacts.OracleAttestation {
+	a := oAttestation(0x90, 0, 0, 0)
+	a.ValueCommitment = [32]byte{}
 	return a
 }
 
@@ -758,6 +777,15 @@ func oAssert(v []Vector) {
 	// omitempty empties the three byte slices of an attestation and does
 	// NOTHING to its fixed array, so the two attestation blocks differ.
 	differ("O_BLOCK_ATTESTATION", "O_BLOCK_ATTESTATION_BARE")
+	// And the zero commitment must still be WRITTEN, which is the half of that
+	// rule no other vector reaches: an attestation with everything omitempty
+	// could touch at its zero value is not the same block as one whose array
+	// is missing. Held by asserting the array is on the wire.
+	if !strings.Contains(string(oBlockWithAttestations(oParent(), 5, oTime(1000, 0),
+		nil, nil, nil, []*artifacts.OracleAttestation{oZeroCommitted()})),
+		`"valueCommitment":[0,0,0`) {
+		panic("omitempty dropped a fixed array, which Go does not do")
+	}
 	// A nil []byte and an empty one are `null` and `""`, and not one block.
 	differ("O_BLOCK_OBS_NULL_VALUE", "O_BLOCK_OBS_EMPTY_VALUE")
 	// A short fixed-array list zero-fills what it did not reach, and a long
