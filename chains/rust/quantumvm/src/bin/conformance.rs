@@ -357,21 +357,15 @@ fn eval_block(id: &str, wire: &str) -> Row {
         .on_chain(chain(), NETWORK)
         .and_then(|()| block.well_formed())
     {
+        Ok(()) => r.syntactic = OK.into(),
         Err(e) => {
-            // A refusal reached before the first read of the store answers BOTH
-            // fields — the block never got far enough for them to differ. That
-            // is the corpus's rule, in conformance/README.md under "`syntactic`
-            // where verify is one pass", and not a second opinion about the
-            // block: there is one verdict here and it is written down twice.
-            //
-            // Declining `exec` here was wrong twice over. It reported a gap
-            // where the answer was already in hand, and the note it left behind
-            // was the syntactic refusal, so the decline came with a reason that
-            // was about a different field.
+            // A refusal reached before the first read of the store also comes
+            // back out of `verify` below, so both fields end up carrying it
+            // without either being restated here. That is the corpus's rule,
+            // in conformance/README.md under "`syntactic` where verify is one
+            // pass".
             let why = e.to_string();
-            let verdict: String = classify(&why).into();
-            r.syntactic = verdict.clone();
-            r.exec = verdict;
+            r.syntactic = classify(&why).into();
             r.note = why;
         }
     }
