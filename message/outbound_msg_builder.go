@@ -263,8 +263,8 @@ func (b *outMsgBuilder) Handshake(
 	ipMLDSASig []byte,
 	chains []*p2p.ChainIdentity,
 ) (OutboundMessage, error) {
-	subsubchainIDBytes := make([][]byte, len(trackedNets))
-	encodeIDs(trackedNets, subsubchainIDBytes)
+	subnetworkIDBytes := make([][]byte, len(trackedNets))
+	encodeIDs(trackedNets, subnetworkIDBytes)
 	return b.builder.createOutbound(
 		&p2p.Message{
 			Message: &p2p.Message_Handshake{
@@ -275,7 +275,7 @@ func (b *outMsgBuilder) Handshake(
 					IpPort:        uint32(ip.Port()),
 					IpSigningTime: ipSigningTime,
 					IpNodeIdSig:   ipNodeIDSig,
-					TrackedNets:   subsubchainIDBytes,
+					TrackedNets:   subnetworkIDBytes,
 					Client: &p2p.Client{
 						Name:  client,
 						Major: major,

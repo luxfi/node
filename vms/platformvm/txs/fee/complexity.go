@@ -44,7 +44,7 @@ const (
 		wireLongLen // weight
 
 	intrinsicNetValidatorBandwidth = intrinsicValidatorBandwidth + // validator
-		ids.IDLen // subchainID
+		ids.IDLen // networkID
 
 	intrinsicOutputBandwidth = ids.IDLen + // assetID
 		wireIntLen // output typeID
@@ -84,7 +84,7 @@ const (
 	intrinsicBLSPublicKeyValidationCompute = 50    // BLS public key validation time is around 50us
 	intrinsicBLSPoPVerifyCompute           = intrinsicBLSPublicKeyValidationCompute + intrinsicBLSVerifyCompute
 
-	intrinsicWarpDBReads = 3 + 20 // chainID -> subchainID mapping + apply weight diffs + apply pk diffs + diff application reads
+	intrinsicWarpDBReads = 3 + 20 // chainID -> networkID mapping + apply weight diffs + apply pk diffs + diff application reads
 
 	intrinsicPoPBandwidth = bls.PublicKeyLen + // public key
 		bls.SignatureLen // signature
@@ -108,7 +108,7 @@ var (
 	}
 	IntrinsicCreateChainTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
-			ids.IDLen + // subchainID
+			ids.IDLen + // networkID
 			wireShortLen + // chainName length
 			ids.IDLen + // vmID
 			wireIntLen + // num fxIDs
@@ -145,7 +145,7 @@ var (
 	IntrinsicAddPermissionlessValidatorTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
 			intrinsicValidatorBandwidth + // validator
-			ids.IDLen + // subchainID
+			ids.IDLen + // networkID
 			wireIntLen + // signer typeID
 			wireIntLen + // num stake outs
 			wireIntLen + // validator rewards typeID
@@ -157,7 +157,7 @@ var (
 	IntrinsicAddPermissionlessDelegatorTxComplexities = gas.Dimensions{
 		gas.Bandwidth: IntrinsicBaseTxComplexities[gas.Bandwidth] +
 			intrinsicValidatorBandwidth + // validator
-			ids.IDLen + // subchainID
+			ids.IDLen + // networkID
 			wireIntLen + // num stake outs
 			wireIntLen, // delegator rewards typeID
 		gas.DBRead:  1, // get staking config
@@ -187,8 +187,8 @@ var (
 			wireLongLen + // balance
 			bls.SignatureLen + // proof of possession
 			wireIntLen, // message length
-		gas.DBRead:  5, // conversion owner + expiry lookup + sov lookup + subchainID/nodeID lookup + weight lookup
-		gas.DBWrite: 6, // write current staker + expiry + write weight diff + write pk diff + subchainID/nodeID lookup + weight lookup
+		gas.DBRead:  5, // conversion owner + expiry lookup + sov lookup + networkID/nodeID lookup + weight lookup
+		gas.DBWrite: 6, // write current staker + expiry + write weight diff + write pk diff + networkID/nodeID lookup + weight lookup
 		gas.Compute: intrinsicBLSPoPVerifyCompute,
 	}
 	IntrinsicSetL1ValidatorWeightTxComplexities = gas.Dimensions{
