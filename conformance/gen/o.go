@@ -114,8 +114,6 @@ func oTime(sec int64, nsec int64) time.Time { return time.Unix(sec, nsec).UTC() 
 // the staleness rule from the authorisation rule underneath it.
 func oFresh() time.Time { return time.Date(2400, 1, 1, 0, 0, 0, 0, time.UTC) }
 
-func oBytes(b byte, n int) []byte { return zBytes(b, n) }
-
 // ---------------------------------------------------------------------------
 // Building the wire.
 // ---------------------------------------------------------------------------
@@ -123,13 +121,13 @@ func oBytes(b byte, n int) []byte { return zBytes(b, n) }
 func oObservation(feed ids.ID, op ids.NodeID, ts time.Time, seed byte) *oraclevm.Observation {
 	obs := &oraclevm.Observation{
 		FeedID:     feed,
-		Value:      oBytes(seed, 8),
+		Value:      zBytes(seed, 8),
 		Timestamp:  ts,
 		OperatorID: op,
 		Scheme:     1, // ML-DSA-65: the only scheme a strict-PQ O-chain admits
-		Signature:  oBytes(seed+1, 16),
+		Signature:  zBytes(seed+1, 16),
 	}
-	copy(obs.SourceMeta[:], oBytes(seed+2, 32))
+	copy(obs.SourceMeta[:], zBytes(seed+2, 32))
 	return obs
 }
 
@@ -137,7 +135,7 @@ func oAggregated(feed ids.ID, epoch uint64, seed byte) *oraclevm.AggregatedValue
 	return &oraclevm.AggregatedValue{
 		FeedID:       feed,
 		Epoch:        epoch,
-		Value:        oBytes(seed, 8),
+		Value:        zBytes(seed, 8),
 		Timestamp:    oTime(2000, 0),
 		Observations: 3,
 	}
@@ -430,14 +428,14 @@ func oAttestation(seed byte, value, proof, cert int) *artifacts.OracleAttestatio
 		DomainID_: id(0x0A),
 		FeedID:    oFeed(),
 		Epoch:     7,
-		Value:     oBytes(seed, value),
-		AggProof:  oBytes(seed+1, proof),
-		QuorumCert: oBytes(seed+2, cert),
+		Value:     zBytes(seed, value),
+		AggProof:  zBytes(seed+1, proof),
+		QuorumCert: zBytes(seed+2, cert),
 		ValidFrom: oTime(1000, 0),
 		ValidTo:   oTime(2000, 0),
 	}
-	copy(a.ValueCommitment[:], oBytes(seed+3, 32))
-	copy(a.PolicyHash[:], oBytes(seed+4, 32))
+	copy(a.ValueCommitment[:], zBytes(seed+3, 32))
+	copy(a.PolicyHash[:], zBytes(seed+4, 32))
 	return a
 }
 
@@ -454,8 +452,8 @@ func oZeroCommitted() *artifacts.OracleAttestation {
 // non-zero lengths both are written, and with zero lengths neither is.
 func oProved(seed byte, proof, cert int) *oraclevm.AggregatedValue {
 	a := oAggregated(oFeed(), 2, seed)
-	a.AggProof = oBytes(seed+1, proof)
-	a.QuorumCert = oBytes(seed+2, cert)
+	a.AggProof = zBytes(seed+1, proof)
+	a.QuorumCert = zBytes(seed+2, cert)
 	return a
 }
 
@@ -469,7 +467,7 @@ func oRichFeed() *oraclevm.Feed {
 	f.UpdateFreq = 1500 * time.Millisecond
 	f.Operators = []ids.NodeID{oOperator(), nodeID(2)}
 	f.Metadata = map[string]string{"z": "last", "a": "first", "m": "middle"}
-	copy(f.PolicyHash[:], oBytes(0x80, 32))
+	copy(f.PolicyHash[:], zBytes(0x80, 32))
 	return f
 }
 
@@ -600,13 +598,13 @@ func oRequest(kind oraclevm.RequestKind, execs []ids.NodeID) *oraclevm.OracleReq
 		Step:           0,
 		Retry:          0,
 		Kind:           kind,
-		Target:         oBytes(0x21, 8),
+		Target:         zBytes(0x21, 8),
 		DeadlineHeight: 100,
 		Executors:      execs,
 		CreatedAt:      oTime(1000, 0),
 	}
-	copy(req.PayloadHash[:], oBytes(0x22, 32))
-	copy(req.SchemaHash[:], oBytes(0x23, 32))
+	copy(req.PayloadHash[:], zBytes(0x22, 32))
+	copy(req.SchemaHash[:], zBytes(0x23, 32))
 	req.RequestID = oracle.ComputeRequestID(req.ServiceID, req.SessionID, req.TxID, req.Step, req.Retry)
 	return req
 }
@@ -618,11 +616,11 @@ func oRecord(req *oraclevm.OracleRequest, exec ids.NodeID, ts uint64, seed byte)
 		Timestamp:   ts,
 		Endpoint:    "https://feed.invalid/v1/price",
 		ResultCode:  200,
-		ExternalRef: oBytes(seed, 8),
+		ExternalRef: zBytes(seed, 8),
 		Scheme:      1,
-		Signature:   oBytes(seed+1, 16),
+		Signature:   zBytes(seed+1, 16),
 	}
-	copy(r.BodyHash[:], oBytes(seed+2, 32))
+	copy(r.BodyHash[:], zBytes(seed+2, 32))
 	return r
 }
 
@@ -698,12 +696,12 @@ func oCommitVectors() []Vector {
 		vec("O_COMMIT_OTHER_CODE", "O", "commit",
 			run(other(func(r *oraclevm.OracleRecord) { r.ResultCode = 404 }))),
 		vec("O_COMMIT_OTHER_REF", "O", "commit",
-			run(other(func(r *oraclevm.OracleRecord) { r.ExternalRef = oBytes(0x51, 8) }))),
+			run(other(func(r *oraclevm.OracleRecord) { r.ExternalRef = zBytes(0x51, 8) }))),
 		// The signature is NOT in the leaf. Two records that differ only there
 		// commit to one root, which is the chain's answer and has to be every
 		// implementation's.
 		vec("O_COMMIT_OTHER_SIGNATURE", "O", "commit",
-			run(other(func(r *oraclevm.OracleRecord) { r.Signature = oBytes(0x99, 16) }))),
+			run(other(func(r *oraclevm.OracleRecord) { r.Signature = zBytes(0x99, 16) }))),
 		vec("O_COMMIT_NO_RECORDS", "O", "commit", run()),
 		vec("O_COMMIT_UNAUTHORIZED", "O", "commit", run(unauth)),
 		vec("O_COMMIT_NOT_JSON", "O", "commit", []byte("[]")),
