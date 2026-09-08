@@ -3957,7 +3957,7 @@ func (b *blockHandler) GetContext(ctx context.Context, nodeID ids.NodeID, reques
 		// to keep oldest-first.
 		var certBytes []byte
 		if b.engine != nil {
-			certBytes, _ = b.engine.CertForBlock(blk.ID())
+			certBytes, _ = b.engine.CertForBlock(blk)
 		}
 		entry := encodeCatchupEntry(blk.Bytes(), certBytes)
 

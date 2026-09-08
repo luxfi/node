@@ -232,8 +232,8 @@ func TestValidatorStakeSource_HeightPinned(t *testing.T) {
 	if w := src.Weight(n0, 10); w != 70 {
 		t.Fatalf("Weight(n0, h=10) = %d, want 70", w)
 	}
-	if total := src.TotalStake(10); total != 100 {
-		t.Fatalf("TotalStake(h=10) = %d, want 100", total)
+	if total := src.SignerStake(10); total != 100 {
+		t.Fatalf("SignerStake(h=10) = %d, want 100", total)
 	}
 	// n2 is NOT in the height-10 set → 0 at h=10, but 50 at h=11. The tally is
 	// height-pinned, not current-map.
@@ -243,8 +243,8 @@ func TestValidatorStakeSource_HeightPinned(t *testing.T) {
 	if w := src.Weight(n2, 11); w != 50 {
 		t.Fatalf("Weight(n2, h=11) = %d, want 50", w)
 	}
-	if total := src.TotalStake(11); total != 150 {
-		t.Fatalf("TotalStake(h=11) = %d, want 150", total)
+	if total := src.SignerStake(11); total != 150 {
+		t.Fatalf("SignerStake(h=11) = %d, want 150", total)
 	}
 
 	// Unknown node at a known height → 0 (cannot inflate the numerator).
@@ -253,7 +253,7 @@ func TestValidatorStakeSource_HeightPinned(t *testing.T) {
 	}
 	// nil state → fail-soft zeros.
 	nilSrc := &validatorStakeSource{state: nil, networkID: netID}
-	if nilSrc.Weight(n0, 10) != 0 || nilSrc.TotalStake(10) != 0 {
+	if nilSrc.Weight(n0, 10) != 0 || nilSrc.SignerStake(10) != 0 {
 		t.Fatal("nil state must yield zero weight and total")
 	}
 }
@@ -289,5 +289,41 @@ func TestHashValidatorSet_ByteStability(t *testing.T) {
 	}
 	if validators.SetRoot(map[ids.NodeID]*validators.GetValidatorOutput{}) != ids.Empty {
 		t.Fatal("empty set must commit to ids.Empty")
+	}
+}
+
+// TestValidatorStakeSource_KeylessIsCarriedNotSigning pins the one distinction
+// the two stake numbers exist for: a member holding no key is stake the chain
+// CARRIES and stake that can never SIGN.
+//
+// Counting it in the signing denominator raises a bar no quorum can clear — the
+// chain would stop certifying and every node would be individually correct
+// about it. Leaving it out of the carried total hides the opposite failure: a
+// set whose signable stake has fallen to a sliver of what it holds still
+// certifies at two thirds of the sliver, quietly. Both numbers, or neither
+// failure is visible.
+func TestValidatorStakeSource_KeylessIsCarriedNotSigning(t *testing.T) {
+	netID := ids.GenerateTestID()
+	keyed, keyless := ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
+
+	state := stateWithHistory(netID, map[uint64][]vdr{
+		7: {{keyed, []byte("pk"), 60}, {keyless, nil, 40}},
+	})
+	src := newValidatorStakeSource(state, netID)
+
+	if got := src.SignerStake(7); got != 60 {
+		t.Fatalf("SignerStake = %d, want 60 — the keyless 40 cannot sign", got)
+	}
+	if got := src.CarriedStake(7); got != 100 {
+		t.Fatalf("CarriedStake = %d, want 100 — the chain carries both", got)
+	}
+	if got := src.SignerCount(7); got != 1 {
+		t.Fatalf("SignerCount = %d, want 1", got)
+	}
+	if src.Weight(keyless, 7) != 40 {
+		t.Fatal("a keyless member still has the weight it was registered with")
+	}
+	if src.CarriedStake(7) < src.SignerStake(7) {
+		t.Fatal("carried is never less than signing")
 	}
 }

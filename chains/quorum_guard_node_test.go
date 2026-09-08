@@ -57,7 +57,7 @@ func TestGetValidatorState_NoopIsEmptyAtEveryHeight(t *testing.T) {
 	root := newValidatorSetRootSource(noop, netID)
 
 	for _, h := range []uint64{0, 1, 7, 1_000, 10_000_000} {
-		if total := stake.TotalStake(h); total != 0 {
+		if total := stake.SignerStake(h); total != 0 {
 			t.Fatalf("no-op State must report zero total stake at height %d, got %d", h, total)
 		}
 		if r := root.ValidatorSetRoot(h); r != ids.Empty {
@@ -92,7 +92,7 @@ func TestGetValidatorState_LiveStateReadsSet(t *testing.T) {
 	stake := newValidatorStakeSource(got, netID)
 	root := newValidatorSetRootSource(got, netID)
 
-	if total := stake.TotalStake(H); total != 100 {
+	if total := stake.SignerStake(H); total != 100 {
 		t.Fatalf("live State must report total stake 100 at the epoch, got %d", total)
 	}
 	if w := stake.Weight(n2, H); w != 40 {
@@ -102,7 +102,7 @@ func TestGetValidatorState_LiveStateReadsSet(t *testing.T) {
 		t.Fatal("live State must commit to a NON-Empty set-root at the epoch")
 	}
 	// A different height (no set) is still Empty/zero — the read is height-pinned.
-	if stake.TotalStake(H+1) != 0 || root.ValidatorSetRoot(H+1) != ids.Empty {
+	if stake.SignerStake(H+1) != 0 || root.ValidatorSetRoot(H+1) != ids.Empty {
 		t.Fatal("live State read must be height-pinned (empty at a height with no set)")
 	}
 }

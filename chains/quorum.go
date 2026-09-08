@@ -406,10 +406,27 @@ func (s *validatorStakeSource) Weight(nodeID ids.NodeID, height uint64) uint64 {
 	return out.Light
 }
 
-// TotalStake implements consensuschain.StakeSource. Total active stake of the set
-// IN FORCE AT height (the denominator of the ⅔ predicate), measured at the same
-// epoch as Weight and the set-root.
-func (s *validatorStakeSource) TotalStake(height uint64) uint64 {
+// SignerStake implements consensuschain.StakeSource. The stake of the set IN
+// FORCE AT height that can actually SIGN — a member holding no key is left out,
+// because its stake can never reach the numerator and counting it in the
+// denominator only raises a bar no quorum could then clear.
+func (s *validatorStakeSource) SignerStake(height uint64) uint64 {
+	var total uint64
+	for _, out := range validatorSetAtHeight(s.state, s.networkID, height) {
+		if out != nil && len(out.PublicKey) > 0 {
+			total += out.Light
+		}
+	}
+	return total
+}
+
+// CarriedStake implements consensuschain.StakeSource. The stake the chain
+// CARRIES at height: every member, keyed or not. No floor is read against it,
+// and none may be — it exists so the two numbers can be compared. A chain whose
+// signable stake has fallen to a sliver of what it carries still certifies at
+// two thirds of the sliver, correctly and invisibly; reporting both is what
+// lets that be seen before it is an incident.
+func (s *validatorStakeSource) CarriedStake(height uint64) uint64 {
 	var total uint64
 	for _, out := range validatorSetAtHeight(s.state, s.networkID, height) {
 		if out != nil {
@@ -419,14 +436,20 @@ func (s *validatorStakeSource) TotalStake(height uint64) uint64 {
 	return total
 }
 
-// ValidatorCount implements consensuschain.StakeSource. The number of DISTINCT
-// validators in the set IN FORCE AT height — the round-scoped view-change's BFT
+// SignerCount implements consensuschain.StakeSource. The number of DISTINCT
+// validators in the set IN FORCE AT height that can sign — the round-scoped view-change's BFT
 // committee size (it sizes its POL/precommit quorum to bftAlpha over this count,
 // NOT the oversized sample K). Read from the SAME height-indexed set as
-// Weight/TotalStake so every node computes the identical committee and the
+// Weight/SignerStake so every node computes the identical committee and the
 // count-quorum matches the ⅔-by-stake set exactly.
-func (s *validatorStakeSource) ValidatorCount(height uint64) int {
-	return len(validatorSetAtHeight(s.state, s.networkID, height))
+func (s *validatorStakeSource) SignerCount(height uint64) int {
+	n := 0
+	for _, out := range validatorSetAtHeight(s.state, s.networkID, height) {
+		if out != nil && len(out.PublicKey) > 0 {
+			n++
+		}
+	}
+	return n
 }
 
 var _ consensuschain.StakeSource = (*validatorStakeSource)(nil)

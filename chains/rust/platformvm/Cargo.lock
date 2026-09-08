@@ -1846,6 +1846,7 @@ dependencies = [
 [[package]]
 name = "lux-crypto-sys"
 version = "0.1.0"
+source = "git+ssh://git@github.com/lux-rs/sdk.git?tag=v0.1.1#49704723d1cdd2da4b841cb400f6336686292925"
 dependencies = [
  "thiserror",
 ]
@@ -1853,6 +1854,7 @@ dependencies = [
 [[package]]
 name = "lux-evm"
 version = "0.1.0"
+source = "git+ssh://git@github.com/lux-rs/evm.git?tag=v0.1.0#ff3f1a78b316bcf70d5de87a609a06a1545372c0"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 2.4.1",
@@ -1916,6 +1918,7 @@ dependencies = [
 [[package]]
 name = "lux-pq"
 version = "0.1.0"
+source = "git+ssh://git@github.com/lux-rs/sdk.git?tag=v0.1.1#49704723d1cdd2da4b841cb400f6336686292925"
 dependencies = [
  "lux-crypto-sys",
  "thiserror",
