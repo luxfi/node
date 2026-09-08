@@ -174,11 +174,15 @@ impl std::fmt::Display for Row {
 fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vector) -> Row {
     let who = name(&v.address);
     let call = inputs(v);
-    // Whether a refusal here has a charge that can be reported. A Lux module
-    // splits price from body the way Go's does, so it knows what a call cost
-    // even when it refused; revm computes the price inside the work and an
-    // error carries none. Asked before the run, because the run borrows.
-    let priced = precompiles.module(&v.address).is_some();
+    // Whether a refusal here has a charge that can be reported. There are two
+    // ways this call can come back refused and only one of them left a charge
+    // behind. The profile refuses AFTER the precompile ran and paid, which is
+    // where Go's deduction lands too; revm's own refusals compute the price
+    // inside the work and record none. Asked before the run, because the run
+    // borrows.
+    let priced = precompiles
+        .op(&v.address)
+        .is_some_and(|op| precompiles.profile().forbids(op));
 
     match PrecompileProvider::<CTX>::run(precompiles, context, &call) {
         // Nothing at this address. revm says so by declining to produce a
