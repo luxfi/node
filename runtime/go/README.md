@@ -37,7 +37,7 @@ in its dependency graph — proven, not assumed:
 
 ```
 $ cd ~/work/lux/chains && GOWORK=off go list -deps ./evm/...   # 1057 packages
-$ … | grep -E 'luxfi/node|lux-private'                            # zero matches
+$ … | grep -E 'luxfi/node'                            # zero matches
 $ GOWORK=off go build ./evm                                    # exit 0, 68MB ELF
 ```
 

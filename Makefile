@@ -59,8 +59,8 @@ luxd-go:
 	GOWORK=off CGO_ENABLED=0 go build -trimpath -o $(BIN)/luxd-go ./cmd/luxd
 	@test -x $(BIN)/luxd-go
 	@leaked="$$(GOWORK=off go list -deps ./cmd/luxd 2>/dev/null | grep -E 'lux-private' || true)"; \
-	if [ -n "$$leaked" ]; then echo "FAIL: lux-private in the closure:" >&2; echo "$$leaked" >&2; exit 1; fi
-	@echo "    confirmed clean: 0 lux-private in the dependency graph"
+	if [ -n "$$leaked" ]; then echo "FAIL: a forbidden package in the closure:" >&2; echo "$$leaked" >&2; exit 1; fi
+	@echo "    confirmed clean: 0 forbidden in the dependency graph"
 	@ls -lh $(BIN)/luxd-go
 
 # rust: lux-rs/node — a real node host (mesh + BLS quorum finality + revm),

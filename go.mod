@@ -5,7 +5,6 @@
 // has not replaced anything. Rust and C++ live beside it in this same repo and
 // are measured against it by the differential.
 //
-// Nothing here depends on lux-private. That is checked at build time, not assumed.
 module github.com/luxfi/node
 
 // - Changes to the minimum golang version must also be replicated in:
