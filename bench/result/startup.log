@@ -1,0 +1,11 @@
+=== begins load=44.40 20:12:19
+node round1 load=44.40 listening=36.590519135s healthy_at_listen+30s=False
+node round2 load=58.59 listening=49.560601709s healthy_at_listen+30s=False
+node round3 load=60.05 listening=.878162592s healthy_at_listen+30s=False
+v1 round1 load=58.04 listening=31.090537423s healthy_at_listen+30s=False
+
+# upstream, same method, measured 20:03-20:07 (the run that also produced the false-green):
+ava round1 load=35.78 listening=10.591632373s healthy=40.649307491s chains=0
+ava round2 load=50.03 listening=21.109860240s healthy=51.089317004s chains=0
+ava round3 load=62.97 listening=23.575254226s healthy=52.260264037s chains=0
+ava round3 load=62.97 listening=23.575254226s healthy=52.260264037s chains=
