@@ -21,8 +21,10 @@
 #pragma once
 
 #include <cctype>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -188,6 +190,57 @@ inline bool read(const char* path, const char* who, std::vector<Vector>& out) {
         out.push_back(Vector{f[1], f[2], f[3], f[4]});
     }
     return true;
+}
+
+// The optional repeat count, from the `<vectors.tsv> [repeats]` every
+// evaluator takes. Absent it is 0: answer the corpus once and say nothing
+// about how long it took, which is what the differential asks for and what it
+// has always got. False means the arguments were not that shape.
+inline bool repeats(int argc, char** argv, const char* who, long& out) {
+    out = 0;
+    bool ok = argc == 2 || argc == 3;
+    if (ok && argc == 3) {
+        char* end = nullptr;
+        out = std::strtol(argv[2], &end, 10);
+        ok = end != argv[2] && *end == '\0' && out >= 1;
+    }
+    if (!ok) std::fprintf(stderr, "usage: %s <vectors.tsv> [repeats]\n", who);
+    return ok;
+}
+
+// Answer one chain's vectors, `repeats` times over.
+//
+// The corpus is read before this is called and the answers are printed after
+// the clock stops, so what the clock covers is parsing, verification and
+// execution and nothing else. The answers are kept rather than dropped, so a
+// round cannot be optimised away, and they are printed once however many
+// rounds ran: the runner's input does not change because someone asked for a
+// time. The timing line goes to stderr, where the runner does not read.
+//
+//	B <impl> <vectors> <repeats> <seconds>
+template <class Answer>
+inline void answer(const std::vector<Vector>& corpus, const char* chain, const char* name,
+                   long repeats, Answer one) {
+    // The other chains' vectors are theirs to answer, and selecting them here
+    // rather than inside the loop keeps the time about this chain.
+    std::vector<const Vector*> mine;
+    for (const Vector& v : corpus)
+        if (v.chain == chain) mine.push_back(&v);
+
+    std::vector<Row> rows;
+    rows.reserve(mine.size());
+    const auto begun = std::chrono::steady_clock::now();
+    for (long round = 0; round < (repeats > 0 ? repeats : 1); ++round) {
+        rows.clear();
+        for (const Vector* v : mine) rows.push_back(one(*v));
+    }
+    const double elapsed =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() - begun).count();
+
+    for (const Row& r : rows) print(r);
+    if (repeats > 0) {
+        std::fprintf(stderr, "B\t%s\t%zu\t%ld\t%.6f\n", name, mine.size(), repeats, elapsed);
+    }
 }
 
 }  // namespace lux::conformance

@@ -7,9 +7,11 @@
 //
 //	gen emit <dir>              build the corpus from the Go chains and write
 //	                            <dir>/vectors.tsv and <dir>/expected.tsv
-//	gen eval <vectors> [reps]   read a corpus and print this implementation's
+//	gen eval [-chain L] <vectors> [reps]
+//	                            read a corpus and print this implementation's
 //	                            verdicts; with a repeat count, do the same work
-//	                            that many times and time it
+//	                            that many times and time it, and with a chain
+//	                            letter answer only that chain
 //
 // `emit` writes expected.tsv by running `eval` over the vectors it just built,
 // so the recorded expectations are not a second opinion typed beside the
@@ -46,11 +48,20 @@ func main() {
 			os.Exit(1)
 		}
 	case "eval":
-		path := "../corpus/vectors.tsv"
-		if len(os.Args) > 2 {
-			path = os.Args[2]
+		// The differential asks this one program for every chain, because it
+		// is the reference for all of them. The benchmark asks for one chain
+		// at a time: it times this against ports that are one chain each, and
+		// a whole corpus is not a time to put beside a sixth of one.
+		args := os.Args[2:]
+		chain := ""
+		if len(args) > 1 && args[0] == "-chain" {
+			chain, args = args[1], args[2:]
 		}
-		if err := eval(path, repeatsArg(3)); err != nil {
+		path := "../corpus/vectors.tsv"
+		if len(args) > 0 {
+			path = args[0]
+		}
+		if err := eval(path, chain, repeatsArg(args, 1)); err != nil {
 			fmt.Fprintln(os.Stderr, "eval:", err)
 			os.Exit(1)
 		}
@@ -59,22 +70,34 @@ func main() {
 	}
 }
 
-// repeatsArg reads the optional repeat count at os.Args[i]. Absent, it is 0:
+// repeatsArg reads the optional repeat count at args[i]. Absent, it is 0:
 // evaluate the corpus once and say nothing about how long it took, which is
 // what the differential asks for and what it has always got.
-func repeatsArg(i int) int {
-	if len(os.Args) <= i {
+func repeatsArg(args []string, i int) int {
+	if len(args) <= i {
 		return 0
 	}
-	n, err := strconv.Atoi(os.Args[i])
+	n, err := strconv.Atoi(args[i])
 	if err != nil || n < 1 {
 		usage()
 	}
 	return n
 }
 
+// What each chain letter names, in the words the ports call themselves on
+// their own timing line — so a row for one chain in three languages reads as
+// three rows about one thing.
+var chainNames = map[string]string{
+	"P": "platformvm",
+	"X": "xvm",
+	"Q": "quantumvm",
+	"Z": "zkvm",
+	"D": "dexvm",
+	"F": "fhevm",
+}
+
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: gen emit <corpus-dir> | gen eval <vectors.tsv> [repeats]")
+	fmt.Fprintln(os.Stderr, "usage: gen emit <corpus-dir> | gen eval [-chain P|X|Q|Z|D|F] <vectors.tsv> [repeats]")
 	os.Exit(2)
 }
 
@@ -111,7 +134,9 @@ func emit(dir string) error {
 	return nil
 }
 
-// eval prints this implementation's verdict for every vector in the corpus.
+// eval prints this implementation's verdict for every vector in the corpus,
+// or — given a chain letter — for that chain's vectors and no others. The
+// filter runs before the clock starts, so what is timed is the answering.
 //
 // A repeat count asks for the same work to be done that many times and for the
 // elapsed time of THAT WORK to be reported: the corpus is read before the
@@ -124,7 +149,7 @@ func emit(dir string) error {
 // The timing line goes to stderr, where the runner does not read:
 //
 //	B <impl> <vectors> <repeats> <seconds>
-func eval(path string, repeats int) error {
+func eval(path, chain string, repeats int) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return err
@@ -134,6 +159,27 @@ func eval(path string, repeats int) error {
 	vectors, err := readVectors(f)
 	if err != nil {
 		return err
+	}
+
+	name := "go"
+	if chain != "" {
+		vm, ok := chainNames[chain]
+		if !ok {
+			return fmt.Errorf("no chain is filed under %q", chain)
+		}
+		name = "go/" + vm
+		kept := vectors[:0]
+		for _, v := range vectors {
+			if v.Chain == chain {
+				kept = append(kept, v)
+			}
+		}
+		// A chain the corpus has nothing for would time an empty loop and
+		// report it as a speed.
+		if len(kept) == 0 {
+			return fmt.Errorf("the corpus holds no %s vector", chain)
+		}
+		vectors = kept
 	}
 
 	rounds := repeats
@@ -157,7 +203,7 @@ func eval(path string, repeats int) error {
 		return err
 	}
 	if repeats > 0 {
-		fmt.Fprintf(os.Stderr, "B\tgo\t%d\t%d\t%.6f\n", len(vectors), repeats, elapsed.Seconds())
+		fmt.Fprintf(os.Stderr, "B\t%s\t%d\t%d\t%.6f\n", name, len(vectors), repeats, elapsed.Seconds())
 	}
 	return nil
 }

@@ -16,7 +16,7 @@
 // here would be one a CRQC could mint shielded value on, and the row would
 // say so.
 //
-// Usage: zkvm_conformance <vectors.tsv>
+// Usage: zkvm_conformance <vectors.tsv> [repeats]
 
 #include "lux/conformance/corpus.hpp"
 
@@ -226,29 +226,17 @@ conf::Row eval_seam(const std::string& id) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::fprintf(stderr, "usage: zkvm_conformance <vectors.tsv>\n");
-        return 2;
-    }
+    long repeats = 0;
+    if (!conf::repeats(argc, argv, "zkvm_conformance", repeats)) return 2;
     std::vector<conf::Vector> vectors;
     if (!conf::read(argv[1], "zkvm_conformance", vectors)) return 1;
 
-    for (const auto& v : vectors) {
-        // This evaluator is the Z-chain; the other chains' vectors are theirs
-        // to answer.
-        if (v.chain != "Z") continue;
-
-        if (v.op == "block") {
-            conf::print(eval_block(v.id, v.wire));
-        } else if (v.op == "seam") {
-            conf::print(eval_seam(v.id));
-        } else if (v.op == "identity") {
-            conf::print(conf::identity(v.id, kChainByte, kNetworkID));
-        } else {
-            std::fprintf(stderr, "zkvm_conformance: unknown op %s on %s\n", v.op.c_str(),
-                         v.id.c_str());
-            return 1;
-        }
-    }
+    conf::answer(vectors, "Z", "cpp/zkvm", repeats, [](const conf::Vector& v) {
+        if (v.op == "block") return eval_block(v.id, v.wire);
+        if (v.op == "seam") return eval_seam(v.id);
+        if (v.op == "identity") return conf::identity(v.id, kChainByte, kNetworkID);
+        std::fprintf(stderr, "zkvm_conformance: unknown op %s on %s\n", v.op.c_str(), v.id.c_str());
+        std::exit(1);
+    });
     return 0;
 }
