@@ -33,6 +33,19 @@ luxd --chains=D,B,M      # by letter or alias; an unknown name is refused at boo
 Without it, D, B and M decline even under `--track-all-chains`. A chain becomes
 permissionless by dropping `Consent` from its row in `node/vms.go`.
 
+## What is not here
+
+The D-Chain matcher, the F-Chain's FHE implementation and the GPU kernels are in
+`luxfi/compute`, which is private. Those three are ours; the rest of this
+repository forks public work and anyone building on this network has to be able
+to read and run it, so the two do not share a visibility.
+
+`chains/{rust,cpp}/{dexvm,fhevm}` and `gpu/` are shims naming that checkout —
+the same arrangement `runtime/rust` and `runtime/cpp` already use. The
+differential builds them from `$(COMPUTE)`, so the rows below still measure
+them; they are simply not stored here. The pure-Go DEX in `luxfi/dex` is the
+public one and is unaffected.
+
 ## The differentials
 
 The point of the repository. One corpus, three implementations, a runner that
@@ -71,8 +84,11 @@ a claim.
 | F — fhevm | 264 | 3,497 | 15,834 | 13,208 |
 
 Source lines, non-test. All six exist in all three languages, and `make chains`
-agrees on every compared field of all 725 vectors with no implementation
-silent.
+agrees on every field of all 725 vectors, each answered by at least two running
+implementations — a claim worth stating carefully, because until the runner was
+fixed a port that answered SKIPPED for every field produced a report byte-identical
+to an honest one. It now reports what each port declined: cpp 13 of 3625 fields,
+rust 12 of 3625.
 
 Read the line counts as shape, not as progress: a port is larger than its
 reference where the reference leans on a runtime the port has to state for
@@ -121,7 +137,7 @@ hand-written implementations that preceded them are deleted.
 ## Build
 
 ```sh
-make luxd RUNTIME=go      # bin/luxd-go    — chains/evm, the C-Chain VM plugin
+make luxd RUNTIME=go      # bin/luxd-go    — ./cmd/luxd, the node itself
 make luxd RUNTIME=rust    # bin/luxd-rust  — lux-rs/node, a full host
 make luxd RUNTIME=cpp     # bin/luxd-cpp   — lux-cpp/node, a full host
 make all                  # all three plus gpu; nonzero exit unless 3/3
