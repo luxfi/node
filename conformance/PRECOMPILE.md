@@ -70,12 +70,20 @@ comparing. On `FAILED` the charge stands: a precompile that read the input and
 refused it did the work of reading it.
 
 An implementation that cannot know the charge writes `SKIPPED` rather than a
-number. revm computes a precompile's price inside the function that does its
-work, so a call that returned an error recorded no charge and none can be
-recovered; Go and the C++ tree separate price from work and do report it.
-Zero would be an answer and a wrong one, since the call was not free. The
-runner counts a `SKIPPED` field, prints it under NOT COMPARED, and never
-scores it as agreement.
+number, since zero would be an answer and a wrong one. The runner counts a
+`SKIPPED` field, prints it under DECLINED, and never scores it as agreement —
+a run can still pass, because two other implementations answered, which is
+exactly why a column going quiet has to be printed rather than inferred.
+
+Little reaches it now. revm computes a precompile's price inside the function
+that does the work, so its error carries no charge away, where Go and the C++
+tree separate price from work and report one. But the charge is recoverable
+without either of them: a price is the smallest offer a precompile accepts, so
+the Rust evaluator bisects the offer until the answer stops being out of gas.
+That reads the price off the implementation under test rather than off a copy
+of revm's numbers — which revm keeps private in any case. What is left for
+`SKIPPED` is a precompile that cannot run at all, where no offer produces an
+answer and there is nothing to measure.
 
 The note is not compared. An error string is a fact about a codebase, not
 about a precompile, so it travels where it explains without being weighed.
