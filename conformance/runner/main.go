@@ -34,9 +34,9 @@ import (
 var compared []string
 
 // notEvaluated marks a field an implementation declined to answer. It is never
-// a pass: it is counted, reported, and excluded from comparison, because
-// comparing an answer against a non-answer would let a chain that evaluates
-// nothing agree with everyone.
+// a pass: it is counted, reported, excluded from comparison, and it fails the
+// run, because comparing an answer against a non-answer would let a chain that
+// evaluates nothing agree with everyone.
 const notEvaluated = "SKIPPED"
 
 const absent = "" // the implementation printed no row for this vector at all
@@ -50,6 +50,13 @@ type evaluator struct {
 	name string
 	cmd  []string
 	rows map[string]result
+
+	// A recording is what one implementation said when the corpus was built,
+	// read back from a file. It is compared like any other voice, so a
+	// reference that has changed its mind since is a disagreement. It does
+	// NOT count toward the two answers a field needs, because it is not a
+	// second opinion: it is the first one, written down.
+	recorded bool
 }
 
 func main() {
@@ -112,11 +119,14 @@ func main() {
 		}
 	}
 
-	// The corpus's recorded answers join the comparison as one more voice, so
-	// that a reference that changed its mind since the corpus was generated is
-	// a disagreement rather than a silent new normal.
+	// The corpus's recorded answers join the comparison so that a reference
+	// that changed its mind since the corpus was generated is a disagreement
+	// rather than a silent new normal. They are the Go evaluator's own output,
+	// written down, so they are marked as a recording: they can disagree with
+	// anyone, and they cannot stand in for the second implementation a field
+	// needs before it counts as compared.
 	if *expected != "" {
-		e := &evaluator{name: "corpus", rows: map[string]result{}}
+		e := &evaluator{name: "corpus", rows: map[string]result{}, recorded: true}
 		if err := e.load(*expected); err != nil {
 			fmt.Fprintln(os.Stderr, "runner:", err)
 			os.Exit(1)
@@ -232,6 +242,7 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 	var bad []disagreement
 	uncovered := map[string][]string{} // vector -> fields nobody could compare
 	silent := map[string][]string{}    // implementation -> vectors it never answered
+	declined := map[string]int{}       // implementation -> fields it printed SKIPPED for
 	answered := map[string]int{}
 
 	// An implementation that prints no row for a vector has not passed it. The
@@ -252,7 +263,10 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 		rowDisagrees := false
 		for fi, field := range compared {
 			// Collect the implementations that actually answered this field.
-			type said struct{ name, value, note string }
+			type said struct {
+				name, value, note string
+				recorded          bool
+			}
 			var says []said
 			for _, e := range evals {
 				r, ok := e.rows[id]
@@ -261,11 +275,20 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 				}
 				v := r.fields[fi]
 				if v == notEvaluated || v == absent {
+					if v == notEvaluated {
+						declined[e.name]++
+					}
 					continue
 				}
-				says = append(says, said{e.name, v, r.note})
+				says = append(says, said{e.name, v, r.note, e.recorded})
 			}
-			if len(says) < 2 {
+			running := 0
+			for _, s := range says {
+				if !s.recorded {
+					running++
+				}
+			}
+			if running < 2 {
 				uncovered[id] = append(uncovered[id], field)
 				continue
 			}
@@ -292,7 +315,7 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 
 	// What nobody could compare. Printed loudly, never counted as a pass.
 	if len(uncovered) > 0 {
-		fmt.Println("NOT COMPARED — fewer than two implementations answered:")
+		fmt.Println("NOT COMPARED — fewer than two running implementations answered:")
 		keys := make([]string, 0, len(uncovered))
 		for k := range uncovered {
 			keys = append(keys, k)
@@ -300,6 +323,22 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 		sort.Strings(keys)
 		for _, k := range keys {
 			fmt.Printf("  %-34s %s\n", k, strings.Join(uncovered[k], " "))
+		}
+		fmt.Println()
+	}
+
+	// What each implementation declined to answer. A field two others still
+	// answered is compared and the run can pass, but a column quietly shrinking
+	// is the thing a differential is built to notice, so it is always printed.
+	if len(declined) > 0 {
+		fmt.Println("DECLINED — printed SKIPPED rather than an answer:")
+		keys := make([]string, 0, len(declined))
+		for k := range declined {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			fmt.Printf("  %-6s %d of %d fields\n", k, declined[k], len(ids)*len(compared))
 		}
 		fmt.Println()
 	}
@@ -317,17 +356,16 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 		fmt.Println()
 	}
 
-	if len(bad) == 0 && len(silent) == 0 {
-		fmt.Printf("AGREED on every compared field of %d vectors.\n", len(ids))
-		fmt.Println()
-		fmt.Println("Read that with the NOT COMPARED list above: a field no two")
-		fmt.Println("implementations answered was not checked by anything here.")
+	if len(bad) == 0 && len(silent) == 0 && len(uncovered) == 0 {
+		fmt.Printf("AGREED on every field of %d vectors, each answered by at least two\n", len(ids))
+		fmt.Printf("running implementations.\n")
 		return
 	}
 
 	if len(bad) == 0 {
 		fmt.Printf("Every compared field of %d vectors agreed, but the run fails:\n", len(ids))
-		fmt.Println("silence is not agreement.")
+		fmt.Println("a field nothing compared, and an implementation that said nothing,")
+		fmt.Println("are not agreement.")
 		os.Exit(1)
 	}
 
