@@ -37,9 +37,21 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(FHEVM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../fhevm)
-if(NOT EXISTS ${FHEVM_DIR}/src/json.cpp)
-  message(FATAL_ERROR "oraclevm reads Go's JSON through ${FHEVM_DIR}/src/json.cpp, which is not there")
+# oraclevm compiles two of fhevm's sources directly. fhevm lives in the
+# compute repository; it is looked for beside this one first, so a tree that
+# still carries it in place keeps working, and FHEVM_DIR overrides both.
+if(NOT FHEVM_DIR)
+  foreach(candidate
+      ${CMAKE_CURRENT_SOURCE_DIR}/../fhevm
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../../../compute/chains/cpp/fhevm)
+    if(EXISTS ${candidate}/src/json.cpp)
+      set(FHEVM_DIR ${candidate})
+      break()
+    endif()
+  endforeach()
+endif()
+if(NOT FHEVM_DIR OR NOT EXISTS ${FHEVM_DIR}/src/json.cpp)
+  message(FATAL_ERROR "oraclevm reads Go's JSON through fhevm's src/json.cpp, which was not found beside this directory or in the compute repository; pass -DFHEVM_DIR=<path> to say where it is")
 endif()
 
 add_library(oraclevm STATIC

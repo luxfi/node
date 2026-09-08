@@ -123,7 +123,7 @@ txs::Tx a_transaction(std::uint8_t seq) {
     b.network_id = 96369;
     b.blockchain_id = id_of(0x20);
     b.outs = {TransferableOutput{id_of(0x10), 0,
-                                 TransferOutput{1'000'000 + seq, OutputOwners{0, 1, {short_of(0x30)}}}}};
+                                 TransferOutput{static_cast<std::uint64_t>(1'000'000 + seq), OutputOwners{0, 1, {short_of(0x30)}}}}};
     b.ins = {TransferableInput{UtxoId{id_of(0x60), seq}, id_of(0x10), 0,
                                TransferInput{1'000'042, {0}}}};
     return signed_free(txs::BaseTxUnsigned::create(b).value());
