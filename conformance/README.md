@@ -243,17 +243,26 @@ two answers is what let every port decline every field of every vector and still
 print `AGREED`. They are marked as a recording now: they may disagree with
 anyone, and they may not stand in for a second implementation.
 
-Today that is `exec` on the X-chain in C++ (13 fields) and `exec` on the
-Q-chain in Rust (12). The two sets are disjoint, so every one of those fields
-still has two implementations behind it. Go and Rust both run the X-chain's
-semantic pass and then its executor over an empty chain — the same arrangement
-the P-chain's vectors are judged under, for the reason above — so the field IS
-compared, and a Rust chain that skipped the semantic pass and answered `OK`
-where Go answers `LEDGER` fails the run on all five vectors. The C++ evaluator
-still declines; giving it the same two passes on its own empty chain is what
-closes the last voice. Until it does, the C++ Q-chain declining `exec` would
-take those twelve fields down to one implementation and fail the run — which is
-the point: the target should notice a voice leaving, not average over it.
+Nothing is declined today. The two that were — `exec` on the X-chain in C++ and
+`exec` on the Q-chain in Rust — asked for a funded UTXO set and a chain with a
+tip, and neither was a capability the port lacked. Both were an evaluator
+declining to stand up what its own crate already hands out.
+
+The X-chain's answer is the semantic pass and then the executor over an EMPTY
+chain, which is the arrangement the P-chain's vectors are judged under and for
+the reason above: a funded state would have to be built three times, and the
+differential would be measuring three state builders rather than three chains.
+All three evaluators run it now, each over a store of its own that holds
+nothing, and all three answer `LEDGER` — every X vector names an input no chain
+here holds. A port that skipped the semantic pass and answered `OK` fails the
+run on all thirteen.
+
+The Q-chain's answer is `Qvm::verify` against a chain stood up fresh for each
+vector over an in-memory store, seeded with the genesis its constructor writes.
+All three evaluators stand one up; the tip this field needs is a thing the chain
+makes, not a fixture the corpus has to carry. A port configured with stamp
+checking off — the one setting that matters here — answers `OK` where the other
+two answer `AUTH` and `UNSUPPORTED`, and fails the run on four fields.
 
 ### What `encoding/json` accepts
 
@@ -344,10 +353,11 @@ make chains-corpus    regenerate the corpus from the Go reference
 
 **`make chains` passes today.** 725 vectors, three running implementations —
 go, rust and cpp — plus the committed corpus as a recording of the first.
-Agreement on every field, every field answered by at least two of the three,
-nothing under NOT ANSWERED, and 25 of 3625 fields declined: `exec` on the
-X-chain in C++, `exec` on the Q-chain in Rust. Those two sets do not overlap,
-which is the only reason the run is green rather than short a voice.
+Agreement on every field, every field answered by all three, nothing under NOT
+ANSWERED and nothing under DECLINED. The two that used to decline — `exec` on
+the X-chain in C++ and `exec` on the Q-chain in Rust — answer it now, so the
+run is green on three voices rather than on two sets that happened not to
+overlap.
 
 The corpus is committed, so a reference that changed its mind shows up as a
 diff. `expected.tsv` — the Go chains' answers at generation time — also joins

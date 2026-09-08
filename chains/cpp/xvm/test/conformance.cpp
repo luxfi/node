@@ -19,14 +19,13 @@
 // because someone asked for a time. The timing line goes to stderr, where the
 // runner does not read: B <impl> <vectors> <repeats> <seconds>
 //
-// WHAT THIS EVALUATOR DOES NOT DO IS PART OF ITS TIME. eval_tx below stops
-// after the syntactic pass and answers SKIPPED for exec, where the Go and Rust
-// X-chains go on to verify semantically and then execute. A time measured here
-// is a time for parsing and syntax, and it is not comparable, work for work,
-// with the other two until this evaluator runs the same two passes.
+// It runs the same three passes the Go and Rust X-chains run — syntax, then the
+// chain's own agreement, then application — so a time measured here covers the
+// same work theirs does and the two are comparable round for round.
 
 #include "lux/xvm/block.hpp"
 #include "lux/xvm/executor.hpp"
+#include "lux/xvm/state.hpp"
 #include "lux/xvm/txs.hpp"
 #include "lux/xvm/vm.hpp"
 
@@ -54,7 +53,6 @@ constexpr const char* kLedger = "LEDGER";
 constexpr const char* kAuth = "AUTH";
 constexpr const char* kWarp = "WARP";
 constexpr const char* kUnsupported = "UNSUPPORTED";
-constexpr const char* kSkipped = "SKIPPED";
 constexpr const char* kInternal = "INTERNAL";
 
 Id id_of(std::uint8_t b) {
@@ -66,7 +64,23 @@ Id id_of(std::uint8_t b) {
 // The chain the corpus is built for. The X vectors are built fee-neutral —
 // inputs equal outputs — so the differential measures the chain's rules and not
 // three fee schedules. The Go and Rust evaluators are given the same.
+// A shared area that holds nothing.
+//
+// The empty half of an empty ledger: this chain has never been handed anything
+// by a peer, and saying so is the honest answer. The Go and Rust evaluators are
+// given the same. Nothing in the corpus reaches it — every X vector names an
+// input on THIS chain, and that lookup fails first — but a chain given no
+// shared area at all refuses an import for a different reason than a chain
+// given an empty one, and the three evaluators would then be answering three
+// different questions.
+struct EmptyPeer final : executor::SharedMemory {
+    executor::Result<std::vector<Bytes>> get(const Id&, const std::vector<Bytes>&) const override {
+        return std::unexpected(state::kErrNotFound);
+    }
+};
+
 executor::Backend backend() {
+    static EmptyPeer peer;
     executor::Backend b;
     b.config.tx_fee = 0;
     b.config.create_asset_tx_fee = 0;
@@ -76,6 +90,7 @@ executor::Backend backend() {
     b.bootstrapped = true;
     b.fxs.push_back(executor::ParsedFx{id_of(1), std::make_shared<fx::Secp256k1Fx>()});
     b.fx_index.set(wire::TypeKind::Secp256k1, 0);
+    b.shared_memory = &peer;
     return b;
 }
 
@@ -168,6 +183,34 @@ std::string classify(const std::string& raw) {
     return kSyntactic;
 }
 
+// Run the chain's own agreement and then the application, over a chain that
+// holds nothing, and report the verdict class.
+//
+// Both passes, in that order, because that is the order a block runs them in:
+// semantic verification asks whether the transaction is allowed, execution
+// applies it. A vector that passed the first and failed the second would be
+// hidden by running only one.
+//
+// An EMPTY chain, and deliberately — the same arrangement the Go and Rust
+// evaluators judge these vectors under, and the reason no funded UTXO set has
+// to be built three times. A funded state would make the differential measure
+// three state builders rather than three chains. What survives an empty chain
+// is the verdict CLASS: every X vector that reaches here names an input the
+// chain does not hold, and the three implementations must agree both that they
+// looked it up and that its absence is a LEDGER refusal.
+//
+// state::State default-constructs over a Memory of its own, so the chain each
+// vector meets is fresh and no vector can be answered differently because of
+// one that ran before it.
+std::pair<std::string, std::string> exec_tx(const executor::Backend& b, const txs::Tx& tx) {
+    state::State chain;
+    executor::SemanticVerifier sem(b, chain, tx);
+    if (auto r = tx.unsigned_tx->visit(sem); !r) return {classify(r.error()), r.error()};
+    executor::Executor apply(chain, tx);
+    if (auto r = tx.unsigned_tx->visit(apply); !r) return {classify(r.error()), r.error()};
+    return {kOk, "executed on the empty chain"};
+}
+
 Row eval_tx(const std::string& id, const std::string& wire) {
     Row r;
     r.id = id;
@@ -201,11 +244,9 @@ Row eval_tx(const std::string& id, const std::string& wire) {
         return r;
     }
     r.syntactic = kOk;
-    // The semantic pass needs a funded UTXO set and a shared-memory peer;
-    // neither is stood up here, so this layer is reported as not evaluated
-    // rather than as a pass.
-    r.exec = kSkipped;
-    r.note = "semantic verification not evaluated: needs a funded UTXO set";
+    auto [verdict, why] = exec_tx(b, *tx);
+    r.exec = verdict;
+    r.note = why;
     return r;
 }
 

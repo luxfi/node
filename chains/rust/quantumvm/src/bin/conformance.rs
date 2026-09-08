@@ -14,7 +14,9 @@
 //! row is a claim and this program has no claim to make about a P-chain
 //! transaction.
 
+use lux_quantumvm::config::Config;
 use lux_quantumvm::ids::{self, Id};
+use lux_quantumvm::vm::{Init, Qvm};
 use lux_quantumvm::wire;
 
 const NONE: &str = "-";
@@ -293,8 +295,7 @@ fn eval_block(id: &str, wire: &str) -> Row {
     // What can be decided from the block alone, in the order the chain's own
     // `verify` decides it: the block belongs to this chain and this network,
     // then it is not genesis, carries work, and fits on the wire. Whether it
-    // sits correctly on its parent needs a chain, which the corpus does not
-    // stand up.
+    // sits correctly on its parent needs a chain, which `accept` stands up.
     //
     // The binding comes first because it comes first in `Qvm::verify`, and
     // because the two questions are not the same one: a block of another chain
@@ -329,11 +330,40 @@ fn eval_block(id: &str, wire: &str) -> Row {
         }
         Ok(()) => {
             r.syntactic = OK.into();
-            // Past that boundary is the parent, and this evaluator does not
-            // stand up a chain to hold one.
-            r.exec = SKIPPED.into();
-            r.note = "acceptance is not evaluated: it needs a chain with a tip".into();
+            // Past that boundary is the parent, so the chain that holds one is
+            // stood up and asked. It costs a store with a genesis in it, which
+            // is a thing this crate hands out — the tip the answer needs is not
+            // a fixture the corpus has to carry.
+            match accept(&bytes) {
+                Ok(()) => {
+                    r.exec = OK.into();
+                    r.note = "verified against the seeded chain".into();
+                }
+                Err(why) => {
+                    r.exec = classify(&why).into();
+                    r.note = why;
+                }
+            }
         }
     }
     r
+}
+
+/// Whether the chain would build on this block.
+///
+/// A chain stood up FRESH for the block, over its own in-memory store, seeded
+/// with the genesis `Qvm::new` writes — so what refuses is the rule that
+/// refuses rather than a chain that happened to hold something another
+/// evaluator's did not. `Qvm::verify` is the whole of the question and reads
+/// the store without writing to it; the same arrangement the Go and C++
+/// evaluators answer this field from.
+fn accept(bytes: &[u8]) -> std::result::Result<(), String> {
+    let init = Init::memory("conformance", chain(), NETWORK);
+    // The chain's OWN defaults, asked for rather than assembled here. The one
+    // that matters is that stamps are checked at all: a chain configured with
+    // that off accepts an expired stamp, an unsupported parameter set and a
+    // duplicate transaction alike, and nothing downstream would catch it.
+    let vm = Qvm::new(Config::default(), init).map_err(|e| e.to_string())?;
+    let block = vm.parse(bytes).map_err(|e| e.to_string())?;
+    vm.verify(&block.id()).map_err(|e| e.to_string())
 }
