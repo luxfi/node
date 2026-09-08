@@ -209,6 +209,7 @@ func buildCorpus() []Vector {
 	v = append(v, zVectors()...)
 	v = append(v, fVectors()...)
 	v = append(v, dVectors()...)
+	v = append(v, oVectors()...)
 	v = append(v, seams()...)
 	v = append(v, malformations(pTxs)...)
 	v = append(v, malformations(pBlocks)...)
@@ -228,6 +229,7 @@ func buildCorpus() []Vector {
 	v = append(v, malformations(wellFormed(qVectors()))...)
 	v = append(v, malformations(wellFormed(zVectors()))...)
 	v = append(v, malformations(wellFormed(fVectors()))...)
+	v = append(v, malformations(wellFormed(oVectors()))...)
 	return v
 }
 

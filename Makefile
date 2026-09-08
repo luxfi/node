@@ -241,7 +241,8 @@ wire: ## rewrite the chain accessors from chains/schema
 # implementation of each chain. Every field two of them answer differently
 # fails the target and names the pair. See conformance/README.md.
 #
-# SIX chains: P and X from luxfi/node, and Q, Z, D and F from luxfi/chains.
+# SEVEN chains: P and X from luxfi/node, Q, Z, D and F from luxfi/chains, and
+# O from luxfi/oracle — which chains/oraclevm re-exports and does not contain.
 # The four were added because they had no vector at all, which is the shape the
 # P-chain's L1 fork hid in — a chain nothing is pointed at agrees with itself.
 #
@@ -268,14 +269,16 @@ QVM_RUST    := $(ROOT)/chains/rust/quantumvm/target/release/conformance
 DVM_RUST    := $(ROOT)/chains/rust/dexvm/target/release/conformance
 ZVM_RUST    := $(ROOT)/chains/rust/zkvm/target/release/conformance
 FVM_RUST    := $(ROOT)/chains/rust/fhevm/target/release/conformance
+OVM_RUST    := $(ROOT)/chains/rust/oraclevm/target/release/conformance
 PVM_CPP     := $(ROOT)/chains/cpp/platformvm/build/pvm_conformance
 XVM_CPP     := $(ROOT)/chains/cpp/xvm/build/xvm_conformance
 QVM_CPP     := $(ROOT)/chains/cpp/quantumvm/build/qvm_conformance
 ZVM_CPP     := $(ROOT)/chains/cpp/zkvm/build/zkvm_conformance
 DVM_CPP     := $(ROOT)/chains/cpp/dexvm/build/dexvm_conformance
 FVM_CPP     := $(ROOT)/chains/cpp/fhevm/build/fhevm_conformance
-RUST_EVALS  := $(PVM_RUST) $(XVM_RUST) $(QVM_RUST) $(DVM_RUST) $(ZVM_RUST) $(FVM_RUST)
-CPP_EVALS   := $(PVM_CPP) $(XVM_CPP) $(QVM_CPP) $(ZVM_CPP) $(DVM_CPP) $(FVM_CPP)
+OVM_CPP     := $(ROOT)/chains/cpp/oraclevm/build/oraclevm_conformance
+RUST_EVALS  := $(PVM_RUST) $(XVM_RUST) $(QVM_RUST) $(DVM_RUST) $(ZVM_RUST) $(FVM_RUST) $(OVM_RUST)
+CPP_EVALS   := $(PVM_CPP) $(XVM_CPP) $(QVM_CPP) $(ZVM_CPP) $(DVM_CPP) $(FVM_CPP) $(OVM_CPP)
 
 chains: chains-build ## run the chain differential in all three languages
 	@echo
@@ -296,7 +299,9 @@ chains: chains-build ## run the chain differential in all three languages
 		-eval "cpp=$(QVM_CPP)" \
 		-eval "cpp=$(ZVM_CPP)" \
 		-eval "cpp=$(DVM_CPP)" \
-		-eval "cpp=$(FVM_CPP)"
+		-eval "cpp=$(FVM_CPP)" \
+		-eval "rust=$(OVM_RUST)" \
+		-eval "cpp=$(OVM_CPP)"
 
 # Every evaluator is built before the run, and a build that fails stops the
 # target. A differential that quietly lost one of its voices would report
@@ -309,7 +314,7 @@ chains: chains-build ## run the chain differential in all three languages
 # green. A gate that builds less than what it measures is how the thing it was
 # built to catch gets past it. It costs a few minutes on a cold tree.
 chains-build:
-	@echo "==> chain differential: building twelve evaluators"
+	@echo "==> chain differential: building fourteen evaluators"
 	cd $(CONF)/gen && GOWORK=off go build -o gen .
 	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
@@ -317,6 +322,7 @@ chains-build:
 	cd $(ROOT)/chains/rust/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/zkvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/fhevm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/oraclevm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(ROOT)/chains/cpp/platformvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release
@@ -329,6 +335,8 @@ chains-build:
 	cmake --build $(ROOT)/chains/cpp/dexvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/fhevm -B $(ROOT)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(ROOT)/chains/cpp/fhevm/build -j$(NPROC)
+	cmake -S $(ROOT)/chains/cpp/oraclevm -B $(ROOT)/chains/cpp/oraclevm/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(ROOT)/chains/cpp/oraclevm/build -j$(NPROC)
 	@for f in $(CONF_GEN) $(RUST_EVALS) $(CPP_EVALS); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \
 	done
