@@ -239,8 +239,12 @@ var _ consensuschain.CertGossiper = (*recordingCertGossiper)(nil)
 
 // --- helpers -----------------------------------------------------------------
 
+// params5 is a five-node sample with the smallest alpha that is Byzantine-safe
+// at that K. The engine refuses to start below it: with K=5 an adversary holds
+// f=2, and a quorum of 3 lets two disjoint quorums both form. Four is the floor,
+// and it is the number the running networks use.
 func params5() consensusconfig.Parameters {
-	return consensusconfig.Parameters{K: 5, AlphaPreference: 3, AlphaConfidence: 3, Beta: 2}
+	return consensusconfig.Parameters{K: 5, AlphaPreference: 4, AlphaConfidence: 4, Beta: 2}
 }
 
 func waitForCond(d time.Duration, cond func() bool) bool {
