@@ -41,7 +41,7 @@ env:
 
 jobs:
   test:
-    runs-on: [lux-build-linux-amd64]
+    runs-on: [linux-amd64]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
       - run: ./scripts/build_test.sh
 
   lint:
-    runs-on: [lux-build-linux-amd64]
+    runs-on: [linux-amd64]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +61,7 @@ jobs:
   # Generated code and go.mod are inputs to the build, so they are checked the
   # same way: regenerate, then require the tree to be unchanged.
   generated:
-    runs-on: [lux-build-linux-amd64]
+    runs-on: [linux-amd64]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
       - run: scripts/check-clean-branch.sh
 
   fuzz:
-    runs-on: [lux-build-linux-amd64]
+    runs-on: [linux-amd64]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
