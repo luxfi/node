@@ -33,7 +33,8 @@ CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
 
 .PHONY: chains-build all luxd gpu gpu-differential conformance conformance-go conformance-rust conformance-cpp \
         chains chains-corpus bench precompiles precompiles-build precompiles-corpus \
-        dex dex-test luxd-go luxd-rust luxd-cpp wire clean help
+        dex dex-test luxd-go luxd-rust luxd-cpp wire clean help \
+        closure closure-search closure-control
 
 help:
 	@grep -hE '^[a-z][a-z-]*:.*## ' $(MAKEFILE_LIST) \
@@ -53,10 +54,58 @@ luxd-go:
 	@mkdir -p $(BIN)
 	GOWORK=off CGO_ENABLED=0 go build -trimpath -o $(BIN)/luxd-go ./cmd/luxd
 	@test -x $(BIN)/luxd-go
-	@leaked="$$(GOWORK=off go list -deps ./cmd/luxd 2>/dev/null | grep -E 'lux-private' || true)"; \
-	if [ -n "$$leaked" ]; then echo "FAIL: lux-private in the closure:" >&2; echo "$$leaked" >&2; exit 1; fi
-	@echo "    confirmed clean: 0 lux-private in the dependency graph"
+	@$(MAKE) --no-print-directory closure
 	@ls -lh $(BIN)/luxd-go
+
+# ---- the closure this module is allowed to have -----------------------------
+#
+# Upstream is retained by name in LICENSE and NOTICE, which is where a license
+# artifact belongs, and nowhere else: no package of it is linked.
+#
+# Scope is the whole module. Reading ./cmd/luxd alone says nothing about the
+# other commands or about any test, and a package imported by one of those is
+# exactly as linked as one imported by main.
+#
+# The listing and the search are separate steps so the search can be run
+# against a list that is known to be dirty — see closure-control. A check
+# nobody has watched fail is not known to work.
+#
+# A listing that FAILED is a failure here. Searching the empty output of a
+# command that did not run produces the same silence as a clean tree.
+
+UPSTREAM := lux-private|avalabs|the predecessor|coreth|subnet-evm
+
+closure: ## fail if an upstream package is in the module's dependency graph
+	@mkdir -p $(BIN)
+	@GOWORK=off go list -deps ./... > $(BIN)/closure.txt || { \
+		echo "FAIL: the dependency graph could not be listed, so it was not searched" >&2; \
+		exit 1; }
+	@$(MAKE) --no-print-directory closure-search LIST=$(BIN)/closure.txt
+	@echo "    closure clean: $$(wc -l < $(BIN)/closure.txt) packages, 0 upstream"
+
+closure-search:
+	@test -s "$(LIST)" || { echo "FAIL: no package list at $(LIST)" >&2; exit 1; }
+	@leaked="$$(grep -iE '$(UPSTREAM)' $(LIST) || true)"; \
+	if [ -n "$$leaked" ]; then \
+		echo "FAIL: upstream packages in the closure:" >&2; \
+		printf '%s\n' "$$leaked" >&2; \
+		exit 1; \
+	fi
+
+closure-control: ## prove the closure check rejects a list that is dirty
+	@mkdir -p $(BIN)
+	@for name in github.com/lux-private/the predecessor github.com/avalabs/the predecessor \
+	             github.com/lux-private/coreth github.com/lux-private/subnet-evm; do \
+		printf 'github.com/luxfi/node\n%s\n' "$$name" > $(BIN)/dirty.txt; \
+		if $(MAKE) --no-print-directory closure-search LIST=$(BIN)/dirty.txt >/dev/null 2>&1; then \
+			echo "FAIL: the closure check passed a list containing $$name" >&2; exit 1; \
+		fi; \
+		echo "    rejected: $$name"; \
+	done
+	@printf 'github.com/luxfi/node\ngithub.com/luxfi/ids\n' > $(BIN)/clean.txt
+	@$(MAKE) --no-print-directory closure-search LIST=$(BIN)/clean.txt || { \
+		echo "FAIL: the closure check rejected a clean list" >&2; exit 1; }
+	@echo "    accepted: a clean list"
 
 # rust: lux-rs/node — a real node host (mesh + BLS quorum finality + revm),
 # already luxfi/node-free. Built in place; only the binary is copied out.
