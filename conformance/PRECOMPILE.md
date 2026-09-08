@@ -25,10 +25,22 @@ of them can ask that.
 The address is twenty bytes of lower-case hex with no leading `0x`. Input is
 lower-case hex, or `-` for no bytes. Most of the corpus is borrowed from
 geth's own `core/vm/testdata/precompiles`: an input the reference tests itself
-against is an input the other two should survive. The rest covers what that
-data does not reach — the three precompiles it ships no vectors for, an empty
-input to every address, addresses nobody serves, and the boundary between
-paying and not paying.
+against is an input the other two should survive. It is read out of the geth
+the Go evaluator's module requires, located with `go list -m`, so the corpus
+and the reference cannot be two different versions of geth — they were, and
+the corpus was two patch releases behind the requirement with nothing to say
+so.
+
+The rest covers what that data does not reach — the three precompiles it ships
+no vectors for, an empty input to every address, addresses nobody serves, the
+boundary between paying and not paying, and Lux's own precompiles, which geth
+has no data for because they are not geth's: inference at `0x0300…0003`, AI
+mining at `0x0300…0000`, p256 at `0x…0100`, and the post-quantum block of
+LP-4200 — ML-KEM `0x…012201`, ML-DSA `0x…012202`, SLH-DSA `0x…012203`, Pulsar
+`0x…012204`, P3Q `0x…012205`, Corona `0x…012206` and X-Wing `0x…2221`. An
+empty input is a defined call to every one of them, so what those rows settle
+is not how each parses its arguments; it is which implementations are at the
+address at all.
 
 ## The answer
 
