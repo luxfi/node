@@ -93,8 +93,11 @@ func (s *Service) getHeight(ctx context.Context, _ *struct{}) (*apitypes.GetHeig
 	defer s.vm.lock.Unlock()
 
 	height, err := s.vm.GetCurrentHeight(ctx)
+	if err != nil {
+		return nil, err
+	}
 	response.Height = apitypes.Uint64(height)
-	return nil, err
+	return response, nil
 }
 
 // getProposedHeight returns the height the next proposal will be built at.
@@ -1503,7 +1506,10 @@ func (s *Service) getTx(ctx context.Context, args *apitypes.GetTxArgs) (*apitype
 	}
 
 	response.Tx, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
-	return nil, err
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 type GetTxStatusArgs struct {
@@ -2109,7 +2115,10 @@ func (s *Service) getBlock(ctx context.Context, args *apitypes.GetBlockArgs) (*a
 	}
 
 	response.Block, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
-	return nil, err
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 // getBlockByHeight returns the accepted block at a height.
@@ -2155,7 +2164,10 @@ func (s *Service) getBlockByHeight(ctx context.Context, args *apitypes.GetBlockB
 	}
 
 	response.Block, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
-	return nil, err
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 // getFeeConfig returns the chain's dynamic-fee configuration: what gas each
