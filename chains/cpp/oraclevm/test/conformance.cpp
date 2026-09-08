@@ -272,14 +272,24 @@ std::vector<std::string> split(const std::string& s, char sep) {
     return out;
 }
 
-bool parse_u32(const std::string& s, std::uint32_t* out) {
+// A decimal counter, the way the corpus writes one. One reader, and the
+// narrower widths are a range check on top of it rather than a second loop.
+bool parse_u64(const std::string& s, std::uint64_t* out) {
     if (s.empty()) return false;
     std::uint64_t v = 0;
     for (const char c : s) {
         if (c < '0' || c > '9') return false;
-        v = v * 10 + static_cast<std::uint64_t>(c - '0');
-        if (v > 0xFFFFFFFFull) return false;
+        const std::uint64_t d = static_cast<std::uint64_t>(c - '0');
+        if (v > (~std::uint64_t(0) - d) / 10) return false;
+        v = v * 10 + d;
     }
+    *out = v;
+    return true;
+}
+
+bool parse_u32(const std::string& s, std::uint32_t* out) {
+    std::uint64_t v = 0;
+    if (!parse_u64(s, &v) || v > 0xFFFFFFFFull) return false;
     *out = static_cast<std::uint32_t>(v);
     return true;
 }
@@ -293,18 +303,6 @@ bool arg_id(const std::string& s, Id* out) {
     return true;
 }
 
-bool parse_u64(const std::string& s, std::uint64_t* out) {
-    if (s.empty()) return false;
-    std::uint64_t v = 0;
-    for (const char c : s) {
-        if (c < '0' || c > '9') return false;
-        const std::uint64_t d = static_cast<std::uint64_t>(c - '0');
-        if (v > (~std::uint64_t(0) - d) / 10) return false;
-        v = v * 10 + d;
-    }
-    *out = v;
-    return true;
-}
 
 Row artifact_id_row(const std::string& id, const lux::fhevm::Bytes& bytes) {
     Row r(id);
