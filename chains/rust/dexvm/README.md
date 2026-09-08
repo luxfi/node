@@ -1,6 +1,6 @@
-# gpu
+# chains/rust/dexvm
 
-A shim. No source lives here — the GPU kernels is in `luxfi/compute`, which is private,
+A shim. No source lives here — the D-Chain matcher in Rust is in `luxfi/compute`, which is private,
 and is built from a checkout at `~/work/lux/compute`.
 
 Same arrangement as `runtime/rust` and `runtime/cpp`: this repository is
