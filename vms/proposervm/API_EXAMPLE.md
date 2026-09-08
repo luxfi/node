@@ -45,7 +45,7 @@ curl -X POST --data '{
     "id"     :1,
     "method" :"proposervm.getProposedHeight",
     "params" :{}
-}' -H 'content-type:application/json;' http://127.0.0.1:9650/v1/chain/C/proposervm
+}' -H 'content-type:application/json;' http://127.0.0.1:9650/v1/chain/c/proposervm
 ```
 
 ### Response

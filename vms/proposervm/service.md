@@ -35,7 +35,7 @@ curl -X POST --data '{
     "method": "proposervm.getProposedHeight",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/v1/chain/P/proposervm
+}' -H 'content-type:application/json;' 127.0.0.1:9650/v1/chain/p/proposervm
 ```
 
 **Example Response:**
@@ -73,7 +73,7 @@ curl -X POST --data '{
     "method": "proposervm.getCurrentEpoch",
     "params": {},
     "id": 1
-}' -H 'content-type:application/json;' 127.0.0.1:9650/v1/chain/P/proposervm
+}' -H 'content-type:application/json;' 127.0.0.1:9650/v1/chain/p/proposervm
 ```
 
 **Example Response:**

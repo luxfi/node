@@ -7,7 +7,7 @@ A shim. No C++ source lives here — `make luxd RUNTIME=cpp` configures
 ## What it builds
 
 A running Lux node: `cevm` executing C-Chain blocks, BLS quorum-certificate
-consensus over a TCP mesh framed by ZAP, and JSON-RPC at `/v1/chain/C/rpc`.
+consensus over a TCP mesh framed by ZAP, and JSON-RPC at `/v1/chain/c/rpc`.
 Every validator executes each block itself and signs the root its own
 execution produced, so a certificate is agreement about a result rather than
 about a name.
@@ -42,7 +42,7 @@ are the same function, `import_chain_data` in that repo's `src/import.cpp`.
 
     curl -s -X POST -H 'content-type: application/json' \
       --data '{"jsonrpc":"2.0","id":1,"method":"admin_importChain","params":["<file>.rlp"]}' \
-      http://127.0.0.1:<rpc>/v1/chain/C/rpc
+      http://127.0.0.1:<rpc>/v1/chain/c/rpc
 
 After an import the node does not act as a caught-up validator: the outer
 index is missing, so it refuses to build blocks until that is rebuilt from

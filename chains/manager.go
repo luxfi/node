@@ -956,7 +956,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 
 				// AddRoute builds the full path as /v1/<base><endpoint>, so a
 				// base of "chain/C" and an endpoint of "/rpc" is
-				// /v1/chain/C/rpc.
+				// /v1/chain/c/rpc.
 				//
 				// One segment, [constants.ChainAliasPrefix]. "chain" is what
 				// these are: C-Chain, X-Chain, M-Chain. Clients reach the same

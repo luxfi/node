@@ -8,7 +8,7 @@ script by the same three keys, with the resulting book put side by side.
 go build ./conformance/dex && ./dex          # probe, run, and run the control
 ./dex -probe                                 # only report what each node admits to
 ./dex -only go,rust                          # a subset
-./dex -fleet rust=http://127.0.0.1:23620/v1/chain/C   # where a node actually is
+./dex -fleet rust=http://127.0.0.1:23620/v1/chain/c   # where a node actually is
 ```
 
 `-fleet` takes `lang=url`, comma separated, and replaces the URL of each

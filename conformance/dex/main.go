@@ -30,7 +30,7 @@ type Endpoint struct{ Lang, URL string }
 // happened to be started, not a property of the implementation, so -fleet
 // replaces an entry rather than the harness carrying a second list.
 var fleet = []Endpoint{
-	{"go", "http://127.0.0.1:21610/v1/chain/C"},
+	{"go", "http://127.0.0.1:21610/v1/chain/c"},
 	{"cpp", "http://127.0.0.1:21730/"},
 	{"rust", "http://127.0.0.1:21780/v1/chain/hanzo"},
 }
