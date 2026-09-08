@@ -17,9 +17,11 @@ import (
 	"testing"
 )
 
-const vectors = `# V	<id>	<payload>
-V	A	00
-V	B	01
+// The column after the id is the label the corpus files a vector under — the
+// chain, for the chain corpus. The runner reads it so a report can group.
+const vectors = `# V	<id>	<label>	<payload>
+V	A	T	00
+V	B	T	01
 `
 
 // The reference's own answers, as `gen emit` records them.
@@ -190,6 +192,66 @@ func TestDecliningIsCounted(t *testing.T) {
 	}
 	if !strings.Contains(got.output, "DECLINED") || !strings.Contains(got.output, "cpp    1 of 10 fields") {
 		t.Fatalf("the declined field is not counted:\n%s", got.output)
+	}
+}
+
+// A count is not something anyone can go and fix. The vector, the label it is
+// filed under, the field and the reason are.
+func TestDecliningIsNamed(t *testing.T) {
+	runner, dir := setup(t)
+	partial := "R	A	ok	Base	aa	OK	SKIPPED	needs a chain with a tip\n" +
+		"R	B	ok	Base	bb	OK	LEDGER	fine\n"
+	a := evaluatorSaying(t, dir, "go", recorded)
+	b := evaluatorSaying(t, dir, "rust", recorded)
+	c := evaluatorSaying(t, dir, "cpp", partial)
+	got := differential(t, runner, dir, "go="+a, "rust="+b, "cpp="+c)
+	if got.code != 0 {
+		t.Fatalf("exit %d, want 0\n%s", got.code, got.output)
+	}
+	for _, want := range []string{"cpp . T . exec — 1", "needs a chain with a tip", "\n      A\n"} {
+		if !strings.Contains(got.output, want) {
+			t.Fatalf("the declined field is not named (%q missing):\n%s", want, got.output)
+		}
+	}
+	// B was answered. Naming that would be naming a gap that is not there.
+	if strings.Contains(got.output, "\n      B\n") {
+		t.Fatalf("an answered vector is named as declined:\n%s", got.output)
+	}
+}
+
+// Two ports declining the same field for different reasons are two gaps, and
+// the report keeps them apart. One heading over both would read as one.
+func TestDeclinesAreGroupedByReason(t *testing.T) {
+	runner, dir := setup(t)
+	rust := "R	A	ok	Base	aa	OK	SKIPPED	no tip\n" +
+		"R	B	ok	Base	bb	OK	SKIPPED	no funds\n"
+	a := evaluatorSaying(t, dir, "go", recorded)
+	b := evaluatorSaying(t, dir, "cpp", recorded)
+	c := evaluatorSaying(t, dir, "rust", rust)
+	got := differential(t, runner, dir, "go="+a, "cpp="+b, "rust="+c)
+	if got.code != 0 {
+		t.Fatalf("exit %d, want 0\n%s", got.code, got.output)
+	}
+	if strings.Count(got.output, "rust . T . exec — 1") != 2 {
+		t.Fatalf("two reasons did not make two groups:\n%s", got.output)
+	}
+}
+
+// A vector line that carries no label is a corpus this runner cannot group, and
+// it says so instead of reporting every gap under the empty string.
+func TestVectorWithoutALabelIsRejected(t *testing.T) {
+	runner, dir := setup(t)
+	if err := os.WriteFile(filepath.Join(dir, "vectors.tsv"), []byte("V\tA\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a := evaluatorSaying(t, dir, "go", recorded)
+	b := evaluatorSaying(t, dir, "cpp", recorded)
+	got := differential(t, runner, dir, "go="+a, "cpp="+b)
+	if got.code != 1 {
+		t.Fatalf("an unlabelled vector exited %d, want 1\n%s", got.code, got.output)
+	}
+	if !strings.Contains(got.output, "not a vector line") {
+		t.Fatalf("the bad line is not named:\n%s", got.output)
 	}
 }
 
