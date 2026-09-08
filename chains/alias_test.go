@@ -50,7 +50,7 @@ func TestThePrimaryNetworksNamesAreNotAvailable(t *testing.T) {
 		"v", "V", "v-chain", "vchain", "vvm",
 		"bridge", "bridgevm", "Bridge", "bridge-chain",
 		"oracle", "oraclevm", "relay", "relayvm", "dex", "dexvm",
-		"zk", "zkvm", "quantum", "quantumvm", "evm", "avm", "platform",
+		"zk", "zkvm", "quantum", "quantumvm", "evm", "x", "platform",
 	} {
 		if !reserved(seg) {
 			t.Fatalf("%q is available to any chain that asks for it", seg)

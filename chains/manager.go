@@ -542,7 +542,7 @@ func reserved(segment string) bool {
 // here reserves every way of writing it.
 var vmNames = []string{
 	"mpc", "bridge", "oracle", "relay", "dex", "graph",
-	"identity", "key", "quantum", "zk", "ai", "platform", "avm", "evm",
+	"identity", "key", "quantum", "zk", "ai", "platform", "x", "evm",
 }
 
 type manager struct {
@@ -2996,7 +2996,7 @@ func chainExpectsStakedBeacons(sybilProtectionEnabled, isPrimaryNetworkChain, is
 // chainValidatesOnPrimaryNetwork reports whether a chain's validating Net IS the primary
 // network — the correct discriminator for the "native" C/X/Q/... set that syncs its bootstrap
 // frontier against the primary-network STAKED validator set. It keys off the validating Net
-// (subnet) ID, NOT the blockchain ID: deployed C/X/Q carry HASH blockchain IDs, whereas
+// network ID, NOT the blockchain ID: deployed C/X/Q carry HASH blockchain IDs, whereas
 // ids.IsNativeChain only ever matches the symbolic 111...C alias form that NO deployed chain
 // uses (only the P-chain, at PlatformChainID=111...P, has a symbolic blockchain ID — and it is
 // excluded as the platform chain anyway). Keying the durable-rejoin discriminator off the

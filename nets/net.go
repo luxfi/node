@@ -27,9 +27,11 @@ type Allower interface {
 	IsAllowed(nodeID ids.NodeID, isValidator bool) bool
 }
 
-// Net keeps track of the currently bootstrapping chains in a chain. If no
-// chains in the net are currently bootstrapping, the net is considered
-// bootstrapped.
+// Net is a set of chains that share a validator set and bootstrap together. It
+// is bootstrapped when none of its chains still is.
+//
+// A network holds chains; a chain belongs to one network. The two are not the
+// same shape and neither contains the other recursively.
 type Net interface {
 	// IsBootstrapped returns true if the chains in this chain are done bootstrapping
 	IsBootstrapped() bool
