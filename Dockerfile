@@ -121,8 +121,8 @@ ARG BUILDPLATFORM
 # edge POST roundtrip vs encoding/json v1. Applies to luxd + every
 # in-stage VM plugin build below.
 #
-# scripts/constants.sh is where this value is chosen; the luxd build sources it.
-# This pins the same value for the plugin stages below, which do not.
+# Pinned here for luxd and for every plugin stage below, so one experiment
+# setting governs the whole image.
 ARG GO_EXPERIMENT=jsonv2
 ENV GOEXPERIMENT=${GO_EXPERIMENT}
 
@@ -190,7 +190,6 @@ RUN --mount=type=secret,id=ghtok,required=false \
 # Build node. CGO_ENABLED=1 (default) links luxcpp/cevm for parallel + GPU EVM.
 # Set CGO_ENABLED=0 for portable pure-Go builds without the native libs.
 ARG RACE_FLAG=""
-ARG BUILD_SCRIPT=build.sh
 ARG LUXD_COMMIT=""
 ENV CGO_ENABLED=${CGO_ENABLED}
 RUN . ./build_env.sh && \
@@ -202,7 +201,17 @@ RUN . ./build_env.sh && \
     echo "{CC=$CC, TARGETPLATFORM=$TARGETPLATFORM, BUILDPLATFORM=$BUILDPLATFORM, CGO_ENABLED=${CGO_ENABLED}}" && \
     export GOARCH=$(echo ${TARGETPLATFORM} | cut -d / -f2) && \
     export LUXD_COMMIT="${LUXD_COMMIT}" && \
-    GOFLAGS="-mod=mod" ./scripts/${BUILD_SCRIPT} ${RACE_FLAG}
+    # The daemon is built here, not through a script: this stage called one
+    # that is not in the repository, so the image could not be built at all
+    # and every attempt failed naming a file nobody had written. One command,
+    # the same one the Makefile runs, landing where the runtime stage copies
+    # from — and it runs the binary once, because a build that produced
+    # something that will not start is a build that failed later.
+    mkdir -p /build/build && \
+    GOFLAGS="-mod=mod" GOWORK=off go build ${RACE_FLAG} -trimpath \
+        -ldflags "-X github.com/luxfi/node/version.GitCommit=${LUXD_COMMIT}" \
+        -o /build/build/luxd ./cmd/luxd && \
+    /build/build/luxd --version
 
 # ============= EVM Plugin Stage ================
 # Build EVM plugin from source (includes custom precompile registry).

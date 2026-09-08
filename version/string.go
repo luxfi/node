@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// GitCommit is set in the build script at compile time
+// GitCommit is stamped by the build with -ldflags at compile time
 var GitCommit string
 
 // Versions contains the versions relevant to a build of node. In
