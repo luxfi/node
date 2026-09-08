@@ -230,20 +230,30 @@ class that moves with the payload is not a class.
 
 ### `SKIPPED` is never a pass
 
-A field an implementation declines to answer prints `SKIPPED`, and the runner
-excludes it from comparison and lists it under **NOT COMPARED**. A field no two
-implementations answered was not checked by anything here, and the run says so
-above the result rather than counting it as agreement.
+A field an implementation declines to answer prints `SKIPPED`. The runner
+excludes it from comparison, counts it under **DECLINED**, and if it leaves the
+field with fewer than two running implementations, lists the field under **NOT
+COMPARED** and fails the run. A field nothing compared is not agreement, and it
+does not get to exit zero.
 
-Today that is the X-chain's `exec` field in C++ alone. Go and Rust both run
-the X-chain's semantic pass and then its executor over an empty chain — the
-same arrangement the P-chain's vectors are judged under, for the reason above —
-so the field IS compared, and a Rust chain that skipped the semantic pass and
-answered `OK` where Go answers `LEDGER` fails the run on all five vectors.
-Until this was wired, that same broken chain passed: one voice on a field is
-not a comparison, and the harness said so under NOT COMPARED rather than
-pretending. The C++ evaluator still declines; giving it the same two passes on
-its own empty chain is what closes the last voice.
+The reference's own recorded answers cannot make up the shortfall. `expected.tsv`
+is what `gen eval` printed, so `go` and `corpus` are one function's output twice
+over — byte for byte, `sha256sum` of both is the same string. Counting them as
+two answers is what let every port decline every field of every vector and still
+print `AGREED`. They are marked as a recording now: they may disagree with
+anyone, and they may not stand in for a second implementation.
+
+Today that is `exec` on the X-chain in C++ (13 fields) and `exec` on the
+Q-chain in Rust (12). The two sets are disjoint, so every one of those fields
+still has two implementations behind it. Go and Rust both run the X-chain's
+semantic pass and then its executor over an empty chain — the same arrangement
+the P-chain's vectors are judged under, for the reason above — so the field IS
+compared, and a Rust chain that skipped the semantic pass and answered `OK`
+where Go answers `LEDGER` fails the run on all five vectors. The C++ evaluator
+still declines; giving it the same two passes on its own empty chain is what
+closes the last voice. Until it does, the C++ Q-chain declining `exec` would
+take those twelve fields down to one implementation and fail the run — which is
+the point: the target should notice a voice leaving, not average over it.
 
 ### What `encoding/json` accepts
 
@@ -332,14 +342,18 @@ make chains           build all twelve evaluators, run the differential
 make chains-corpus    regenerate the corpus from the Go reference
 ```
 
-**`make chains` passes today.** 725 vectors, four voices — go, rust, cpp and
-the committed corpus — agreement on every compared field, and nothing under NOT
-ANSWERED.
+**`make chains` passes today.** 725 vectors, three running implementations —
+go, rust and cpp — plus the committed corpus as a recording of the first.
+Agreement on every field, every field answered by at least two of the three,
+nothing under NOT ANSWERED, and 25 of 3625 fields declined: `exec` on the
+X-chain in C++, `exec` on the Q-chain in Rust. Those two sets do not overlap,
+which is the only reason the run is green rather than short a voice.
 
 The corpus is committed, so a reference that changed its mind shows up as a
 diff. `expected.tsv` — the Go chains' answers at generation time — also joins
-the run as one more voice, under the name `corpus`, so drift in Go itself is a
-disagreement rather than a silent new normal.
+the run under the name `corpus`, so drift in Go itself is a disagreement rather
+than a silent new normal. It is a recording, not a second opinion, so it does
+not count toward the two answers a field needs before it counts as compared.
 
 Every evaluator is built before the run and a build that fails stops the
 target. A differential that quietly lost one of its voices would report
