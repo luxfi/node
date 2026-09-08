@@ -125,7 +125,7 @@ jobs:
           fi
 
       - name: Build (load for smoke, not yet pushed)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
