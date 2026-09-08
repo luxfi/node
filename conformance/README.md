@@ -92,17 +92,20 @@ function of its bytes: the SHA-256 of the canonical re-marshal of the parsed
 struct. The bug is in the chain and not in the corpus, and it is written down
 here because a differential that quietly worked around it would have hidden it.
 
-### What O's five ops ask
+### What O's seven ops ask
 
 `block` is the wire and the id above. `genesis` is the feed configuration the
 observation vectors are judged under, so "we applied the same configuration" is
 a compared field rather than an assumption. `requestid` is the derivation that
 names a request — `sha256("LUX:OracleRequest:v1" ‖ service ‖ session ‖
 be32(step) ‖ be32(retry) ‖ tx)` — where nothing separates the three ids, so
-their ORDER is the whole of what keeps two requests apart. `commit` carries a
-request and the records executed against it and answers with the Merkle root
-the chain commits, which is the one number a light client checks an oracle
-answer against. `observation` is offered to the seeded chain and separates the
+their ORDER is the whole of what keeps two requests apart. `request` offers an
+OracleRequest to a chain that holds nothing, and its deterministic-id check is
+the one refusal on this chain reached BEFORE the chain is read — which is what
+puts it on the syntactic side of the corpus's boundary while everything else
+here leaves that field OK. `commit` carries a request and the records executed
+against it and answers with the Merkle root the chain commits, which is the one
+number a light client checks an oracle answer against. `observation` is offered to the seeded chain and separates the
 feed lookup, the staleness rule and the operator check into three refusals.
 `artifactid` is the name an attestation takes when it LEAVES this chain —
 `sha256("LUX:OracleAttestation:v1" ‖ feed ‖ be64(epoch))`, and nothing in the
