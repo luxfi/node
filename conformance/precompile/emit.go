@@ -4,27 +4,39 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-// Where geth's checkout is, for the vectors borrowed from it. The default is
-// the sibling layout every other Lux path resolves by.
-func gethRoot() string {
-	if d := os.Getenv("LUX_GETH"); d != "" {
-		return d
-	}
-	home, err := os.UserHomeDir()
+// Where geth is, for the vectors borrowed from it: the version this module
+// requires, as the module cache holds it. Not a checkout beside this one —
+// that names whatever the developer has, which on one machine was two patch
+// releases behind the requirement and produced a corpus nobody could
+// reproduce from the dependency it claims to borrow from. Here the corpus and
+// the reference cannot be different versions, because there is only one.
+func gethRoot() (string, error) {
+	out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}", "github.com/luxfi/geth").Output()
 	if err != nil {
-		return "."
+		return "", fmt.Errorf("locating geth: %w", err)
 	}
-	return filepath.Join(home, "work", "lux", "evm")
+	dir := strings.TrimSpace(string(out))
+	if dir == "" {
+		return "", errors.New("locating geth: the module is required but not in the cache")
+	}
+	return dir, nil
 }
 
 func emit(dir string) error {
-	vectors, err := borrowed(gethRoot())
+	root, err := gethRoot()
+	if err != nil {
+		return err
+	}
+	vectors, err := borrowed(root)
 	if err != nil {
 		return err
 	}
@@ -116,6 +128,31 @@ func own() []Vector {
 		{ID: "AIVM_BAD_SELECTOR", Address: addr(0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x03),
 			Gas: 1 << 20, Input: []byte{0x02, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1}},
 
+		// The AI mining precompile, at the address its own range starts
+		// at. It is not the inference one two lines above: 0x0300…0000
+		// signs work with ML-DSA, prices it by privacy level, and binds
+		// a work id to a chain so the same work cannot be minted twice
+		// on two of them. computeWorkId is the part of it that reads no
+		// chain, and the two rows below are the same device and the same
+		// nonce under two chain ids — a binding that holds produces two
+		// different ids, and one that does not produces one id twice.
+		{ID: "AIMINING_EMPTY", Address: aiMining, Gas: plenty},
+		{ID: "AIMINING_WORKID_96369", Address: aiMining, Gas: plenty, Input: workID(96369)},
+		{ID: "AIMINING_WORKID_200200", Address: aiMining, Gas: plenty, Input: workID(200200)},
+
+		// The post-quantum block, LP-4200. Go serves each of these from a
+		// module of its own, and an empty input is a defined call to all
+		// of them: each meters first and then refuses. So what the row
+		// settles is not how they parse, it is which implementations are
+		// at the address at all.
+		{ID: "MLKEM_EMPTY", Address: addr(0x01, 0x22, 0x01), Gas: plenty},
+		{ID: "MLDSA_EMPTY", Address: addr(0x01, 0x22, 0x02), Gas: plenty},
+		{ID: "SLHDSA_EMPTY", Address: addr(0x01, 0x22, 0x03), Gas: plenty},
+		{ID: "PULSAR_EMPTY", Address: addr(0x01, 0x22, 0x04), Gas: plenty},
+		{ID: "P3Q_EMPTY", Address: addr(0x01, 0x22, 0x05), Gas: plenty},
+		{ID: "CORONA_EMPTY", Address: addr(0x01, 0x22, 0x06), Gas: plenty},
+		{ID: "XWING_EMPTY", Address: addr(0x22, 0x21), Gas: plenty},
+
 		// 0x0100. Two implementations claim this address in Go alone: the
 		// stock table charges 6900 and the Lux module charges 3450, and the
 		// module wins because it is consulted first. Whether the other two
@@ -175,6 +212,28 @@ func own() []Vector {
 	return v
 }
 
+// The AI mining precompile's address: 0x03 and nineteen zero bytes. Its range
+// runs from the FRONT of the twenty, which is what separates it from the stock
+// precompiles at the other end.
+var aiMining = addr(0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+// workID builds a computeWorkId call: the selector, a device id, a nonce, and
+// the chain the work is being claimed on. The device and the nonce are fixed,
+// so two calls differing only in the chain id are the whole test of whether the
+// id is bound to a chain.
+func workID(chain uint64) []byte {
+	out := []byte{0x06, 0x00, 0x00, 0x00}
+	for i := range 32 {
+		out = append(out, byte(i))
+	}
+	for i := range 32 {
+		out = append(out, byte(0xff-i))
+	}
+	var id [8]byte
+	binary.BigEndian.PutUint64(id[:], chain)
+	return append(out, id[:]...)
+}
+
 // aivmGenerate builds the inference precompile's calldata: the generate
 // selector, how many tokens to produce, and the prompt — each a big-endian
 // uint32, which is also how the answer comes back.
@@ -187,6 +246,3 @@ func aivmGenerate(nNew uint32, prompt ...uint32) []byte {
 	}
 	return out
 }
-
-// Kept so `emit` fails rather than writing a corpus with a name in it twice.
-var _ = strings.ToUpper

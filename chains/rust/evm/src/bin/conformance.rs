@@ -135,9 +135,10 @@ impl Vector {
 /// zero and the output is empty, because there is no charge to report and a
 /// number nobody agrees to means the column stops comparing.
 ///
-/// On a refusal it is `None`, which prints as SKIPPED. revm computes a
-/// precompile's price inside the function that does its work, so a call that
-/// returned an error recorded no charge and this program cannot recover one.
+/// On a refusal it is `None` unless a charge was recorded, and `None` prints as
+/// SKIPPED. revm computes a precompile's price inside the function that does
+/// its work, so a call that returned an error recorded no charge and this
+/// program cannot recover one.
 /// Go and the C++ tree both separate price from work and do report it. Zero
 /// would be an answer, and a wrong one — the call was not free — so this says
 /// it does not know, which the runner counts and prints and never scores as
@@ -174,15 +175,6 @@ impl std::fmt::Display for Row {
 fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vector) -> Row {
     let who = name(&v.address);
     let call = inputs(v);
-    // Whether a refusal here has a charge that can be reported. There are two
-    // ways this call can come back refused and only one of them left a charge
-    // behind. The profile refuses AFTER the precompile ran and paid, which is
-    // where Go's deduction lands too; revm's own refusals compute the price
-    // inside the work and record none. Asked before the run, because the run
-    // borrows.
-    let priced = precompiles
-        .op(&v.address)
-        .is_some_and(|op| precompiles.profile().forbids(op));
 
     match PrecompileProvider::<CTX>::run(precompiles, context, &call) {
         // Nothing at this address. revm says so by declining to produce a
@@ -194,7 +186,7 @@ fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vec
             output: Bytes::new(),
             note: "no precompile at this address".into(),
         },
-        Ok(Some(r)) => verdict(v, r, context, who, priced),
+        Ok(Some(r)) => verdict(v, r, context, who),
         // A precompile that could not run at all — revm's `PrecompileError::
         // Fatal`, which is a missing trusted setup rather than a bad input.
         // It refused, so it is reported as a refusal, and the note says which
@@ -209,13 +201,7 @@ fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vec
     }
 }
 
-fn verdict<CTX: ContextTr>(
-    v: &Vector,
-    r: InterpreterResult,
-    context: &mut CTX,
-    who: &str,
-    priced: bool,
-) -> Row {
+fn verdict<CTX: ContextTr>(v: &Vector, r: InterpreterResult, context: &mut CTX, who: &str) -> Row {
     let id = v.id.clone();
     // `limit - remaining`. The conversion happens here, at the edge, and once.
     let charged = r.gas.spent();
@@ -243,13 +229,15 @@ fn verdict<CTX: ContextTr>(
                 .unwrap_or_else(|| format!("{other:?}"));
             Row {
                 id,
-                // A Lux module charged for reading the input it then refused,
-                // and can say how much. Everything else is revm's, where the
-                // price lives inside the function that does the work and an
-                // error records nothing — SKIPPED there, because zero would be
-                // an answer and the wrong one.
                 status: FAILED,
-                gas: if priced { Some(charged) } else { None },
+                // A refusal that recorded a charge is one the classical gate
+                // produced: `Precompiles::run` lets the precompile run and pay
+                // before it discards the answer, so the price is on the meter.
+                // A refusal from inside the precompile recorded nothing — revm
+                // hands the `Gas` back untouched — and nothing in the set costs
+                // nothing, so a zero there is the absence of a number rather
+                // than a number. SKIPPED says which of the two this is.
+                gas: (charged > 0).then_some(charged),
                 output: Bytes::new(),
                 note: format!("revm:{who}: {why}"),
             }

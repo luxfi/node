@@ -86,8 +86,10 @@ constexpr auto kPrices = std::to_array<Price>({
     {0x0000000000000000000000000000000000000008_address, "ecpairing", ecpairing_analyze},
     {0x0000000000000000000000000000000000000009_address, "blake2bf", blake2bf_analyze},
     {0x000000000000000000000000000000000000000a_address, "point_evaluation", point_evaluation_analyze},
-    // BLS12-381, seven addresses: add and multi-exponentiation for each group,
-    // the pairing check, and the two field maps.
+    // BLS12-381 on EIP-2537 as finalised: multiplication folded into the
+    // multi-exponentiation precompiles, and the two field maps at the top of
+    // the range. Seven addresses, 0x0b through 0x11, which is also where geth's
+    // Osaka table puts them.
     {0x000000000000000000000000000000000000000b_address, "bls12_g1add", bls12_g1add_analyze},
     {0x000000000000000000000000000000000000000c_address, "bls12_g1msm", bls12_g1msm_analyze},
     {0x000000000000000000000000000000000000000d_address, "bls12_g2add", bls12_g2add_analyze},
@@ -96,13 +98,13 @@ constexpr auto kPrices = std::to_array<Price>({
     {0x0000000000000000000000000000000000000010_address, "bls12_map_fp_to_g1", bls12_map_fp_to_g1_analyze},
     {0x0000000000000000000000000000000000000011_address, "bls12_map_fp2_to_g2", bls12_map_fp2_to_g2_analyze},
     {0x0000000000000000000000000000000000000100_address, "p256verify", p256verify_analyze},
-    // Nothing outside the stock range. cevm's dispatcher keys on the last two
-    // bytes of an address, so an address whose first eighteen bytes carry the
-    // precompile's identity cannot be expressed in its table: aivm_analyze and
-    // aivm_execute are compiled and nothing reaches them. check_table() below
-    // holds this list to what the seam actually answers for, so an address
-    // named here that the seam does not serve stops the program instead of
-    // being priced by a function the seam never calls.
+    // No Lux precompile is priced here, because cevm's dispatcher registers
+    // none. aivm_analyze and aivm_execute are compiled and tested in cevm and
+    // reachable from nothing: its lookup keys on the last two bytes of an
+    // address, and inference's 0x0300…0003 ends in ripemd160's. Pricing it
+    // anyway would put a number in the gas column for an address the seam
+    // answers ABSENT at, so check_table() below refuses to let this list claim
+    // an address the seam does not serve.
 });
 
 // The widest address cevm's availability table can hold, so the scan below
