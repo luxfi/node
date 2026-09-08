@@ -11,7 +11,7 @@ import (
 	"math"
 	"slices"
 
-	"github.com/go-json-experiment/json"
+	jsonv2 "github.com/go-json-experiment/json"
 	jsonv1 "github.com/go-json-experiment/json/v1"
 	"github.com/luxfi/log"
 
@@ -39,7 +39,7 @@ import (
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/vm/types"
 
-	avajson "github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/json"
 	platformapitypes "github.com/luxfi/node/vms/platformvm/api"
 )
 
@@ -124,15 +124,15 @@ type GetBalanceRequest struct {
 // compatibility.
 type GetBalanceResponse struct {
 	// Balance, in µLUX, of the address
-	Balance             avajson.Uint64 `json:"balance"`
-	Unlocked            avajson.Uint64 `json:"unlocked"`
-	LockedStakeable     avajson.Uint64 `json:"lockedStakeable"`
-	LockedNotStakeable  avajson.Uint64 `json:"lockedNotStakeable"`
-	Balances            Amounts        `json:"balances"`
-	Unlockeds           Amounts        `json:"unlockeds"`
-	LockedStakeables    Amounts        `json:"lockedStakeables"`
-	LockedNotStakeables Amounts        `json:"lockedNotStakeables"`
-	UTXOIDs             []*lux.UTXOID  `json:"utxoIDs"`
+	Balance             json.Uint64   `json:"balance"`
+	Unlocked            json.Uint64   `json:"unlocked"`
+	LockedStakeable     json.Uint64   `json:"lockedStakeable"`
+	LockedNotStakeable  json.Uint64   `json:"lockedNotStakeable"`
+	Balances            Amounts       `json:"balances"`
+	Unlockeds           Amounts       `json:"unlockeds"`
+	LockedStakeables    Amounts       `json:"lockedStakeables"`
+	LockedNotStakeables Amounts       `json:"lockedNotStakeables"`
+	UTXOIDs             []*lux.UTXOID `json:"utxoIDs"`
 }
 
 // getBalance returns what a set of addresses holds, per asset and in total.
@@ -246,10 +246,10 @@ utxoFor:
 	response.Unlockeds = newAmounts(unlockeds)
 	response.LockedStakeables = newAmounts(lockedStakeables)
 	response.LockedNotStakeables = newAmounts(lockedNotStakeables)
-	response.Balance = avajson.Uint64(balances[s.vm.utxoAssetID])
-	response.Unlocked = avajson.Uint64(unlockeds[s.vm.utxoAssetID])
-	response.LockedStakeable = avajson.Uint64(lockedStakeables[s.vm.utxoAssetID])
-	response.LockedNotStakeable = avajson.Uint64(lockedNotStakeables[s.vm.utxoAssetID])
+	response.Balance = json.Uint64(balances[s.vm.utxoAssetID])
+	response.Unlocked = json.Uint64(unlockeds[s.vm.utxoAssetID])
+	response.LockedStakeable = json.Uint64(lockedStakeables[s.vm.utxoAssetID])
+	response.LockedNotStakeable = json.Uint64(lockedNotStakeables[s.vm.utxoAssetID])
 	return response, nil
 }
 
@@ -379,9 +379,9 @@ type GetNetResponse struct {
 	// whether it is permissioned or not
 	IsPermissioned bool `json:"isPermissioned"`
 	// net auth information for a permissioned net
-	ControlKeys []string       `json:"controlKeys"`
-	Threshold   avajson.Uint32 `json:"threshold"`
-	Locktime    avajson.Uint64 `json:"locktime"`
+	ControlKeys []string    `json:"controlKeys"`
+	Threshold   json.Uint32 `json:"threshold"`
+	Locktime    json.Uint64 `json:"locktime"`
 	// net transformation tx ID for an elastic net
 	NetTransformationTxID ids.ID `json:"netTransformationTxID"`
 	// net conversion information for an L1
@@ -425,8 +425,8 @@ func (s *Service) getNet(ctx context.Context, args *GetNetArgs) (*GetNetResponse
 	}
 
 	response.ControlKeys = controlAddrs
-	response.Threshold = avajson.Uint32(owner.Threshold)
-	response.Locktime = avajson.Uint64(owner.Locktime)
+	response.Threshold = json.Uint32(owner.Threshold)
+	response.Locktime = json.Uint64(owner.Locktime)
 
 	switch netTransformationTx, err := s.vm.state.GetNetTransformation(args.ChainID); err {
 	case nil:
@@ -464,8 +464,8 @@ type APINet struct {
 	// Each element of [ControlKeys] the address of a public key.
 	// A transaction to add a validator to this net requires
 	// signatures from [Threshold] of these keys to be valid.
-	ControlKeys []string       `json:"controlKeys"`
-	Threshold   avajson.Uint32 `json:"threshold"`
+	ControlKeys []string    `json:"controlKeys"`
+	Threshold   json.Uint32 `json:"threshold"`
 }
 
 // GetNetsArgs are the arguments to GetNets
@@ -510,7 +510,7 @@ func (s *Service) getNets(ctx context.Context, args *GetNetsArgs) (*GetNetsRespo
 				response.Nets[i] = APINet{
 					ID:          netID,
 					ControlKeys: []string{},
-					Threshold:   avajson.Uint32(0),
+					Threshold:   json.Uint32(0),
 				}
 				continue
 			}
@@ -536,14 +536,14 @@ func (s *Service) getNets(ctx context.Context, args *GetNetsArgs) (*GetNetsRespo
 			response.Nets[i] = APINet{
 				ID:          netID,
 				ControlKeys: controlAddrs,
-				Threshold:   avajson.Uint32(owner.Threshold),
+				Threshold:   json.Uint32(owner.Threshold),
 			}
 		}
 		// Include primary network
 		response.Nets[len(netIDs)] = APINet{
 			ID:          constants.PrimaryNetworkID,
 			ControlKeys: []string{},
-			Threshold:   avajson.Uint32(0),
+			Threshold:   json.Uint32(0),
 		}
 		return response, nil
 	}
@@ -560,7 +560,7 @@ func (s *Service) getNets(ctx context.Context, args *GetNetsArgs) (*GetNetsRespo
 				APINet{
 					ID:          constants.PrimaryNetworkID,
 					ControlKeys: []string{},
-					Threshold:   avajson.Uint32(0),
+					Threshold:   json.Uint32(0),
 				},
 			)
 			continue
@@ -570,7 +570,7 @@ func (s *Service) getNets(ctx context.Context, args *GetNetsArgs) (*GetNetsRespo
 			response.Nets = append(response.Nets, APINet{
 				ID:          netID,
 				ControlKeys: []string{},
-				Threshold:   avajson.Uint32(0),
+				Threshold:   json.Uint32(0),
 			})
 			continue
 		}
@@ -600,7 +600,7 @@ func (s *Service) getNets(ctx context.Context, args *GetNetsArgs) (*GetNetsRespo
 		response.Nets = append(response.Nets, APINet{
 			ID:          netID,
 			ControlKeys: controlAddrs,
-			Threshold:   avajson.Uint32(owner.Threshold),
+			Threshold:   json.Uint32(owner.Threshold),
 		})
 	}
 	return response, nil
@@ -613,9 +613,9 @@ func (s *Service) getNets(ctx context.Context, args *GetNetsArgs) (*GetNetsRespo
 // deserializer that targets APIChain reads APINet responses and vice
 // versa; no proxies need to translate.
 type APIChain struct {
-	ID          ids.ID         `json:"id"`
-	ControlKeys []string       `json:"controlKeys"`
-	Threshold   avajson.Uint32 `json:"threshold"`
+	ID          ids.ID      `json:"id"`
+	ControlKeys []string    `json:"controlKeys"`
+	Threshold   json.Uint32 `json:"threshold"`
 }
 
 // GetChainsArgs are the arguments to GetChains. IDs is the optional
@@ -899,13 +899,13 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 
 	for _, currentStaker := range targetStakers {
 		apiStaker := toPlatformStaker(currentStaker)
-		potentialReward := avajson.Uint64(currentStaker.PotentialReward)
+		potentialReward := json.Uint64(currentStaker.PotentialReward)
 
 		delegateeReward, err := s.vm.state.GetDelegateeReward(currentStaker.ChainID, currentStaker.NodeID)
 		if err != nil {
 			return nil, err
 		}
-		jsonDelegateeReward := avajson.Uint64(delegateeReward)
+		jsonDelegateeReward := json.Uint64(delegateeReward)
 
 		switch currentStaker.Priority {
 		case txs.PrimaryNetworkValidatorCurrentPriority, txs.ChainPermissionlessValidatorCurrentPriority:
@@ -915,9 +915,9 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 			}
 
 			shares := attr.shares
-			delegationFee := avajson.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
+			delegationFee := json.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
 			var (
-				uptime    *avajson.Float32
+				uptime    *json.Float32
 				connected *bool
 			)
 			if netID == constants.PrimaryNetworkID {
@@ -927,7 +927,7 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 				}
 				// Transform this to a percentage (0-100) to make it consistent
 				// with observedUptime in info.peers API
-				currentUptime := avajson.Float32(rawUptime * 100)
+				currentUptime := json.Float32(rawUptime * 100)
 				uptime = &currentUptime
 
 				// Report whether this validator currently has a live connection
@@ -1014,8 +1014,8 @@ func (s *Service) getPrimaryOrNetValidators(netID ids.ID, nodeIDs set.Set[ids.No
 			// always return a non-nil value.
 			delegators = []platformapitypes.PrimaryDelegator{}
 		}
-		delegatorCount := avajson.Uint64(len(delegators))
-		delegatorWeight := avajson.Uint64(0)
+		delegatorCount := json.Uint64(len(delegators))
+		delegatorWeight := json.Uint64(0)
 		for _, d := range delegators {
 			delegatorWeight += d.Weight
 		}
@@ -1040,7 +1040,7 @@ type GetL1ValidatorReply struct {
 	platformapitypes.APIL1Validator
 	ChainID ids.ID `json:"netID"`
 	// Height is the height of the last accepted block
-	Height avajson.Uint64 `json:"height"`
+	Height json.Uint64 `json:"height"`
 }
 
 // getL1Validator returns one L1 validator by its validation id, with the
@@ -1072,7 +1072,7 @@ func (s *Service) getL1Validator(ctx context.Context, args *GetL1ValidatorArgs) 
 
 	reply.APIL1Validator = apiVdr
 	reply.ChainID = l1Validator.ChainID
-	reply.Height = avajson.Uint64(height)
+	reply.Height = json.Uint64(height)
 	return reply, nil
 }
 
@@ -1106,12 +1106,12 @@ func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapityp
 	pubKey := types.JSONByteSlice(bls.PublicKeyToCompressedBytes(
 		bls.PublicKeyFromValidUncompressedBytes(vdr.PublicKey),
 	))
-	minNonce := avajson.Uint64(vdr.MinNonce)
+	minNonce := json.Uint64(vdr.MinNonce)
 
 	apiVdr := platformapitypes.APIL1Validator{
 		NodeID:    vdr.NodeID,
-		StartTime: avajson.Uint64(vdr.StartTime),
-		Weight:    avajson.Uint64(vdr.Weight),
+		StartTime: json.Uint64(vdr.StartTime),
+		Weight:    json.Uint64(vdr.Weight),
 		BaseL1Validator: platformapitypes.BaseL1Validator{
 			ValidationID:          &vdr.ValidationID,
 			PublicKey:             &pubKey,
@@ -1120,11 +1120,11 @@ func (s *Service) convertL1ValidatorToAPI(vdr state.L1Validator) (platformapityp
 			MinNonce:              &minNonce,
 		},
 	}
-	zero := avajson.Uint64(0)
+	zero := json.Uint64(0)
 	apiVdr.Balance = &zero
 	if vdr.EndAccumulatedFee != 0 {
 		accruedFees := s.vm.state.GetAccruedFees()
-		balance := avajson.Uint64(vdr.EndAccumulatedFee - accruedFees)
+		balance := json.Uint64(vdr.EndAccumulatedFee - accruedFees)
 		apiVdr.Balance = &balance
 	}
 	return apiVdr, nil
@@ -1137,8 +1137,8 @@ type GetCurrentSupplyArgs struct {
 
 // GetCurrentSupplyReply are the results from calling GetCurrentSupply
 type GetCurrentSupplyReply struct {
-	Supply avajson.Uint64 `json:"supply"`
-	Height avajson.Uint64 `json:"height"`
+	Supply json.Uint64 `json:"supply"`
+	Height json.Uint64 `json:"height"`
 }
 
 // getCurrentSupply returns an upper bound on the supply of LUX on a net, and
@@ -1157,13 +1157,13 @@ func (s *Service) getCurrentSupply(ctx context.Context, args *GetCurrentSupplyAr
 	if err != nil {
 		return nil, fmt.Errorf("fetching current supply failed: %w", err)
 	}
-	reply.Supply = avajson.Uint64(supply)
+	reply.Supply = json.Uint64(supply)
 
 	height, err := s.vm.GetCurrentHeight(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("fetching current height failed: %w", err)
 	}
-	reply.Height = avajson.Uint64(height)
+	reply.Height = json.Uint64(height)
 
 	return reply, nil
 }
@@ -1502,7 +1502,7 @@ func (s *Service) getTx(ctx context.Context, args *apitypes.GetTxArgs) (*apitype
 		}
 	}
 
-	response.Tx, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
+	response.Tx, err = jsonv2.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
 	return nil, err
 }
 
@@ -1591,8 +1591,8 @@ type GetStakeArgs struct {
 
 // GetStakeReply is the response from calling GetStake.
 type GetStakeReply struct {
-	Staked  avajson.Uint64 `json:"staked"`
-	Stakeds Amounts        `json:"stakeds"`
+	Staked  json.Uint64 `json:"staked"`
+	Stakeds Amounts     `json:"stakeds"`
 	// String representation of staked outputs
 	// Each is of type lux.TransferableOutput
 	Outputs []string `json:"stakedOutputs"`
@@ -1672,7 +1672,7 @@ func (s *Service) getStake(ctx context.Context, args *GetStakeArgs) (*GetStakeRe
 	}
 
 	response.Stakeds = newAmounts(totalAmountStaked)
-	response.Staked = avajson.Uint64(totalAmountStaked[s.vm.utxoAssetID])
+	response.Staked = json.Uint64(totalAmountStaked[s.vm.utxoAssetID])
 	response.Outputs = make([]string, len(stakedOuts))
 	for i, output := range stakedOuts {
 		// Surface each staked output as native UTXO wire bytes — the one
@@ -1705,9 +1705,9 @@ type GetMinStakeArgs struct {
 // GetMinStakeReply is the response from calling GetMinStake.
 type GetMinStakeReply struct {
 	//  The minimum amount of tokens one must bond to be a validator
-	MinValidatorStake avajson.Uint64 `json:"minValidatorStake"`
+	MinValidatorStake json.Uint64 `json:"minValidatorStake"`
 	// Minimum stake, in µLUX, that can be delegated on the primary network
-	MinDelegatorStake avajson.Uint64 `json:"minDelegatorStake"`
+	MinDelegatorStake json.Uint64 `json:"minDelegatorStake"`
 }
 
 // getMinStake returns the least that can be staked on a net, as a validator
@@ -1720,8 +1720,8 @@ func (s *Service) getMinStake(ctx context.Context, args *GetMinStakeArgs) (*GetM
 	)
 
 	if args.ChainID == constants.PrimaryNetworkID {
-		reply.MinValidatorStake = avajson.Uint64(s.vm.MinValidatorStake)
-		reply.MinDelegatorStake = avajson.Uint64(s.vm.MinDelegatorStake)
+		reply.MinValidatorStake = json.Uint64(s.vm.MinValidatorStake)
+		reply.MinDelegatorStake = json.Uint64(s.vm.MinDelegatorStake)
 		return reply, nil
 	}
 
@@ -1744,8 +1744,8 @@ func (s *Service) getMinStake(ctx context.Context, args *GetMinStakeArgs) (*GetM
 		)
 	}
 
-	reply.MinValidatorStake = avajson.Uint64(transformNet.MinValidatorStake())
-	reply.MinDelegatorStake = avajson.Uint64(transformNet.MinDelegatorStake())
+	reply.MinValidatorStake = json.Uint64(transformNet.MinValidatorStake())
+	reply.MinDelegatorStake = json.Uint64(transformNet.MinDelegatorStake())
 
 	return reply, nil
 }
@@ -1760,9 +1760,9 @@ type GetTotalStakeArgs struct {
 // GetTotalStakeReply is the response from calling GetTotalStake.
 type GetTotalStakeReply struct {
 	// Deprecated: Use Weight instead.
-	Stake avajson.Uint64 `json:"stake"`
+	Stake json.Uint64 `json:"stake"`
 
-	Weight avajson.Uint64 `json:"weight"`
+	Weight json.Uint64 `json:"weight"`
 }
 
 // getTotalStake returns the total weight of a net's validator set.
@@ -1777,7 +1777,7 @@ func (s *Service) getTotalStake(ctx context.Context, args *GetTotalStakeArgs) (*
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get total weight: %w", err)
 	}
-	weight := avajson.Uint64(totalWeight)
+	weight := json.Uint64(totalWeight)
 	reply.Weight = weight
 	reply.Stake = weight
 	return reply, nil
@@ -1786,7 +1786,7 @@ func (s *Service) getTotalStake(ctx context.Context, args *GetTotalStakeArgs) (*
 // GetRewardUTXOsReply defines the GetRewardUTXOs replies returned from the API
 type GetRewardUTXOsReply struct {
 	// Number of UTXOs returned
-	NumFetched avajson.Uint64 `json:"numFetched"`
+	NumFetched json.Uint64 `json:"numFetched"`
 	// The UTXOs
 	UTXOs []string `json:"utxos"`
 	// Encoding specifies the encoding format the UTXOs are returned in
@@ -1810,7 +1810,7 @@ func (s *Service) getRewardUTXOs(ctx context.Context, args *apitypes.GetTxArgs) 
 		return nil, fmt.Errorf("couldn't get reward UTXOs: %w", err)
 	}
 
-	reply.NumFetched = avajson.Uint64(len(utxos))
+	reply.NumFetched = json.Uint64(len(utxos))
 	reply.UTXOs = make([]string, len(utxos))
 	for i, utxo := range utxos {
 		utxoBytes, err := utxo.WireBytes()
@@ -1831,7 +1831,7 @@ func (s *Service) getRewardUTXOs(ctx context.Context, args *apitypes.GetTxArgs) 
 // GetTimestampReply is the response from GetTimestamp
 type GetTimestampReply struct {
 	// Current timestamp
-	Timestamp avajson.Time `json:"timestamp"`
+	Timestamp json.Time `json:"timestamp"`
 }
 
 // getTimestamp returns the chain's current time.
@@ -1845,7 +1845,7 @@ func (s *Service) getTimestamp(ctx context.Context, _ *struct{}) (*GetTimestampR
 	s.vm.lock.Lock()
 	defer s.vm.lock.Unlock()
 
-	reply.Timestamp = avajson.NewTime(s.vm.state.GetTimestamp())
+	reply.Timestamp = json.NewTime(s.vm.state.GetTimestamp())
 	return reply, nil
 }
 
@@ -1863,8 +1863,8 @@ type GetValidatorsAtArgs struct {
 // not under v2. Both show in what mainnet answers today — see testdata/ — so
 // the semantics are part of the wire, not a preference.
 type jsonGetValidatorOutput struct {
-	PublicKey *string        `json:"publicKey"`
-	Weight    avajson.Uint64 `json:"weight"`
+	PublicKey *string     `json:"publicKey"`
+	Weight    json.Uint64 `json:"weight"`
 }
 
 func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
@@ -1884,12 +1884,12 @@ func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
 
 		m[vdr.NodeID] = vdrJSON
 	}
-	return json.Marshal(m, jsonv1.DefaultOptionsV1())
+	return jsonv2.Marshal(m, jsonv1.DefaultOptionsV1())
 }
 
 func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
 	var m map[ids.NodeID]*jsonGetValidatorOutput
-	if err := json.Unmarshal(b, &m); err != nil {
+	if err := jsonv2.Unmarshal(b, &m); err != nil {
 		return err
 	}
 
@@ -1982,7 +1982,7 @@ type GetAllValidatorsAtReply struct {
 
 func (v GetAllValidatorsAtReply) MarshalJSON() ([]byte, error) {
 	if v.ValidatorSets == nil {
-		return []byte(`{"validatorSets":` + avajson.Null + `}`), nil
+		return []byte(`{"validatorSets":` + json.Null + `}`), nil
 	}
 	m := make(map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput, len(v.ValidatorSets))
 	for _, set := range v.ValidatorSets {
@@ -1992,7 +1992,7 @@ func (v GetAllValidatorsAtReply) MarshalJSON() ([]byte, error) {
 		}
 		m[set.ChainID] = inner
 	}
-	return json.Marshal(struct {
+	return jsonv2.Marshal(struct {
 		ValidatorSets map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput `json:"validatorSets"`
 	}{m}, jsonv1.DefaultOptionsV1())
 }
@@ -2001,7 +2001,7 @@ func (v *GetAllValidatorsAtReply) UnmarshalJSON(b []byte) error {
 	var wire struct {
 		ValidatorSets map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput `json:"validatorSets"`
 	}
-	if err := json.Unmarshal(b, &wire); err != nil {
+	if err := jsonv2.Unmarshal(b, &wire); err != nil {
 		return err
 	}
 	if wire.ValidatorSets == nil {
@@ -2108,7 +2108,7 @@ func (s *Service) getBlock(ctx context.Context, args *apitypes.GetBlockArgs) (*a
 		}
 	}
 
-	response.Block, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
+	response.Block, err = jsonv2.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
 	return nil, err
 }
 
@@ -2154,7 +2154,7 @@ func (s *Service) getBlockByHeight(ctx context.Context, args *apitypes.GetBlockB
 		}
 	}
 
-	response.Block, err = json.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
+	response.Block, err = jsonv2.Marshal(result, jsonv1.FormatByteArrayAsArray(true))
 	return nil, err
 }
 
@@ -2174,8 +2174,8 @@ func (s *Service) getFeeConfig(ctx context.Context, _ *struct{}) (*GetFeeConfigR
 
 type GetFeeStateReply struct {
 	gas.State
-	Price gas.Price    `json:"price"`
-	Time  avajson.Time `json:"timestamp"`
+	Price gas.Price `json:"price"`
+	Time  json.Time `json:"timestamp"`
 }
 
 // getFeeState returns the chain's current fee state: the gas consumed, the
@@ -2197,7 +2197,7 @@ func (s *Service) getFeeState(ctx context.Context, _ *struct{}) (*GetFeeStateRep
 		reply.State.Excess,
 		s.vm.DynamicFeeConfig.ExcessConversionConstant,
 	)
-	reply.Time = avajson.NewTime(s.vm.state.GetTimestamp())
+	reply.Time = json.NewTime(s.vm.state.GetTimestamp())
 	return reply, nil
 }
 
@@ -2215,9 +2215,9 @@ func (s *Service) getValidatorFeeConfig(ctx context.Context, _ *struct{}) (*fee.
 }
 
 type GetValidatorFeeStateReply struct {
-	Excess gas.Gas      `json:"excess"`
-	Price  gas.Price    `json:"price"`
-	Time   avajson.Time `json:"timestamp"`
+	Excess gas.Gas   `json:"excess"`
+	Price  gas.Price `json:"price"`
+	Time   json.Time `json:"timestamp"`
 }
 
 // getValidatorFeeState returns what an L1 validator is currently charged per
@@ -2238,14 +2238,14 @@ func (s *Service) getValidatorFeeState(ctx context.Context, _ *struct{}) (*GetVa
 		reply.Excess,
 		s.vm.ValidatorFeeConfig.ExcessConversionConstant,
 	)
-	reply.Time = avajson.NewTime(s.vm.state.GetTimestamp())
+	reply.Time = json.NewTime(s.vm.state.GetTimestamp())
 	return reply, nil
 }
 
 func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapitypes.Owner, error) {
 	apiOwner := &platformapitypes.Owner{
-		Locktime:  avajson.Uint64(owner.Locktime),
-		Threshold: avajson.Uint32(owner.Threshold),
+		Locktime:  json.Uint64(owner.Locktime),
+		Threshold: json.Uint32(owner.Threshold),
 		Addresses: make([]string, 0, len(owner.Addrs)),
 	}
 	for _, addr := range owner.Addrs {
@@ -2307,9 +2307,9 @@ func getStakeHelper(tx *txs.Tx, addrs set.Set[ids.ShortID], totalAmountStaked ma
 func toPlatformStaker(staker *state.Staker) platformapitypes.Staker {
 	return platformapitypes.Staker{
 		TxID:      staker.TxID,
-		StartTime: avajson.Uint64(staker.StartTime.Unix()),
-		EndTime:   avajson.Uint64(staker.EndTime.Unix()),
-		Weight:    avajson.Uint64(staker.Weight),
+		StartTime: json.Uint64(staker.StartTime.Unix()),
+		EndTime:   json.Uint64(staker.EndTime.Unix()),
+		Weight:    json.Uint64(staker.Weight),
 		NodeID:    staker.NodeID,
 	}
 }

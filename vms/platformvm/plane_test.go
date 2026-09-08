@@ -13,7 +13,7 @@ import (
 
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	avajson "github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/components/gas"
 	platformapi "github.com/luxfi/node/vms/platformvm/api"
 )
@@ -51,26 +51,26 @@ func crosses[T any](t *testing.T, want *T) *T {
 	return got
 }
 
-// TestATimeCrossesWithItsValue. avajson.Time is the P-Chain's timestamp, and it
+// TestATimeCrossesWithItsValue. json.Time is the P-Chain's timestamp, and it
 // is the shape that hides an empty layout: a wrapper over time.Time, whose own
 // fields are unexported. Three replies carry one.
 func TestATimeCrossesWithItsValue(t *testing.T) {
 	at := time.Date(2026, 8, 29, 22, 34, 56, 789, time.UTC)
 
-	stamp := crosses(t, &GetTimestampReply{Timestamp: avajson.NewTime(at)})
+	stamp := crosses(t, &GetTimestampReply{Timestamp: json.NewTime(at)})
 	require.True(t, stamp.Timestamp.Time().Equal(at), "getTimestamp answered %v, want %v", stamp.Timestamp.Time(), at)
 
 	fee := crosses(t, &GetFeeStateReply{
 		State: gas.State{Capacity: 11, Excess: 22},
 		Price: 33,
-		Time:  avajson.NewTime(at),
+		Time:  json.NewTime(at),
 	})
 	require.Equal(t, gas.Gas(11), fee.State.Capacity)
 	require.Equal(t, gas.Gas(22), fee.State.Excess)
 	require.Equal(t, gas.Price(33), fee.Price)
 	require.True(t, fee.Time.Time().Equal(at), "getFeeState answered %v, want %v", fee.Time.Time(), at)
 
-	vdr := crosses(t, &GetValidatorFeeStateReply{Excess: 44, Price: 55, Time: avajson.NewTime(at)})
+	vdr := crosses(t, &GetValidatorFeeStateReply{Excess: 44, Price: 55, Time: json.NewTime(at)})
 	require.Equal(t, gas.Gas(44), vdr.Excess)
 	require.Equal(t, gas.Price(55), vdr.Price)
 	require.True(t, vdr.Time.Time().Equal(at), "getValidatorFeeState answered %v, want %v", vdr.Time.Time(), at)
@@ -84,8 +84,8 @@ func TestTheAnswersCrossWithTheirValues(t *testing.T) {
 	node := ids.GenerateTestNodeID()
 
 	height := crosses(t, &GetCurrentSupplyReply{Supply: 7, Height: 9})
-	require.Equal(t, avajson.Uint64(7), height.Supply)
-	require.Equal(t, avajson.Uint64(9), height.Height)
+	require.Equal(t, json.Uint64(7), height.Supply)
+	require.Equal(t, json.Uint64(9), height.Height)
 
 	// An id is 32 bytes and needs a stated codec; a list of them needs one too.
 	blockchains := crosses(t, &ValidatesResponse{BlockchainIDs: []ids.ID{one, two}})
@@ -96,7 +96,7 @@ func TestTheAnswersCrossWithTheirValues(t *testing.T) {
 		Balance:  5,
 		Balances: Amounts{{AssetID: one, Value: 5}},
 	})
-	require.Equal(t, avajson.Uint64(5), balance.Balance)
+	require.Equal(t, json.Uint64(5), balance.Balance)
 	require.Equal(t, Amounts{{AssetID: one, Value: 5}}, balance.Balances)
 
 	// ValidatorSet was a map keyed by node id.
@@ -118,7 +118,7 @@ func TestTheAnswersCrossWithTheirValues(t *testing.T) {
 	require.NotNil(t, arm, "the sum lost which arm was set")
 	require.Equal(t, one, arm.TxID)
 	require.Equal(t, node, arm.NodeID)
-	require.Equal(t, avajson.Uint64(12), arm.Weight)
+	require.Equal(t, json.Uint64(12), arm.Weight)
 
 	// gas.Dimensions is a fixed array, restated as the list it is on the wire.
 	config := crosses(t, &GetFeeConfigReply{

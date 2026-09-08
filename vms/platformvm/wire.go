@@ -6,12 +6,12 @@ package platformvm
 import (
 	"slices"
 
-	"github.com/go-json-experiment/json"
+	jsonv2 "github.com/go-json-experiment/json"
 	jsonv1 "github.com/go-json-experiment/json/v1"
 
 	"github.com/luxfi/ids"
 
-	avajson "github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/components/gas"
 	api "github.com/luxfi/node/vms/platformvm/api"
 	validators "github.com/luxfi/validators"
@@ -41,8 +41,8 @@ import (
 
 // Amount is a quantity of one asset.
 type Amount struct {
-	AssetID ids.ID         `json:"assetID"`
-	Value   avajson.Uint64 `json:"value"`
+	AssetID ids.ID      `json:"assetID"`
+	Value   json.Uint64 `json:"value"`
 }
 
 // Amounts is a quantity per asset. The wire spells it as an object keyed by
@@ -56,7 +56,7 @@ type Amounts []Amount
 func newAmounts(m map[ids.ID]uint64) Amounts {
 	a := make(Amounts, 0, len(m))
 	for assetID, amount := range m {
-		a = append(a, Amount{AssetID: assetID, Value: avajson.Uint64(amount)})
+		a = append(a, Amount{AssetID: assetID, Value: json.Uint64(amount)})
 	}
 	slices.SortFunc(a, func(x, y Amount) int { return x.AssetID.Compare(y.AssetID) })
 	return a
@@ -64,18 +64,18 @@ func newAmounts(m map[ids.ID]uint64) Amounts {
 
 func (a Amounts) MarshalJSON() ([]byte, error) {
 	if a == nil {
-		return []byte(avajson.Null), nil
+		return []byte(json.Null), nil
 	}
-	m := make(map[ids.ID]avajson.Uint64, len(a))
+	m := make(map[ids.ID]json.Uint64, len(a))
 	for _, amount := range a {
 		m[amount.AssetID] = amount.Value
 	}
-	return json.Marshal(m, jsonv1.DefaultOptionsV1())
+	return jsonv2.Marshal(m, jsonv1.DefaultOptionsV1())
 }
 
 func (a *Amounts) UnmarshalJSON(b []byte) error {
-	var m map[ids.ID]avajson.Uint64
-	if err := json.Unmarshal(b, &m); err != nil {
+	var m map[ids.ID]json.Uint64
+	if err := jsonv2.Unmarshal(b, &m); err != nil {
 		return err
 	}
 	if m == nil {
@@ -99,9 +99,9 @@ func (a *Amounts) UnmarshalJSON(b []byte) error {
 // The node id is the object's KEY on the wire, not one of its fields, which is
 // what `json:"-"` says here; ValidatorSet supplies it.
 type Validator struct {
-	NodeID    ids.NodeID     `json:"-"`
-	PublicKey []byte         `json:"publicKey"`
-	Weight    avajson.Uint64 `json:"weight"`
+	NodeID    ids.NodeID  `json:"-"`
+	PublicKey []byte      `json:"publicKey"`
+	Weight    json.Uint64 `json:"weight"`
 }
 
 // ValidatorSet is a validator set read at a height. The wire spells it as an
@@ -114,7 +114,7 @@ func newValidatorSet(m map[ids.NodeID]*validators.GetValidatorOutput) ValidatorS
 		s = append(s, Validator{
 			NodeID:    nodeID,
 			PublicKey: vdr.PublicKey,
-			Weight:    avajson.Uint64(vdr.Weight),
+			Weight:    json.Uint64(vdr.Weight),
 		})
 	}
 	slices.SortFunc(s, func(x, y Validator) int { return x.NodeID.Compare(y.NodeID) })
@@ -165,13 +165,13 @@ type CurrentValidator struct {
 func (v CurrentValidator) MarshalJSON() ([]byte, error) {
 	switch {
 	case v.Permissionless != nil:
-		return json.Marshal(v.Permissionless, jsonv1.DefaultOptionsV1())
+		return jsonv2.Marshal(v.Permissionless, jsonv1.DefaultOptionsV1())
 	case v.Permissioned != nil:
-		return json.Marshal(v.Permissioned, jsonv1.DefaultOptionsV1())
+		return jsonv2.Marshal(v.Permissioned, jsonv1.DefaultOptionsV1())
 	case v.L1 != nil:
-		return json.Marshal(v.L1, jsonv1.DefaultOptionsV1())
+		return jsonv2.Marshal(v.L1, jsonv1.DefaultOptionsV1())
 	default:
-		return []byte(avajson.Null), nil
+		return []byte(json.Null), nil
 	}
 }
 
@@ -180,22 +180,22 @@ func (v CurrentValidator) MarshalJSON() ([]byte, error) {
 // staker and not on an L1 validator. Two keys tell the three apart.
 func (v *CurrentValidator) UnmarshalJSON(b []byte) error {
 	var probe struct {
-		DelegationFee *avajson.Float32 `json:"delegationFee"`
-		TxID          *ids.ID          `json:"txID"`
+		DelegationFee *json.Float32 `json:"delegationFee"`
+		TxID          *ids.ID       `json:"txID"`
 	}
-	if err := json.Unmarshal(b, &probe); err != nil {
+	if err := jsonv2.Unmarshal(b, &probe); err != nil {
 		return err
 	}
 	switch {
 	case probe.DelegationFee != nil:
 		v.Permissionless = &api.PermissionlessValidator{}
-		return json.Unmarshal(b, v.Permissionless)
+		return jsonv2.Unmarshal(b, v.Permissionless)
 	case probe.TxID != nil:
 		v.Permissioned = &api.Staker{}
-		return json.Unmarshal(b, v.Permissioned)
+		return jsonv2.Unmarshal(b, v.Permissioned)
 	default:
 		v.L1 = &api.APIL1Validator{}
-		return json.Unmarshal(b, v.L1)
+		return jsonv2.Unmarshal(b, v.L1)
 	}
 }
 

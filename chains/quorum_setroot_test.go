@@ -30,8 +30,8 @@ import (
 )
 
 // expectedSetRoot is an INDEPENDENT reimplementation of the canonical set-root
-// spec, used only by the golden test to cross-check hashValidatorSet. It is
-// deliberately NOT a call to hashValidatorSet (that would be a tautology): if the
+// spec, used only by the golden test to cross-check validators.SetRoot. It is
+// deliberately NOT a call to validators.SetRoot (that would be a tautology): if the
 // production encoding ever diverges from this spec the golden test fails.
 func expectedSetRoot(t *testing.T, vdrs []vdr) ids.ID {
 	t.Helper()
@@ -271,7 +271,7 @@ func TestHashValidatorSet_ByteStability(t *testing.T) {
 		a: {NodeID: a, PublicKey: []byte{0xaa, 0xbb}, Light: 10},
 		b: {NodeID: b, PublicKey: []byte{0xcc}, Light: 20},
 	}
-	got := hashValidatorSet(set)
+	got := validators.SetRoot(set)
 
 	// Independently recompute the expected commitment from the canonical spec:
 	// sorted-by-NodeID, each nodeID || light(8,BE) || len(pk)(8,BE) || pk, SHA-256.
@@ -284,10 +284,10 @@ func TestHashValidatorSet_ByteStability(t *testing.T) {
 	}
 
 	// Empty/nil set → ids.Empty.
-	if hashValidatorSet(nil) != ids.Empty {
+	if validators.SetRoot(nil) != ids.Empty {
 		t.Fatal("nil set must commit to ids.Empty")
 	}
-	if hashValidatorSet(map[ids.NodeID]*validators.GetValidatorOutput{}) != ids.Empty {
+	if validators.SetRoot(map[ids.NodeID]*validators.GetValidatorOutput{}) != ids.Empty {
 		t.Fatal("empty set must commit to ids.Empty")
 	}
 }

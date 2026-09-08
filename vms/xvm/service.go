@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/go-json-experiment/json"
+	jsonv2 "github.com/go-json-experiment/json"
 	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
@@ -20,7 +20,7 @@ import (
 	"github.com/luxfi/utxo/secp256k1fx"
 
 	safemath "github.com/luxfi/math"
-	avajson "github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/json"
 )
 
 const (
@@ -103,7 +103,7 @@ func (s *Service) getBlock(_ context.Context, in *apitypes.GetBlockArgs) (*apity
 		}
 	}
 
-	reply.Block, err = json.Marshal(result)
+	reply.Block, err = jsonv2.Marshal(result)
 	return reply, err
 }
 
@@ -161,7 +161,7 @@ func (s *Service) getBlockByHeight(_ context.Context, in *apitypes.GetBlockByHei
 		}
 	}
 
-	reply.Block, err = json.Marshal(result)
+	reply.Block, err = jsonv2.Marshal(result)
 	return reply, err
 }
 
@@ -236,9 +236,9 @@ func (s *Service) issueTx(_ context.Context, in *apitypes.FormattedTx) (*apitype
 type GetAddressTxsArgs struct {
 	apitypes.JSONAddress
 	// Cursor used as a page index / offset
-	Cursor avajson.Uint64 `json:"cursor"`
+	Cursor json.Uint64 `json:"cursor"`
 	// PageSize num of items per page
-	PageSize avajson.Uint64 `json:"pageSize"`
+	PageSize json.Uint64 `json:"pageSize"`
 	// AssetID defaulted to LUX if omitted or left blank
 	AssetID string `json:"assetID"`
 }
@@ -246,7 +246,7 @@ type GetAddressTxsArgs struct {
 type GetAddressTxsReply struct {
 	TxIDs []ids.ID `json:"txIDs"`
 	// Cursor used as a page index / offset
-	Cursor avajson.Uint64 `json:"cursor"`
+	Cursor json.Uint64 `json:"cursor"`
 }
 
 // getAddressTxs returns the transactions of an address, one page at a time.
@@ -302,7 +302,7 @@ func (s *Service) getAddressTxs(_ context.Context, in *GetAddressTxsArgs) (*GetA
 	// To get the next set of tx IDs, the user should provide this cursor.
 	// e.g. if they provided cursor 5, and read 6 tx IDs, they should start
 	// next time from index (cursor) 11.
-	reply.Cursor = avajson.Uint64(cursor + uint64(len(reply.TxIDs)))
+	reply.Cursor = json.Uint64(cursor + uint64(len(reply.TxIDs)))
 	return reply, nil
 }
 
@@ -347,7 +347,7 @@ func (s *Service) getTx(_ context.Context, in *apitypes.GetTxArgs) (*apitypes.Ge
 		return nil, err
 	}
 
-	reply.Tx, err = json.Marshal(result)
+	reply.Tx, err = jsonv2.Marshal(result)
 	return reply, err
 }
 
@@ -470,9 +470,9 @@ type GetAssetDescriptionArgs struct {
 // GetAssetDescriptionReply is an asset's name, symbol and denomination
 type GetAssetDescriptionReply struct {
 	FormattedAssetID
-	Name         string        `json:"name"`
-	Symbol       string        `json:"symbol"`
-	Denomination avajson.Uint8 `json:"denomination"`
+	Name         string     `json:"name"`
+	Symbol       string     `json:"symbol"`
+	Denomination json.Uint8 `json:"denomination"`
 }
 
 // getAsset returns an asset's name, symbol and denomination.
@@ -508,7 +508,7 @@ func (s *Service) getAsset(_ context.Context, in *GetAssetDescriptionArgs) (*Get
 	reply := &GetAssetDescriptionReply{
 		Name:         createAssetTx.Name,
 		Symbol:       createAssetTx.Symbol,
-		Denomination: avajson.Uint8(createAssetTx.Denomination),
+		Denomination: json.Uint8(createAssetTx.Denomination),
 	}
 	reply.FormattedAssetID.AssetID = assetID
 	return reply, nil
@@ -523,8 +523,8 @@ type GetBalanceArgs struct {
 
 // GetBalanceReply is an address's balance of one asset, and the UTXOs holding it
 type GetBalanceReply struct {
-	Balance avajson.Uint64 `json:"balance"`
-	UTXOIDs []lux.UTXOID   `json:"utxoIDs"`
+	Balance json.Uint64  `json:"balance"`
+	UTXOIDs []lux.UTXOID `json:"utxoIDs"`
 }
 
 // getBalance returns the balance of one asset held by an address.
@@ -584,7 +584,7 @@ func (s *Service) getBalance(_ context.Context, in *GetBalanceArgs) (*GetBalance
 		if err != nil {
 			return nil, err
 		}
-		reply.Balance = avajson.Uint64(amt)
+		reply.Balance = json.Uint64(amt)
 		reply.UTXOIDs = append(reply.UTXOIDs, utxo.UTXOID)
 	}
 
@@ -592,8 +592,8 @@ func (s *Service) getBalance(_ context.Context, in *GetBalanceArgs) (*GetBalance
 }
 
 type Balance struct {
-	AssetID string         `json:"asset"`
-	Balance avajson.Uint64 `json:"balance"`
+	AssetID string      `json:"asset"`
+	Balance json.Uint64 `json:"balance"`
 }
 
 type GetAllBalancesArgs struct {
@@ -667,7 +667,7 @@ func (s *Service) getBalances(_ context.Context, in *GetAllBalancesArgs) (*GetAl
 		alias := s.vm.PrimaryAliasOrDefault(assetID)
 		reply.Balances[i] = Balance{
 			AssetID: alias,
-			Balance: avajson.Uint64(balances[assetID]),
+			Balance: json.Uint64(balances[assetID]),
 		}
 		i++
 	}

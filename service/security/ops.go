@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/zap-proto/zip"
 
-	avajson "github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/json"
 )
 
 //go:generate go run github.com/zap-proto/zip/cmd/zipdoc
@@ -53,7 +53,7 @@ type BlockSecurityArgs struct {
 	// BlockNumber is the explorer-visible block height. The profile is pinned at
 	// genesis so today's answer is the same at every height; the argument is
 	// carried so per-block detail can be added without a new namespace.
-	BlockNumber avajson.Uint64 `json:"blockNumber"`
+	BlockNumber json.Uint64 `json:"blockNumber"`
 	// Chain is the chain alias ("P", "X", "C") the block belongs to. Reserved
 	// for the same reason.
 	Chain string `json:"chain,omitempty"`

@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/go-json-experiment/json"
+	jsonv2 "github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
 	jsonv1 "github.com/go-json-experiment/json/v1"
 	"github.com/luxfi/address"
@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
 
-	avajson "github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/json"
 )
 
 var (
@@ -59,7 +59,7 @@ func CreateStaticService() *StaticService {
 
 // BuildGenesisArgs are arguments for BuildGenesis
 type BuildGenesisArgs struct {
-	NetworkID   avajson.Uint32      `json:"networkID"`
+	NetworkID   json.Uint32         `json:"networkID"`
 	GenesisData Assets              `json:"genesisData"`
 	Encoding    formatting.Encoding `json:"encoding"`
 }
@@ -73,18 +73,18 @@ type Assets []AssetDefinition
 
 func (a Assets) MarshalJSON() ([]byte, error) {
 	if a == nil {
-		return []byte(avajson.Null), nil
+		return []byte(json.Null), nil
 	}
 	m := make(map[string]AssetDefinition, len(a))
 	for _, def := range a {
 		m[def.Alias] = def
 	}
-	return json.Marshal(m, jsonv1.DefaultOptionsV1())
+	return jsonv2.Marshal(m, jsonv1.DefaultOptionsV1())
 }
 
 func (a *Assets) UnmarshalJSON(b []byte) error {
 	var m map[string]AssetDefinition
-	if err := json.Unmarshal(b, &m); err != nil {
+	if err := jsonv2.Unmarshal(b, &m); err != nil {
 		return err
 	}
 	if m == nil {
@@ -105,24 +105,24 @@ type AssetDefinition struct {
 	// Alias is the name the asset is known by. On the wire it is the key the
 	// definition hangs under rather than one of its fields, which is what
 	// `json:"-"` says; Assets supplies it.
-	Alias        string        `json:"-"`
-	Name         string        `json:"name"`
-	Symbol       string        `json:"symbol"`
-	Denomination avajson.Uint8 `json:"denomination"`
-	InitialState InitialState  `json:"initialState"`
-	Memo         string        `json:"memo"`
+	Alias        string       `json:"-"`
+	Name         string       `json:"name"`
+	Symbol       string       `json:"symbol"`
+	Denomination json.Uint8   `json:"denomination"`
+	InitialState InitialState `json:"initialState"`
+	Memo         string       `json:"memo"`
 }
 
 // Holder describes how much an address owns of an asset
 type Holder struct {
-	Amount  avajson.Uint64 `json:"amount"`
-	Address string         `json:"address"`
+	Amount  json.Uint64 `json:"amount"`
+	Address string      `json:"address"`
 }
 
 // Owners describes who can perform an action
 type Owners struct {
-	Threshold avajson.Uint32 `json:"threshold"`
-	Minters   []string       `json:"minters"`
+	Threshold json.Uint32 `json:"threshold"`
+	Minters   []string    `json:"minters"`
 }
 
 // InitialState is what an asset holds at genesis.
@@ -147,16 +147,16 @@ func (s InitialState) empty() bool {
 // without the state that was asked for.
 func (s *InitialState) UnmarshalJSON(b []byte) error {
 	var raw map[string]jsontext.Value
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := jsonv2.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	for kind, states := range raw {
 		var err error
 		switch kind {
 		case "fixedCap":
-			err = json.Unmarshal(states, &s.FixedCap)
+			err = jsonv2.Unmarshal(states, &s.FixedCap)
 		case "variableCap":
-			err = json.Unmarshal(states, &s.VariableCap)
+			err = jsonv2.Unmarshal(states, &s.VariableCap)
 		default:
 			return fmt.Errorf("%w: %q", errUnknownAssetType, kind)
 		}

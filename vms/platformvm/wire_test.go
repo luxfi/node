@@ -4,7 +4,7 @@
 package platformvm
 
 import (
-	"encoding/json"
+	stdjson "encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,7 +18,7 @@ import (
 	validators "github.com/luxfi/validators"
 	"github.com/luxfi/vm/types"
 
-	avajson "github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/components/gas"
 	api "github.com/luxfi/node/vms/platformvm/api"
 )
@@ -71,9 +71,9 @@ func TestWireGolden(t *testing.T) {
 
 			recorded := golden(t, test.file)
 			reply := test.reply()
-			require.NoError(json.Unmarshal(recorded, reply))
+			require.NoError(stdjson.Unmarshal(recorded, reply))
 
-			again, err := json.Marshal(reply)
+			again, err := stdjson.Marshal(reply)
 			require.NoError(err)
 			require.JSONEq(string(recorded), string(again))
 			require.Equal(string(recorded), string(again), "the bytes a live node answers with must survive the round trip")
@@ -96,28 +96,28 @@ func TestWireUnchanged(t *testing.T) {
 	t.Run("amounts", func(t *testing.T) {
 		tests := []struct {
 			name string
-			m    map[ids.ID]avajson.Uint64
+			m    map[ids.ID]json.Uint64
 			a    Amounts
 		}{
 			{"nil", nil, nil},
-			{"empty", map[ids.ID]avajson.Uint64{}, Amounts{}},
+			{"empty", map[ids.ID]json.Uint64{}, Amounts{}},
 			{
 				"two",
-				map[ids.ID]avajson.Uint64{assetA: 1, assetB: 2},
+				map[ids.ID]json.Uint64{assetA: 1, assetB: 2},
 				Amounts{{AssetID: assetA, Value: 1}, {AssetID: assetB, Value: 2}},
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				require := require.New(t)
-				was, err := json.Marshal(test.m)
+				was, err := stdjson.Marshal(test.m)
 				require.NoError(err)
-				is, err := json.Marshal(test.a)
+				is, err := stdjson.Marshal(test.a)
 				require.NoError(err)
 				require.Equal(string(was), string(is))
 
 				var back Amounts
-				require.NoError(json.Unmarshal(was, &back))
+				require.NoError(stdjson.Unmarshal(was, &back))
 				require.Equal(test.a, back)
 			})
 		}
@@ -138,13 +138,13 @@ func TestWireUnchanged(t *testing.T) {
 		require := require.New(t)
 
 		// What the reply held before: the read's own output, keyed by node.
-		was, err := json.Marshal(&legacyValidatorsAtReply{Validators: map[ids.NodeID]*validators.GetValidatorOutput{
+		was, err := stdjson.Marshal(&legacyValidatorsAtReply{Validators: map[ids.NodeID]*validators.GetValidatorOutput{
 			nodeA: {NodeID: nodeA, PublicKey: key, Weight: 7, TxID: txID, Light: 7},
 			nodeB: {NodeID: nodeB, Weight: 9},
 		}})
 		require.NoError(err)
 
-		is, err := json.Marshal(&GetValidatorsAtReply{Validators: ValidatorSet{
+		is, err := stdjson.Marshal(&GetValidatorsAtReply{Validators: ValidatorSet{
 			{NodeID: nodeA, PublicKey: key, Weight: 7},
 			{NodeID: nodeB, Weight: 9},
 		}})
@@ -157,9 +157,9 @@ func TestWireUnchanged(t *testing.T) {
 
 	t.Run("getValidatorsAt nil", func(t *testing.T) {
 		require := require.New(t)
-		was, err := json.Marshal(&legacyValidatorsAtReply{})
+		was, err := stdjson.Marshal(&legacyValidatorsAtReply{})
 		require.NoError(err)
-		is, err := json.Marshal(&GetValidatorsAtReply{})
+		is, err := stdjson.Marshal(&GetValidatorsAtReply{})
 		require.NoError(err)
 		require.Equal(string(was), string(is))
 	})
@@ -169,7 +169,7 @@ func TestWireUnchanged(t *testing.T) {
 		vdrA := &validators.GetValidatorOutput{NodeID: nodeA, PublicKey: key, Light: 7, Weight: 7, TxID: txID}
 		vdrB := &validators.GetValidatorOutput{NodeID: nodeB, Weight: 9}
 
-		was, err := json.Marshal(&legacyAllValidatorsAtReply{
+		was, err := stdjson.Marshal(&legacyAllValidatorsAtReply{
 			ValidatorSets: map[ids.ID]map[ids.NodeID]*validators.GetValidatorOutput{
 				assetA: {nodeA: vdrA, nodeB: vdrB},
 				assetB: {},
@@ -177,7 +177,7 @@ func TestWireUnchanged(t *testing.T) {
 		})
 		require.NoError(err)
 
-		is, err := json.Marshal(&GetAllValidatorsAtReply{ValidatorSets: []ChainValidatorSet{
+		is, err := stdjson.Marshal(&GetAllValidatorsAtReply{ValidatorSets: []ChainValidatorSet{
 			{ChainID: assetA, Validators: []*validators.GetValidatorOutput{vdrA, vdrB}},
 			{ChainID: assetB, Validators: []*validators.GetValidatorOutput{}},
 		}})
@@ -187,15 +187,15 @@ func TestWireUnchanged(t *testing.T) {
 
 	t.Run("getBalance", func(t *testing.T) {
 		require := require.New(t)
-		m := map[ids.ID]avajson.Uint64{assetA: 3}
+		m := map[ids.ID]json.Uint64{assetA: 3}
 		a := Amounts{{AssetID: assetA, Value: 3}}
 
-		was, err := json.Marshal(&legacyBalanceResponse{
+		was, err := stdjson.Marshal(&legacyBalanceResponse{
 			Balance: 3, Balances: m, Unlockeds: m,
-			LockedStakeables: map[ids.ID]avajson.Uint64{}, LockedNotStakeables: nil,
+			LockedStakeables: map[ids.ID]json.Uint64{}, LockedNotStakeables: nil,
 		})
 		require.NoError(err)
-		is, err := json.Marshal(&GetBalanceResponse{
+		is, err := stdjson.Marshal(&GetBalanceResponse{
 			Balance: 3, Balances: a, Unlockeds: a,
 			LockedStakeables: Amounts{}, LockedNotStakeables: nil,
 		})
@@ -211,7 +211,7 @@ func TestWireUnchanged(t *testing.T) {
 	t.Run("getCurrentValidators", func(t *testing.T) {
 		require := require.New(t)
 
-		reward := avajson.Uint64(11)
+		reward := json.Uint64(11)
 		staker := api.Staker{TxID: txID, StartTime: 1, EndTime: 2, Weight: 3, NodeID: nodeA}
 		permissionless := api.PermissionlessValidator{
 			Staker:          staker,
@@ -224,12 +224,12 @@ func TestWireUnchanged(t *testing.T) {
 			BaseL1Validator: api.BaseL1Validator{ValidationID: &txID, PublicKey: &pubKey},
 		}
 
-		was, err := json.Marshal(&legacyCurrentValidatorsReply{
+		was, err := stdjson.Marshal(&legacyCurrentValidatorsReply{
 			Validators: []any{permissionless, staker, l1},
 		})
 		require.NoError(err)
 
-		is, err := json.Marshal(&GetCurrentValidatorsReply{Validators: []CurrentValidator{
+		is, err := stdjson.Marshal(&GetCurrentValidatorsReply{Validators: []CurrentValidator{
 			{Permissionless: &permissionless},
 			{Permissioned: &staker},
 			{L1: &l1},
@@ -239,7 +239,7 @@ func TestWireUnchanged(t *testing.T) {
 
 		// And the arms come back from the wire as the arms they went out as.
 		var back GetCurrentValidatorsReply
-		require.NoError(json.Unmarshal(is, &back))
+		require.NoError(stdjson.Unmarshal(is, &back))
 		require.Len(back.Validators, 3)
 		require.NotNil(back.Validators[0].Permissionless)
 		require.NotNil(back.Validators[1].Permissioned)
@@ -255,19 +255,19 @@ func TestWireUnchanged(t *testing.T) {
 		delegators := []api.PrimaryDelegator{{Staker: api.Staker{NodeID: nodeA}}}
 		vdr := api.PermissionlessValidator{Staker: api.Staker{NodeID: nodeA}}
 
-		without, err := json.Marshal(CurrentValidator{Permissionless: &vdr})
+		without, err := stdjson.Marshal(CurrentValidator{Permissionless: &vdr})
 		require.NoError(err)
 		require.NotContains(string(without), `"delegators"`)
 
 		vdr.Delegators = &delegators
-		with, err := json.Marshal(CurrentValidator{Permissionless: &vdr})
+		with, err := stdjson.Marshal(CurrentValidator{Permissionless: &vdr})
 		require.NoError(err)
 		require.Contains(string(with), `"delegators"`)
 	})
 
 	t.Run("timestamps", func(t *testing.T) {
 		// time.Time lays out with no slots, so a reply holding one crosses
-		// carrying nothing and says nothing about it. avajson.Time is the same
+		// carrying nothing and says nothing about it. json.Time is the same
 		// instant as numbers — and has to render as the same bytes, in whatever
 		// zone the instant was read in.
 		for _, when := range []time.Time{
@@ -278,20 +278,20 @@ func TestWireUnchanged(t *testing.T) {
 			{},
 		} {
 			require := require.New(t)
-			was, err := json.Marshal(struct {
+			was, err := stdjson.Marshal(struct {
 				T time.Time `json:"timestamp"`
 			}{when})
 			require.NoError(err)
-			is, err := json.Marshal(struct {
-				T avajson.Time `json:"timestamp"`
-			}{avajson.NewTime(when)})
+			is, err := stdjson.Marshal(struct {
+				T json.Time `json:"timestamp"`
+			}{json.NewTime(when)})
 			require.NoError(err)
 			require.Equal(string(was), string(is), "instant %s", when)
 
 			var back struct {
-				T avajson.Time `json:"timestamp"`
+				T json.Time `json:"timestamp"`
 			}
-			require.NoError(json.Unmarshal(is, &back))
+			require.NoError(stdjson.Unmarshal(is, &back))
 			require.True(back.T.Time().Equal(when), "instant %s did not survive", when)
 		}
 	})
@@ -306,9 +306,9 @@ func TestWireUnchanged(t *testing.T) {
 			MinPrice:                 8,
 			ExcessConversionConstant: 9,
 		}
-		was, err := json.Marshal(config)
+		was, err := stdjson.Marshal(config)
 		require.NoError(err)
-		is, err := json.Marshal(newFeeConfig(config))
+		is, err := stdjson.Marshal(newFeeConfig(config))
 		require.NoError(err)
 		require.Equal(string(was), string(is))
 	})
@@ -327,15 +327,15 @@ type (
 		Validators []any `json:"validators"`
 	}
 	legacyBalanceResponse struct {
-		Balance             avajson.Uint64            `json:"balance"`
-		Unlocked            avajson.Uint64            `json:"unlocked"`
-		LockedStakeable     avajson.Uint64            `json:"lockedStakeable"`
-		LockedNotStakeable  avajson.Uint64            `json:"lockedNotStakeable"`
-		Balances            map[ids.ID]avajson.Uint64 `json:"balances"`
-		Unlockeds           map[ids.ID]avajson.Uint64 `json:"unlockeds"`
-		LockedStakeables    map[ids.ID]avajson.Uint64 `json:"lockedStakeables"`
-		LockedNotStakeables map[ids.ID]avajson.Uint64 `json:"lockedNotStakeables"`
-		UTXOIDs             []*lux.UTXOID             `json:"utxoIDs"`
+		Balance             json.Uint64            `json:"balance"`
+		Unlocked            json.Uint64            `json:"unlocked"`
+		LockedStakeable     json.Uint64            `json:"lockedStakeable"`
+		LockedNotStakeable  json.Uint64            `json:"lockedNotStakeable"`
+		Balances            map[ids.ID]json.Uint64 `json:"balances"`
+		Unlockeds           map[ids.ID]json.Uint64 `json:"unlockeds"`
+		LockedStakeables    map[ids.ID]json.Uint64 `json:"lockedStakeables"`
+		LockedNotStakeables map[ids.ID]json.Uint64 `json:"lockedNotStakeables"`
+		UTXOIDs             []*lux.UTXOID          `json:"utxoIDs"`
 	}
 )
 
@@ -346,7 +346,7 @@ type (
 func (v *legacyValidatorsAtReply) MarshalJSON() ([]byte, error) {
 	m := make(map[ids.NodeID]*jsonGetValidatorOutput, len(v.Validators))
 	for _, vdr := range v.Validators {
-		out := &jsonGetValidatorOutput{Weight: avajson.Uint64(vdr.Weight)}
+		out := &jsonGetValidatorOutput{Weight: json.Uint64(vdr.Weight)}
 		if vdr.PublicKey != nil {
 			pk, err := formatting.Encode(formatting.HexNC, vdr.PublicKey)
 			if err != nil {
@@ -356,5 +356,5 @@ func (v *legacyValidatorsAtReply) MarshalJSON() ([]byte, error) {
 		}
 		m[vdr.NodeID] = out
 	}
-	return json.Marshal(m)
+	return stdjson.Marshal(m)
 }

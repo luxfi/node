@@ -23,12 +23,8 @@
 package chains
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/binary"
 	"errors"
-	"sort"
 	"sync/atomic"
 	"time"
 
@@ -457,7 +453,7 @@ var _ consensuschain.StakeSource = (*validatorStakeSource)(nil)
 //
 // The commitment is a SHA-256 over the set serialized in a canonical order
 // (validators sorted by NodeID, each as nodeID || light || len(pubkey) ||
-// pubkey) — see hashValidatorSet. Sorting by NodeID + length-prefixing the
+// pubkey) — see validators.SetRoot. Sorting by NodeID + length-prefixing the
 // pubkey makes the encoding canonical and unambiguous; the byte layout is
 // UNCHANGED from the prior implementation, so the wire format and the engine's
 // epoch-binding contract are preserved (only the SOURCE of the set changed from
@@ -478,43 +474,10 @@ func newValidatorSetRootSource(state validators.State, networkID ids.ID) *valida
 // symmetric across nodes, so the Empty fallback is uniform and never creates a
 // cross-node root disagreement.
 func (s *validatorSetRootSource) ValidatorSetRoot(height uint64) ids.ID {
-	return hashValidatorSet(validatorSetAtHeight(s.state, s.networkID, height))
+	return validators.SetRoot(validatorSetAtHeight(s.state, s.networkID, height))
 }
 
 var _ consensuschain.ValidatorSetRootSource = (*validatorSetRootSource)(nil)
-
-// hashValidatorSet computes the canonical SHA-256 commitment to a weighted
-// validator set: validators sorted by NodeID, each serialized as
-// nodeID || light(8,BE) || len(pubkey)(8,BE) || pubkey. An empty/nil set commits
-// to ids.Empty (the "unbound" answer). This is the SINGLE definition of the
-// set-root encoding (DRY) — both the live source and its tests hash through here,
-// so the wire format cannot drift between them.
-func hashValidatorSet(set map[ids.NodeID]*validators.GetValidatorOutput) ids.ID {
-	if len(set) == 0 {
-		return ids.Empty
-	}
-	nodeIDs := make([]ids.NodeID, 0, len(set))
-	for nodeID := range set {
-		nodeIDs = append(nodeIDs, nodeID)
-	}
-	sort.Slice(nodeIDs, func(i, j int) bool {
-		return bytes.Compare(nodeIDs[i][:], nodeIDs[j][:]) < 0
-	})
-	h := sha256.New()
-	var u64 [8]byte
-	for _, nodeID := range nodeIDs {
-		v := set[nodeID]
-		h.Write(nodeID[:])
-		binary.BigEndian.PutUint64(u64[:], v.Light)
-		h.Write(u64[:])
-		binary.BigEndian.PutUint64(u64[:], uint64(len(v.PublicKey)))
-		h.Write(u64[:])
-		h.Write(v.PublicKey)
-	}
-	var root ids.ID
-	copy(root[:], h.Sum(nil))
-	return root
-}
 
 // --- app-gossip envelope for votes/certs -------------------------------------
 

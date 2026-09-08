@@ -4,14 +4,14 @@
 package xvm
 
 import (
-	"encoding/json"
+	stdjson "encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/formatting"
 
-	avajson "github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/utils/json"
 )
 
 // buildGenesis's argument used to be a map of maps, so it had no layout and no
@@ -34,7 +34,7 @@ func TestBuildGenesisArgsWire(t *testing.T) {
 	require := require.New(t)
 
 	var args BuildGenesisArgs
-	require.NoError(json.Unmarshal([]byte(genesisRequest), &args))
+	require.NoError(stdjson.Unmarshal([]byte(genesisRequest), &args))
 
 	// The alias is the object's key on the wire and lives inside the entry
 	// here, in the key's own order.
@@ -42,11 +42,11 @@ func TestBuildGenesisArgsWire(t *testing.T) {
 	require.Equal("asset1", args.GenesisData[0].Alias)
 	require.Equal("asset2", args.GenesisData[1].Alias)
 	require.Len(args.GenesisData[0].InitialState.FixedCap, 1)
-	require.Equal(avajson.Uint64(100000), args.GenesisData[0].InitialState.FixedCap[0].Amount)
+	require.Equal(json.Uint64(100000), args.GenesisData[0].InitialState.FixedCap[0].Amount)
 	require.Len(args.GenesisData[1].InitialState.VariableCap, 1)
 	require.Equal(formatting.Hex, args.Encoding)
 
-	again, err := json.Marshal(args)
+	again, err := stdjson.Marshal(args)
 	require.NoError(err)
 	require.Equal(genesisRequest, string(again), "the request document must survive the round trip")
 }
@@ -57,6 +57,6 @@ func TestBuildGenesisRefusesUnknownState(t *testing.T) {
 	require := require.New(t)
 
 	var args BuildGenesisArgs
-	err := json.Unmarshal([]byte(`{"genesisData":{"a":{"initialState":{"nft":[]}}}}`), &args)
+	err := stdjson.Unmarshal([]byte(`{"genesisData":{"a":{"initialState":{"nft":[]}}}}`), &args)
 	require.ErrorIs(err, errUnknownAssetType)
 }

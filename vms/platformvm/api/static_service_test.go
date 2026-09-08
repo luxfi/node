@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/utils/json"
+	"github.com/luxfi/node/vms/platformvm/genesis"
 )
 
 func TestBuildGenesisInvalidUTXOBalance(t *testing.T) {

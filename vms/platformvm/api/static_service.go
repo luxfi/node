@@ -14,14 +14,14 @@ import (
 	"github.com/luxfi/formatting"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/utils/json"
 	"github.com/luxfi/node/vms/platformvm/genesis"
+	"github.com/luxfi/node/vms/platformvm/signer"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/platformvm/txs/txheap"
 	"github.com/luxfi/util"
-	"github.com/luxfi/node/utils/json"
-	"github.com/luxfi/node/vms/platformvm/signer"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -33,7 +33,7 @@ import (
 
 var (
 	errUTXOHasNoValue         = errors.New("genesis UTXO has no value")
-	errValidatorHasZeroWeight   = errors.New("validator has zero weight")
+	errValidatorHasZeroWeight = errors.New("validator has zero weight")
 	errValidatorAlreadyExited = errors.New("validator would have already unstaked")
 	errStakeOverflow          = errors.New("validator stake exceeds limit")
 
@@ -169,7 +169,7 @@ type Chain struct {
 	VMID        ids.ID   `json:"vmID"`
 	FxIDs       []ids.ID `json:"fxIDs"`
 	Name        string   `json:"name"`
-	ChainID       ids.ID   `json:"netID"`
+	ChainID     ids.ID   `json:"netID"`
 }
 
 // BuildGenesisArgs are the arguments used to create
@@ -180,7 +180,7 @@ type Chain struct {
 // [Chains] are the chains that exist at genesis.
 // [Time] is the Platform Chain's time at network genesis.
 type BuildGenesisArgs struct {
-	UTXOAssetID    ids.ID                           `json:"utxoAssetID"`
+	UTXOAssetID   ids.ID                           `json:"utxoAssetID"`
 	NetworkID     json.Uint32                      `json:"networkID"`
 	UTXOs         []UTXO                           `json:"utxos"`
 	Validators    []GenesisPermissionlessValidator `json:"validators"`
