@@ -127,6 +127,18 @@ func TestChainAddressBuiltOnlyHere(t *testing.T) {
 			case ".git", "vendor", "testdata", "node_modules":
 				return fs.SkipDir
 			}
+			// A nested module is a different program with a different
+			// dependency set, and some of them exist precisely so they can
+			// carry what the node must not — conformance/dex links an EVM ABI
+			// and a signer. Such a module cannot import [Chain], so requiring
+			// it to call [Chain] would be asking it to depend on the node to
+			// avoid spelling a string. The rule this test enforces is about
+			// THIS module.
+			if p != root {
+				if _, err := os.Stat(filepath.Join(p, "go.mod")); err == nil {
+					return fs.SkipDir
+				}
+			}
 			return nil
 		}
 		if filepath.Ext(p) != ".go" {
