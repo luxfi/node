@@ -11,14 +11,14 @@ import (
 
 	consensusconfig "github.com/luxfi/consensus/config"
 	"github.com/luxfi/node/config"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network"
 )
 
 func TestPOAConsensusParameters(t *testing.T) {
 	require := require.New(t)
 
 	// Test that POA consensus parameters are correctly set
-	params := nets.GetPOAConsensusParameters()
+	params := network.GetPOAConsensusParameters()
 
 	// POA mode should have K=1, Alpha=1, Beta=1 for single-node operation
 	require.Equal(1, params.K, "POA mode should have K=1")
@@ -32,7 +32,7 @@ func TestPOANetConfig(t *testing.T) {
 	require := require.New(t)
 
 	// Test net config with POA enabled
-	cfg := nets.Config{
+	cfg := network.Config{
 		POAEnabled:        true,
 		POASingleNodeMode: true,
 		POAMinBlockTime:   1 * time.Second,

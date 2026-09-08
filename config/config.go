@@ -40,10 +40,10 @@ import (
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/config/node"
 	"github.com/luxfi/node/genesis/builder"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/mesh/dialer"
+	"github.com/luxfi/node/mesh/throttling"
 	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/dialer"
-	"github.com/luxfi/node/network/throttling"
 	server "github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/trace"
@@ -117,7 +117,7 @@ var (
 // getConsensusConfig cannot serve that purpose: it starts from DefaultParams and
 // returns a fully-populated struct, so "operator asked for K=20" and "nobody
 // asked for anything" come back identical. Its result also only ever reaches a
-// nets.Config, which chain creation does not read.
+// mesh.Config, which chain creation does not read.
 func getConsensusOverrides(v *viper.Viper) *chains.ConsensusOverrides {
 	o := &chains.ConsensusOverrides{}
 	set := false
@@ -335,7 +335,7 @@ func getNetworkConfig(
 	networkID uint32,
 	sybilProtectionEnabled bool,
 	halflife time.Duration,
-) (network.Config, error) {
+) (mesh.Config, error) {
 	// Set the max number of recent inbound connections upgraded to be
 	// equal to the max number of inbound connections per second.
 	maxInboundConnsPerSec := v.GetFloat64(NetworkInboundThrottlerMaxConnsPerSecKey)
@@ -345,7 +345,7 @@ func getNetworkConfig(
 
 	compressionType, err := compression.TypeFromString(v.GetString(NetworkCompressionTypeKey))
 	if err != nil {
-		return network.Config{}, err
+		return mesh.Config{}, err
 	}
 
 	// Allow private IPs by default for local development and testing.
@@ -358,7 +358,7 @@ func getNetworkConfig(
 	var supportedLPs set.Set[uint32]
 	for _, lp := range v.GetIntSlice(LPSupportKey) {
 		if lp < 0 || lp > math.MaxInt32 {
-			return network.Config{}, fmt.Errorf("invalid LP: %d", lp)
+			return mesh.Config{}, fmt.Errorf("invalid LP: %d", lp)
 		}
 		supportedLPs.Add(uint32(lp))
 	}
@@ -366,15 +366,15 @@ func getNetworkConfig(
 	var objectedLPs set.Set[uint32]
 	for _, lp := range v.GetIntSlice(LPObjectKey) {
 		if lp < 0 || lp > math.MaxInt32 {
-			return network.Config{}, fmt.Errorf("invalid LP: %d", lp)
+			return mesh.Config{}, fmt.Errorf("invalid LP: %d", lp)
 		}
 		objectedLPs.Add(uint32(lp))
 	}
 	if supportedLPs.Overlaps(objectedLPs) {
-		return network.Config{}, errConflictingLPOpinion
+		return mesh.Config{}, errConflictingLPOpinion
 	}
 	if constants.ScheduledLPs.Overlaps(objectedLPs) {
-		return network.Config{}, errConflictingImplicitLPOpinion
+		return mesh.Config{}, errConflictingImplicitLPOpinion
 	}
 
 	// Because this node version has scheduled these LPs, we should notify
@@ -386,8 +386,8 @@ func getNetworkConfig(
 	supportedLPs.Difference(constants.ActivatedLPs)
 	objectedLPs.Difference(constants.ActivatedLPs)
 
-	config := network.Config{
-		ThrottlerConfig: network.ThrottlerConfig{
+	config := mesh.Config{
+		ThrottlerConfig: mesh.ThrottlerConfig{
 			MaxInboundConnsPerSec: maxInboundConnsPerSec,
 			InboundConnUpgradeThrottlerConfig: throttling.InboundConnUpgradeThrottlerConfig{
 				UpgradeCooldown:        upgradeCooldown,
@@ -420,7 +420,7 @@ func getNetworkConfig(
 			},
 		},
 
-		HealthConfig: network.HealthConfig{
+		HealthConfig: mesh.HealthConfig{
 			Enabled:                                 sybilProtectionEnabled,
 			MaxTimeSinceMsgSent:                     v.GetDuration(NetworkHealthMaxTimeSinceMsgSentKey),
 			MaxTimeSinceMsgReceived:                 v.GetDuration(NetworkHealthMaxTimeSinceMsgReceivedKey),
@@ -441,18 +441,18 @@ func getNetworkConfig(
 
 		TLSKeyLogFile: v.GetString(NetworkTLSKeyLogFileKey),
 
-		TimeoutConfig: network.TimeoutConfig{
+		TimeoutConfig: mesh.TimeoutConfig{
 			PingPongTimeout:      v.GetDuration(NetworkPingTimeoutKey),
 			ReadHandshakeTimeout: v.GetDuration(NetworkReadHandshakeTimeoutKey),
 		},
 
-		PeerListGossipConfig: network.PeerListGossipConfig{
+		PeerListGossipConfig: mesh.PeerListGossipConfig{
 			PeerListNumValidatorIPs: v.GetUint32(NetworkPeerListNumValidatorIPsKey),
 			PeerListPullGossipFreq:  v.GetDuration(NetworkPeerListPullGossipFreqKey),
 			PeerListBloomResetFreq:  v.GetDuration(NetworkPeerListBloomResetFreqKey),
 		},
 
-		DelayConfig: network.DelayConfig{
+		DelayConfig: mesh.DelayConfig{
 			MaxReconnectDelay:     v.GetDuration(NetworkMaxReconnectDelayKey),
 			InitialReconnectDelay: v.GetDuration(NetworkInitialReconnectDelayKey),
 		},
@@ -474,39 +474,39 @@ func getNetworkConfig(
 
 	switch {
 	case config.HealthConfig.MaxTimeSinceMsgSent < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkHealthMaxTimeSinceMsgSentKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkHealthMaxTimeSinceMsgSentKey)
 	case config.HealthConfig.MaxTimeSinceMsgReceived < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkHealthMaxTimeSinceMsgReceivedKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkHealthMaxTimeSinceMsgReceivedKey)
 	case config.HealthConfig.MaxSendFailRate < 0 || config.HealthConfig.MaxSendFailRate > 1:
-		return network.Config{}, fmt.Errorf("%s must be in [0,1]", NetworkHealthMaxSendFailRateKey)
+		return mesh.Config{}, fmt.Errorf("%s must be in [0,1]", NetworkHealthMaxSendFailRateKey)
 	case config.HealthConfig.MaxPortionSendQueueBytesFull < 0 || config.HealthConfig.MaxPortionSendQueueBytesFull > 1:
-		return network.Config{}, fmt.Errorf("%s must be in [0,1]", NetworkHealthMaxPortionSendQueueFillKey)
+		return mesh.Config{}, fmt.Errorf("%s must be in [0,1]", NetworkHealthMaxPortionSendQueueFillKey)
 	case config.DialerConfig.ConnectionTimeout < 0:
-		return network.Config{}, fmt.Errorf("%q must be >= 0", NetworkOutboundConnectionTimeoutKey)
+		return mesh.Config{}, fmt.Errorf("%q must be >= 0", NetworkOutboundConnectionTimeoutKey)
 	case config.PeerListPullGossipFreq < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkPeerListPullGossipFreqKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkPeerListPullGossipFreqKey)
 	case config.PeerListBloomResetFreq < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkPeerListBloomResetFreqKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkPeerListBloomResetFreqKey)
 	case config.ThrottlerConfig.InboundMsgThrottlerConfig.CPUThrottlerConfig.MaxRecheckDelay < constants.MinInboundThrottlerMaxRecheckDelay:
-		return network.Config{}, fmt.Errorf("%s must be >= %d", InboundThrottlerCPUMaxRecheckDelayKey, constants.MinInboundThrottlerMaxRecheckDelay)
+		return mesh.Config{}, fmt.Errorf("%s must be >= %d", InboundThrottlerCPUMaxRecheckDelayKey, constants.MinInboundThrottlerMaxRecheckDelay)
 	case config.ThrottlerConfig.InboundMsgThrottlerConfig.DiskThrottlerConfig.MaxRecheckDelay < constants.MinInboundThrottlerMaxRecheckDelay:
-		return network.Config{}, fmt.Errorf("%s must be >= %d", InboundThrottlerDiskMaxRecheckDelayKey, constants.MinInboundThrottlerMaxRecheckDelay)
+		return mesh.Config{}, fmt.Errorf("%s must be >= %d", InboundThrottlerDiskMaxRecheckDelayKey, constants.MinInboundThrottlerMaxRecheckDelay)
 	case config.MaxReconnectDelay < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkMaxReconnectDelayKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkMaxReconnectDelayKey)
 	case config.InitialReconnectDelay < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkInitialReconnectDelayKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkInitialReconnectDelayKey)
 	case config.MaxReconnectDelay < config.InitialReconnectDelay:
-		return network.Config{}, fmt.Errorf("%s must be >= %s", NetworkMaxReconnectDelayKey, NetworkInitialReconnectDelayKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= %s", NetworkMaxReconnectDelayKey, NetworkInitialReconnectDelayKey)
 	case config.PingPongTimeout < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkPingTimeoutKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkPingTimeoutKey)
 	case config.PingFrequency < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkPingFrequencyKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkPingFrequencyKey)
 	case config.PingPongTimeout <= config.PingFrequency:
-		return network.Config{}, fmt.Errorf("%s must be > %s", NetworkPingTimeoutKey, NetworkPingFrequencyKey)
+		return mesh.Config{}, fmt.Errorf("%s must be > %s", NetworkPingTimeoutKey, NetworkPingFrequencyKey)
 	case config.ReadHandshakeTimeout < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkReadHandshakeTimeoutKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkReadHandshakeTimeoutKey)
 	case config.MaxClockDifference < 0:
-		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkMaxClockDifferenceKey)
+		return mesh.Config{}, fmt.Errorf("%s must be >= 0", NetworkMaxClockDifferenceKey)
 	}
 	return config, nil
 }
@@ -1559,14 +1559,14 @@ func readChainConfigPath(chainConfigPath string) (map[string]chains.ChainConfig,
 
 // getNetConfigs reads net configs from the correct place
 // (flag or file) and returns a non-nil map.
-func getNetConfigs(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, error) {
+func getNetConfigs(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]network.Config, error) {
 	if v.IsSet(NetConfigContentKey) {
 		return getNetConfigsFromFlags(v, netIDs)
 	}
 	return getNetConfigsFromDir(v, netIDs)
 }
 
-func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Config, error) {
+func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]network.Config, error) {
 	netConfigContentB64 := v.GetString(NetConfigContentKey)
 	netConfigContent, err := base64.StdEncoding.DecodeString(netConfigContentB64)
 	if err != nil {
@@ -1579,7 +1579,7 @@ func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Co
 		return nil, fmt.Errorf("could not unmarshal JSON: %w", err)
 	}
 
-	res := make(map[ids.ID]nets.Config)
+	res := make(map[ids.ID]network.Config)
 	for _, chainID := range netIDs {
 		config := getDefaultNetConfig(v)
 
@@ -1605,13 +1605,13 @@ func getNetConfigsFromFlags(v *viper.Viper, netIDs []ids.ID) (map[ids.ID]nets.Co
 }
 
 // getNetConfigsFromDir reads NetConfigs to node config map
-func getNetConfigsFromDir(v *viper.Viper, chainIDs []ids.ID) (map[ids.ID]nets.Config, error) {
+func getNetConfigsFromDir(v *viper.Viper, chainIDs []ids.ID) (map[ids.ID]network.Config, error) {
 	chainConfigPath, err := getPathFromDirKey(v, NetConfigDirKey)
 	if err != nil {
 		return nil, err
 	}
 
-	chainConfigs := make(map[ids.ID]nets.Config)
+	chainConfigs := make(map[ids.ID]network.Config)
 
 	// reads chain config files from a path and given chainIDs and returns a map.
 	for _, chainID := range chainIDs {
@@ -1664,8 +1664,8 @@ func getNetConfigsFromDir(v *viper.Viper, chainIDs []ids.ID) (map[ids.ID]nets.Co
 	return chainConfigs, nil
 }
 
-func getDefaultNetConfig(v *viper.Viper) nets.Config {
-	config := nets.Config{
+func getDefaultNetConfig(v *viper.Viper) network.Config {
+	config := network.Config{
 		ConsensusParameters:         getConsensusConfig(v),
 		ValidatorOnly:               false,
 		ProposerMinBlockDelay:       v.GetDuration(ProposerVMMinBlockDelayKey),
@@ -1677,7 +1677,7 @@ func getDefaultNetConfig(v *viper.Viper) nets.Config {
 
 	// If automine mode or POA mode is enabled, adjust consensus parameters
 	if config.POAEnabled {
-		config.ConsensusParameters = nets.GetPOAConsensusParameters()
+		config.ConsensusParameters = network.GetPOAConsensusParameters()
 		if config.POAMinBlockTime == 0 {
 			config.POAMinBlockTime = 1 * time.Second
 		}

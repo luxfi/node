@@ -6,7 +6,7 @@ package node
 import (
 	"time"
 
-	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/mesh/tracker"
 )
 
 // Type aliases

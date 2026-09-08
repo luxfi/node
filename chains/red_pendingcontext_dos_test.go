@@ -22,14 +22,14 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/mesh"
 	"github.com/luxfi/node/proto/p2p"
 )
 
 // redStubNet implements the one Network method requestContext uses (Send); every
 // other method is inherited from the embedded nil interface and is never called.
 type redStubNet struct {
-	network.Network
+	mesh.Network
 	sends int
 }
 
@@ -47,7 +47,7 @@ func (redStubMsg) GetAncestors(_ ids.ID, _ uint32, _ time.Duration, _ ids.ID, _ 
 	return nil, nil
 }
 
-func newRedTestHandler(net network.Network) *blockHandler {
+func newRedTestHandler(net mesh.Network) *blockHandler {
 	return &blockHandler{
 		logger:         log.NewNoOpLogger(),
 		net:            net,

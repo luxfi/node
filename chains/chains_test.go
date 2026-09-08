@@ -10,12 +10,12 @@ import (
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network"
 )
 
 func TestNewNets(t *testing.T) {
 	require := require.New(t)
-	config := map[ids.ID]nets.Config{
+	config := map[ids.ID]network.Config{
 		constants.PrimaryNetworkID: {},
 	}
 
@@ -29,7 +29,7 @@ func TestNewNets(t *testing.T) {
 
 func TestNewNetsNoPrimaryNetworkConfig(t *testing.T) {
 	require := require.New(t)
-	config := map[ids.ID]nets.Config{}
+	config := map[ids.ID]network.Config{}
 
 	_, err := NewNets(ids.EmptyNodeID, config)
 	require.ErrorIs(err, ErrNoPrimaryNetworkConfig)
@@ -81,7 +81,7 @@ func TestNetsGetOrCreate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
-			config := map[ids.ID]nets.Config{
+			config := map[ids.ID]network.Config{
 				constants.PrimaryNetworkID: {},
 			}
 			chains, err := NewNets(ids.EmptyNodeID, config)
@@ -100,28 +100,28 @@ func TestNetConfigs(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		config map[ids.ID]nets.Config
+		config map[ids.ID]network.Config
 		netID  ids.ID
-		want   nets.Config
+		want   network.Config
 	}{
 		{
 			name: "default to primary network config",
-			config: map[ids.ID]nets.Config{
+			config: map[ids.ID]network.Config{
 				constants.PrimaryNetworkID: {},
 			},
 			netID: testChainID,
-			want:  nets.Config{},
+			want:  network.Config{},
 		},
 		{
 			name: "use net config",
-			config: map[ids.ID]nets.Config{
+			config: map[ids.ID]network.Config{
 				constants.PrimaryNetworkID: {},
 				testChainID: {
 					ValidatorOnly: true,
 				},
 			},
 			netID: testChainID,
-			want: nets.Config{
+			want: network.Config{
 				ValidatorOnly: true,
 			},
 		},
@@ -145,7 +145,7 @@ func TestNetConfigs(t *testing.T) {
 func TestNetsBootstrapping(t *testing.T) {
 	require := require.New(t)
 
-	config := map[ids.ID]nets.Config{
+	config := map[ids.ID]network.Config{
 		constants.PrimaryNetworkID: {},
 	}
 
@@ -180,7 +180,7 @@ func TestNetsBootstrapping(t *testing.T) {
 func TestNetsBootstrappingReportsChainsNotNets(t *testing.T) {
 	require := require.New(t)
 
-	chains, err := NewNets(ids.EmptyNodeID, map[ids.ID]nets.Config{
+	chains, err := NewNets(ids.EmptyNodeID, map[ids.ID]network.Config{
 		constants.PrimaryNetworkID: {},
 	})
 	require.NoError(err)

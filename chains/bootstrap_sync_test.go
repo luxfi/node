@@ -30,8 +30,8 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/mesh/peer"
 	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/validators"
 )
@@ -206,7 +206,7 @@ func (bsMsgBuilder) Accepted(_ ids.ID, requestID uint32, containerIDs []ids.ID) 
 // malicious peer entirely. `connected` is the subset of beacons currently reachable (so a
 // test can model "beacons offline, only the attacker is up").
 type bsBeaconNet struct {
-	network.Network
+	mesh.Network
 	bh             *blockHandler
 	chainID        ids.ID
 	connected      []ids.NodeID            // beacons that are connected + tracking the chain

@@ -46,11 +46,11 @@ import (
 	"github.com/luxfi/node/indexer"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/nat"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/dialer"
-	"github.com/luxfi/node/network/peer"
-	"github.com/luxfi/node/network/throttling"
-	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/mesh/dialer"
+	"github.com/luxfi/node/mesh/peer"
+	"github.com/luxfi/node/mesh/throttling"
+	"github.com/luxfi/node/mesh/tracker"
 	server "github.com/luxfi/node/server/http"
 	"github.com/luxfi/node/service/admin"
 	"github.com/luxfi/node/service/health"
@@ -395,7 +395,7 @@ type Node struct {
 	VertexAcceptorGroup nodeconsensus.AcceptorGroup
 
 	// Net runs the networking stack
-	Net network.Network
+	Net mesh.Network
 
 	// The staking address will optionally be written to a process context
 	// file to enable other nodes to be configured to use this node as a
@@ -689,7 +689,7 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 	n.Config.NetworkConfig.MyNodeID = n.ID
 	// Mirror the strict-PQ staking ML-DSA keypair so the network layer's
 	// PQ peer handshake signs with the SAME key that derives MyNodeID
-	// (see network.NewNetwork -> peer.NewLocalIdentityFromStakingKey).
+	// (see mesh.NewNetwork -> peer.NewLocalIdentityFromStakingKey).
 	// Nil on classical-compat chains, where the PQ handshake is skipped.
 	n.Config.NetworkConfig.StakingMLDSA = n.Config.StakingConfig.StakingMLDSA
 	n.Config.NetworkConfig.StakingMLDSAPub = n.Config.StakingConfig.StakingMLDSAPub
@@ -724,13 +724,13 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 		return ids.Empty
 	}
 
-	// Wrap the router to implement network.ExternalHandler
+	// Wrap the router to implement mesh.ExternalHandler
 	externalHandler := &externalHandlerWrapper{router: consensusRouter}
 
 	// Create a Registry for network metrics
 	networkRegistry := metric.NewRegistry()
 
-	n.Net, err = network.NewNetwork(
+	n.Net, err = mesh.NewNetwork(
 		&n.Config.NetworkConfig,
 		upgrade.InitiallyActiveTime,
 		n.msgCreator,

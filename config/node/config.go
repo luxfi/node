@@ -13,14 +13,14 @@ import (
 	"github.com/luxfi/node/benchlist"
 	"github.com/luxfi/node/chains"
 	"github.com/luxfi/node/genesis/builder"
-	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/server/http"
 	// "github.com/luxfi/consensus/core/router" // Unused
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/mldsa"
 	mlkemcrypto "github.com/luxfi/crypto/mlkem"
-	"github.com/luxfi/node/nets"
-	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/mesh/tracker"
+	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
 	// "github.com/luxfi/log" // Unused
@@ -186,7 +186,7 @@ type Config struct {
 	ProposerMinBlockDelay time.Duration `json:"proposerMinBlockDelay"`
 
 	// Network configuration
-	NetworkConfig network.Config `json:"networkConfig"`
+	NetworkConfig mesh.Config `json:"networkConfig"`
 
 	AdaptiveTimeoutConfig timer.AdaptiveTimeoutConfig `json:"adaptiveTimeoutConfig"`
 
@@ -240,7 +240,7 @@ type Config struct {
 	// rewrite.
 	Chains []string `json:"chains"`
 
-	NetConfigs map[ids.ID]nets.Config `json:"chainConfigs"`
+	NetConfigs map[ids.ID]network.Config `json:"chainConfigs"`
 
 	ChainConfigs map[string]chains.ChainConfig `json:"-"`
 	ChainAliases map[ids.ID][]string           `json:"chainAliases"`

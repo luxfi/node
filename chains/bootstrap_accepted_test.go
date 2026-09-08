@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/mesh"
 )
 
 // ----- policy-level helpers -------------------------------------------------
@@ -193,7 +193,7 @@ func (f acceptanceFunc) Acceptance(ctx context.Context, candidates []ids.ID, fro
 // written. The fields are behind a mutex and reached through the accessors below; touching them
 // directly is what the race detector caught.
 type captureNet struct {
-	network.Network
+	mesh.Network
 	mu   sync.Mutex
 	sent []*bsOutMsg
 	to   []set.Set[ids.NodeID]
@@ -398,7 +398,7 @@ func TestAccepted_DropsAnswersNobodyAsked(t *testing.T) {
 // answerNet answers one asked beacon and also relays an unasked stranger's answer plus a duplicate,
 // so the collector's drop rules are exercised on the real path.
 type answerNet struct {
-	network.Network
+	mesh.Network
 	bh        *blockHandler
 	asked     ids.NodeID
 	stranger  ids.NodeID

@@ -17,7 +17,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/service/health"
 	"github.com/luxfi/node/vms"
 	"github.com/luxfi/vm"
@@ -87,7 +87,7 @@ func TestQueueChainCreation(t *testing.T) {
 	require := require.New(t)
 
 	// Create chains with primary network config
-	chainConfigs := map[ids.ID]nets.Config{
+	chainConfigs := map[ids.ID]network.Config{
 		constants.PrimaryNetworkID: {},
 	}
 	chains, err := NewNets(ids.GenerateTestNodeID(), chainConfigs)
@@ -190,7 +190,7 @@ func TestIsBootstrapped(t *testing.T) {
 func TestIsBootstrappedTracksRealConvergence(t *testing.T) {
 	require := require.New(t)
 
-	chainConfigs := map[ids.ID]nets.Config{
+	chainConfigs := map[ids.ID]network.Config{
 		constants.PrimaryNetworkID: {},
 	}
 	netsTracker, err := NewNets(ids.GenerateTestNodeID(), chainConfigs)

@@ -19,8 +19,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/chains"
-	"github.com/luxfi/node/network"
-	nodepeer "github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/mesh"
+	nodepeer "github.com/luxfi/node/mesh/peer"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/node/vms"
@@ -54,7 +54,7 @@ type Info struct {
 	log          log.Logger
 	validators   validators.Manager
 	myIP         *utils.Atomic[netip.AddrPort]
-	networking   network.Network
+	networking   mesh.Network
 	chainManager chains.Manager
 	vmManager    vms.Manager
 }
@@ -85,7 +85,7 @@ func New(
 	chainManager chains.Manager,
 	vmManager vms.Manager,
 	myIP *utils.Atomic[netip.AddrPort],
-	network network.Network,
+	network mesh.Network,
 ) *Info {
 	return &Info{
 		Parameters:   parameters,

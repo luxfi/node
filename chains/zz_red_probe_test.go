@@ -22,8 +22,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/mesh/peer"
 )
 
 // redSilentNet reports FULL connectivity (every beacon in `connected` is returned by PeerInfo)
@@ -33,7 +33,7 @@ import (
 // frontier response past the 3s window) AND a natural occurrence during a mass co-restart (an
 // ahead beacon replaying state answers the frontier query slowly).
 type redSilentNet struct {
-	network.Network
+	mesh.Network
 	bh        *blockHandler
 	connected []ids.NodeID          // all reported connected (the full set MINUS self)
 	silent    set.Set[ids.NodeID]   // connected but withhold their frontier reply

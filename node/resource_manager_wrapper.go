@@ -4,7 +4,7 @@
 package node
 
 import (
-	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/mesh/tracker"
 	"github.com/luxfi/resource"
 )
 

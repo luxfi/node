@@ -24,7 +24,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
+	"github.com/luxfi/node/mesh"
 )
 
 // --- (1) the type-level proof ------------------------------------------------
@@ -245,7 +245,7 @@ func TestUnheldBlockIsBufferedThenDrainedOnArrival(t *testing.T) {
 // pollStubNet records what actually left the node. Every Network method other
 // than Send/Gossip is inherited from the embedded nil interface and never called.
 type pollStubNet struct {
-	network.Network
+	mesh.Network
 	sent     []message.OutboundMessage
 	gossiped []message.OutboundMessage
 	peers    set.Set[ids.NodeID]

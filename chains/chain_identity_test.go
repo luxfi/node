@@ -11,8 +11,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/mesh/peer"
 )
 
 // A node runs eight chains through one writer. The catch-up lines carry heights and
@@ -55,7 +55,7 @@ func TestHandlerLinesNameTheirChain(t *testing.T) {
 
 // noPeers reports an empty peer set, which is the shortest way into the frontier
 // poll's own log line.
-type noPeers struct{ network.Network }
+type noPeers struct{ mesh.Network }
 
 func (noPeers) PeerInfo([]ids.NodeID) []peer.Info { return nil }
 

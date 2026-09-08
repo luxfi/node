@@ -35,8 +35,8 @@ import (
 	// "github.com/luxfi/database/prefixdb" // Unused
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/mesh/peer"
 	"github.com/luxfi/node/proto/p2p"
 	// vmpb "github.com/luxfi/node/proto/vm" // Removed - using vm.Ready instead
 	"github.com/luxfi/warp"
@@ -66,7 +66,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
 	utilmetric "github.com/luxfi/metric"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/trace"
 	"github.com/luxfi/node/upgrade"
@@ -87,7 +87,7 @@ import (
 	"github.com/luxfi/utxo/secp256r1fx"
 	"github.com/luxfi/utxo/slhdsafx"
 
-	timetracker "github.com/luxfi/node/network/tracker"
+	timetracker "github.com/luxfi/node/mesh/tracker"
 )
 
 const (
@@ -379,7 +379,7 @@ type ManagerConfig struct {
 	DB                  database.Database
 	MsgCreator          message.OutboundMsgBuilder // message creator, shared with network
 	Router              ChainRouter                // Routes incoming messages to the appropriate chain
-	Net                 network.Network            // Sends consensus messages to other validators
+	Net                 mesh.Network            // Sends consensus messages to other validators
 	Validators          validators.Manager         // Validators validating on this chain
 	NodeID              ids.NodeID                 // The ID of this node
 	NetworkID           uint32                     // ID of the network this node is connected to
@@ -427,7 +427,7 @@ type ManagerConfig struct {
 
 	TimeoutManager timeout.Manager // Manages request timeouts when sending messages to other validators
 	Health         health.Registerer
-	NetConfigs     map[ids.ID]nets.Config // ID -> NetConfig
+	NetConfigs     map[ids.ID]network.Config // ID -> NetConfig
 	ChainConfigs   map[string]ChainConfig // alias -> ChainConfig
 	// ShutdownNodeFunc allows the chain manager to issue a request to shutdown the node
 	ShutdownNodeFunc func(exitCode int)
@@ -1106,7 +1106,7 @@ func (m *manager) createChain(chainParams ChainParameters) {
 }
 
 // Create a chain
-func (m *manager) buildChain(chainParams ChainParameters, sb nets.Net) (*chainInfo, error) {
+func (m *manager) buildChain(chainParams ChainParameters, sb network.Net) (*chainInfo, error) {
 	if chainParams.ID != constants.PlatformChainID && chainParams.VMID == constants.PlatformVMID {
 		return nil, errCreatePlatformVM
 	}
@@ -2312,7 +2312,7 @@ var errBootstrapTimeout = errors.New("chain failed to bootstrap within timeout")
 //
 // IMPORTANT: If bootstrap times out, the chain is NOT marked as bootstrapped. This ensures
 // real bootstrap failures are surfaced rather than masked by forcing a "ready" state.
-func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb nets.Net, chainID ids.ID) {
+func (m *manager) monitorBootstrap(engine Engine, h handler.Handler, sb network.Net, chainID ids.ID) {
 	// The READY signal is the handler's real initial-sync completion: the bootstrap
 	// loop has fetched+executed up to the discovered network frontier. This REPLACES
 	// the old engine.IsBootstrapped() poll, which returned true the instant the engine
@@ -3121,7 +3121,7 @@ type blockHandler struct {
 	vm         consensuschain.BlockBuilder
 	logger     log.Logger
 	engine     *consensuschain.Runtime    // Consensus engine for proper block handling
-	net        network.Network            // Network for sending Qbit responses
+	net        mesh.Network            // Network for sending Qbit responses
 	msgCreator message.OutboundMsgBuilder // Message creator for Qbit responses
 	chainID    ids.ID                     // Chain ID for message routing
 	networkID  ids.ID                     // Network ID for validator routing
@@ -3385,7 +3385,7 @@ type contextRequest struct {
 // CONSTRUCTOR parameter, not a field set afterwards, because its zero value is
 // the permissive K==1 legacy path: a site that forgot to state it would silently
 // resurrect the unsigned-Chits-to-Vote braid on a quorum chain.
-func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net network.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager, selfNodeID ids.NodeID, expectsStakedBeacons bool, signedVotesRequired bool) *blockHandler {
+func newBlockHandler(vm consensuschain.BlockBuilder, connector chain.ChainVM, logger log.Logger, engine *consensuschain.Runtime, net mesh.Network, msgCreator message.OutboundMsgBuilder, chainID ids.ID, networkID ids.ID, beacons validators.Manager, selfNodeID ids.NodeID, expectsStakedBeacons bool, signedVotesRequired bool) *blockHandler {
 	return &blockHandler{
 		vm:                   vm,
 		connector:            connector,
@@ -5474,7 +5474,7 @@ func (c *networkCatchup) RequestAncestors(_ ids.ID, _ ids.ID, missingBlockID ids
 }
 
 type networkGossiper struct {
-	net        network.Network
+	net        mesh.Network
 	msgCreator message.OutboundMsgBuilder
 	networkID  ids.ID
 	log        log.Logger

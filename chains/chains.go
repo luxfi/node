@@ -9,7 +9,7 @@ import (
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network"
 )
 
 var ErrNoPrimaryNetworkConfig = errors.New("no net config for primary network found")
@@ -17,15 +17,15 @@ var ErrNoPrimaryNetworkConfig = errors.New("no net config for primary network fo
 // Nets holds the currently running chains on this node
 type Nets struct {
 	nodeID  ids.NodeID
-	configs map[ids.ID]nets.Config
+	configs map[ids.ID]network.Config
 
 	lock   sync.RWMutex
-	chains map[ids.ID]nets.Net
+	chains map[ids.ID]network.Net
 }
 
 // GetOrCreate returns a chain running on this node, or creates one if it was
 // not running before. Returns the chain and if the chain was created.
-func (s *Nets) GetOrCreate(chainID ids.ID) (nets.Net, bool) {
+func (s *Nets) GetOrCreate(chainID ids.ID) (network.Net, bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -40,7 +40,7 @@ func (s *Nets) GetOrCreate(chainID ids.ID) (nets.Net, bool) {
 		config = s.configs[constants.PrimaryNetworkID]
 	}
 
-	chain := nets.New(s.nodeID, config)
+	chain := network.New(s.nodeID, config)
 	s.chains[chainID] = chain
 
 	return chain, true
@@ -96,7 +96,7 @@ func (s *Nets) Bootstrapping() []ids.ID {
 // NewNets returns an instance of Nets
 func NewNets(
 	nodeID ids.NodeID,
-	configs map[ids.ID]nets.Config,
+	configs map[ids.ID]network.Config,
 ) (*Nets, error) {
 	if _, ok := configs[constants.PrimaryNetworkID]; !ok {
 		return nil, ErrNoPrimaryNetworkConfig
@@ -105,7 +105,7 @@ func NewNets(
 	s := &Nets{
 		nodeID:  nodeID,
 		configs: configs,
-		chains:  make(map[ids.ID]nets.Net),
+		chains:  make(map[ids.ID]network.Net),
 	}
 
 	_, _ = s.GetOrCreate(constants.PrimaryNetworkID)

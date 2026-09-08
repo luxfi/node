@@ -8,7 +8,7 @@ import (
 
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/network/tracker"
+	"github.com/luxfi/node/mesh/tracker"
 )
 
 // resourceTrackerAdapter adapts node tracker to consensus tracker interface

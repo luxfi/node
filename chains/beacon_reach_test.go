@@ -17,14 +17,14 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/network"
-	"github.com/luxfi/node/network/peer"
+	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/mesh/peer"
 )
 
 // reachNet reports every peer as connected, and lets each one decide whether it
 // advertises the chain — which is the only axis these tests vary.
 type reachNet struct {
-	network.Network
+	mesh.Network
 	peers     []ids.NodeID
 	advertise map[ids.NodeID]bool
 	tracked   ids.ID

@@ -16,7 +16,7 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/nets"
+	"github.com/luxfi/node/network"
 )
 
 // committee stands in for the M-Chain: it returns the attestation recorded for a
@@ -114,7 +114,7 @@ func newManager(
 	critical set.Set[ids.ID],
 	mChain entitlement,
 ) *manager {
-	netsTracker, err := NewNets(ids.GenerateTestNodeID(), map[ids.ID]nets.Config{
+	netsTracker, err := NewNets(ids.GenerateTestNodeID(), map[ids.ID]network.Config{
 		constants.PrimaryNetworkID: {},
 	})
 	if err != nil {
