@@ -602,26 +602,18 @@ and it is not attempted here.
 
 ## What a Rust validator does after it restarts
 
-Three faults sat between a restarted validator and the cluster it could see.
-Two are fixed in `lux-rs/node` (branch `fin/cluster-revive`); the third is
-named here because it is a real addition and guessing at it would be worse
-than saying where it is.
+**A validator that restarts rejoins the cluster it can see.**
 
-**It refused to sign, and stopped.** The signing journal is durable on
-purpose: it is written before the key is used, so a node that comes back
-cannot contradict the run before it. That guard is right. What was wrong is
-what followed it — `certify` turned the refusal into a returned error, so the
-node rebuilt at that height, was refused for the same reason, and never moved.
-One line in a file retired a validator, and the log filled with `already
-signed at this height` while the height stayed at 0. Now the refusal means
-what it should: this node does not vote *here*. It re-sends the statement it
-stands by — the journal was already handing it back for exactly that, and it
-was being dropped — and then stays silent and keeps collecting, because a
-certificate is checked by a rule that does not ask whether the checker voted.
+The signing journal is durable on purpose: it is written before the key is
+used, so a node that comes back cannot contradict the run before it. A refusal
+to sign means this node does not vote *here* — it re-sends the statement it
+already stands by, which the journal hands back for exactly that, then stays
+silent and keeps collecting. A certificate is checked by a rule that does not
+ask whether the checker voted.
 Quorum is three of four, so the others certify without it and it accepts their
-block. `anchor` already relied on that; the equivocation case now does too.
+block. `anchor` relies on that, and so does the equivocation case.
 
-**The mesh only ever formed at boot.** `connect` is the opening rendezvous and
+**The mesh re-forms after boot.** `connect` is the opening rendezvous and
 it returns; nothing accepted an inbound link afterwards. A validator that
 restarted dialed into a backlog no one was reading — `peers 0 of 3` while the
 three peers it could see carried on, each still holding a socket that had
