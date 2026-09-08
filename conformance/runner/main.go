@@ -83,7 +83,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	ids, err := readVectorIDs(vectors)
+	vecs, err := readVectors(vectors)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "runner:", err)
 		os.Exit(1)
@@ -132,7 +132,7 @@ func main() {
 		evals = append(evals, e)
 	}
 
-	report(*subject, ids, evals, *verbose)
+	report(*subject, vecs, evals, *verbose)
 }
 
 func (e *evaluator) run() error {
@@ -212,14 +212,26 @@ func blank(fields []string) int {
 	return -1
 }
 
-func readVectorIDs(path string) ([]string, error) {
+// A vector is its id and the label the corpus files it under. Every corpus
+// here writes that label in the column after the id — the chain for the chain
+// corpus, the precompile address for the precompile one — and it is the only
+// thing past the id this program reads. It reads it so a report can say that
+// twelve declines are one chain declining one field rather than twelve gaps.
+// The payload after it stays the evaluators' business: the file is handed over
+// whole and never opened for its bytes.
+type vector struct {
+	id    string
+	label string
+}
+
+func readVectors(path string) ([]vector, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	var ids []string
+	var vs []vector
 	s := bufio.NewScanner(f)
 	s.Buffer(make([]byte, 1<<20), 1<<26)
 	for s.Scan() {
@@ -228,14 +240,25 @@ func readVectorIDs(path string) ([]string, error) {
 			continue
 		}
 		f := strings.Split(line, "\t")
-		if len(f) < 2 || f[0] != "V" {
+		if len(f) < 3 || f[0] != "V" {
 			return nil, fmt.Errorf("not a vector line: %q", line)
 		}
-		// Everything after the id is the evaluators' business, not this
-		// program's: it hands the file over whole and never reads the payload.
-		ids = append(ids, f[1])
+		vs = append(vs, vector{id: f[1], label: f[2]})
 	}
-	return ids, s.Err()
+	return vs, s.Err()
+}
+
+// A decline is one implementation refusing one field of one vector, and what
+// it said about it. Counting them says how big the gap is; this says where it
+// is, which is the only form of it anyone can act on.
+//
+// The note is the row's note, not the field's: an evaluator prints one line per
+// vector and one note on it. Where a row declines a field and its note is about
+// a different one, that shows up here as a reason that does not mention the
+// declined field — which is a finding about the port, and better read than
+// hidden behind a count.
+type decline struct {
+	impl, vector, label, field, note string
 }
 
 type disagreement struct {
@@ -249,7 +272,14 @@ type disagreement struct {
 // A result line is R, the vector id, one value per compared field, and a note.
 func resultWidth() int { return len(compared) + 3 }
 
-func report(subject string, ids []string, evals []*evaluator, verbose bool) {
+func report(subject string, vecs []vector, evals []*evaluator, verbose bool) {
+	ids := make([]string, len(vecs))
+	label := make(map[string]string, len(vecs))
+	for i, v := range vecs {
+		ids[i] = v.id
+		label[v.id] = v.label
+	}
+
 	names := make([]string, len(evals))
 	for i, e := range evals {
 		names[i] = e.name
@@ -260,7 +290,7 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 	var bad []disagreement
 	uncovered := map[string][]string{} // vector -> fields nobody could compare
 	silent := map[string][]string{}    // implementation -> vectors it never answered
-	declined := map[string]int{}       // implementation -> fields it printed SKIPPED for
+	var declined []decline             // every field an implementation printed SKIPPED for
 	answered := map[string]int{}
 
 	// An implementation that prints no row for a vector has not passed it. The
@@ -293,7 +323,10 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 				}
 				v := r.fields[fi]
 				if v == notEvaluated {
-					declined[e.name]++
+					declined = append(declined, decline{
+						impl: e.name, vector: id, label: label[id],
+						field: field, note: r.note,
+					})
 					continue
 				}
 				says = append(says, said{e.name, v, r.note, e.recorded})
@@ -347,16 +380,7 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 	// answered is compared and the run can pass, but a column quietly shrinking
 	// is the thing a differential is built to notice, so it is always printed.
 	if len(declined) > 0 {
-		fmt.Println("DECLINED — printed SKIPPED rather than an answer:")
-		keys := make([]string, 0, len(declined))
-		for k := range declined {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			fmt.Printf("  %-6s %d of %d fields\n", k, declined[k], len(ids)*len(compared))
-		}
-		fmt.Println()
+		printDeclined(declined, len(ids)*len(compared))
 	}
 
 	if len(silent) > 0 {
@@ -408,6 +432,66 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 		fmt.Printf("  %-16s %d\n", k, pairs[k])
 	}
 	os.Exit(1)
+}
+
+// printDeclined names every declined field, gathered by the implementation, the
+// label the corpus files the vector under, the field, and the reason given.
+//
+// The count comes first because it is the size of the gap, and then the whole
+// list, because a count is not something anyone can go and fix. Twelve declines
+// under one heading are one gap; twelve headings are twelve. Nothing is elided:
+// a list that stopped at six would be the count again, wearing examples.
+func printDeclined(declined []decline, total int) {
+	fmt.Println("DECLINED — printed SKIPPED rather than an answer:")
+
+	perImpl := map[string]int{}
+	for _, d := range declined {
+		perImpl[d.impl]++
+	}
+	impls := make([]string, 0, len(perImpl))
+	for k := range perImpl {
+		impls = append(impls, k)
+	}
+	sort.Strings(impls)
+	for _, k := range impls {
+		fmt.Printf("  %-6s %d of %d fields\n", k, perImpl[k], total)
+	}
+	fmt.Println()
+
+	type group struct {
+		impl, label, field, note string
+	}
+	members := map[group][]string{}
+	var order []group
+	for _, d := range declined {
+		g := group{d.impl, d.label, d.field, d.note}
+		if _, seen := members[g]; !seen {
+			order = append(order, g)
+		}
+		members[g] = append(members[g], d.vector)
+	}
+	sort.Slice(order, func(i, j int) bool {
+		a, b := order[i], order[j]
+		if a.impl != b.impl {
+			return a.impl < b.impl
+		}
+		if a.label != b.label {
+			return a.label < b.label
+		}
+		if a.field != b.field {
+			return a.field < b.field
+		}
+		return a.note < b.note
+	})
+	for _, g := range order {
+		v := members[g]
+		fmt.Printf("  %s . %s . %s — %d, each saying:\n", g.impl, g.label, g.field, len(v))
+		fmt.Printf("      %s\n", g.note)
+		for _, id := range v {
+			fmt.Printf("      %s\n", id)
+		}
+		fmt.Println()
+	}
 }
 
 func printRow(id string, evals []*evaluator) {
