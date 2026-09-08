@@ -25,7 +25,7 @@ answers next to each other.
 | Z zkvm | 137 | yes | yes | yes |
 | D dexvm | 35 | yes | yes | yes |
 | F fhevm | 264 | yes | yes | yes |
-| O oraclevm | 153 | yes | yes | yes |
+| O oraclevm | 195 | yes | yes | yes |
 
 Most of those counts are damage. Every vector this reference reads back as a
 block or a transaction is also cut to a quarter, cut to a half, cut by one
@@ -125,8 +125,8 @@ The four chains were added because they had **no vector at all**, which is the
 same shape the P-chain fork hid in for weeks: a chain nothing is pointed at
 agrees with itself. Every fork this program has found, the differential found.
 
-**All three columns answer all six chains, and every compared field of all 725
-vectors agrees.** That is recent. The Rust column used to answer P and X and
+**All three columns answer all seven chains, and every compared field of all
+920 vectors agrees.** That is recent. The Rust column used to answer P and X and
 say nothing about the other four, and the runner listed 421 vectors under NOT
 ANSWERED and exited non-zero — silence is not agreement, and a target that went
 green while a whole column said nothing about four chains would be reporting the
@@ -191,7 +191,7 @@ disagreement can be read without opening three debuggers.
 
 ### What is NOT on the wire is corpus contract
 
-Three of the six chains hash something that never travels into every id they
+Three of the seven chains hash something that never travels into every id they
 derive. The Z-chain's block id opens with `sha256(ChainID ‖ NetworkID)`; the
 F-chain does the same and binds its signing preimage to the chain id besides;
 the Q-chain carries the pair in the block and refuses a block whose pair is not
@@ -415,16 +415,25 @@ What the three implementations agree on today, and what they are now held to:
 ## Running it
 
 ```
-make chains           build all twelve evaluators, run the differential
+make chains           build all fourteen evaluators, run the differential
 make chains-corpus    regenerate the corpus from the Go reference
 ```
 
-**`make chains` passes today.** 725 vectors, three running implementations —
+**`make chains` passes today.** 920 vectors, three running implementations —
 go, rust and cpp — plus the committed corpus as a recording of the first.
 Agreement on every field, every field answered by at least two of the three,
-nothing under NOT ANSWERED, and 25 of 3625 fields declined: `exec` on the
-X-chain in C++, `exec` on the Q-chain in Rust. Those two sets do not overlap,
-which is the only reason the run is green rather than short a voice.
+and nothing under NOT ANSWERED.
+
+A handful of fields are still DECLINED, and the runner prints which: `exec` on
+the X-chain in C++ and `exec` on the Q-chain in Rust. Those two sets do not
+overlap, which is the only reason the run is green rather than short a voice —
+and the count is deliberately not written down here, because it moves as those
+two ports close and a number in prose would go stale silently. Read it off the
+run.
+
+The O column declines NOTHING. A port that agreed by declining is the failure
+mode this differential already had once, so both O evaluators were held to
+answering every field of every O vector before either was wired in.
 
 The corpus is committed, so a reference that changed its mind shows up as a
 diff. `expected.tsv` — the Go chains' answers at generation time — also joins

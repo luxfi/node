@@ -229,6 +229,45 @@ func oVectors() []Vector {
 				[]*oraclevm.AggregatedValue{agg},
 				[]*oraclevm.Feed{feed})),
 
+		// The encoder's own edges, each a place two implementations can write
+		// one value differently and derive two ids for one block.
+		//
+		// omitempty on a []byte: present when it carries bytes, absent when it
+		// is empty, and an implementation that wrote `"aggProof":""` for the
+		// empty one names a different block. The pair is the check.
+		vec("O_BLOCK_AGG_PROOFS", "O", "block",
+			oBlockWire(oParent(), 2, oTime(1000, 0), nil,
+				[]*oraclevm.AggregatedValue{oProved(0x41, 8, 4)}, nil)),
+		vec("O_BLOCK_AGG_EMPTY_PROOF", "O", "block",
+			oBlockWire(oParent(), 2, oTime(1000, 0), nil,
+				[]*oraclevm.AggregatedValue{oProved(0x41, 0, 0)}, nil)),
+
+		// A feed carrying every member that has a rendering of its own: a
+		// non-nil list of strings, a duration in nanoseconds, a map — whose
+		// keys come out SORTED and are given here out of order — and a
+		// description holding the three runes Marshal escapes.
+		vec("O_BLOCK_FEED_RICH", "O", "block",
+			oBlockWire(oParent(), 3, oTime(1000, 0), nil, nil,
+				[]*oraclevm.Feed{oRichFeed()})),
+
+		// A nil []byte is `null` and an empty one is `""`. Both read back, and
+		// they are not the same block.
+		vec("O_BLOCK_OBS_NULL_VALUE", "O", "block",
+			oBlockWire(oParent(), 1, oTime(1000, 0),
+				[]*oraclevm.Observation{oNilValued()}, nil, nil)),
+		vec("O_BLOCK_OBS_EMPTY_VALUE", "O", "block",
+			oBlockWire(oParent(), 1, oTime(1000, 0),
+				[]*oraclevm.Observation{oEmptyValued()}, nil, nil)),
+
+		// A Go [32]byte reads a list of ANY length: the elements past the
+		// thirty-second are discarded without being type-checked, and the ones
+		// it never reached stay zero. Both are refusals a hand-written reader
+		// is likely to invent, and neither is one the chain makes.
+		vec("O_BLOCK_SOURCEMETA_SHORT", "O", "block",
+			oSourceMeta(obs1, "[1,2,3]")),
+		vec("O_BLOCK_SOURCEMETA_LONG", "O", "block",
+			oSourceMeta(obs1, oNumbers(40))),
+
 		// The block the chain WROTE, id and all. Its id is a different id.
 		vec("O_BLOCK_ID_SET", "O", "block", withID),
 
@@ -309,6 +348,64 @@ func oVectors() []Vector {
 
 	oAssert(v)
 	return v
+}
+
+// oProved is an aggregation carrying the two proofs that are omitempty: with
+// non-zero lengths both are written, and with zero lengths neither is.
+func oProved(seed byte, proof, cert int) *oraclevm.AggregatedValue {
+	a := oAggregated(oFeed(), 2, seed)
+	a.AggProof = oBytes(seed+1, proof)
+	a.QuorumCert = oBytes(seed+2, cert)
+	return a
+}
+
+// oRichFeed carries every member of a Feed that has a rendering of its own.
+// The metadata keys are given out of order because Marshal sorts them, and the
+// description holds the three runes it escapes.
+func oRichFeed() *oraclevm.Feed {
+	f := oFeedRecord(id(5), "btc-usd")
+	f.Description = "spot <b> & \"mid\" > 0"
+	f.Sources = []string{"a.invalid", "b.invalid"}
+	f.UpdateFreq = 1500 * time.Millisecond
+	f.Operators = []ids.NodeID{oOperator(), nodeID(2)}
+	f.Metadata = map[string]string{"z": "last", "a": "first", "m": "middle"}
+	copy(f.PolicyHash[:], oBytes(0x80, 32))
+	return f
+}
+
+func oNilValued() *oraclevm.Observation {
+	o := oObservation(oFeed(), oOperator(), oTime(1500, 0), 0x20)
+	o.Value = nil
+	o.Signature = nil
+	return o
+}
+
+func oEmptyValued() *oraclevm.Observation {
+	o := oObservation(oFeed(), oOperator(), oTime(1500, 0), 0x20)
+	o.Value = []byte{}
+	o.Signature = []byte{}
+	return o
+}
+
+// oSourceMeta replaces an observation's fixed-array member with a list of a
+// different length, which is a thing the Go reader takes rather than refuses.
+func oSourceMeta(obs *oraclevm.Observation, list string) []byte {
+	wire := oBlockWire(oParent(), 1, oTime(1000, 0),
+		[]*oraclevm.Observation{obs}, nil, nil)
+	want := `"sourceMetaHash":` + oNumbers(32)
+	if !strings.Contains(string(wire), want) {
+		panic("the source-meta member is not written as this vector assumes")
+	}
+	return []byte(strings.Replace(string(wire), want, `"sourceMetaHash":`+list, 1))
+}
+
+// oNumbers is the list Marshal writes for n bytes of the value obs1 carries.
+func oNumbers(n int) string {
+	parts := make([]string, n)
+	for i := range parts {
+		parts[i] = "34" // the 0x22 every byte of that member holds
+	}
+	return "[" + strings.Join(parts, ",") + "]"
 }
 
 // oInsert puts a member at the front of a JSON object's member list, which is
@@ -560,6 +657,17 @@ func oAssert(v []Vector) {
 	if by["O_BLOCK_ID_SET"].Hash == hex.EncodeToString(written[:]) {
 		panic("O_BLOCK_ID_SET was expected NOT to round-trip its own id")
 	}
+
+	// omitempty writes the proofs that carry bytes and omits the empty ones,
+	// so the two aggregation blocks are two different blocks.
+	differ("O_BLOCK_AGG_PROOFS", "O_BLOCK_AGG_EMPTY_PROOF")
+	// A nil []byte and an empty one are `null` and `""`, and not one block.
+	differ("O_BLOCK_OBS_NULL_VALUE", "O_BLOCK_OBS_EMPTY_VALUE")
+	// A short fixed-array list zero-fills what it did not reach, and a long
+	// one discards the rest — so the short one is a DIFFERENT block and the
+	// long one is the SAME block as the one it was cut from.
+	differ("O_BLOCK_OBSERVATION", "O_BLOCK_SOURCEMETA_SHORT")
+	same("O_BLOCK_OBSERVATION", "O_BLOCK_SOURCEMETA_LONG")
 
 	// The unknown member is ignored, so it is the same block.
 	same("O_BLOCK_EMPTY", "O_BLOCK_UNKNOWN_MEMBER")
