@@ -394,6 +394,7 @@ func oVectors() []Vector {
 		vec("O_BLOCK_ONE_BYTE", "O", "block", []byte{'{'}),
 	}
 
+	v = append(v, oArtifactIDVectors()...)
 	v = append(v, oRequestIDVectors()...)
 	v = append(v, oRequestVectors()...)
 	v = append(v, oCommitVectors()...)
@@ -552,6 +553,36 @@ func oCorrupt(s string) string {
 //
 //	requestid  serviceHex | sessionHex | txHex | step | retry
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// The identity an attestation takes when it leaves this chain.
+//
+// An OracleAttestation is what the O-chain hands the X-chain, and X names it
+// by `sha256("LUX:OracleAttestation:v1" ‖ feedID ‖ be64(epoch))` — not by
+// anything in the attestation's own bytes. So two implementations can agree on
+// every byte of a block and still file its attestations under different names,
+// which is a fork of the artifact plane that no block vector can see.
+//
+//	artifactid  feedHex | epoch
+// ---------------------------------------------------------------------------
+
+func oArtifactIDVectors() []Vector {
+	feed := hexID32(3)
+	return []Vector{
+		vec("O_ARTIFACTID_ZERO", "O", "artifactid", dArgs(hexID32(0), "0")),
+		vec("O_ARTIFACTID_BASE", "O", "artifactid", dArgs(feed, "7")),
+		// The epoch and the feed each move it on their own. One that ignored
+		// either would let two attestations share a name, and a name is what a
+		// light client checks an oracle answer under.
+		vec("O_ARTIFACTID_OTHER_EPOCH", "O", "artifactid", dArgs(feed, "8")),
+		vec("O_ARTIFACTID_OTHER_FEED", "O", "artifactid", dArgs(hexID32(4), "7")),
+		// The largest epoch, which is where a counter written in the wrong
+		// width stops agreeing.
+		vec("O_ARTIFACTID_EPOCH_MAX", "O", "artifactid",
+			dArgs(feed, "18446744073709551615")),
+		vec("O_ARTIFACTID_BAD_HEX", "O", "artifactid", dArgs("zz", "7")),
+	}
+}
 
 func oRequestIDVectors() []Vector {
 	svc, ses, tx := hexID32(0x11), hexID32(0x12), hexID32(0x13)
@@ -824,6 +855,10 @@ func oAssert(v []Vector) {
 		panic("the native-chain alias did not read back: " + by["O_BLOCK_NATIVE_PARENT"].Note)
 	}
 
+	// Both arguments of an artifact id move it.
+	differ("O_ARTIFACTID_BASE", "O_ARTIFACTID_OTHER_EPOCH")
+	differ("O_ARTIFACTID_BASE", "O_ARTIFACTID_OTHER_FEED")
+
 	// The five arguments of a request id each move it.
 	for _, pair := range [][2]string{
 		{"O_REQUESTID_BASE", "O_REQUESTID_STEP"},
@@ -927,6 +962,8 @@ func evalO(v Vector) Result {
 		return evalOBlock(v)
 	case "genesis":
 		return evalOGenesis(v)
+	case "artifactid":
+		return evalOArtifactID(v)
 	case "requestid":
 		return evalORequestID(v)
 	case "request":
@@ -1056,6 +1093,35 @@ func evalOGenesis(v Vector) Result {
 	r.Syntactic = fmt.Sprintf("feeds=%d", len(g.InitialFeeds))
 	r.Exec = VOK
 	r.Note = fmt.Sprintf("timestamp=%d message=%q", g.Timestamp, g.Message)
+	return r
+}
+
+// evalOArtifactID asks the artifact itself for its id, so the answer comes out
+// of the reference's own method rather than out of a preimage written here.
+func evalOArtifactID(v Vector) Result {
+	r, b, ok := oResult(v)
+	if !ok {
+		return r
+	}
+	f := strings.Split(string(b), "|")
+	if len(f) != 2 {
+		return oMalformed(r, fmt.Errorf("an artifact id takes two arguments, got %d", len(f)))
+	}
+	feed, err := oArgID(f[0])
+	if err != nil {
+		return oMalformed(r, err)
+	}
+	epoch, err := strconv.ParseUint(f[1], 10, 64)
+	if err != nil {
+		return oMalformed(r, err)
+	}
+	r.Parse = "ok"
+	r.Kind = "OracleAttestation"
+	a := &artifacts.OracleAttestation{FeedID: feed, Epoch: epoch}
+	r.Hash = hexID(a.ArtifactID())
+	r.Syntactic = VOK
+	r.Exec = VOK
+	r.Note = fmt.Sprintf("epoch=%d", epoch)
 	return r
 }
 

@@ -589,6 +589,14 @@ std::array<std::uint8_t, 32> compute_request_id(const Id& service, const Id& ses
     return h.sum();
 }
 
+std::array<std::uint8_t, 32> attestation_id(const Id& feed, std::uint64_t epoch) {
+    lux::fhevm::Hasher h;
+    h.write(std::string_view("LUX:OracleAttestation:v1"));
+    h.write(view(feed));
+    be64(&h, epoch);
+    return h.sum();
+}
+
 namespace {
 
 // The leaf a record hashes to. The signature is NOT in it: two records that

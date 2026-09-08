@@ -25,7 +25,7 @@ answers next to each other.
 | Z zkvm | 137 | yes | yes | yes |
 | D dexvm | 35 | yes | yes | yes |
 | F fhevm | 264 | yes | yes | yes |
-| O oraclevm | 241 | yes | yes | yes |
+| O oraclevm | 247 | yes | yes | yes |
 
 Most of those counts are damage. Every vector this reference reads back as a
 block or a transaction is also cut to a quarter, cut to a half, cut by one
@@ -104,6 +104,18 @@ request and the records executed against it and answers with the Merkle root
 the chain commits, which is the one number a light client checks an oracle
 answer against. `observation` is offered to the seeded chain and separates the
 feed lookup, the staleness rule and the operator check into three refusals.
+`artifactid` is the name an attestation takes when it LEAVES this chain —
+`sha256("LUX:OracleAttestation:v1" ‖ feed ‖ be64(epoch))`, and nothing in the
+attestation's own bytes — so two implementations can agree on every byte of a
+block and still file its attestations under different names, which is a fork of
+the artifact plane no block comparison can see.
+
+**What O still has no vector for**, and it is the sharpest thing left: the two
+signing preimages, `observationMessage` and `recordMessage`. Both are
+unexported in the reference and only reachable through a signature that
+verifies, which needs an ML-DSA signer in all three languages, and the O port
+performs no cryptography beyond SHA-256. A fork in either would forge an
+operator's observation, and nothing here would see it.
 
 `Block.Verify` is `return nil` with no condition in it, so on O's block vectors
 `syntactic` and `exec` are OK for everything that parses. That is the chain and
@@ -126,7 +138,7 @@ same shape the P-chain fork hid in for weeks: a chain nothing is pointed at
 agrees with itself. Every fork this program has found, the differential found.
 
 **All three columns answer all seven chains, and every compared field of all
-966 vectors agrees.** That is recent. The Rust column used to answer P and X and
+972 vectors agrees.** That is recent. The Rust column used to answer P and X and
 say nothing about the other four, and the runner listed 421 vectors under NOT
 ANSWERED and exited non-zero — silence is not agreement, and a target that went
 green while a whole column said nothing about four chains would be reporting the
@@ -419,7 +431,7 @@ make chains           build all fourteen evaluators, run the differential
 make chains-corpus    regenerate the corpus from the Go reference
 ```
 
-**`make chains` passes today.** 966 vectors, three running implementations —
+**`make chains` passes today.** 972 vectors, three running implementations —
 go, rust and cpp — plus the committed corpus as a recording of the first.
 Agreement on every field, every field answered by at least two of the three,
 and nothing under NOT ANSWERED.

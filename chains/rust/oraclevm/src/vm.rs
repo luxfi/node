@@ -53,6 +53,22 @@ pub fn compute_request_id(service: &Id, session: &Id, tx: &Id, step: u32, retry:
     out
 }
 
+/// The name an attestation takes when it leaves this chain.
+///
+/// `sha256("LUX:OracleAttestation:v1" ‖ feed ‖ be64(epoch))` — and NOTHING in
+/// the attestation's own bytes. Two implementations can agree on every byte of
+/// a block and still file its attestations under different names, which is a
+/// fork of the artifact plane no block comparison can see.
+pub fn attestation_id(feed: &Id, epoch: u64) -> [u8; 32] {
+    let mut h = Sha256::new();
+    h.update(b"LUX:OracleAttestation:v1");
+    h.update(feed);
+    h.update(epoch.to_be_bytes());
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&h.finalize());
+    out
+}
+
 /// The leaf a record hashes to. The signature is NOT in it: two records that
 /// differ only there commit to one root, which is the chain's answer and has
 /// to be every implementation's.

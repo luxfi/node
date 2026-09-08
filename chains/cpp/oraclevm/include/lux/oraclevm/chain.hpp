@@ -204,6 +204,13 @@ inline constexpr std::int64_t kObservationWindowSeconds = 60;
 std::array<std::uint8_t, 32> compute_request_id(const Id& service, const Id& session, const Id& tx,
                                                 std::uint32_t step, std::uint32_t retry);
 
+// The name an attestation takes when it leaves this chain:
+// sha256("LUX:OracleAttestation:v1" ‖ feed ‖ be64(epoch)) — and NOTHING in the
+// attestation's own bytes. Two implementations can agree on every byte of a
+// block and still file its attestations under different names, which is a fork
+// of the artifact plane no block comparison can see.
+std::array<std::uint8_t, 32> attestation_id(const Id& feed, std::uint64_t epoch);
+
 // The root over a request's records. A lone last leaf is paired WITH ITSELF, so
 // a set of records and that set with its last member repeated commit to one
 // root. That is the chain's tree and this port reproduces it: a port that

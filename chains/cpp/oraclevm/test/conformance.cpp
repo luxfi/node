@@ -284,6 +284,48 @@ bool parse_u32(const std::string& s, std::uint32_t* out) {
     return true;
 }
 
+// One 32-byte id, hex, the way the corpus writes a derivation's arguments.
+bool arg_id(const std::string& s, Id* out) {
+    lux::fhevm::Bytes raw;
+    if (!lux::fhevm::from_hex(s, &raw)) return false;
+    if (raw.size() != 32) return false;
+    std::copy(raw.begin(), raw.end(), out->begin());
+    return true;
+}
+
+bool parse_u64(const std::string& s, std::uint64_t* out) {
+    if (s.empty()) return false;
+    std::uint64_t v = 0;
+    for (const char c : s) {
+        if (c < '0' || c > '9') return false;
+        const std::uint64_t d = static_cast<std::uint64_t>(c - '0');
+        if (v > (~std::uint64_t(0) - d) / 10) return false;
+        v = v * 10 + d;
+    }
+    *out = v;
+    return true;
+}
+
+Row artifact_id_row(const std::string& id, const lux::fhevm::Bytes& bytes) {
+    Row r(id);
+    const std::string text(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    const std::vector<std::string> f = split(text, '|');
+    if (f.size() != 2) {
+        return r.malformed("an artifact id takes two arguments, got " + std::to_string(f.size()));
+    }
+    Id feed{};
+    if (!arg_id(f[0], &feed)) return r.malformed("an id is 32 bytes of hex");
+    std::uint64_t epoch = 0;
+    if (!parse_u64(f[1], &epoch)) return r.malformed("epoch is not a uint64");
+    r.parse = "ok";
+    r.kind = "OracleAttestation";
+    r.hash = lux::fhevm::hex(lux::fhevm::view(attestation_id(feed, epoch)));
+    r.syntactic = kOk;
+    r.exec = kOk;
+    r.note = "epoch=" + std::to_string(epoch);
+    return r;
+}
+
 Row request_id_row(const std::string& id, const lux::fhevm::Bytes& bytes) {
     Row r(id);
     const std::string text(reinterpret_cast<const char*>(bytes.data()), bytes.size());
@@ -293,14 +335,9 @@ Row request_id_row(const std::string& id, const lux::fhevm::Bytes& bytes) {
     }
     Id ids_[3];
     for (int i = 0; i < 3; i++) {
-        lux::fhevm::Bytes raw;
-        if (!lux::fhevm::from_hex(f[static_cast<std::size_t>(i)], &raw)) {
-            return r.malformed("an argument is not hex");
+        if (!arg_id(f[static_cast<std::size_t>(i)], &ids_[i])) {
+            return r.malformed("an id is 32 bytes of hex");
         }
-        if (raw.size() != 32) {
-            return r.malformed("an id is 32 bytes, got " + std::to_string(raw.size()));
-        }
-        std::copy(raw.begin(), raw.end(), ids_[i].begin());
     }
     std::uint32_t step = 0;
     std::uint32_t retry = 0;
@@ -429,6 +466,7 @@ Row evaluate(const std::string& id, const std::string& op, const std::string& wi
     if (op == "identity") return identity(id);
     if (op == "block") return block_row(id, bytes);
     if (op == "genesis") return genesis_row(id, bytes);
+    if (op == "artifactid") return artifact_id_row(id, bytes);
     if (op == "requestid") return request_id_row(id, bytes);
     if (op == "request") return request_row(id, bytes);
     if (op == "commit") return commit_row(id, bytes);

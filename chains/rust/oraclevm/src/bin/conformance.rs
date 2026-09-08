@@ -30,7 +30,7 @@
 use lux_oraclevm::gojson;
 use lux_oraclevm::ids;
 use lux_oraclevm::types::{Block, Genesis, Observation, OracleRecord, OracleRequest, KIND_READ, KIND_WRITE};
-use lux_oraclevm::vm::{compute_request_id, Vm};
+use lux_oraclevm::vm::{attestation_id, compute_request_id, Vm};
 
 const NONE: &str = "-";
 const INTERNAL: &str = "INTERNAL";
@@ -268,6 +268,7 @@ fn evaluate(id: &str, op: &str, wire: &str) -> Row {
         "identity" => identity(id),
         "block" => block(id, &bytes),
         "genesis" => genesis(id, &bytes),
+        "artifactid" => artifact_id(id, &bytes),
         "requestid" => request_id(id, &bytes),
         "request" => request(id, &bytes),
         "commit" => commit(id, &bytes),
@@ -365,6 +366,44 @@ fn genesis(id: &str, bytes: &[u8]) -> Row {
     r
 }
 
+fn artifact_id(id: &str, bytes: &[u8]) -> Row {
+    let mut r = Row::new(id);
+    let text = match std::str::from_utf8(bytes) {
+        Ok(t) => t,
+        Err(_) => return r.malformed("arguments are not text"),
+    };
+    let f: Vec<&str> = text.split('|').collect();
+    if f.len() != 2 {
+        return r.malformed(&format!("an artifact id takes two arguments, got {}", f.len()));
+    }
+    let feed = match arg_id(f[0]) {
+        Ok(v) => v,
+        Err(e) => return r.malformed(&trim(&e)),
+    };
+    let epoch: u64 = match f[1].parse() {
+        Ok(n) => n,
+        Err(e) => return r.malformed(&trim(&e.to_string())),
+    };
+    r.parse = "ok".into();
+    r.kind = "OracleAttestation".into();
+    r.hash = hex::encode(attestation_id(&feed, epoch));
+    r.syntactic = OK.into();
+    r.exec = OK.into();
+    r.note = format!("epoch={epoch}");
+    r
+}
+
+/// One 32-byte id, hex, the way the corpus writes a derivation's arguments.
+fn arg_id(s: &str) -> Result<ids::Id, String> {
+    let raw = hex::decode(s).map_err(|e| e.to_string())?;
+    if raw.len() != 32 {
+        return Err(format!("an id is 32 bytes, got {}", raw.len()));
+    }
+    let mut out = ids::EMPTY;
+    out.copy_from_slice(&raw);
+    Ok(out)
+}
+
 fn request_id(id: &str, bytes: &[u8]) -> Row {
     let mut r = Row::new(id);
     let text = match std::str::from_utf8(bytes) {
@@ -375,16 +414,7 @@ fn request_id(id: &str, bytes: &[u8]) -> Row {
     if f.len() != 5 {
         return r.malformed(&format!("a request id takes five arguments, got {}", f.len()));
     }
-    let arg = |s: &str| -> Result<ids::Id, String> {
-        let raw = hex::decode(s).map_err(|e| e.to_string())?;
-        if raw.len() != 32 {
-            return Err(format!("an id is 32 bytes, got {}", raw.len()));
-        }
-        let mut out = ids::EMPTY;
-        out.copy_from_slice(&raw);
-        Ok(out)
-    };
-    let (service, session, tx) = match (arg(f[0]), arg(f[1]), arg(f[2])) {
+    let (service, session, tx) = match (arg_id(f[0]), arg_id(f[1]), arg_id(f[2])) {
         (Ok(a), Ok(b), Ok(c)) => (a, b, c),
         (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => return r.malformed(&trim(&e)),
     };
