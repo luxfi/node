@@ -32,6 +32,16 @@ COMPUTE         := $(HOME)/work/lux/compute
 GPU_CPP         := $(COMPUTE)/gpu/cpp
 LUX_CRYPTO_DIST := $(HOME)/work/lux/crypto/dist
 
+# The Rust chains link libluxcrypto.a — the same ML-KEM and ML-DSA the Go node
+# uses, through its C ABI. Build it with:
+#
+#   cd $(HOME)/work/lux/crypto/bindings/cabi && CGO_ENABLED=1 \
+#     CGO_CFLAGS=-I<accel>/internal/capi/include \
+#     go build -buildmode=c-archive -o $(LUX_CRYPTO_DIST)/libluxcrypto.a .
+#
+# Without it every Rust evaluator fails at the link, and the differential is
+# short a whole column before it asks a single question.
+
 # ---- conformance corpus (also imported) ------------------------------------
 CONSENSUS_GO   := $(HOME)/work/lux/consensus
 CONSENSUS_RUST := $(HOME)/work/lux/consensus/pkg/rust
@@ -373,13 +383,13 @@ chains: chains-build ## run the chain differential in all three languages
 chains-build:
 	@echo "==> chain differential: building fourteen evaluators"
 	cd $(CONF)/gen && GOWORK=off go build -o gen .
-	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	cd $(ROOT)/chains/rust/quantumvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	cd $(COMPUTE)/chains/rust/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	cd $(ROOT)/chains/rust/zkvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	cd $(COMPUTE)/chains/rust/fhevm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	cd $(ROOT)/chains/rust/oraclevm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/quantumvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
+	cd $(COMPUTE)/chains/rust/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/zkvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
+	cd $(COMPUTE)/chains/rust/fhevm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/oraclevm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
 	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(ROOT)/chains/cpp/platformvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
@@ -477,7 +487,7 @@ precompiles: precompiles-build ## run the precompile differential
 precompiles-build:
 	@echo "==> precompile differential: building three evaluators"
 	cd $(PREC) && GOWORK=off go build -o precompile .
-	cd $(ROOT)/chains/rust/evm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
+	cd $(ROOT)/chains/rust/evm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
 	conan install $(ROOT)/chains/cpp/evm --output-folder=$(ROOT)/chains/cpp/evm/build \
 		-s build_type=Release -s compiler.cppstd=gnu20 --build=missing
 	cmake -S $(ROOT)/chains/cpp/evm -B $(ROOT)/chains/cpp/evm/build -DCMAKE_BUILD_TYPE=Release \
