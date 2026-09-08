@@ -37,10 +37,14 @@ using namespace evmc::literals;  // the _address literal, for whole addresses
 
 namespace {
 
-// The revision. p256verify at 0x…0100 is live from Osaka, and the Go reference
-// reads geth's Osaka table, so this is the revision at which the two are asked
-// the same question.
-constexpr evmc_revision kRevision = EVMC_OSAKA;
+// The revision the C-Chain runs, which is the revision the other two
+// evaluators answer at. cevm executes the C-Chain at Cancun (src/evm.cpp, and
+// the unit tests say so), luxfi/evm maps its Quasar fork to CancunTime and has
+// no OsakaTime for a network to set, and no cchain.json names a fork after
+// Cancun. Asking at Osaka made this evaluator serve p256verify at 0x…0100,
+// where the chain has an empty account, and price modexp by EIP-7883, which no
+// validator charges.
+constexpr evmc_revision kRevision = EVMC_CANCUN;
 
 constexpr const char* kNone = "-";
 
@@ -66,10 +70,11 @@ constexpr const char* kAbsent = "ABSENT";
 struct Price {
     // The WHOLE address. cevm's dispatcher keys the stock range on the last two
     // bytes and matches everything else on all twenty, and a Lux precompile is
-    // everything else: inference is at 0x0300…0003, whose last two bytes are
-    // ripemd160's. Keying on two bytes here priced a call to that address at
-    // ripemd160's 720 gas and named it ripemd160, with no sign anything was
-    // wrong.
+    // everything else — the inference body sits at 0x0300…0003, whose last two
+    // bytes are ripemd160's. Keying on two bytes here priced a call to that
+    // address at ripemd160's 720 gas and named it ripemd160, with no sign
+    // anything was wrong. No entry below needs the width today; the type keeps
+    // the next one from needing to discover this again.
     evmc::address address;
     const char* name;
     decltype(identity_analyze)* analyze;
@@ -91,20 +96,18 @@ constexpr auto kPrices = std::to_array<Price>({
     // the range. Seven addresses, 0x0b through 0x11, which is also where geth's
     // Osaka table puts them.
     {0x000000000000000000000000000000000000000b_address, "bls12_g1add", bls12_g1add_analyze},
-    {0x000000000000000000000000000000000000000c_address, "bls12_g1msm", bls12_g1msm_analyze},
-    {0x000000000000000000000000000000000000000d_address, "bls12_g2add", bls12_g2add_analyze},
-    {0x000000000000000000000000000000000000000e_address, "bls12_g2msm", bls12_g2msm_analyze},
-    {0x000000000000000000000000000000000000000f_address, "bls12_pairing_check", bls12_pairing_check_analyze},
-    {0x0000000000000000000000000000000000000010_address, "bls12_map_fp_to_g1", bls12_map_fp_to_g1_analyze},
-    {0x0000000000000000000000000000000000000011_address, "bls12_map_fp2_to_g2", bls12_map_fp2_to_g2_analyze},
-    {0x0000000000000000000000000000000000000100_address, "p256verify", p256verify_analyze},
-    // No Lux precompile is priced here, because cevm's dispatcher registers
-    // none. aivm_analyze and aivm_execute are compiled and tested in cevm and
-    // reachable from nothing: its lookup keys on the last two bytes of an
-    // address, and inference's 0x0300…0003 ends in ripemd160's. Pricing it
-    // anyway would put a number in the gas column for an address the seam
-    // answers ABSENT at, so check_table() below refuses to let this list claim
-    // an address the seam does not serve.
+    {0x000000000000000000000000000000000000000c_address, "bls12_g1mul", bls12_g1mul_analyze},
+    {0x000000000000000000000000000000000000000d_address, "bls12_g1msm", bls12_g1msm_analyze},
+    {0x000000000000000000000000000000000000000e_address, "bls12_g2add", bls12_g2add_analyze},
+    {0x000000000000000000000000000000000000000f_address, "bls12_g2mul", bls12_g2mul_analyze},
+    {0x0000000000000000000000000000000000000010_address, "bls12_g2msm", bls12_g2msm_analyze},
+    {0x0000000000000000000000000000000000000011_address, "bls12_pairing_check", bls12_pairing_check_analyze},
+    // Nothing is priced at 0x…0100 or at 0x0300…0003. cevm holds a p256verify
+    // and an aivm body and the chain reaches neither: p256verify arrives at
+    // Osaka, which is past the Cancun above, and aivm's aiInferenceConfig is
+    // in no upgrade.json, so it is in no dispatch table. check_table() below
+    // is what keeps that agreement — a price here for an address the seam does
+    // not serve fails the run.
 });
 
 // The widest address cevm's availability table can hold, so the scan below

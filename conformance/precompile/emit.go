@@ -119,10 +119,11 @@ func own() []Vector {
 		{ID: "UNCLAIMED_FF", Address: addr(0xff), Gas: plenty},
 		{ID: "UNCLAIMED_0101", Address: addr(0x01, 0x01), Gas: plenty},
 
-		// Lux's own, at the address Go serves. C++ reaches it only since
-		// cevm learned to dispatch on a whole address rather than on the last
-		// two bytes — 0x0300…0003 and ripemd160 share those. Rust serves no
-		// Lux precompile at all, and says so.
+		// 0x0300…0003. The inference module is registered here and no
+		// network enables it: aiInferenceConfig is in no upgrade.json, and
+		// the AI key the C-chain does enable is aiMiningConfig, at another
+		// address. So the call is to an empty account, and an implementation
+		// that answers is serving a precompile the chain does not have.
 		{ID: "AIVM_GENERATE", Address: addr(0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x03),
 			Gas: 1 << 20, Input: aivmGenerate(10, 1, 7, 13, 2)},
 		{ID: "AIVM_BAD_SELECTOR", Address: addr(0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x03),
@@ -153,10 +154,11 @@ func own() []Vector {
 		{ID: "CORONA_EMPTY", Address: addr(0x01, 0x22, 0x06), Gas: plenty},
 		{ID: "XWING_EMPTY", Address: addr(0x22, 0x21), Gas: plenty},
 
-		// 0x0100. Two implementations claim this address in Go alone: the
-		// stock table charges 6900 and the Lux module charges 3450, and the
-		// module wins because it is consulted first. Whether the other two
-		// runtimes charge what the chain charges is the question.
+		// 0x0100. Two implementations are written for this address and
+		// neither one runs: the Lux secp256r1 module charges 3450 but no
+		// network enables secp256r1Config, and geth's p256verify charges
+		// 6900 but it arrives at Osaka, which is past the Cancun every Lux
+		// chain ends at. A price here is a price no validator charges.
 		{ID: "P256_EMPTY", Address: addr(0x01, 0x00), Gas: plenty},
 		{ID: "P256_WRONG_LENGTH", Address: addr(0x01, 0x00), Gas: plenty, Input: make([]byte, 159)},
 		{ID: "P256_ZEROES", Address: addr(0x01, 0x00), Gas: plenty, Input: make([]byte, 160)},
@@ -202,7 +204,6 @@ func own() []Vector {
 		{"SHA256", addr(0x02), 72, []byte("abc")},
 		{"RIPEMD160", addr(0x03), 720, []byte("abc")},
 		{"IDENTITY", addr(0x04), 18, []byte("abc")},
-		{"P256", addr(0x01, 0x00), 3450, make([]byte, 160)},
 	} {
 		v = append(v,
 			Vector{ID: b.id + "_GAS_EXACT", Address: b.address, Gas: b.cost, Input: b.input},

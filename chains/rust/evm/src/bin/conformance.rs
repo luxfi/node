@@ -44,10 +44,14 @@ use revm::primitives::hardfork::SpecId;
 use revm::primitives::{Address, Bytes, U256};
 use revm::{Context, MainContext};
 
-/// The revision every implementation in this differential is built to: the one
-/// that serves p256verify at 0x0100, which is geth's Osaka table on the Go
-/// side and revm's `PrecompileSpecId::OSAKA` here.
-const SPEC: SpecId = SpecId::OSAKA;
+/// The revision the C-chain runs, which is the revision every implementation in
+/// this differential answers at. `luxfi/evm` maps its Quasar fork to
+/// `CancunTime` and knows no fork after it — there is no `OsakaTime` on a Lux
+/// chain config for a network to set, and none sets one — so Cancun is where
+/// every Lux chain ends. Asking a port at a later revision makes it serve
+/// addresses no validator serves: at Osaka this table answers p256verify at
+/// 0x0100, where the chain has an empty account.
+const SPEC: SpecId = SpecId::CANCUN;
 
 /// An empty column, spelled so it is not an empty column.
 const NONE: &str = "-";
