@@ -29,6 +29,7 @@ GPU_DIR         := $(HOME)/work/luxcpp/gpu
 # name checkouts rather than vendoring them: this repository is public, and a
 # public repository must not hold a partial copy of a private one.
 COMPUTE         := $(HOME)/work/lux/compute
+GPU_CPP         := $(COMPUTE)/gpu/cpp
 LUX_CRYPTO_DIST := $(HOME)/work/lux/crypto/dist
 
 # ---- conformance corpus (also imported) ------------------------------------
@@ -322,17 +323,17 @@ chains-build:
 	cd $(COMPUTE)/chains/rust/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/zkvm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
 	cd $(COMPUTE)/chains/rust/fhevm && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release --bin conformance
-	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(ROOT)/chains/cpp/platformvm/build -j$(NPROC)
-	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake -S $(ROOT)/chains/cpp/xvm -B $(ROOT)/chains/cpp/xvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(ROOT)/chains/cpp/xvm/build -j$(NPROC)
-	cmake -S $(ROOT)/chains/cpp/quantumvm -B $(ROOT)/chains/cpp/quantumvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake -S $(ROOT)/chains/cpp/quantumvm -B $(ROOT)/chains/cpp/quantumvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(ROOT)/chains/cpp/quantumvm/build -j$(NPROC)
-	cmake -S $(ROOT)/chains/cpp/zkvm -B $(ROOT)/chains/cpp/zkvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake -S $(ROOT)/chains/cpp/zkvm -B $(ROOT)/chains/cpp/zkvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(ROOT)/chains/cpp/zkvm/build -j$(NPROC)
-	cmake -S $(COMPUTE)/chains/cpp/dexvm -B $(COMPUTE)/chains/cpp/dexvm/build -DCMAKE_BUILD_TYPE=Release
+	cmake -S $(COMPUTE)/chains/cpp/dexvm -B $(COMPUTE)/chains/cpp/dexvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(COMPUTE)/chains/cpp/dexvm/build -j$(NPROC)
-	cmake -S $(COMPUTE)/chains/cpp/fhevm -B $(COMPUTE)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release
+	cmake -S $(COMPUTE)/chains/cpp/fhevm -B $(COMPUTE)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(COMPUTE)/chains/cpp/fhevm/build -j$(NPROC)
 	@for f in $(CONF_GEN) $(RUST_EVALS) $(CPP_EVALS); do \
 		test -x "$$f" || { echo "FAIL: no evaluator at $$f" >&2; exit 1; }; \

@@ -19,14 +19,14 @@
 // because someone asked for a time. The timing line goes to stderr, where the
 // runner does not read: B <impl> <vectors> <repeats> <seconds>
 //
-// WHAT THIS EVALUATOR DOES NOT DO IS PART OF ITS TIME. eval_tx below stops
-// after the syntactic pass and answers SKIPPED for exec, where the Go and Rust
-// X-chains go on to verify semantically and then execute. A time measured here
-// is a time for parsing and syntax, and it is not comparable, work for work,
-// with the other two until this evaluator runs the same two passes.
+// THE TIME COVERS THE SAME WORK IN ALL THREE. eval_tx runs the parse, the
+// syntactic pass, the chain's agreement and the execution, which is what the
+// Go and Rust X-chains run, so a time measured here is comparable with theirs
+// work for work.
 
 #include "lux/xvm/block.hpp"
 #include "lux/xvm/executor.hpp"
+#include "lux/xvm/state.hpp"
 #include "lux/xvm/txs.hpp"
 #include "lux/xvm/vm.hpp"
 
@@ -201,11 +201,33 @@ Row eval_tx(const std::string& id, const std::string& wire) {
         return r;
     }
     r.syntactic = kOk;
-    // The semantic pass needs a funded UTXO set and a shared-memory peer;
-    // neither is stood up here, so this layer is reported as not evaluated
-    // rather than as a pass.
-    r.exec = kSkipped;
-    r.note = "semantic verification not evaluated: needs a funded UTXO set";
+
+    // And the two passes the chain runs after it: the chain's own agreement,
+    // then the execution. Both read an EMPTY chain — the reference runs them
+    // over a diff on a chain with nothing in it, so a vector that wanted a
+    // UTXO is refused for the reason a chain would refuse it, and one that
+    // wanted nothing goes through. A funded set would be a different question
+    // than the one the corpus asks.
+    //
+    // A fresh state per vector, because the executor writes: two vectors
+    // sharing one would be one vector judged against the other's leavings.
+    state::State chain;
+    executor::SemanticVerifier sem(b, chain, *tx);
+    auto agreed = tx->unsigned_tx->visit(sem);
+    if (!agreed) {
+        r.exec = classify(agreed.error());
+        r.note = agreed.error();
+        return r;
+    }
+    executor::Executor exe(chain, *tx);
+    auto ran = tx->unsigned_tx->visit(exe);
+    if (!ran) {
+        r.exec = classify(ran.error());
+        r.note = ran.error();
+        return r;
+    }
+    r.exec = kOk;
+    r.note = "executed on the empty chain";
     return r;
 }
 
