@@ -14,7 +14,7 @@
 // then the rule that refused rather than a chain that happened to hold
 // something this one did not.
 //
-// Usage: qvm_conformance <vectors.tsv>
+// Usage: qvm_conformance <vectors.tsv> [repeats]
 
 #include "lux/conformance/corpus.hpp"
 
@@ -175,26 +175,17 @@ conf::Row eval_seam(const std::string& id) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::fprintf(stderr, "usage: qvm_conformance <vectors.tsv>\n");
-        return 2;
-    }
+    long repeats = 0;
+    if (!conf::repeats(argc, argv, "qvm_conformance", repeats)) return 2;
     std::vector<conf::Vector> vectors;
     if (!conf::read(argv[1], "qvm_conformance", vectors)) return 1;
 
-    for (const auto& v : vectors) {
-        if (v.chain != "Q") continue;
-        if (v.op == "block") {
-            conf::print(eval_block(v.id, v.wire));
-        } else if (v.op == "seam") {
-            conf::print(eval_seam(v.id));
-        } else if (v.op == "identity") {
-            conf::print(conf::identity(v.id, kChainByte, kNetworkID));
-        } else {
-            std::fprintf(stderr, "qvm_conformance: unknown op %s on %s\n", v.op.c_str(),
-                         v.id.c_str());
-            return 1;
-        }
-    }
+    conf::answer(vectors, "Q", "cpp/quantumvm", repeats, [](const conf::Vector& v) {
+        if (v.op == "block") return eval_block(v.id, v.wire);
+        if (v.op == "seam") return eval_seam(v.id);
+        if (v.op == "identity") return conf::identity(v.id, kChainByte, kNetworkID);
+        std::fprintf(stderr, "qvm_conformance: unknown op %s on %s\n", v.op.c_str(), v.id.c_str());
+        std::exit(1);
+    });
     return 0;
 }

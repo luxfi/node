@@ -5,7 +5,7 @@
 // It hands ONE corpus to every evaluator the differential already runs, asks
 // each to do its parse-and-verify work over that corpus a fixed number of
 // times, and reports how long that work took. The workload is the differential's
-// workload: the same 208 vectors, and the same answers, computed the same way.
+// workload: the same vectors, and the same answers, computed the same way.
 // Nothing here asks an implementation to do less.
 //
 // It knows nothing about any chain, and it does not time anything itself. Each

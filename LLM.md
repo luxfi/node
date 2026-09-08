@@ -518,12 +518,27 @@ carries 48 benchmark functions in `luxfi/node`, the Rust chains have no
 `benches/` at all, and the C++ chains have none of their own. Any claim that one
 is faster than another was unsupported.
 
-The differential already hands all three the same 208 vectors and makes each one
+The differential already hands all three the same 725 vectors and makes each one
 parse and verify them, which is a fair identical workload. `make bench` times
 it. Every evaluator takes an optional repeat count after the corpus path, walks
-the whole corpus that many times, and prints its own elapsed time to stderr as
-`B <impl> <vectors> <repeats> <seconds>`. `conformance/bench` runs them and
+its chain's vectors that many times, and prints its own elapsed time to stderr
+as `B <impl> <vectors> <repeats> <seconds>`. `conformance/bench` runs them and
 prints the table. Without a count nothing changes and `make chains` is untouched.
+
+**It did not run.** Six of the twelve evaluators the differential runs had no
+clock at all — rust dexvm and quantumvm, cpp quantumvm, zkvm, dexvm and fhevm —
+and the target named two of the six, so `make bench` exited 1 on the first of
+them and had never produced a number for any chain. All twelve take the count
+now; in C++ the loop lives once in the header the four already share. The D and
+F evaluators are in `luxfi/compute` with the rest of the licensed half, so the
+change to those two is there and the header they build against is here.
+
+**One row per chain per language.** A port is one chain, so its time is that
+chain's. The Go reference is all six in one program and could only report a
+whole-corpus time, which is not a number to set beside a sixth of one; it now
+takes `-chain P|X|Q|Z|D|F` before the corpus path and names itself the way the
+ports name themselves. Eighteen rows, plus a total per language over the same
+725 vectors.
 
 Three things about it are load-bearing:
 
@@ -546,9 +561,16 @@ machine can add time to a run and nothing can subtract it, so the fastest is the
 least contaminated and the spread says how contaminated the rest were.
 
 What it says, and the honest caveats, are in `conformance/README.md` under
-**Timing it** — the sharpest being that `chains/cpp/xvm` answers `SKIPPED` for
-`exec` and is therefore the fastest thing in the table because it is the only
-one that stops after the syntactic pass.
+**Timing it**. The sharpest is that the biggest number in the table is not
+about a language: `cpp/quantumvm` costs 1821 µs a vector against
+`go/quantumvm`'s 1.02, and a Q block that dies on its FIRST BYTE costs it 1.85
+ms — within 1% of one that verifies to the end. The C++ evaluator stands a
+fresh chain up per vector and the Go one stands one up per process, both
+deliberately: 81 chains a round against one a process is the entire ratio. The
+next sharpest is that a field a port DECLINES is work it did not do, so a row
+`make chains` names under DECLINED is fast for that reason. Take Q out and the
+three totals over the remaining 644 vectors are Go 3.16 s, Rust 2.75 s, C++
+4.28 s — the same shape P and F give on their own.
 
 ## Running the three, and why two of them sit at height 0
 
