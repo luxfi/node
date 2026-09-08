@@ -1,0 +1,9 @@
+node
+Copyright (c) 2024-2026 Lux Industries Inc.
+
+Part of the Go implementation derives from AvalancheGo
+(https://github.com/ava-labs/avalanchego), BSD 3-Clause:
+
+    Copyright (C) 2019, Ava Labs, Inc.
+
+Modified. The Rust and C++ implementations are original.
