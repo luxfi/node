@@ -29,7 +29,7 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 cp -R "$chains" "$work/chains"
-cp "$here/zz_gen_vectors_test.go" "$work/chains/fhevm/"
+cp "$here/gen_vectors.go.tmpl" "$work/chains/fhevm/zz_gen_vectors_test.go"
 
 cd "$work/chains/fhevm"
 GOWORK=off go test -count=1 -run TestWriteVectors -v . 2>&1 | tail -20
