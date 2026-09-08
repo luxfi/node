@@ -409,6 +409,11 @@ type Node struct {
 	// this node's initial connections to the network
 	bootstrappers nodevalidators.Manager
 
+	// endpointOnlyBootstrappers is how many beacons were named by address
+	// alone. They have no id to be keyed on until the handshake supplies one,
+	// so they are not in the manager above and are counted here instead.
+	endpointOnlyBootstrappers int
+
 	// current validators of the network
 	vdrs nodevalidators.Manager
 
@@ -660,7 +665,9 @@ func (n *Node) initNetworking(reg metric.Registerer) error {
 
 	// Create unified validator manager
 	n.onSufficientlyConnected = make(chan struct{})
-	numBootstrappers := n.bootstrappers.NumValidators(constants.PrimaryNetworkID)
+	// Beacons whose id is not known yet still count: the operator named them,
+	// and the connection floor is about how many of the named ones must answer.
+	numBootstrappers := n.bootstrappers.NumValidators(constants.PrimaryNetworkID) + n.endpointOnlyBootstrappers
 	requiredConns := int64((3*numBootstrappers + 3) / 4)
 
 	if requiredConns == 0 {
@@ -968,11 +975,16 @@ func (n *Node) initDatabase() error {
 // Set the node IDs of the peers this node should first connect to
 func (n *Node) initBootstrappers() error {
 	n.bootstrappers = nodevalidators.NewManager()
+	endpointOnly := 0
 	for _, bootstrapper := range n.Config.Bootstrappers {
-		// Skip endpoint-only bootstrappers — their NodeID is discovered
-		// from the peer's staking certificate during the TLS handshake
-		// and added to the bootstrapper set dynamically.
+		// An endpoint-only beacon (--bootstrap-nodes) has no id yet: the id
+		// arrives with the peer's staking certificate at the handshake, and a
+		// staker cannot be keyed on an id nobody has. It is counted rather
+		// than dropped, because a node that was given four beacons and then
+		// requires zero connections is waiting for nothing while reporting
+		// that it is waiting for beacons.
 		if bootstrapper.ID == ids.EmptyNodeID {
+			endpointOnly++
 			continue
 		}
 		// Note: The beacon connection manager will treat all beaconIDs as
@@ -982,6 +994,7 @@ func (n *Node) initBootstrappers() error {
 			return err
 		}
 	}
+	n.endpointOnlyBootstrappers = endpointOnly
 	return nil
 }
 
