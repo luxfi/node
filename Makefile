@@ -56,12 +56,12 @@ luxd: ## build one runtime into bin/luxd-<runtime> (RUNTIME=go|rust|cpp)
 luxd-go:
 	@echo "==> go: ./cmd/luxd"
 	@mkdir -p $(BIN)
-	GOWORK=off CGO_ENABLED=0 go build -trimpath -o $(BIN)/luxd-go ./cmd/luxd
-	@test -x $(BIN)/luxd-go
+	GOWORK=off CGO_ENABLED=0 go build -trimpath -o $(BIN)/luxd ./cmd/luxd
+	@test -x $(BIN)/luxd
 	@leaked="$$(GOWORK=off go list -deps ./cmd/luxd 2>/dev/null | grep -E 'lux-private' || true)"; \
 	if [ -n "$$leaked" ]; then echo "FAIL: a forbidden package in the closure:" >&2; echo "$$leaked" >&2; exit 1; fi
 	@echo "    confirmed clean: 0 forbidden in the dependency graph"
-	@ls -lh $(BIN)/luxd-go
+	@ls -lh $(BIN)/luxd
 
 # rust: lux-rs/node — a real node host (mesh + BLS quorum finality + revm),
 # already luxfi/node-free. Built in place; only the binary is copied out.
@@ -70,8 +70,8 @@ luxd-rust:
 	@mkdir -p $(BIN)
 	cd $(NODE_RUST_DIR) && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin luxd
 	@test -x $(NODE_RUST_DIR)/target/release/luxd
-	cp $(NODE_RUST_DIR)/target/release/luxd $(BIN)/luxd-rust
-	@ls -lh $(BIN)/luxd-rust
+	cp $(NODE_RUST_DIR)/target/release/luxd $(BIN)/hanzod
+	@ls -lh $(BIN)/hanzod
 
 # cpp: lux-cpp/node — a real node host (mesh + BLS quorum finality + cevm).
 # Configures the repo's own build/ against the Conan toolchain cevm's
@@ -93,14 +93,14 @@ luxd-cpp:
 		-DCMAKE_TOOLCHAIN_FILE=$(CONAN_TOOLCHAIN)
 	cmake --build $(NODE_CPP_BUILD) --target luxd -j$(NPROC)
 	@test -x $(NODE_CPP_BUILD)/luxd
-	cp $(NODE_CPP_BUILD)/luxd $(BIN)/luxd-cpp
-	@ls -lh $(BIN)/luxd-cpp
+	cp $(NODE_CPP_BUILD)/luxd $(BIN)/zood
+	@ls -lh $(BIN)/zood
 
 # ---- make all: attempt all three + gpu, report every one, fail loudly -----
 
 all: ## build all three runtimes plus gpu; nonzero unless 3/3
 	@mkdir -p $(BIN)
-	@rm -f $(BIN)/luxd-go $(BIN)/luxd-rust $(BIN)/luxd-cpp
+	@rm -f $(BIN)/luxd $(BIN)/hanzod $(BIN)/zood
 	@echo "=== node2: building go, rust, cpp, gpu ==="
 	-$(MAKE) --no-print-directory luxd-go
 	-$(MAKE) --no-print-directory luxd-rust

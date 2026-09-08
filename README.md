@@ -113,9 +113,9 @@ languages.
 ## Build
 
 ```sh
-make luxd RUNTIME=go      # bin/luxd-go    — ./cmd/luxd, the node itself
-make luxd RUNTIME=rust    # bin/luxd-rust  — lux-rs/node, a full host
-make luxd RUNTIME=cpp     # bin/luxd-cpp   — lux-cpp/node, a full host
+make luxd RUNTIME=go      # bin/luxd    — ./cmd/luxd, the node itself
+make luxd RUNTIME=rust    # bin/hanzod  — lux-rs/node, a full host
+make luxd RUNTIME=cpp     # bin/zood   — lux-cpp/node, a full host
 make all                  # all three plus gpu; nonzero exit unless 3/3
 make conformance          # the pop/verdict corpus, all three languages
 ```

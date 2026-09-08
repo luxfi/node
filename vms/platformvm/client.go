@@ -655,10 +655,16 @@ func (c *Client) GetValidatorsAt(
 	}
 	set := make(map[ids.NodeID]*validators.GetValidatorOutput, len(res.Validators))
 	for _, vdr := range res.Validators {
+		// Light and Weight are one number. The wire carries Weight and the
+		// set commitment hashes Light, so a reader that fills one leaves the
+		// other zero and the committee it read hashes to a root no producer
+		// agrees with.
+		w := uint64(vdr.Weight)
 		set[vdr.NodeID] = &validators.GetValidatorOutput{
 			NodeID:    vdr.NodeID,
 			PublicKey: vdr.PublicKey,
-			Weight:    uint64(vdr.Weight),
+			Light:     w,
+			Weight:    w,
 		}
 	}
 	return set, nil
