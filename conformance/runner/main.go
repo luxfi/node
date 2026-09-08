@@ -39,8 +39,6 @@ var compared []string
 // evaluates nothing agree with everyone.
 const notEvaluated = "SKIPPED"
 
-const absent = "" // the implementation printed no row for this vector at all
-
 type result struct {
 	fields []string
 	note   string
@@ -159,6 +157,10 @@ func (e *evaluator) run() error {
 		if _, dup := e.rows[f[1]]; dup {
 			return fmt.Errorf("%s answered %s twice", e.name, f[1])
 		}
+		if i := blank(f[2 : 2+len(compared)]); i >= 0 {
+			return fmt.Errorf("%s left %s of %s empty; a field it cannot answer is %s",
+				e.name, compared[i], f[1], notEvaluated)
+		}
 		e.rows[f[1]] = result{
 			fields: append([]string(nil), f[2:2+len(compared)]...),
 			note:   f[len(f)-1],
@@ -186,12 +188,28 @@ func (e *evaluator) load(path string) error {
 			return fmt.Errorf("%s: not a result line, want %d columns, got %d: %q",
 				path, resultWidth(), len(fs), line)
 		}
+		if i := blank(fs[2 : 2+len(compared)]); i >= 0 {
+			return fmt.Errorf("%s: %s of %s is empty; a field the reference cannot answer is %s",
+				path, compared[i], fs[1], notEvaluated)
+		}
 		e.rows[fs[1]] = result{
 			fields: append([]string(nil), fs[2:2+len(compared)]...),
 			note:   fs[len(fs)-1],
 		}
 	}
 	return s.Err()
+}
+
+// blank reports the first compared field left empty, or -1. An evaluator that
+// cannot answer says so with SKIPPED; an empty column is a row it got wrong,
+// and reading it as a polite non-answer is how a broken evaluator disappears.
+func blank(fields []string) int {
+	for i, f := range fields {
+		if f == "" {
+			return i
+		}
+	}
+	return -1
 }
 
 func readVectorIDs(path string) ([]string, error) {
@@ -274,10 +292,8 @@ func report(subject string, ids []string, evals []*evaluator, verbose bool) {
 					continue // this implementation printed no row: absent
 				}
 				v := r.fields[fi]
-				if v == notEvaluated || v == absent {
-					if v == notEvaluated {
-						declined[e.name]++
-					}
+				if v == notEvaluated {
+					declined[e.name]++
 					continue
 				}
 				says = append(says, said{e.name, v, r.note, e.recorded})
