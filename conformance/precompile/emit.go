@@ -137,22 +137,13 @@ func own() []Vector {
 		// chain, and the two rows below are the same device and the same
 		// nonce under two chain ids — a binding that holds produces two
 		// different ids, and one that does not produces one id twice.
-		{ID: "AIMINING_EMPTY", Address: aiMining, Gas: plenty},
+		// The two work ids. Everything else this block used to list -- the
+		// empty call here and one to each post-quantum address -- is the
+		// loop below, which reaches the same addresses from one table.
+		// Listing them twice named two vectors MLKEM_EMPTY and stopped
+		// `emit` before it wrote anything.
 		{ID: "AIMINING_WORKID_96369", Address: aiMining, Gas: plenty, Input: workID(96369)},
 		{ID: "AIMINING_WORKID_200200", Address: aiMining, Gas: plenty, Input: workID(200200)},
-
-		// The post-quantum block, LP-4200. Go serves each of these from a
-		// module of its own, and an empty input is a defined call to all
-		// of them: each meters first and then refuses. So what the row
-		// settles is not how they parse, it is which implementations are
-		// at the address at all.
-		{ID: "MLKEM_EMPTY", Address: addr(0x01, 0x22, 0x01), Gas: plenty},
-		{ID: "MLDSA_EMPTY", Address: addr(0x01, 0x22, 0x02), Gas: plenty},
-		{ID: "SLHDSA_EMPTY", Address: addr(0x01, 0x22, 0x03), Gas: plenty},
-		{ID: "PULSAR_EMPTY", Address: addr(0x01, 0x22, 0x04), Gas: plenty},
-		{ID: "P3Q_EMPTY", Address: addr(0x01, 0x22, 0x05), Gas: plenty},
-		{ID: "CORONA_EMPTY", Address: addr(0x01, 0x22, 0x06), Gas: plenty},
-		{ID: "XWING_EMPTY", Address: addr(0x22, 0x21), Gas: plenty},
 
 		// 0x0100. Two implementations are written for this address and
 		// neither one runs: the Lux secp256r1 module charges 3450 but no

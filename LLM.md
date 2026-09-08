@@ -158,11 +158,18 @@ Each would have refused a transaction the reference admits, which on a live
 chain is a node that refuses a block its peers accepted.
 `conformance/README.md` states all four rules.
 
-`make precompiles` is described in `conformance/PRECOMPILE.md`. **It passes:
-235 calls, three runtimes, agreement on every compared field.** What it found
-on the way there is the reason it exists.
+`make precompiles` is described in `conformance/PRECOMPILE.md`. Across 258
+calls the three runtimes now agree on every field but eight, no column
+declines one, and what is left is a single sentence: **Rust and C++ do not
+implement three module families the chain enables.** They are `aiMiningConfig`
+at `0x0300…0000`, `mlkemConfig` at `0x…012201` and `xwingConfig` at
+`0x…2221` — Go serves each because mainnet's `upgrade.json` names its key, the
+two ports serve none of them, and an address one runtime answers at and another
+does not is a fork whichever way it falls. That is an implementation gap with a
+size, which is what a differential is for.
 
-Every disagreement it caught came back to one question the Go reference was not
+Everything else it was reporting was the harness rather than the chain, and all
+of it came back to one question the Go reference was not
 asking — what does the C-Chain actually serve? — and the answer has two halves
 the reference had both of wrong.
 
@@ -211,13 +218,20 @@ Address zero is not unclaimed either: the dead-address module (LP-0150) is
 registered there, is enabled, and reads chain state, so it cannot be answered
 for without a chain — and the corpus does not ask.
 
-What is left is a reporting convention rather than a behaviour, and less of it
-than there was. revm computes a price inside the work, so its error carries no
-charge and a refused call used to leave the gas column blank on six fields. A
-price is the smallest offer a precompile accepts, so the Rust evaluator now
-bisects the offer and recovers it — 0 where revm rejects a blake2 length before
-reading the round count, 50000 for a KZG blob it prices before validating —
-which is what Go and cevm already reported.
+No column declines a field any more either. revm computes a price inside the
+work, so its error carries no charge and a refused call used to leave the gas
+column blank on six fields. A price is the smallest offer a precompile accepts,
+so the Rust evaluator now bisects the offer and recovers it — 0 where revm
+rejects a blake2 length before reading the round count, 50000 for a KZG blob it
+prices before validating — which is what Go and cevm already reported.
+
+So the eight vectors above are the whole of what the differential still finds,
+and they name work rather than a disagreement about a price: ML-KEM, X-Wing and
+AI-mining have to be written in the two ports. Five more post-quantum families
+were reported alongside them until the reference started asking the enabled set
+— `mldsaVerify`, `slhdsaVerify`, `pulsarVerify`, `p3qVerify` and
+`coronaThreshold` are linked into the Go binary and enabled by no network, so
+all three runtimes answer ABSENT and there is nothing there to implement.
 
 This is **consensus-layer** conformance, not **node-level** — three live
 `bin/luxd-*` daemons handed the same blocks over real sockets and checked
