@@ -81,19 +81,19 @@ type RNSLink struct {
 
 	// Peer information
 	peerDestination [endpoints.RNSDestinationLen]byte
-	peerSigningKey [32]byte
+	peerSigningKey  [32]byte
 
 	// Hybrid peer information (nil if peer is classical-only)
 	peerHybridIdentity *HybridPublicIdentity
 
 	// Ephemeral keys for forward secrecy (destroyed after session establishment)
-	localEphemeralX25519Priv  [32]byte
-	localEphemeralX25519Pub   [32]byte
-	localEphemeralMLKEMPriv   kem.PrivateKey
-	localEphemeralMLKEMPub    kem.PublicKey
-	remoteEphemeralX25519Pub  [32]byte
-	remoteEphemeralMLKEMPub   kem.PublicKey
-	ephemeralKeysDestroyed    bool
+	localEphemeralX25519Priv [32]byte
+	localEphemeralX25519Pub  [32]byte
+	localEphemeralMLKEMPriv  kem.PrivateKey
+	localEphemeralMLKEMPub   kem.PublicKey
+	remoteEphemeralX25519Pub [32]byte
+	remoteEphemeralMLKEMPub  kem.PublicKey
+	ephemeralKeysDestroyed   bool
 
 	// Symmetric encryption keys derived from hybrid ECDH
 	sendKey    [linkKeySize]byte
@@ -318,7 +318,9 @@ func (l *RNSLink) handshakeResponder() error {
 
 // buildLinkRequest creates a link request message.
 // Hybrid format: type(1) + dest(16) + ed25519_pub(32) + x25519_eph_pub(32) +
-//                mldsa_pub(1952) + mlkem_eph_pub(1184) + hybrid_sig
+//
+//	mldsa_pub(1952) + mlkem_eph_pub(1184) + hybrid_sig
+//
 // Classical format: type(1) + dest(16) + ed25519_pub(32) + x25519_eph_pub(32) + ed25519_sig(64)
 func (l *RNSLink) buildLinkRequest() []byte {
 	if l.localHybridIdentity != nil {
@@ -663,10 +665,10 @@ func (l *RNSLink) parseHybridLinkAccept(msg []byte) error {
 // shared secret deterministically from both sets of public keys.
 //
 // This provides post-quantum security because:
-// 1. X25519 ECDH provides forward secrecy and classical security
-// 2. ML-KEM public keys are included in the key derivation, binding the
-//    session to both parties' post-quantum keys
-// 3. An attacker must break BOTH X25519 AND ML-KEM to compromise the session
+//  1. X25519 ECDH provides forward secrecy and classical security
+//  2. ML-KEM public keys are included in the key derivation, binding the
+//     session to both parties' post-quantum keys
+//  3. An attacker must break BOTH X25519 AND ML-KEM to compromise the session
 //
 // A future version could implement full KEM encapsulation for stronger
 // post-quantum guarantees, but this requires additional round trips.

@@ -189,8 +189,8 @@ func createTestDecisionTxs(count int) ([]*txs.Tx, error) {
 			base,
 			ids.GenerateTestID(), // chainID
 			"chainName",
-			ids.GenerateTestID(),                        // vmID
-			[]ids.ID{ids.GenerateTestID()},              // fxIDs
+			ids.GenerateTestID(),           // vmID
+			[]ids.ID{ids.GenerateTestID()}, // fxIDs
 			[]byte{'g', 'e', 'n', 'D', 'a', 't', 'a'},   // genesisData
 			&secp256k1fx.Input{SigIndices: []uint32{1}}, // chainAuth
 		)

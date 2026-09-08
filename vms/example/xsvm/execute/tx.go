@@ -182,4 +182,3 @@ func (t *Tx) Import(i *tx.Import) error {
 		QuorumDenominator,
 	)
 }
-

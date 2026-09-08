@@ -10,15 +10,15 @@ import (
 
 	"github.com/google/btree"
 
-	validators "github.com/luxfi/validators"
+	"github.com/luxfi/container/iterator"
+	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/util"
-	"github.com/luxfi/container/iterator"
-	"github.com/luxfi/math"
-	"github.com/luxfi/container/maybe"
+	validators "github.com/luxfi/validators"
 )
 
 var (

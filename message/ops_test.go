@@ -36,18 +36,18 @@ func TestToConsensusOp_TableAlignedWithRouter(t *testing.T) {
 
 	// want: the authoritative router-op <-> node-op correspondence.
 	want := map[router.Op]Op{
-		router.GetAcceptedFrontier: GetAcceptedFrontierOp,
-		router.AcceptedFrontier:    AcceptedFrontierOp,
-		router.GetAccepted:         GetAcceptedOp,
-		router.Accepted:            AcceptedOp,
-		router.Get:                 GetOp,
-		router.Put:                 PutOp,
-		router.PushQuery:           PushQueryOp,
-		router.PullQuery:           PullQueryOp,
-		router.Vote:                QbitOp,         // votes ride the Qbit wire op
-		router.GetContext:          GetAncestorsOp, // wire op is still GetAncestors
-		router.Context:             AncestorsOp,    // wire op is still Ancestors
-		router.Gossip:              GossipOp,       // α-of-K vote/cert transport
+		router.GetAcceptedFrontier:     GetAcceptedFrontierOp,
+		router.AcceptedFrontier:        AcceptedFrontierOp,
+		router.GetAccepted:             GetAcceptedOp,
+		router.Accepted:                AcceptedOp,
+		router.Get:                     GetOp,
+		router.Put:                     PutOp,
+		router.PushQuery:               PushQueryOp,
+		router.PullQuery:               PullQueryOp,
+		router.Vote:                    QbitOp,         // votes ride the Qbit wire op
+		router.GetContext:              GetAncestorsOp, // wire op is still GetAncestors
+		router.Context:                 AncestorsOp,    // wire op is still Ancestors
+		router.Gossip:                  GossipOp,       // α-of-K vote/cert transport
 		router.GetStateSummaryFrontier: GetStateSummaryFrontierOp,
 		router.StateSummaryFrontier:    StateSummaryFrontierOp,
 		router.GetAcceptedStateSummary: GetAcceptedStateSummaryOp,

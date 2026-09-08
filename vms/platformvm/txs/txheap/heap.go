@@ -4,9 +4,9 @@
 package txheap
 
 import (
+	"github.com/luxfi/container/heap"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/container/heap"
 )
 
 type Heap interface {

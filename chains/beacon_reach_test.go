@@ -15,8 +15,8 @@ import (
 	"testing"
 
 	"github.com/luxfi/ids"
-	"github.com/luxfi/math/set"
 	"github.com/luxfi/log"
+	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/mesh"
 	"github.com/luxfi/node/mesh/peer"
 )

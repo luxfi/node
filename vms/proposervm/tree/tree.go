@@ -9,8 +9,8 @@ import (
 	"slices"
 	"sync"
 
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
+	chain "github.com/luxfi/vm/chain"
 )
 
 // Tree handles the propagation of block acceptance and rejection to inner

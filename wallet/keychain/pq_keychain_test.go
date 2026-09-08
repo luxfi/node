@@ -608,21 +608,21 @@ func TestPQKeychain_AllKeyTypes(t *testing.T) {
 
 func keyTypeName(kt KeyType) string {
 	names := map[KeyType]string{
-		KeyTypeSecp256k1:              "Secp256k1",
-		KeyTypeBLS:                    "BLS",
-		KeyTypeMLDSA44:                "MLDSA44",
-		KeyTypeMLDSA65:                "MLDSA65",
-		KeyTypeMLDSA87:                "MLDSA87",
-		KeyTypeSLHDSA128:              "SLHDSA128",
-		KeyTypeSLHDSA192:              "SLHDSA192",
-		KeyTypeSLHDSA256:              "SLHDSA256",
-		KeyTypeMLKEM512:               "MLKEM512",
-		KeyTypeMLKEM768:               "MLKEM768",
-		KeyTypeMLKEM1024:              "MLKEM1024",
-		KeyTypeRingSig:               "Corona",
-		KeyTypeHybridSecp256k1MLDSA44: "HybridSecp256k1MLDSA44",
+		KeyTypeSecp256k1:                "Secp256k1",
+		KeyTypeBLS:                      "BLS",
+		KeyTypeMLDSA44:                  "MLDSA44",
+		KeyTypeMLDSA65:                  "MLDSA65",
+		KeyTypeMLDSA87:                  "MLDSA87",
+		KeyTypeSLHDSA128:                "SLHDSA128",
+		KeyTypeSLHDSA192:                "SLHDSA192",
+		KeyTypeSLHDSA256:                "SLHDSA256",
+		KeyTypeMLKEM512:                 "MLKEM512",
+		KeyTypeMLKEM768:                 "MLKEM768",
+		KeyTypeMLKEM1024:                "MLKEM1024",
+		KeyTypeRingSig:                  "Corona",
+		KeyTypeHybridSecp256k1MLDSA44:   "HybridSecp256k1MLDSA44",
 		KeyTypeHybridSecp256k1SLHDSA128: "HybridSecp256k1SLHDSA128",
-		KeyTypeHybridBLSMLDSA44:       "HybridBLSMLDSA44",
+		KeyTypeHybridBLSMLDSA44:         "HybridBLSMLDSA44",
 	}
 	if name, ok := names[kt]; ok {
 		return name

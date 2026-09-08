@@ -12,9 +12,6 @@ import (
 	"github.com/google/btree"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/runtime"
-	validators "github.com/luxfi/validators"
-	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/database"
@@ -28,7 +25,6 @@ import (
 	"github.com/luxfi/node/cache/metercacher"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/node/vms/platformvm/fx"
@@ -36,6 +32,10 @@ import (
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	"github.com/luxfi/runtime"
+	lux "github.com/luxfi/utxo"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 
 	// utxo.ParseUTXO factory registration — see
 	// vms/components/lux/utxo_parser.go init(). Required for

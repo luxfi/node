@@ -11,10 +11,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	validators "github.com/luxfi/validators"
 )
 
 func TestInboundMsgByteThrottlerCancelContextDeadlock(t *testing.T) {

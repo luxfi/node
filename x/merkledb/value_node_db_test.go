@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/util"
-	"github.com/luxfi/container/maybe"
 )
 
 // Test putting, modifying, deleting, and getting key-node pairs.

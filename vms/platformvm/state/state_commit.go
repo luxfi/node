@@ -9,17 +9,17 @@ import (
 	"time"
 
 	"github.com/luxfi/constants"
-	"github.com/luxfi/database"
 	hash "github.com/luxfi/crypto/hash"
+	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/genesis"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	lux "github.com/luxfi/utxo"
 
 	safemath "github.com/luxfi/math"
 )

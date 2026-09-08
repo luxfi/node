@@ -113,4 +113,3 @@ func decisionTx(t *testing.T) *txs.Tx {
 	require.NoError(t, err, "this stand-in is not priceable, so it cannot represent a decision tx")
 	return tx
 }
-

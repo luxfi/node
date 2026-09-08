@@ -32,4 +32,3 @@ func newMetrics(registerer metric.Registerer) (*serverMetrics, error) {
 
 	return m, nil
 }
-

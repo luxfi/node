@@ -6,9 +6,9 @@ package main
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
-	"fmt"
 	"log"
 	"time"
 

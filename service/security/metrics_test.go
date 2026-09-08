@@ -86,9 +86,9 @@ func TestMetrics_SecurityProfileGauge_Reflects_UnsafeFork(t *testing.T) {
 	cases := map[string]float64{
 		"lux_security_profile_post_quantum_end_to_end:profile_id=" + idLabel +
 			",profile_name=FORK_CLASSICAL_COMPAT_UNSAFE": 0,
-		"lux_security_profile_lux_canonical:profile_id=" + idLabel:        0,
-		"lux_security_profile_unsafe_mode_enabled:profile_id=" + idLabel:  1,
-		"lux_security_profile_nist_friendly:profile_id=" + idLabel:        1,
+		"lux_security_profile_lux_canonical:profile_id=" + idLabel:       0,
+		"lux_security_profile_unsafe_mode_enabled:profile_id=" + idLabel: 1,
+		"lux_security_profile_nist_friendly:profile_id=" + idLabel:       1,
 	}
 	for key, want := range cases {
 		got, ok := values[key]

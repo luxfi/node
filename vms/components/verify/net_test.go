@@ -38,10 +38,10 @@ func TestSameNet(t *testing.T) {
 	chainID1 := ids.GenerateTestID()
 
 	tests := []struct {
-		name     string
+		name         string
 		chainRuntime *ChainContext
-		chainID  ids.ID
-		result   error
+		chainID      ids.ID
+		result       error
 	}{
 		{
 			name: "same chain",

@@ -64,8 +64,8 @@ type fakeInnerBlock struct {
 	acceptCalled int
 }
 
-func (b *fakeInnerBlock) ID() ids.ID                    { return b.id }
-func (b *fakeInnerBlock) Parent() ids.ID                { return b.parentID }
+func (b *fakeInnerBlock) ID() ids.ID                   { return b.id }
+func (b *fakeInnerBlock) Parent() ids.ID               { return b.parentID }
 func (b *fakeInnerBlock) ParentID() ids.ID             { return b.parentID }
 func (b *fakeInnerBlock) Height() uint64               { return b.height }
 func (b *fakeInnerBlock) Timestamp() time.Time         { return b.timestamp }
@@ -89,11 +89,11 @@ func (b *fakeInnerBlock) accepted() int {
 // ParseBlock(bytes) reconstructs the SAME inner block on a follower. It builds one
 // block on demand (set via stage) so the test controls the proposed block.
 type fakeInnerVM struct {
-	mu       sync.Mutex
-	byID     map[ids.ID]*fakeInnerBlock
-	byBytes  map[string]*fakeInnerBlock
-	staged   *fakeInnerBlock // returned by the next BuildBlock
-	lastAcc  ids.ID
+	mu      sync.Mutex
+	byID    map[ids.ID]*fakeInnerBlock
+	byBytes map[string]*fakeInnerBlock
+	staged  *fakeInnerBlock // returned by the next BuildBlock
+	lastAcc ids.ID
 }
 
 func newFakeInnerVM() *fakeInnerVM {

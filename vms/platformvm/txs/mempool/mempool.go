@@ -28,8 +28,8 @@ type Mempool struct {
 	// callers that haven't migrated their construction path get the
 	// classical-compat default (admit everything). Once a chain pins a
 	// non-nil profile via SetAuthPolicy, Add enforces it.
-	authMu     sync.RWMutex
-	authPolicy *config.ChainSecurityProfile
+	authMu       sync.RWMutex
+	authPolicy   *config.ChainSecurityProfile
 	authRegistry auth.ClassicalCompatRegistry
 }
 

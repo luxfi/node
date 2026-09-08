@@ -5,9 +5,9 @@ package tmpnet
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -50,7 +50,7 @@ type Network struct {
 
 // Net represents a net (non-primary chain) in the network
 type Net struct {
-	ChainID        ids.ID
+	ChainID      ids.ID
 	Chains       []*Chain
 	ValidatorIDs []ids.NodeID
 }

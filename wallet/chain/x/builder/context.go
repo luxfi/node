@@ -4,8 +4,8 @@
 package builder
 
 import (
-	"github.com/luxfi/runtime"
 	"github.com/luxfi/ids"
+	"github.com/luxfi/runtime"
 )
 
 const Alias = "X"
@@ -13,7 +13,7 @@ const Alias = "X"
 type Context struct {
 	NetworkID        uint32
 	BlockchainID     ids.ID
-	UTXOAssetID         ids.ID
+	UTXOAssetID      ids.ID
 	BaseTxFee        uint64
 	CreateAssetTxFee uint64
 }
@@ -25,10 +25,10 @@ func NewConsensusRuntime(
 ) (*runtime.Runtime, error) {
 	lookup := ids.NewAliaser()
 	rt := &runtime.Runtime{
-		NetworkID: networkID,
-		ChainID:   blockchainID,
-		XChainID:  blockchainID,
-		UTXOAssetID:  utxoAssetID,
+		NetworkID:   networkID,
+		ChainID:     blockchainID,
+		XChainID:    blockchainID,
+		UTXOAssetID: utxoAssetID,
 	}
 	return rt, lookup.Alias(blockchainID, Alias)
 }

@@ -28,4 +28,3 @@ func TestSigner(t *testing.T) {
 		})
 	}
 }
-

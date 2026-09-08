@@ -15,9 +15,9 @@ import (
 	context "context"
 	reflect "reflect"
 
+	maybe "github.com/luxfi/container/maybe"
 	database "github.com/luxfi/database"
 	ids "github.com/luxfi/ids"
-	maybe "github.com/luxfi/container/maybe"
 )
 
 // MockMerkleDB is a mock of MerkleDB interface.

@@ -24,10 +24,16 @@ import (
 // for one block, or none, is as wrong as the wrong one firing.
 type armRecorder struct{ arms []string }
 
-func (r *armRecorder) AbortBlock(*AbortBlock) error       { r.arms = append(r.arms, "abort"); return nil }
-func (r *armRecorder) CommitBlock(*CommitBlock) error     { r.arms = append(r.arms, "commit"); return nil }
-func (r *armRecorder) ProposalBlock(*ProposalBlock) error { r.arms = append(r.arms, "proposal"); return nil }
-func (r *armRecorder) StandardBlock(*StandardBlock) error { r.arms = append(r.arms, "standard"); return nil }
+func (r *armRecorder) AbortBlock(*AbortBlock) error   { r.arms = append(r.arms, "abort"); return nil }
+func (r *armRecorder) CommitBlock(*CommitBlock) error { r.arms = append(r.arms, "commit"); return nil }
+func (r *armRecorder) ProposalBlock(*ProposalBlock) error {
+	r.arms = append(r.arms, "proposal")
+	return nil
+}
+func (r *armRecorder) StandardBlock(*StandardBlock) error {
+	r.arms = append(r.arms, "standard")
+	return nil
+}
 
 func blockOfEachKind(t *testing.T) map[string]Block {
 	t.Helper()

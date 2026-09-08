@@ -63,9 +63,9 @@ func NewManager(
 	return m, nil
 }
 
-func (m *noopManager) CPUUsage() float64                      { return 0 }
-func (m *noopManager) DiskUsage() (float64, float64)          { return 0, 0 }
-func (m *noopManager) AvailableDiskBytes() uint64             { return m.availableDiskBytes }
-func (m *noopManager) TrackProcess(_ int)                     {}
-func (m *noopManager) UntrackProcess(_ int)                   {}
-func (m *noopManager) Shutdown()                              {}
+func (m *noopManager) CPUUsage() float64             { return 0 }
+func (m *noopManager) DiskUsage() (float64, float64) { return 0, 0 }
+func (m *noopManager) AvailableDiskBytes() uint64    { return m.availableDiskBytes }
+func (m *noopManager) TrackProcess(_ int)            {}
+func (m *noopManager) UntrackProcess(_ int)          {}
+func (m *noopManager) Shutdown()                     {}

@@ -15,12 +15,12 @@ import "github.com/luxfi/zap"
 type xkind uint8
 
 const (
-	xkindReserved xkind = iota
-	xkindBase           // 1
-	xkindCreateAsset    // 2
-	xkindOperation      // 3
-	xkindImport         // 4
-	xkindExport         // 5
+	xkindReserved    xkind = iota
+	xkindBase              // 1
+	xkindCreateAsset       // 2
+	xkindOperation         // 3
+	xkindImport            // 4
+	xkindExport            // 5
 )
 
 // offXKind is the fixed wire position of the discriminator (object offset 0).

@@ -27,7 +27,7 @@ var Default = Config{
 	NetToL1ConversionCacheSize:    4 * constants.MiB,
 	L1WeightsCacheSize:            16 * constants.KiB,
 	L1InactiveValidatorsCacheSize: 256 * constants.KiB,
-	L1ChainIDNodeIDCacheSize:        16 * constants.KiB,
+	L1ChainIDNodeIDCacheSize:      16 * constants.KiB,
 	ChecksumsEnabled:              false,
 	MempoolPruneFrequency:         30 * time.Minute,
 	TxFee:                         constants.MilliLux,
@@ -60,12 +60,12 @@ type Config struct {
 	Chains                        chains.Manager  `json:"-"`
 
 	// Transaction fees
-	TxFee                         uint64 `json:"tx-fee"`
-	CreateAssetTxFee              uint64 `json:"create-asset-tx-fee"`
-	CreateNetworkTxFee            uint64 `json:"create-network-tx-fee"`
-	CreateChainTxFee              uint64 `json:"create-chain-tx-fee"`
-	AddNetworkValidatorFee        uint64 `json:"add-network-validator-fee"`
-	AddNetworkDelegatorFee        uint64 `json:"add-network-delegator-fee"`
+	TxFee                  uint64 `json:"tx-fee"`
+	CreateAssetTxFee       uint64 `json:"create-asset-tx-fee"`
+	CreateNetworkTxFee     uint64 `json:"create-network-tx-fee"`
+	CreateChainTxFee       uint64 `json:"create-chain-tx-fee"`
+	AddNetworkValidatorFee uint64 `json:"add-network-validator-fee"`
+	AddNetworkDelegatorFee uint64 `json:"add-network-delegator-fee"`
 }
 
 // GetConfig returns a Config from the provided json encoded bytes. If a

@@ -71,10 +71,10 @@ func TestStakingIdentity_RefusesKeyMaterialOfTheWrongWidth(t *testing.T) {
 	nodeID := ids.GenerateTestNodeID()
 
 	badPubs := map[string][]byte{
-		"empty":     nil,
-		"one short": pubBytes[:len(pubBytes)-1],
-		"one long":  append(bytes.Clone(pubBytes), 0),
-		"truncated": pubBytes[:32],
+		"empty":                          nil,
+		"one short":                      pubBytes[:len(pubBytes)-1],
+		"one long":                       append(bytes.Clone(pubBytes), 0),
+		"truncated":                      pubBytes[:32],
 		"private key in the public slot": privBytes,
 	}
 	for name, b := range badPubs {
@@ -83,10 +83,10 @@ func TestStakingIdentity_RefusesKeyMaterialOfTheWrongWidth(t *testing.T) {
 	}
 
 	badPrivs := map[string][]byte{
-		"empty":     nil,
-		"one short": privBytes[:len(privBytes)-1],
-		"one long":  append(bytes.Clone(privBytes), 0),
-		"truncated": privBytes[:32],
+		"empty":                          nil,
+		"one short":                      privBytes[:len(privBytes)-1],
+		"one long":                       append(bytes.Clone(privBytes), 0),
+		"truncated":                      privBytes[:32],
 		"public key in the private slot": pubBytes,
 	}
 	for name, b := range badPrivs {

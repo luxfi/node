@@ -10,12 +10,12 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	syncpb "github.com/luxfi/node/proto/sync"
 	"github.com/luxfi/node/trace"
-	"github.com/luxfi/container/maybe"
 )
 
 const verificationCacheSize = math.MaxUint16

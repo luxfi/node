@@ -223,7 +223,7 @@ func TestValidatorStakeSource_HeightPinned(t *testing.T) {
 	n0, n1, n2 := ids.GenerateTestNodeID(), ids.GenerateTestNodeID(), ids.GenerateTestNodeID()
 
 	state := stateWithHistory(netID, map[uint64][]vdr{
-		10: {{n0, []byte("pk0"), 70}, {n1, []byte("pk1"), 30}},                       // total 100
+		10: {{n0, []byte("pk0"), 70}, {n1, []byte("pk1"), 30}},                          // total 100
 		11: {{n0, []byte("pk0"), 70}, {n1, []byte("pk1"), 30}, {n2, []byte("pk2"), 50}}, // total 150
 	})
 	src := newValidatorStakeSource(state, netID)

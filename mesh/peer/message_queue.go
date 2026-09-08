@@ -7,11 +7,11 @@ import (
 	"context"
 	"sync"
 
+	"github.com/luxfi/container/buffer"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/mesh/throttling"
-	"github.com/luxfi/container/buffer"
+	"github.com/luxfi/node/message"
 )
 
 const initialQueueSize = 64

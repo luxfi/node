@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	validators "github.com/luxfi/validators"
-	"github.com/luxfi/validators/validatorsmock"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/validatorsmock"
 )
 
 var sourceChainID = ids.GenerateTestID()

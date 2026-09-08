@@ -5,8 +5,8 @@ package fxs
 
 import (
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/bls12381fx"
 	"github.com/luxfi/utxo/ed25519fx"
 	"github.com/luxfi/utxo/mldsafx"

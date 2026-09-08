@@ -13,12 +13,12 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	reflect "reflect"
 
-	chain "github.com/luxfi/vm/chain"
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/math/set"
 	block "github.com/luxfi/node/vms/platformvm/block"
 	state "github.com/luxfi/node/vms/platformvm/state"
 	txs "github.com/luxfi/node/vms/platformvm/txs"
+	chain "github.com/luxfi/vm/chain"
 )
 
 // MockManager is a mock of Manager interface.

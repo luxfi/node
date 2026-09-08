@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/core/choices"
-	chain "github.com/luxfi/vm/chain"
 	consensustest "github.com/luxfi/consensus/test/helpers"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -21,6 +20,7 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/proposervm/block"
 	"github.com/luxfi/node/vms/proposervm/state"
+	chain "github.com/luxfi/vm/chain"
 )
 
 // testBlock is a simple implementation for testing

@@ -12,8 +12,8 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
-	"github.com/luxfi/ids"
 	hash "github.com/luxfi/crypto/hash"
+	"github.com/luxfi/ids"
 )
 
 func newBLSPublicKey(t *testing.T) [bls.PublicKeyLen]byte {

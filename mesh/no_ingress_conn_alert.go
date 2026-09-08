@@ -6,9 +6,9 @@ package mesh
 import (
 	"errors"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
+	validators "github.com/luxfi/validators"
 )
 
 // ErrNoIngressConnections denotes that no node is connected to this validator.

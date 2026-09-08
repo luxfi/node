@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/ids"
-	
-	lux "github.com/luxfi/utxo"
+
 	"github.com/luxfi/node/vms/components/verify"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/secp256k1fx"
 )

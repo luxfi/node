@@ -5,9 +5,9 @@ package xvm
 
 import (
 	"context"
+	"errors"
 	"github.com/go-json-experiment/json"
 	jsonv1 "github.com/go-json-experiment/json/v1"
-	"errors"
 	"sync"
 	"testing"
 

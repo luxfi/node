@@ -11,16 +11,16 @@ import (
 	"testing"
 	"time"
 
+	compression "github.com/luxfi/compress"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/message"
+	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/mesh/throttling"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/util"
-	compression "github.com/luxfi/compress"
-	"github.com/luxfi/net/endpoints"
 )
 
 // FuzzPeerMessageHandling tests peer message handling with random data
@@ -376,4 +376,3 @@ func FuzzPeerConnection(f *testing.F) {
 type testRouter struct{}
 
 func (r *testRouter) HandleInbound(context.Context, message.InboundMessage) {}
-

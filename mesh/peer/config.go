@@ -8,16 +8,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	validators "github.com/luxfi/validators"
-	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/mesh/throttling"
 	"github.com/luxfi/node/mesh/tracker"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/timer/mockable"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 )
 
 // InboundHandler handles inbound messages

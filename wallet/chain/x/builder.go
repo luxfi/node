@@ -12,12 +12,12 @@ import (
 	"github.com/luxfi/ids"
 	math "github.com/luxfi/math/safe"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/util"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -153,7 +153,7 @@ type Builder interface {
 type Context struct {
 	NetworkID        uint32
 	BlockchainID     ids.ID
-	UTXOAssetID         ids.ID
+	UTXOAssetID      ids.ID
 	BaseTxFee        uint64
 	CreateAssetTxFee uint64
 }
@@ -370,7 +370,7 @@ func (b *txBuilder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		utxoAssetID      = b.backend.UTXOAssetID()
+		utxoAssetID     = b.backend.UTXOAssetID()
 		txFee           = b.backend.BaseTxFee()
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
@@ -628,7 +628,7 @@ func (b *txBuilder) spend(
 		}
 	}
 
-	utils.Sort(inputs)                                   // sort inputs
+	utils.Sort(inputs)                   // sort inputs
 	lux.SortTransferableOutputs(outputs) // sort the change outputs
 	return inputs, outputs, nil
 }

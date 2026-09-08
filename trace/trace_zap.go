@@ -184,11 +184,11 @@ func (noopTracer) Start(ctx context.Context, _ string, _ ...SpanStartOption) (co
 
 type noopSpan struct{}
 
-func (noopSpan) End(...SpanEndOption)               {}
-func (noopSpan) SetStatus(StatusCode, string)       {}
-func (noopSpan) RecordError(error, ...EventOption)  {}
-func (noopSpan) AddEvent(string, ...EventOption)    {}
-func (noopSpan) SetAttributes(...KeyValue)          {}
+func (noopSpan) End(...SpanEndOption)              {}
+func (noopSpan) SetStatus(StatusCode, string)      {}
+func (noopSpan) RecordError(error, ...EventOption) {}
+func (noopSpan) AddEvent(string, ...EventOption)   {}
+func (noopSpan) SetAttributes(...KeyValue)         {}
 
 // New creates a new tracer (returns Noop in the canonical ZAP build).
 func New(Config) (Tracer, error) {

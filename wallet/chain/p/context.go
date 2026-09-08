@@ -69,7 +69,7 @@ func NewContextFromClients(
 
 	return &builder.Context{
 		NetworkID:         networkID,
-		UTXOAssetID:          utxoAssetID,
+		UTXOAssetID:       utxoAssetID,
 		ComplexityWeights: dynamicFeeConfig.Weights,
 		GasPrice:          gasPriceMultiplier * gasPrice,
 		// Static fee config - use defaults matching platformvm/config

@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/container/maybe"
+	"github.com/luxfi/ids"
 )
 
 var sha256HashNodeTests = []struct {

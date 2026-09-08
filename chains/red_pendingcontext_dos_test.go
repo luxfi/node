@@ -21,8 +21,8 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/p2p"
 )
 

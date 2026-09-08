@@ -13,10 +13,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/container/maybe"
 )
 
 func Test_History_Simple(t *testing.T) {

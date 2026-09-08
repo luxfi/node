@@ -14,8 +14,8 @@ import (
 
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/wallet/network/primary"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 
 	"github.com/luxfi/crypto/secp256k1"

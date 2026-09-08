@@ -12,8 +12,8 @@ import (
 	"math/bits"
 	"slices"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/container/maybe"
+	"github.com/luxfi/ids"
 )
 
 const (

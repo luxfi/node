@@ -153,12 +153,12 @@ func TestRoundTrip_ConvertNetwork(t *testing.T) {
 	vdr := sampleNetworkValidator()
 	sec := security.Mode{Admission: security.Open, Threshold: 1_000, Manager: security.Contract}
 	in, err := NewConvertNetworkTx(base,
-		ids.GenerateTestID(),         // the L2/L3 network being promoted
-		ids.Empty,                    // new parent = Primary ⇒ becomes an L1
-		ids.GenerateTestID(),         // manager chain
-		sec,                          // target security.Mode (sovereign, contract-governed)
-		[]byte("0xmgr"),              // manager address
-		[]*NetworkValidator{vdr},     // sovereign validator set
+		ids.GenerateTestID(),     // the L2/L3 network being promoted
+		ids.Empty,                // new parent = Primary ⇒ becomes an L1
+		ids.GenerateTestID(),     // manager chain
+		sec,                      // target security.Mode (sovereign, contract-governed)
+		[]byte("0xmgr"),          // manager address
+		[]*NetworkValidator{vdr}, // sovereign validator set
 		&secp256k1fx.Input{SigIndices: []uint32{0}}, // owner auth
 	)
 	require.NoError(err)

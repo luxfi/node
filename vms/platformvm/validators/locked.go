@@ -7,8 +7,8 @@ import (
 	"context"
 	"sync"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
+	validators "github.com/luxfi/validators"
 )
 
 // NewLockedState creates a new locked validator state

@@ -12,8 +12,8 @@ package fx
 import (
 	"context"
 
-	"go.uber.org/mock/gomock"
 	"github.com/luxfi/runtime"
+	"go.uber.org/mock/gomock"
 	reflect "reflect"
 
 	verify "github.com/luxfi/node/vms/components/verify"

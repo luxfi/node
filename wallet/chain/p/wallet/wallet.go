@@ -8,14 +8,14 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/wallet/chain/p/builder"
 	"github.com/luxfi/node/wallet/network/primary/common"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 
-	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 	vmsigner "github.com/luxfi/node/vms/platformvm/signer"
+	walletsigner "github.com/luxfi/node/wallet/chain/p/signer"
 )
 
 var _ Wallet = (*wallet)(nil)

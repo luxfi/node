@@ -12,10 +12,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/container/maybe"
+	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
-	hash "github.com/luxfi/crypto/hash"
-	"github.com/luxfi/container/maybe"
 )
 
 func getBasicDB() (*merkleDB, error) {

@@ -4,8 +4,8 @@
 package warp
 
 import (
-	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/accel"
+	"github.com/luxfi/crypto/bls"
 )
 
 // BatchVerifyBLSSignatures verifies multiple BLS signatures using GPU acceleration

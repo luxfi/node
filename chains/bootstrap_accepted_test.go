@@ -24,8 +24,8 @@ import (
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/mesh"
+	"github.com/luxfi/node/message"
 )
 
 // ----- policy-level helpers -------------------------------------------------

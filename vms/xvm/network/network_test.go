@@ -13,19 +13,19 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	validators "github.com/luxfi/validators"
-	validatorstest "github.com/luxfi/validators/validatorstest"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/block/executor/executormock"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/txs"
 	xmempool "github.com/luxfi/node/vms/xvm/txs/mempool"
-	"github.com/luxfi/node/vms/txs/mempool"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
+	validators "github.com/luxfi/validators"
+	validatorstest "github.com/luxfi/validators/validatorstest"
 	"github.com/luxfi/warp"
 )
 

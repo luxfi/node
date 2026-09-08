@@ -9,10 +9,10 @@ import (
 
 	"github.com/google/btree"
 
+	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/util"
-	"github.com/luxfi/container/iterator"
 )
 
 // expiryEntry = [timestamp] + [validationID]

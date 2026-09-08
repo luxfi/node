@@ -10,10 +10,10 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/luxfi/ids"
 	"github.com/luxfi/container/buffer"
 	"github.com/luxfi/container/heap"
 	"github.com/luxfi/container/maybe"
+	"github.com/luxfi/ids"
 )
 
 var (

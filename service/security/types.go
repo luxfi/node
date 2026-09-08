@@ -70,17 +70,17 @@ type ProfileReply struct {
 	// rendered as the generic "UNKNOWN_0x<hex>" form so a forked
 	// binary that pins an unknown byte cannot silently masquerade as
 	// a canonical scheme.
-	HashSuite        string `json:"hash_suite"`
-	WalletScheme     string `json:"wallet_scheme"`
-	TxScheme         string `json:"tx_scheme"`
-	ContractAuth     string `json:"contract_auth"`
-	ValidatorScheme  string `json:"validator_scheme"`
-	FinalityScheme   string `json:"finality_scheme"`
-	HighValueScheme  string `json:"high_value_scheme"`
-	ProofPolicy      string `json:"proof_policy"`
-	KeyExchange      string `json:"key_exchange"`
-	HighValueKEM     string `json:"high_value_kem"`
-	RecoveryScheme   string `json:"recovery_scheme"`
+	HashSuite       string `json:"hash_suite"`
+	WalletScheme    string `json:"wallet_scheme"`
+	TxScheme        string `json:"tx_scheme"`
+	ContractAuth    string `json:"contract_auth"`
+	ValidatorScheme string `json:"validator_scheme"`
+	FinalityScheme  string `json:"finality_scheme"`
+	HighValueScheme string `json:"high_value_scheme"`
+	ProofPolicy     string `json:"proof_policy"`
+	KeyExchange     string `json:"key_exchange"`
+	HighValueKEM    string `json:"high_value_kem"`
+	RecoveryScheme  string `json:"recovery_scheme"`
 
 	// Forbid* axes — one boolean per refused-primitive class. Audit
 	// tooling reads these to verify a deployment refuses what it

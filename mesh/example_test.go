@@ -12,14 +12,14 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	"github.com/luxfi/p2p"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/genesis/builder"
 	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/version"
+	"github.com/luxfi/p2p"
+	validators "github.com/luxfi/validators"
 )
 
 var _ ExternalHandler = (*testExternalHandler)(nil)

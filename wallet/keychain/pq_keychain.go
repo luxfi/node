@@ -71,9 +71,9 @@ type PQSigner struct {
 	slhdsaKey interface{} // Can be *slhdsa.PrivateKey128/192/256
 
 	// Post-quantum key encapsulation (ML-KEM)
-	mlkemKey     *mlkem.PrivateKey
-	mlkemPubKey  *mlkem.PublicKey
-	mlkemMode    mlkem.Mode
+	mlkemKey    *mlkem.PrivateKey
+	mlkemPubKey *mlkem.PublicKey
+	mlkemMode   mlkem.Mode
 
 	// Ring signatures (privacy-preserving)
 	ringSigner ring.Signer

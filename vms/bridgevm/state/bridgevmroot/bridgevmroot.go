@@ -59,12 +59,12 @@ const Size = hash.KeccakSize
 // only affect the active-bond aggregate (active = Active set, Jailed clear,
 // Tombstoned clear), never inclusion.
 const (
-	SignerStatusActive     uint32 = 0x1
-	SignerStatusJailed     uint32 = 0x2
-	SignerStatusTombstoned uint32 = 0x4
-	SignerStatusPendingAdd uint32 = 0x8
+	SignerStatusActive      uint32 = 0x1
+	SignerStatusJailed      uint32 = 0x2
+	SignerStatusTombstoned  uint32 = 0x4
+	SignerStatusPendingAdd  uint32 = 0x8
 	SignerStatusPendingDrop uint32 = 0x10
-	SignerStatusExiting    uint32 = 0x20
+	SignerStatusExiting     uint32 = 0x20
 )
 
 // SignerLeaf is one bridgevm signer in the accelerator's state-snapshot layout,
@@ -80,7 +80,7 @@ const (
 // _pad_addr, committed as four zero bytes.
 type SignerLeaf struct {
 	SignerID       uint64
-	UTXOAddr     [20]byte
+	UTXOAddr       [20]byte
 	BondLo         uint64
 	BondHi         uint64
 	OptInHeight    uint64

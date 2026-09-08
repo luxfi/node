@@ -12,13 +12,13 @@ package executor
 import (
 	reflect "reflect"
 
-	chain "github.com/luxfi/vm/chain"
 	ids "github.com/luxfi/ids"
 	set "github.com/luxfi/math/set"
 	gomock "github.com/luxfi/mock/gomock"
 	block "github.com/luxfi/node/vms/xvm/block"
 	state "github.com/luxfi/node/vms/xvm/state"
 	txs "github.com/luxfi/node/vms/xvm/txs"
+	chain "github.com/luxfi/vm/chain"
 )
 
 // MockManager is a mock of Manager interface.

@@ -11,9 +11,9 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/util"
+	lux "github.com/luxfi/utxo"
 )
 
 const (

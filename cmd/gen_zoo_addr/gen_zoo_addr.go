@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/hex"
+	"fmt"
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
-	"fmt"
 	"os"
 	"time"
 

@@ -193,7 +193,7 @@ func cmdExport(args []string) {
 // stateEnvelope wraps CeremonyState with a SHA-256 integrity hash.
 type stateEnvelope struct {
 	State     jsontext.Value `json:"state"`
-	Integrity string          `json:"integrity"` // hex(SHA-256(state bytes))
+	Integrity string         `json:"integrity"` // hex(SHA-256(state bytes))
 }
 
 func readState(path string) (*CeremonyState, error) {

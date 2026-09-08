@@ -8,18 +8,18 @@ import (
 	"errors"
 	"fmt"
 
+	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/ids"
+	safemath "github.com/luxfi/math"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer/mockable"
-	hash "github.com/luxfi/crypto/hash"
-	safemath "github.com/luxfi/math"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 
@@ -391,9 +391,9 @@ func (h *handler) Spend(
 		)
 	}
 
-	lux.SortTransferableInputsWithSigners(ins, signers)  // sort inputs and keys
-	lux.SortTransferableOutputs(returnedOuts) // sort outputs
-	lux.SortTransferableOutputs(stakedOuts)   // sort outputs
+	lux.SortTransferableInputsWithSigners(ins, signers) // sort inputs and keys
+	lux.SortTransferableOutputs(returnedOuts)           // sort outputs
+	lux.SortTransferableOutputs(stakedOuts)             // sort outputs
 
 	return ins, returnedOuts, stakedOuts, signers, nil
 }

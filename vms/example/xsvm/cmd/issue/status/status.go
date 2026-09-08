@@ -4,9 +4,9 @@
 package status
 
 import (
+	"fmt"
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
-	"fmt"
 	"time"
 
 	"github.com/luxfi/ids"

@@ -10,11 +10,11 @@ import (
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/vm/chains/atomic"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/wallet/chain/x/builder"
 	"github.com/luxfi/node/wallet/chain/x/signer"
+	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/vm/chains/atomic"
 )
 
 const maxPageSize uint64 = 1024

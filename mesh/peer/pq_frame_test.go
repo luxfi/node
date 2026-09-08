@@ -49,12 +49,12 @@ func (c *scriptConn) Write(b []byte) (int, error) {
 	return c.w.Write(b)
 }
 
-func (*scriptConn) Close() error                       { return nil }
-func (*scriptConn) LocalAddr() net.Addr                { return nil }
-func (*scriptConn) RemoteAddr() net.Addr               { return nil }
-func (*scriptConn) SetDeadline(time.Time) error        { return nil }
-func (*scriptConn) SetReadDeadline(time.Time) error    { return nil }
-func (*scriptConn) SetWriteDeadline(time.Time) error   { return nil }
+func (*scriptConn) Close() error                     { return nil }
+func (*scriptConn) LocalAddr() net.Addr              { return nil }
+func (*scriptConn) RemoteAddr() net.Addr             { return nil }
+func (*scriptConn) SetDeadline(time.Time) error      { return nil }
+func (*scriptConn) SetReadDeadline(time.Time) error  { return nil }
+func (*scriptConn) SetWriteDeadline(time.Time) error { return nil }
 
 // header returns the 4-byte big-endian length prefix for n.
 func header(n uint32) []byte {
@@ -301,10 +301,10 @@ func TestPQBody_LengthPrefixCannotOverrunTheFrame(t *testing.T) {
 		"precondition: the first variable field is the ML-DSA public key")
 
 	for _, claim := range []uint32{
-		uint32(len(whole)),      // exactly the whole frame, still an overrun
-		uint32(len(whole)) + 1,  //
-		1 << 20,                 //
-		^uint32(0),              // 4 GiB - 1: the number a hostile peer picks
+		uint32(len(whole)),     // exactly the whole frame, still an overrun
+		uint32(len(whole)) + 1, //
+		1 << 20,                //
+		^uint32(0),             // 4 GiB - 1: the number a hostile peer picks
 	} {
 		mangled := bytes.Clone(whole)
 		binary.BigEndian.PutUint32(mangled[mldsaLenOffset:], claim)

@@ -34,9 +34,9 @@ import (
 	// "github.com/luxfi/database/meterdb" // Unused
 	// "github.com/luxfi/database/prefixdb" // Unused
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/mesh"
 	"github.com/luxfi/node/mesh/peer"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/p2p"
 	// vmpb "github.com/luxfi/node/proto/vm" // Removed - using vm.Ready instead
 	"github.com/luxfi/warp"
@@ -379,7 +379,7 @@ type ManagerConfig struct {
 	DB                  database.Database
 	MsgCreator          message.OutboundMsgBuilder // message creator, shared with network
 	Router              ChainRouter                // Routes incoming messages to the appropriate chain
-	Net                 mesh.Network            // Sends consensus messages to other validators
+	Net                 mesh.Network               // Sends consensus messages to other validators
 	Validators          validators.Manager         // Validators validating on this chain
 	NodeID              ids.NodeID                 // The ID of this node
 	NetworkID           uint32                     // ID of the network this node is connected to
@@ -428,7 +428,7 @@ type ManagerConfig struct {
 	TimeoutManager timeout.Manager // Manages request timeouts when sending messages to other validators
 	Health         health.Registerer
 	NetConfigs     map[ids.ID]network.Config // ID -> NetConfig
-	ChainConfigs   map[string]ChainConfig // alias -> ChainConfig
+	ChainConfigs   map[string]ChainConfig    // alias -> ChainConfig
 	// ShutdownNodeFunc allows the chain manager to issue a request to shutdown the node
 	ShutdownNodeFunc func(exitCode int)
 	MeterVMEnabled   bool // Should each VM be wrapped with a MeterVM
@@ -3121,7 +3121,7 @@ type blockHandler struct {
 	vm         consensuschain.BlockBuilder
 	logger     log.Logger
 	engine     *consensuschain.Runtime    // Consensus engine for proper block handling
-	net        mesh.Network            // Network for sending Qbit responses
+	net        mesh.Network               // Network for sending Qbit responses
 	msgCreator message.OutboundMsgBuilder // Message creator for Qbit responses
 	chainID    ids.ID                     // Chain ID for message routing
 	networkID  ids.ID                     // Network ID for validator routing

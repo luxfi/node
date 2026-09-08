@@ -19,9 +19,9 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"go.uber.org/zap"
 
+	compression "github.com/luxfi/compress"
 	luxlog "github.com/luxfi/log"
 	"github.com/luxfi/node/cache/lru"
-	compression "github.com/luxfi/compress"
 
 	safemath "github.com/luxfi/math"
 )

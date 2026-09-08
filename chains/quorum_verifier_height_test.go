@@ -73,7 +73,7 @@ func stateWithBLSByHeight(netID ids.ID, byHeight map[uint64][]blsKey) *validator
 // vote verified at H (the verifier reads set@H, not the current map).
 func TestBLSVoteVerifier_ResolvesPubkeyAtEpochHeight(t *testing.T) {
 	netID := ids.GenerateTestID()
-	keep := newBLSKey(t) // stays in the set across epochs
+	keep := newBLSKey(t)   // stays in the set across epochs
 	leaver := newBLSKey(t) // in set@10, GONE from set@11 (departed the current set)
 
 	const H = uint64(10)

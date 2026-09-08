@@ -13,20 +13,20 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	validators "github.com/luxfi/validators"
-	"github.com/luxfi/validators/uptime"
+	"github.com/luxfi/compress"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/mesh/throttling"
 	"github.com/luxfi/node/mesh/tracker"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/util"
-	"github.com/luxfi/compress"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 )
 
 const maxMessageToSend = 1024

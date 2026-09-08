@@ -11,8 +11,8 @@
 package main
 
 import (
-	"github.com/go-json-experiment/json"
 	"fmt"
+	"github.com/go-json-experiment/json"
 	"os"
 	"sort"
 	"strings"

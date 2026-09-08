@@ -16,11 +16,11 @@ import (
 )
 
 type Backend struct {
-	Ctx           context.Context
-	Runtime       *runtime.Runtime
-	Config        *config.Config
-	Fxs           []*fxs.ParsedFx
-	FxIndex       *txs.FxIndex
+	Ctx     context.Context
+	Runtime *runtime.Runtime
+	Config  *config.Config
+	Fxs     []*fxs.ParsedFx
+	FxIndex *txs.FxIndex
 	// Note: FeeAssetID may be different than ctx.UTXOAssetID if this XVM is
 	// running in a chain.
 	FeeAssetID   ids.ID

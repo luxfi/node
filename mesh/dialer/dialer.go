@@ -24,8 +24,8 @@ type Dialer interface {
 }
 
 type dialer struct {
-	dialer net.Dialer
-	log    log.Logger
+	dialer    net.Dialer
+	log       log.Logger
 	network   string
 	throttler throttling.DialThrottler
 }

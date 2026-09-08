@@ -309,7 +309,7 @@ func TestRegressionL03_StateFileHasIntegrity(t *testing.T) {
 
 	var envelope struct {
 		State     jsontext.Value `json:"state"`
-		Integrity string          `json:"integrity"`
+		Integrity string         `json:"integrity"`
 	}
 	if err := json.Unmarshal(raw, &envelope); err != nil {
 		t.Fatalf("unmarshal envelope: %v", err)

@@ -11,8 +11,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/wallet/network/primary/common"
+	lux "github.com/luxfi/utxo"
 )
 
 var (

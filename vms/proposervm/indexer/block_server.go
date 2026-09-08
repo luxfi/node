@@ -6,9 +6,9 @@ package indexer
 import (
 	"context"
 
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/database/versiondb"
 	"github.com/luxfi/ids"
+	chain "github.com/luxfi/vm/chain"
 )
 
 // BlockServer represents all requests heightIndexer can issue

@@ -17,4 +17,3 @@ type xsvmVerifier struct{}
 func (xsvmVerifier) Verify(context.Context, *luxWarp.Message, []byte) error {
 	return nil
 }
-

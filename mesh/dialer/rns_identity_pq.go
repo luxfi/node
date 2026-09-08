@@ -42,7 +42,6 @@ var (
 	ErrInvalidHybridIdentity = errors.New("invalid hybrid identity")
 )
 
-
 // HybridIdentity represents a post-quantum hybrid RNS identity.
 // It combines classical (Ed25519/X25519) and post-quantum (ML-DSA-65/ML-KEM-768)
 // algorithms for TLS 1.3-like hybrid security.

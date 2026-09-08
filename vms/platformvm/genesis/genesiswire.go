@@ -15,8 +15,8 @@ package genesis
 import (
 	"fmt"
 
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/zap"
 )
 

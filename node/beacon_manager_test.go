@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/consensus/networking/handler"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
@@ -19,6 +18,7 @@ import (
 	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/version"
 	"github.com/luxfi/timer"
+	validators "github.com/luxfi/validators"
 )
 
 const numValidators = 10

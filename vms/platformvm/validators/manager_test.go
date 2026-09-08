@@ -7,13 +7,13 @@ import (
 	"sync"
 	"testing"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/vms/platformvm/config"
 	"github.com/luxfi/timer/mockable"
+	validators "github.com/luxfi/validators"
 )
 
 // emptyCache reports whether c is the no-op cache returned for chains the

@@ -5,8 +5,8 @@ package config
 
 import (
 	"embed"
-	"github.com/go-json-experiment/json"
 	"fmt"
+	"github.com/go-json-experiment/json"
 
 	"github.com/spf13/viper"
 )

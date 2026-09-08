@@ -10,9 +10,9 @@ import (
 	"github.com/luxfi/database/linkeddb"
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
+	lux "github.com/luxfi/utxo"
 )
 
 func (s *state) GetTx(txID ids.ID) (*txs.Tx, status.Status, error) {

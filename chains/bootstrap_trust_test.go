@@ -907,8 +907,8 @@ func TestBootstrapTrust_CaughtUp_SameHeightForkNotHeld(t *testing.T) {
 // GREEN-after pin. The boundary sub-assertion (one notch lower DOES name N) proves it is precisely
 // the OWN-HEIGHT exclusion doing the work, not some unrelated filter.
 func TestBootstrapTrust_EclipseOwnHeightNotNamedRoutesToCaughtUp(t *testing.T) {
-	const N = 40       // the node's own last-accepted height
-	const ahead = N + 5 // a GENUINELY FINALIZED block 5 ahead — the eclipse throttles its visibility
+	const N = 40                  // the node's own last-accepted height
+	const ahead = N + 5           // a GENUINELY FINALIZED block 5 ahead — the eclipse throttles its visibility
 	refs, byID := refChain(ahead) // genesis..N+5, parent-linked; the ahead set's tip descends through N
 	const w = uint64(100)
 

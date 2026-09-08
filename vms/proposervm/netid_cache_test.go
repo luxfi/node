@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/cache/lru"
+	validators "github.com/luxfi/validators"
 )
 
 // mockValidatorState implements validators.State for testing

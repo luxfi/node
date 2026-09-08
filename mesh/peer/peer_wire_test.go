@@ -16,8 +16,8 @@ import (
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/mesh/throttling"
+	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/proto/p2p"
 	"github.com/luxfi/node/utils/bloom"
 	"github.com/luxfi/node/version"
@@ -573,9 +573,9 @@ func TestWire_PeerListClaimWithABadAddressIsRefused(t *testing.T) {
 // as on the handshake.
 func TestWire_GetPeerListWithAMalformedFilterIsRefused(t *testing.T) {
 	cases := map[string]*p2p.BloomFilter{
-		"filter is garbage":   {Filter: []byte{0xff, 0xff, 0xff, 0xff}},
-		"filter is absent":    {},
-		"salt is oversized":   {Filter: bloom.EmptyFilter.Marshal(), Salt: make([]byte, maxBloomSaltLen+1)},
+		"filter is garbage": {Filter: []byte{0xff, 0xff, 0xff, 0xff}},
+		"filter is absent":  {},
+		"salt is oversized": {Filter: bloom.EmptyFilter.Marshal(), Salt: make([]byte, maxBloomSaltLen+1)},
 	}
 
 	for name, known := range cases {

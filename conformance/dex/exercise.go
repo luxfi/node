@@ -93,10 +93,10 @@ type Run struct {
 }
 
 type driver struct {
-	n      *Node
-	who    []Account
-	nonce  map[common.Address]uint64
-	at     common.Address
+	n     *Node
+	who   []Account
+	nonce map[common.Address]uint64
+	at    common.Address
 }
 
 // nonceOf reads the chain's accepted nonce once per account and counts from

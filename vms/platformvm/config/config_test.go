@@ -105,17 +105,17 @@ func TestConfigUnmarshal(t *testing.T) {
 			NetToL1ConversionCacheSize:    10,
 			L1WeightsCacheSize:            11,
 			L1InactiveValidatorsCacheSize: 12,
-			L1ChainIDNodeIDCacheSize:        13,
+			L1ChainIDNodeIDCacheSize:      13,
 			ChecksumsEnabled:              true,
 			SybilProtectionEnabled:        true,
 			TrackedChains:                 trackedChains,
 			MempoolPruneFrequency:         time.Minute,
 			TxFee:                         14,
 			CreateAssetTxFee:              15,
-			CreateNetworkTxFee:                16,
-			CreateChainTxFee:         17,
-			AddNetworkValidatorFee: 18,
-			AddNetworkDelegatorFee: 19,
+			CreateNetworkTxFee:            16,
+			CreateChainTxFee:              17,
+			AddNetworkValidatorFee:        18,
+			AddNetworkDelegatorFee:        19,
 		}
 		verifyInitializedStruct(t, *expected)
 		verifyInitializedStruct(t, expected.Network)

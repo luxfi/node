@@ -10,8 +10,8 @@ import (
 
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/fx"
+	lux "github.com/luxfi/utxo"
 )
 
 // ValidatorTx defines the interface for a validator transaction that supports

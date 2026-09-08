@@ -15,7 +15,7 @@ import (
 
 const (
 	URIKey        = "uri"
-	ChainIDKey      = "chain-id"
+	ChainIDKey    = "chain-id"
 	AddressKey    = "address"
 	BalanceKey    = "balance"
 	NameKey       = "name"
@@ -33,7 +33,7 @@ func AddFlags(flags *pflag.FlagSet) {
 
 type Config struct {
 	URI        string
-	ChainID      ids.ID
+	ChainID    ids.ID
 	Address    ids.ShortID
 	Balance    uint64
 	Name       string
@@ -97,7 +97,7 @@ func ParseFlags(flags *pflag.FlagSet, args []string) (*Config, error) {
 
 	return &Config{
 		URI:        uri,
-		ChainID:      netID,
+		ChainID:    netID,
 		Address:    addr,
 		Balance:    balance,
 		Name:       name,

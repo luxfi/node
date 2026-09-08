@@ -54,7 +54,7 @@ type DABlob struct {
 	Chunks     []*Chunk  `json:"chunks"`
 	ChunkCount uint32    `json:"chunkCount"`
 	ChunkSize  uint32    `json:"chunkSize"`
-	Height     uint64    `json:"height"`    // Block height where blob was included
+	Height     uint64    `json:"height"` // Block height where blob was included
 	Timestamp  time.Time `json:"timestamp"`
 	Submitter  ids.ID    `json:"submitter"` // Who submitted the blob
 }
@@ -70,21 +70,21 @@ type Chunk struct {
 // DACommitment represents a commitment to data availability
 type DACommitment struct {
 	BlobID        ids.ID `json:"blobId"`
-	Commitment    []byte `json:"commitment"`    // KZG commitment
+	Commitment    []byte `json:"commitment"` // KZG commitment
 	ChunkCount    uint32 `json:"chunkCount"`
-	DataRoot      []byte `json:"dataRoot"`      // Merkle root of chunks
-	ErasureRoot   []byte `json:"erasureRoot"`   // Erasure coding root
+	DataRoot      []byte `json:"dataRoot"`    // Merkle root of chunks
+	ErasureRoot   []byte `json:"erasureRoot"` // Erasure coding root
 	Height        uint64 `json:"height"`
 	ValidatorSigs []byte `json:"validatorSigs"` // Aggregated validator signatures
 }
 
 // DACert represents a Data Availability Certificate
 type DACert struct {
-	Commitment    *DACommitment `json:"commitment"`
-	Signatures    [][]byte      `json:"signatures"`    // Validator signatures
-	SignerBitmap  []byte        `json:"signerBitmap"`  // Bitmap of signing validators
-	Threshold     uint32        `json:"threshold"`     // Required signature threshold
-	Timestamp     int64         `json:"timestamp"`
+	Commitment   *DACommitment `json:"commitment"`
+	Signatures   [][]byte      `json:"signatures"`   // Validator signatures
+	SignerBitmap []byte        `json:"signerBitmap"` // Bitmap of signing validators
+	Threshold    uint32        `json:"threshold"`    // Required signature threshold
+	Timestamp    int64         `json:"timestamp"`
 }
 
 // Sample represents a random sample for availability verification
@@ -118,12 +118,12 @@ func NewDABlob(data []byte, submitter ids.ID, height uint64) (*DABlob, error) {
 	blobID := ids.ID(h.Sum(nil))
 
 	blob := &DABlob{
-		ID:         blobID,
-		Data:       data,
-		ChunkSize:  DefaultChunkSize,
-		Height:     height,
-		Timestamp:  time.Now(),
-		Submitter:  submitter,
+		ID:        blobID,
+		Data:      data,
+		ChunkSize: DefaultChunkSize,
+		Height:    height,
+		Timestamp: time.Now(),
+		Submitter: submitter,
 	}
 
 	// Split into chunks
@@ -276,10 +276,10 @@ func computeMerkleRoot(chunks []*Chunk) []byte {
 
 // SamplingConfig configures DA sampling parameters
 type SamplingConfig struct {
-	SampleCount    int     `json:"sampleCount"`    // Number of samples to request
-	Threshold      float64 `json:"threshold"`      // Required success rate (0-1)
-	Timeout        int     `json:"timeout"`        // Sampling timeout in seconds
-	RetryCount     int     `json:"retryCount"`     // Number of retries per sample
+	SampleCount int     `json:"sampleCount"` // Number of samples to request
+	Threshold   float64 `json:"threshold"`   // Required success rate (0-1)
+	Timeout     int     `json:"timeout"`     // Sampling timeout in seconds
+	RetryCount  int     `json:"retryCount"`  // Number of retries per sample
 }
 
 // DefaultSamplingConfig returns default sampling configuration

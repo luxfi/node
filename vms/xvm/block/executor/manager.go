@@ -6,16 +6,16 @@ package executor
 import (
 	"errors"
 
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/node/vms/xvm/block"
 	"github.com/luxfi/node/vms/xvm/metrics"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/vms/xvm/txs/executor"
-	"github.com/luxfi/node/vms/txs/mempool"
 	"github.com/luxfi/timer/mockable"
+	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/vm/chains/atomic"
 )
 

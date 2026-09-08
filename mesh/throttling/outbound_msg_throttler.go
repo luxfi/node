@@ -11,10 +11,10 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/message"
+	validators "github.com/luxfi/validators"
 )
 
 var (

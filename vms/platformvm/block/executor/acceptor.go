@@ -9,11 +9,11 @@ import (
 
 	"github.com/luxfi/log"
 
-	"github.com/luxfi/vm/chains/atomic"
 	"github.com/luxfi/node/vms/platformvm/block"
 	"github.com/luxfi/node/vms/platformvm/metrics"
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/validators"
+	"github.com/luxfi/vm/chains/atomic"
 )
 
 var (

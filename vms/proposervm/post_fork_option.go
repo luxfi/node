@@ -9,9 +9,9 @@ import (
 
 	"github.com/luxfi/log"
 
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/block"
+	chain "github.com/luxfi/vm/chain"
 )
 
 var _ PostForkBlock = (*postForkOption)(nil)

@@ -493,10 +493,10 @@ func TestMessageSkipPredicate(t *testing.T) {
 	var nonzeroID [32]byte
 	nonzeroID[0] = 1
 	all := []MessageLeaf{
-		{},                        // skipped (free)
-		{Status: 1},               // live (status)
-		{MsgID: nonzeroID},        // live (msg_id)
-		{},                        // skipped (free)
+		{},                            // skipped (free)
+		{Status: 1},                   // live (status)
+		{MsgID: nonzeroID},            // live (msg_id)
+		{},                            // skipped (free)
 		{Status: 2, MsgID: nonzeroID}, // live
 	}
 	// Only the live slots (indices 1,2,4) are folded; compare against a manual

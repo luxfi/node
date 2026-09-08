@@ -8,8 +8,8 @@ import (
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/node/vms/platformvm/warp"
 	"github.com/luxfi/math"
+	"github.com/luxfi/node/vms/platformvm/warp"
 )
 
 var (

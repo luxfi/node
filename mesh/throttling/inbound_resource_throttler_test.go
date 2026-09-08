@@ -19,9 +19,9 @@ import (
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/mesh/tracker"
 	"github.com/luxfi/node/mesh/tracker/trackermock"
-	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/node/utils/math/meter"
 	"github.com/luxfi/resource"
+	"github.com/luxfi/timer/mockable"
 	"github.com/stretchr/testify/require"
 )
 

@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/go-json-experiment/json"
 	"fmt"
+	"github.com/go-json-experiment/json"
 	"time"
 
 	"github.com/consensys/gnark-crypto/ecc/bn254"

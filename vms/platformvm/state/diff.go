@@ -11,14 +11,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/luxfi/container/iterator"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/components/gas"
-	lux "github.com/luxfi/utxo"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/container/iterator"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	lux "github.com/luxfi/utxo"
 )
 
 var (

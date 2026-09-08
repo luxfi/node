@@ -20,13 +20,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/constants"
+	"github.com/luxfi/container/maybe"
+	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/dbtest"
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	hash "github.com/luxfi/crypto/hash"
-	"github.com/luxfi/container/maybe"
 )
 
 // newDB returns a new merkle database with the underlying type so that tests can access unexported fields

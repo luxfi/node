@@ -22,9 +22,9 @@ func TestCreateAssetTxRoundTrip(t *testing.T) {
 	require := require.New(t)
 
 	utx := &CreateAssetTx{
-		BaseTx: *sampleBaseTx(),
-		Name:   "Volatility Index",
-		Symbol: "VIX",
+		BaseTx:       *sampleBaseTx(),
+		Name:         "Volatility Index",
+		Symbol:       "VIX",
 		Denomination: 2,
 		States: []*InitialState{
 			{

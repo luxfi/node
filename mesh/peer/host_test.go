@@ -116,13 +116,13 @@ func TestCanonicalHost_RefusesMalformedNames(t *testing.T) {
 // digit-leading label and a punycode label are all ordinary DNS.
 func TestCanonicalHost_AcceptsWhatDNSAccepts(t *testing.T) {
 	for in, want := range map[string]string{
-		"node":                          "node",
-		"node.lux.network":              "node.lux.network",
-		"a-b.example":                   "a-b.example",
-		"9node.example":                 "9node.example",
-		"xn--80ak6aa92e.com":            "xn--80ak6aa92e.com",
+		"node":                           "node",
+		"node.lux.network":               "node.lux.network",
+		"a-b.example":                    "a-b.example",
+		"9node.example":                  "9node.example",
+		"xn--80ak6aa92e.com":             "xn--80ak6aa92e.com",
 		"validator-07.eu-west.lux.cloud": "validator-07.eu-west.lux.cloud",
-		strings.Repeat("a", 63):         strings.Repeat("a", 63), // exactly at the label limit
+		strings.Repeat("a", 63):          strings.Repeat("a", 63), // exactly at the label limit
 	} {
 		got, err := CanonicalHost(in)
 		require.NoError(t, err, "input=%q", in)

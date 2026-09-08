@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/container/window"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
@@ -25,7 +25,7 @@ import (
 	"github.com/luxfi/node/vms/platformvm/status"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/timer/mockable"
-	"github.com/luxfi/container/window"
+	validators "github.com/luxfi/validators"
 )
 
 const (

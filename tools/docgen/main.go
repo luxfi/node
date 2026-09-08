@@ -10,12 +10,12 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/doc"
 	"go/parser"
 	"go/printer"
 	"go/token"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"

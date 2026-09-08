@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	vmcore "github.com/luxfi/vm"
-	consensuschain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
+	vmcore "github.com/luxfi/vm"
+	consensuschain "github.com/luxfi/vm/chain"
 )
 
 // VM is a test VM that can be used for testing

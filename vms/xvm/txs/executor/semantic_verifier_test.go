@@ -10,9 +10,7 @@ import (
 	"github.com/luxfi/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/luxfi/runtime"
 	consensustest "github.com/luxfi/consensus/test/helpers"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/secp256k1"
 	"github.com/luxfi/database"
@@ -20,14 +18,16 @@ import (
 	"github.com/luxfi/database/prefixdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/fxs"
 	"github.com/luxfi/node/vms/xvm/state"
 	"github.com/luxfi/node/vms/xvm/state/statemock"
 	"github.com/luxfi/node/vms/xvm/txs"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
+	validators "github.com/luxfi/validators"
 	"github.com/luxfi/vm/chains/atomic"
 )
 
@@ -106,9 +106,9 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 				Fx: secpFx,
 			},
 		},
-		FxIndex:       fxIndex,
-		FeeAssetID:    ids.GenerateTestID(),
-		Bootstrapped:  true,
+		FxIndex:      fxIndex,
+		FeeAssetID:   ids.GenerateTestID(),
+		Bootstrapped: true,
 	}
 	require.NoError(t, secpFx.Bootstrapped())
 
@@ -465,9 +465,9 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 				Fx: secpFx,
 			},
 		},
-		FxIndex:       fxIndex,
-		FeeAssetID:    ids.GenerateTestID(),
-		Bootstrapped:  true,
+		FxIndex:      fxIndex,
+		FeeAssetID:   ids.GenerateTestID(),
+		Bootstrapped: true,
 	}
 	require.NoError(t, secpFx.Bootstrapped())
 
@@ -890,9 +890,9 @@ func TestSemanticVerifierExportTxDifferentNet(t *testing.T) {
 				Fx: secpFx,
 			},
 		},
-		FxIndex:       fxIndex,
-		FeeAssetID:    ids.GenerateTestID(),
-		Bootstrapped:  true,
+		FxIndex:      fxIndex,
+		FeeAssetID:   ids.GenerateTestID(),
+		Bootstrapped: true,
 	}
 	require.NoError(t, secpFx.Bootstrapped())
 
@@ -1029,10 +1029,10 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 				Fx: fx,
 			},
 		},
-		FxIndex:       fxIndex,
-		FeeAssetID:    ids.GenerateTestID(),
-		Bootstrapped:  true,
-		SharedMemory:  &testSharedMemory{sm: m.NewSharedMemory(chainID)},
+		FxIndex:      fxIndex,
+		FeeAssetID:   ids.GenerateTestID(),
+		Bootstrapped: true,
+		SharedMemory: &testSharedMemory{sm: m.NewSharedMemory(chainID)},
 	}
 	require.NoError(t, fx.Bootstrapped())
 

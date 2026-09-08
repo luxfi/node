@@ -71,13 +71,13 @@ type ClassicalCompatRegistry interface {
 //   - profile.RequireTypedTxAuth == false → admit unconditionally
 //     (the classical-compat profile path).
 //   - profile.RequireTypedTxAuth == true:
-//       - every credential is a PQ credential (mldsafx.Credential or
-//         any non-secp256k1fx.Credential type) → admit.
-//       - at least one credential is *secp256k1fx.Credential and
-//         registry == nil → refuse (no allow-list configured).
-//       - at least one credential is *secp256k1fx.Credential and
-//         registry.IsAllowed(originator) == false → refuse.
-//       - otherwise → admit.
+//   - every credential is a PQ credential (mldsafx.Credential or
+//     any non-secp256k1fx.Credential type) → admit.
+//   - at least one credential is *secp256k1fx.Credential and
+//     registry == nil → refuse (no allow-list configured).
+//   - at least one credential is *secp256k1fx.Credential and
+//     registry.IsAllowed(originator) == false → refuse.
+//   - otherwise → admit.
 //
 // The `originator` argument is the address bound to the tx by the chain
 // (P-chain: first input's address; X-chain: first input owner). Callers

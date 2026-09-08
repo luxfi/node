@@ -16,8 +16,8 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/luxfi/runtime"
 	verify "github.com/luxfi/node/vms/components/verify"
+	"github.com/luxfi/runtime"
 	gomock "go.uber.org/mock/gomock"
 )
 

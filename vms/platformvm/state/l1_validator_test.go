@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
@@ -16,7 +17,6 @@ import (
 	"github.com/luxfi/node/cache"
 	"github.com/luxfi/node/cache/lru"
 	"github.com/luxfi/util"
-	"github.com/luxfi/container/maybe"
 )
 
 func TestL1Validator_Compare(t *testing.T) {

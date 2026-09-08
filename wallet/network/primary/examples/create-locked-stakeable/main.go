@@ -11,10 +11,10 @@ import (
 	"github.com/luxfi/address"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/platformvm/stakeable"
 	"github.com/luxfi/node/wallet/network/primary"
 	"github.com/luxfi/node/wallet/network/primary/examples/keyutil"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 

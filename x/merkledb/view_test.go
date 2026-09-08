@@ -14,9 +14,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	hash "github.com/luxfi/crypto/hash"
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/memdb"
-	hash "github.com/luxfi/crypto/hash"
 )
 
 var hashChangedNodesTests = []struct {

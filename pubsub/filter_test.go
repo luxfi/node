@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/luxfi/address"
+	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
-	apitypes "github.com/luxfi/api/types"
 	"github.com/luxfi/node/pubsub/bloom"
 )
 

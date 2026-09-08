@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
+	chain "github.com/luxfi/vm/chain"
 )
 
 var (

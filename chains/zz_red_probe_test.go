@@ -21,9 +21,9 @@ import (
 	chainbootstrap "github.com/luxfi/consensus/engine/chain/bootstrap"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/message"
 	"github.com/luxfi/node/mesh"
 	"github.com/luxfi/node/mesh/peer"
+	"github.com/luxfi/node/message"
 )
 
 // redSilentNet reports FULL connectivity (every beacon in `connected` is returned by PeerInfo)

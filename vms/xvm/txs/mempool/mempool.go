@@ -11,8 +11,8 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/txs/auth"
-	"github.com/luxfi/node/vms/xvm/txs"
 	txmempool "github.com/luxfi/node/vms/txs/mempool"
+	"github.com/luxfi/node/vms/xvm/txs"
 )
 
 type Mempool struct {

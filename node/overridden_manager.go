@@ -8,10 +8,10 @@ import (
 	"sort"
 	"strings"
 
-	nodevalidators "github.com/luxfi/validators"
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/math/set"
+	nodevalidators "github.com/luxfi/validators"
+	validators "github.com/luxfi/validators"
 )
 
 var _ nodevalidators.Manager = (*overriddenManager)(nil)

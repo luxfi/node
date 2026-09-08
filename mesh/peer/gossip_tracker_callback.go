@@ -6,8 +6,8 @@ package peer
 import (
 	"github.com/luxfi/log"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/ids"
+	validators "github.com/luxfi/validators"
 )
 
 var _ validators.SetCallbackListener = (*GossipTrackerCallback)(nil)

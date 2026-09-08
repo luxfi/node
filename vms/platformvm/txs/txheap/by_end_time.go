@@ -6,9 +6,9 @@ package txheap
 import (
 	"time"
 
+	"github.com/luxfi/container/heap"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/platformvm/txs"
-	"github.com/luxfi/container/heap"
 )
 
 var _ TimedHeap = (*byEndTime)(nil)

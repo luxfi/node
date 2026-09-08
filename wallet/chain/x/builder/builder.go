@@ -9,13 +9,13 @@ import (
 	"fmt"
 
 	"github.com/luxfi/ids"
+	"github.com/luxfi/math"
 	"github.com/luxfi/math/set"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/components/verify"
 	"github.com/luxfi/node/vms/xvm/txs"
 	"github.com/luxfi/node/wallet/network/primary/common"
 	"github.com/luxfi/util"
-	"github.com/luxfi/math"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/nftfx"
 	"github.com/luxfi/utxo/propertyfx"
 	"github.com/luxfi/utxo/secp256k1fx"
@@ -374,7 +374,7 @@ func (b *builder) NewImportTx(
 	var (
 		addrs           = ops.Addresses(b.addrs)
 		minIssuanceTime = ops.MinIssuanceTime()
-		utxoAssetID      = b.context.UTXOAssetID
+		utxoAssetID     = b.context.UTXOAssetID
 		txFee           = b.context.BaseTxFee
 
 		importedInputs  = make([]*lux.TransferableInput, 0, len(utxos))
@@ -638,7 +638,7 @@ func (b *builder) spend(
 		}
 	}
 
-	utils.Sort(inputs)                                   // sort inputs
+	utils.Sort(inputs)                   // sort inputs
 	lux.SortTransferableOutputs(outputs) // sort the change outputs
 	return inputs, outputs, nil
 }

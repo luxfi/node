@@ -167,10 +167,10 @@ type metricsImpl struct {
 	blockMetrics *blockMetrics
 
 	// Staking metrics
-	timeUntilUnstake     metric.Gauge
-	timeUntilNetUnstake  metric.GaugeVec
-	localStake           metric.Gauge
-	totalStake           metric.Gauge
+	timeUntilUnstake    metric.Gauge
+	timeUntilNetUnstake metric.GaugeVec
+	localStake          metric.Gauge
+	totalStake          metric.Gauge
 
 	gasConsumed          metric.Counter
 	gasCapacity          metric.Gauge

@@ -86,7 +86,7 @@ func pricedTxs(t *testing.T) map[string]txs.UnsignedTx {
 	warpMsg := feeWarp(t, 4, 32)
 
 	return map[string]txs.UnsignedTx{
-		"BaseTx":     build(txs.NewBaseTx(feeSpendBase())),
+		"BaseTx": build(txs.NewBaseTx(feeSpendBase())),
 		"CreateChain": build(txs.NewCreateChainTx(
 			feeSpendBase(), ids.GenerateTestID(), "chain", ids.GenerateTestID(),
 			nil, []byte("genesis"), feeAuth(),

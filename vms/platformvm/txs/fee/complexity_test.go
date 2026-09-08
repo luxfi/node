@@ -89,9 +89,9 @@ func feeCreateChainTx(t *testing.T) *txs.CreateChainTx {
 		feeSpendBase(),
 		ids.GenerateTestID(), // chainID
 		"chain",
-		ids.GenerateTestID(),                        // vmID
-		nil,                                         // fxIDs
-		[]byte("genesis"),                           // genesisData
+		ids.GenerateTestID(), // vmID
+		nil,                  // fxIDs
+		[]byte("genesis"),    // genesisData
 		&secp256k1fx.Input{SigIndices: []uint32{0}}, // chainAuth
 	)
 	require.NoError(t, err)

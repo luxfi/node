@@ -6,9 +6,9 @@ package proposervm
 import (
 	"context"
 
-	chain "github.com/luxfi/vm/chain"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/vms/proposervm/indexer"
+	chain "github.com/luxfi/vm/chain"
 )
 
 var _ indexer.BlockServer = (*VM)(nil)

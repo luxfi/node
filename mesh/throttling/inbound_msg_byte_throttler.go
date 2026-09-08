@@ -12,11 +12,11 @@ import (
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/container/linked"
 	"github.com/luxfi/ids"
 	utilmetric "github.com/luxfi/metric"
-	"github.com/luxfi/container/linked"
+	validators "github.com/luxfi/validators"
 )
 
 // See inbound_msg_throttler.go

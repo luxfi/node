@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/luxfi/container/maybe"
 	"github.com/luxfi/database"
 	"github.com/luxfi/ids"
-	"github.com/luxfi/container/maybe"
 )
 
 type ViewChanges struct {

@@ -9,7 +9,6 @@ import (
 
 	"github.com/luxfi/log"
 
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/container/sampler"
 	"github.com/luxfi/ids"
@@ -17,6 +16,7 @@ import (
 	"github.com/luxfi/metric"
 	"github.com/luxfi/net/endpoints"
 	"github.com/luxfi/node/utils/bloom"
+	validators "github.com/luxfi/validators"
 )
 
 const (

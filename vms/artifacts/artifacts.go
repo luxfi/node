@@ -71,15 +71,15 @@ type Artifact interface {
 // =============================================================================
 
 var (
-	DomainSepCReceipt          = []byte("LUX:CReceipt:v1")
+	DomainSepCReceipt           = []byte("LUX:CReceipt:v1")
 	DomainSepDSettlementReceipt = []byte("LUX:DSettlementReceipt:v1")
-	DomainSepOracleAttestation = []byte("LUX:OracleAttestation:v1")
-	DomainSepVerifiedMessage   = []byte("LUX:VerifiedMessage:v1")
-	DomainSepCredentialProof   = []byte("LUX:CredentialProof:v1")
-	DomainSepOracleCert        = []byte("LUX:OracleCert:v1")
-	DomainSepRelayCert         = []byte("LUX:RelayCert:v1")
-	DomainSepDACert            = []byte("LUX:DACert:v1")
-	DomainSepZKProof           = []byte("LUX:ZKProofCommitment:v1")
+	DomainSepOracleAttestation  = []byte("LUX:OracleAttestation:v1")
+	DomainSepVerifiedMessage    = []byte("LUX:VerifiedMessage:v1")
+	DomainSepCredentialProof    = []byte("LUX:CredentialProof:v1")
+	DomainSepOracleCert         = []byte("LUX:OracleCert:v1")
+	DomainSepRelayCert          = []byte("LUX:RelayCert:v1")
+	DomainSepDACert             = []byte("LUX:DACert:v1")
+	DomainSepZKProof            = []byte("LUX:ZKProofCommitment:v1")
 )
 
 // =============================================================================
@@ -104,18 +104,18 @@ type FeePayment struct {
 // CReceipt is the canonical artifact emitted by C-Chain for X-Chain settlement
 type CReceipt struct {
 	// Header
-	Version_      uint32         `json:"version"`
-	SigSuite_     SignatureSuite `json:"sigSuite"`
-	DomainID_     ids.ID         `json:"domainId"`
-	Height        uint64         `json:"height"`
-	Timestamp_    time.Time      `json:"timestamp"`
-	ExpiryTime    time.Time      `json:"expiry"`
+	Version_   uint32         `json:"version"`
+	SigSuite_  SignatureSuite `json:"sigSuite"`
+	DomainID_  ids.ID         `json:"domainId"`
+	Height     uint64         `json:"height"`
+	Timestamp_ time.Time      `json:"timestamp"`
+	ExpiryTime time.Time      `json:"expiry"`
 
 	// State commitments
-	CStateRoot    [32]byte `json:"cStateRoot"`
-	DARoot        [32]byte `json:"daRoot"`
-	WitnessRoot   [32]byte `json:"witnessRoot"`
-	MessagesRoot  [32]byte `json:"messagesOutRoot"`
+	CStateRoot   [32]byte `json:"cStateRoot"`
+	DARoot       [32]byte `json:"daRoot"`
+	WitnessRoot  [32]byte `json:"witnessRoot"`
+	MessagesRoot [32]byte `json:"messagesOutRoot"`
 
 	// Settlement data
 	Withdrawals []Withdrawal `json:"withdrawals"`
@@ -146,11 +146,11 @@ func (r *CReceipt) computeID() ids.ID {
 	return ids.ID(h.Sum(nil))
 }
 
-func (r *CReceipt) DomainID() ids.ID        { return r.DomainID_ }
-func (r *CReceipt) SchemaVersion() uint32   { return r.Version_ }
+func (r *CReceipt) DomainID() ids.ID               { return r.DomainID_ }
+func (r *CReceipt) SchemaVersion() uint32          { return r.Version_ }
 func (r *CReceipt) SignatureSuite() SignatureSuite { return r.SigSuite_ }
-func (r *CReceipt) Expiry() time.Time       { return r.ExpiryTime }
-func (r *CReceipt) Bytes() []byte           { return r.bytes }
+func (r *CReceipt) Expiry() time.Time              { return r.ExpiryTime }
+func (r *CReceipt) Bytes() []byte                  { return r.bytes }
 
 // =============================================================================
 // DSettlementReceipt (D-Chain → X-Chain)
@@ -166,23 +166,23 @@ type EscrowRef struct {
 
 // TradeNetting represents netted trade outcomes
 type TradeNetting struct {
-	Maker       []byte `json:"maker"`
-	Taker       []byte `json:"taker"`
-	MakerDelta  int64  `json:"makerDelta"`  // Positive = receive, negative = send
-	TakerDelta  int64  `json:"takerDelta"`
-	AssetID     ids.ID `json:"assetId"`
-	TradeID     ids.ID `json:"tradeId"`
+	Maker      []byte `json:"maker"`
+	Taker      []byte `json:"taker"`
+	MakerDelta int64  `json:"makerDelta"` // Positive = receive, negative = send
+	TakerDelta int64  `json:"takerDelta"`
+	AssetID    ids.ID `json:"assetId"`
+	TradeID    ids.ID `json:"tradeId"`
 }
 
 // DSettlementReceipt is the canonical artifact for D-Chain escrow settlement
 type DSettlementReceipt struct {
 	// Header
-	Version_      uint32         `json:"version"`
-	SigSuite_     SignatureSuite `json:"sigSuite"`
-	DomainID_     ids.ID         `json:"domainId"`
-	Height        uint64         `json:"height"`
-	Timestamp_    time.Time      `json:"timestamp"`
-	ExpiryTime    time.Time      `json:"expiry"`
+	Version_   uint32         `json:"version"`
+	SigSuite_  SignatureSuite `json:"sigSuite"`
+	DomainID_  ids.ID         `json:"domainId"`
+	Height     uint64         `json:"height"`
+	Timestamp_ time.Time      `json:"timestamp"`
+	ExpiryTime time.Time      `json:"expiry"`
 
 	// Escrow inputs (X-Chain UTXO refs)
 	EscrowInputs []EscrowRef `json:"escrowInputs"`
@@ -216,11 +216,11 @@ func (r *DSettlementReceipt) ArtifactID() ids.ID {
 	return r.id
 }
 
-func (r *DSettlementReceipt) DomainID() ids.ID        { return r.DomainID_ }
-func (r *DSettlementReceipt) SchemaVersion() uint32   { return r.Version_ }
+func (r *DSettlementReceipt) DomainID() ids.ID               { return r.DomainID_ }
+func (r *DSettlementReceipt) SchemaVersion() uint32          { return r.Version_ }
 func (r *DSettlementReceipt) SignatureSuite() SignatureSuite { return r.SigSuite_ }
-func (r *DSettlementReceipt) Expiry() time.Time       { return r.ExpiryTime }
-func (r *DSettlementReceipt) Bytes() []byte           { return r.bytes }
+func (r *DSettlementReceipt) Expiry() time.Time              { return r.ExpiryTime }
+func (r *DSettlementReceipt) Bytes() []byte                  { return r.bytes }
 
 // =============================================================================
 // OracleAttestation (O-Chain → X-Chain)
@@ -229,13 +229,13 @@ func (r *DSettlementReceipt) Bytes() []byte           { return r.bytes }
 // OracleAttestation is the canonical artifact for oracle data feeds
 type OracleAttestation struct {
 	// Header
-	Version_      uint32         `json:"version"`
-	SigSuite_     SignatureSuite `json:"sigSuite"`
-	DomainID_     ids.ID         `json:"domainId"`
+	Version_  uint32         `json:"version"`
+	SigSuite_ SignatureSuite `json:"sigSuite"`
+	DomainID_ ids.ID         `json:"domainId"`
 
 	// Feed identification
-	FeedID    ids.ID `json:"feedId"`
-	Epoch     uint64 `json:"epoch"`
+	FeedID ids.ID `json:"feedId"`
+	Epoch  uint64 `json:"epoch"`
 
 	// Value (can be plain or committed)
 	Value           []byte   `json:"value,omitempty"`
@@ -270,11 +270,11 @@ func (a *OracleAttestation) ArtifactID() ids.ID {
 	return a.id
 }
 
-func (a *OracleAttestation) DomainID() ids.ID        { return a.DomainID_ }
-func (a *OracleAttestation) SchemaVersion() uint32   { return a.Version_ }
+func (a *OracleAttestation) DomainID() ids.ID               { return a.DomainID_ }
+func (a *OracleAttestation) SchemaVersion() uint32          { return a.Version_ }
 func (a *OracleAttestation) SignatureSuite() SignatureSuite { return a.SigSuite_ }
-func (a *OracleAttestation) Expiry() time.Time       { return a.ValidTo }
-func (a *OracleAttestation) Bytes() []byte           { return a.bytes }
+func (a *OracleAttestation) Expiry() time.Time              { return a.ValidTo }
+func (a *OracleAttestation) Bytes() []byte                  { return a.bytes }
 
 // =============================================================================
 // VerifiedMessage (R-Chain → X-Chain)
@@ -294,8 +294,8 @@ const (
 // VerifiedMessage is the canonical artifact for cross-chain messages
 type VerifiedMessage struct {
 	// Header
-	Version_      uint32         `json:"version"`
-	SigSuite_     SignatureSuite `json:"sigSuite"`
+	Version_  uint32         `json:"version"`
+	SigSuite_ SignatureSuite `json:"sigSuite"`
 
 	// Message envelope
 	SrcDomain   ids.ID `json:"srcDomain"`
@@ -336,11 +336,13 @@ func (m *VerifiedMessage) ArtifactID() ids.ID {
 	return m.id
 }
 
-func (m *VerifiedMessage) DomainID() ids.ID        { return m.SrcDomain }
-func (m *VerifiedMessage) SchemaVersion() uint32   { return m.Version_ }
+func (m *VerifiedMessage) DomainID() ids.ID               { return m.SrcDomain }
+func (m *VerifiedMessage) SchemaVersion() uint32          { return m.Version_ }
 func (m *VerifiedMessage) SignatureSuite() SignatureSuite { return m.SigSuite_ }
-func (m *VerifiedMessage) Expiry() time.Time       { return m.Timestamp.Add(time.Duration(m.Timeout) * time.Second) }
-func (m *VerifiedMessage) Bytes() []byte           { return m.bytes }
+func (m *VerifiedMessage) Expiry() time.Time {
+	return m.Timestamp.Add(time.Duration(m.Timeout) * time.Second)
+}
+func (m *VerifiedMessage) Bytes() []byte { return m.bytes }
 
 // =============================================================================
 // CredentialProof (I-Chain → X-Chain)
@@ -349,9 +351,9 @@ func (m *VerifiedMessage) Bytes() []byte           { return m.bytes }
 // CredentialProof is the canonical artifact for identity credentials
 type CredentialProof struct {
 	// Header
-	Version_      uint32         `json:"version"`
-	SigSuite_     SignatureSuite `json:"sigSuite"`
-	DomainID_     ids.ID         `json:"domainId"`
+	Version_  uint32         `json:"version"`
+	SigSuite_ SignatureSuite `json:"sigSuite"`
+	DomainID_ ids.ID         `json:"domainId"`
 
 	// Credential identification
 	CredentialID ids.ID `json:"credentialId"`
@@ -360,9 +362,9 @@ type CredentialProof struct {
 	CredType     string `json:"credentialType"`
 
 	// Claims (can be plain or selectively disclosed via ZK)
-	Claims          map[string][]byte `json:"claims,omitempty"`
-	ClaimsCommitment [32]byte         `json:"claimsCommitment,omitempty"`
-	SelectiveProof  []byte            `json:"selectiveProof,omitempty"`
+	Claims           map[string][]byte `json:"claims,omitempty"`
+	ClaimsCommitment [32]byte          `json:"claimsCommitment,omitempty"`
+	SelectiveProof   []byte            `json:"selectiveProof,omitempty"`
 
 	// Trust policy
 	IssuerTrustPolicy [32]byte `json:"issuerTrustPolicy"`
@@ -394,11 +396,11 @@ func (c *CredentialProof) ArtifactID() ids.ID {
 	return c.id
 }
 
-func (c *CredentialProof) DomainID() ids.ID        { return c.DomainID_ }
-func (c *CredentialProof) SchemaVersion() uint32   { return c.Version_ }
+func (c *CredentialProof) DomainID() ids.ID               { return c.DomainID_ }
+func (c *CredentialProof) SchemaVersion() uint32          { return c.Version_ }
 func (c *CredentialProof) SignatureSuite() SignatureSuite { return c.SigSuite_ }
-func (c *CredentialProof) Expiry() time.Time       { return c.ExpiresAt }
-func (c *CredentialProof) Bytes() []byte           { return c.bytes }
+func (c *CredentialProof) Expiry() time.Time              { return c.ExpiresAt }
+func (c *CredentialProof) Bytes() []byte                  { return c.bytes }
 
 // =============================================================================
 // Cert Types (T-Chain → Various)
@@ -406,9 +408,9 @@ func (c *CredentialProof) Bytes() []byte           { return c.bytes }
 
 // OracleCert attests that a quorum signed an oracle attestation
 type OracleCert struct {
-	Version_      uint32         `json:"version"`
-	SigSuite_     SignatureSuite `json:"sigSuite"`
-	DomainID_     ids.ID         `json:"domainId"`
+	Version_  uint32         `json:"version"`
+	SigSuite_ SignatureSuite `json:"sigSuite"`
+	DomainID_ ids.ID         `json:"domainId"`
 
 	FeedID          ids.ID   `json:"feedId"`
 	Epoch           uint64   `json:"epoch"`
@@ -437,17 +439,17 @@ func (c *OracleCert) ArtifactID() ids.ID {
 	return c.id
 }
 
-func (c *OracleCert) DomainID() ids.ID        { return c.DomainID_ }
-func (c *OracleCert) SchemaVersion() uint32   { return c.Version_ }
+func (c *OracleCert) DomainID() ids.ID               { return c.DomainID_ }
+func (c *OracleCert) SchemaVersion() uint32          { return c.Version_ }
 func (c *OracleCert) SignatureSuite() SignatureSuite { return c.SigSuite_ }
-func (c *OracleCert) Expiry() time.Time       { return c.ExpiresAt }
-func (c *OracleCert) Bytes() []byte           { return c.bytes }
+func (c *OracleCert) Expiry() time.Time              { return c.ExpiresAt }
+func (c *OracleCert) Bytes() []byte                  { return c.bytes }
 
 // RelayCert attests that a quorum verified a message batch
 type RelayCert struct {
-	Version_      uint32         `json:"version"`
-	SigSuite_     SignatureSuite `json:"sigSuite"`
-	DomainID_     ids.ID         `json:"domainId"`
+	Version_  uint32         `json:"version"`
+	SigSuite_ SignatureSuite `json:"sigSuite"`
+	DomainID_ ids.ID         `json:"domainId"`
 
 	SrcDomain    ids.ID   `json:"srcDomain"`
 	MsgBatchHash [32]byte `json:"msgBatchHash"`
@@ -458,9 +460,9 @@ type RelayCert struct {
 	Threshold  uint32       `json:"threshold"`
 
 	// Risk bounds (for attested mode)
-	ValueCap     uint64 `json:"valueCap"`
-	MinDelay     uint64 `json:"minDelay"`
-	EmergencyHalt bool  `json:"emergencyHalt"`
+	ValueCap      uint64 `json:"valueCap"`
+	MinDelay      uint64 `json:"minDelay"`
+	EmergencyHalt bool   `json:"emergencyHalt"`
 
 	Timestamp time.Time `json:"timestamp"`
 	ExpiresAt time.Time `json:"expiresAt"`
@@ -480,17 +482,17 @@ func (c *RelayCert) ArtifactID() ids.ID {
 	return c.id
 }
 
-func (c *RelayCert) DomainID() ids.ID        { return c.DomainID_ }
-func (c *RelayCert) SchemaVersion() uint32   { return c.Version_ }
+func (c *RelayCert) DomainID() ids.ID               { return c.DomainID_ }
+func (c *RelayCert) SchemaVersion() uint32          { return c.Version_ }
 func (c *RelayCert) SignatureSuite() SignatureSuite { return c.SigSuite_ }
-func (c *RelayCert) Expiry() time.Time       { return c.ExpiresAt }
-func (c *RelayCert) Bytes() []byte           { return c.bytes }
+func (c *RelayCert) Expiry() time.Time              { return c.ExpiresAt }
+func (c *RelayCert) Bytes() []byte                  { return c.bytes }
 
 // DACert aggregates DA sampling evidence
 type DACert struct {
-	Version_      uint32         `json:"version"`
-	SigSuite_     SignatureSuite `json:"sigSuite"`
-	DomainID_     ids.ID         `json:"domainId"`
+	Version_  uint32         `json:"version"`
+	SigSuite_ SignatureSuite `json:"sigSuite"`
+	DomainID_ ids.ID         `json:"domainId"`
 
 	ChainID ids.ID   `json:"chainId"`
 	Height  uint64   `json:"height"`
@@ -520,11 +522,11 @@ func (c *DACert) ArtifactID() ids.ID {
 	return c.id
 }
 
-func (c *DACert) DomainID() ids.ID        { return c.DomainID_ }
-func (c *DACert) SchemaVersion() uint32   { return c.Version_ }
+func (c *DACert) DomainID() ids.ID               { return c.DomainID_ }
+func (c *DACert) SchemaVersion() uint32          { return c.Version_ }
 func (c *DACert) SignatureSuite() SignatureSuite { return c.SigSuite_ }
-func (c *DACert) Expiry() time.Time       { return c.ExpiresAt }
-func (c *DACert) Bytes() []byte           { return c.bytes }
+func (c *DACert) Expiry() time.Time              { return c.ExpiresAt }
+func (c *DACert) Bytes() []byte                  { return c.bytes }
 
 // =============================================================================
 // ZKProofCommitment (Z-Chain → X/C)
@@ -532,18 +534,18 @@ func (c *DACert) Bytes() []byte           { return c.bytes }
 
 // ZKProofCommitment is the canonical artifact for ZK proofs
 type ZKProofCommitment struct {
-	Version_      uint32         `json:"version"`
-	SigSuite_     SignatureSuite `json:"sigSuite"`
-	DomainID_     ids.ID         `json:"domainId"`
+	Version_  uint32         `json:"version"`
+	SigSuite_ SignatureSuite `json:"sigSuite"`
+	DomainID_ ids.ID         `json:"domainId"`
 
 	// Proof identification
 	ProofID   ids.ID `json:"proofId"`
 	ProofType string `json:"proofType"` // groth16, plonk, stark, bulletproof
 
 	// Commitments
-	ProofCommitment   [32]byte `json:"proofCommitment"`
-	PublicInputsHash  [32]byte `json:"publicInputsHash"`
-	VerifyingKeyHash  [32]byte `json:"verifyingKeyHash"`
+	ProofCommitment  [32]byte `json:"proofCommitment"`
+	PublicInputsHash [32]byte `json:"publicInputsHash"`
+	VerifyingKeyHash [32]byte `json:"verifyingKeyHash"`
 
 	// The actual proof (can be large)
 	ProofData    []byte   `json:"proofData"`
@@ -572,8 +574,8 @@ func (z *ZKProofCommitment) ArtifactID() ids.ID {
 	return z.id
 }
 
-func (z *ZKProofCommitment) DomainID() ids.ID        { return z.DomainID_ }
-func (z *ZKProofCommitment) SchemaVersion() uint32   { return z.Version_ }
+func (z *ZKProofCommitment) DomainID() ids.ID               { return z.DomainID_ }
+func (z *ZKProofCommitment) SchemaVersion() uint32          { return z.Version_ }
 func (z *ZKProofCommitment) SignatureSuite() SignatureSuite { return z.SigSuite_ }
-func (z *ZKProofCommitment) Expiry() time.Time       { return z.ExpiresAt }
-func (z *ZKProofCommitment) Bytes() []byte           { return z.bytes }
+func (z *ZKProofCommitment) Expiry() time.Time              { return z.ExpiresAt }
+func (z *ZKProofCommitment) Bytes() []byte                  { return z.bytes }

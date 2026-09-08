@@ -15,31 +15,31 @@ import (
 
 	"github.com/luxfi/metric"
 
+	compression "github.com/luxfi/compress"
 	consensustracker "github.com/luxfi/consensus/networking/tracker"
-	nodevalidators "github.com/luxfi/validators"
-	validators "github.com/luxfi/validators"
-	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/constants"
 	"github.com/luxfi/crypto/bls/signer/localsigner"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/math/set"
-	"github.com/luxfi/node/message"
-	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/mesh/dialer"
 	"github.com/luxfi/node/mesh/peer"
 	"github.com/luxfi/node/mesh/throttling"
 	"github.com/luxfi/node/mesh/tracker"
+	"github.com/luxfi/node/message"
+	"github.com/luxfi/node/network"
 	"github.com/luxfi/node/staking"
 	"github.com/luxfi/node/upgrade"
 	"github.com/luxfi/util"
-	compression "github.com/luxfi/compress"
+	nodevalidators "github.com/luxfi/validators"
+	validators "github.com/luxfi/validators"
+	"github.com/luxfi/validators/uptime"
 )
 
 var (
 	errClosed = errors.New("closed")
 
-	_ net.Listener = (*noopListener)(nil)
+	_ net.Listener    = (*noopListener)(nil)
 	_ network.Allower = (*nodeIDConnector)(nil)
 )
 
@@ -262,4 +262,3 @@ func (n *noOpConsensusDiskTracker) TimeUntilUsage(nodeID ids.NodeID, now time.Ti
 	return 0
 }
 func (n *noOpConsensusDiskTracker) TotalUsage() float64 { return 0 }
-

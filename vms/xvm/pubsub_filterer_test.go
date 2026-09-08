@@ -11,8 +11,8 @@ import (
 
 	"github.com/luxfi/ids"
 	"github.com/luxfi/node/pubsub"
-	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/node/vms/xvm/txs"
+	lux "github.com/luxfi/utxo"
 	"github.com/luxfi/utxo/secp256k1fx"
 )
 

@@ -4,9 +4,9 @@
 package tmpnet
 
 import (
+	"fmt"
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
-	"fmt"
 	"time"
 
 	"github.com/luxfi/constants"
@@ -30,7 +30,7 @@ type GenesisConfig struct {
 // Allocation represents an initial fund allocation
 type Allocation struct {
 	EVMAddr        string         `json:"evmAddr"`
-	UTXOAddr        string         `json:"utxoAddr"`
+	UTXOAddr       string         `json:"utxoAddr"`
 	InitialAmount  uint64         `json:"initialAmount"`
 	UnlockSchedule []UnlockPeriod `json:"unlockSchedule,omitempty"`
 }
@@ -68,7 +68,7 @@ func NewTestGenesisWithFunds(
 	for _, key := range fundedKeys {
 		addr := key.Address()
 		allocation := Allocation{
-			UTXOAddr:       addr.String(),
+			UTXOAddr:      addr.String(),
 			InitialAmount: 300 * constants.MegaLux, // 300M LUX per funded key
 		}
 		config.Allocations = append(config.Allocations, allocation)

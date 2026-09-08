@@ -47,8 +47,8 @@ func TestHIGH2_SlashAmountNoOverflow(t *testing.T) {
 		{
 			name:     "large weight 50% slash - would overflow old code",
 			weight:   math.MaxUint64 / 2, // ~9.2e18
-			pct:      500_000,             // 50%
-			expected: math.MaxUint64 / 4,  // ~4.6e18
+			pct:      500_000,            // 50%
+			expected: math.MaxUint64 / 4, // ~4.6e18
 		},
 		{
 			name:     "max uint64 weight 10% slash",

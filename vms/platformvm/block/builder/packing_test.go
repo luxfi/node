@@ -23,8 +23,8 @@ import (
 	"github.com/luxfi/node/vms/platformvm/state"
 	"github.com/luxfi/node/vms/platformvm/txs"
 	"github.com/luxfi/node/vms/txs/mempool"
-	"github.com/luxfi/utxo/secp256k1fx"
 	"github.com/luxfi/utxo"
+	"github.com/luxfi/utxo/secp256k1fx"
 )
 
 // priceableTx returns a transaction the fee model does price, and asserts it —

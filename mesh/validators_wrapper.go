@@ -4,9 +4,9 @@
 package mesh
 
 import (
-	validators "github.com/luxfi/validators"
 	"github.com/luxfi/crypto/bls"
 	"github.com/luxfi/ids"
+	validators "github.com/luxfi/validators"
 )
 
 // validatorsWrapper wraps validators.Manager to match the expected interface

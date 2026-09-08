@@ -4,15 +4,15 @@
 package executor
 
 import (
-	"github.com/luxfi/runtime"
-	"github.com/luxfi/validators/uptime"
 	"github.com/luxfi/log"
 	"github.com/luxfi/node/vms/platformvm/config"
+	"github.com/luxfi/node/vms/platformvm/fx"
 	"github.com/luxfi/node/vms/platformvm/reward"
 	"github.com/luxfi/node/vms/platformvm/utxo"
+	"github.com/luxfi/runtime"
 	"github.com/luxfi/timer/mockable"
 	"github.com/luxfi/util"
-	"github.com/luxfi/node/vms/platformvm/fx"
+	"github.com/luxfi/validators/uptime"
 )
 
 type Backend struct {

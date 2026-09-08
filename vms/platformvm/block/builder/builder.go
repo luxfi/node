@@ -27,11 +27,11 @@ import (
 	validators "github.com/luxfi/validators"
 	vmcore "github.com/luxfi/vm"
 
-	chain "github.com/luxfi/vm/chain"
 	platformblock "github.com/luxfi/node/vms/platformvm/block"
 	blockexecutor "github.com/luxfi/node/vms/platformvm/block/executor"
 	txexecutor "github.com/luxfi/node/vms/platformvm/txs/executor"
 	"github.com/luxfi/runtime"
+	chain "github.com/luxfi/vm/chain"
 )
 
 // validatorStateAdapter adapts runtime.ValidatorState to validators.State
