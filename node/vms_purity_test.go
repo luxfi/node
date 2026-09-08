@@ -52,7 +52,7 @@ func TestVenueEngineNotLinked(t *testing.T) {
 		"luxfi/dex/pkg/venue",     // the venue engine
 		"luxfi/dex/pkg/orderbook", // the CGO order book
 	}
-	for _, pkg := range []string{"./node/", "./main"} {
+	for _, pkg := range []string{"./node/", "./cmd/luxd"} {
 		deps := goListDeps(t, pkg)
 		for _, f := range forbidden {
 			if got := countContaining(deps, f); got != 0 {
