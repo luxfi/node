@@ -316,17 +316,11 @@ two answers is what let every port decline every field of every vector and still
 print `AGREED`. They are marked as a recording now: they may disagree with
 anyone, and they may not stand in for a second implementation.
 
-Today that is `exec` on the X-chain in C++ (13 fields) and `exec` on the
-Q-chain in Rust (12). The two sets are disjoint, so every one of those fields
-still has two implementations behind it. Go and Rust both run the X-chain's
-semantic pass and then its executor over an empty chain — the same arrangement
-the P-chain's vectors are judged under, for the reason above — so the field IS
-compared, and a Rust chain that skipped the semantic pass and answered `OK`
-where Go answers `LEDGER` fails the run on all five vectors. The C++ evaluator
-still declines; giving it the same two passes on its own empty chain is what
-closes the last voice. Until it does, the C++ Q-chain declining `exec` would
-take those twelve fields down to one implementation and fail the run — which is
-the point: the target should notice a voice leaving, not average over it.
+No column declines a field today. Every one of the 942 vectors is answered by
+all three, and the rule stands for the day one of them cannot: a decline is
+reported per implementation and per field, never counted as agreement, and a
+field left with a single running answer fails the run rather than passing on
+one voice.
 
 ### What `encoding/json` accepts
 
@@ -531,13 +525,11 @@ them down rather than one.
 
 **A declined field is work that did not happen.** `make chains` prints what
 each port skipped, and a row that skips a pass is fast for that reason and not
-for a reason about the language. The two it named while this was written were
-`cpp . X . exec` and `rust . Q . exec`; run it for the current ones, because
-they move. A row so named is a parse-and-syntax number over part of its corpus,
-and the harness
-cannot say how much of a gap is the missing pass. A chain's three rows become
-comparable the day nothing under DECLINED names it — which is the same gap the
-`SKIPPED` field already reports to the differential.
+for a reason about the language. Read DECLINED before reading the table: a row
+named there is a parse-and-syntax number over part of its corpus, and the
+harness cannot say how much of the gap is the pass that did not run. A chain's
+three rows are comparable when nothing under DECLINED names it, which is the
+same fact the `SKIPPED` field reports to the differential.
 
 **The evaluators do not stand their chains up the same way, and on Q that is
 the whole number.** The C++ Q-chain builds a fresh `QuantumVM` for every
