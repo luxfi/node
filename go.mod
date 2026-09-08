@@ -33,7 +33,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/luxfi/consensus v1.36.81
-	github.com/luxfi/crypto v1.20.5
+	github.com/luxfi/crypto v1.20.9
 	github.com/luxfi/database v1.21.5
 	github.com/luxfi/ids v1.3.4
 	github.com/luxfi/keychain v1.1.1
