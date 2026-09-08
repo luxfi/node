@@ -1,0 +1,32 @@
+[package]
+name = "lux-oraclevm"
+version = "0.1.0"
+edition = "2021"
+description = "The Lux O-Chain in Rust: oracle feeds, deterministic requests, and the commitment over what executors reported."
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node"
+publish = false
+
+[dependencies]
+# Every name this chain derives is a SHA-256: the block id, the request id and
+# the Merkle root over a request's records. Writing one by hand would be a
+# second implementation to keep in step with Go and C++.
+sha2 = "0.10"
+
+# The O-chain's wire is JSON, so what a reader ACCEPTS is a consensus question
+# and not a convenience. serde_json is the grammar; the rules Go layers on top
+# of it — a member name matched by case-folding, the LAST of two members naming
+# one field, a number that must be an integer to reach an integer — are in
+# `gojson`, which is the only place they are written down.
+#
+# `preserve_order` is not cosmetic: one of those rules is about ORDER.
+serde_json = { version = "1", features = ["preserve_order"] }
+
+# An id on this wire is CB58 — base 58 with a four-byte SHA-256 checksum — and
+# a byte slice is base64. Both are what `encoding/json` writes for the Go
+# types, so both are the wire and neither is a rendering choice.
+bs58 = "0.5"
+base64 = "0.22"
+
+# The corpus is hex, because that is how the Go generator prints it.
+hex = "0.4"

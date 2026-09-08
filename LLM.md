@@ -123,9 +123,25 @@ as well — and it fails a run in which any implementation printed no row at
 all, since with four voices three answering is still a comparison, it agrees,
 and the fourth's silence would read as a pass.
 
-**`make chains` passes.** It covers six chains — P and X from `luxfi/node`, and
-Q, Z, D and F from `luxfi/chains`. All three columns
-answer all six, and every compared field of all 725 vectors agrees.
+**`make chains` passes.** It covers seven chains — P and X from `luxfi/node`,
+Q, Z, D and F from `luxfi/chains`, and O from `luxfi/oracle`, which had no
+vector at all until they were added, which is the same shape the P-chain fork
+hid in. All three columns now answer all seven, and every compared field of all
+942 vectors agrees.
+
+O was added last and taught three things before a line of either port was
+written. `chains/oraclevm` is 213 lines and is NOT the chain: it re-exports
+`luxfi/oracle/vm`, which is 1628 — and `chains/relayvm` is 161 lines over
+`luxfi/relay/vm`'s 2077, so the two chains that looked smallest by an order of
+magnitude were the two that were not there. The O-chain's wire is not a codec
+frame but `encoding/json`, and its block id is the SHA-256 of the block
+marshalled AGAIN, so a block does not round-trip its own id. And its genesis
+block is built with `time.Unix`, which is LOCAL time, so the same genesis file
+gives block id `6cf00752…` on a `-08:00` box and `f4970a27…` under
+`TZ=Asia/Kolkata` — two validators in two timezones are on different chains
+from block zero. That one is a bug in the chain and it is unfixed; the corpus
+routes around it by pinning the genesis through a re-marshal instead, and
+`conformance/README.md` says so rather than letting the workaround hide it.
 
 The Rust column was the last to close, and the last two chains in it each said
 something. `chains/rust/zkvm` had sixteen modules, no VM to hold them and no
@@ -210,7 +226,7 @@ make all                  # all three + gpu; reports each; nonzero exit unless 3
 make gpu                  # lux-gpu/gpu kernel library
 make gpu-differential     # CPU alone, then CPU against the plugin, all three
 make conformance          # the pop/verdict corpus, all three languages
-make chains               # the six-chain differential, all three languages
+make chains               # the seven-chain differential, all three languages
 make chains-corpus        # regenerate that corpus from the Go reference
 make precompiles          # the EVM precompile differential, all three languages
 make precompiles-corpus   # regenerate that corpus from the Go reference

@@ -53,7 +53,7 @@ understands nothing and compares strings.
 
 ```sh
 make chains        # 725 P/X/Q/Z/D/F wire vectors, all three languages
-make precompiles   # 237 EVM precompile calls, all three languages
+make precompiles   # 268 EVM precompile calls, all three languages
 make bench         # the same chain corpus, timed
 ```
 
