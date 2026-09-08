@@ -2105,7 +2105,7 @@ func (m *manager) createDAG(
 			chainConfig.Config,
 			toEngine,
 			fxs,
-			&noopWarpSender{}, // Simple no-op for non-warp VMs
+			&chainSender{net: m.Net, msgCreator: m.MsgCreator, chainID: chainParams.ID, log: m.Log},
 		)
 		if err != nil {
 			m.Log.Warn("QVM-style initialization failed", log.Stringer("chainID", chainParams.ID), log.Err(err))
@@ -2145,7 +2145,7 @@ func (m *manager) createDAG(
 				chainConfig.Config,
 				toEngine,
 				fxsInterface,
-				&noopWarpSender{}, // Implements p2p.Sender interface
+				&chainSender{net: m.Net, msgCreator: m.MsgCreator, chainID: chainParams.ID, log: m.Log},
 			)
 			if err != nil {
 				m.Log.Warn("ExchangeVM-style initialization failed", log.Stringer("chainID", chainParams.ID), log.Err(err))
@@ -5461,29 +5461,6 @@ func mustDeadline(ctx context.Context) time.Time {
 }
 
 const defaultAppRequestDeadline = 10 * time.Second
-
-// noopWarpSender is a no-op implementation of warp.Sender for cross-chain messaging
-// Used in single-node mode where cross-chain messaging is not needed
-type noopWarpSender struct{}
-
-// Compile-time check that noopWarpSender implements warp.Sender
-var _ warp.Sender = (*noopWarpSender)(nil)
-
-func (n *noopWarpSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
-	return nil
-}
-
-func (n *noopWarpSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
-	return nil
-}
-
-func (n *noopWarpSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
-	return nil
-}
-
-func (n *noopWarpSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
-	return nil
-}
 
 // networkGossiper implements consensuschain.Gossiper for Lux consensus integration.
 // It adapts the node's network layer to the minimal Gossiper interface used by
