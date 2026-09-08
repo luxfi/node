@@ -1,0 +1,8 @@
+Package: luxd
+Version: 0.1.0
+Section: misc 
+Priority: optional
+Architecture: arm64 
+Depends:
+Maintainer: Lux Team <dev@lux.network>
+Description: The Lux platform binaries 
