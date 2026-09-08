@@ -30,8 +30,8 @@ import (
 )
 
 // expectedSetRoot is an INDEPENDENT reimplementation of the canonical set-root
-// spec, used only by the golden test to cross-check hashValidatorSet. It is
-// deliberately NOT a call to hashValidatorSet (that would be a tautology): if the
+// spec, used only by the golden test to cross-check SetRoot. It is
+// deliberately NOT a call to SetRoot (that would be a tautology): if the
 // production encoding ever diverges from this spec the golden test fails.
 func expectedSetRoot(t *testing.T, vdrs []vdr) ids.ID {
 	t.Helper()
@@ -258,12 +258,12 @@ func TestValidatorStakeSource_HeightPinned(t *testing.T) {
 	}
 }
 
-// TestHashValidatorSet_ByteStability is a GOLDEN test pinning the canonical
+// TestSetRoot_ByteStability is a GOLDEN test pinning the canonical
 // set-root encoding so the wire format cannot drift (the engine's epoch-binding
 // contract and any persisted/gossiped cert depend on this exact byte layout). If
 // this value changes, the set-root encoding changed and every node in the
 // network must upgrade in lockstep — it is a CONSENSUS-BREAKING change.
-func TestHashValidatorSet_ByteStability(t *testing.T) {
+func TestSetRoot_ByteStability(t *testing.T) {
 	// Fixed (non-random) NodeIDs so the golden is reproducible.
 	var a, b ids.NodeID
 	a[0], b[0] = 0x01, 0x02
@@ -271,7 +271,7 @@ func TestHashValidatorSet_ByteStability(t *testing.T) {
 		a: {NodeID: a, PublicKey: []byte{0xaa, 0xbb}, Light: 10},
 		b: {NodeID: b, PublicKey: []byte{0xcc}, Light: 20},
 	}
-	got := hashValidatorSet(set)
+	got := SetRoot(set)
 
 	// Independently recompute the expected commitment from the canonical spec:
 	// sorted-by-NodeID, each nodeID || light(8,BE) || len(pk)(8,BE) || pk, SHA-256.
@@ -284,10 +284,10 @@ func TestHashValidatorSet_ByteStability(t *testing.T) {
 	}
 
 	// Empty/nil set → ids.Empty.
-	if hashValidatorSet(nil) != ids.Empty {
+	if SetRoot(nil) != ids.Empty {
 		t.Fatal("nil set must commit to ids.Empty")
 	}
-	if hashValidatorSet(map[ids.NodeID]*validators.GetValidatorOutput{}) != ids.Empty {
+	if SetRoot(map[ids.NodeID]*validators.GetValidatorOutput{}) != ids.Empty {
 		t.Fatal("empty set must commit to ids.Empty")
 	}
 }

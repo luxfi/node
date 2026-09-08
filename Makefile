@@ -38,6 +38,7 @@ CONSENSUS_CPP  := $(HOME)/work/lux-cpp/consensus
 
 .PHONY: chains-build all luxd gpu gpu-differential conformance conformance-go conformance-rust conformance-cpp \
         chains chains-corpus bench precompiles precompiles-build precompiles-corpus \
+        setroot setroot-build setroot-corpus \
         dex dex-test luxd-go luxd-rust luxd-cpp wire clean help
 
 help:
@@ -404,6 +405,69 @@ precompiles-corpus: ## regenerate the precompile corpus
 
 # Rebuild the corpus from the Go reference. Its output is committed, so a
 # corpus that moves shows up as a diff rather than as a silent new normal.
+# ---- make setroot: the validator-set root, in all three ----------------------
+#
+# The root is the commitment to the set a vote is cast under, and it is INSIDE
+# the signed vote message. Two daemons that compute it differently do not
+# disagree about a block: they sign different bytes, so each drops the other's
+# votes as unverifiable and neither can say why. It is therefore the first thing
+# a Go, a Rust and a C++ node have to agree on before they can be on one
+# network, and it is written four times — chains.SetRoot here,
+# validators::root and Committee::root in the Rust node, validator_set_root in
+# the C++ node. Every test each of them had compared an implementation to a
+# restatement of the spec in its own language; none compared bytes across two.
+#
+# The two port evaluators reach their node BY PATH, the way this Makefile builds
+# the daemons: an evaluator has to answer for the code this checkout would run,
+# and a version number between them would let the differential report on
+# something else.
+
+SETROOT_VECS := $(CONF)/corpus/setroot.tsv
+SETROOT_WANT := $(CONF)/corpus/setroot-expected.tsv
+SETROOT_RUST := $(CONF)/setroot/rust/target/release/conformance
+SETROOT_CPP  := $(CONF)/setroot/cpp/build/conformance
+
+setroot: setroot-build ## run the validator-set-root differential in all three languages
+	@echo
+	cd $(ROOT) && GOWORK=off go run ./conformance/runner \
+		-subject "validator-set root" \
+		-fields root \
+		-vectors $(SETROOT_VECS) \
+		-expected $(SETROOT_WANT) \
+		-eval "go=go run ./conformance/setroot" \
+		-eval "rust=$(SETROOT_RUST)" \
+		-eval "cpp=$(SETROOT_CPP)"
+	@echo
+	@echo "==> the document: luxd publishes a set, and the Rust node reads it back"
+	@# Hashing a set alike is worth nothing to a node that cannot read the set
+	@# the network published. luxd serves it at
+	@# /v1/chain/<P>/ops/validators/at, one weight per validator, and the root
+	@# hashes Light — so this asks the Rust node's own reader for the root of
+	@# the document luxd just wrote, and holds it to the root luxd committed to.
+	@# The C++ node has no such reader: lux-join takes the root from LUX_SET_ROOT
+	@# because it cannot compute it, so there is nothing here to ask it yet.
+	@doc="$$(cd $(ROOT) && GOWORK=off go run ./conformance/setroot -publish SET_ORDER_SORTED)"; \
+	 want=$$(printf '%s\n' "$$doc" | tail -1); \
+	 got=$$(printf '%s\n' "$$doc" | head -1 | $(SETROOT_RUST) -document); \
+	 echo "    luxd committed to  $$want"; \
+	 echo "    the rust node read $$got"; \
+	 [ -n "$$got" ] && [ "$$got" = "$$want" ]
+
+# The corpus is checked against the live definition before anything is asked to
+# agree with it: a corpus that had drifted from chains.SetRoot would hand the
+# other two a number this build no longer uses, and their agreeing with it would
+# mean nothing.
+setroot-build:
+	@echo "==> validator-set root: checking the corpus against the definition"
+	cd $(ROOT) && GOWORK=off go test -count=1 ./conformance/setroot/
+	@echo "==> building the rust and cpp evaluators"
+	cd $(CONF)/setroot/rust && PATH="$(HOME)/.cargo/bin:$$PATH" cargo build --release
+	mkdir -p $(CONF)/setroot/cpp/build
+	$(CONF)/setroot/cpp/build.sh $(NODE_CPP_DIR) $(SETROOT_CPP)
+
+setroot-corpus: ## rewrite the set-root corpus from the live definition
+	cd $(ROOT) && GOWORK=off go run ./conformance/setroot -emit $(CONF)/corpus
+
 chains-corpus: ## regenerate the chain corpus from the Go reference
 	cd $(CONF)/gen && GOWORK=off go run . emit ../corpus
 

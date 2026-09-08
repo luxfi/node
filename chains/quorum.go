@@ -457,7 +457,7 @@ var _ consensuschain.StakeSource = (*validatorStakeSource)(nil)
 //
 // The commitment is a SHA-256 over the set serialized in a canonical order
 // (validators sorted by NodeID, each as nodeID || light || len(pubkey) ||
-// pubkey) — see hashValidatorSet. Sorting by NodeID + length-prefixing the
+// pubkey) — see SetRoot. Sorting by NodeID + length-prefixing the
 // pubkey makes the encoding canonical and unambiguous; the byte layout is
 // UNCHANGED from the prior implementation, so the wire format and the engine's
 // epoch-binding contract are preserved (only the SOURCE of the set changed from
@@ -478,18 +478,24 @@ func newValidatorSetRootSource(state validators.State, networkID ids.ID) *valida
 // symmetric across nodes, so the Empty fallback is uniform and never creates a
 // cross-node root disagreement.
 func (s *validatorSetRootSource) ValidatorSetRoot(height uint64) ids.ID {
-	return hashValidatorSet(validatorSetAtHeight(s.state, s.networkID, height))
+	return SetRoot(validatorSetAtHeight(s.state, s.networkID, height))
 }
 
 var _ consensuschain.ValidatorSetRootSource = (*validatorSetRootSource)(nil)
 
-// hashValidatorSet computes the canonical SHA-256 commitment to a weighted
+// SetRoot computes the canonical SHA-256 commitment to a weighted
 // validator set: validators sorted by NodeID, each serialized as
 // nodeID || light(8,BE) || len(pubkey)(8,BE) || pubkey. An empty/nil set commits
 // to ids.Empty (the "unbound" answer). This is the SINGLE definition of the
 // set-root encoding (DRY) — both the live source and its tests hash through here,
 // so the wire format cannot drift between them.
-func hashValidatorSet(set map[ids.NodeID]*validators.GetValidatorOutput) ids.ID {
+//
+// It is exported because it is not private knowledge: this value goes inside
+// the signed vote message, so every other implementation of a Lux validator has
+// to produce the same 32 bytes for the same set or have its votes dropped
+// rather than disputed. conformance/setroot hands what this returns to the Rust
+// and C++ nodes and compares.
+func SetRoot(set map[ids.NodeID]*validators.GetValidatorOutput) ids.ID {
 	if len(set) == 0 {
 		return ids.Empty
 	}

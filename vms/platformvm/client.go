@@ -653,15 +653,7 @@ func (c *Client) GetValidatorsAt(
 	if err != nil {
 		return nil, err
 	}
-	set := make(map[ids.NodeID]*validators.GetValidatorOutput, len(res.Validators))
-	for _, vdr := range res.Validators {
-		set[vdr.NodeID] = &validators.GetValidatorOutput{
-			NodeID:    vdr.NodeID,
-			PublicKey: vdr.PublicKey,
-			Weight:    uint64(vdr.Weight),
-		}
-	}
-	return set, nil
+	return res.Set(), nil
 }
 
 // GetBlock returns blockID.

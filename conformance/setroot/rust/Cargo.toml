@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: BSD-3-Clause-Eco
+
+[package]
+name = "lux-setroot-conformance"
+version = "0.1.0"
+edition = "2021"
+description = "The Rust node's answers to the validator-set-root corpus"
+license = "BSD-3-Clause-Eco"
+repository = "https://github.com/luxfi/node"
+publish = false
+
+[dependencies]
+# The implementation under test, by path for the same reason the chains reach
+# their runtime by path: the evaluator has to answer for the code this checkout
+# would run, and a version number between them would be a way for the
+# differential to report on something else.
+lux-node = { path = "../../../../../lux-rs/node" }
+
+[[bin]]
+name = "conformance"
+path = "src/main.rs"

@@ -121,6 +121,26 @@ func newValidatorSet(m map[ids.NodeID]*validators.GetValidatorOutput) ValidatorS
 	return s
 }
 
+// Set is what the reply MEANS: the validator set a reader rebuilds from it.
+//
+// One declaration, because the root a vote binds is computed over this map and
+// the weight it hashes is Light. A reader that filled in Weight and left Light
+// at zero would rebuild a set that looks right and commits to a different 32
+// bytes than the network does — and would have its votes dropped rather than
+// disputed. The wire carries one weight; both fields are that weight.
+func (v *GetValidatorsAtReply) Set() map[ids.NodeID]*validators.GetValidatorOutput {
+	set := make(map[ids.NodeID]*validators.GetValidatorOutput, len(v.Validators))
+	for _, vdr := range v.Validators {
+		set[vdr.NodeID] = &validators.GetValidatorOutput{
+			NodeID:    vdr.NodeID,
+			PublicKey: vdr.PublicKey,
+			Light:     uint64(vdr.Weight),
+			Weight:    uint64(vdr.Weight),
+		}
+	}
+	return set
+}
+
 // ChainValidatorSet is one chain's validator set, in the full shape
 // getAllValidatorsAt answers with. That method reports the state read verbatim,
 // under the field names Go gave it, and this keeps that exactly.
