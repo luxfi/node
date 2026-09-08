@@ -1,39 +1,28 @@
 # runtime/rust
 
-A thin shim. No Rust source lives here — `make luxd RUNTIME=rust` builds
-`~/work/lux-rs/node` in place and copies its `luxd` binary to `bin/luxd-rust`.
+A shim. No Rust source lives here — `make luxd RUNTIME=rust` builds
+`~/work/lux-rs/node` in place and copies its `luxd` binary to `bin/rust/luxd`.
 
-## What it is
+## What it builds
 
-A complete, running Lux node: a validator mesh over real TCP sockets framed by
-ZAP, BLS quorum-certificate finality via `lux-consensus` (the same crate the
-conformance corpus checks Rust against), and a pure-Go-equivalent EVM
-(`revm`) for the C-Chain. `co-certifies with luxd today` — the Rust host and
-the Go `luxd` reach agreement in a live mesh, not just on paper. Its `main.rs`
-also builds other orgs' brand-specific argv0 binaries — out of scope here.
-`node2` is Lux-branded only; it builds `luxd` and nothing else from this
-crate.
+A running Lux node: a validator mesh over TCP framed by ZAP, BLS
+quorum-certificate finality through `lux-consensus`, and `revm` executing the
+C-Chain. Every validator executes each block itself and signs the root its own
+execution produced, so a certificate is agreement about a result rather than
+about a name.
 
-It carries no `luxfi/node` and no lux-private lineage — see its own `Cargo.toml`
-header comment on the `lux-consensus` dependency for why that matters and how
-it is kept true (there is a second, unpublished, stale copy of a
-`lux-consensus`-shaped crate elsewhere on this machine; this shim always
-resolves through Cargo's registry dependency, never a path override to that
-one).
+That crate also builds other networks' binaries from the same source. This
+repository builds `luxd` and names nothing else.
 
-`runtime/go`'s README names this crate's architecture — plugin-equivalent VM
-+ P2P-over-ZAP + bootstrap + `luxfi/consensus` — as the template a clean Go
-node host would mirror.
+## The build
 
-## Build
+    make luxd RUNTIME=rust
 
-```sh
-cd ~/work/lux-rs/node
-PATH="$HOME/.cargo/bin:$PATH" LUX_LIB_DIR=~/work/lux/crypto/dist cargo build --release --bin luxd
-```
+It needs `libluxcrypto.a`, which `LUX_LIB_DIR` points at; the Makefile passes
+`~/work/lux/crypto/dist`. Build it with:
 
-`LUX_LIB_DIR` locates `libluxcrypto` (ML-KEM-768 / ML-DSA-65) for `lux-pq`'s
-own build script, which republishes the resolved path as `DEP_LUXPQ_LIB_DIR`
-for this crate's `build.rs` to set as an rpath — the same library the Go node
-links via cgo, so both languages verify under the same post-quantum
-implementation.
+    cd ~/work/lux/crypto/bindings/cabi && \
+      CGO_ENABLED=1 go build -buildmode=c-archive -o ~/work/lux/crypto/dist/libluxcrypto.a .
+
+The exit code of every step is checked. Nothing is written back into the
+checkout except its own `target/`.
