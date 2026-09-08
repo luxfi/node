@@ -310,14 +310,15 @@ fn block(id: &str, bytes: &[u8]) -> Row {
     // port's opinion rather than the chain's.
     r.syntactic = OK.into();
     r.exec = OK.into();
-    let (o, a, f) = blk.count();
+    let (o, a, f, t) = blk.count();
     r.note = format!(
-        "height={} parent={} obs={} agg={} feeds={}",
+        "height={} parent={} obs={} agg={} feeds={} att={}",
         blk.height,
         hex::encode(&blk.parent_id[..4]),
         o,
         a,
-        f
+        f,
+        t
     );
     r
 }
@@ -325,7 +326,7 @@ fn block(id: &str, bytes: &[u8]) -> Row {
 /// What a block CARRIES. The chain has one block type, so naming the type
 /// would compare a constant against itself.
 fn kind_of(b: &Block) -> String {
-    let (o, a, f) = b.count();
+    let (o, a, f, t) = b.count();
     let mut parts: Vec<String> = Vec::new();
     let mut add = |name: &str, n: usize| match n {
         0 => {}
@@ -335,6 +336,7 @@ fn kind_of(b: &Block) -> String {
     add("Observation", o);
     add("Aggregation", a);
     add("FeedUpdate", f);
+    add("Attestation", t);
     if parts.is_empty() {
         "Empty".to_owned()
     } else {

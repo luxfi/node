@@ -340,6 +340,59 @@ bool Feed::admits(const NodeId& op) const {
     return std::find(operators->begin(), operators->end(), op) != operators->end();
 }
 
+// ---- Attestation ------------------------------------------------------------
+
+bool Attestation::read(const json::Value& v, Attestation* out, std::string* err) {
+    json::Reader r(v,
+                   {"version", "sigSuite", "domainId", "feedId", "epoch", "value",
+                    "valueCommitment", "aggProof", "quorumCert", "validFrom", "validTo",
+                    "policyHash"},
+                   err, json::Unknown::Ignore);
+    if (!r.ok()) return false;
+    Attestation a;
+    if (!read_u32(r.find("version"), "version", &a.version, err)) return false;
+    if (!read_u8(r.find("sigSuite"), "sigSuite", &a.sig_suite, err)) return false;
+    if (!read_id_member(r.find("domainId"), "domainId", &a.domain_id, err)) return false;
+    if (!read_id_member(r.find("feedId"), "feedId", &a.feed_id, err)) return false;
+    if (!read_u64f(r.find("epoch"), "epoch", &a.epoch, err)) return false;
+    if (!read_slice(r.find("value"), "value", &a.value, err)) return false;
+    if (!json::read_byte_array(r.find("valueCommitment"), "valueCommitment",
+                               a.value_commitment.data(), 32, err))
+        return false;
+    if (!read_slice(r.find("aggProof"), "aggProof", &a.agg_proof, err)) return false;
+    if (!read_slice(r.find("quorumCert"), "quorumCert", &a.quorum_cert, err)) return false;
+    if (!read_time(r.find("validFrom"), "validFrom", &a.valid_from, err)) return false;
+    if (!read_time(r.find("validTo"), "validTo", &a.valid_to, err)) return false;
+    if (!json::read_byte_array(r.find("policyHash"), "policyHash", a.policy_hash.data(), 32, err))
+        return false;
+    *out = std::move(a);
+    return true;
+}
+
+void Attestation::write(json::Writer* w) const {
+    w->begin_object();
+    w->key("version");
+    w->u64(version);
+    w->key("sigSuite");
+    w->u64(sig_suite);
+    write_id(w, "domainId", domain_id);
+    write_id(w, "feedId", feed_id);
+    w->key("epoch");
+    w->u64(epoch);
+    if (value.has_value() && !value->empty()) write_slice(w, "value", value);
+    // omitempty on a fixed array does nothing: this one is always written.
+    w->key("valueCommitment");
+    w->byte_array(view(value_commitment));
+    if (agg_proof.has_value() && !agg_proof->empty()) write_slice(w, "aggProof", agg_proof);
+    if (quorum_cert.has_value() && !quorum_cert->empty())
+        write_slice(w, "quorumCert", quorum_cert);
+    write_time(w, "validFrom", valid_from);
+    write_time(w, "validTo", valid_to);
+    w->key("policyHash");
+    w->byte_array(view(policy_hash));
+    w->end_object();
+}
+
 // ---- Block ------------------------------------------------------------------
 
 namespace {
@@ -371,11 +424,6 @@ bool Block::read(const json::Value& v, Block* out, std::string* err) {
                     "feedUpdates", "attestations"},
                    err, json::Unknown::Ignore);
     if (!r.ok()) return false;
-    const json::Value* att = r.find("attestations");
-    if (att != nullptr && !att->null()) {
-        *err = "oraclevm: this port does not model an attestation";
-        return false;
-    }
     Block b;
     if (!read_id_member(r.find("id"), "id", &b.id, err)) return false;
     if (!read_id_member(r.find("parentID"), "parentID", &b.parent_id, err)) return false;
@@ -386,6 +434,8 @@ bool Block::read(const json::Value& v, Block* out, std::string* err) {
     if (!read_list<AggregatedValue>(r.find("aggregations"), "aggregations", &b.aggregations, err))
         return false;
     if (!read_list<Feed>(r.find("feedUpdates"), "feedUpdates", &b.feed_updates, err)) return false;
+    if (!read_list<Attestation>(r.find("attestations"), "attestations", &b.attestations, err))
+        return false;
     *out = std::move(b);
     return true;
 }
@@ -414,6 +464,12 @@ std::string Block::write() const {
         w.key("feedUpdates");
         w.begin_array();
         for (const auto& f : *feed_updates) f.write(&w);
+        w.end_array();
+    }
+    if (attestations.has_value() && !attestations->empty()) {
+        w.key("attestations");
+        w.begin_array();
+        for (const auto& a : *attestations) a.write(&w);
         w.end_array();
     }
     w.end_object();

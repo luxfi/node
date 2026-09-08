@@ -8,11 +8,12 @@
 //! of the block marshalled again, so a field written out of place names a
 //! different block.
 //!
-//! An OracleAttestation is NOT here. A block may carry a list of them and this
-//! port does not model one; no vector in the corpus carries one, and a block
-//! that did would be refused rather than silently re-marshalled without them.
-//! That is the port's known boundary and it is stated here rather than left to
-//! be discovered.
+//! `OracleAttestation` is the artifact the O-chain hands the X-chain, and a
+//! block may carry a list of them. Its `valueCommitment` is a `[32]byte`
+//! tagged `omitempty`, and omitempty does NOTHING to a Go array — an array has
+//! no empty form — so it is written on every attestation, all zeros included,
+//! while the three byte SLICES beside it vanish when they are empty. Two rules
+//! in adjacent fields and only one of them fires.
 
 use crate::gojson::{self as gj, Writer};
 use crate::gotime::Time;
@@ -162,6 +163,72 @@ impl Feed {
 }
 
 #[derive(Clone, Debug)]
+pub struct Attestation {
+    pub version: u32,
+    pub sig_suite: u8,
+    pub domain_id: Id,
+    pub feed_id: Id,
+    pub epoch: u64,
+    pub value: Option<Vec<u8>>,
+    pub value_commitment: [u8; 32],
+    pub agg_proof: Option<Vec<u8>>,
+    pub quorum_cert: Option<Vec<u8>>,
+    pub valid_from: Time,
+    pub valid_to: Time,
+    pub policy_hash: [u8; 32],
+}
+
+impl Attestation {
+    pub fn read(v: &Value) -> Result<Attestation, Error> {
+        let o = gj::object(v)?;
+        Ok(Attestation {
+            version: gj::u32_of(o, "version")?,
+            sig_suite: gj::u8_of(o, "sigSuite")?,
+            domain_id: gj::id_of(o, "domainId")?,
+            feed_id: gj::id_of(o, "feedId")?,
+            epoch: gj::u64_of(o, "epoch")?,
+            value: gj::bytes_of(o, "value")?,
+            value_commitment: gj::byte_array_of(o, "valueCommitment")?,
+            agg_proof: gj::bytes_of(o, "aggProof")?,
+            quorum_cert: gj::bytes_of(o, "quorumCert")?,
+            valid_from: gj::time_of(o, "validFrom")?,
+            valid_to: gj::time_of(o, "validTo")?,
+            policy_hash: gj::byte_array_of(o, "policyHash")?,
+        })
+    }
+
+    pub fn write(&self) -> String {
+        let mut w = Writer::object();
+        w.unum("version", self.version as u64);
+        w.unum("sigSuite", self.sig_suite as u64);
+        w.id("domainId", &self.domain_id);
+        w.id("feedId", &self.feed_id);
+        w.unum("epoch", self.epoch);
+        if let Some(b) = &self.value {
+            if !b.is_empty() {
+                w.bytes("value", &self.value);
+            }
+        }
+        // omitempty on a fixed array does nothing: this one is always written.
+        w.byte_array("valueCommitment", &self.value_commitment);
+        if let Some(b) = &self.agg_proof {
+            if !b.is_empty() {
+                w.bytes("aggProof", &self.agg_proof);
+            }
+        }
+        if let Some(b) = &self.quorum_cert {
+            if !b.is_empty() {
+                w.bytes("quorumCert", &self.quorum_cert);
+            }
+        }
+        w.time("validFrom", &self.valid_from);
+        w.time("validTo", &self.valid_to);
+        w.byte_array("policyHash", &self.policy_hash);
+        w.finish()
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct Block {
     pub id: Id,
     pub parent_id: Id,
@@ -170,17 +237,12 @@ pub struct Block {
     pub observations: Option<Vec<Observation>>,
     pub aggregations: Option<Vec<AggregatedValue>>,
     pub feed_updates: Option<Vec<Feed>>,
+    pub attestations: Option<Vec<Attestation>>,
 }
 
 impl Block {
     pub fn read(v: &Value) -> Result<Block, Error> {
         let o = gj::object(v)?;
-        if gj::member(o, "attestations")
-            .map(|m| !m.is_null())
-            .unwrap_or(false)
-        {
-            return Err("oraclevm: this port does not model an attestation".into());
-        }
         let mut obs = None;
         if let Some(a) = gj::array_of(o, "observations")? {
             let mut items = Vec::with_capacity(a.len());
@@ -205,6 +267,14 @@ impl Block {
             }
             feeds = Some(items);
         }
+        let mut att = None;
+        if let Some(a) = gj::array_of(o, "attestations")? {
+            let mut items = Vec::with_capacity(a.len());
+            for e in a {
+                items.push(Attestation::read(e)?);
+            }
+            att = Some(items);
+        }
         Ok(Block {
             id: gj::id_of(o, "id")?,
             parent_id: gj::id_of(o, "parentID")?,
@@ -213,6 +283,7 @@ impl Block {
             observations: obs,
             aggregations: agg,
             feed_updates: feeds,
+            attestations: att,
         })
     }
 
@@ -245,6 +316,12 @@ impl Block {
                 w.list("feedUpdates", &bodies);
             }
         }
+        if let Some(items) = &self.attestations {
+            if !items.is_empty() {
+                let bodies: Vec<String> = items.iter().map(Attestation::write).collect();
+                w.list("attestations", &bodies);
+            }
+        }
         w.finish()
     }
 
@@ -254,11 +331,12 @@ impl Block {
         ids::sha256(self.write().as_bytes())
     }
 
-    pub fn count(&self) -> (usize, usize, usize) {
+    pub fn count(&self) -> (usize, usize, usize, usize) {
         (
             self.observations.as_ref().map_or(0, Vec::len),
             self.aggregations.as_ref().map_or(0, Vec::len),
             self.feed_updates.as_ref().map_or(0, Vec::len),
+            self.attestations.as_ref().map_or(0, Vec::len),
         )
     }
 }

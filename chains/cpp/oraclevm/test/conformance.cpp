@@ -191,6 +191,7 @@ std::string kind_of(const Block& b) {
     add("Observation", b.observations.has_value() ? b.observations->size() : 0);
     add("Aggregation", b.aggregations.has_value() ? b.aggregations->size() : 0);
     add("FeedUpdate", b.feed_updates.has_value() ? b.feed_updates->size() : 0);
+    add("Attestation", b.attestations.has_value() ? b.attestations->size() : 0);
     if (parts.empty()) return "Empty";
     std::string out = parts[0];
     for (std::size_t i = 1; i < parts.size(); i++) out += "+" + parts[i];
@@ -226,12 +227,13 @@ Row block_row(const std::string& id, const lux::fhevm::Bytes& bytes) {
     r.syntactic = kOk;
     r.exec = kOk;
     char note[192];
-    std::snprintf(note, sizeof(note), "height=%llu parent=%s obs=%zu agg=%zu feeds=%zu",
+    std::snprintf(note, sizeof(note), "height=%llu parent=%s obs=%zu agg=%zu feeds=%zu att=%zu",
                   static_cast<unsigned long long>(b.height),
                   lux::fhevm::hex(lux::fhevm::ByteView(b.parent_id.data(), 4)).c_str(),
                   b.observations.has_value() ? b.observations->size() : 0,
                   b.aggregations.has_value() ? b.aggregations->size() : 0,
-                  b.feed_updates.has_value() ? b.feed_updates->size() : 0);
+                  b.feed_updates.has_value() ? b.feed_updates->size() : 0,
+                  b.attestations.has_value() ? b.attestations->size() : 0);
     r.note = note;
     return r;
 }

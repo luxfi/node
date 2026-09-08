@@ -185,37 +185,40 @@ R	D_GUARD_LABELED_NO_CAPS	ok	ValueActivation	-	OK	SYNTACTIC	registry: refuse HON
 R	D_GUARD_LABELED_NO_HALT	ok	ValueActivation	-	OK	SYNTACTIC	registry: refuse HONEST_VALIDATOR_LABELED value activation — caps-on + real-assets-only + halt-ready not all asserted (capsOn=true realAssetsOnly=true haltRea
 R	D_GUARD_UNSET	ok	ValueActivation	-	OK	SYNTACTIC	registry: refuse DEX value activation — consensus mode is UNSET (no Byzantine-finality and no labeled CFT-parity declared)
 R	O_GENESIS	ok	Genesis	7759df6298423881052fa67bceae3ff73fbf7cb05b968505a2d4707a3fe40ab7	feeds=1	OK	timestamp=1000 message="conformance"
-R	O_BLOCK_EMPTY	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_ZERO_HEIGHT	ok	Empty	3a924d2ff4e0c9ad0b10f1f37a9dab67fca737be349e9bbc4fb64b50ec1edc59	OK	OK	height=0 parent=00000000 obs=0 agg=0 feeds=0
-R	O_BLOCK_OBSERVATION	ok	Observation	9aa6943a1d20bc586274cf2ee13a0dd9c848cf07f43c8ac0ad968cdca8df05ee	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0
-R	O_BLOCK_OBSERVATION_TWO	ok	Observationx2	8265e2452a8a7a205d80d09a6a5f40c8577b2ed6d13b01f2b1853054fea5fe4d	OK	OK	height=1 parent=07070707 obs=2 agg=0 feeds=0
-R	O_BLOCK_AGGREGATION	ok	Aggregation	6de91b599930865d61f5ead04ad1ecfdbb616b6c41ecd4a2bae89c85da59c6c8	OK	OK	height=2 parent=07070707 obs=0 agg=1 feeds=0
-R	O_BLOCK_FEED_UPDATE	ok	FeedUpdate	4f9745e16a62c2d12efefb504f12d5a1edbe36e469b2d3ee6855adaffc002a18	OK	OK	height=3 parent=07070707 obs=0 agg=0 feeds=1
-R	O_BLOCK_MIXED	ok	Observation+Aggregation+FeedUpdate	45ff9d6a1167368bd213cb5386da22a681ff4b074f90d9384b142a8a055a1e1d	OK	OK	height=4 parent=07070707 obs=1 agg=1 feeds=1
-R	O_BLOCK_AGG_PROOFS	ok	Aggregation	7210c83b9d8aa42bbb0189152087dcbea9d33bcce55d4d15ed48438a6164b7e6	OK	OK	height=2 parent=07070707 obs=0 agg=1 feeds=0
-R	O_BLOCK_AGG_EMPTY_PROOF	ok	Aggregation	97711d7b3eb143a1a55aa3219c4afec6852a8d25512ba62fe4d7e1dfa94c4a22	OK	OK	height=2 parent=07070707 obs=0 agg=1 feeds=0
-R	O_BLOCK_FEED_RICH	ok	FeedUpdate	1314ac239366504e5cd1f11cb04dd3993a4fb0bfabecd589e81c79669bf6c7aa	OK	OK	height=3 parent=07070707 obs=0 agg=0 feeds=1
-R	O_BLOCK_OBS_NULL_VALUE	ok	Observation	572a2608f518a1d7727face961e83f812cda35c1d68d06432daa01e259de4c49	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0
-R	O_BLOCK_OBS_EMPTY_VALUE	ok	Observation	ad28e4ca534dda53ef70dc4ccfad83336330132ad8d6096ea03abebd22f4d6b3	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0
-R	O_BLOCK_SOURCEMETA_SHORT	ok	Observation	067b8ab2d3b7629901a6aa55d869954b49499aefcd3c04eb8aad9c0bfce952d3	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0
-R	O_BLOCK_SOURCEMETA_LONG	ok	Observation	9aa6943a1d20bc586274cf2ee13a0dd9c848cf07f43c8ac0ad968cdca8df05ee	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0
-R	O_BLOCK_ID_SET	ok	Empty	c94f957b3d4f04f89d6764de70790e7fc4268318a588e29f9cd200a37543dfa5	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_NATIVE_PARENT	ok	Empty	f3fd52b9a7492912550169ae23d75feaf82ce64300e12dddadbddca3b72d50f6	OK	OK	height=1 parent=00000000 obs=0 agg=0 feeds=0
-R	O_BLOCK_TIME_HALF_SECOND	ok	Empty	683a9fbe3db127b0862ea832e89c82cab5ba8d6996f2f8d6222a441b343899ce	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_TIME_NANO	ok	Empty	507565895a4911d056c7aa4c65f4926889def1c5c27e1eeb6ee5701dad663620	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_TIME_OFFSET	ok	Empty	e2e9bed24b74792dd02a948e30309b411494002940593858bb6ed3a9b866a7e9	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_UNKNOWN_MEMBER	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_DUPLICATE_HEIGHT_FIRST	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_DUPLICATE_HEIGHT_LAST	ok	Empty	acd9860e725037070c1fdf393ccf9a94ce980938f97980601e771cb64d02421c	OK	OK	height=9 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_FOLDED_MEMBER	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_FOLDED_AFTER_EXACT	ok	Empty	acd9860e725037070c1fdf393ccf9a94ce980938f97980601e771cb64d02421c	OK	OK	height=9 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_EXACT_AFTER_FOLDED	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_NULL_MEMBER	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
-R	O_BLOCK_EMPTY_ARRAY	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
+R	O_BLOCK_EMPTY	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_ZERO_HEIGHT	ok	Empty	3a924d2ff4e0c9ad0b10f1f37a9dab67fca737be349e9bbc4fb64b50ec1edc59	OK	OK	height=0 parent=00000000 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_OBSERVATION	ok	Observation	9aa6943a1d20bc586274cf2ee13a0dd9c848cf07f43c8ac0ad968cdca8df05ee	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0 att=0
+R	O_BLOCK_OBSERVATION_TWO	ok	Observationx2	8265e2452a8a7a205d80d09a6a5f40c8577b2ed6d13b01f2b1853054fea5fe4d	OK	OK	height=1 parent=07070707 obs=2 agg=0 feeds=0 att=0
+R	O_BLOCK_AGGREGATION	ok	Aggregation	6de91b599930865d61f5ead04ad1ecfdbb616b6c41ecd4a2bae89c85da59c6c8	OK	OK	height=2 parent=07070707 obs=0 agg=1 feeds=0 att=0
+R	O_BLOCK_FEED_UPDATE	ok	FeedUpdate	4f9745e16a62c2d12efefb504f12d5a1edbe36e469b2d3ee6855adaffc002a18	OK	OK	height=3 parent=07070707 obs=0 agg=0 feeds=1 att=0
+R	O_BLOCK_ATTESTATION	ok	Attestation	118fee84d5823374b2db4fc7b594d4ba2d9d508802acd1001da0397c41ec943e	OK	OK	height=5 parent=07070707 obs=0 agg=0 feeds=0 att=1
+R	O_BLOCK_ATTESTATION_BARE	ok	Attestation	0766f78aef20cb7b986a95e614b5c944ca844540d9bcc75d9d840589f43f6f87	OK	OK	height=5 parent=07070707 obs=0 agg=0 feeds=0 att=1
+R	O_BLOCK_ATTESTATION_TWO	ok	Attestationx2	cb75b59d77134a425af3c732b0f3546af94221bef5e745031bc74ae2925f92f5	OK	OK	height=5 parent=07070707 obs=0 agg=0 feeds=0 att=2
+R	O_BLOCK_MIXED	ok	Observation+Aggregation+FeedUpdate	45ff9d6a1167368bd213cb5386da22a681ff4b074f90d9384b142a8a055a1e1d	OK	OK	height=4 parent=07070707 obs=1 agg=1 feeds=1 att=0
+R	O_BLOCK_AGG_PROOFS	ok	Aggregation	7210c83b9d8aa42bbb0189152087dcbea9d33bcce55d4d15ed48438a6164b7e6	OK	OK	height=2 parent=07070707 obs=0 agg=1 feeds=0 att=0
+R	O_BLOCK_AGG_EMPTY_PROOF	ok	Aggregation	97711d7b3eb143a1a55aa3219c4afec6852a8d25512ba62fe4d7e1dfa94c4a22	OK	OK	height=2 parent=07070707 obs=0 agg=1 feeds=0 att=0
+R	O_BLOCK_FEED_RICH	ok	FeedUpdate	1314ac239366504e5cd1f11cb04dd3993a4fb0bfabecd589e81c79669bf6c7aa	OK	OK	height=3 parent=07070707 obs=0 agg=0 feeds=1 att=0
+R	O_BLOCK_OBS_NULL_VALUE	ok	Observation	572a2608f518a1d7727face961e83f812cda35c1d68d06432daa01e259de4c49	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0 att=0
+R	O_BLOCK_OBS_EMPTY_VALUE	ok	Observation	ad28e4ca534dda53ef70dc4ccfad83336330132ad8d6096ea03abebd22f4d6b3	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0 att=0
+R	O_BLOCK_SOURCEMETA_SHORT	ok	Observation	067b8ab2d3b7629901a6aa55d869954b49499aefcd3c04eb8aad9c0bfce952d3	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0 att=0
+R	O_BLOCK_SOURCEMETA_LONG	ok	Observation	9aa6943a1d20bc586274cf2ee13a0dd9c848cf07f43c8ac0ad968cdca8df05ee	OK	OK	height=1 parent=07070707 obs=1 agg=0 feeds=0 att=0
+R	O_BLOCK_ID_SET	ok	Empty	c94f957b3d4f04f89d6764de70790e7fc4268318a588e29f9cd200a37543dfa5	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_NATIVE_PARENT	ok	Empty	f3fd52b9a7492912550169ae23d75feaf82ce64300e12dddadbddca3b72d50f6	OK	OK	height=1 parent=00000000 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_TIME_HALF_SECOND	ok	Empty	683a9fbe3db127b0862ea832e89c82cab5ba8d6996f2f8d6222a441b343899ce	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_TIME_NANO	ok	Empty	507565895a4911d056c7aa4c65f4926889def1c5c27e1eeb6ee5701dad663620	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_TIME_OFFSET	ok	Empty	e2e9bed24b74792dd02a948e30309b411494002940593858bb6ed3a9b866a7e9	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_UNKNOWN_MEMBER	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_DUPLICATE_HEIGHT_FIRST	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_DUPLICATE_HEIGHT_LAST	ok	Empty	acd9860e725037070c1fdf393ccf9a94ce980938f97980601e771cb64d02421c	OK	OK	height=9 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_FOLDED_MEMBER	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_FOLDED_AFTER_EXACT	ok	Empty	acd9860e725037070c1fdf393ccf9a94ce980938f97980601e771cb64d02421c	OK	OK	height=9 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_EXACT_AFTER_FOLDED	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_NULL_MEMBER	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
+R	O_BLOCK_EMPTY_ARRAY	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0 att=0
 R	O_BLOCK_HEIGHT_FLOAT	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number 1.0 into Go struct field Block.height of type uint64
 R	O_BLOCK_HEIGHT_EXPONENT	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number 1e2 into Go struct field Block.height of type uint64
 R	O_BLOCK_HEIGHT_NEGATIVE	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number -1 into Go struct field Block.height of type uint64
-R	O_BLOCK_HEIGHT_MAX	ok	Empty	16fff4644f339e4a62a0b9448875ef6a81251e61849c7c4995f0446e738f7f90	OK	OK	height=18446744073709551615 parent=07070707 obs=0 agg=0 feeds=0
+R	O_BLOCK_HEIGHT_MAX	ok	Empty	16fff4644f339e4a62a0b9448875ef6a81251e61849c7c4995f0446e738f7f90	OK	OK	height=18446744073709551615 parent=07070707 obs=0 agg=0 feeds=0 att=0
 R	O_BLOCK_HEIGHT_OVER_MAX	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number 18446744073709551616 into Go struct field Block.height of type uint64
 R	O_BLOCK_SCHEME_OVER_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number 256 into Go struct field Observation.observations.scheme of type profile.Scheme
 R	O_BLOCK_PARENT_BAD_CHECKSUM	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't decode ID to bytes: invalid input checksum
@@ -832,6 +835,21 @@ R	O_BLOCK_FEED_UPDATE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected en
 R	O_BLOCK_FEED_UPDATE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
 R	O_BLOCK_FEED_UPDATE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
 R	O_BLOCK_FEED_UPDATE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
+R	O_BLOCK_ATTESTATION_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_ATTESTATION_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_ATTESTATION_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_ATTESTATION_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
+R	O_BLOCK_ATTESTATION_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
+R	O_BLOCK_ATTESTATION_BARE_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_ATTESTATION_BARE_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_ATTESTATION_BARE_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_ATTESTATION_BARE_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
+R	O_BLOCK_ATTESTATION_BARE_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
+R	O_BLOCK_ATTESTATION_TWO_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_ATTESTATION_TWO_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_ATTESTATION_TWO_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_ATTESTATION_TWO_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
+R	O_BLOCK_ATTESTATION_TWO_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
 R	O_BLOCK_MIXED_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
 R	O_BLOCK_MIXED_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
 R	O_BLOCK_MIXED_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input

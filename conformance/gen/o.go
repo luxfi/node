@@ -64,6 +64,7 @@ import (
 	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
+	"github.com/luxfi/node/vms/artifacts"
 	oracle "github.com/luxfi/oracle/vm"
 	"github.com/luxfi/runtime"
 	luxvm "github.com/luxfi/vm"
@@ -158,6 +159,12 @@ func oFeedRecord(feed ids.ID, name string) *oraclevm.Feed {
 func oBlockWire(parent ids.ID, height uint64, ts time.Time,
 	obs []*oraclevm.Observation, agg []*oraclevm.AggregatedValue,
 	feeds []*oraclevm.Feed) []byte {
+	return oBlockWithAttestations(parent, height, ts, obs, agg, feeds, nil)
+}
+
+func oBlockWithAttestations(parent ids.ID, height uint64, ts time.Time,
+	obs []*oraclevm.Observation, agg []*oraclevm.AggregatedValue,
+	feeds []*oraclevm.Feed, att []*artifacts.OracleAttestation) []byte {
 	b := &oraclevm.Block{
 		ID_:          ids.Empty,
 		ParentID_:    parent,
@@ -166,6 +173,7 @@ func oBlockWire(parent ids.ID, height uint64, ts time.Time,
 		Observations: obs,
 		Aggregations: agg,
 		FeedUpdates:  feeds,
+		Attestations: att,
 	}
 	w, err := json.Marshal(b)
 	must(err)
@@ -223,6 +231,20 @@ func oVectors() []Vector {
 		vec("O_BLOCK_FEED_UPDATE", "O", "block",
 			oBlockWire(oParent(), 3, oTime(1000, 0), nil, nil,
 				[]*oraclevm.Feed{feed})),
+		// The artifact this chain hands the X-chain, carried in a block. The
+		// pair is the omitempty rule read twice: the byte slices are written
+		// on the first and gone on the second, and the fixed array is written
+		// on both.
+		vec("O_BLOCK_ATTESTATION", "O", "block",
+			oBlockWithAttestations(oParent(), 5, oTime(1000, 0), nil, nil, nil,
+				[]*artifacts.OracleAttestation{oAttestation(0x90, 8, 16, 24)})),
+		vec("O_BLOCK_ATTESTATION_BARE", "O", "block",
+			oBlockWithAttestations(oParent(), 5, oTime(1000, 0), nil, nil, nil,
+				[]*artifacts.OracleAttestation{oAttestation(0x90, 0, 0, 0)})),
+		vec("O_BLOCK_ATTESTATION_TWO", "O", "block",
+			oBlockWithAttestations(oParent(), 5, oTime(1000, 0), nil, nil, nil,
+				[]*artifacts.OracleAttestation{oAttestation(0x90, 8, 16, 24), oAttestation(0xA0, 4, 0, 0)})),
+
 		vec("O_BLOCK_MIXED", "O", "block",
 			oBlockWire(oParent(), 4, oTime(1000, 0),
 				[]*oraclevm.Observation{obs1},
@@ -381,6 +403,32 @@ func oHeight(wire []byte, literal string) []byte {
 		panic("the height member is not written as these vectors assume")
 	}
 	return []byte(strings.Replace(s, `"height":1,`, `"height":`+literal+`,`, 1))
+}
+
+// oAttestation is the artifact an O-chain hands the X-chain: the aggregated
+// value for one feed and epoch, with the window it is good for.
+//
+// `ValueCommitment` carries `omitempty` and is a [32]byte, and omitempty does
+// NOTHING to a Go array — an array has no empty form — so it is written on
+// every attestation, all zeros included, while the three byte SLICES beside it
+// vanish when they are empty. The two rules sit in adjacent fields and only
+// one of them fires.
+func oAttestation(seed byte, value, proof, cert int) *artifacts.OracleAttestation {
+	a := &artifacts.OracleAttestation{
+		Version_:  1,
+		SigSuite_: 1,
+		DomainID_: id(0x0A),
+		FeedID:    oFeed(),
+		Epoch:     7,
+		Value:     oBytes(seed, value),
+		AggProof:  oBytes(seed+1, proof),
+		QuorumCert: oBytes(seed+2, cert),
+		ValidFrom: oTime(1000, 0),
+		ValidTo:   oTime(2000, 0),
+	}
+	copy(a.ValueCommitment[:], oBytes(seed+3, 32))
+	copy(a.PolicyHash[:], oBytes(seed+4, 32))
+	return a
 }
 
 // oProved is an aggregation carrying the two proofs that are omitempty: with
@@ -707,6 +755,9 @@ func oAssert(v []Vector) {
 	// omitempty writes the proofs that carry bytes and omits the empty ones,
 	// so the two aggregation blocks are two different blocks.
 	differ("O_BLOCK_AGG_PROOFS", "O_BLOCK_AGG_EMPTY_PROOF")
+	// omitempty empties the three byte slices of an attestation and does
+	// NOTHING to its fixed array, so the two attestation blocks differ.
+	differ("O_BLOCK_ATTESTATION", "O_BLOCK_ATTESTATION_BARE")
 	// A nil []byte and an empty one are `null` and `""`, and not one block.
 	differ("O_BLOCK_OBS_NULL_VALUE", "O_BLOCK_OBS_EMPTY_VALUE")
 	// A short fixed-array list zero-fills what it did not reach, and a long
@@ -922,9 +973,9 @@ func evalOBlock(v Vector) Result {
 	}
 	r.Syntactic = VOK
 	r.Exec = VOK
-	r.Note = fmt.Sprintf("height=%d parent=%s obs=%d agg=%d feeds=%d",
+	r.Note = fmt.Sprintf("height=%d parent=%s obs=%d agg=%d feeds=%d att=%d",
 		ob.Height_, shortID(ob.ParentID_), len(ob.Observations),
-		len(ob.Aggregations), len(ob.FeedUpdates))
+		len(ob.Aggregations), len(ob.FeedUpdates), len(ob.Attestations))
 	return r
 }
 
@@ -946,6 +997,7 @@ func oKindName(b *oraclevm.Block) string {
 	add("Observation", len(b.Observations))
 	add("Aggregation", len(b.Aggregations))
 	add("FeedUpdate", len(b.FeedUpdates))
+	add("Attestation", len(b.Attestations))
 	if len(parts) == 0 {
 		return "Empty"
 	}

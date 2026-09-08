@@ -25,9 +25,12 @@
 // naming debt: the right home is a shared one, and moving them is a rename
 // across fifteen of that chain's files.
 //
-// NOT MODELLED. A block may carry a list of OracleAttestation and this port
-// does not model one; no vector in the corpus carries one, and a block that
-// did is refused here rather than silently re-marshalled without them.
+// THE ATTESTATION'S TWO ADJACENT RULES. OracleAttestation is the artifact the
+// O-chain hands the X-chain, and a block may carry a list of them. Its
+// `valueCommitment` is a [32]byte tagged omitempty, and omitempty does NOTHING
+// to a Go array — an array has no empty form — so it is written on every
+// attestation, all zeros included, while the three byte SLICES beside it
+// vanish when they are empty. Two rules in adjacent fields and only one fires.
 
 #pragma once
 
@@ -101,6 +104,24 @@ struct Feed {
     bool admits(const NodeId& op) const;
 };
 
+struct Attestation {
+    std::uint32_t version = 0;
+    std::uint8_t sig_suite = 0;
+    Id domain_id{};
+    Id feed_id{};
+    std::uint64_t epoch = 0;
+    Slice value;
+    std::array<std::uint8_t, 32> value_commitment{};
+    Slice agg_proof;
+    Slice quorum_cert;
+    Time valid_from;
+    Time valid_to;
+    std::array<std::uint8_t, 32> policy_hash{};
+
+    static bool read(const json::Value& v, Attestation* out, std::string* err);
+    void write(json::Writer* w) const;
+};
+
 struct Block {
     Id id{};
     Id parent_id{};
@@ -109,6 +130,7 @@ struct Block {
     std::optional<std::vector<Observation>> observations;
     std::optional<std::vector<AggregatedValue>> aggregations;
     std::optional<std::vector<Feed>> feed_updates;
+    std::optional<std::vector<Attestation>> attestations;
 
     static bool read(const json::Value& v, Block* out, std::string* err);
     // The bytes Marshal writes. omitempty is spelled out rather than

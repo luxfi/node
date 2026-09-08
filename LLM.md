@@ -171,7 +171,7 @@ and the fourth's silence would read as a pass.
 Q, Z, D and F from `luxfi/chains`, and O from `luxfi/oracle`, which had no
 vector at all until they were added, which is the same shape the P-chain fork
 hid in. All three columns now answer all seven, and every compared field of all
-942 vectors agrees.
+960 vectors agrees.
 
 O was added last and taught three things before a line of either port was
 written. `chains/oraclevm` is 213 lines and is NOT the chain: it re-exports
