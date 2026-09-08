@@ -184,27 +184,19 @@ func (t *rnsTransport) Dial(ctx context.Context, destination [endpoints.RNSDesti
 
 // dialLink creates a new RNS link to the destination.
 func (t *rnsTransport) dialLink(ctx context.Context, destination [endpoints.RNSDestinationLen]byte) (*rnsConn, error) {
-	// Look up destination in announce table
-	announce := t.announcer.Lookup(destination)
+	// The announce TABLE is what carries a destination's transport address; the
+	// announcement itself does not have one. LookupEntry reads that table.
+	entry, err := t.announcer.LookupEntry(destination)
 	var transportAddr netip.AddrPort
-	if announce == nil {
+	if err != nil {
 		// Destination unknown - try gateway if configured
 		if t.config.GatewayAddr == "" {
 			return nil, fmt.Errorf("%w: %s", ErrDestinationUnknown, destinationHex(destination))
 		}
 		// Use gateway for routing
 		transportAddr = parseAddrPort(t.config.GatewayAddr)
-	} else {
-		// Use transport address from announcement if available
-		entry := &AnnounceEntry{
-			Destination: announce.Destination,
-			SigningKey:  announce.Ed25519PubKey[:],
-			ExchangeKey: announce.X25519PubKey,
-			Hops:        announce.Hops,
-		}
-		if entry.TransportAddr.IsValid() {
-			transportAddr = entry.TransportAddr
-		}
+	} else if entry.TransportAddr.IsValid() {
+		transportAddr = entry.TransportAddr
 	}
 
 	// Establish TCP connection to transport address

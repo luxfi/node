@@ -1920,9 +1920,6 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 
 	// Router
 	// 	routerHealthCfg, err := getRouterHealthConfig(v, healthCheckAveragerHalflife)
-	if err != nil {
-		return node.Config{}, err
-	}
 	// 	// Convert RouterHealthConfig to node.HealthConfig
 	// 	nodeConfig.RouterHealthConfig = node.HealthConfig{
 	// 		MaxTimeSinceMsgReceived: routerHealthCfg.MaxOutstandingDuration,
@@ -2094,9 +2091,6 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// 	cpuTargeterCfg, err := getCPUTargeterConfig(v)
-	if err != nil {
-		return node.Config{}, err
-	}
 	// Convert TrackerTargeterConfig to node.TargeterConfig
 	// 	nodeConfig.CPUTargeterConfig = node.TargeterConfig{
 	// 		VdrAlloc:           cpuTargeterCfg.VdrAlloc,
@@ -2105,9 +2099,6 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	// 	}
 
 	// 	diskTargeterCfg, err := getDiskTargeterConfig(v)
-	if err != nil {
-		return node.Config{}, err
-	}
 	// Convert TrackerTargeterConfig to node.TargeterConfig
 	// 	nodeConfig.DiskTargeterConfig = node.TargeterConfig{
 	// 		VdrAlloc:           diskTargeterCfg.VdrAlloc,

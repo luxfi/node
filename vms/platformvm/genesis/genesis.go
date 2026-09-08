@@ -6,7 +6,6 @@ package genesis
 import (
 	"cmp"
 	"errors"
-	"fmt"
 
 	"github.com/luxfi/address"
 	"github.com/luxfi/constants"
@@ -189,9 +188,6 @@ func New(
 				Locktime:        allocation.Locktime,
 				TransferableOut: utxo.Out.(lux.TransferableOut),
 			}
-		}
-		if err != nil {
-			return nil, fmt.Errorf("problem decoding UTXO message bytes: %w", err)
 		}
 		utxos = append(utxos, &UTXO{
 			UTXO:    utxo,
