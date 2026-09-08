@@ -72,7 +72,10 @@ func run(args []string) int {
 	}
 
 	// Bump file descriptor limit early; node + its plugins open many sockets.
-	if err := ulimit.Set(ulimit.DefaultFDLimit, logger); err != nil {
+	// The number is --fd-limit, which carries the default when nobody set it.
+	// Reading the constant here instead left the flag, its documentation and
+	// the three profiles that set it with nothing to act on.
+	if err := ulimit.Set(cfg.FdLimit, logger); err != nil {
 		logger.Error("failed to set fd limit", "error", err)
 		return 1
 	}
