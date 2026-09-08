@@ -1,0 +1,14 @@
+[
+ {"name":"state commit (merkle view, 1000 kv)","bench":"^BenchmarkCommitView$/apply","iters":2000,"rounds":7,
+  "builds":[["node","/tmp/bin_node_merkledb"],["v1","/tmp/bin_v1_merkledb"],["ava","/tmp/bin_ava_merkledb"]]},
+ {"name":"bls proof of possession verify","bench":"^BenchmarkProofOfPossessionVerify$","iters":1500,"rounds":7,
+  "builds":[["node","/tmp/bin_node_vms_platformvm_signer"],["v1","/tmp/bin_v1_vms_platformvm_signer"],["ava","/tmp/bin_ava_vms_platformvm_signer"]]},
+ {"name":"utxo read, 100 utxos","bench":"^BenchmarkGetUTXOs$/^100$","iters":10000,"rounds":7,
+  "builds":[["node","/tmp/bin_node_vms_xvm"],["v1","/tmp/bin_v1_vms_xvm"],["ava","/tmp/bin_ava_vms_avm"]]},
+ {"name":"utxo read, 10k utxos","bench":"^BenchmarkGetUTXOs$/^10k$","iters":40,"rounds":7,
+  "builds":[["node","/tmp/bin_node_vms_xvm"],["v1","/tmp/bin_v1_vms_xvm"],["ava","/tmp/bin_ava_vms_avm"]]},
+ {"name":"handshake marshal","bench":"^BenchmarkMarshalHandshake$","iters":1000000,"rounds":7,
+  "builds":[["node","/tmp/bin_node_message"],["v1","/tmp/bin_v1_message"],["ava","/tmp/bin_ava_message"]]},
+ {"name":"compress 1 MiB zstd","bench":"^BenchmarkCompress$/^zstd_1048576$","iters":200,"rounds":7,
+  "builds":[["node","/tmp/bin_node_utils_compression"],["v1","/tmp/bin_v1_utils_compression"],["ava","/tmp/bin_ava_utils_compression"]]}
+]

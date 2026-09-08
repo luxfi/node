@@ -1,0 +1,162 @@
+
+===== state commit (merkle view, 1000 kv)  bench=^BenchmarkCommitView$/apply  iters=2000x  rounds=7
+  round1 load=  46.69 node  exit=0       467655.0 ns/op  iters=2000 wall=0.9s
+  round1 load=  46.69 v1    exit=0       418452.0 ns/op  iters=2000 wall=0.9s
+  round1 load=  46.69 ava   exit=0       463249.0 ns/op  iters=2000 wall=1.0s
+  round2 load=  47.20 node  exit=0       452213.0 ns/op  iters=2000 wall=0.9s
+  round2 load=  47.20 v1    exit=0       428899.0 ns/op  iters=2000 wall=0.9s
+  round2 load=  47.20 ava   exit=0       450465.0 ns/op  iters=2000 wall=0.9s
+  round3 load=  47.20 node  exit=0       409129.0 ns/op  iters=2000 wall=0.8s
+  round3 load=  47.20 v1    exit=0       448716.0 ns/op  iters=2000 wall=0.9s
+  round3 load=  47.20 ava   exit=0       564589.0 ns/op  iters=2000 wall=1.1s
+  round4 load=  45.98 node  exit=0       405481.0 ns/op  iters=2000 wall=0.8s
+  round4 load=  45.98 v1    exit=0       412169.0 ns/op  iters=2000 wall=0.8s
+  round4 load=  45.98 ava   exit=0       475650.0 ns/op  iters=2000 wall=1.0s
+  round5 load=  46.38 node  exit=0       428242.0 ns/op  iters=2000 wall=0.9s
+  round5 load=  46.38 v1    exit=0       440515.0 ns/op  iters=2000 wall=0.9s
+  round5 load=  46.38 ava   exit=0       485511.0 ns/op  iters=2000 wall=1.0s
+  round6 load=  46.99 node  exit=0       471278.0 ns/op  iters=2000 wall=1.0s
+  round6 load=  46.99 v1    exit=0       414158.0 ns/op  iters=2000 wall=0.8s
+  round6 load=  46.99 ava   exit=0       465292.0 ns/op  iters=2000 wall=0.9s
+  round7 load=  48.28 node  exit=0       430876.0 ns/op  iters=2000 wall=0.9s
+  round7 load=  48.28 v1    exit=0       460527.0 ns/op  iters=2000 wall=0.9s
+  round7 load=  48.28 ava   exit=0       553813.0 ns/op  iters=2000 wall=1.1s
+  --- state commit (merkle view, 1000 kv)
+  node  median       430876.0  min       405481.0  max       471278.0  runs=7  iters/run=2000
+  v1    median       428899.0  min       412169.0  max       460527.0  runs=7  iters/run=2000
+  ava   median       475650.0  min       450465.0  max       564589.0  runs=7  iters/run=2000
+
+===== bls proof of possession verify  bench=^BenchmarkProofOfPossessionVerify$  iters=1500x  rounds=7
+  round1 load=  48.28 node  exit=0       673899.0 ns/op  iters=1500 wall=1.0s
+  round1 load=  48.28 v1    exit=0       683316.0 ns/op  iters=1500 wall=1.1s
+  round1 load=  48.28 ava   exit=0       667176.0 ns/op  iters=1500 wall=1.0s
+  round2 load=  48.01 node  exit=0       642926.0 ns/op  iters=1500 wall=1.0s
+  round2 load=  48.01 v1    exit=0       685481.0 ns/op  iters=1500 wall=1.0s
+  round2 load=  48.01 ava   exit=0       655126.0 ns/op  iters=1500 wall=1.0s
+  round3 load=  47.29 node  exit=0       630978.0 ns/op  iters=1500 wall=1.0s
+  round3 load=  47.29 v1    exit=0       657817.0 ns/op  iters=1500 wall=1.9s
+  round3 load=  47.29 ava   exit=0       631660.0 ns/op  iters=1500 wall=1.0s
+  round4 load=  46.15 node  exit=0       638689.0 ns/op  iters=1500 wall=1.0s
+  round4 load=  46.15 v1    exit=0       652586.0 ns/op  iters=1500 wall=1.0s
+  round4 load=  46.15 ava   exit=0       672665.0 ns/op  iters=1500 wall=1.0s
+  round5 load=  46.15 node  exit=0       654482.0 ns/op  iters=1500 wall=1.0s
+  round5 load=  46.15 v1    exit=0       775945.0 ns/op  iters=1500 wall=1.2s
+  round5 load=  46.15 ava   exit=0       683498.0 ns/op  iters=1500 wall=1.0s
+  round6 load=  44.61 node  exit=0       654085.0 ns/op  iters=1500 wall=1.0s
+  round6 load=  44.61 v1    exit=0       650505.0 ns/op  iters=1500 wall=1.0s
+  round6 load=  44.61 ava   exit=0       656219.0 ns/op  iters=1500 wall=1.0s
+  round7 load=  44.48 node  exit=0       637476.0 ns/op  iters=1500 wall=1.0s
+  round7 load=  44.48 v1    exit=0       639168.0 ns/op  iters=1500 wall=1.0s
+  round7 load=  44.48 ava   exit=0       672698.0 ns/op  iters=1500 wall=1.0s
+  --- bls proof of possession verify
+  node  median       642926.0  min       630978.0  max       673899.0  runs=7  iters/run=1500
+  v1    median       657817.0  min       639168.0  max       775945.0  runs=7  iters/run=1500
+  ava   median       667176.0  min       631660.0  max       683498.0  runs=7  iters/run=1500
+
+===== utxo read, 100 utxos  bench=^BenchmarkGetUTXOs$/^100$  iters=10000x  rounds=7
+  round1 load=  44.48 node  exit=0        48365.0 ns/op  iters=10000 wall=0.5s
+  round1 load=  44.48 v1    exit=0        48777.0 ns/op  iters=10000 wall=0.8s
+  round1 load=  44.48 ava   exit=0        53822.0 ns/op  iters=10000 wall=0.6s
+  round2 load=  43.56 node  exit=0        52297.0 ns/op  iters=10000 wall=0.5s
+  round2 load=  43.56 v1    exit=0        48283.0 ns/op  iters=10000 wall=0.5s
+  round2 load=  43.56 ava   exit=0        42022.0 ns/op  iters=10000 wall=0.4s
+  round3 load=  43.56 node  exit=0        45559.0 ns/op  iters=10000 wall=0.5s
+  round3 load=  43.56 v1    exit=0        47600.0 ns/op  iters=10000 wall=0.5s
+  round3 load=  43.56 ava   exit=0        41989.0 ns/op  iters=10000 wall=0.4s
+  round4 load=  42.08 node  exit=0        48029.0 ns/op  iters=10000 wall=0.5s
+  round4 load=  42.08 v1    exit=0        49638.0 ns/op  iters=10000 wall=0.5s
+  round4 load=  42.08 ava   exit=0        44187.0 ns/op  iters=10000 wall=0.5s
+  round5 load=  42.08 node  exit=0        46429.0 ns/op  iters=10000 wall=0.5s
+  round5 load=  42.08 v1    exit=0        46704.0 ns/op  iters=10000 wall=0.5s
+  round5 load=  42.08 ava   exit=0        41104.0 ns/op  iters=10000 wall=0.4s
+  round6 load=  42.08 node  exit=0        46462.0 ns/op  iters=10000 wall=0.5s
+  round6 load=  42.08 v1    exit=0        47513.0 ns/op  iters=10000 wall=0.5s
+  round6 load=  42.08 ava   exit=0        40773.0 ns/op  iters=10000 wall=0.4s
+  round7 load=  42.08 node  exit=0        46655.0 ns/op  iters=10000 wall=0.5s
+  round7 load=  42.08 v1    exit=0        46784.0 ns/op  iters=10000 wall=0.5s
+  round7 load=  42.08 ava   exit=0        41951.0 ns/op  iters=10000 wall=0.4s
+  --- utxo read, 100 utxos
+  node  median        46655.0  min        45559.0  max        52297.0  runs=7  iters/run=10000
+  v1    median        47600.0  min        46704.0  max        49638.0  runs=7  iters/run=10000
+  ava   median        41989.0  min        40773.0  max        53822.0  runs=7  iters/run=10000
+
+===== utxo read, 10k utxos  bench=^BenchmarkGetUTXOs$/^10k$  iters=40x  rounds=7
+  round1 load=  43.75 node  exit=0     39914694.0 ns/op  iters=40 wall=2.1s
+  round1 load=  43.75 v1    exit=0     24041768.0 ns/op  iters=40 wall=1.1s
+  round1 load=  43.75 ava   exit=0     32207144.0 ns/op  iters=40 wall=1.5s
+  round2 load=  43.69 node  exit=0     56003296.0 ns/op  iters=40 wall=2.4s
+  round2 load=  43.69 v1    exit=0     40558216.0 ns/op  iters=40 wall=1.8s
+  round2 load=  43.69 ava   exit=0     30753836.0 ns/op  iters=40 wall=1.4s
+  round3 load=  42.80 node  exit=0     23863600.0 ns/op  iters=40 wall=1.1s
+  round3 load=  42.80 v1    exit=0     22732807.0 ns/op  iters=40 wall=1.1s
+  round3 load=  42.80 ava   exit=0     30152617.0 ns/op  iters=40 wall=1.4s
+  round4 load=  43.53 node  exit=0     20384390.0 ns/op  iters=40 wall=1.0s
+  round4 load=  43.53 v1    exit=0     21466193.0 ns/op  iters=40 wall=1.0s
+  round4 load=  43.53 ava   exit=0     30129777.0 ns/op  iters=40 wall=1.4s
+  round5 load=  43.53 node  exit=0     22845896.0 ns/op  iters=40 wall=1.1s
+  round5 load=  43.53 v1    exit=0     21938222.0 ns/op  iters=40 wall=1.0s
+  round5 load=  43.53 ava   exit=0     29072714.0 ns/op  iters=40 wall=1.3s
+  round6 load=  42.05 node  exit=0     21660023.0 ns/op  iters=40 wall=1.0s
+  round6 load=  42.05 v1    exit=0     22402893.0 ns/op  iters=40 wall=1.0s
+  round6 load=  42.05 ava   exit=0     30366688.0 ns/op  iters=40 wall=1.4s
+  round7 load=  41.66 node  exit=0     22395495.0 ns/op  iters=40 wall=1.0s
+  round7 load=  41.66 v1    exit=0     21907346.0 ns/op  iters=40 wall=1.0s
+  round7 load=  41.66 ava   exit=0     30952901.0 ns/op  iters=40 wall=1.4s
+  --- utxo read, 10k utxos
+  node  median     22845896.0  min     20384390.0  max     56003296.0  runs=7  iters/run=40
+  v1    median     22402893.0  min     21466193.0  max     40558216.0  runs=7  iters/run=40
+  ava   median     30366688.0  min     29072714.0  max     32207144.0  runs=7  iters/run=40
+
+===== handshake marshal  bench=^BenchmarkMarshalHandshake$  iters=1000000x  rounds=7
+  round1 load=  41.66 node  exit=0          634.9 ns/op  iters=1000000 wall=0.6s
+  round1 load=  41.66 v1    exit=0          585.5 ns/op  iters=1000000 wall=0.6s
+  round1 load=  41.66 ava   exit=0          389.9 ns/op  iters=1000000 wall=0.8s
+  round2 load=  39.93 node  exit=0          618.4 ns/op  iters=1000000 wall=0.6s
+  round2 load=  39.93 v1    exit=0          603.0 ns/op  iters=1000000 wall=0.6s
+  round2 load=  39.93 ava   exit=0          480.4 ns/op  iters=1000000 wall=0.5s
+  round3 load=  39.93 node  exit=0          587.0 ns/op  iters=1000000 wall=0.6s
+  round3 load=  39.93 v1    exit=0          587.9 ns/op  iters=1000000 wall=0.6s
+  round3 load=  39.93 ava   exit=0          403.5 ns/op  iters=1000000 wall=0.4s
+  round4 load=  39.93 node  exit=0          581.2 ns/op  iters=1000000 wall=0.6s
+  round4 load=  39.93 v1    exit=0          591.2 ns/op  iters=1000000 wall=0.6s
+  round4 load=  39.93 ava   exit=0          383.2 ns/op  iters=1000000 wall=0.4s
+  round5 load=  38.41 node  exit=0          658.2 ns/op  iters=1000000 wall=0.7s
+  round5 load=  38.41 v1    exit=0          687.0 ns/op  iters=1000000 wall=0.7s
+  round5 load=  38.41 ava   exit=0          384.5 ns/op  iters=1000000 wall=0.4s
+  round6 load=  38.41 node  exit=0          664.6 ns/op  iters=1000000 wall=0.7s
+  round6 load=  38.41 v1    exit=0          588.2 ns/op  iters=1000000 wall=0.6s
+  round6 load=  38.41 ava   exit=0          403.8 ns/op  iters=1000000 wall=0.4s
+  round7 load=  37.26 node  exit=0          649.9 ns/op  iters=1000000 wall=0.7s
+  round7 load=  37.26 v1    exit=0          737.7 ns/op  iters=1000000 wall=0.7s
+  round7 load=  37.26 ava   exit=0          382.8 ns/op  iters=1000000 wall=0.4s
+  --- handshake marshal
+  node  median          634.9  min          581.2  max          664.6  runs=7  iters/run=1000000
+  v1    median          591.2  min          585.5  max          737.7  runs=7  iters/run=1000000
+  ava   median          389.9  min          382.8  max          480.4  runs=7  iters/run=1000000
+
+===== compress 1 MiB zstd  bench=^BenchmarkCompress$/^zstd_1048576$  iters=200x  rounds=7
+  round1 load=  37.32 node  exit=0      1707015.0 ns/op  iters=200 wall=0.4s
+  round1 load=  37.32 v1    exit=0      1372099.0 ns/op  iters=200 wall=0.3s
+  round1 load=  37.32 ava   exit=0      1495825.0 ns/op  iters=200 wall=0.3s
+  round2 load=  37.32 node  exit=0      1716814.0 ns/op  iters=200 wall=0.4s
+  round2 load=  37.32 v1    exit=0      1430449.0 ns/op  iters=200 wall=0.3s
+  round2 load=  37.32 ava   exit=0      1541738.0 ns/op  iters=200 wall=0.3s
+  round3 load=  37.32 node  exit=0      1369883.0 ns/op  iters=200 wall=0.3s
+  round3 load=  37.32 v1    exit=0      1405829.0 ns/op  iters=200 wall=0.3s
+  round3 load=  37.32 ava   exit=0      1462687.0 ns/op  iters=200 wall=0.3s
+  round4 load=  37.32 node  exit=0      1473724.0 ns/op  iters=200 wall=0.3s
+  round4 load=  37.32 v1    exit=0      1665725.0 ns/op  iters=200 wall=0.3s
+  round4 load=  37.32 ava   exit=0      1567578.0 ns/op  iters=200 wall=0.3s
+  round5 load=  38.17 node  exit=0      1700325.0 ns/op  iters=200 wall=0.4s
+  round5 load=  38.17 v1    exit=0      1541315.0 ns/op  iters=200 wall=0.3s
+  round5 load=  38.17 ava   exit=0      1506806.0 ns/op  iters=200 wall=0.3s
+  round6 load=  38.17 node  exit=0      1470321.0 ns/op  iters=200 wall=0.3s
+  round6 load=  38.17 v1    exit=0      1716538.0 ns/op  iters=200 wall=0.4s
+  round6 load=  38.17 ava   exit=0      1441129.0 ns/op  iters=200 wall=0.3s
+  round7 load=  38.17 node  exit=0      1629859.0 ns/op  iters=200 wall=0.3s
+  round7 load=  38.17 v1    exit=0      1628796.0 ns/op  iters=200 wall=0.3s
+  round7 load=  38.17 ava   exit=0      1431308.0 ns/op  iters=200 wall=0.3s
+  --- compress 1 MiB zstd
+  node  median      1629859.0  min      1369883.0  max      1716814.0  runs=7  iters/run=200
+  v1    median      1541315.0  min      1372099.0  max      1716538.0  runs=7  iters/run=200
+  ava   median      1495825.0  min      1431308.0  max      1567578.0  runs=7  iters/run=200
