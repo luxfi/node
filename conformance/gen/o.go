@@ -309,6 +309,17 @@ func oVectors() []Vector {
 		// exactly.
 		vec("O_BLOCK_FOLDED_MEMBER", "O", "block",
 			[]byte(strings.Replace(string(empty), `"height":`, `"HEIGHT":`, 1))),
+		// The exact name and the folded one, in the same object, with the
+		// FOLDED one last. Go's decoder walks the members in document order
+		// and decodes each one that resolves to the field, so exactness
+		// decides WHICH FIELD a name reaches and POSITION decides which value
+		// survives — a reader that preferred the exact member wherever it sat
+		// would keep 1 where the chain keeps 9. Nothing anywhere said which
+		// of those two rules the chain has until this vector asked.
+		vec("O_BLOCK_FOLDED_AFTER_EXACT", "O", "block",
+			oAppend(empty, `"HEIGHT":9`)),
+		vec("O_BLOCK_EXACT_AFTER_FOLDED", "O", "block",
+			oInsert(empty, `"HEIGHT":9,`)),
 		// null for a member leaves it at its zero value and is not an error.
 		vec("O_BLOCK_NULL_MEMBER", "O", "block",
 			oInsert(empty, `"observations":null,`)),
@@ -713,6 +724,10 @@ func oAssert(v []Vector) {
 	// A member name that matches only case-insensitively still reaches the
 	// field, so the block is unchanged.
 	same("O_BLOCK_EMPTY", "O_BLOCK_FOLDED_MEMBER")
+	// And position, not exactness, decides which of two names that both reach
+	// the field wins.
+	differ("O_BLOCK_EMPTY", "O_BLOCK_FOLDED_AFTER_EXACT")
+	same("O_BLOCK_EMPTY", "O_BLOCK_EXACT_AFTER_FOLDED")
 	// The native-chain parent must render through the alias table and NOT as
 	// CB58 — the alias carries no checksum, where every other id does — and it
 	// must read back as the id it names. Both halves are the vector: a port
