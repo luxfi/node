@@ -91,17 +91,13 @@ constexpr auto kPrices = std::to_array<Price>({
     {0x0000000000000000000000000000000000000008_address, "ecpairing", ecpairing_analyze},
     {0x0000000000000000000000000000000000000009_address, "blake2bf", blake2bf_analyze},
     {0x000000000000000000000000000000000000000a_address, "point_evaluation", point_evaluation_analyze},
-    // BLS12-381 on EIP-2537 as finalised: multiplication folded into the
-    // multi-exponentiation precompiles, and the two field maps at the top of
-    // the range. Seven addresses, 0x0b through 0x11, which is also where geth's
-    // Osaka table puts them.
-    {0x000000000000000000000000000000000000000b_address, "bls12_g1add", bls12_g1add_analyze},
-    {0x000000000000000000000000000000000000000c_address, "bls12_g1mul", bls12_g1mul_analyze},
-    {0x000000000000000000000000000000000000000d_address, "bls12_g1msm", bls12_g1msm_analyze},
-    {0x000000000000000000000000000000000000000e_address, "bls12_g2add", bls12_g2add_analyze},
-    {0x000000000000000000000000000000000000000f_address, "bls12_g2mul", bls12_g2mul_analyze},
-    {0x0000000000000000000000000000000000000010_address, "bls12_g2msm", bls12_g2msm_analyze},
-    {0x0000000000000000000000000000000000000011_address, "bls12_pairing_check", bls12_pairing_check_analyze},
+    // Nothing is priced at 0x0b through 0x11 either. EIP-2537 lands at Prague
+    // and the revision above is Cancun, so cevm dispatches nothing in that
+    // range and a price here would be exactly the disagreement check_table()
+    // exists to catch. cevm does carry the seven analyzers, on the finalised
+    // layout — g1add, g1msm, g2add, g2msm, pairing_check, and the two field
+    // maps at the top — and they become priceable the revision the C-Chain
+    // reaches Prague, not before.
     // Nothing is priced at 0x…0100 or at 0x0300…0003. cevm holds a p256verify
     // and an aivm body and the chain reaches neither: p256verify arrives at
     // Osaka, which is past the Cancun above, and aivm's aiInferenceConfig is
