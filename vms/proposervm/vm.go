@@ -989,7 +989,7 @@ func (vm *VM) repairAcceptedChainByHeight(ctx context.Context) error {
 		// needs an envelope; with no anchor at all that is the fork height itself
 		// (or 1 when the fork height is unrecorded).
 		from := uint64(1)
-		if forkErr == nil && forkHeight > 0 {
+		if forkHeight > 0 {
 			from = forkHeight
 		}
 		vm.logger.Warn("proposervm RECOVERY REQUIRED — inner accepted state exists but the outer "+
