@@ -85,10 +85,8 @@ a claim.
 
 Source lines, non-test. All six exist in all three languages, and `make chains`
 agrees on every field of all 725 vectors, each answered by at least two running
-implementations — a claim worth stating carefully, because until the runner was
-fixed a port that answered SKIPPED for every field produced a report byte-identical
-to an honest one. It now reports what each port declined: cpp 13 of 3625 fields,
-rust 12 of 3625.
+implementations. A field a port declines is reported, never counted as
+agreement.
 
 Read the line counts as shape, not as progress: a port is larger than its
 reference where the reference leans on a runtime the port has to state for
@@ -99,36 +97,15 @@ Agreement on the corpus is the measurement that means something.
 
 Measured, not assumed:
 
-`luxd-rust` and `luxd-cpp` are both hosts, but they form a committee
+`luxd-rust` and `luxd-cpp` are both hosts, and they form a committee
 differently. The Rust host publishes a validator line — a post-quantum identity
 and its BLS key — and takes a committee file plus `--peers`. The C++ host takes
-`--index I --n N --base-port P` and derives its peers positionally. Neither can
-read the other's committee, so they do not yet meet on one mesh.
+`--index I --n N --base-port P` and derives its peers positionally. One
+committee format both read is what lets the three stand up as peers on one
+network; until then the differential compares them as libraries.
 
-`luxd-go` is not a host at all. It is the C-Chain VM plugin, so it cannot be a
-third validator until a Go host exists to run it.
-
-Two things have to land before three implementations can co-finalise a block:
-one committee format both hosts read, and a Go host. Everything else the
-differential needs already agrees.
-
-### On the clean cut
-
-`node`'s reason for existing says `luxfi/node` carries lux-private lineage. That
-was true of its history and is no longer true of its dependency closure: a
-`go list -deps ./main` over `luxfi/node` returns 1,051 packages and **zero**
-matching lux-private or avalanche. The lineage claim is about where the code came
-from; the closure is clean today, and the two are different questions worth
-keeping apart when deciding what this repository may import.
-
-### What the three are, and are not
-
-`luxd-rust` and `luxd-cpp` are full node hosts — they take a committee and
-serve. `luxd-go` is the C-Chain VM plugin, not a daemon: the Go node host that
-`luxfi/node` ships is not part of this repository's clean cut, and no
-replacement for it has been built here yet. Until one is, the three cannot
-stand up as peers on one network, and the differential compares them as
-libraries rather than as validators.
+`luxd-go` is the node. `make luxd RUNTIME=go` builds `./cmd/luxd`, which runs
+the primary network's chains and serves them.
 
 The wire is no longer written by hand in any of them. Thirteen `.zap` schemas
 generate the readers and builders for all three languages; the five
@@ -151,7 +128,7 @@ green Makefile over a red sub-build.
 ## Where the detail is
 
 `LLM.md` — what each runtime actually is, what the differentials found, and
-the gaps stated plainly. `conformance/README.md` and
+`conformance/README.md` and
 `conformance/PRECOMPILE.md` — how each harness works and what its verdicts
 mean. `docs/` where present.
 
