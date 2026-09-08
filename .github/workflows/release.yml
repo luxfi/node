@@ -1,0 +1,320 @@
+name: Release
+
+# Builds ghcr.io/luxfi/node on the native runners (git.hanzo.ai → git-runner).
+#
+# This replaces .github/workflows/release.yml, which was the only thing pushing
+# this image and which ran on `runs-on: lux-build` — an ARC autoscaling runner
+# set that no longer exists. The cluster has no ARC CRDs, no ARC namespace and
+# no such pool, so every `v*` tag queued a job nothing could pick up: v1.36.38,
+# v1.36.39 and v1.36.41 all have git tags and no image. A tag that builds
+# nothing is worse than no tag, because the version number implies an artifact.
+#
+# A tag push vX.Y.Z is a release: the image carries the semver tags plus the sha
+# tag; a main push carries only the sha tag. The image must pass the smoke below
+# before it is allowed to exist at the registry, and the pushed manifest is
+# proven resolvable so a StatefulSet pin can never point at a phantom tag.
+#
+# ghcr auth: GHCR_USER / GHCR_TOKEN — org Actions secrets on this forge, sourced
+# from KMS. The same PAT is handed to BuildKit as the `ghtok` secret the
+# Dockerfile mounts for private go modules (lux-private/cevm).
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# A release is a tag. Only a tag.
+#
+# Building on branch pushes as well meant two runs raced to push layers for the same
+# image, and the registry answers the loser "unknown blob" — a job that exits 1 with
+# no image, indistinguishable from a build failure. Publishing from one tag-only
+# trigger removes that race. If a corrective tag supersedes a build still in flight,
+# cancel it so only the newest immutable release consumes the publisher. Branch
+# pushes are covered by ci.yml, which tests without publishing.
+# One release, one image. The group is keyed on the REF, not the repository:
+# a repo-wide group means pushing v1.36.173 cancels v1.36.172's build, and a
+# batch of tags leaves one image and a row of versions that promise an artifact
+# nobody can pull. Re-running the same tag still supersedes its own run.
+concurrency:
+  group: release-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: [lux-build-linux-amd64]
+    timeout-minutes: 60
+    env:
+      GOWORK: off
+      # GOEXPERIMENT is not set here: scripts/constants.sh picks it, so the
+      # release is verified with the experiments it is built with.
+      CGO_ENABLED: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go-for-project
+      - name: Test the exact release source
+        run: ./scripts/build_test.sh
+
+  build:
+    needs: verify
+    # One job per architecture, each on its own native pool. The lab runs both,
+    # so neither arch is emulated: the binary that ships for an arch was compiled
+    # AND smoke-tested on that arch. Emulating arm64 on an amd64 host would run
+    # the gates below against a QEMU translation of the binary, which answers a
+    # different question than "does this run on the machine it ships to".
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            pool: lux-build-linux-amd64
+          - arch: arm64
+            pool: lux-build-linux-arm64
+    runs-on: ['${{ matrix.pool }}']
+    # cevm (CGO), luxd, and twelve VM plugins. The long pole is cevm.
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute this arch's image name
+        id: meta
+        # A per-arch name, never a release name. The release names are a manifest
+        # list and only the merge job may write them: a tag that resolves to one
+        # architecture is worse than a tag that does not exist yet, because it
+        # pulls successfully on that arch and fails everywhere else.
+        run: |
+          set -euo pipefail
+          echo "image=ghcr.io/luxfi/node:sha-${GITHUB_SHA:0:7}-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+        # The daemon's built-in BuildKit, not a side container. The
+        # docker-container driver starts buildx_buildkit_* as a real container,
+        # and the runners refuse that start: the request carries GPU
+        # capabilities and the host has no such driver. Nothing here asks for a
+        # GPU — the driver does. The refusal lands while this step is still
+        # running and the step still reports success, so it surfaces one step
+        # later as a build that dies in seconds with no builder to explain it.
+        # Each job builds ONE platform, which is all the built-in driver
+        # serves. The manifest list that joins them is assembled from the
+        # registry by the merge job, which needs no builder at all.
+        with:
+          driver: docker
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USER }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Write the private-module token for BuildKit
+        # Stripped of trailing whitespace on purpose. The Dockerfile interpolates
+        # this into a URL:
+        #   git config url."https://x-access-token:$(cat /run/secrets/ghtok)@github.com/"
+        # so a single trailing newline in the stored secret truncates the URL at
+        # it, and git resolves the credential prefix as the HOST:
+        #   fatal: unable to access 'https://x-access-token:***@github.com/hanzoai/vfs/':
+        #     Could not resolve host: x-access-token
+        # That is what failed the first run of this workflow. The secret's exact
+        # bytes are not ours to control, so the trim happens here.
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' '${{ secrets.GHCR_TOKEN }}' | tr -d '\r\n' > "${RUNNER_TEMP}/ghtok"
+          if [ ! -s "${RUNNER_TEMP}/ghtok" ]; then
+            echo "::error::GHCR_TOKEN is empty — private module fetches will fail"
+            exit 1
+          fi
+
+      - name: Build (load for smoke, not yet pushed)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          secrets: |
+            ghtok=${{ runner.temp }}/ghtok
+          load: true
+          push: false
+          provenance: false
+          tags: ${{ steps.meta.outputs.image }}
+          # Provenance in the image itself, because the TAG has already lied. The
+          # image published as v1.36.47 stamps a commit whose tree does not contain
+          # a string the shipped binary carries, so "which tag is it" and "which code
+          # is in it" are separate questions and only the first was answerable without
+          # pulling the image. These make the second answerable from the registry
+          # alone — `docker buildx imagetools inspect` names the commit and ref the
+          # artifact was actually built from.
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
+            org.opencontainers.image.source=https://github.com/luxfi/node
+
+      - name: Smoke — luxd runs, and its plugins agree with it on luxfi/vm
+        # Two things this image has actually shipped broken, both invisible to a
+        # successful build:
+        #
+        # 1. v1.36.11 baked VM plugins compiled against a stale luxfi/api. The
+        #    node decoded a field the plugins never encoded, so EVERY EVM
+        #    Initialize failed and the image could not run any EVM chain. It was
+        #    published, rolled, and found in the field.
+        #
+        # 2. v1.36.35 shipped luxd on luxfi/vm v1.3.3 — the map-race fix — while
+        #    the C-Chain plugin, built from luxfi/evm, still carried v1.3.1. The
+        #    fixed binary was not the one verifying blocks, and testnet took the
+        #    `concurrent map writes` fatal five minutes after the roll.
+        #
+        # Both are a SKEW between luxd and the plugins baked beside it, which is
+        # checkable here from the two binaries themselves. A build that produces
+        # a disagreeing pair does not become an image.
+        run: |
+          set -euo pipefail
+          img="${{ steps.meta.outputs.image }}"
+
+          docker run --rm --entrypoint sh "$img" -c './luxd --version' | head -3
+          docker run --rm --entrypoint sh "$img" -c './repair-cchain --help >/dev/null'
+
+          # Every plugin id the Dockerfile NAMES must exist in the image. A count is
+          # not enough and a floor is worse: v1.36.140 named 13 ids and shipped 12,
+          # and a floor of 12 -- or a count compared against the final-stage COPY list,
+          # which was itself self-consistent at 12 -- calls that green. The id was built
+          # and then never crossed into the image. Only comparing the SET catches it.
+          want=$(grep -ohE '/luxd/build/plugins/[A-Za-z0-9]{40,}' Dockerfile | sed 's|.*/||' | sort -u)
+          have=$(docker run --rm --entrypoint sh "$img" -c 'ls -1 plugins' | sort -u)
+
+          # BOTH SIDES MUST BE NON-EMPTY. An empty `want` makes the loop below run
+          # zero times and the gate pass having compared nothing -- the same shape as
+          # the count it replaced, which was self-consistent at 12 while the image
+          # shipped 12 of 13. A grep that stops matching because the Dockerfile
+          # changed shape must fail the release, not bless it.
+          want_n=$(echo "$want" | grep -c . || true)
+          have_n=$(echo "$have" | grep -c . || true)
+          if [ "$want_n" -lt 10 ]; then
+            echo "::error::extracted only $want_n plugin ids from the Dockerfile; the release " \
+                 "gate would pass having checked nothing"
+            exit 1
+          fi
+          if [ "$have_n" -lt 1 ]; then
+            echo "::error::the image lists no plugins at all"
+            exit 1
+          fi
+
+          missing=''
+          for id in $want; do
+            echo "$have" | grep -qx "$id" || missing="$missing $id"
+          done
+          echo "VM plugins: named $(echo "$want" | wc -l), shipped $(echo "$have" | wc -l)"
+          if [ -n "$missing" ]; then
+            echo "::error::Dockerfile names VM plugins the image does not carry:$missing"
+            exit 1
+          fi
+
+          # go version -m reads the module table stamped into each binary.
+          vm_of() {
+            docker run --rm --entrypoint sh "$img" -c \
+              "go version -m '$1' 2>/dev/null | awk '\$2==\"github.com/luxfi/vm\"{print \$3; exit}'" ||
+            docker run --rm --entrypoint sh "$img" -c \
+              "grep -ao 'github.com/luxfi/vm@v[0-9][0-9.]*' '$1' | head -1 | cut -d@ -f2"
+          }
+
+          node_vm=$(vm_of ./luxd | tr -d '[:space:]')
+          echo "luxd  luxfi/vm = ${node_vm:-<unstamped>}"
+
+          skew=0
+          for p in $(docker run --rm --entrypoint sh "$img" -c 'ls -1 plugins'); do
+            pv=$(vm_of "plugins/$p" | tr -d '[:space:]')
+            [ -z "$pv" ] && continue
+            if [ -n "${node_vm}" ] && [ "$pv" != "${node_vm}" ]; then
+              echo "::error::plugin ${p} has luxfi/vm ${pv}, luxd has ${node_vm}"
+              skew=1
+            fi
+          done
+          if [ "$skew" -ne 0 ]; then
+            echo "::error::luxd and its baked plugins disagree on luxfi/vm — the fixed binary would not be the one verifying blocks"
+            exit 1
+          fi
+          echo "luxd and all plugins agree on luxfi/vm"
+
+      - name: Push this arch
+        run: docker push '${{ steps.meta.outputs.image }}'
+
+      - name: Verify this arch's pushed image resolves
+        # A tag that names nothing pullable is how a StatefulSet ends up pinned
+        # to a phantom: the pin applies, the pod never starts, and the tag looks
+        # like a release. Prove it before the job is green.
+        run: |
+          set -euo pipefail
+          img="${{ steps.meta.outputs.image }}"
+          for i in 1 2 3 4 5 6; do
+            if docker manifest inspect "$img" >/dev/null 2>&1; then
+              echo "$img is resolvable"; exit 0
+            fi
+            echo "manifest not visible yet (attempt ${i}/6) — retrying"; sleep 5
+          done
+          echo "::error::$img not pullable after push"; exit 1
+
+  merge:
+    needs: build
+    # Registry-side only: imagetools reads the two per-arch manifests and writes
+    # a list that points at both. No builder, no platform of its own, so which
+    # pool runs this does not matter.
+    runs-on: [lux-build-linux-amd64]
+    timeout-minutes: 15
+    steps:
+      - name: Compute the release names
+        id: meta
+        run: |
+          set -euo pipefail
+          SHA_TAG="ghcr.io/luxfi/node:sha-${GITHUB_SHA:0:7}"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            {
+              echo "tags<<EOF"
+              echo "ghcr.io/luxfi/node:v${VERSION}"
+              echo "ghcr.io/luxfi/node:${VERSION}"
+              echo "$SHA_TAG"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "probe=ghcr.io/luxfi/node:v${VERSION}" >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "tags<<EOF"
+              echo "$SHA_TAG"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "probe=$SHA_TAG" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USER }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Join both architectures under every release name
+        run: |
+          set -euo pipefail
+          base="ghcr.io/luxfi/node:sha-${GITHUB_SHA:0:7}"
+          args=''
+          while IFS= read -r t; do
+            [ -n "$t" ] && args="$args -t $t"
+          done <<< "${{ steps.meta.outputs.tags }}"
+          # shellcheck disable=SC2086
+          docker buildx imagetools create $args "${base}-amd64" "${base}-arm64"
+
+      - name: Prove every release name carries BOTH architectures
+        # A manifest list with one entry pulls fine on the arch that built it and
+        # fails everywhere else, which is exactly the state this workflow is
+        # replacing. Counting the platforms is what makes "multi-arch" a fact
+        # rather than an intention.
+        run: |
+          set -euo pipefail
+          while IFS= read -r t; do
+            [ -z "$t" ] && continue
+            got=$(docker buildx imagetools inspect "$t" --format '{{range .Manifest.Manifests}}{{.Platform.OS}}/{{.Platform.Architecture}} {{end}}')
+            echo "$t -> ${got}"
+            for want in linux/amd64 linux/arm64; do
+              case " $got " in
+                *" $want "*) ;;
+                *) echo "::error::$t does not carry $want"; exit 1 ;;
+              esac
+            done
+          done <<< "${{ steps.meta.outputs.tags }}"
