@@ -50,8 +50,6 @@ The four chains were added because they had **no vector at all**, which is the
 same shape the P-chain fork hid in for weeks: a chain nothing is pointed at
 agrees with itself. Every fork this program has found, the differential found.
 
-**All three columns answer all six chains, and every compared field of all 725
-vectors agrees.** That is recent. The Rust column used to answer P and X and
 say nothing about the other four, and the runner listed 421 vectors under NOT
 ANSWERED and exited non-zero — silence is not agreement, and a target that went
 green while a whole column said nothing about four chains would be reporting the
@@ -685,7 +683,7 @@ by name. That is the sovereign-L1 birth path every downstream L1 depends on.
 
 CLOSED by the Rust port growing the plane: an L1 validator register, a
 network's own staking terms and validator set, and a chain identity to check a
-transaction against. The three `…NotHeld` refusals no longer exist as error
+transaction against. The three `…NotHeld` refusals are not error
 variants, and all seven vectors now reach the ledger.
 
 **The X-chain reject.** `X_SEAM_BLOCK_REJECT`: Go and Rust had a reject, C++ did

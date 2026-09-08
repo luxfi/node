@@ -168,8 +168,7 @@ all, since with four voices three answering is still a comparison, it agrees,
 and the fourth's silence would read as a pass.
 
 **`make chains` passes.** It covers six chains — P and X from `luxfi/node`, and
-Q, Z, D and F from `luxfi/chains`, which had no vector at all until they were
-added, which is the same shape the P-chain fork hid in. All three columns now
+Q, Z, D and F from `luxfi/chains`. All three columns
 answer all six, and every compared field of all 725 vectors agrees.
 
 The Rust column was the last to close, and the last two chains in it each said
@@ -304,7 +303,7 @@ connection initiate, and requests pipeline — many in flight, answers back in
 whatever order the peer finishes them. It is not a codec, and treating it as
 one is how this repo got into trouble.
 
-Both C++ chains used to carry their own copy of the wire —
+The C++ chains share one wire implementation. It replaced
 `chains/cpp/xvm/include/lux/xvm/zap.hpp` (557 lines) and
 `chains/cpp/platformvm/include/lux/platformvm/zap.hpp` (517 lines) — and the
 two copies had drifted from each other and from the reference. Two chains in
@@ -331,8 +330,7 @@ What the drift actually was, since it is the reason the rule exists:
 - Out-of-line list elements: xvm could read them, platformvm could only write
   them. One half of a pair each.
 
-The wire-format suite that used to sit in `chains/cpp/platformvm/test/` moved
-to the SDK with the implementation, case for case. A wire rule belongs in one
+The wire-format suite lives in the SDK beside the implementation, case for case. A wire rule belongs in one
 place, and its test belongs beside it.
 
 Four more copies followed: `chains/cpp/zap` (which fhevm read), and

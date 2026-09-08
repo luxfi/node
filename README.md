@@ -102,14 +102,13 @@ differently. The Rust host publishes a validator line — a post-quantum identit
 and its BLS key — and takes a committee file plus `--peers`. The C++ host takes
 `--index I --n N --base-port P` and derives its peers positionally. One
 committee format both read is what lets the three stand up as peers on one
-network; until then the differential compares them as libraries.
+network.
 
 `luxd-go` is the node. `make luxd RUNTIME=go` builds `./cmd/luxd`, which runs
 the primary network's chains and serves them.
 
-The wire is no longer written by hand in any of them. Thirteen `.zap` schemas
-generate the readers and builders for all three languages; the five
-hand-written implementations that preceded them are deleted.
+Thirteen `.zap` schemas generate the wire readers and builders for all three
+languages.
 
 ## Build
 

@@ -73,9 +73,8 @@ implementations do not serve the same JSON-RPC:
 | `eth_getTransactionByHash` | yes | **no** | yes |
 | `eth_getLogs` | yes | **no** | **no** |
 
-A harness built on view functions would have quietly become a
-two-implementation harness, and one built on receipts would have reported the
-C++ chain as dead while it was mining perfectly well. Storage is the widest
+A harness built on view functions is a two-implementation harness, and one
+built on receipts reports a mining chain as dead. Storage is the widest
 surface all three answer on, and it is also the surface consensus is about.
 
 Two consequences run through the code:
