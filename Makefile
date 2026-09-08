@@ -171,7 +171,7 @@ all: ## build all three runtimes plus gpu; nonzero unless 3/3
 	@echo; echo "=== summary ==="
 	@ok=0; \
 	for r in go rust cpp; do \
-		f=$(BIN)/luxd-$$r; \
+		f=$(BIN)/$$r/luxd; \
 		if [ -x "$$f" ]; then \
 			printf "  luxd-%-4s OK    %s  (%s)\n" "$$r" "$$f" "$$(du -h "$$f" | cut -f1)"; \
 			ok=$$((ok+1)); \
