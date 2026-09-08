@@ -192,3 +192,18 @@ func TestDecliningIsCounted(t *testing.T) {
 		t.Fatalf("the declined field is not counted:\n%s", got.output)
 	}
 }
+
+// An empty column is a row an evaluator got wrong. Reading it as a polite
+// non-answer is how a broken evaluator disappears from the comparison.
+func TestEmptyFieldIsRejected(t *testing.T) {
+	runner, dir := setup(t)
+	a := evaluatorSaying(t, dir, "go", recorded)
+	b := evaluatorSaying(t, dir, "cpp", "R	A	ok	Base		OK	LEDGER	fine\n")
+	got := differential(t, runner, dir, "go="+a, "cpp="+b)
+	if got.code != 1 {
+		t.Fatalf("an empty field exited %d, want 1\n%s", got.code, got.output)
+	}
+	if !strings.Contains(got.output, "left id of A empty") {
+		t.Fatalf("the empty field is not named:\n%s", got.output)
+	}
+}
