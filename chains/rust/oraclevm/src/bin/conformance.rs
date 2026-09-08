@@ -250,17 +250,19 @@ fn main() {
     }
 }
 
-fn wire_of(id: &str, wire: &str) -> Result<Vec<u8>, Row> {
+/// A vector with no bytes writes "-" rather than an empty column, because a
+/// trailing empty field is invisible to a reader that splits on tabs.
+fn wire_of(wire: &str) -> Option<Vec<u8>> {
     if wire == NONE {
-        return Ok(Vec::new());
+        return Some(Vec::new());
     }
-    hex::decode(wire).map_err(|_| Row::new(id).internal("corpus wire is not hex"))
+    hex::decode(wire).ok()
 }
 
 fn evaluate(id: &str, op: &str, wire: &str) -> Row {
-    let bytes = match wire_of(id, wire) {
-        Ok(b) => b,
-        Err(r) => return r,
+    let bytes = match wire_of(wire) {
+        Some(b) => b,
+        None => return Row::new(id).internal("corpus wire is not hex"),
     };
     match op {
         "identity" => identity(id),

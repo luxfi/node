@@ -22,7 +22,7 @@
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 
-use crate::ids::{self, Id, NodeId};
+use crate::ids::{self, Id};
 use crate::types::{Feed, OracleRecord, OracleRequest, Observation};
 
 /// The window an observation must be inside, in seconds. It is the chain's
@@ -229,10 +229,4 @@ impl Vm {
         }
         Ok(Commit { root, count: records.len() as u32, window_start: start, window_end: end })
     }
-}
-
-/// The operator a feed names, rendered — used only in refusal messages, which
-/// the differential carries beside the verdict rather than comparing.
-pub fn operator_word(n: &NodeId) -> String {
-    ids::node_id_string(n)
 }
