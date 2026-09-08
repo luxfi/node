@@ -25,7 +25,7 @@ answers next to each other.
 | Z zkvm | 137 | yes | yes | yes |
 | D dexvm | 35 | yes | yes | yes |
 | F fhevm | 264 | yes | yes | yes |
-| O oraclevm | 195 | yes | yes | yes |
+| O oraclevm | 205 | yes | yes | yes |
 
 Most of those counts are damage. Every vector this reference reads back as a
 block or a transaction is also cut to a quarter, cut to a half, cut by one
@@ -126,7 +126,7 @@ same shape the P-chain fork hid in for weeks: a chain nothing is pointed at
 agrees with itself. Every fork this program has found, the differential found.
 
 **All three columns answer all seven chains, and every compared field of all
-920 vectors agrees.** That is recent. The Rust column used to answer P and X and
+930 vectors agrees.** That is recent. The Rust column used to answer P and X and
 say nothing about the other four, and the runner listed 421 vectors under NOT
 ANSWERED and exited non-zero — silence is not agreement, and a target that went
 green while a whole column said nothing about four chains would be reporting the
@@ -419,7 +419,7 @@ make chains           build all fourteen evaluators, run the differential
 make chains-corpus    regenerate the corpus from the Go reference
 ```
 
-**`make chains` passes today.** 920 vectors, three running implementations —
+**`make chains` passes today.** 930 vectors, three running implementations —
 go, rust and cpp — plus the committed corpus as a recording of the first.
 Agreement on every field, every field answered by at least two of the three,
 and nothing under NOT ANSWERED.

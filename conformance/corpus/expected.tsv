@@ -211,6 +211,11 @@ R	O_BLOCK_FOLDED_MEMBER	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31
 R	O_BLOCK_NULL_MEMBER	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
 R	O_BLOCK_EMPTY_ARRAY	ok	Empty	aef91999c3527cbd603810e7bc9f83c5c0fddfbfbbf9a31b83f2242711748b07	OK	OK	height=1 parent=07070707 obs=0 agg=0 feeds=0
 R	O_BLOCK_HEIGHT_FLOAT	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number 1.0 into Go struct field Block.height of type uint64
+R	O_BLOCK_HEIGHT_EXPONENT	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number 1e2 into Go struct field Block.height of type uint64
+R	O_BLOCK_HEIGHT_NEGATIVE	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number -1 into Go struct field Block.height of type uint64
+R	O_BLOCK_HEIGHT_MAX	ok	Empty	16fff4644f339e4a62a0b9448875ef6a81251e61849c7c4995f0446e738f7f90	OK	OK	height=18446744073709551615 parent=07070707 obs=0 agg=0 feeds=0
+R	O_BLOCK_HEIGHT_OVER_MAX	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number 18446744073709551616 into Go struct field Block.height of type uint64
+R	O_BLOCK_SCHEME_OVER_BYTE	MALFORMED	-	-	MALFORMED	MALFORMED	json: cannot unmarshal number 256 into Go struct field Observation.observations.scheme of type profile.Scheme
 R	O_BLOCK_PARENT_BAD_CHECKSUM	MALFORMED	-	-	MALFORMED	MALFORMED	couldn't decode ID to bytes: invalid input checksum
 R	O_BLOCK_VALUE_BAD_BASE64	MALFORMED	-	-	MALFORMED	MALFORMED	illegal base64 data at input byte 0
 R	O_BLOCK_TIME_NOT_RFC3339	MALFORMED	-	-	MALFORMED	MALFORMED	parsing time "the tenth of never" as "2006-01-02T15:04:05Z07:00": cannot parse "the tenth of never" as "2006"
@@ -920,3 +925,8 @@ R	O_BLOCK_EMPTY_ARRAY_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected en
 R	O_BLOCK_EMPTY_ARRAY_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
 R	O_BLOCK_EMPTY_ARRAY_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
 R	O_BLOCK_EMPTY_ARRAY_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
+R	O_BLOCK_HEIGHT_MAX_TRUNC_QUARTER	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_HEIGHT_MAX_TRUNC_HALF	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_HEIGHT_MAX_TRUNC_MINUS1	MALFORMED	-	-	MALFORMED	MALFORMED	unexpected end of JSON input
+R	O_BLOCK_HEIGHT_MAX_TRAIL_1	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
+R	O_BLOCK_HEIGHT_MAX_TRAIL_4	MALFORMED	-	-	MALFORMED	MALFORMED	invalid character 'ÿ' after top-level value
