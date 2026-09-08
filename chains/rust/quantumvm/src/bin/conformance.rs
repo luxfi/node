@@ -15,7 +15,10 @@
 //! transaction.
 
 use lux_quantumvm::ids::{self, Id};
+use lux_quantumvm::vm::{Init, Qvm};
 use lux_quantumvm::wire;
+use lux_quantumvm::config::Config;
+use std::sync::OnceLock;
 
 const NONE: &str = "-";
 
@@ -318,9 +321,53 @@ fn eval_block(id: &str, wire: &str) -> Row {
         }
     }
 
-    r.exec = SKIPPED.into();
-    if r.note.is_empty() {
-        r.note = "acceptance is not evaluated: it needs a chain with a tip".into();
+    // And what the chain decides. `verify` re-runs the two above and then goes
+    // on to the parent, the height, the time and the stamps, so a refusal it
+    // reaches before the store is the same word `syntactic` already carries,
+    // and one it reaches after is the chain's own answer. That is the boundary
+    // the corpus asks for, and it falls out of running the real call rather
+    // than being restated here.
+    match seeded() {
+        Some(vm) => match vm.parse(&bytes) {
+            Ok(block) => {
+                let id = block.id();
+                match vm.verify(&id) {
+                    Ok(()) => {
+                        r.exec = OK.into();
+                        if r.note.is_empty() {
+                            r.note = "verified against the seeded chain".into();
+                        }
+                    }
+                    Err(e) => {
+                        let why = e.to_string();
+                        r.exec = classify(&why).into();
+                        if r.note.is_empty() {
+                            r.note = why;
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                r.exec = classify(&e.to_string()).into();
+            }
+        },
+        None => {
+            r.exec = INTERNAL.into();
+            r.note = "the chain did not start".into();
+        }
     }
     r
+}
+
+/// A Q-chain over an empty store, its own genesis already the tip.
+///
+/// One per process: starting it opens a committee, and every vector asks it
+/// the same question. Without a tip the parent lookup would refuse every
+/// vector alike and the exec field would say nothing.
+fn seeded() -> Option<&'static Qvm> {
+    static VM: OnceLock<Option<Qvm>> = OnceLock::new();
+    VM.get_or_init(|| {
+        Qvm::new(Config::default(), Init::memory("q-conformance", chain(), NETWORK)).ok()
+    })
+    .as_ref()
 }
