@@ -86,20 +86,23 @@ constexpr auto kPrices = std::to_array<Price>({
     {0x0000000000000000000000000000000000000008_address, "ecpairing", ecpairing_analyze},
     {0x0000000000000000000000000000000000000009_address, "blake2bf", blake2bf_analyze},
     {0x000000000000000000000000000000000000000a_address, "point_evaluation", point_evaluation_analyze},
-    // BLS12-381, on the layout the C-Chain runs — EIP-2537's draft, where
-    // multiplication has its own precompile and the field maps have no address.
-    // cevm serves these seven from its Lux table, which shadows the stock one.
+    // BLS12-381, seven addresses: add and multi-exponentiation for each group,
+    // the pairing check, and the two field maps.
     {0x000000000000000000000000000000000000000b_address, "bls12_g1add", bls12_g1add_analyze},
-    {0x000000000000000000000000000000000000000c_address, "bls12_g1mul", bls12_g1mul_analyze},
-    {0x000000000000000000000000000000000000000d_address, "bls12_g1msm", bls12_g1msm_analyze},
-    {0x000000000000000000000000000000000000000e_address, "bls12_g2add", bls12_g2add_analyze},
-    {0x000000000000000000000000000000000000000f_address, "bls12_g2mul", bls12_g2mul_analyze},
-    {0x0000000000000000000000000000000000000010_address, "bls12_g2msm", bls12_g2msm_analyze},
-    {0x0000000000000000000000000000000000000011_address, "bls12_pairing_check", bls12_pairing_check_analyze},
+    {0x000000000000000000000000000000000000000c_address, "bls12_g1msm", bls12_g1msm_analyze},
+    {0x000000000000000000000000000000000000000d_address, "bls12_g2add", bls12_g2add_analyze},
+    {0x000000000000000000000000000000000000000e_address, "bls12_g2msm", bls12_g2msm_analyze},
+    {0x000000000000000000000000000000000000000f_address, "bls12_pairing_check", bls12_pairing_check_analyze},
+    {0x0000000000000000000000000000000000000010_address, "bls12_map_fp_to_g1", bls12_map_fp_to_g1_analyze},
+    {0x0000000000000000000000000000000000000011_address, "bls12_map_fp2_to_g2", bls12_map_fp2_to_g2_analyze},
     {0x0000000000000000000000000000000000000100_address, "p256verify", p256verify_analyze},
-    // Lux's, outside the stock range. Go serves inference here
-    // (luxfi/precompile/inference) and cevm does now too.
-    {0x0300000000000000000000000000000000000003_address, "aivm", aivm_analyze},
+    // Nothing outside the stock range. cevm's dispatcher keys on the last two
+    // bytes of an address, so an address whose first eighteen bytes carry the
+    // precompile's identity cannot be expressed in its table: aivm_analyze and
+    // aivm_execute are compiled and nothing reaches them. check_table() below
+    // holds this list to what the seam actually answers for, so an address
+    // named here that the seam does not serve stops the program instead of
+    // being priced by a function the seam never calls.
 });
 
 // The widest address cevm's availability table can hold, so the scan below

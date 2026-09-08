@@ -125,6 +125,32 @@ func own() []Vector {
 		{ID: "P256_ZEROES", Address: addr(0x01, 0x00), Gas: plenty, Input: make([]byte, 160)},
 	}
 
+	// The addresses outside the stock range that a Lux chain claims. Whether
+	// all three runtimes claim them is not a question the borrowed vectors can
+	// reach — geth ships no test data for an address geth does not serve — and
+	// an address one runtime answers at and another does not is a fork at that
+	// address whichever way it falls. Two calls each: the empty input, and a
+	// word of zeroes, so an implementation that serves the address has
+	// something to be compared on beyond the fact that it is there.
+	for _, p := range []struct {
+		name    string
+		address string
+	}{
+		{"MINING", addr(0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)},
+		{"MLKEM", addr(0x01, 0x22, 0x01)},
+		{"MLDSA", addr(0x01, 0x22, 0x02)},
+		{"SLHDSA", addr(0x01, 0x22, 0x03)},
+		{"PULSAR", addr(0x01, 0x22, 0x04)},
+		{"P3Q", addr(0x01, 0x22, 0x05)},
+		{"CORONA", addr(0x01, 0x22, 0x06)},
+		{"XWING", addr(0x22, 0x21)},
+	} {
+		v = append(v,
+			Vector{ID: p.name + "_EMPTY", Address: p.address, Gas: plenty},
+			Vector{ID: p.name + "_ZEROES", Address: p.address, Gas: plenty, Input: make([]byte, 32)},
+		)
+	}
+
 	// The gas boundary, for the fixed-price precompiles: exactly the charge,
 	// and one below it. An implementation that charges a different price
 	// crosses this boundary in a different place, which shows up here as a
