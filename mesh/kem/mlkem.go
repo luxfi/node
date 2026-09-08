@@ -65,12 +65,6 @@ var (
 	// ErrBadPrivateKeySize is returned when the caller-supplied
 	// decapsulation key is not the scheme's canonical PrivateKeySize.
 	ErrBadPrivateKeySize = errors.New("kem: private key size does not match scheme")
-
-	// ErrEmptyTranscript is returned when transcript bytes are nil or
-	// empty. The whole point of transcript binding is that the AEAD key
-	// depends on every prior handshake message; a zero-length transcript
-	// is a contract violation.
-	ErrEmptyTranscript = errors.New("kem: transcript is empty")
 )
 
 // KEMSession is the result of one successful ML-KEM encapsulate /
@@ -207,25 +201,21 @@ func CiphertextSize(scheme KeyExchangeID) (int, error) {
 }
 
 // InitiateKEMSession performs the initiator side of a one-shot ML-KEM
-// session establishment. peerKEMPub is the responder's encapsulation key
-// (already received on the wire); transcript is the bound running hash
-// over every handshake message produced before this call.
+// session establishment. peerKEMPub is the responder's encapsulation key,
+// already received on the wire.
 //
-// Returns the resulting KEMSession plus the encapsulation ciphertext to
-// send to the responder. The caller is responsible for binding the
-// ciphertext into the post-KEM transcript before deriving subordinate
-// keys (the cSHAKE256 customisation inside DeriveAEADKey hard-binds the
-// transcript bytes the caller passes here).
+// Returns the session and the encapsulation ciphertext to send back. The
+// session carries a shared secret and no commitment: the transcript is
+// the caller's, because only the caller has seen the whole handshake, and
+// it sets TranscriptHash before deriving a key. A transcript taken here
+// would be hashed over and then replaced by the caller's, which is a
+// commitment nobody reads and a claim the type could not keep.
 func InitiateKEMSession(
 	scheme KeyExchangeID,
 	peerKEMPub []byte,
-	transcript []byte,
 ) (*KEMSession, []byte, error) {
 	if scheme.IsForbiddenInPQMode() {
 		return nil, nil, fmt.Errorf("%w: scheme=%s", ErrClassicalKEMForbidden, scheme)
-	}
-	if len(transcript) == 0 {
-		return nil, nil, ErrEmptyTranscript
 	}
 
 	switch scheme {
@@ -241,7 +231,7 @@ func InitiateKEMSession(
 		ct := make([]byte, mlkem768.CiphertextSize)
 		ssBuf := make([]byte, mlkem768.SharedKeySize)
 		pk.EncapsulateTo(ct, ssBuf, nil)
-		return finishSession(scheme, ssBuf, transcript), ct, nil
+		return finishSession(scheme, ssBuf), ct, nil
 
 	case KeyExchangeMLKEM1024:
 		if len(peerKEMPub) != mlkem1024.PublicKeySize {
@@ -255,7 +245,7 @@ func InitiateKEMSession(
 		ct := make([]byte, mlkem1024.CiphertextSize)
 		ssBuf := make([]byte, mlkem1024.SharedKeySize)
 		pk.EncapsulateTo(ct, ssBuf, nil)
-		return finishSession(scheme, ssBuf, transcript), ct, nil
+		return finishSession(scheme, ssBuf), ct, nil
 
 	default:
 		return nil, nil, fmt.Errorf("%w: scheme=%s", ErrUnsupportedScheme, scheme)
@@ -266,20 +256,17 @@ func InitiateKEMSession(
 // initiator's ciphertext under the responder's decapsulation key and
 // produce the shared session.
 //
-// transcript MUST be byte-identical to the transcript the initiator used.
-// If the two sides disagree by even one byte, their derived AEAD keys
-// diverge and the first encrypted frame fails authentication.
+// As with the initiator, the commitment is the caller's. Two sides whose
+// transcripts differ by one byte derive different AEAD keys and the first
+// encrypted frame fails to open — which is the point, and is enforced
+// where the transcript is known rather than here.
 func RespondKEMSession(
 	scheme KeyExchangeID,
 	ourKEMSec []byte,
 	peerCiphertext []byte,
-	transcript []byte,
 ) (*KEMSession, error) {
 	if scheme.IsForbiddenInPQMode() {
 		return nil, fmt.Errorf("%w: scheme=%s", ErrClassicalKEMForbidden, scheme)
-	}
-	if len(transcript) == 0 {
-		return nil, ErrEmptyTranscript
 	}
 
 	switch scheme {
@@ -298,7 +285,7 @@ func RespondKEMSession(
 		}
 		ssBuf := make([]byte, mlkem768.SharedKeySize)
 		sk.DecapsulateTo(ssBuf, peerCiphertext)
-		return finishSession(scheme, ssBuf, transcript), nil
+		return finishSession(scheme, ssBuf), nil
 
 	case KeyExchangeMLKEM1024:
 		if len(ourKEMSec) != mlkem1024.PrivateKeySize {
@@ -315,7 +302,7 @@ func RespondKEMSession(
 		}
 		ssBuf := make([]byte, mlkem1024.SharedKeySize)
 		sk.DecapsulateTo(ssBuf, peerCiphertext)
-		return finishSession(scheme, ssBuf, transcript), nil
+		return finishSession(scheme, ssBuf), nil
 
 	default:
 		return nil, fmt.Errorf("%w: scheme=%s", ErrUnsupportedScheme, scheme)
@@ -326,10 +313,9 @@ func RespondKEMSession(
 // bound transcript. Internal helper; the public Initiate/Respond entry
 // points dispatch through it so the SchemeID byte and the transcript
 // commitment are written once, in one place.
-func finishSession(scheme KeyExchangeID, ssBuf, transcript []byte) *KEMSession {
+func finishSession(scheme KeyExchangeID, ssBuf []byte) *KEMSession {
 	s := &KEMSession{SchemeID: scheme}
 	copy(s.SharedSecret[:], ssBuf)
-	s.TranscriptHash = HashTranscript(transcript)
 	return s
 }
 

@@ -21,10 +21,12 @@ func TestNewAEAD_RoundTrip(t *testing.T) {
 	require.NoError(err)
 
 	transcript := []byte("aead-roundtrip-transcript")
-	initSess, ct, err := InitiateKEMSession(KeyExchangeMLKEM768, pub, transcript)
+	initSess, ct, err := InitiateKEMSession(KeyExchangeMLKEM768, pub)
 	require.NoError(err)
-	respSess, err := RespondKEMSession(KeyExchangeMLKEM768, priv, ct, transcript)
+	initSess.TranscriptHash = HashTranscript(transcript)
+	respSess, err := RespondKEMSession(KeyExchangeMLKEM768, priv, ct)
 	require.NoError(err)
+	respSess.TranscriptHash = HashTranscript(transcript)
 
 	initKey := initSess.DeriveAEADKey()
 	respKey := respSess.DeriveAEADKey()

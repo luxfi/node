@@ -38,12 +38,11 @@ var ErrDKGSchemeMismatch = errors.New("kem: DKG channels MUST use ML-KEM-1024")
 func InitiateDKGKEMSession(
 	scheme KeyExchangeID,
 	peerKEMPub []byte,
-	transcript []byte,
 ) (*KEMSession, []byte, error) {
 	if scheme != DKGChannelScheme {
 		return nil, nil, fmt.Errorf("%w: got=%s", ErrDKGSchemeMismatch, scheme)
 	}
-	return InitiateKEMSession(scheme, peerKEMPub, transcript)
+	return InitiateKEMSession(scheme, peerKEMPub)
 }
 
 // RespondDKGKEMSession is the responder-side analogue of
@@ -52,12 +51,11 @@ func RespondDKGKEMSession(
 	scheme KeyExchangeID,
 	ourKEMSec []byte,
 	peerCiphertext []byte,
-	transcript []byte,
 ) (*KEMSession, error) {
 	if scheme != DKGChannelScheme {
 		return nil, fmt.Errorf("%w: got=%s", ErrDKGSchemeMismatch, scheme)
 	}
-	return RespondKEMSession(scheme, ourKEMSec, peerCiphertext, transcript)
+	return RespondKEMSession(scheme, ourKEMSec, peerCiphertext)
 }
 
 // AssertDKGCompliance reports nil iff sessionScheme and profileHighValueKEM

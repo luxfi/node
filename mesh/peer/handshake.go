@@ -378,12 +378,10 @@ func RespondHandshake(
 		return nil, nil, fmt.Errorf("%w: initiator signature failed", ErrHandshakeBadIdentity)
 	}
 
-	// KEM encapsulate against initiator's KEM pub. transcript bytes here
-	// are exactly the initiator's INIT message in canonical order; the
-	// responder's RESP will append onto this for the responder's signing
-	// transcript.
-	transcript := init.canonicalBytes()
-	kemSess, ct, err := kem.InitiateKEMSession(cfg.KEMScheme, init.KEMPub, transcript)
+	// Encapsulate against the initiator's KEM key. The commitment is not
+	// made here: the session carries a secret, and the transcript that
+	// binds it is built below, once both messages are known.
+	kemSess, ct, err := kem.InitiateKEMSession(cfg.KEMScheme, init.KEMPub)
 	if err != nil {
 		return nil, nil, fmt.Errorf("peer: PQ encapsulate: %w", err)
 	}
@@ -460,8 +458,7 @@ func FinishInitiatorHandshake(
 		return nil, fmt.Errorf("%w: responder signature failed", ErrHandshakeBadIdentity)
 	}
 
-	transcript := init.canonicalBytes()
-	kemSess, err := kem.RespondKEMSession(cfg.KEMScheme, kemSec, resp.KEMCiphertext, transcript)
+	kemSess, err := kem.RespondKEMSession(cfg.KEMScheme, kemSec, resp.KEMCiphertext)
 	if err != nil {
 		return nil, fmt.Errorf("peer: PQ decapsulate: %w", err)
 	}

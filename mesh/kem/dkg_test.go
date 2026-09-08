@@ -28,12 +28,14 @@ func TestDKGChannel_ForcesMLKEM1024(t *testing.T) {
 	transcript := []byte("dkg-channel-transcript")
 
 	// Happy path: ML-KEM-1024 succeeds end-to-end.
-	initSess, ct, err := InitiateDKGKEMSession(KeyExchangeMLKEM1024, pub1024, transcript)
+	initSess, ct, err := InitiateDKGKEMSession(KeyExchangeMLKEM1024, pub1024)
 	require.NoError(err)
+	initSess.TranscriptHash = HashTranscript(transcript)
 	require.Equal(KeyExchangeMLKEM1024, initSess.SchemeID)
 
-	respSess, err := RespondDKGKEMSession(KeyExchangeMLKEM1024, priv1024, ct, transcript)
+	respSess, err := RespondDKGKEMSession(KeyExchangeMLKEM1024, priv1024, ct)
 	require.NoError(err)
+	respSess.TranscriptHash = HashTranscript(transcript)
 	require.Equal(initSess.SharedSecret, respSess.SharedSecret)
 
 	// DKG-flavour AEAD key MUST derive cleanly.
@@ -47,19 +49,19 @@ func TestDKGChannel_ForcesMLKEM1024(t *testing.T) {
 	pub768, priv768, err := GenerateKEMKeypair(KeyExchangeMLKEM768, rand.Reader)
 	require.NoError(err)
 
-	_, _, err = InitiateDKGKEMSession(KeyExchangeMLKEM768, pub768, transcript)
+	_, _, err = InitiateDKGKEMSession(KeyExchangeMLKEM768, pub768)
 	require.ErrorIs(err, ErrDKGSchemeMismatch,
 		"DKG adapter MUST refuse ML-KEM-768")
 
-	_, err = RespondDKGKEMSession(KeyExchangeMLKEM768, priv768, make([]byte, 1088), transcript)
+	_, err = RespondDKGKEMSession(KeyExchangeMLKEM768, priv768, make([]byte, 1088))
 	require.ErrorIs(err, ErrDKGSchemeMismatch)
 
 	// Bad path 2: caller passes a classical marker.
-	_, _, err = InitiateDKGKEMSession(KeyExchangeX25519Unsafe, pub1024, transcript)
+	_, _, err = InitiateDKGKEMSession(KeyExchangeX25519Unsafe, pub1024)
 	require.ErrorIs(err, ErrDKGSchemeMismatch)
 
 	// Bad path 3: caller passes None.
-	_, _, err = InitiateDKGKEMSession(KeyExchangeNone, pub1024, transcript)
+	_, _, err = InitiateDKGKEMSession(KeyExchangeNone, pub1024)
 	require.ErrorIs(err, ErrDKGSchemeMismatch)
 }
 

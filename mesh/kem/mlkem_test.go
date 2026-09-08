@@ -23,14 +23,16 @@ func TestKEMSession_MLKEM768_RoundTrip(t *testing.T) {
 
 	transcript := []byte("test-transcript-mlkem768-roundtrip")
 
-	initSess, ct, err := InitiateKEMSession(KeyExchangeMLKEM768, pub, transcript)
+	initSess, ct, err := InitiateKEMSession(KeyExchangeMLKEM768, pub)
 	require.NoError(err)
+	initSess.TranscriptHash = HashTranscript(transcript)
 	require.NotNil(initSess)
 	require.Len(ct, 1088, "ML-KEM-768 ciphertext must be 1088 bytes (FIPS 203)")
 	require.Equal(KeyExchangeMLKEM768, initSess.SchemeID)
 
-	respSess, err := RespondKEMSession(KeyExchangeMLKEM768, priv, ct, transcript)
+	respSess, err := RespondKEMSession(KeyExchangeMLKEM768, priv, ct)
 	require.NoError(err)
+	respSess.TranscriptHash = HashTranscript(transcript)
 	require.NotNil(respSess)
 
 	require.Equal(initSess.SharedSecret, respSess.SharedSecret,
@@ -56,12 +58,14 @@ func TestKEMSession_MLKEM1024_RoundTrip(t *testing.T) {
 
 	transcript := []byte("test-transcript-mlkem1024-dkg-channel")
 
-	initSess, ct, err := InitiateKEMSession(KeyExchangeMLKEM1024, pub, transcript)
+	initSess, ct, err := InitiateKEMSession(KeyExchangeMLKEM1024, pub)
 	require.NoError(err)
+	initSess.TranscriptHash = HashTranscript(transcript)
 	require.Len(ct, 1568, "ML-KEM-1024 ciphertext must be 1568 bytes (FIPS 203)")
 
-	respSess, err := RespondKEMSession(KeyExchangeMLKEM1024, priv, ct, transcript)
+	respSess, err := RespondKEMSession(KeyExchangeMLKEM1024, priv, ct)
 	require.NoError(err)
+	respSess.TranscriptHash = HashTranscript(transcript)
 
 	require.Equal(initSess.SharedSecret, respSess.SharedSecret)
 	require.Equal(initSess.TranscriptHash, respSess.TranscriptHash)
@@ -84,10 +88,12 @@ func TestKEMSession_DistinctTranscriptsDifferentKeys(t *testing.T) {
 	transcriptB := []byte("scenario-B-handshake-bytes-v1")
 
 	// Different transcripts, different ciphertexts (random KEM seed each call).
-	sessA, ctA, err := InitiateKEMSession(KeyExchangeMLKEM768, pub, transcriptA)
+	sessA, ctA, err := InitiateKEMSession(KeyExchangeMLKEM768, pub)
 	require.NoError(err)
-	sessB, ctB, err := InitiateKEMSession(KeyExchangeMLKEM768, pub, transcriptB)
+	sessA.TranscriptHash = HashTranscript(transcriptA)
+	sessB, ctB, err := InitiateKEMSession(KeyExchangeMLKEM768, pub)
 	require.NoError(err)
+	sessB.TranscriptHash = HashTranscript(transcriptB)
 
 	// Sanity: distinct sessions have distinct shared secrets (the KEM is
 	// randomized).
@@ -117,8 +123,9 @@ func TestKEMSession_DistinctTranscriptsDifferentKeys(t *testing.T) {
 	// Responder-side decapsulation under the wrong transcript: shared
 	// secret converges (KEM is transcript-free), but derived AEAD key
 	// diverges. Use ctA but pass transcriptB.
-	respWrong, err := RespondKEMSession(KeyExchangeMLKEM768, priv, ctA, transcriptB)
+	respWrong, err := RespondKEMSession(KeyExchangeMLKEM768, priv, ctA)
 	require.NoError(err)
+	respWrong.TranscriptHash = HashTranscript(transcriptB)
 	require.Equal(sessA.SharedSecret, respWrong.SharedSecret,
 		"KEM decapsulation is transcript-free; shared secret still converges")
 	require.NotEqual(sessA.DeriveAEADKey(), respWrong.DeriveAEADKey(),
@@ -142,28 +149,38 @@ func TestKEMSession_RefusesClassicalKEM(t *testing.T) {
 		_, _, err := GenerateKEMKeypair(scheme, rand.Reader)
 		require.ErrorIs(err, ErrClassicalKEMForbidden)
 
-		_, _, err = InitiateKEMSession(scheme, nil, []byte("x"))
+		_, _, err = InitiateKEMSession(scheme, nil)
 		require.ErrorIs(err, ErrClassicalKEMForbidden)
 
-		_, err = RespondKEMSession(scheme, nil, nil, []byte("x"))
+		_, err = RespondKEMSession(scheme, nil, nil)
 		require.ErrorIs(err, ErrClassicalKEMForbidden)
 	})
 }
 
-// TestKEMSession_RefusesEmptyTranscript asserts the binding requirement:
-// an empty transcript MUST fail at construction time, not silently bind
-// to a zero-length tuple.
-func TestKEMSession_RefusesEmptyTranscript(t *testing.T) {
+// TestKEMSession_KeyDependsOnTheTranscript asserts what the session owes its
+// caller: the key is a function of the secret AND the commitment. A session
+// whose transcript was never bound derives a different key from the same
+// secret, so an unbound session cannot be mistaken for a bound one — the two
+// ends simply fail to open the first frame.
+func TestKEMSession_KeyDependsOnTheTranscript(t *testing.T) {
 	require := require.New(t)
 
 	pub, priv, err := GenerateKEMKeypair(KeyExchangeMLKEM768, rand.Reader)
 	require.NoError(err)
 
-	_, _, err = InitiateKEMSession(KeyExchangeMLKEM768, pub, nil)
-	require.ErrorIs(err, ErrEmptyTranscript)
+	sess, ct, err := InitiateKEMSession(KeyExchangeMLKEM768, pub)
+	require.NoError(err)
+	peer, err := RespondKEMSession(KeyExchangeMLKEM768, priv, ct)
+	require.NoError(err)
+	require.Equal(sess.SharedSecret, peer.SharedSecret)
 
-	_, err = RespondKEMSession(KeyExchangeMLKEM768, priv, make([]byte, 1088), nil)
-	require.ErrorIs(err, ErrEmptyTranscript)
+	unbound := sess.DeriveAEADKey()
+	sess.TranscriptHash = HashTranscript([]byte("the handshake that actually happened"))
+	peer.TranscriptHash = sess.TranscriptHash
+	require.Equal(sess.DeriveAEADKey(), peer.DeriveAEADKey(),
+		"one transcript, one key")
+	require.NotEqual(unbound, sess.DeriveAEADKey(),
+		"binding a transcript MUST change the key")
 }
 
 // TestKEMSession_RefusesBadSizes asserts mis-sized public keys, private
@@ -172,15 +189,15 @@ func TestKEMSession_RefusesEmptyTranscript(t *testing.T) {
 func TestKEMSession_RefusesBadSizes(t *testing.T) {
 	require := require.New(t)
 
-	_, _, err := InitiateKEMSession(KeyExchangeMLKEM768, make([]byte, 100), []byte("x"))
+	_, _, err := InitiateKEMSession(KeyExchangeMLKEM768, make([]byte, 100))
 	require.ErrorIs(err, ErrBadPublicKeySize)
 
-	_, err = RespondKEMSession(KeyExchangeMLKEM768, make([]byte, 100), make([]byte, 1088), []byte("x"))
+	_, err = RespondKEMSession(KeyExchangeMLKEM768, make([]byte, 100), make([]byte, 1088))
 	require.ErrorIs(err, ErrBadPrivateKeySize)
 
 	_, priv, gerr := GenerateKEMKeypair(KeyExchangeMLKEM768, rand.Reader)
 	require.NoError(gerr)
-	_, err = RespondKEMSession(KeyExchangeMLKEM768, priv, make([]byte, 100), []byte("x"))
+	_, err = RespondKEMSession(KeyExchangeMLKEM768, priv, make([]byte, 100))
 	require.ErrorIs(err, ErrBadCiphertextSize)
 }
 
@@ -201,7 +218,7 @@ func TestKEMSession_RefusesUnsupportedScheme(t *testing.T) {
 	_, _, err = GenerateKEMKeypair(unknown, rand.Reader)
 	require.ErrorIs(err, ErrUnsupportedScheme)
 
-	_, _, err = InitiateKEMSession(unknown, make([]byte, 800), []byte("x"))
+	_, _, err = InitiateKEMSession(unknown, make([]byte, 800))
 	require.ErrorIs(err, ErrUnsupportedScheme)
 }
 
@@ -231,8 +248,9 @@ func TestDeriveDKGAEADKey_OnlyMLKEM1024(t *testing.T) {
 
 	pub, _, err := GenerateKEMKeypair(KeyExchangeMLKEM768, rand.Reader)
 	require.NoError(err)
-	sess, _, err := InitiateKEMSession(KeyExchangeMLKEM768, pub, []byte("x"))
+	sess, _, err := InitiateKEMSession(KeyExchangeMLKEM768, pub)
 	require.NoError(err)
+	sess.TranscriptHash = HashTranscript([]byte("dkg channel"))
 
 	_, err = sess.DeriveDKGAEADKey()
 	require.ErrorIs(err, ErrUnsupportedScheme,
@@ -240,8 +258,9 @@ func TestDeriveDKGAEADKey_OnlyMLKEM1024(t *testing.T) {
 
 	pub2, _, err := GenerateKEMKeypair(KeyExchangeMLKEM1024, rand.Reader)
 	require.NoError(err)
-	sess2, _, err := InitiateKEMSession(KeyExchangeMLKEM1024, pub2, []byte("x"))
+	sess2, _, err := InitiateKEMSession(KeyExchangeMLKEM1024, pub2)
 	require.NoError(err)
+	sess2.TranscriptHash = HashTranscript([]byte("dkg channel"))
 	key, err := sess2.DeriveDKGAEADKey()
 	require.NoError(err)
 	require.Len(key[:], AEADKeySize)
