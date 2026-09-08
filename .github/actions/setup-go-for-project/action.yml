@@ -1,0 +1,48 @@
+name: 'Set up project Go toolchain'
+description: 'Activate the exact Go toolchain declared by the project'
+
+inputs:
+  github-token:
+    description: 'GitHub token for private repo access'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Configure git for private repo access
+      if: inputs.github-token != ''
+      shell: bash
+      run: |
+        git config --global url."https://x-access-token:${{ inputs.github-token }}@github.com/".insteadOf "https://github.com/"
+    - name: Activate project Go toolchain
+      shell: bash
+      run: |
+        set -euo pipefail
+        version=$(awk '$1 == "go" { print $2; exit }' go.mod)
+        case "${RUNNER_ARCH:-X64}" in
+          X64) cache_arch=x64; go_arch=amd64 ;;
+          ARM64) cache_arch=arm64; go_arch=arm64 ;;
+          *) echo "unsupported runner architecture: ${RUNNER_ARCH:-unset}" >&2; exit 1 ;;
+        esac
+        root="/opt/hostedtoolcache/go/$version/$cache_arch"
+        if [ ! -x "$root/bin/go" ]; then
+          name="go$version.linux-$go_arch.tar.gz"
+          expected=$(curl -fsSL 'https://go.dev/dl/?mode=json&include=all' |
+            python3 -c 'import json,sys; name=sys.argv[1]; print(next(a["sha256"] for r in json.load(sys.stdin) for a in r["files"] if a["filename"] == name))' "$name")
+          work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/go-toolchain.XXXXXX")
+          archive="$work/$name"
+          curl -fsSL "https://go.dev/dl/$name" -o "$archive"
+          actual=$(sha256sum "$archive" | awk '{ print $1 }')
+          [ "$actual" = "$expected" ] || {
+            echo "checksum mismatch for $name" >&2
+            exit 1
+          }
+          root="$work/go"
+          mkdir -p "$root"
+          tar -C "$root" --strip-components=1 -xzf "$archive"
+        fi
+        echo "$root/bin" >> "$GITHUB_PATH"
+        echo "$("$root/bin/go" env GOPATH)/bin" >> "$GITHUB_PATH"
+        echo "GOROOT=$root" >> "$GITHUB_ENV"
+        "$root/bin/go" version
