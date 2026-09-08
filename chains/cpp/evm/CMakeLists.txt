@@ -42,7 +42,9 @@ endfunction()
 
 find_checkout(_cevm "test/state/precompiles.hpp"
   "${CEVM_DIR}"
+  "$ENV{HOME}/work/luxcpp/cevm"
   "$ENV{HOME}/work/lux-cpp/cevm"
+  "${CMAKE_SOURCE_DIR}/../../../../../luxcpp/cevm"
   "${CMAKE_SOURCE_DIR}/../../../../../lux-cpp/cevm")
 if(NOT _cevm)
   message(FATAL_ERROR
