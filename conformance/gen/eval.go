@@ -48,6 +48,7 @@ func xrt() *runtime.Runtime {
 //
 //	P  platformvm    X  xvm      Q  quantumvm
 //	Z  zkvm          F  fhevm    D  dexvm
+//	O  oraclevm
 //
 // P and X are dispatched by op below, because they share one op vocabulary.
 // The four chains added here each answer their own ops — a D vector asks for
@@ -65,6 +66,8 @@ func evaluate(v Vector) Result {
 		return evalF(v)
 	case "D":
 		return evalD(v)
+	case "O":
+		return evalO(v)
 	}
 	switch v.Op {
 	case "tx":

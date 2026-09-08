@@ -12,6 +12,7 @@ require (
 	github.com/luxfi/log v1.4.3
 	github.com/luxfi/metric v1.10.1
 	github.com/luxfi/node v1.36.184
+	github.com/luxfi/oracle v1.1.1
 	github.com/luxfi/runtime v1.3.1
 	github.com/luxfi/timer v1.1.1
 	github.com/luxfi/util v1.3.4

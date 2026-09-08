@@ -36,6 +36,7 @@ var identities = []struct {
 	{"Q", "Q_CHAIN_IDENTITY", qChain, networkID},
 	{"Z", "Z_CHAIN_IDENTITY", zChain, networkID},
 	{"F", "F_CHAIN_IDENTITY", fChain, networkID},
+	{"O", "O_CHAIN_IDENTITY", oChain, networkID},
 }
 
 func identityVectors() []Vector {

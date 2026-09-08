@@ -6,8 +6,8 @@ Two harnesses live here, and they check different things.
   signs, what a certificate looks like on the wire, what the finality predicate
   decides. It already existed, and all three implementations already pass it.
 - **`make chains`** — the **chain-layer** differential: one corpus, covering
-  six chains, handed to every implementation of each of them, with every answer
-  compared against every other answer.
+  seven chains, handed to every implementation of each of them, with every
+  answer compared against every other answer.
 
 Until `make chains` existed, every port checked itself against Go in isolation,
 each one deciding for itself which cases to check. That is how a P-chain fork
@@ -15,7 +15,7 @@ survived: `chains/cpp/platformvm` executes the sovereign-L1 plane and
 `chains/rust/platformvm` refuses it by name, and no test anywhere put those two
 answers next to each other.
 
-## The six chains
+## The seven chains
 
 | | vectors | Go | Rust | C++ |
 | --- | --- | --- | --- | --- |
@@ -25,6 +25,7 @@ answers next to each other.
 | Z zkvm | 137 | yes | yes | yes |
 | D dexvm | 35 | yes | yes | yes |
 | F fhevm | 264 | yes | yes | yes |
+| O oraclevm | 153 | yes | yes | yes |
 
 Most of those counts are damage. Every vector this reference reads back as a
 block or a transaction is also cut to a quarter, cut to a half, cut by one
@@ -42,9 +43,83 @@ word broken across a line, a literal `null` where a struct belongs — and every
 one of them is a transaction the Go chain ADMITS, so an implementation that
 refuses it is named rather than quietly stricter. See `chains/cpp/fhevm/LLM.md`.
 
-P and X come from `luxfi/node`; Q, Z, D and F from `luxfi/chains`. Both are
+P and X come from `luxfi/node`; Q, Z, D and F from `luxfi/chains`. All are
 PUBLISHED versions and there is no replace directive, so the corpus regenerates
 on any machine rather than on one.
+
+## O, and where the O-chain actually is
+
+`chains/oraclevm` is 213 lines and none of them are the chain: it re-exports
+`github.com/luxfi/oracle/vm`, which is 1628. Reading the shim's size as the
+chain's size understates it by an order of magnitude. The same is true of
+`chains/relayvm` — 161 lines over `luxfi/relay/vm`'s 2077. Of the eight chains
+the node runs that this differential did not cover, the two that looked
+smallest by an order of magnitude were the two that were not there at all.
+
+### O is JSON, and its id is a hash of the RE-MARSHAL
+
+The O-chain has no codec frame. `ParseBlock` is `json.Unmarshal` and `Bytes` is
+`json.Marshal`, so the wire is whatever `encoding/json` writes for the chain's
+structs: CB58 for an id, base64 for a byte slice, a list of numbers for a fixed
+array, RFC 3339 for a time, and field order taken from the struct declaration.
+None of that is written down anywhere but in the standard library's behaviour,
+and all of it is consensus here — because `computeID` marshals the parsed block
+AGAIN and hashes the result rather than hashing the bytes it was handed.
+
+Two things follow, and the corpus pins both:
+
+  - **a block does not round-trip its own id.** `BuildBlock` hashes the block
+    while its `id` member is still empty and then writes that id INTO the
+    struct, so `Bytes()` is not the preimage of `ID()`. `O_BLOCK_ID_SET` is the
+    block the chain wrote, and it takes a different id when read back.
+  - **a member the reader accepts and `omitempty` then drops does not change
+    the id.** `"observations":[]` parses to an empty slice and re-marshals to
+    nothing at all, so `O_BLOCK_EMPTY_ARRAY` and `O_BLOCK_EMPTY` are two
+    different buffers under ONE id.
+
+### The O-chain's genesis id depends on the machine's timezone
+
+`Initialize` builds the genesis block with `time.Unix(genesis.Timestamp, 0)` —
+LOCAL time — and `MarshalJSON` writes the offset. Measured: one genesis file
+gives block id `6cf00752…` with `TZ` unset on a `-08:00` box and `f4970a27…`
+under `TZ=Asia/Kolkata`. Two validators in two timezones derive different
+genesis ids from identical genesis bytes and are on different chains from
+block zero.
+
+No vector carries that id — a corpus answer that changes with the machine is
+not an answer — so `O_GENESIS` pins the genesis by the one thing that IS a
+function of its bytes: the SHA-256 of the canonical re-marshal of the parsed
+struct. The bug is in the chain and not in the corpus, and it is written down
+here because a differential that quietly worked around it would have hidden it.
+
+### What O's five ops ask
+
+`block` is the wire and the id above. `genesis` is the feed configuration the
+observation vectors are judged under, so "we applied the same configuration" is
+a compared field rather than an assumption. `requestid` is the derivation that
+names a request — `sha256("LUX:OracleRequest:v1" ‖ service ‖ session ‖
+be32(step) ‖ be32(retry) ‖ tx)` — where nothing separates the three ids, so
+their ORDER is the whole of what keeps two requests apart. `commit` carries a
+request and the records executed against it and answers with the Merkle root
+the chain commits, which is the one number a light client checks an oracle
+answer against. `observation` is offered to the seeded chain and separates the
+feed lookup, the staleness rule and the operator check into three refusals.
+
+`Block.Verify` is `return nil` with no condition in it, so on O's block vectors
+`syntactic` and `exec` are OK for everything that parses. That is the chain and
+not a gap in the corpus: what O decides lives in the other four ops, and a port
+that invented a block rule would fail the differential for being right.
+
+Three O vectors are PAIRS, and neither half of a pair means anything alone.
+`O_COMMIT_THREE` and `O_COMMIT_THREE_PADDED` are different record sets that
+commit to the SAME root, because the tree pairs a lone last leaf with itself —
+reproduced here rather than corrected, since a port that fixed the malleability
+would derive a different root for every odd record count and fork the chain in
+the act of improving it. `O_BLOCK_DUPLICATE_HEIGHT_FIRST` and `_LAST` are one
+intruding member placed either side of the original, and only the pair says
+which of two members naming one field wins. `O_COMMIT_ONE` sits against six
+`O_COMMIT_OTHER_*` copies, five of which must move the root and one — the
+signature, which the leaf does not hash — must not.
 
 The four chains were added because they had **no vector at all**, which is the
 same shape the P-chain fork hid in for weeks: a chain nothing is pointed at
@@ -87,6 +162,8 @@ chains/cpp/quantumvm/test/conformance.cpp       the C++ Q-chain's answers
 chains/cpp/zkvm/test/conformance.cpp            the C++ Z-chain's answers
 chains/cpp/dexvm/test/conformance.cpp           the C++ D-chain's answers
 chains/cpp/fhevm/test/conformance.cpp           the C++ F-chain's answers
+chains/rust/oraclevm/src/bin/conformance.rs     the Rust O-chain's answers
+chains/cpp/oraclevm/test/conformance.cpp        the C++ O-chain's answers
 chains/cpp/conformance/include/…/corpus.hpp     the format, the verdict words
                                                 and the error-word table, once
 ```
