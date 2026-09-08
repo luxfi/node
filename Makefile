@@ -397,20 +397,49 @@ chains-build:
 # out here times a process. Five runs, because a single timing is not a
 # measurement, and the spread of the five is printed beside the median.
 # See conformance/README.md.
+#
+# EIGHTEEN rows: six chains in three languages, and a total per language over
+# the same 725 vectors. The Go reference is one program that answers all six,
+# so it is asked for one chain at a time — a whole corpus is not a time to put
+# beside a sixth of one. Every evaluator the differential runs is timed here;
+# an implementation missing from a chain's row would be a chain whose speed is
+# the speed of whoever was left.
+#
+# A TIME IS ONLY COMPARABLE WHERE THE ANSWERS ARE. `make chains` prints what
+# each port DECLINED, and a declined field is work an implementation did not
+# do: the row that skips it is fast for that reason and not for a reason about
+# the language. Read the two outputs together.
+#
+# The load average is printed either side of the run. A number from a busy
+# machine is not wrong, but it is not the machine's best either, and a
+# benchmark that does not say which it was cannot be repeated.
 
 bench: chains-build ## time the differential work in all three languages
 	@echo
+	@echo "load before: $$(cut -d' ' -f1-3 /proc/loadavg)"
 	cd $(ROOT) && GOWORK=off go run ./conformance/bench \
 		-vectors $(CONF_VECS) \
 		-repeats 200 \
 		-runs 5 \
-		-eval "go=$(CONF_GEN) eval" \
+		-eval "go=$(CONF_GEN) eval -chain P" \
+		-eval "go=$(CONF_GEN) eval -chain X" \
+		-eval "go=$(CONF_GEN) eval -chain Q" \
+		-eval "go=$(CONF_GEN) eval -chain Z" \
+		-eval "go=$(CONF_GEN) eval -chain D" \
+		-eval "go=$(CONF_GEN) eval -chain F" \
 		-eval "rust=$(PVM_RUST)" \
 		-eval "rust=$(XVM_RUST)" \
 		-eval "rust=$(QVM_RUST)" \
+		-eval "rust=$(ZVM_RUST)" \
 		-eval "rust=$(DVM_RUST)" \
+		-eval "rust=$(FVM_RUST)" \
 		-eval "cpp=$(PVM_CPP)" \
-		-eval "cpp=$(XVM_CPP)"
+		-eval "cpp=$(XVM_CPP)" \
+		-eval "cpp=$(QVM_CPP)" \
+		-eval "cpp=$(ZVM_CPP)" \
+		-eval "cpp=$(DVM_CPP)" \
+		-eval "cpp=$(FVM_CPP)"
+	@echo "load after:  $$(cut -d' ' -f1-3 /proc/loadavg)"
 
 # ---- make precompiles: the cross-language precompile differential -----------
 #
