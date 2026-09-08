@@ -37,15 +37,20 @@ for r in $(seq 1 "$rounds"); do
          --sybil-protection-enabled=false --log-level=info "$@" >"$log" 2>&1 &
   pid=$!
   tlive=""; thealth=""
-  for _ in $(seq 1 3000); do          # 300s ceiling at 0.1s a poll
+  for _ in $(seq 1 "${CEILING:-3000}"); do   # polls at 0.1s; CEILING=1500 is 150s
     kill -0 "$pid" 2>/dev/null || break
     if [ -z "$tlive" ]; then
       code=$(curl -s -o /dev/null -w '%{http_code}' -m 2 "http://localhost:$hp$live" 2>/dev/null)
       [ "$code" = "200" ] && tlive=$(echo "$(date +%s.%N) - $t0" | bc)
     fi
     if [ -n "$tlive" ]; then
-      body=$(curl -s -m 2 "http://localhost:$hp$health" 2>/dev/null)
-      if [[ "$body" == *'"healthy":true'* ]]; then
+      # The TOP-LEVEL verdict, read as JSON. A substring search for
+      # "healthy":true is wrong here and quietly reports a node healthy the
+      # moment its API answers: this node nests a "healthy" field inside the
+      # router check's own message, so the string is present in a body whose
+      # actual verdict is false.
+      if curl -s -m 2 "http://localhost:$hp$health" 2>/dev/null \
+         | python3 -c 'import sys,json;sys.exit(0 if json.load(sys.stdin).get("healthy") is True else 1)' 2>/dev/null; then
         thealth=$(echo "$(date +%s.%N) - $t0" | bc); break
       fi
     fi

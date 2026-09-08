@@ -1,0 +1,16 @@
+chain differential benchmark — evaluators: 5 · repeats of the corpus per run: 200 · runs: 5
+
+evaluator        vectors  repeats  runs  fastest s  median s  slowest s  spread  µs/vector
+go               208      200      5     2.155      2.441     3.297      53%     51.80
+rust/platformvm  159      200      5     1.922      1.982     2.368      23%     60.45
+rust/xvm         49       200      5     0.020      0.021     0.022      9%      2.06
+rust (all)       208      200      5     1.943      2.004     2.389      23%     46.71
+cpp/platformvm   159      200      5     2.565      2.645     2.714      6%      80.64
+cpp/xvm          49       200      5     0.011      0.012     0.033      203%    1.11
+cpp (all)        208      200      5     2.575      2.657     2.726      6%      61.91
+
+µs/vector is per vector per repeat, from the FASTEST run. Everything else
+sharing the machine can only ever add time, never subtract it, so the fastest
+run is the least contaminated one. The spread beside it says how contaminated
+the others were: a large spread means the machine was busy, not that one
+implementation is erratic, and the run is worth repeating on a quiet one.
