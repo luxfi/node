@@ -93,19 +93,18 @@ reference where the reference leans on a runtime the port has to state for
 itself, and smaller where the reference carries history the port does not.
 Agreement on the corpus is the measurement that means something.
 
-### What stops the three sharing one network
+### How a network is named
 
-Measured, not assumed:
+A network is a committee: one line per validator carrying the post-quantum
+identity it is named by, the BLS key it votes with, and the proof it holds
+that key. A node id is derived from the identity, a weight is one, and file
+order is the order `--peers` addresses line up with. Nothing in the file is
+taken on trust — the proof is checked when the set is built.
 
-`luxd-rust` and `luxd-cpp` are both hosts, and they form a committee
-differently. The Rust host publishes a validator line — a post-quantum identity
-and its BLS key — and takes a committee file plus `--peers`. The C++ host takes
-`--index I --n N --base-port P` and derives its peers positionally. One
-committee format both read is what lets the three stand up as peers on one
-network.
-
-`luxd-go` is the node. `make luxd RUNTIME=go` builds `./cmd/luxd`, which runs
-the primary network's chains and serves them.
+The commitment to a set is a SHA-256 over its validators sorted by node id,
+each written `nodeID || weight || len(key) || key`. That encoding is written
+once per language and no more: `validators.SetRoot` in Go, `Committee::root`
+in Rust. Two writings of it would agree until they didn't.
 
 Thirteen `.zap` schemas generate the wire readers and builders for all three
 languages.
@@ -113,9 +112,9 @@ languages.
 ## Build
 
 ```sh
-make luxd RUNTIME=go      # bin/luxd    — ./cmd/luxd, the node itself
-make luxd RUNTIME=rust    # bin/hanzod  — lux-rs/node, a full host
-make luxd RUNTIME=cpp     # bin/zood   — lux-cpp/node, a full host
+make luxd RUNTIME=go      # bin/go/luxd    — ./cmd/luxd
+make luxd RUNTIME=rust    # bin/rust/luxd  — lux-rs/node
+make luxd RUNTIME=cpp     # bin/cpp/luxd   — lux-cpp/node
 make all                  # all three plus gpu; nonzero exit unless 3/3
 make conformance          # the pop/verdict corpus, all three languages
 ```

@@ -1,120 +1,76 @@
-# node2 — one shim, one Makefile, three node runtimes
+# node
 
-`node2` is a structural shell, not a fourth implementation. It imports the
-three existing Lux node runtimes — Go, Rust, C++ — behind one `Makefile` and
-runs the one conformance corpus that already holds across all three. Nothing
-under `runtime/` is a copy or a fork; each is a README naming an absolute path
-on this machine and the exact invocation that builds it. Delete `node2` and
-every one of those repos is exactly as it was.
-
-One thing under `chains/` is not a README. `chains/rust/xvm` is the X-Chain
-itself, in Rust, ported from `~/work/lux/node/vms/xvm` against the VM seam of
-`~/work/lux-rs/node` — 13,388 lines, 239 tests, and twelve golden vectors
-printed by the Go chain that prove the two produce the same bytes and give a
-transaction the same name. It lives here rather than in a shim because there
-was no clean Rust X-Chain to import; see `chains/rust/xvm/LLM.md`.
-
-The reason this exists: `luxfi/node` (`~/work/lux/node`) carries lux-private
-lineage, and three separate teams have since built clean replacements for
-its role in three languages, none of which had a shared home or a shared
-proof that they agree with each other. `node2` is that home. `luxfi/node`
-is untouched by this repo and stays running until conformance passes here —
-retiring it is the outcome this repo works toward, not a precondition of it.
+`github.com/luxfi/node` — the Lux node. The Go implementation IS this module:
+`cmd/luxd` and everything under it are these sources, so the repository is the
+thing its import path names. The Rust and C++ implementations sit beside it,
+and the differentials here hold all three to the same answers.
 
 ## Layout
 
 ```
-runtime/{go,rust,cpp}   thin shim READMEs — what gets built, from where, how
-chains/{go,rust,cpp}    the chain suite — cpp and rust each run six chains, go a README
-gpu/                    the primitive seam — a complete CPU backend, an optional kernel plugin
-conformance/            wires the existing pop/verdict corpus per language
-bin/                    build output — luxd-go, luxd-rust, luxd-cpp (gitignored)
+cmd/luxd                the daemon
+node/vms.go             the one chain registry — what runs, what is a plugin, what needs consent
+mesh/                   the peer layer: dialer, post-quantum handshake, peer, throttling, tracker
+network/                a set of chains that share a validator set and bootstrap together
+chains/                 the chain manager, and chains/{rust,cpp}/* the ports
+chains/schema/*.zap     the wire, from which the accessors are generated for all three languages
+runtime/{go,rust,cpp}   what each implementation builds, from where, and the exact invocation
+gpu/                    the primitive seam: a complete CPU backend, an optional kernel plugin
+conformance/            the corpora and the harnesses that run them per language
+bin/{go,rust,cpp}/luxd  build output (gitignored)
 Makefile                the one build entry point
 ```
 
-## The three runtimes, honestly
+## The three implementations
 
-**Rust and C++ are real, running node hosts, already clean.**
-`~/work/lux-rs/node` and `~/work/lux-cpp/node` each execute EVM blocks
-themselves, decide them by BLS quorum certificate over a real ZAP/TCP mesh,
-and serve JSON-RPC. Rust co-certifies with the Go `luxd` today, in a live
-mesh. Neither imports `luxfi/node` or lux-private. `make luxd RUNTIME=rust` and
-`make luxd RUNTIME=cpp` build exactly these, unmodified, into
-`bin/luxd-rust` and `bin/luxd-cpp`.
+Each is a running node: it executes blocks itself, decides them by BLS quorum
+certificate over a real mesh, and serves them. None imports another. `make
+luxd RUNTIME=<go|rust|cpp>` builds one; `make all` builds three and exits
+nonzero unless all three come out.
 
-**`node2` is Lux-branded only.** `lux-rs/node`'s `main.rs` and
-`lux-cpp/node`'s `src/noded.cpp` each also build other downstream orgs'
-brand-specific argv0 binaries from that same source. `node2` builds none of
-them, names none of them, and its Makefile and shims reference no brand but
-Lux — `make luxd RUNTIME=rust` builds only the `luxd` bin target, `make luxd
-RUNTIME=cpp` only the `luxd` CMake target. Those other-brand targets belong
-in their own skinny importer repos, one per downstream org, that pull in
-`node2` and layer on brand and config — not inside `node2` itself, and not
-built by anything here.
+**Go** builds from `./cmd/luxd` in this module and fetches nothing for it. It
+runs the primary network's chains — P X C Q Z A B G K M F natively, D through
+its plugin — and the closure is asserted clean at build time.
 
-**Go is not.** `make luxd RUNTIME=go` builds `~/work/lux/chains/evm` — the
-C-Chain VM plugin — into `bin/luxd-go`. It is real and it is clean (proof
-below), but it is not a node: run it and it logs a ZAP-serve line and exits
-asking for `VM_RUNTIME_ENGINE_ADDR`, because it is a plugin waiting for a
-host to dial it over `--plugin-dir`. `luxfi/chains` has no `cmd/luxd` — its
-`cmd/` holds one validation tool, `dex-assets-validate`, and every other
-buildable artifact in it is a plugin the same shape as `evm`. The host those
-plugins are built against today is `luxfi/node` itself.
+**Rust** builds `~/work/lux-rs/node`, **C++** builds `~/work/lux-cpp/node`.
+The shims under `runtime/` name the checkout and the invocation; nothing is
+copied or forked, and only the binary is carried back into `bin/`. Delete this
+repository and both are exactly as they were.
 
-### The clean cut, precisely
+**One brand.** This repository builds `luxd` and names no other. Downstream
+networks layer their own identity in their own repositories and take these as
+a dependency — `hanzoai/node` builds `hanzod`, `zooai/node` builds `zood`.
 
-Checked with `go list -deps` against each of the thirteen VMs `luxfi/chains`
-builds, in isolation:
+## The one chain registry
 
-```
-evm=0  keyvm=2  quantumvm=2  schain=1  oraclevm=4  fhevm=75
-aivm=3 bridgevm=3 graphvm=3 identityvm=3 mpcvm=3 relayvm=3 zkvm=3
-```
-(counts are `luxfi/node` packages appearing in that VM's own dependency
-closure — `go list -deps ./<vm>/...`, or `./<vm>/cmd/plugin/...` where the VM
-has no root `main.go`)
+`node/vms.go` holds every chain in one map, and each row says the three things
+that differ between them: whether the factory is built in `node.go` with
+runtime dependencies, whether the chain brings its own plugin binary, and
+whether an operator has to name it before it runs.
 
-`evm` is the only zero. The other twelve import exactly five `luxfi/node`
-subpackages everywhere they touch it at all — `config`, `version`, `vms`,
-`vms/artifacts`, `vms/types/fee` — the plugin-SDK surface a `ChainVM` needs to
-declare itself to a host, not networking or consensus code. `lux-private` itself
-has zero real imports anywhere in the module (`go mod why -m
-github.com/luxfi/node` shows the one real path, `chains/mpcvm/fhe →
-node/config`; the sole `lux-private` grep hit, `bridgevm/evmclient.go:12`, is a
-comment disclaiming it).
+A chain asks for consent when running it costs an operator something that
+validating the primary network did not — co-location with a matcher, an HSM, a
+GPU, a custody role. `luxd --chains=D,B,M` names them, by letter or alias, and
+an unknown name is refused at boot rather than ignored. A chain becomes
+permissionless by dropping `Consent` from its row; nothing else changes.
 
-`make luxd RUNTIME=go` proves this at build time, every time — it fails the
-build if either name reappears in `chains/evm`'s dependency graph, rather
-than trusting that it stayed true.
+## What is not here
 
-### The actual gap
+The D-Chain matcher, the F-Chain's FHE implementation and the GPU kernels are
+in `luxfi/compute`, which is private. Everything else here forks public work,
+and anyone building on this network has to be able to read and run it, so the
+two do not share a visibility. `chains/{rust,cpp}/{dexvm,fhevm}` and `gpu/` are
+shims naming that checkout, and the differentials build them from `$(COMPUTE)`
+so those rows are still measured. The pure-Go DEX in `luxfi/dex` is public.
 
-A clean Go node **host** does not exist on disk yet, anywhere. That is new
-implementation work — a plugin loader, P2P over ZAP, bootstrap, and
-`luxfi/consensus` wired together — which this structural-shell pass does not
-do, on the same principle that keeps the other `chains/` slots empty: import
-where something clean exists, write it once where nothing does. Its template already exists, just not in Go:
-`lux-rs/node` is exactly that architecture, already clean, already proven
-against the Go side in a live mesh. A Go host (`luxd2`) mirrors it. The other
-half of the gap is smaller than it looks — extracting the five-package
-plugin-SDK surface out of `luxfi/node` into its own package makes all
-thirteen `chains` VMs clean, not just `evm`, without touching any VM's logic.
+## Building against live checkouts
 
-## A note on building against live checkouts
-
-`~/work/lux-cpp/node` (and the repos it reuses) are shared checkouts other
-sessions actively edit, uncommitted, while this Makefile is reading them —
-that is the cost of a thin shim, and it is real, not theoretical: mid-scaffold,
-`make luxd RUNTIME=cpp` failed once with `AWS-LC not found` because another
-session's in-flight, uncommitted edit to that repo's `CMakeLists.txt` (adding
-TLS/peer/staking source and a new AWS-LC dependency) landed between two
-otherwise-successful builds and was picked up by CMake's own
-`cmake_check_build_system` reconfigure check. The next build, seconds later,
-was clean again. Nothing here papers over that — a failure like it is exactly
-what the exit-code check in `luxd-cpp` exists to catch and report, not hide,
-and `node2` does not touch or fix the other session's checkout to make it go
-away. If `make luxd RUNTIME=cpp` fails, retry before assuming the shim itself
-is broken; if it persists, `git status` in `~/work/lux-cpp/node` first.
+The Rust and C++ trees are shared checkouts that other sessions edit while
+this Makefile reads them. Every sub-build's exit code is checked and a failure
+is reported rather than absorbed — `cargo` and `ctest` have both reported
+stale success through a wrapper that did not look. Nothing here writes to
+those trees to make a build go. If one fails, retry; if it persists, `git
+status` in the checkout before suspecting the shim.
 
 ## The primitive seam (`gpu/`)
 
@@ -247,9 +203,9 @@ test what its name claims. It is Phase 2, alongside the Go host itself.
 ## Build
 
 ```sh
-make luxd RUNTIME=go      # bin/luxd-go    — chains/evm (C-Chain VM plugin)
-make luxd RUNTIME=rust    # bin/luxd-rust  — lux-rs/node (full host)
-make luxd RUNTIME=cpp     # bin/luxd-cpp   — lux-cpp/node (full host)
+make luxd RUNTIME=go      # bin/go/luxd    — ./cmd/luxd, this module
+make luxd RUNTIME=rust    # bin/rust/luxd  — lux-rs/node
+make luxd RUNTIME=cpp     # bin/cpp/luxd   — lux-cpp/node
 make all                  # all three + gpu; reports each; nonzero exit unless 3/3
 make gpu                  # lux-gpu/gpu kernel library
 make gpu-differential     # CPU alone, then CPU against the plugin, all three
@@ -263,38 +219,6 @@ make precompiles-corpus   # regenerate that corpus from the Go reference
 Every sub-build's exit code is checked explicitly — `cargo` and `ctest` have
 both reported stale success from a wrapper that didn't check, so nothing here
 trusts a green Makefile over a red sub-build.
-
-## Known corrections against the original brief
-
-- **GPU path.** The brief names `~/work/lux-gpu/gpu`; it does not exist on
-  this machine. The real checkout of that repository (`git remote -v` →
-  `git@github.com:lux-gpu/gpu.git`) is at `~/work/luxcpp/gpu` — confirmed by
-  remote, not assumed by path similarity. `gpu/README.md` records the
-  correction; the Makefile points there.
-- **This directory was not empty.** `~/work/lux/node2` already held a clean,
-  fully-pushed, but stale clone of `lux-cpp/node` (same remote, older HEAD
-  than the live checkout at `~/work/lux-cpp/node`) — apparently left from
-  earlier work exploring the same "second node" idea in C++ alone (its own
-  history has a commit titled "drop the 2: this is the C++ node, not a
-  second one"). Nothing was lost — it had no uncommitted work and a newer
-  copy of the same history lives on at `~/work/lux-cpp/node` and on GitHub.
-  Preserved rather than deleted, at
-  `~/work/lux/node2.stale-luxcpp-node-clone-see-LLM-md`, in case anything
-  about it turns out to matter later.
-- **License label.** This repo's `LICENSE` is the plain, permissive BSD
-  3-Clause text — the same one `~/work/lux/chains` uses for what its own
-  `LICENSING.md` calls the "public tier": usable, forkable, redistributable,
-  including commercially, with no added restriction. Several sibling repos'
-  file headers say `SPDX-License-Identifier: BSD-3-Clause-Eco` while shipping
-  this same plain text (`lux-cpp/node`'s `LICENSE` file is in fact
-  Apache-2.0 under that header, unrelated to either). A *different*,
-  genuinely restrictive "BSD 3-Clause Ecosystem License" also exists in this
-  ecosystem (`~/work/luxcpp/dex/LICENSE` — bars use outside Lux-authorized
-  networks, requires a separate commercial license) and is reserved for
-  monetizable primitives, not core node software. A node that other
-  operators are meant to run needs the permissive one; that is what shipped
-  here. Flagged in case "-Eco" was meant to invoke the restrictive variant
-  specifically.
 
 ## ZAP, and where it lives
 
@@ -499,7 +423,7 @@ either way, which is how a fork lived here for as long as it did.
 
 `conformance/gen` is the one place in this repo that depends on `luxfi/node`.
 That is what a reference is. It is a separate Go module so it cannot reach
-node2's own dependency graph, which `make luxd` still greps and still fails on.
+this module's own dependency graph, which `make luxd` greps and fails on.
 
 Two golden-generator packages, `chains/rust/platformvm/tests/vectors` and
 `chains/cpp/xvm/test/golden`, are references of the same kind but live in the
@@ -548,18 +472,16 @@ What it says, and the honest caveats, are in `conformance/README.md` under
 `exec` and is therefore the fastest thing in the table because it is the only
 one that stops after the syntactic pass.
 
-## Running the three, and why two of them sit at height 0
+## Running the three
 
 `make luxd RUNTIME={go,rust,cpp}` builds; nothing here starts a cluster. Three
 things have to hold before a height moves, and only the first is obvious.
 
 **Up is not producing.** All three answer `eth_chainId` and `eth_blockNumber`
-the moment their listener opens, from a chain that has decided nothing. A fleet
-was found in exactly that state: the Rust cluster had served RPC for eleven
-hours at height 0, and the read-only RPC benchmark that had been run against it
-could not have noticed, because every question it asks is answerable at height
-0. Ask for the height twice, a minute apart, and compare — a single sample
-cannot tell a live chain from a frozen one.
+the moment their listener opens, from a chain that has decided nothing. A
+read-only RPC benchmark cannot tell the difference, because every question it
+asks is answerable at height 0. Ask for the height twice, a minute apart, and
+compare — a single sample cannot tell a live chain from a frozen one.
 
 **The Rust and Go nodes build a block only when there is one to build.** Rust
 says so in its own loop: `Error::Empty` is not an error there but *a chain with

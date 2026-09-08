@@ -46,7 +46,7 @@ help:
 
 # ---- make luxd RUNTIME=go|rust|cpp -----------------------------------------
 
-luxd: ## build one runtime into bin/luxd-<runtime> (RUNTIME=go|rust|cpp)
+luxd: ## build one runtime into bin/<runtime>/luxd (RUNTIME=go|rust|cpp)
 	@test -n "$(RUNTIME)" || { echo "usage: make luxd RUNTIME=go|rust|cpp" >&2; exit 1; }
 	@$(MAKE) --no-print-directory luxd-$(RUNTIME)
 
@@ -55,23 +55,23 @@ luxd: ## build one runtime into bin/luxd-<runtime> (RUNTIME=go|rust|cpp)
 # reaches outside itself for the thing it claims to be has not replaced it.
 luxd-go:
 	@echo "==> go: ./cmd/luxd"
-	@mkdir -p $(BIN)
-	GOWORK=off CGO_ENABLED=0 go build -trimpath -o $(BIN)/luxd ./cmd/luxd
-	@test -x $(BIN)/luxd
+	@mkdir -p $(BIN)/go
+	GOWORK=off CGO_ENABLED=0 go build -trimpath -o $(BIN)/go/luxd ./cmd/luxd
+	@test -x $(BIN)/go/luxd
 	@leaked="$$(GOWORK=off go list -deps ./cmd/luxd 2>/dev/null | grep -E 'lux-private' || true)"; \
 	if [ -n "$$leaked" ]; then echo "FAIL: a forbidden package in the closure:" >&2; echo "$$leaked" >&2; exit 1; fi
 	@echo "    confirmed clean: 0 forbidden in the dependency graph"
-	@ls -lh $(BIN)/luxd
+	@ls -lh $(BIN)/go/luxd
 
 # rust: lux-rs/node — a real node host (mesh + BLS quorum finality + revm),
 # already luxfi/node-free. Built in place; only the binary is copied out.
 luxd-rust:
 	@echo "==> rust: lux-rs/node (full node host)"
-	@mkdir -p $(BIN)
+	@mkdir -p $(BIN)/rust
 	cd $(NODE_RUST_DIR) && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin luxd
 	@test -x $(NODE_RUST_DIR)/target/release/luxd
-	cp $(NODE_RUST_DIR)/target/release/luxd $(BIN)/hanzod
-	@ls -lh $(BIN)/hanzod
+	cp $(NODE_RUST_DIR)/target/release/luxd $(BIN)/rust/luxd
+	@ls -lh $(BIN)/rust/luxd
 
 # cpp: lux-cpp/node — a real node host (mesh + BLS quorum finality + cevm).
 # Configures the repo's own build/ against the Conan toolchain cevm's
@@ -79,7 +79,7 @@ luxd-rust:
 # gitignored directory is written back into the source tree.
 luxd-cpp:
 	@echo "==> cpp: lux-cpp/node (full node host)"
-	@mkdir -p $(BIN)
+	@mkdir -p $(BIN)/cpp
 	@test -n "$(CONAN_TOOLCHAIN)" || { \
 			echo "FAIL: no Conan toolchain for cevm. Write one with:" >&2; \
 			echo "  conan install <cevm> -pr <cevm>/.github/conan/manylinux-relax.profile \\" >&2; \
@@ -93,15 +93,15 @@ luxd-cpp:
 		-DCMAKE_TOOLCHAIN_FILE=$(CONAN_TOOLCHAIN)
 	cmake --build $(NODE_CPP_BUILD) --target luxd -j$(NPROC)
 	@test -x $(NODE_CPP_BUILD)/luxd
-	cp $(NODE_CPP_BUILD)/luxd $(BIN)/zood
-	@ls -lh $(BIN)/zood
+	cp $(NODE_CPP_BUILD)/luxd $(BIN)/cpp/luxd
+	@ls -lh $(BIN)/cpp/luxd
 
 # ---- make all: attempt all three + gpu, report every one, fail loudly -----
 
 all: ## build all three runtimes plus gpu; nonzero unless 3/3
 	@mkdir -p $(BIN)
-	@rm -f $(BIN)/luxd $(BIN)/hanzod $(BIN)/zood
-	@echo "=== node2: building go, rust, cpp, gpu ==="
+	@rm -f $(BIN)/go/luxd $(BIN)/rust/luxd $(BIN)/cpp/luxd
+	@echo "=== node: building go, rust, cpp, gpu ==="
 	-$(MAKE) --no-print-directory luxd-go
 	-$(MAKE) --no-print-directory luxd-rust
 	-$(MAKE) --no-print-directory luxd-cpp
