@@ -1470,7 +1470,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb network.Net) (*chai
 				Config:   vmConfigBytes,
 				ToEngine: toEngine,
 				Fx:       fxsInterface,
-				Sender:   nil, // appSender - not needed for simple VMs
+				Sender:   &chainSender{net: m.Net, msgCreator: m.MsgCreator, chainID: chainParams.ID, log: chainLog},
 			},
 		)
 		if err != nil {
@@ -5388,6 +5388,79 @@ func (p *noopHandler) HandleInbound(ctx context.Context, msg handler.Message) er
 func (p *noopHandler) HandleOutbound(ctx context.Context, msg handler.Message) error {
 	return nil
 }
+
+// chainSender carries a chain's application messages out over the node's own
+// mesh. An in-process chain has no plugin connection to send through, so
+// without this it is handed nothing and builds a peer network with no peers in
+// it — which does not fail at construction, it panics on the first peer that
+// connects.
+//
+// The three sends are the three the seam names, over the two the mesh offers:
+// a request and a response are point-to-point, gossip is a sample. Nothing is
+// retried here — the mesh answers with the set it reached, and a message to a
+// peer that is gone is a message that did not go, which is a fact for the
+// caller and not an error to raise.
+type chainSender struct {
+	net        mesh.Network
+	msgCreator message.OutboundMsgBuilder
+	chainID    ids.ID
+	log        log.Logger
+}
+
+var _ warp.Sender = (*chainSender)(nil)
+
+func (c *chainSender) SendRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, request []byte) error {
+	deadline := time.Until(mustDeadline(ctx))
+	msg, err := c.msgCreator.Request(c.chainID, requestID, deadline, request)
+	if err != nil {
+		return fmt.Errorf("chain %s: build app request: %w", c.chainID, err)
+	}
+	c.net.Send(msg, nodeIDs, c.chainID, requestID)
+	return nil
+}
+
+func (c *chainSender) SendResponse(ctx context.Context, nodeID ids.NodeID, requestID uint32, response []byte) error {
+	msg, err := c.msgCreator.Response(c.chainID, requestID, response)
+	if err != nil {
+		return fmt.Errorf("chain %s: build app response: %w", c.chainID, err)
+	}
+	c.net.Send(msg, set.Of(nodeID), c.chainID, requestID)
+	return nil
+}
+
+// SendError answers a request this chain will not serve. The seam has no error
+// frame of its own, so the code and the text go out as the response body: a
+// requester that gets nothing cannot tell a refusal from a lost message, and
+// waits out its deadline for an answer that was already decided.
+func (c *chainSender) SendError(ctx context.Context, nodeID ids.NodeID, requestID uint32, errorCode int32, errorMessage string) error {
+	body := fmt.Appendf(nil, "%d %s", errorCode, errorMessage)
+	msg, err := c.msgCreator.Response(c.chainID, requestID, body)
+	if err != nil {
+		return fmt.Errorf("chain %s: build app error: %w", c.chainID, err)
+	}
+	c.net.Send(msg, set.Of(nodeID), c.chainID, requestID)
+	return nil
+}
+
+func (c *chainSender) SendGossip(ctx context.Context, config warp.SendConfig, gossipBytes []byte) error {
+	msg, err := c.msgCreator.Gossip(c.chainID, gossipBytes)
+	if err != nil {
+		return fmt.Errorf("chain %s: build app gossip: %w", c.chainID, err)
+	}
+	c.net.Gossip(msg, config.NodeIDs, c.chainID, config.Validators, config.NonValidators, config.Peers)
+	return nil
+}
+
+// mustDeadline is the request's deadline, or a bounded one when the caller set
+// none. A request with no deadline is a slot held open forever.
+func mustDeadline(ctx context.Context) time.Time {
+	if d, ok := ctx.Deadline(); ok {
+		return d
+	}
+	return time.Now().Add(defaultAppRequestDeadline)
+}
+
+const defaultAppRequestDeadline = 10 * time.Second
 
 // noopWarpSender is a no-op implementation of warp.Sender for cross-chain messaging
 // Used in single-node mode where cross-chain messaging is not needed
