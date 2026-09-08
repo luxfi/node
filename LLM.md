@@ -158,57 +158,80 @@ Each would have refused a transaction the reference admits, which on a live
 chain is a node that refuses a block its peers accepted.
 `conformance/README.md` states all four rules.
 
-`make precompiles` is described in `conformance/PRECOMPILE.md`. **It fails, and
-what it found is the reason it exists.**
+`make precompiles` is described in `conformance/PRECOMPILE.md`. Across 258
+calls the three runtimes now agree on every field but eight, no column
+declines one, and what is left is a single sentence: **Rust and C++ do not
+implement three module families the chain enables.** They are `aiMiningConfig`
+at `0x0300…0000`, `mlkemConfig` at `0x…012201` and `xwingConfig` at
+`0x…2221` — Go serves each because mainnet's `upgrade.json` names its key, the
+two ports serve none of them, and an address one runtime answers at and another
+does not is a fork whichever way it falls. That is an implementation gap with a
+size, which is what a differential is for.
 
-Across 235 calls the three runtimes split two against one, and the one is Go:
-Rust and C++ disagree with each other on 15 fields and each disagrees with Go
-on roughly 200. Go is alone because it is the only one that applies the Lux
-precompile modules, and those modules are laid out on the **pre-final**
-EIP-2537, which still had separate multiply precompiles. The final EIP dropped
-them, so every BLS12-381 address from `0x0c` up is shifted by one slot:
-`0x0d` is a G1 multi-exponentiation to the Lux module and a G2 addition to
-geth, revm and cevm — different curve groups, not different gas. 243 of the
-252 Go-versus-C++ disagreements name a `bls12381` module.
+Everything else it was reporting was the harness rather than the chain, and all
+of it came back to one question the Go reference was not
+asking — what does the C-Chain actually serve? — and the answer has two halves
+the reference had both of wrong.
 
-All seven keys are enabled on **mainnet**, in
-`lux/genesis/configs/mainnet/upgrade.json` at a timestamp in December 2025, and
-on testnet and devnet, and at zero on local and localnet. And nothing else can
-serve those addresses there: mainnet's `cchain.json` stops at Cancun, geth's
-stock BLS table starts at Prague, so the Lux modules are the sole occupants.
-That makes it a fork at either revision a port could be run at, for a different
-reason each time. Held at Cancun, matching the chain, cevm gates those
-addresses on Prague and serves nothing where Go serves seven. Held at Osaka, as
-this corpus asks, it serves the final layout where Go serves the draft. There
-is no revision at which a port can express the layout the C-Chain runs, which
-is the gap itself and not an artifact of how the question was put.
+**Registration is not activation.** Importing `luxfi/precompile/registry` links
+fifty-six modules into a binary. `LuxPrecompileOverrider` answers from
+`GetExtrasRules(...).Precompiles`, which holds only the keys a chain's
+`precompileUpgrades` name, and it never asks the registry whether the code is
+linked. The reference asked the registry, so it answered for nineteen modules
+no network has turned on. It now asks mainnet's enabled set.
 
-One of the three has since closed. cevm dispatched precompiles through a dense
-array keyed on the last two bytes of an address, bounded by a full-address
-comparison, so no Lux address could be reached at all: inference at
-`0x0300…0003` shares its last two bytes with ripemd160, and the whole
-`0x…0122xx` post-quantum block was equally unreachable. It matches the whole
-address now for anything outside the stock range, and inference is registered
-where Go serves it. Go and C++ return the same fourteen tokens and the same
-600000 gas for the generate call both were written against, and the corpus
-carries that vector. Rust answers ABSENT, because `lux-evm` is revm's
-`EthPrecompiles` plus a profile gate and registers no Lux module anywhere.
+**The stock table is the chain's, and the chain is at Cancun.** `luxfi/evm` maps
+its Quasar fork to `CancunTime` and defines nothing after it — its config
+carries no `OsakaTime` for a network to set, so no network sets one.
 
-Two smaller ones. At `0x…0100` the Lux `secp256r1` module would charge 3450
-where the stock table charges 6900, and the module would win because
-`LuxPrecompileOverrider` is consulted first — but its key is enabled on no
-network, and stock p256verify is Osaka-only on a chain at Cancun, so nothing
-serves that address anywhere today. It becomes a fork the moment either side is
-switched on, and they cannot both be. And address zero is not unclaimed: the
-dead-address module (LP-0150) is registered there and reads chain state, so it
-cannot be answered for without a chain.
+At `0x…0100` both halves showed at once, which is why three runtimes gave three
+answers. Two implementations are written for that address and neither runs: the
+Lux `secp256r1` module charges 3450 and `secp256r1Config` is named in no
+`upgrade.json`, and geth's `p256verify` charges 6900 and arrives at Osaka. So Go
+read 3450 off the registry, the two ports read 6900 off a table held at a
+revision no Lux chain reaches, and a call there meets an empty account. All
+three answer ABSENT.
 
-The residue is two reporting conventions rather than two behaviours. revm
-cannot say what a refusal cost, because it computes the price inside the
-function that does the work, so it writes SKIPPED rather than a zero it does
-not mean. And cevm prices an unpriceable input above the limit, so it calls a
-malformed length "out of gas" where revm calls it a refusal — 15 vectors. At
-transaction level both consume everything offered, so neither is a fork.
+`0x0300…0003` is the same finding with a longer history. `aiInferenceConfig` is
+enabled nowhere either — the AI key the chain does enable, `aiMiningConfig`, is
+at another address — and cevm had been taught to serve inference there in order
+to agree with Go. A fix that makes a second node serve an address the first
+leaves empty is a state-root split adopted to settle a differential, and it is
+unregistered again.
+
+Holding the ports at Osaka had a second cost that no address made obvious:
+modexp was priced by EIP-7883 and EIP-7823, which no validator charges. Moving
+to Cancun moved 25 corpus rows, which is the whole of the corpus diff besides
+the five at `0x…0100` and the two at `0x0300…0003`.
+
+The BLS12-381 modules at `0x0b`–`0x11` are untouched by any of this, and they
+are the reason the layout matters: they are on the **pre-final** EIP-2537, which
+still had separate multiply precompiles, so from `0x0c` up the same address
+names a different operation to Ethereum than to the chain — `0x0d` is a G1
+multi-exponentiation to the module and a G2 addition to geth, revm and cevm,
+different curve groups rather than different gas. All seven keys are enabled on
+mainnet at a timestamp in December 2025, on testnet and devnet, and at zero on
+local and localnet, and Cancun's stock table holds nothing there, so the modules
+are the sole occupants and all three runtimes serve that layout.
+
+Address zero is not unclaimed either: the dead-address module (LP-0150) is
+registered there, is enabled, and reads chain state, so it cannot be answered
+for without a chain — and the corpus does not ask.
+
+No column declines a field any more either. revm computes a price inside the
+work, so its error carries no charge and a refused call used to leave the gas
+column blank on six fields. A price is the smallest offer a precompile accepts,
+so the Rust evaluator now bisects the offer and recovers it — 0 where revm
+rejects a blake2 length before reading the round count, 50000 for a KZG blob it
+prices before validating — which is what Go and cevm already reported.
+
+So the eight vectors above are the whole of what the differential still finds,
+and they name work rather than a disagreement about a price: ML-KEM, X-Wing and
+AI-mining have to be written in the two ports. Five more post-quantum families
+were reported alongside them until the reference started asking the enabled set
+— `mldsaVerify`, `slhdsaVerify`, `pulsarVerify`, `p3qVerify` and
+`coronaThreshold` are linked into the Go binary and enabled by no network, so
+all three runtimes answer ABSENT and there is nothing there to implement.
 
 This is **consensus-layer** conformance, not **node-level** — three live
 `bin/luxd-*` daemons handed the same blocks over real sockets and checked

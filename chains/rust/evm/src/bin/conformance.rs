@@ -30,6 +30,12 @@
 //! method, deducted before `Run` is reached — so it charges a refusal too. The
 //! difference is confined to this boundary: both machines then halt the frame
 //! and consume everything the caller offered.
+//!
+//! So a refused call still has a price here, it is just not in the error. It
+//! is recovered by offering less until the precompile objects: see
+//! [`price_of_refusal`]. That keeps the gas column comparable on every row
+//! rather than going quiet on the rows where an implementation refused, which
+//! are the rows a differential most wants to read.
 
 use std::ops::Range;
 
@@ -44,10 +50,14 @@ use revm::primitives::hardfork::SpecId;
 use revm::primitives::{Address, Bytes, U256};
 use revm::{Context, MainContext};
 
-/// The revision every implementation in this differential is built to: the one
-/// that serves p256verify at 0x0100, which is geth's Osaka table on the Go
-/// side and revm's `PrecompileSpecId::OSAKA` here.
-const SPEC: SpecId = SpecId::OSAKA;
+/// The revision the C-chain runs, which is the revision every implementation in
+/// this differential answers at. `luxfi/evm` maps its Quasar fork to
+/// `CancunTime` and knows no fork after it — there is no `OsakaTime` on a Lux
+/// chain config for a network to set, and none sets one — so Cancun is where
+/// every Lux chain ends. Asking a port at a later revision makes it serve
+/// addresses no validator serves: at Osaka this table answers p256verify at
+/// 0x0100, where the chain has an empty account.
+const SPEC: SpecId = SpecId::CANCUN;
 
 /// An empty column, spelled so it is not an empty column.
 const NONE: &str = "-";
@@ -135,14 +145,12 @@ impl Vector {
 /// zero and the output is empty, because there is no charge to report and a
 /// number nobody agrees to means the column stops comparing.
 ///
-/// On a refusal it is `None` unless a charge was recorded, and `None` prints as
-/// SKIPPED. revm computes a precompile's price inside the function that does
-/// its work, so a call that returned an error recorded no charge and this
-/// program cannot recover one.
-/// Go and the C++ tree both separate price from work and do report it. Zero
-/// would be an answer, and a wrong one — the call was not free — so this says
-/// it does not know, which the runner counts and prints and never scores as
-/// agreement.
+/// `None` prints as SKIPPED, which the runner counts and prints and never
+/// scores as agreement. One thing still reaches it: a precompile that could
+/// not run at all, revm's `PrecompileError::Fatal`, where no offer produces
+/// an answer and so no price can be measured either. A refusal of the INPUT is
+/// priced — see [`price_of_refusal`] — because the charge is recoverable there
+/// even though revm's error does not carry it.
 struct Row {
     id: String,
     status: &'static str,
@@ -174,9 +182,17 @@ impl std::fmt::Display for Row {
 /// Answers one vector the way a Rust node would answer the call.
 fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vector) -> Row {
     let who = name(&v.address);
-    let call = inputs(v);
+    let call = inputs(v, v.gas);
+    // Whether a refusal here has a charge that can be reported. A Lux module
+    // splits price from body the way Go's does, so it knows what a call cost
+    // even when it refused; revm computes the price inside the work and an
+    // error carries none. Asked before the run, because the run borrows.
+    let priced = precompiles.module(&v.address).is_some();
 
-    match PrecompileProvider::<CTX>::run(precompiles, context, &call) {
+    // Bound, so the borrow the call takes ends here and the refusal path below
+    // can ask the same precompiles what the call would have cost.
+    let outcome = PrecompileProvider::<CTX>::run(precompiles, context, &call);
+    match outcome {
         // Nothing at this address. revm says so by declining to produce a
         // result at all, which is the same sentence as Go's missing map entry.
         Ok(None) => Row {
@@ -186,7 +202,7 @@ fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vec
             output: Bytes::new(),
             note: "no precompile at this address".into(),
         },
-        Ok(Some(r)) => verdict(v, r, context, who),
+        Ok(Some(r)) => verdict(v, r, precompiles, context, who, priced),
         // A precompile that could not run at all — revm's `PrecompileError::
         // Fatal`, which is a missing trusted setup rather than a bad input.
         // It refused, so it is reported as a refusal, and the note says which
@@ -201,7 +217,14 @@ fn run<CTX: ContextTr>(precompiles: &mut Precompiles, context: &mut CTX, v: &Vec
     }
 }
 
-fn verdict<CTX: ContextTr>(v: &Vector, r: InterpreterResult, context: &mut CTX, who: &str) -> Row {
+fn verdict<CTX: ContextTr>(
+    v: &Vector,
+    r: InterpreterResult,
+    precompiles: &mut Precompiles,
+    context: &mut CTX,
+    who: &str,
+    priced: bool,
+) -> Row {
     let id = v.id.clone();
     // `limit - remaining`. The conversion happens here, at the edge, and once.
     let charged = r.gas.spent();
@@ -227,17 +250,26 @@ fn verdict<CTX: ContextTr>(v: &Vector, r: InterpreterResult, context: &mut CTX, 
                 .local_mut()
                 .take_precompile_error_context()
                 .unwrap_or_else(|| format!("{other:?}"));
+            // A Lux module charged for reading the input it then refused and
+            // can say how much. Everything else is revm's, where the price
+            // lives inside the function that does the work and the error
+            // carries none away — so that price is measured rather than read.
+            let gas = if priced || charged > 0 {
+                charged
+            } else {
+                price_of_refusal(v, precompiles, context)
+            };
             Row {
                 id,
                 status: FAILED,
                 // A refusal that recorded a charge is one the classical gate
                 // produced: `Precompiles::run` lets the precompile run and pay
-                // before it discards the answer, so the price is on the meter.
-                // A refusal from inside the precompile recorded nothing — revm
-                // hands the `Gas` back untouched — and nothing in the set costs
-                // nothing, so a zero there is the absence of a number rather
-                // than a number. SKIPPED says which of the two this is.
-                gas: (charged > 0).then_some(charged),
+                // before it discards the answer, so the price is already on the
+                // meter and is read straight off it. A refusal from inside the
+                // precompile recorded nothing — revm hands the `Gas` back
+                // untouched — and nothing in the set costs nothing, so that
+                // zero is the absence of a number. It is measured instead.
+                gas: Some(gas),
                 output: Bytes::new(),
                 note: format!("revm:{who}: {why}"),
             }
@@ -245,15 +277,70 @@ fn verdict<CTX: ContextTr>(v: &Vector, r: InterpreterResult, context: &mut CTX, 
     }
 }
 
+/// What a refused call cost, for a precompile that computes its price inside
+/// the work and whose error carries none away.
+///
+/// A price is the smallest offer a precompile accepts: below it the answer is
+/// out of gas, and at it the answer is whatever the work arrives at — here, a
+/// refusal. So the price is asked for rather than looked up, by bisecting the
+/// offer. The vector's own limit already bought a refusal rather than an out
+/// of gas, so the answer lies in `[0, v.gas]`, and a few dozen calls find it
+/// exactly.
+///
+/// Measured, not tabulated, and that is the point. revm keeps these rules
+/// private — `blake2`'s round cost is a bare `const` — so the alternative is a
+/// second table of revm's numbers, which is the thing [`MODULES`] reuses
+/// revm's arithmetic to avoid. A table drifts from the code it copies; this
+/// cannot drift from the code it measures.
+///
+/// Zero is a real answer here, not a missing one: revm's blake2 rejects a
+/// wrong input length before it reads the round count, so it demands nothing,
+/// which is the 0 geth's `RequiredGas` returns for the same call.
+fn price_of_refusal<CTX: ContextTr>(
+    v: &Vector,
+    precompiles: &mut Precompiles,
+    context: &mut CTX,
+) -> u64 {
+    let mut lo = 0u64;
+    let mut hi = v.gas;
+    while lo < hi {
+        let mid = lo + (hi - lo) / 2;
+        if refused_for_want_of_gas(v, mid, precompiles, context) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    // The probing calls parked messages of their own on the way past. Clearing
+    // them here keeps a refusal from being reported again under a later vector.
+    context.local_mut().take_precompile_error_context();
+    lo
+}
+
+/// Whether this call answers "out of gas" when offered exactly `gas_limit`.
+/// Monotone in the offer, which is what makes the bisection above exact.
+fn refused_for_want_of_gas<CTX: ContextTr>(
+    v: &Vector,
+    gas_limit: u64,
+    precompiles: &mut Precompiles,
+    context: &mut CTX,
+) -> bool {
+    let call = inputs(v, gas_limit);
+    matches!(
+        PrecompileProvider::<CTX>::run(precompiles, context, &call),
+        Ok(Some(r)) if r.result == InstructionResult::PrecompileOOG
+    )
+}
+
 /// A top-level call to the precompile, and nothing else: no value, no static
 /// context, no memory to return into. `CallInput::Bytes` rather than a shared
 /// buffer, because the corpus hands over the bytes and there is no interpreter
 /// here holding them.
-fn inputs(v: &Vector) -> CallInputs {
+fn inputs(v: &Vector, gas_limit: u64) -> CallInputs {
     CallInputs {
         input: CallInput::Bytes(v.input.clone()),
         return_memory_offset: Range::default(),
-        gas_limit: v.gas,
+        gas_limit,
         bytecode_address: v.address,
         known_bytecode: None,
         target_address: v.address,

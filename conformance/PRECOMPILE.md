@@ -70,23 +70,51 @@ comparing. On `FAILED` the charge stands: a precompile that read the input and
 refused it did the work of reading it.
 
 An implementation that cannot know the charge writes `SKIPPED` rather than a
-number. revm computes a precompile's price inside the function that does its
-work, so a call that returned an error recorded no charge and none can be
-recovered; Go and the C++ tree separate price from work and do report it.
-Zero would be an answer and a wrong one, since the call was not free. The
-runner counts a `SKIPPED` field, prints it under NOT COMPARED, and never
-scores it as agreement.
+number, since zero would be an answer and a wrong one. The runner counts a
+`SKIPPED` field, prints it under DECLINED, and never scores it as agreement —
+a run can still pass, because two other implementations answered, which is
+exactly why a column going quiet has to be printed rather than inferred.
+
+Little reaches it now. revm computes a precompile's price inside the function
+that does the work, so its error carries no charge away, where Go and the C++
+tree separate price from work and report one. But the charge is recoverable
+without either of them: a price is the smallest offer a precompile accepts, so
+the Rust evaluator bisects the offer until the answer stops being out of gas.
+That reads the price off the implementation under test rather than off a copy
+of revm's numbers — which revm keeps private in any case. What is left for
+`SKIPPED` is a precompile that cannot run at all, where no offer produces an
+answer and there is nothing to measure.
 
 The note is not compared. An error string is a fact about a codebase, not
 about a precompile, so it travels where it explains without being weighed.
 
 ## Which implementation answers at an address
 
-A Lux module registered at an address **shadows** the stock precompile there,
+A Lux module the chain **enables** shadows the stock precompile at its address,
 because that is what `LuxPrecompileOverrider` does before the standard table is
-consulted. The Go reference asks in that order. Asking the stock table first
-would report a price no chain charges — which matters at `0x…0100`, where the
-stock table charges 6900 and the Lux module charges 3450.
+consulted. The Go reference asks in that order.
+
+Enabled, not registered — the two are a long way apart and the difference is
+invisible from inside one runtime. Importing `luxfi/precompile/registry` links
+fifty-six modules into a binary. `PrecompileOverride` answers from
+`GetExtrasRules(...).Precompiles`, which holds the keys the chain's
+`precompileUpgrades` name, and it never asks the registry whether the code is
+linked. A module no network names is not a cheaper precompile at that address;
+it is no precompile at that address.
+
+The stock table is likewise the one the chain runs, and that is **Cancun**.
+`luxfi/evm` maps its Quasar fork to `CancunTime` and defines nothing after it —
+there is no `OsakaTime` on a Lux chain config for a network to set, and none
+sets one.
+
+`0x…0100` is where both halves of that showed. Two implementations are written
+for that address and the chain reaches neither: the Lux `secp256r1` module
+charges 3450 and `secp256r1Config` appears in no `upgrade.json`, and geth's
+`p256verify` charges 6900 and arrives at Osaka. So all three evaluators answer
+`ABSENT` there and the corpus records `ABSENT`, because that is what a call to
+`0x…0100` meets on a Lux chain: an empty account. `0x0300…0003` is the same
+finding a second time — `aiInferenceConfig` is enabled nowhere, and the AI key
+the C-Chain does enable, `aiMiningConfig`, is at another address.
 
 ## Adding an implementation
 

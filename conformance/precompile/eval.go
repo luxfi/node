@@ -45,16 +45,72 @@ func eval(path string, w io.Writer) error {
 	return s.Err()
 }
 
+// enabled is the C-chain's precompileUpgrades — the ConfigKeys named in
+// lux/genesis/configs/mainnet/upgrade.json, which is the set a mainnet node
+// activates. Every Lux network's upgrade.json agrees with it on every key this
+// corpus reaches.
+//
+// It is here because registration is not activation, and the distance between
+// the two is what this evaluator used to answer with. Importing the registry
+// links all fifty-six modules into this binary; a module reaches a call only
+// where the chain names its key. LuxPrecompileOverrider.PrecompileOverride
+// reads GetExtrasRules(...).Precompiles and returns nothing for an address
+// whose key is unnamed — it never asks the registry whether the code is
+// linked, and neither can an evaluator that means to answer as the chain does.
+var enabled = map[string]bool{
+	"aiMiningConfig":           true,
+	"anchorConfig":             true,
+	"attestationConfig":        true,
+	"babyjubjubConfig":         true,
+	"blake3Config":             true,
+	"bls12381G1AddConfig":      true,
+	"bls12381G1MSMConfig":      true,
+	"bls12381G1MulConfig":      true,
+	"bls12381G2AddConfig":      true,
+	"bls12381G2MSMConfig":      true,
+	"bls12381G2MulConfig":      true,
+	"bls12381PairingConfig":    true,
+	"bridgeRegistrarConfig":    true,
+	"computeMarketConfig":      true,
+	"curve25519Config":         true,
+	"deadConfig":               true,
+	"deadFullConfig":           true,
+	"deadZeroConfig":           true,
+	"dexPositionManagerConfig": true,
+	"dexQuoterConfig":          true,
+	"dexSettleConfig":          true,
+	"dexStateViewConfig":       true,
+	"fheConfig":                true,
+	"fixedPointMathConfig":     true,
+	"graphConfig":              true,
+	"hpkeConfig":               true,
+	"mlkemConfig":              true,
+	"pastaConfig":              true,
+	"pedersenConfig":           true,
+	"poseidonConfig":           true,
+	"rewardManagerConfig":      true,
+	"ringConfig":               true,
+	"routerConfig":             true,
+	"stableSwapConfig":         true,
+	"vrfConfig":                true,
+	"warpConfig":               true,
+	"x25519Config":             true,
+	"xwingConfig":              true,
+	"zkConfig":                 true,
+}
+
 // run answers one vector the way the chain would answer the call.
 //
-// The order is the chain's order, not a convenience: a Lux module registered
-// at an address SHADOWS the stock precompile there, because that is what
+// The order is the chain's order, not a convenience: a Lux module the chain
+// ENABLES shadows the stock precompile at its address, because that is what
 // LuxPrecompileOverrider does before the standard table is consulted. Asking
-// the stock table first would report a gas price no chain charges.
+// the stock table first would report a gas price no chain charges — and so
+// would asking the registry, which holds modules no chain has turned on.
 func run(v Vector) Result {
 	address := common.HexToAddress("0x" + v.Address)
 
-	if m, ok := modules.GetPrecompileModuleByAddress(address); ok && m.Contract != nil {
+	if m, ok := modules.GetPrecompileModuleByAddress(address); ok && m.Contract != nil &&
+		(m.AlwaysOn || enabled[m.ConfigKey]) {
 		// The modules this corpus reaches deduct gas and delegate, and read
 		// nothing, so there is no state to give them. One that does read state
 		// cannot be compared against implementations that have no chain under
@@ -64,9 +120,12 @@ func run(v Vector) Result {
 		return runModule(v, address, m.ConfigKey)
 	}
 
-	// The stock set, at the latest revision, which is the one every
-	// implementation in this differential is built to.
-	p, ok := vm.PrecompiledContractsOsaka[address]
+	// The stock set at the revision the C-chain runs. luxfi/evm maps its
+	// Quasar fork to CancunTime and knows no fork after it — its config carries
+	// no OsakaTime for a network to set, and none does — so Cancun is where
+	// every Lux chain ends. A later table would serve addresses no validator
+	// serves and price calls no validator prices.
+	p, ok := vm.PrecompiledContractsCancun[address]
 	if !ok {
 		return Result{ID: v.ID, Status: ABSENT, Note: "no precompile at this address"}
 	}
