@@ -1,19 +1,37 @@
 # node
 
-Three node runtimes — Go, Rust and C++ — one build entry point, and the
+`github.com/luxfi/node` — the Lux node, in three languages, with the
 differentials that hold them to the same answers.
 
 ## What it is
 
-`node` imports three existing implementations rather than adding a fourth.
-Nothing under `runtime/` or `gpu/` is a copy or a fork; each is a README naming
-the checkout it builds and the exact invocation. Delete this repository and
-every one of them is exactly as it was.
+The Go node lives here. It is not fetched and not vendored: `cmd/luxd` and
+everything under it are this module, so the repository is the thing its import
+path names rather than a host that reaches outside itself for it. It runs the
+primary network's chains — P X C Q Z A B G K M F, and D through its plugin —
+and `make luxd RUNTIME=go` builds it.
 
-The exception is `chains/`, where a port had no clean home. `chains/rust/xvm`
-is the X-Chain in Rust — a real port against the Rust node's VM seam, not a
-shim — and `chains/{rust,cpp}/*` hold the chain ports the differentials
-compare.
+Rust and C++ sit beside it. `runtime/{rust,cpp}` name the checkouts they build
+and the exact invocation; neither is a copy or a fork. `chains/{rust,cpp}/*`
+hold the chain ports, and `chains/rust/xvm` is the X-Chain in Rust — a real
+port against the Rust node's VM seam, not a shim.
+
+That arrangement is the point: the reference implementation and the two ports
+are one checkout, so parity is something you run rather than something you
+assert.
+
+## Opting into a chain
+
+Some chains cost an operator something that validating the primary network did
+not ask for — co-location with a matcher, an HSM, a GPU, a custody role — so
+the node runs them only when named:
+
+```sh
+luxd --chains=D,B,M      # by letter or alias; an unknown name is refused at boot
+```
+
+Without it, D, B and M decline even under `--track-all-chains`. A chain becomes
+permissionless by dropping `Consent` from its row in `node/vms.go`.
 
 ## The differentials
 
