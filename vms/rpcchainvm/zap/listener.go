@@ -19,17 +19,15 @@ import (
 // "unix" from the socket-path addr, so a plugin rebuilt against that api
 // connects back over the socket with zero code change on its side.
 //
-// It is OPT-IN via LUXD_VM_UNIX_SOCKET=1 because a plugin binary built against
-// an older api/zap still dials "tcp" and would fail on a socket-path addr —
-// activating the socket transport is a coordinated node+plugin rebuild. Default
-// stays TCP loopback so existing /data/plugins keep working across the upgrade.
-// Windows always uses TCP (no unix sockets).
+// The node and the plugins it runs are one build and ship together, so both
+// sides move at once. Windows has no unix sockets and gets TCP; so does a host
+// where the socket cannot be bound, because a chain that will not start is
+// worse than one on a slower transport.
 func NewListener() (net.Listener, error) {
-	if runtime.GOOS != "windows" && os.Getenv("LUXD_VM_UNIX_SOCKET") == "1" {
+	if runtime.GOOS != "windows" {
 		if ln, err := newUnixListener(); err == nil {
 			return ln, nil
 		}
-		// fall through to TCP on any unix-socket failure
 	}
 	return net.Listen("tcp", "127.0.0.1:0")
 }
