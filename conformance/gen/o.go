@@ -317,10 +317,22 @@ func oVectors() []Vector {
 		vec("O_BLOCK_EMPTY_ARRAY", "O", "block",
 			oInsert(empty, `"observations":[],`)),
 
-		// A height written as a float. Go hands the literal to strconv on the
-		// way into a uint64, so "1.0" is refused where "1" is taken.
-		vec("O_BLOCK_HEIGHT_FLOAT", "O", "block",
-			[]byte(strings.Replace(string(empty), `"height":1`, `"height":1.0`, 1))),
+		// A number reaching an integer must BE one: Go hands the literal to
+		// strconv, so a float, an exponent, a negative and a value past the
+		// width are all refused, and the largest value that FITS is taken. The
+		// five are one rule read at five points, and a reader that ran the
+		// literal through a double would take three of them.
+		vec("O_BLOCK_HEIGHT_FLOAT", "O", "block", oHeight(empty, "1.0")),
+		vec("O_BLOCK_HEIGHT_EXPONENT", "O", "block", oHeight(empty, "1e2")),
+		vec("O_BLOCK_HEIGHT_NEGATIVE", "O", "block", oHeight(empty, "-1")),
+		vec("O_BLOCK_HEIGHT_MAX", "O", "block", oHeight(empty, "18446744073709551615")),
+		vec("O_BLOCK_HEIGHT_OVER_MAX", "O", "block", oHeight(empty, "18446744073709551616")),
+		// A scheme past the width of the byte it is read into.
+		vec("O_BLOCK_SCHEME_OVER_BYTE", "O", "block",
+			[]byte(strings.Replace(
+				string(oBlockWire(oParent(), 1, oTime(1000, 0),
+					[]*oraclevm.Observation{obs1}, nil, nil)),
+				`"scheme":1`, `"scheme":256`, 1))),
 		// A CB58 string whose checksum does not check.
 		vec("O_BLOCK_PARENT_BAD_CHECKSUM", "O", "block",
 			[]byte(strings.Replace(string(empty), oParent().String(),
@@ -348,6 +360,16 @@ func oVectors() []Vector {
 
 	oAssert(v)
 	return v
+}
+
+// oHeight rewrites a block's height member with a literal, so the number rules
+// are read against the same block every time.
+func oHeight(wire []byte, literal string) []byte {
+	s := string(wire)
+	if !strings.Contains(s, `"height":1,`) {
+		panic("the height member is not written as these vectors assume")
+	}
+	return []byte(strings.Replace(s, `"height":1,`, `"height":`+literal+`,`, 1))
 }
 
 // oProved is an aggregation carrying the two proofs that are omitempty: with
@@ -656,6 +678,19 @@ func oAssert(v []Vector) {
 	written := oBlockID(oBlockWire(oParent(), 1, oTime(1000, 0), nil, nil, nil))
 	if by["O_BLOCK_ID_SET"].Hash == hex.EncodeToString(written[:]) {
 		panic("O_BLOCK_ID_SET was expected NOT to round-trip its own id")
+	}
+
+	// The five number vectors: four refusals and the one that fits.
+	for _, refused := range []string{
+		"O_BLOCK_HEIGHT_FLOAT", "O_BLOCK_HEIGHT_EXPONENT", "O_BLOCK_HEIGHT_NEGATIVE",
+		"O_BLOCK_HEIGHT_OVER_MAX", "O_BLOCK_SCHEME_OVER_BYTE",
+	} {
+		if by[refused].Parse != VMalformed {
+			panic(refused + " was expected to be refused, and was not: " + by[refused].Note)
+		}
+	}
+	if by["O_BLOCK_HEIGHT_MAX"].Parse != "ok" {
+		panic("the largest uint64 was refused: " + by["O_BLOCK_HEIGHT_MAX"].Note)
 	}
 
 	// omitempty writes the proofs that carry bytes and omits the empty ones,
