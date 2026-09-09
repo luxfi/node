@@ -2,8 +2,8 @@
 # Must be a full patch version: the go-installer stage below fetches
 # go${GO_VERSION}.linux-<arch>.tar.gz, and go.dev publishes no such tarball for
 # a bare "1.26" (only 1.26.0, 1.26.1, ...), so a minor-only value 404s.
-# Must also be >= the `go` directive in go.mod (1.26.4).
-ARG GO_VERSION=1.26.5
+# Must also be >= the `go` directive in go.mod (1.26.8).
+ARG GO_VERSION=1.26.8
 
 # ============= Go Installation Stage ================
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS go-installer

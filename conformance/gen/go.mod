@@ -1,6 +1,6 @@
 module github.com/luxfi/node/conformance/gen
 
-go 1.26.5
+go 1.26.8
 
 require (
 	github.com/luxfi/address v1.1.1

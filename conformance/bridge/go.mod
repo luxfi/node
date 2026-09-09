@@ -1,6 +1,6 @@
 module github.com/luxfi/node/conformance/bridge
 
-go 1.26.4
+go 1.26.8
 
 require (
 	github.com/luxfi/crypto v1.20.5

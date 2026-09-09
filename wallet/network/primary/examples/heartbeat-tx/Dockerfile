@@ -4,7 +4,7 @@
 # the same luxfi/geth + luxfi/crypto + luxfi/go-bip{32,39} versions as
 # the rest of the stack.
 
-ARG GO_VERSION=1.26.5
+ARG GO_VERSION=1.26.8
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-bookworm AS build
 
