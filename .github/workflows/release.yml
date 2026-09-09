@@ -45,14 +45,19 @@ jobs:
     timeout-minutes: 60
     env:
       GOWORK: off
-      # GOEXPERIMENT is not set here: scripts/constants.sh picks it, so the
-      # release is verified with the experiments it is built with.
       CGO_ENABLED: '0'
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
-      - name: Test the exact release source
-        run: ./scripts/build_test.sh
+      # Compile every package the release ships, at the release's own settings.
+      # This used to call ./scripts/build_test.sh, which is in no commit this
+      # repository has ever had: the step exited 127, verify failed, and build
+      # and merge were skipped — which is why every published tag is amd64-only
+      # while the matrix below has always named both architectures.
+      - name: Build the exact release source
+        run: go build ./...
+      - name: Test the node's own packages
+        run: go test ./server/... ./utils/...
 
   build:
     needs: verify
