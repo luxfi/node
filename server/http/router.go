@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 	"sync"
 
 	"github.com/go-json-experiment/json"
@@ -66,6 +67,12 @@ type router struct {
 	// a namespace shared by sibling endpoints; an endpoint is a mount, and it
 	// owns the paths beneath it. Only non-empty endpoints appear here.
 	mounts map[string]http.Handler
+	// folded maps the lowercased spelling of every url in paths and mounts to
+	// the same handler. A chain answers to C or c, bc or BC: the alias is the
+	// chain, not the shift key, and a caller that types it either way means the
+	// same chain. Exact spellings are matched first, so this only ever decides
+	// a request that would otherwise have been a 404.
+	folded map[string]http.Handler
 
 	// rootInfoProvider provides node information for GET /
 	rootInfoProvider RootInfoProvider
@@ -79,6 +86,7 @@ func newRouter() *router {
 		routes:         make(map[string]map[string]http.Handler),
 		paths:          make(map[string]http.Handler),
 		mounts:         make(map[string]http.Handler),
+		folded:         make(map[string]http.Handler),
 	}
 }
 
@@ -103,6 +111,9 @@ func (r *router) serveBelowMount(writer http.ResponseWriter, request *http.Reque
 		mount := path[:i]
 		r.routeLock.Lock()
 		handler, ok := r.mounts[mount]
+		if !ok {
+			handler, ok = r.folded[strings.ToLower(mount)]
+		}
 		r.routeLock.Unlock()
 		if ok {
 			http.StripPrefix(mount, handler).ServeHTTP(writer, request)
@@ -130,6 +141,9 @@ func (r *router) servePath(writer http.ResponseWriter, request *http.Request) {
 
 	r.routeLock.Lock()
 	handler, ok := r.paths[request.URL.Path]
+	if !ok {
+		handler, ok = r.folded[strings.ToLower(request.URL.Path)]
+	}
 	r.routeLock.Unlock()
 	if ok {
 		handler.ServeHTTP(writer, request)
@@ -344,6 +358,11 @@ func (r *router) forceAddRouter(base, endpoint string, handler http.Handler) err
 	// holds; the pair that got there first keeps it.
 	if _, taken := r.paths[url]; !taken {
 		r.paths[url] = handler
+	}
+	if lower := strings.ToLower(url); lower != url {
+		if _, taken := r.folded[lower]; !taken {
+			r.folded[lower] = handler
+		}
 	}
 
 	var err error
