@@ -73,11 +73,11 @@ const Refused = "this changes the node, and a node answers to its operator"
 // Authorize is the node's one authorization decision, run at the invoke seam of
 // every typed op on every mounted app. [Mount] installs it; nothing else needs
 // to, and nothing else should.
-func Authorize(ctx context.Context, op zip.Op, _ any) error {
+func Authorize(ctx context.Context, op zip.Op, _ any) (zip.Decision, error) {
 	if Open(op) {
-		return nil
+		return zip.Decision{Effect: zip.Allow}, nil
 	}
-	return operator(ctx)
+	return operator(ctx), nil
 }
 
 // Open reports whether op answers to anyone.
@@ -109,11 +109,11 @@ func Open(op zip.Op) bool {
 // TestAnUnreadablePeerIsNotTheOperator holds it to one. Node's own code reaches
 // an operation by calling the Go method, in the same process, with no address
 // to present and nothing to prove.
-func operator(ctx context.Context) error {
+func operator(ctx context.Context) zip.Decision {
 	if here(zip.CallerOf(ctx).IP) {
-		return nil
+		return zip.Decision{Effect: zip.Allow}
 	}
-	return zip.ErrForbidden(Refused)
+	return zip.Decision{Effect: zip.Deny, Reason: Refused}
 }
 
 // here reports whether ip is this machine. An address that does not parse is

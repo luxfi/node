@@ -136,10 +136,11 @@ require (
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
 	github.com/luxfi/geth v1.20.3
 	github.com/luxfi/go-bip39 v1.2.0
-	github.com/luxfi/kms v1.12.10
+	github.com/luxfi/kms v1.12.26
 	github.com/luxfi/math/safe v0.0.1
 	github.com/luxfi/net v0.1.1
 	github.com/luxfi/p2p v1.22.1
+	github.com/luxfi/precompile v0.19.22
 	github.com/luxfi/resource v0.1.1
 	github.com/luxfi/rpc v1.1.0
 	github.com/luxfi/runtime v1.3.1
@@ -157,9 +158,9 @@ require (
 	github.com/luxfi/zwing v0.6.1
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/valyala/fasthttp v1.73.0
-	github.com/zap-proto/go v1.8.2
-	github.com/zap-proto/http v0.3.5
-	github.com/zap-proto/zip v1.36.41
+	github.com/zap-proto/go v1.8.3
+	github.com/zap-proto/http v0.3.9
+	github.com/zap-proto/zip v1.36.48
 	go.uber.org/zap v1.27.1
 )
 
@@ -199,8 +200,6 @@ require (
 	github.com/emicklei/dot v1.11.0 // indirect
 	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ferranbt/fastssz v1.0.0 // indirect
-	github.com/fjl/gencodec v0.1.1 // indirect
-	github.com/garslo/gogen v0.0.0-20170306192744-1d203ffc1f61 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20250918194357-1ec6f2e601c6 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
@@ -235,7 +234,6 @@ require (
 	github.com/luxfi/mlwe v0.3.0 // indirect
 	github.com/luxfi/oracle v1.1.3 // indirect
 	github.com/luxfi/pq v1.1.2 // indirect
-	github.com/luxfi/precompile v0.19.22 // indirect
 	github.com/luxfi/pulsar v1.9.2 // indirect
 	github.com/luxfi/relay v1.1.2 // indirect
 	github.com/luxfi/staking v1.6.1 // indirect
