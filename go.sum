@@ -365,6 +365,8 @@ github.com/luxfi/evm v1.104.30 h1:OEl96LVmso7rdgJCRh/gSV/NbKQNyc+ah5+Q+edBS3E=
 github.com/luxfi/evm v1.104.30/go.mod h1:n020OYht3istzB4+nAhLt+21vkjLGGtCSmBg9IPSM7M=
 github.com/luxfi/evm v1.104.52 h1:265R7m51bflT7ESM9imybD749leicEq/QlGDOvD2rmw=
 github.com/luxfi/evm v1.104.52/go.mod h1:KHf1mjjl7/IK/QTFRW0EltuVIse9tekPwI2ZUQMP/ZU=
+github.com/luxfi/evm v1.104.53 h1:kIVbkHoeujnoPNrp0oMsGbwmTlpITINGLZQhqtSSGkM=
+github.com/luxfi/evm v1.104.53/go.mod h1:WjAsZkZqLHKYKkkA1wEGJ8KJHIhk2uJIOfIE+hai42s=
 github.com/luxfi/fhe v1.11.1 h1:fDTpXhWrqgtrmgvu/tOkDt4A5omJ6cU6u/wrRMBC6lc=
 github.com/luxfi/fhe v1.11.1/go.mod h1:QeNytuStXaY+HWvUN4+ULZBRMzvnrzjA/AV6FWksBro=
 github.com/luxfi/filesystem v0.0.1 h1:VZ6xMFKaAPBW/ddlMsDnI2G0VU1lV5rYaVcW5d+KwEY=
@@ -431,6 +433,8 @@ github.com/luxfi/precompile v0.19.8 h1:7VD+AE/EWI+95EmHs6aWQX2E4fIwJsqGszGIftalN
 github.com/luxfi/precompile v0.19.8/go.mod h1:QRUEgAYgEuUl1fUJ0HBJVsiS9mG0CPdcbs2Cw4G50Lg=
 github.com/luxfi/precompile v0.19.21 h1:jzslO40kcWoRNuNaY8gzf5dV3eo3FgBaNu+EPPptFss=
 github.com/luxfi/precompile v0.19.21/go.mod h1:LCI0TWKLxGnuH9uSvdN7GhUmGElHYFeJTRPBNUWlKso=
+github.com/luxfi/precompile v0.19.22 h1:I2qy5er6x9QlhYZO42dbuOSQ5LJ5qu9uP9wuf7zjUrk=
+github.com/luxfi/precompile v0.19.22/go.mod h1:nHfuuOcQdqfJwzfAr9Z+Hx6OECalyoIVF/L/x2kLg4A=
 github.com/luxfi/proto v1.4.10 h1:+XTxvAvnZGktWzsNNke09lcOilUOUk6wS8WLtDVsPbA=
 github.com/luxfi/proto v1.4.10/go.mod h1:iyRspUgLedMEeFMJUpwy1SGpE+1qzgaIUAKBdutGKEU=
 github.com/luxfi/pulsar v1.9.2 h1:pFLoAfBlCwFZfchqHn78J6yMe29AhaoKGRa/KTUP8CE=

@@ -130,7 +130,7 @@ require (
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.4
 	github.com/luxfi/container v0.2.2
-	github.com/luxfi/evm v1.104.52
+	github.com/luxfi/evm v1.104.53
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.16.23
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
@@ -235,7 +235,7 @@ require (
 	github.com/luxfi/mlwe v0.3.0 // indirect
 	github.com/luxfi/oracle v1.1.3 // indirect
 	github.com/luxfi/pq v1.1.2 // indirect
-	github.com/luxfi/precompile v0.19.21 // indirect
+	github.com/luxfi/precompile v0.19.22 // indirect
 	github.com/luxfi/pulsar v1.9.2 // indirect
 	github.com/luxfi/relay v1.1.2 // indirect
 	github.com/luxfi/staking v1.6.1 // indirect
