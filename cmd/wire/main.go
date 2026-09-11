@@ -105,7 +105,7 @@ func codecs(root string, at mapping) error {
 		}
 		roots = append(roots, t)
 	}
-	written, err := zip.Codecs(roots...)
+	written, err := zip.Layouts(roots...)
 	if err != nil {
 		return err
 	}
