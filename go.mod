@@ -130,11 +130,11 @@ require (
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.4
 	github.com/luxfi/container v0.2.2
-	github.com/luxfi/evm v1.104.30
+	github.com/luxfi/evm v1.104.52
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.16.23
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
-	github.com/luxfi/geth v1.20.2
+	github.com/luxfi/geth v1.20.3
 	github.com/luxfi/go-bip39 v1.2.0
 	github.com/luxfi/kms v1.12.10
 	github.com/luxfi/math/safe v0.0.1
@@ -199,6 +199,8 @@ require (
 	github.com/emicklei/dot v1.11.0 // indirect
 	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ferranbt/fastssz v1.0.0 // indirect
+	github.com/fjl/gencodec v0.1.1 // indirect
+	github.com/garslo/gogen v0.0.0-20170306192744-1d203ffc1f61 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20250918194357-1ec6f2e601c6 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
@@ -232,8 +234,8 @@ require (
 	github.com/luxfi/mdns v0.1.1 // indirect
 	github.com/luxfi/mlwe v0.3.0 // indirect
 	github.com/luxfi/oracle v1.1.3 // indirect
-	github.com/luxfi/pq v1.1.0 // indirect
-	github.com/luxfi/precompile v0.19.8 // indirect
+	github.com/luxfi/pq v1.1.2 // indirect
+	github.com/luxfi/precompile v0.19.21 // indirect
 	github.com/luxfi/pulsar v1.9.2 // indirect
 	github.com/luxfi/relay v1.1.2 // indirect
 	github.com/luxfi/staking v1.6.1 // indirect
