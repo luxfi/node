@@ -51,7 +51,7 @@ jobs:
       GOWORK: off
       CGO_ENABLED: '0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-go-for-project
       # Compile every package the release ships, at the release's own settings.
       # This used to call ./scripts/build_test.sh, which is in no commit this
@@ -82,7 +82,7 @@ jobs:
     # cevm (CGO), luxd, and twelve VM plugins. The long pole is cevm.
     timeout-minutes: 150
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Compute this arch's image name
         id: meta
