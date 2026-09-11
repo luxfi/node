@@ -56,12 +56,12 @@ permissionless by dropping `Consent` from its row; nothing else changes.
 
 ## What is not here
 
-The D-Chain matcher, the F-Chain's FHE implementation and the GPU kernels are
-in `luxfi/compute`, which is private. Everything else here forks public work,
-and anyone building on this network has to be able to read and run it, so the
-two do not share a visibility. `chains/{rust,cpp}/{dexvm,fhevm}` and `gpu/` are
-shims naming that checkout, and the differentials build them from `$(COMPUTE)`
-so those rows are still measured. The pure-Go DEX in `luxfi/dex` is public.
+The D-Chain and F-Chain ports are in `lux-cpp/chains` and `lux-rs/chains`,
+public, beside this repository; the differentials build them from those
+checkouts, so those rows are still measured. The pure-Go DEX in `luxfi/dex` is
+the protocol they are ports of. The GPU kernels are in `lux-gpu/gpu`, which is
+private; `gpu/` here is the seam they plug into, and its CPU backend is
+complete, so a node that never finds a kernel library is a whole node.
 
 ## Building against live checkouts
 
@@ -491,8 +491,8 @@ clock at all — rust dexvm and quantumvm, cpp quantumvm, zkvm, dexvm and fhevm 
 and the target named two of the six, so `make bench` exited 1 on the first of
 them and had never produced a number for any chain. All twelve take the count
 now; in C++ the loop lives once in the header the four already share. The D and
-F evaluators are in `luxfi/compute` with the rest of the licensed half, so the
-change to those two is there and the header they build against is here.
+F evaluators are in `lux-cpp/chains` and `lux-rs/chains`, so the change to
+those two is there and the header they build against is here.
 
 **One row per chain per language.** A port is one chain, so its time is that
 chain's. The Go reference is all six in one program and could only report a

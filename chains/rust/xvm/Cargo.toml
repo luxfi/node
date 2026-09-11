@@ -41,7 +41,7 @@ lux-consensus = "1.23.0"
 # spendable because the sender is RECOVERED from the signature. This crate is
 # also where the choice between computing those and handing them to an installed
 # kernel library is made — see gpu/README.md.
-lux-gpu = { path = "../../../../compute/gpu/rust" }
+lux-gpu = { path = "../../../gpu/rust" }
 
 # Signing. A node never signs a transfer — a wallet does — so this is the test
 # and tooling half of the same curve, and is deliberately not behind the

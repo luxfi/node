@@ -37,7 +37,7 @@ lux-node = { path = "../../../../../lux-rs/node" }
 # a second answer to "which block". This crate is also where the choice between
 # computing them and handing them to an installed kernel library is made — see
 # gpu/README.md.
-lux-gpu = { path = "../../../../compute/gpu/rust" }
+lux-gpu = { path = "../../../gpu/rust" }
 
 # The signature a validator proves possession of. Same curve, same domain tag as
 # the Go P-Chain's proof of possession — a second BLS is a second network.

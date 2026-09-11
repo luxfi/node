@@ -29,14 +29,13 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../zap.cmake)
 # SHA-256, and it asks for that hash the same way every other chain here does —
 # see gpu/README.md. Carrying its own copy would be a third implementation of
 # one hash in one C++ tree.
-# The kernels are in luxfi/compute, which gpu/README.md names. LUX_GPU_DIR is
-# where that checkout is; a build that was not told fails here, with the reason.
+# The seam is gpu/cpp in this repository. LUX_GPU_DIR overrides that, for a
+# tree that keeps it elsewhere.
 if(NOT LUX_GPU_DIR)
   set(LUX_GPU_DIR "$ENV{LUX_GPU_DIR}")
 endif()
-if(NOT LUX_GPU_DIR OR NOT EXISTS "${LUX_GPU_DIR}/CMakeLists.txt")
-  message(FATAL_ERROR
-    "no primitive seam: set LUX_GPU_DIR to luxfi/compute's gpu/cpp (see gpu/README.md)")
+if(NOT LUX_GPU_DIR)
+  set(LUX_GPU_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../gpu/cpp")
 endif()
 add_subdirectory(${LUX_GPU_DIR} ${CMAKE_CURRENT_BINARY_DIR}/lux_gpu)
 

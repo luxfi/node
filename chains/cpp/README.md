@@ -54,7 +54,7 @@ anywhere in the tree to pass one.
 cd platformvm && cmake -S . -B build && cmake --build build -j && (cd build && ctest)
 ```
 
-It finds `luxcpp/blst`, `luxcpp/crypto`, `lux-cpp/node` and `lux-cpp/consensus`
+It finds `lux-cpp/blst`, `lux-private/crypto`, `lux-cpp/node` and `lux-cpp/consensus`
 where they actually sit, matching on a file rather than a directory name. All
 four are required: a build that cannot check a proof of possession or recover a
 signer does not produce a P-chain at all.

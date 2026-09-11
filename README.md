@@ -35,16 +35,14 @@ permissionless by dropping `Consent` from its row in `node/vms.go`.
 
 ## What is not here
 
-The D-Chain matcher, the F-Chain's FHE implementation and the GPU kernels are in
-`luxfi/compute`, which is private. Those three are ours; the rest of this
-repository forks public work and anyone building on this network has to be able
-to read and run it, so the two do not share a visibility.
+The D-Chain and F-Chain ports are in `lux-cpp/chains` and `lux-rs/chains`,
+public, beside this repository. The differential builds them from those
+checkouts, so the rows below still measure them; they are simply not stored
+here. The pure-Go DEX in `luxfi/dex` is the protocol they are ports of.
 
-`chains/{rust,cpp}/{dexvm,fhevm}` and `gpu/` are shims naming that checkout —
-the same arrangement `runtime/rust` and `runtime/cpp` already use. The
-differential builds them from `$(COMPUTE)`, so the rows below still measure
-them; they are simply not stored here. The pure-Go DEX in `luxfi/dex` is the
-public one and is unaffected.
+The GPU kernels are in `lux-gpu/gpu`, which is private. `gpu/` here is the
+seam they plug into — a C ABI of four symbols and a complete CPU backend, so
+a node that never finds a kernel library is a whole node.
 
 ## The differentials
 

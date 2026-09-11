@@ -37,13 +37,13 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# oraclevm compiles two of fhevm's sources directly. fhevm lives in the
-# compute repository; it is looked for beside this one first, so a tree that
-# still carries it in place keeps working, and FHEVM_DIR overrides both.
+# oraclevm compiles two of fhevm's sources directly. fhevm is the C++ F-Chain
+# in lux-cpp/chains, checked out beside this repository; FHEVM_DIR overrides
+# where that checkout is.
 if(NOT FHEVM_DIR)
   foreach(candidate
-      ${CMAKE_CURRENT_SOURCE_DIR}/../fhevm
-      ${CMAKE_CURRENT_SOURCE_DIR}/../../../../compute/chains/cpp/fhevm)
+      $ENV{HOME}/work/lux-cpp/chains/fhevm
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../lux-cpp/chains/fhevm)
     if(EXISTS ${candidate}/src/json.cpp)
       set(FHEVM_DIR ${candidate})
       break()
@@ -51,7 +51,7 @@ if(NOT FHEVM_DIR)
   endforeach()
 endif()
 if(NOT FHEVM_DIR OR NOT EXISTS ${FHEVM_DIR}/src/json.cpp)
-  message(FATAL_ERROR "oraclevm reads Go's JSON through fhevm's src/json.cpp, which was not found beside this directory or in the compute repository; pass -DFHEVM_DIR=<path> to say where it is")
+  message(FATAL_ERROR "oraclevm reads Go's JSON through fhevm's src/json.cpp, which was not found in a lux-cpp/chains checkout beside this repository; pass -DFHEVM_DIR=<path> to say where it is")
 endif()
 
 add_library(oraclevm STATIC

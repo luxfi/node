@@ -14,6 +14,8 @@ NPROC := $(shell nproc 2>/dev/null || echo 4)
 CHAINS_DIR      := $(HOME)/work/lux/chains
 NODE_RUST_DIR   := $(HOME)/work/lux-rs/node
 NODE_CPP_DIR    := $(HOME)/work/lux-cpp/node
+CHAINS_RUST_DIR := $(HOME)/work/lux-rs/chains
+CHAINS_CPP_DIR  := $(HOME)/work/lux-cpp/chains
 NODE_CPP_BUILD  := $(NODE_CPP_DIR)/build
 
 # The C++ node reaches cevm's dependencies through the toolchain Conan writes
@@ -21,15 +23,16 @@ NODE_CPP_BUILD  := $(NODE_CPP_DIR)/build
 # belongs to sits under either root depending on the machine, and the first one
 # that exists is the answer.
 CONAN_TOOLCHAIN := $(firstword $(wildcard \
-    $(HOME)/work/luxcpp/cevm/build-node/build/Release/generators/conan_toolchain.cmake \
-    $(HOME)/work/lux-cpp/cevm/build-node/build/Release/generators/conan_toolchain.cmake))
-GPU_DIR         := $(HOME)/work/luxcpp/gpu
-# COMPUTE is the licensed half — the matcher, the FHE chain, the kernels. It is
-# a separate private repository for the same reason runtime/rust and runtime/cpp
-# name checkouts rather than vendoring them: this repository is public, and a
-# public repository must not hold a partial copy of a private one.
-COMPUTE         := $(HOME)/work/lux/compute
-GPU_CPP         := $(COMPUTE)/gpu/cpp
+    $(HOME)/work/lux-private/cevm/build-node/build/Release/generators/conan_toolchain.cmake \
+    $(HOME)/work/luxcpp/cevm/build-node/build/Release/generators/conan_toolchain.cmake))
+# The kernels are lux-gpu/gpu, private, and searched for rather than named:
+# on a machine checked out before the luxcpp org split they sit under the old
+# root, and the first one that exists is the answer.
+GPU_DIR         := $(firstword $(wildcard \
+    $(HOME)/work/lux-gpu/gpu \
+    $(HOME)/work/luxcpp/gpu))
+# The seam those kernels plug into is in this repository.
+GPU_CPP         := $(ROOT)/gpu/cpp
 LUX_CRYPTO_DIST := $(HOME)/work/lux/crypto/dist
 
 # The Rust chains link libluxcrypto.a — the same ML-KEM and ML-DSA the Go node
@@ -190,8 +193,7 @@ all: ## build all three runtimes plus gpu; nonzero unless 3/3
 # ---- gpu --------------------------------------------------------------------
 
 # GPU kernels, on by default (not opt-in) — reuses lux-gpu/gpu's own already-
-# configured build/. Path note: the repo lives at ~/work/luxcpp/gpu on this
-# machine, not ~/work/lux-gpu/gpu — see gpu/README.md.
+# configured build/. GPU_DIR is where that checkout is; see gpu/README.md.
 #
 # Scoped to the one target the brief means by "kernels": luxgpu_core_static
 # ("for embedding in Go/Rust" per its own CMakeLists comment), NOT the
@@ -333,16 +335,16 @@ CONF_WANT   := $(CONF)/corpus/expected.tsv
 PVM_RUST    := $(ROOT)/chains/rust/platformvm/target/release/conformance
 XVM_RUST    := $(ROOT)/chains/rust/xvm/target/release/conformance
 QVM_RUST    := $(ROOT)/chains/rust/quantumvm/target/release/conformance
-DVM_RUST    := $(COMPUTE)/chains/rust/dexvm/target/release/conformance
+DVM_RUST    := $(CHAINS_RUST_DIR)/dexvm/target/release/conformance
 ZVM_RUST    := $(ROOT)/chains/rust/zkvm/target/release/conformance
-FVM_RUST    := $(COMPUTE)/chains/rust/fhevm/target/release/conformance
+FVM_RUST    := $(CHAINS_RUST_DIR)/fhevm/target/release/conformance
 OVM_RUST    := $(ROOT)/chains/rust/oraclevm/target/release/conformance
 PVM_CPP     := $(ROOT)/chains/cpp/platformvm/build/pvm_conformance
 XVM_CPP     := $(ROOT)/chains/cpp/xvm/build/xvm_conformance
 QVM_CPP     := $(ROOT)/chains/cpp/quantumvm/build/qvm_conformance
 ZVM_CPP     := $(ROOT)/chains/cpp/zkvm/build/zkvm_conformance
-DVM_CPP     := $(COMPUTE)/chains/cpp/dexvm/build/dexvm_conformance
-FVM_CPP     := $(COMPUTE)/chains/cpp/fhevm/build/fhevm_conformance
+DVM_CPP     := $(CHAINS_CPP_DIR)/dexvm/build/dexvm_conformance
+FVM_CPP     := $(CHAINS_CPP_DIR)/fhevm/build/fhevm_conformance
 OVM_CPP     := $(ROOT)/chains/cpp/oraclevm/build/oraclevm_conformance
 RUST_EVALS  := $(PVM_RUST) $(XVM_RUST) $(QVM_RUST) $(DVM_RUST) $(ZVM_RUST) $(FVM_RUST) $(OVM_RUST)
 CPP_EVALS   := $(PVM_CPP) $(XVM_CPP) $(QVM_CPP) $(ZVM_CPP) $(DVM_CPP) $(FVM_CPP) $(OVM_CPP)
@@ -386,9 +388,9 @@ chains-build:
 	cd $(ROOT)/chains/rust/platformvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/xvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/quantumvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
-	cd $(COMPUTE)/chains/rust/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
+	cd $(CHAINS_RUST_DIR)/dexvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/zkvm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
-	cd $(COMPUTE)/chains/rust/fhevm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
+	cd $(CHAINS_RUST_DIR)/fhevm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
 	cd $(ROOT)/chains/rust/oraclevm && PATH="$(HOME)/.cargo/bin:$$PATH" LUX_LIB_DIR=$(LUX_CRYPTO_DIST) cargo build --release --bin conformance
 	cmake -S $(ROOT)/chains/cpp/platformvm -B $(ROOT)/chains/cpp/platformvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(ROOT)/chains/cpp/platformvm/build -j$(NPROC)
@@ -398,10 +400,10 @@ chains-build:
 	cmake --build $(ROOT)/chains/cpp/quantumvm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/zkvm -B $(ROOT)/chains/cpp/zkvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(ROOT)/chains/cpp/zkvm/build -j$(NPROC)
-	cmake -S $(COMPUTE)/chains/cpp/dexvm -B $(COMPUTE)/chains/cpp/dexvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
-	cmake --build $(COMPUTE)/chains/cpp/dexvm/build -j$(NPROC)
-	cmake -S $(COMPUTE)/chains/cpp/fhevm -B $(COMPUTE)/chains/cpp/fhevm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
-	cmake --build $(COMPUTE)/chains/cpp/fhevm/build -j$(NPROC)
+	cmake -S $(CHAINS_CPP_DIR)/dexvm -B $(CHAINS_CPP_DIR)/dexvm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
+	cmake --build $(CHAINS_CPP_DIR)/dexvm/build -j$(NPROC)
+	cmake -S $(CHAINS_CPP_DIR)/fhevm -B $(CHAINS_CPP_DIR)/fhevm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
+	cmake --build $(CHAINS_CPP_DIR)/fhevm/build -j$(NPROC)
 	cmake -S $(ROOT)/chains/cpp/oraclevm -B $(ROOT)/chains/cpp/oraclevm/build -DCMAKE_BUILD_TYPE=Release -DLUX_GPU_DIR=$(GPU_CPP)
 	cmake --build $(ROOT)/chains/cpp/oraclevm/build -j$(NPROC)
 	@for f in $(CONF_GEN) $(RUST_EVALS) $(CPP_EVALS); do \
