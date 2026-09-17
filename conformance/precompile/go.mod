@@ -1,6 +1,6 @@
 module github.com/luxfi/node/conformance/precompile
 
-go 1.26.8
+go 1.27.1
 
 require (
 	github.com/luxfi/geth v1.20.3

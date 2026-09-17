@@ -3,7 +3,7 @@
 // must not carry.
 module github.com/luxfi/node/conformance/dex
 
-go 1.26.8
+go 1.27.1
 
 require (
 	github.com/luxfi/crypto v1.20.9
