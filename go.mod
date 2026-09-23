@@ -130,7 +130,7 @@ require (
 	github.com/luxfi/compress v0.1.1
 	github.com/luxfi/constants v1.6.4
 	github.com/luxfi/container v0.2.2
-	github.com/luxfi/evm v1.104.55
+	github.com/luxfi/evm v1.104.56
 	github.com/luxfi/filesystem v0.0.1
 	github.com/luxfi/genesis v1.16.23
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
