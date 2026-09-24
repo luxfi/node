@@ -99,6 +99,19 @@ what the differential actually measured on this machine, and the one
 cross-language disagreement about secp256k1 recovery ids that consolidating
 the primitives turned up.
 
+## The consensus engine
+
+luxd runs `luxfi/consensus` engine/chain at the version go.mod pins (v1.36.94).
+At one height a validator signs the lowest sibling that can still reach the ⅔
+floor given the verified votes it has seen, proposes nothing beside a live
+sibling, pushes the block it signed with its vote again when a sibling lands
+beside it, passes on each block it takes up, caps undecided blocks at 4 a
+proposer and 64 a height, and settles until one deadline per height. The rules
+and where they live: that repo's LLM.md, "Siblings at one height". C-Chain
+blocks are proposervm blocks and state their proposer (`Proposer()`), which the
+caps count by; P- and X-Chain blocks (`pChainHeightVM`) state none and are
+counted by the peer that sent them.
+
 ## Conformance
 
 `~/work/lux/consensus/conformance` (tag `v1.36.91`) is the finality standard
