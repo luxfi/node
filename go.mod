@@ -132,7 +132,7 @@ require (
 	github.com/luxfi/container v0.2.2
 	github.com/luxfi/evm v1.104.56
 	github.com/luxfi/filesystem v0.0.1
-	github.com/luxfi/genesis v1.16.23
+	github.com/luxfi/genesis v1.16.25
 	github.com/luxfi/genesis/pkg/genesis/security v1.13.8
 	github.com/luxfi/geth v1.20.3
 	github.com/luxfi/go-bip39 v1.2.0

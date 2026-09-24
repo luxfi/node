@@ -47,9 +47,12 @@ const canonicalMPCVMID = "qCURact1n41FcoNBch8iMVBwc9AWie48D118ZNJ5tBdWrvryS"
 // can ship with no mchain.json at all — fewer chains than it declares, an empty
 // MChainID, and every restricted chain therefore unentitled — with no assertion
 // anywhere that would say so.
+//
+// mainnet and testnet are absent because they were born without one, and a
+// network with history cannot change its genesis (luxfi/genesis ships theirs
+// recorded, byte for byte). Their M-Chain, if they are to have one, is a
+// CreateChainTx — with the custody window below that it implies.
 var mchainNetworks = []uint32{
-	constants.MainnetID,
-	constants.TestnetID,
 	constants.DevnetID,
 	constants.LocalID,
 }
@@ -58,10 +61,8 @@ var mchainNetworks = []uint32{
 // same set, so adding a network without deciding its quorum fails the test
 // rather than silently exempting it.
 var wantPolicy = map[uint32]string{
-	constants.MainnetID: "3-of-5",
-	constants.TestnetID: "3-of-5",
-	constants.DevnetID:  "3-of-5",
-	constants.LocalID:   "2-of-3",
+	constants.DevnetID: "3-of-5",
+	constants.LocalID:  "2-of-3",
 }
 
 // M-Chain must be a GENESIS chain — in the P-Chain's chain set at height 0,

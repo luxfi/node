@@ -166,7 +166,7 @@ func TestGetConfigAllocations(t *testing.T) {
 		minStakers int
 	}{
 		{"Mainnet", constants.MainnetID, 50, 1},
-		{"Testnet", constants.TestnetID, 50, 1},
+		{"Testnet", constants.TestnetID, 6, 1}, // recorded: six, as it was born
 		{"Devnet", constants.DevnetID, 50, 1},
 		{"Local", constants.LocalID, 50, 1},
 	}

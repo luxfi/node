@@ -49,7 +49,11 @@ func TestCanonicalConfigsParse(t *testing.T) {
 		require.NoErrorf(t, err, "network %d", networkID)
 		require.NotEmptyf(t, cfg.Allocations, "network %d ships no allocations", networkID)
 		require.NotEmptyf(t, cfg.InitialStakers, "network %d ships no stakers", networkID)
-		require.NotNilf(t, cfg.SecurityProfile, "network %d ships no security profile pin", networkID)
+		// Testnet was born without a pin, so it boots classical-compat as it
+		// always has; its genesis is recorded and cannot gain one.
+		if networkID != genesisconfigs.TestnetID && networkID != genesisconfigs.TestnetChainID {
+			require.NotNilf(t, cfg.SecurityProfile, "network %d ships no security profile pin", networkID)
+		}
 	}
 }
 

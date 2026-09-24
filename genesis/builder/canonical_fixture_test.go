@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/luxfi/constants"
 	"github.com/luxfi/ids"
 	"github.com/stretchr/testify/require"
 
@@ -45,6 +46,30 @@ func TestCanonicalGenesisFixtureParses(t *testing.T) {
 				require.NotEqual(ids.ShortEmpty, a.EVMAddr, "allocation[%d] EVMAddr is zero — parse silently dropped", i)
 				require.NotEqual(ids.ShortEmpty, a.UTXOAddr, "allocation[%d] UTXOAddr is zero — parse silently dropped", i)
 			}
+		})
+	}
+}
+
+// A node started without --genesis-file joins the network that is running. The
+// C-Chain the shipped genesis founds is the one live validators run, named by
+// the ID their chainData directory carries.
+func TestShippedGenesisFoundsTheLiveCChain(t *testing.T) {
+	for _, c := range []struct {
+		networkID uint32
+		cchain    string
+	}{
+		{constants.MainnetID, "2Hx3UMuWA6mSQHwZ8SYcqnWUUAj4T3jHbD5HFFa1SiCdPq9TvU"},
+		{constants.TestnetID, "5kjSQWfw5GTuyxX5jxwaugpB2DAawsqtCfW8riWpwrFBuWZMi"},
+	} {
+		t.Run(networkNameOf(c.networkID), func(t *testing.T) {
+			require := require.New(t)
+			cfg, err := GetConfig(c.networkID)
+			require.NoError(err)
+			genesisBytes, _, err := FromConfig(cfg)
+			require.NoError(err)
+			tx, err := VMGenesis(genesisBytes, constants.EVMID)
+			require.NoError(err)
+			require.Equal(c.cchain, tx.ID().String(), "the shipped genesis founds another C-Chain")
 		})
 	}
 }
