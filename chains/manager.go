@@ -5006,10 +5006,10 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 			switch kind {
 			case quorumKindVote:
 				if b.logger != nil {
-					// handleVote returns BEFORE the signature check when the block is
-					// not in pendingBlocks — it buffers the vote and fires a fetch
-					// instead. So "known" here is what decides whether this vote can
-					// EVER be counted, and it is the difference between an ID-space
+					// A vote for a block not in pendingBlocks cannot be verified yet: the
+					// engine parks it when it names this sender as its signer, and counts
+					// it only if its block lands. So "known" here is what decides whether
+					// this vote is counted now, and it is the difference between an ID-space
 					// mismatch (vote keyed differently from pendingBlocks) and an
 					// eviction race (block dropped before peers' votes land). Also
 					// report whether the VM holds the block at all, which separates
@@ -5026,12 +5026,12 @@ func (b *blockHandler) Gossip(ctx context.Context, nodeID ids.NodeID, msg []byte
 						log.Stringer("from", nodeID), log.Stringer("blockID", blockID),
 						log.Bool("inPendingBlocks", known), log.Bool("inVM", inVM))
 					if !known {
-						b.logger.Warn("quorum: vote is for a block NOT in pendingBlocks — it will be buffered, never counted",
+						b.logger.Warn("quorum: vote is for a block NOT in pendingBlocks — parked when it is the sender's own, counted if its block lands",
 							log.Stringer("from", nodeID), log.Stringer("blockID", blockID),
 							log.Bool("inVM", inVM))
 					}
 				}
-				b.engine.HandleIncomingVote(blockID, payload)
+				b.engine.HandleIncomingVote(nodeID, blockID, payload)
 			case quorumKindCert:
 				if b.logger != nil {
 					b.logger.Info("quorum: CERT received",

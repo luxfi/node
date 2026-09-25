@@ -101,16 +101,30 @@ the primitives turned up.
 
 ## The consensus engine
 
-luxd runs `luxfi/consensus` engine/chain at the version go.mod pins (v1.36.94).
+luxd runs `luxfi/consensus` engine/chain at the version go.mod pins (v1.36.95).
+A block is accepted — VM.Accept, the ledger's decided height — only on the ⅔
+certificate: signers holding more than two thirds of the signing stake and at
+least ⌊2n/3⌋+1 of the n signers, over a set of at least four. A bare majority
+accepts nothing, so one equivocating validator cannot decide two blocks at one
+height. A certificate served for a height decided before this rule is read at
+the ⅔ rung: four of five signers prove the height, three do not.
+
+**Upgrade: every validator of a network moves to v1.37.12 together.** A node
+before it accepts on a majority certificate this one refuses, so a mixed set
+can decide different blocks at a height. Stop all, upgrade all, start all.
+
 At one height a validator signs the lowest sibling that can still reach the ⅔
 floor given the verified votes it has seen, proposes nothing beside a live
 sibling, pushes the block it signed with its vote again when a sibling lands
-beside it, passes on each block it takes up, caps undecided blocks at 4 a
-proposer and 64 a height, and settles until one deadline per height. The rules
-and where they live: that repo's LLM.md, "Siblings at one height". C-Chain
-blocks are proposervm blocks and state their proposer (`Proposer()`), which the
-caps count by; P- and X-Chain blocks (`pChainHeightVM`) state none and are
-counted by the peer that sent them.
+beside it, passes on each proposer's first block at a height, caps undecided
+blocks at 4 a proposer and 64 a height, and settles until one deadline per
+height. The vote gossip handler passes the transport-authenticated sender
+(`HandleIncomingVote(nodeID, …)`): a vote for a block this node lacks is parked
+only when it is the sender's own, and at the BLS signature length
+(`blsVoteVerifier.SignatureLen`). The rules and where they live: that repo's
+LLM.md, "Siblings at one height". C-Chain blocks are proposervm blocks and
+state their proposer (`Proposer()`), which the caps count by; P- and X-Chain
+blocks (`pChainHeightVM`) state none and count only toward the 64 a height.
 
 ## Conformance
 

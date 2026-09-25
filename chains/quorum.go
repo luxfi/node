@@ -279,6 +279,11 @@ func newBLSVoteVerifier(state validators.State, networkID ids.ID) *blsVoteVerifi
 
 // VerifyVote implements consensuschain.VoteVerifier. epochHeight is the block's
 // P-chain height; the voter's pubkey is read from the set IN FORCE AT that height.
+// SignatureLen is the length of every vote signature this verifier accepts: a
+// compressed BLS12-381 G2 point. The engine parks a vote for a block it lacks only at
+// this length.
+func (v *blsVoteVerifier) SignatureLen() int { return bls.SignatureLen }
+
 func (v *blsVoteVerifier) VerifyVote(nodeID ids.NodeID, message []byte, sig []byte, epochHeight uint64) bool {
 	out, ok := validatorSetAtHeight(v.state, v.networkID, epochHeight)[nodeID]
 	if !ok || out == nil {
