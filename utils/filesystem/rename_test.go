@@ -5,6 +5,7 @@ package filesystem
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,12 +16,12 @@ func TestRenameIfExists(t *testing.T) {
 
 	t.Parallel()
 
-	f, err := os.CreateTemp(os.TempDir(), "test-rename")
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+
+	f, err := os.Create(a)
 	require.NoError(err)
-
-	a := f.Name()
-	b := a + ".2"
-
 	require.NoError(f.Close())
 
 	// rename "a" to "b"
