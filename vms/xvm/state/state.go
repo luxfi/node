@@ -174,17 +174,26 @@ type state struct {
 	singletonDB                         database.Database
 }
 
+type nonClosingStateDB struct {
+	database.Database
+}
+
+func (nonClosingStateDB) Close() error {
+	return nil
+}
+
 func New(
 	db *versiondb.Database,
 	parser block.Parser,
 	metrics metric.Registerer,
 	trackChecksums bool,
 ) (State, error) {
-	utxoDB := prefixdb.New(utxoPrefix, db)
-	txDB := prefixdb.New(txPrefix, db)
-	blockIDDB := prefixdb.New(blockIDPrefix, db)
-	blockDB := prefixdb.New(blockPrefix, db)
-	singletonDB := prefixdb.New(singletonPrefix, db)
+	sharedDB := nonClosingStateDB{Database: db}
+	utxoDB := prefixdb.NewNested(utxoPrefix, sharedDB)
+	txDB := prefixdb.NewNested(txPrefix, sharedDB)
+	blockIDDB := prefixdb.NewNested(blockIDPrefix, sharedDB)
+	blockDB := prefixdb.NewNested(blockPrefix, sharedDB)
+	singletonDB := prefixdb.NewNested(singletonPrefix, sharedDB)
 
 	registry, ok := metrics.(metric.Registry)
 	if !ok {
@@ -230,7 +239,7 @@ func New(
 		modifiedUTXOs: make(map[ids.ID]*lux.UTXO),
 		utxoDB:        utxoDB,
 		utxoState:     utxoState,
-		utxoRecordDB:  prefixdb.New(utxoRecordPrefix, utxoDB),
+		utxoRecordDB:  prefixdb.NewNested(utxoRecordPrefix, nonClosingStateDB{Database: utxoDB}),
 
 		addedTxs: make(map[ids.ID]*txs.Tx),
 		txCache:  txCache,

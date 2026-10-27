@@ -1112,12 +1112,20 @@ func (n *Node) initEventDispatchers() {
 	n.VertexAcceptorGroup = nodeconsensus.NewAcceptorGroup(n.Log)
 }
 
+type nonClosingNodeDB struct {
+	database.Database
+}
+
+func (nonClosingNodeDB) Close() error {
+	return nil
+}
+
 // Initialize [n.indexer].
 // Should only be called after [n.DB], [n.DecisionAcceptorGroup],
 // [n.ConsensusAcceptorGroup], [n.Log], [n.APIServer], [n.chainManager] are
 // initialized
 func (n *Node) initIndexer() error {
-	txIndexerDB := prefixdb.New(indexerDBPrefix, n.DB)
+	txIndexerDB := prefixdb.NewNested(indexerDBPrefix, nonClosingNodeDB{Database: n.DB})
 	var err error
 	n.indexer, err = indexer.NewIndexer(indexer.Config{
 		IndexingEnabled:      n.Config.IndexAPIEnabled,
@@ -1451,6 +1459,7 @@ func (n *Node) initChainManager(utxoAssetID ids.ID) error {
 			ChainConfigs:                            n.Config.ChainConfigs,
 			FrontierPollFrequency:                   n.Config.FrontierPollFrequency,
 			ConsensusAppConcurrency:                 n.Config.ConsensusAppConcurrency,
+			ConsensusShutdownTimeout:                n.Config.ConsensusShutdownTimeout,
 			BootstrapMaxTimeGetAncestors:            n.Config.BootstrapMaxTimeGetAncestors,
 			BootstrapAncestorsMaxContainersSent:     n.Config.BootstrapAncestorsMaxContainersSent,
 			BootstrapAncestorsMaxContainersReceived: n.Config.BootstrapAncestorsMaxContainersReceived,
@@ -1728,7 +1737,7 @@ func (n *Node) initVMs() error {
 // initSharedMemory initializes the shared memory for cross chain interation
 func (n *Node) initSharedMemory() {
 	n.Log.Info("initializing SharedMemory")
-	sharedMemoryDB := prefixdb.New([]byte("shared memory"), n.DB)
+	sharedMemoryDB := prefixdb.NewNested([]byte("shared memory"), nonClosingNodeDB{Database: n.DB})
 	n.sharedMemory = atomic.NewMemory(sharedMemoryDB)
 }
 

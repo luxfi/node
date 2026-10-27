@@ -14,6 +14,8 @@ import (
 
 	"github.com/luxfi/consensus/networking/handler"
 	"github.com/luxfi/constants"
+	"github.com/luxfi/database"
+	"github.com/luxfi/database/memdb"
 	"github.com/luxfi/ids"
 	"github.com/luxfi/log"
 	"github.com/luxfi/metric"
@@ -492,4 +494,132 @@ func TestReportBootstrapNamesTheCurrentReason(t *testing.T) {
 	converged = true
 	_, err = check.HealthCheck(context.Background())
 	require.NoError(err, "a reason that has since been falsified must stop being reported as a failure")
+}
+
+type shutdownTrackingHandler struct {
+	handler.Handler
+	stopped gatomic.Bool
+}
+
+func (h *shutdownTrackingHandler) Stop(context.Context) {
+	h.stopped.Store(true)
+}
+
+type shutdownTrackingEngine struct {
+	stopped gatomic.Bool
+	reason  error
+}
+
+func (e *shutdownTrackingEngine) Start(context.Context, bool) error { return nil }
+func (e *shutdownTrackingEngine) Context() context.Context          { return context.Background() }
+func (e *shutdownTrackingEngine) StopWithError(_ context.Context, err error) error {
+	e.reason = err
+	e.stopped.Store(true)
+	return nil
+}
+
+type shutdownTrackingVM struct {
+	vmDB        database.Database
+	stopped     gatomic.Bool
+	hasDeadline gatomic.Bool
+	flushErr    error
+}
+
+func (v *shutdownTrackingVM) Shutdown(ctx context.Context) error {
+	_, ok := ctx.Deadline()
+	v.hasDeadline.Store(ok)
+	if v.vmDB != nil {
+		if err := v.vmDB.Put([]byte("flushed-on-shutdown"), []byte("ok")); err != nil {
+			v.flushErr = err
+			return err
+		}
+		if err := v.vmDB.Close(); err != nil {
+			v.flushErr = err
+			return err
+		}
+	}
+	v.stopped.Store(true)
+	return nil
+}
+
+// TestShutdownStopsTrackedChainsAndPreservesSharedDB verifies that Manager.Shutdown
+// stops every active chain's handler, consensus engine, and VM within
+// ConsensusShutdownTimeout while keeping the parent shared database open so the
+// node can clear the ungraceful-shutdown marker and close n.DB last.
+func TestShutdownStopsTrackedChainsAndPreservesSharedDB(t *testing.T) {
+	require := require.New(t)
+
+	sharedDB := memdb.New()
+	ungracefulKey := []byte("ungraceful-shutdown")
+	require.NoError(sharedDB.Put(ungracefulKey, []byte{1}))
+
+	config := &ManagerConfig{
+		Log:                      log.NewNoOpLogger(),
+		Metrics:                  metric.NewMultiGatherer(),
+		VMManager:                vms.NewManager(),
+		ChainDataDir:             t.TempDir(),
+		DB:                       sharedDB,
+		ConsensusShutdownTimeout: 5 * time.Second,
+	}
+
+	m, err := New(config)
+	require.NoError(err)
+	mImpl := m.(*manager)
+
+	chainA := ids.GenerateTestID()
+	chainB := ids.GenerateTestID()
+
+	vmDBA, err := mImpl.chainDBManager.GetVMDatabase(chainA, "P")
+	require.NoError(err)
+	vmDBB, err := mImpl.chainDBManager.GetVMDatabase(chainB, "X")
+	require.NoError(err)
+
+	handlerA := &shutdownTrackingHandler{}
+	engineA := &shutdownTrackingEngine{}
+	vmA := &shutdownTrackingVM{vmDB: vmDBA}
+
+	handlerB := &shutdownTrackingHandler{}
+	engineB := &shutdownTrackingEngine{}
+	vmB := &shutdownTrackingVM{vmDB: vmDBB}
+
+	mImpl.chainsLock.Lock()
+	mImpl.chains[chainA] = &chainInfo{
+		Name:    "P-Chain",
+		Handler: handlerA,
+		Engine:  engineA,
+		VM:      vmA,
+	}
+	mImpl.chains[chainB] = &chainInfo{
+		Name:    "X-Chain",
+		Handler: handlerB,
+		Engine:  engineB,
+		VM:      vmB,
+	}
+	mImpl.chainsLock.Unlock()
+
+	m.Shutdown()
+
+	require.True(handlerA.stopped.Load(), "chain A handler must be stopped on Shutdown")
+	require.True(engineA.stopped.Load(), "chain A engine must be stopped on Shutdown")
+	require.True(vmA.stopped.Load(), "chain A VM Shutdown must run")
+	require.True(vmA.hasDeadline.Load(), "chain A VM Shutdown ctx must carry ConsensusShutdownTimeout deadline")
+	require.NoError(vmA.flushErr)
+
+	require.True(handlerB.stopped.Load(), "chain B handler must be stopped on Shutdown")
+	require.True(engineB.stopped.Load(), "chain B engine must be stopped on Shutdown")
+	require.True(vmB.stopped.Load(), "chain B VM Shutdown must run")
+	require.True(vmB.hasDeadline.Load(), "chain B VM Shutdown ctx must carry ConsensusShutdownTimeout deadline")
+	require.NoError(vmB.flushErr)
+
+	// Per-VM views were closed by VM.Shutdown, so further writes to them fail with ErrClosed.
+	require.ErrorIs(vmDBA.Put([]byte("late"), []byte("write")), database.ErrClosed)
+	require.ErrorIs(vmDBB.Put([]byte("late"), []byte("write")), database.ErrClosed)
+
+	// The shared parent database must still be open so node.shutdown() can delete
+	// ungracefulShutdown and close n.DB last.
+	require.NoError(sharedDB.Delete(ungracefulKey))
+	has, err := sharedDB.Has(ungracefulKey)
+	require.NoError(err)
+	require.False(has)
+	require.NoError(sharedDB.Close())
 }
