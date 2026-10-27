@@ -354,8 +354,11 @@ func (vm *VM) Shutdown(ctx context.Context) error {
 			vm.logger.Warn("stopping the proposer's operations", log.Err(err))
 		}
 	}
-	// ChainVM doesn't have Shutdown in new consensus
-	// return vm.ChainVM.Shutdown(ctx)
+	if inner, ok := vm.ChainVM.(interface {
+		Shutdown(context.Context) error
+	}); ok {
+		return inner.Shutdown(ctx)
+	}
 	return nil
 }
 

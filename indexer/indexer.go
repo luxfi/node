@@ -282,7 +282,7 @@ func (i *indexer) registerChainHelper(
 	prefix := make([]byte, ids.IDLen+wrappers.ByteLen)
 	copy(prefix, chainID[:])
 	prefix[ids.IDLen] = prefixEnd
-	indexDB := prefixdb.New(prefix, i.db)
+	indexDB := prefixdb.NewNested(prefix, nonClosingIndexDB{Database: i.db})
 	index, err := newIndex(indexDB, i.log, i.clock)
 	if err != nil {
 		// Don't close indexDB as it would close the underlying database

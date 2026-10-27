@@ -51,14 +51,11 @@ func (s *state) CommitBatch() (database.Batch, error) {
 }
 
 func (s *state) Close() error {
-	// Only close the base database. All other databases are prefixdb wrappers
-	// that don't need to be closed separately. Closing them would cause
-	// "closed" errors because prefixdb.Close() calls Close() on the underlying
-	// database, which would be closed multiple times.
-	// The baseDB field was not stored in the state struct, but we can close
-	// the underlying database through any of the prefixdb instances.
-	// We'll close singletonDB which is a direct prefixdb over baseDB.
-	return s.singletonDB.Close()
+	// Close only the state's versiondb layer (s.baseDB). All prefixdb views in
+	// state are carved from s.baseDB, while the underlying vm.db is provided
+	// externally and owned by the caller (node.Node owns the shared global DB;
+	// see luxfi/database#6, luxfi/node#5).
+	return s.baseDB.Close()
 }
 
 func (s *state) write(updateValidators bool, height uint64) error {

@@ -55,6 +55,14 @@ type index struct {
 	log              log.Logger
 }
 
+type nonClosingIndexDB struct {
+	database.Database
+}
+
+func (nonClosingIndexDB) Close() error {
+	return nil
+}
+
 // Create a new thread-safe index.
 //
 // Invariant: Closes [baseDB] on close.
@@ -64,8 +72,9 @@ func newIndex(
 	clock *mockable.Clock,
 ) (*index, error) {
 	vDB := versiondb.New(baseDB)
-	indexToContainer := prefixdb.New(indexToContainerPrefix, vDB)
-	containerToIndex := prefixdb.New(containerToIDPrefix, vDB)
+	sharedVDB := nonClosingIndexDB{Database: vDB}
+	indexToContainer := prefixdb.NewNested(indexToContainerPrefix, sharedVDB)
+	containerToIndex := prefixdb.NewNested(containerToIDPrefix, sharedVDB)
 
 	i := &index{
 		clock:            clock,

@@ -6,6 +6,7 @@ package chains
 import (
 	"fmt"
 	"sync"
+	gatomic "sync/atomic"
 
 	"github.com/luxfi/database"
 	"github.com/luxfi/database/prefixdb"
@@ -47,6 +48,49 @@ func NewChainDBManager(config ChainDBManagerConfig) *ChainDBManager {
 	}
 }
 
+// nonClosingDB wraps a shared parent database.Database so that closing a
+// prefixdb view carved from it closes only the view itself and never closes
+// the parent store (owned by node.Node; see luxfi/database#6, luxfi/node#5).
+type nonClosingDB struct {
+	database.Database
+	closed gatomic.Bool
+}
+
+func (n *nonClosingDB) Close() error {
+	if !n.closed.CompareAndSwap(false, true) {
+		return database.ErrClosed
+	}
+	return nil
+}
+
+func (n *nonClosingDB) Has(key []byte) (bool, error) {
+	if n.closed.Load() {
+		return false, database.ErrClosed
+	}
+	return n.Database.Has(key)
+}
+
+func (n *nonClosingDB) Get(key []byte) ([]byte, error) {
+	if n.closed.Load() {
+		return nil, database.ErrClosed
+	}
+	return n.Database.Get(key)
+}
+
+func (n *nonClosingDB) Put(key, value []byte) error {
+	if n.closed.Load() {
+		return database.ErrClosed
+	}
+	return n.Database.Put(key, value)
+}
+
+func (n *nonClosingDB) Delete(key []byte) error {
+	if n.closed.Load() {
+		return database.ErrClosed
+	}
+	return n.Database.Delete(key)
+}
+
 // chainDB returns a prefixed database for the given chain.
 // Uses prefix-based isolation on the single global ZapDB.
 func (m *ChainDBManager) chainDB(chainID ids.ID, chainAlias string) (database.Database, error) {
@@ -62,8 +106,11 @@ func (m *ChainDBManager) chainDB(chainID ids.ID, chainAlias string) (database.Da
 		return db, nil
 	}
 
-	// Create prefixed database for this chain
-	chainDB := prefixdb.New(chainID[:], m.db)
+	// Create prefixed database view for this chain.
+	// Ownership rule: the global shared database (m.db / n.DB) is owned and
+	// closed exclusively by node.Node after all chains and plugin runtimes have
+	// shut down (see luxfi/database#6, luxfi/node#5).
+	chainDB := prefixdb.NewNested(chainID[:], &nonClosingDB{Database: m.db})
 	m.chainDBs[chainID] = chainDB
 
 	if !m.log.IsZero() {
@@ -84,6 +131,7 @@ func (m *ChainDBManager) GetVMDatabase(chainID ids.ID, chainAlias string) (datab
 		return nil, err
 	}
 
-	// Add VM prefix to isolate VM data from other chain data
-	return prefixdb.New(VMDBPrefix, chainDB), nil
+	// Add VM prefix to isolate VM data from other chain data without transferring
+	// ownership of the underlying chainDB / global database.
+	return prefixdb.NewNested(VMDBPrefix, &nonClosingDB{Database: chainDB}), nil
 }

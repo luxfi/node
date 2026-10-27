@@ -436,8 +436,9 @@ type ManagerConfig struct {
 	Metrics        metrics.MultiGatherer
 	MeterDBMetrics metrics.MultiGatherer
 
-	FrontierPollFrequency   time.Duration
-	ConsensusAppConcurrency int
+	FrontierPollFrequency    time.Duration
+	ConsensusAppConcurrency  int
+	ConsensusShutdownTimeout time.Duration
 
 	// Max Time to spend fetching a container and its
 	// ancestors when responding to a GetAncestors
@@ -1810,6 +1811,10 @@ func (m *manager) buildChain(chainParams ChainParameters, sb network.Net) (*chai
 			}
 		}
 
+		// Node-lifetime context shared by the WaitForEvent bridge, initial-sync/poller,
+		// and observer goroutines; cancelled when Handler.Stop runs during Shutdown.
+		pollerCtx, pollerCancel := context.WithCancel(context.Background())
+
 		// Bridge engineVM's WaitForEvent to the toEngine channel.
 		// ForwardVMNotifications reads from toEngine; this goroutine is the sole
 		// writer. For a WRAPPED chain engineVM is the proposervm, whose WaitForEvent
@@ -1822,20 +1827,23 @@ func (m *manager) buildChain(chainParams ChainParameters, sb network.Net) (*chai
 		// every height → conflicting certs → equivocation crash). For an unwrapped
 		// chain engineVM is the inner VM — original behavior.
 		go func() {
-			ctx := context.Background()
 			for {
 				// Call WaitForEvent on the VM - this blocks until there are pending txs
 				// or staker changes that should trigger block building
-				msg, err := engineVM.WaitForEvent(ctx)
+				msg, err := engineVM.WaitForEvent(pollerCtx)
 				if err != nil {
-					if ctx.Err() != nil {
+					if pollerCtx.Err() != nil {
 						// Context cancelled, exit gracefully
 						return
 					}
 					chainLog.Warn("WaitForEvent error, retrying",
 						log.Stringer("chainID", chainParams.ID),
 						log.Err(err))
-					time.Sleep(time.Second)
+					select {
+					case <-time.After(time.Second):
+					case <-pollerCtx.Done():
+						return
+					}
 					continue
 				}
 
@@ -1843,10 +1851,14 @@ func (m *manager) buildChain(chainParams ChainParameters, sb network.Net) (*chai
 				chainLog.Debug("[VM NOTIFICATION] WaitForEvent returned",
 					log.Stringer("chainID", chainParams.ID),
 					log.Uint32("messageType", uint32(msg.Type)))
-				toEngine <- msg
-				chainLog.Debug("[VM NOTIFICATION] Sent to toEngine channel",
-					log.Stringer("chainID", chainParams.ID),
-					log.Uint32("msgType", uint32(msg.Type)))
+				select {
+				case toEngine <- msg:
+					chainLog.Debug("[VM NOTIFICATION] Sent to toEngine channel",
+						log.Stringer("chainID", chainParams.ID),
+						log.Uint32("msgType", uint32(msg.Type)))
+				case <-pollerCtx.Done():
+					return
+				}
 			}
 		}()
 
@@ -1910,7 +1922,6 @@ func (m *manager) buildChain(chainParams ChainParameters, sb network.Net) (*chai
 		// it periodically asks peers for their accepted tip and pulls the gap (with
 		// certs) through the catch-up transport. Node-lifetime goroutine (same ctx
 		// model as the WaitForEvent bridge above).
-		pollerCtx, pollerCancel := context.WithCancel(context.Background())
 		bh.pollerCancel = pollerCancel
 		// Drive INITIAL SYNC first (fetch+execute from the local tip to the network
 		// frontier — the fix for a node that previously declared itself bootstrapped at
@@ -2754,13 +2765,65 @@ func (m *manager) PrimaryAliasOrDefault(chainID ids.ID) string {
 	return alias
 }
 
+var errChainManagerShutdown = errors.New("chain manager shutting down")
+
 // Shutdown stops all the chains
 func (m *manager) Shutdown() {
 	m.Log.Info("shutting down chain manager")
-	m.chainsQueue.Close()
-	close(m.chainCreatorShutdownCh)
+	if m.chainsQueue != nil {
+		m.chainsQueue.Close()
+	}
+	if m.chainCreatorShutdownCh != nil {
+		select {
+		case <-m.chainCreatorShutdownCh:
+		default:
+			close(m.chainCreatorShutdownCh)
+		}
+	}
 	m.chainCreatorExited.Wait()
-	// Router doesn't have Shutdown method in consensus package
+
+	m.chainsLock.Lock()
+	chainsToStop := make(map[ids.ID]*chainInfo, len(m.chains))
+	for id, chain := range m.chains {
+		chainsToStop[id] = chain
+	}
+	m.chainsLock.Unlock()
+
+	timeout := m.ConsensusShutdownTimeout
+	if timeout <= 0 {
+		timeout = constants.DefaultConsensusShutdownTimeout
+	}
+
+	for chainID, chain := range chainsToStop {
+		if chain == nil {
+			continue
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		if stopper, ok := chain.Handler.(interface {
+			Stop(context.Context)
+		}); ok {
+			stopper.Stop(ctx)
+		}
+		if chain.Engine != nil {
+			if err := chain.Engine.StopWithError(ctx, errChainManagerShutdown); err != nil {
+				m.Log.Debug("error stopping consensus engine during shutdown",
+					log.Stringer("chainID", chainID),
+					log.Err(err),
+				)
+			}
+		}
+		if vmWithShutdown, ok := chain.VM.(interface {
+			Shutdown(context.Context) error
+		}); ok {
+			if err := vmWithShutdown.Shutdown(ctx); err != nil {
+				m.Log.Error("error shutting down VM",
+					log.Stringer("chainID", chainID),
+					log.Err(err),
+				)
+			}
+		}
+		cancel()
+	}
 }
 
 // RetryPendingChains re-queues chains that were waiting for the specified VM.
